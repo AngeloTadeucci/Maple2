@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -11,7 +10,7 @@ public static class BannerListPacket {
     public static ByteWriter Load(IList<SystemBanner> banners) {
         var pWriter = Packet.Of(SendOp.BannerList);
         pWriter.WriteShort((short) banners.Count);
-        foreach(SystemBanner banner in banners) {
+        foreach (SystemBanner banner in banners) {
             pWriter.WriteClass<SystemBanner>(banner);
         }
 

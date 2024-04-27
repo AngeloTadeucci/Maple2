@@ -4,19 +4,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class InitialCreate : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class InitialCreate : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AlterDatabase()
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Account",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Username = table.Column<string>(type: "varchar(255)", nullable: false)
@@ -35,16 +31,14 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Account", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Item",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
@@ -82,16 +76,14 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Item", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "ugcmap",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
@@ -105,16 +97,14 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_ugcmap", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Character",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     AccountId = table.Column<long>(type: "bigint", nullable: false),
@@ -122,7 +112,7 @@ namespace Maple2.Server.World.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Gender = table.Column<byte>(type: "tinyint unsigned", nullable: false),
                     Job = table.Column<int>(type: "int", nullable: false),
-                    Level = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)1),
+                    Level = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short) 1),
                     SkinColor = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     MapId = table.Column<int>(type: "int", nullable: false),
@@ -140,8 +130,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Character", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Character_Account_AccountId",
@@ -154,13 +143,12 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Home",
-                columns: table => new
-                {
+                columns: table => new {
                     AccountId = table.Column<long>(type: "bigint", nullable: false),
                     Message = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Area = table.Column<byte>(type: "tinyint unsigned", nullable: false, defaultValue: (byte)4),
-                    Height = table.Column<byte>(type: "tinyint unsigned", nullable: false, defaultValue: (byte)3),
+                    Area = table.Column<byte>(type: "tinyint unsigned", nullable: false, defaultValue: (byte) 4),
+                    Height = table.Column<byte>(type: "tinyint unsigned", nullable: false, defaultValue: (byte) 3),
                     CurrentArchitectScore = table.Column<int>(type: "int", nullable: false),
                     ArchitectScore = table.Column<int>(type: "int", nullable: false),
                     Background = table.Column<byte>(type: "tinyint unsigned", nullable: false),
@@ -173,8 +161,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Home", x => x.AccountId);
                     table.ForeignKey(
                         name: "FK_Home_Account_AccountId",
@@ -187,14 +174,12 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "item-storage",
-                columns: table => new
-                {
+                columns: table => new {
                     AccountId = table.Column<long>(type: "bigint", nullable: false),
                     Meso = table.Column<long>(type: "bigint", nullable: false),
                     Expand = table.Column<short>(type: "smallint", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_item-storage", x => x.AccountId);
                     table.ForeignKey(
                         name: "FK_item-storage_Account_AccountId",
@@ -207,8 +192,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "ugcmap-cube",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UgcMapId = table.Column<long>(type: "bigint", nullable: false),
@@ -220,8 +204,7 @@ namespace Maple2.Server.World.Migrations
                     Template = table.Column<string>(type: "json", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_ugcmap-cube", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ugcmap-cube_ugcmap_UgcMapId",
@@ -234,8 +217,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Buddy",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
@@ -246,8 +228,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Buddy", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Buddy_Character_BuddyId",
@@ -266,8 +247,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "character-unlock",
-                columns: table => new
-                {
+                columns: table => new {
                     CharacterId = table.Column<long>(type: "bigint", nullable: false),
                     Maps = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -284,8 +264,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_character-unlock", x => x.CharacterId);
                     table.ForeignKey(
                         name: "FK_character-unlock_Character_CharacterId",
@@ -298,8 +277,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Club",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Name = table.Column<string>(type: "varchar(255)", nullable: false)
@@ -310,8 +288,7 @@ namespace Maple2.Server.World.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn),
                     LeaderId = table.Column<long>(type: "bigint", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Club", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Club_Character_LeaderId",
@@ -324,8 +301,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "skill-tab",
-                columns: table => new
-                {
+                columns: table => new {
                     CharacterId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<long>(type: "bigint", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: false)
@@ -335,8 +311,7 @@ namespace Maple2.Server.World.Migrations
                     Skills = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_skill-tab", x => new { x.CharacterId, x.Id });
                     table.UniqueConstraint("AK_skill-tab_Id", x => x.Id);
                     table.ForeignKey(
@@ -350,15 +325,13 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "club-member",
-                columns: table => new
-                {
+                columns: table => new {
                     ClubId = table.Column<long>(type: "bigint", nullable: false),
                     CharacterId = table.Column<long>(type: "bigint", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_club-member", x => new { x.ClubId, x.CharacterId });
                     table.ForeignKey(
                         name: "FK_club-member_Character_CharacterId",
@@ -377,8 +350,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "character-config",
-                columns: table => new
-                {
+                columns: table => new {
                     CharacterId = table.Column<long>(type: "bigint", nullable: false),
                     KeyBinds = table.Column<string>(type: "json", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -395,8 +367,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", rowVersion: true, nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_character-config", x => x.CharacterId);
                     table.ForeignKey(
                         name: "FK_character-config_Character_CharacterId",
@@ -493,8 +464,7 @@ namespace Maple2.Server.World.Migrations
             migrationBuilder.Sql("ALTER TABLE `item` AUTO_INCREMENT = 2000000000000");
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "Buddy");
 

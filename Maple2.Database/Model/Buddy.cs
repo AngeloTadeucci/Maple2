@@ -16,7 +16,7 @@ internal class Buddy {
 
     public DateTime LastModified { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Buddy?(Maple2.Model.Game.BuddyEntry? other) {
         return other == null ? null : new Buddy {
             Id = other.Id,
@@ -27,7 +27,7 @@ internal class Buddy {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.BuddyEntry?(Buddy? other) {
         return other == null ? null : new Maple2.Model.Game.BuddyEntry {
             Id = other.Id,

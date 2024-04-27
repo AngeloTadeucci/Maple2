@@ -12,7 +12,7 @@ internal class PetConfig {
     public required PetPotionConfig[] PotionConfigs { get; set; }
     public PetLootConfig LootConfig { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator PetConfig?(Maple2.Model.Game.PetConfig? other) {
         return other == null ? null : new PetConfig {
             PotionConfigs = other.PotionConfig,
@@ -20,7 +20,7 @@ internal class PetConfig {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.PetConfig?(PetConfig? other) {
         return other == null ? null : new Maple2.Model.Game.PetConfig(other.PotionConfigs, other.LootConfig);
     }

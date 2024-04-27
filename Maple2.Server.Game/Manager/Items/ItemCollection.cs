@@ -147,7 +147,7 @@ public class ItemCollection : IEnumerable<Item> {
         // Prefer item slot if specified
         if (ValidSlot(add.Slot) && this[add.Slot] == null) {
             this[add.Slot] = add;
-            return new []{(add, add.Amount)};
+            return new[] { (add, add.Amount) };
         }
 
         IList<(Item, int Added)> result = new List<(Item, int)>();

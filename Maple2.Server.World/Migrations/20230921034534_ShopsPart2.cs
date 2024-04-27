@@ -3,14 +3,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class ShopsPart2 : Migration
-    {
+    public partial class ShopsPart2 : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "DisableInstantRestock",
                 table: "shop");
@@ -86,16 +83,14 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "character-shop-data",
-                columns: table => new
-                {
+                columns: table => new {
                     ShopId = table.Column<int>(type: "int", nullable: false),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     RestockTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     RestockCount = table.Column<int>(type: "int", nullable: false),
                     Interval = table.Column<byte>(type: "tinyint unsigned", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_character-shop-data", x => new { x.ShopId, x.OwnerId });
                     table.ForeignKey(
                         name: "FK_character-shop-data_shop_ShopId",
@@ -108,8 +103,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "character-shop-item-data",
-                columns: table => new
-                {
+                columns: table => new {
                     ShopItemId = table.Column<int>(type: "int", nullable: false),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     ShopId = table.Column<int>(type: "int", nullable: false),
@@ -117,8 +111,7 @@ namespace Maple2.Server.World.Migrations
                     Item = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_character-shop-item-data", x => new { x.ShopItemId, x.OwnerId });
                     table.ForeignKey(
                         name: "FK_character-shop-item-data_shop-item_ShopItemId",
@@ -142,8 +135,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "character-shop-data");
 
@@ -199,7 +191,7 @@ namespace Maple2.Server.World.Migrations
                 table: "shop",
                 type: "tinyint unsigned",
                 nullable: false,
-                defaultValue: (byte)0);
+                defaultValue: (byte) 0);
 
             migrationBuilder.AddColumn<bool>(
                 name: "PersistantInventory",
@@ -220,14 +212,14 @@ namespace Maple2.Server.World.Migrations
                 table: "shop",
                 type: "tinyint unsigned",
                 nullable: false,
-                defaultValue: (byte)0);
+                defaultValue: (byte) 0);
 
             migrationBuilder.AddColumn<byte>(
                 name: "RestockInterval",
                 table: "shop",
                 type: "tinyint unsigned",
                 nullable: false,
-                defaultValue: (byte)0);
+                defaultValue: (byte) 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "TotalRestockCount",

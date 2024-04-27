@@ -18,7 +18,7 @@ public class Vector3Converter : JsonConverter<Vector3> {
     }
 
     public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options) {
-        var surrogate = new Vector3Surrogate {X = value.X, Y = value.Y, Z = value.Z};
+        var surrogate = new Vector3Surrogate { X = value.X, Y = value.Y, Z = value.Z };
         writer.WriteRawValue(JsonSerializer.SerializeToUtf8Bytes(surrogate, options));
     }
 }

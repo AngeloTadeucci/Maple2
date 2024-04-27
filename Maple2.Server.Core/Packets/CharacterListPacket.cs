@@ -150,7 +150,7 @@ public static class CharacterListPacket {
         writer.WriteInt(character.InstanceId);
         writer.WriteShort(character.Level);
         writer.WriteShort(character.Channel);
-        writer.WriteInt((int)character.Job.Code());
+        writer.WriteInt((int) character.Job.Code());
         writer.Write<Job>(character.Job);
         writer.WriteInt(); // CurrentHp
         writer.WriteInt(); // MaxHp

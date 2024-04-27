@@ -15,12 +15,12 @@ public class ItemEnchantManager {
     private const int CHARGE_RATE = 1;
 
     // ReSharper disable RedundantExplicitArraySize
-    private static readonly int[] RequireFodder = new int[15] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4};
-    private static readonly int[] GainExp = new int[15] {10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250};
-    private static readonly int[] SuccessRate = new int[15] {100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5};
-    private static readonly int[] FodderRate = new int[15] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2};
-    private static readonly int[] FailCharge = new int[15] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5};
-    private static readonly float[] StatBonusRate = new float[15]{0.02f, 0.04f, 0.07f, 0.1f, 0.14f, 0.19f, 0.25f, 0.32f, 0.4f, 0.5f, 0.64f, 0.84f, 1.12f, 1.5f, 2f};
+    private static readonly int[] RequireFodder = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4 };
+    private static readonly int[] GainExp = new int[15] { 10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250 };
+    private static readonly int[] SuccessRate = new int[15] { 100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5 };
+    private static readonly int[] FodderRate = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2 };
+    private static readonly int[] FailCharge = new int[15] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5 };
+    private static readonly float[] StatBonusRate = new float[15] { 0.02f, 0.04f, 0.07f, 0.1f, 0.14f, 0.19f, 0.25f, 0.32f, 0.4f, 0.5f, 0.64f, 0.84f, 1.12f, 1.5f, 2f };
     // ReSharper restore RedundantExplicitArraySize
 
     private static readonly IngredientInfo[][] OpheliaCost = new IngredientInfo[15][];
@@ -335,7 +335,8 @@ public class ItemEnchantManager {
         } else if (upgradeItem.Type.IsArmor) {
             if (upgradeItem.Type.IsOverall) {
                 ratio = 1f;
-            } if (upgradeItem.Type.IsClothes || upgradeItem.Type.IsPants) {
+            }
+            if (upgradeItem.Type.IsClothes || upgradeItem.Type.IsPants) {
                 ratio = 0.5f;
             } else if (upgradeItem.Type.IsHat) {
                 ratio = 0.375f;

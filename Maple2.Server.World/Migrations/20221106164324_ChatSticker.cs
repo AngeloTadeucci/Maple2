@@ -2,12 +2,9 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class ChatSticker : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class ChatSticker : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.RenameColumn(
                 name: "Stamps",
                 table: "character-unlock",
@@ -23,8 +20,7 @@ namespace Maple2.Server.World.Migrations
             migrationBuilder.Sql(@"UPDATE `game-server`.`character-unlock` SET StickerSets = REPLACE(StickerSets, '[]', '{}')");
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "FavoriteStickers",
                 table: "character-config");

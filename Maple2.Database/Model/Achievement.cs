@@ -19,7 +19,7 @@ internal class Achievement {
     public AchievementCategory Category { get; set; }
     public required IDictionary<int, long> Grades { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Achievement?(Maple2.Model.Game.Achievement? other) {
         if (other == null) {
             return null;
@@ -49,7 +49,7 @@ internal class Achievement {
     }
 
     public static void Configure(EntityTypeBuilder<Achievement> builder) {
-        builder.HasKey(achieve => new {achieve.OwnerId, achieve.Id});
+        builder.HasKey(achieve => new { achieve.OwnerId, achieve.Id });
         builder.Property(achieve => achieve.Grades).HasJsonConversion().IsRequired();
     }
 }

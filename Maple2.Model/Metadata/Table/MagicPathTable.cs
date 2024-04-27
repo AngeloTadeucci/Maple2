@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Maple2.Model.Metadata;
 
-public record MagicPathTable(IReadOnlyDictionary<long, IReadOnlyList<MagicPath>> Entries)  : Table;
+public record MagicPathTable(IReadOnlyDictionary<long, IReadOnlyList<MagicPath>> Entries) : Table;
 
 public record MagicPath(
     bool Align,

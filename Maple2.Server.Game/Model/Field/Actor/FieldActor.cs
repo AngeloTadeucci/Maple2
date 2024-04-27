@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;

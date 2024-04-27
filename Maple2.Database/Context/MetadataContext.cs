@@ -48,7 +48,7 @@ public sealed class MetadataContext : DbContext {
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
         builder.ToTable("additional-effect");
-        builder.HasKey(effect => new {effect.Id, effect.Level});
+        builder.HasKey(effect => new { effect.Id, effect.Level });
         builder.Property(effect => effect.Condition).HasJsonConversion();
         builder.Property(effect => effect.Property).HasJsonConversion();
         builder.Property(effect => effect.Consume).HasJsonConversion();
@@ -108,7 +108,7 @@ public sealed class MetadataContext : DbContext {
 
     private static void ConfigureMapEntity(EntityTypeBuilder<MapEntity> builder) {
         builder.ToTable("map-entity");
-        builder.HasKey(entity => new {entity.XBlock, Id = entity.Guid});
+        builder.HasKey(entity => new { entity.XBlock, Id = entity.Guid });
         builder.Property(entity => entity.Block).HasJsonConversion().IsRequired();
     }
 
@@ -167,7 +167,7 @@ public sealed class MetadataContext : DbContext {
         builder.HasKey(table => table.Name);
         builder.Property(table => table.Table).HasJsonConversion().IsRequired();
     }
-    
+
     private static void ConfigureAchievementMetadata(EntityTypeBuilder<AchievementMetadata> builder) {
         builder.ToTable("achievement");
         builder.HasKey(achievement => achievement.Id);

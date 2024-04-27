@@ -30,7 +30,7 @@ internal class Guild {
 
     public DateTime CreationTime { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Guild?(Maple2.Model.Game.Guild? other) {
         return other == null ? null : new Guild {
             Id = other.Id,

@@ -3,13 +3,11 @@ using System.Globalization;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
-using Maple2.File.Ingest.Generator;
 using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
 using Maple2.File.Parser.Tools;
 using Maple2.Tools;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Update;
 
 const string locale = "NA";
 const string env = "Live";
@@ -40,7 +38,7 @@ string? database = Environment.GetEnvironmentVariable("DATA_DB_NAME");
 string? user = Environment.GetEnvironmentVariable("DB_USER");
 string? password = Environment.GetEnvironmentVariable("DB_PASSWORD");
 
-if (server == null || port == null || database == null || user == null || password == null) { 
+if (server == null || port == null || database == null || user == null || password == null) {
     throw new ArgumentException("Database connection information was not set");
 }
 

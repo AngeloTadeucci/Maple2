@@ -14,7 +14,7 @@ public partial class WorldService {
             return Task.FromResult(new GuildInfoResponse());
         }
 
-        return Task.FromResult(new GuildInfoResponse{Guild = ToGuildInfo(manager.Guild)});
+        return Task.FromResult(new GuildInfoResponse { Guild = ToGuildInfo(manager.Guild) });
     }
 
     public override Task<GuildResponse> Guild(GuildRequest request, ServerCallContext context) {
@@ -34,64 +34,64 @@ public partial class WorldService {
             case GuildRequest.GuildOneofCase.UpdateMember:
                 return Task.FromResult(UpdateMember(request.RequestorId, request.UpdateMember));
             default:
-                return Task.FromResult(new GuildResponse {Error = (int) GuildError.s_guild_err_none});
+                return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
     }
 
     private GuildResponse CreateGuild(long requestorId, GuildRequest.Types.Create create) {
         GuildError error = guildLookup.Create(create.GuildName, requestorId, out long guildId);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
         if (!guildLookup.TryGet(guildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
 
-        return new GuildResponse {Guild = ToGuildInfo(manager.Guild)};
+        return new GuildResponse { Guild = ToGuildInfo(manager.Guild) };
     }
 
     // TODO: Send reject mail to any applicants
     private GuildResponse DisbandGuild(long requestorId, GuildRequest.Types.Disband disband) {
         GuildError error = guildLookup.Disband(requestorId, disband.GuildId);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
 
-        return new GuildResponse {GuildId = disband.GuildId};
+        return new GuildResponse { GuildId = disband.GuildId };
     }
 
     private GuildResponse InviteGuild(long requestorId, GuildRequest.Types.Invite invite) {
         if (!guildLookup.TryGet(invite.GuildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
         if (!playerLookup.TryGet(invite.ReceiverId, out PlayerInfo? info)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_user};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_user };
         }
 
         GuildError error = manager.Invite(requestorId, info);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
 
-        return new GuildResponse {GuildId = invite.GuildId};
+        return new GuildResponse { GuildId = invite.GuildId };
     }
 
     private GuildResponse RespondInviteGuild(long requestorId, GuildRequest.Types.RespondInvite respond) {
         if (!guildLookup.TryGet(respond.GuildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_invalid_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_invalid_guild };
         }
         string requestorName = manager.ConsumeInvite(requestorId);
         if (string.IsNullOrEmpty(requestorName)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_invite_member};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_invite_member };
         }
         if (!playerLookup.TryGet(requestorId, out PlayerInfo? info)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_none};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_none };
         }
 
         if (respond.Accepted) {
             GuildError error = manager.Join(requestorName, info);
             if (error != GuildError.none) {
-                return new GuildResponse {Error = (int) error};
+                return new GuildResponse { Error = (int) error };
             }
 
             manager.Broadcast(new ChannelGuildRequest {
@@ -101,7 +101,7 @@ public partial class WorldService {
                 },
             });
 
-            return new GuildResponse {Guild = ToGuildInfo(manager.Guild)};
+            return new GuildResponse { Guild = ToGuildInfo(manager.Guild) };
         }
 
         manager.Broadcast(new ChannelGuildRequest {
@@ -111,48 +111,48 @@ public partial class WorldService {
             },
         });
 
-        return new GuildResponse {GuildId = manager.Guild.Id};
+        return new GuildResponse { GuildId = manager.Guild.Id };
     }
 
     private GuildResponse LeaveGuild(long requestorId, GuildRequest.Types.Leave leave) {
         if (!guildLookup.TryGet(leave.GuildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
 
         GuildError error = manager.Leave(requestorId);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
 
-        return new GuildResponse {GuildId = leave.GuildId};
+        return new GuildResponse { GuildId = leave.GuildId };
     }
 
     private GuildResponse ExpelGuild(long requestorId, GuildRequest.Types.Expel expel) {
         if (!guildLookup.TryGet(expel.GuildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
 
         GuildError error = manager.Expel(requestorId, expel.ReceiverId);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
 
-        return new GuildResponse {GuildId = expel.GuildId};
+        return new GuildResponse { GuildId = expel.GuildId };
     }
 
     private GuildResponse UpdateMember(long requestorId, GuildRequest.Types.UpdateMember update) {
         if (!guildLookup.TryGet(update.GuildId, out GuildManager? manager)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_null_guild};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
 
         byte? rankId = update.HasRank ? (byte) update.Rank : null;
         string? message = update.HasMessage ? update.Message : null;
         GuildError error = manager.UpdateMember(requestorId, update.CharacterId, rankId, message);
         if (error != GuildError.none) {
-            return new GuildResponse {Error = (int) error};
+            return new GuildResponse { Error = (int) error };
         }
 
-        return new GuildResponse {GuildId = update.GuildId};
+        return new GuildResponse { GuildId = update.GuildId };
     }
 
     private static GuildInfo ToGuildInfo(Guild guild) {

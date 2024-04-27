@@ -27,10 +27,10 @@ internal class BeautyShopEntry {
             Cost = new Maple2.Model.Game.Shop.BeautyShopCost(other.CostType, other.CostItemId, other.CostAmount),
         };
     }
-    
+
     public static void Configure(EntityTypeBuilder<BeautyShopEntry> builder) {
         builder.ToTable("beauty-shop-entry");
-        builder.HasKey(entry => new {entry.ShopId, entry.ItemId}); 
+        builder.HasKey(entry => new { entry.ShopId, entry.ItemId });
         builder.HasOne<BeautyShop>()
             .WithMany()
             .HasForeignKey(item => item.ShopId);

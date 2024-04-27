@@ -28,7 +28,7 @@ internal class Mail {
     public DateTime ExpiryTime { get; set; }
     public DateTime SendTime { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Mail?(Maple2.Model.Game.Mail? other) {
         return other == null ? null : new Mail {
             ReceiverId = other.ReceiverId,
@@ -53,7 +53,7 @@ internal class Mail {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Mail?(Mail? other) {
         return other == null ? null : new Maple2.Model.Game.Mail {
             ReceiverId = other.ReceiverId,
@@ -84,7 +84,7 @@ internal class Mail {
     }
 
     public static void Configure(EntityTypeBuilder<Mail> builder) {
-        builder.HasKey(mail => new {mail.ReceiverId, mail.Id});
+        builder.HasKey(mail => new { mail.ReceiverId, mail.Id });
 
         builder.Property(mail => mail.Id).ValueGeneratedOnAdd();
         builder.HasOne<Character>()

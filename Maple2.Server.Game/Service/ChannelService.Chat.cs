@@ -43,7 +43,7 @@ public partial class ChannelService {
     private void WorldChat(ChatRequest request) {
         server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.World, request.Message));
     }
-    
+
     private void SuperChat(ChatRequest request) {
         server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Super, request.Message, request.Super.ItemId));
     }

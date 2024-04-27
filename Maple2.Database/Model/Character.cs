@@ -30,7 +30,7 @@ internal class Character {
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Character?(Maple2.Model.Game.Character? other) {
         return other == null ? null : new Character {
             LastModified = other.LastModified,
@@ -76,7 +76,7 @@ internal class Character {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Character?(Character? other) {
         return other == null ? null : new Maple2.Model.Game.Character {
             LastModified = other.LastModified,
@@ -104,7 +104,7 @@ internal class Character {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator CharacterInfo?(Character? other) {
         return other == null ? null : new CharacterInfo(other.AccountId, other.Id, other.Name, other.Profile.Motto, other.Profile.Picture, other.Gender, other.Job, other.Level) {
             MapId = other.MapId,

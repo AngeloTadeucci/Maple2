@@ -1,4 +1,4 @@
-// ReSharper disable InconsistentNaming, IdentifierTypo
+﻿// ReSharper disable InconsistentNaming, IdentifierTypo
 
 using System.ComponentModel;
 

@@ -23,7 +23,7 @@ public class LoginServer : Server<LoginSession> {
             : base(Target.LoginPort, router, context) {
         connectingSessions = new HashSet<LoginSession>();
         sessions = new Dictionary<long, LoginSession>();
-        
+
         this.gameStorage = gameStorage;
         using GameStorage.Request db = this.gameStorage.Context();
         bannerCache = db.GetBanners();

@@ -23,7 +23,7 @@ internal class UgcMap {
     public DateTime ExpiryTime { get; set; }
     public DateTime LastModified { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator UgcMap?(Maple2.Model.Game.PlotInfo? other) {
         return other == null ? null : new UgcMap {
             Id = other.Id,

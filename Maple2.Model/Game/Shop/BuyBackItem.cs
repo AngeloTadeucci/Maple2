@@ -3,7 +3,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 
-public class BuyBackItem : IByteSerializable{
+public class BuyBackItem : IByteSerializable {
     public int Id { get; init; }
     public long AddedTime { get; init; }
     public long Price { get; init; }

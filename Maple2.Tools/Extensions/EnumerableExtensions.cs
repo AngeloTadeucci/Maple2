@@ -62,8 +62,8 @@ public static class EnumerableExtensions {
     public delegate bool TryFunc<in T, TResult>(T input, out TResult value);
 
     public static IEnumerable<TResult> TrySelect<T, TResult>(this IEnumerable<T> source, TryFunc<T, TResult> parse) {
-        foreach(T element in source) {
-            if(parse(element, out TResult value )) {
+        foreach (T element in source) {
+            if (parse(element, out TResult value)) {
                 yield return value;
             }
         }
@@ -71,7 +71,7 @@ public static class EnumerableExtensions {
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class => source.Where(x => x != null)!;
 
-    public static bool TryGetValue<TK1, TK2, TV>(this IReadOnlyDictionary<TK1, IReadOnlyDictionary<TK2, TV>> dictionary,TK1 key1, TK2 key2,
+    public static bool TryGetValue<TK1, TK2, TV>(this IReadOnlyDictionary<TK1, IReadOnlyDictionary<TK2, TV>> dictionary, TK1 key1, TK2 key2,
                                                  [NotNullWhen(true)] out TV? value) {
         if (!dictionary.TryGetValue(key1, out IReadOnlyDictionary<TK2, TV>? nested)) {
             value = default(TV);

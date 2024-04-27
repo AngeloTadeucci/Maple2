@@ -62,7 +62,7 @@ public static class TriggerTranslate {
     };
 
     public static string ToPascalCase(string text) {
-        if(text == null) {
+        if (text == null) {
             throw new ArgumentNullException(nameof(text));
         }
 
@@ -71,19 +71,19 @@ public static class TriggerTranslate {
             .Replace("50 Meso", "Fifty Meso");
         var sb = new StringBuilder();
         foreach (char c in text) {
-            if(!char.IsLetterOrDigit(c)) {
+            if (!char.IsLetterOrDigit(c)) {
                 sb.Append(" ");
             } else {
                 sb.Append(c);
             }
         }
 
-        TextInfo textInfo = new CultureInfo("en-US",false).TextInfo;
+        TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
         return textInfo.ToTitleCase(sb.ToString().ToLower()).Replace(" ", "");
     }
 
     public static string ToSnakeCase(string text) {
-        if(text == null) {
+        if (text == null) {
             throw new ArgumentNullException(nameof(text));
         }
         text = text.Replace(" ", "");
@@ -99,9 +99,9 @@ public static class TriggerTranslate {
 
         var sb = new StringBuilder();
         sb.Append(char.ToLowerInvariant(text[0]));
-        for(int i = 1; i < text.Length; ++i) {
+        for (int i = 1; i < text.Length; ++i) {
             char c = text[i];
-            if(char.IsUpper(c)) {
+            if (char.IsUpper(c)) {
                 sb.Append('_');
                 sb.Append(char.ToLowerInvariant(c));
             } else {

@@ -16,7 +16,7 @@ public class MapMetadataStorage : MetadataStorage<int, MapMetadata>, ISearchable
     protected readonly LRUCache<int, UgcMapMetadata> UgcCache;
 
     public MapMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        UgcCache = new LRUCache<int, UgcMapMetadata>(UGC_CACHE_SIZE, (int)(UGC_CACHE_SIZE * 0.05));
+        UgcCache = new LRUCache<int, UgcMapMetadata>(UGC_CACHE_SIZE, (int) (UGC_CACHE_SIZE * 0.05));
     }
 
     public bool TryGet(int id, [NotNullWhen(true)] out MapMetadata? map) {

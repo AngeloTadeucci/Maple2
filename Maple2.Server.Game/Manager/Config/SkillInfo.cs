@@ -147,7 +147,7 @@ public class SkillInfo : IByteSerializable {
     /// <returns>Enumerable of skills that match the filter.</returns>
     public SortedDictionary<int, Skill> GetMainLearnedJobSkills(SkillType type, SkillRank rank) {
         return new SortedDictionary<int, Skill>(GetMainSkills(type, rank)
-            .Where(skill => skill is {Level: > 0, Id: < 20000000})
+            .Where(skill => skill is { Level: > 0, Id: < 20000000 })
             .ToDictionary(skill => skill.Id, skill => skill));
     }
 
@@ -257,7 +257,7 @@ public class SkillInfo : IByteSerializable {
             writer.WriteBool(Notify);
             writer.WriteBool(Level > 0);
             writer.WriteInt(Id);
-            writer.WriteInt(Math.Max((int)Level, 1));
+            writer.WriteInt(Math.Max((int) Level, 1));
             writer.WriteByte();
 
             Notify = false;

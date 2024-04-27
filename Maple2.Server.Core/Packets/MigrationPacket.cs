@@ -10,7 +10,7 @@ public static class MigrationPacket {
         var pWriter = Packet.Of(SendOp.LoginToGame);
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteBytes(endpoint.Address.GetAddressBytes()); // ip
-        pWriter.Write<ushort>((ushort)endpoint.Port); // port
+        pWriter.Write<ushort>((ushort) endpoint.Port); // port
         pWriter.Write<ulong>(token);
         pWriter.WriteInt(mapId);
 
@@ -29,7 +29,7 @@ public static class MigrationPacket {
         var pWriter = Packet.Of(SendOp.GameToLogin);
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteBytes(endpoint.Address.GetAddressBytes()); // ip
-        pWriter.Write<ushort>((ushort)endpoint.Port); // port
+        pWriter.Write<ushort>((ushort) endpoint.Port); // port
         pWriter.Write<ulong>(token);
 
         return pWriter;
@@ -47,7 +47,7 @@ public static class MigrationPacket {
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.Write<ulong>(token);
         pWriter.WriteBytes(endpoint.Address.GetAddressBytes());
-        pWriter.Write<ushort>((ushort)endpoint.Port);
+        pWriter.Write<ushort>((ushort) endpoint.Port);
         pWriter.WriteInt(mapId);
         pWriter.WriteByte();
 

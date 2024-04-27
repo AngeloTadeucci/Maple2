@@ -35,7 +35,7 @@ public static class ChatPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Message(long accountId, long characterId, string characterName, ChatType type, string message, int superChatId = 0) {
         var pWriter = Packet.Of(SendOp.UserChat);
         pWriter.WriteLong(accountId);

@@ -41,9 +41,9 @@ public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
         writer.WriteBool(Tradeable);
         writer.WriteInt(Charges);
 
-        writer.WriteByte((byte)BasicOptions.Count);
+        writer.WriteByte((byte) BasicOptions.Count);
         foreach ((BasicAttribute type, BasicOption option) in BasicOptions) {
-            writer.WriteInt((int)type);
+            writer.WriteInt((int) type);
             writer.Write<BasicOption>(option);
         }
     }
@@ -60,7 +60,7 @@ public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
 
         byte count = reader.ReadByte();
         for (int i = 0; i < count; i++) {
-            var type = (BasicAttribute)reader.ReadInt();
+            var type = (BasicAttribute) reader.ReadInt();
             BasicOptions[type] = reader.Read<BasicOption>();
         }
     }

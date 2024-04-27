@@ -80,7 +80,7 @@ public class FieldNpc : Actor<Npc> {
     public override Stats Stats { get; }
     public int TargetId = 0;
 
-    public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base (field, objectId, npc) {
+    public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base(field, objectId, npc) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         defaultRoutines = new WeightedSet<string>();
@@ -134,11 +134,11 @@ public class FieldNpc : Actor<Npc> {
             case { } when routineName.Contains("Bore_"):
                 return new WaitRoutine(this, sequence.Id, sequence.Time);
             case { } when routineName.StartsWith("Walk_"): {
-                if (Navigation.RandomPatrol()) {
-                    return MoveRoutine.Walk(this, sequence.Id);
+                    if (Navigation.RandomPatrol()) {
+                        return MoveRoutine.Walk(this, sequence.Id);
+                    }
+                    return new WaitRoutine(this, IdleSequence.Id, sequence.Time);
                 }
-                return new WaitRoutine(this, IdleSequence.Id, sequence.Time);
-            }
             case { } when routineName.StartsWith("Run_"):
                 if (Field.TryGetPlayer(TargetId, out FieldPlayer? target) && Navigation.PathTo(target.Position)) {
                     return MoveRoutine.Run(this, sequence.Id);

@@ -4,16 +4,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class Mail : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class Mail : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "Mail",
-                columns: table => new
-                {
+                columns: table => new {
                     ReceiverId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
@@ -36,8 +32,7 @@ namespace Maple2.Server.World.Migrations
                     SendTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Mail", x => new { x.ReceiverId, x.Id });
                     table.ForeignKey(
                         name: "FK_Mail_Character_ReceiverId",
@@ -61,8 +56,7 @@ namespace Maple2.Server.World.Migrations
             */
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "Mail");
 

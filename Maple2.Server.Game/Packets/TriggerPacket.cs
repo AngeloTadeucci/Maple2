@@ -54,7 +54,7 @@ public static class TriggerPacket {
     public static ByteWriter CameraStart(ICollection<int> pathIds, bool unknown = false) {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.CameraStart);
-        pWriter.WriteByte((byte)pathIds.Count);
+        pWriter.WriteByte((byte) pathIds.Count);
         foreach (int pathId in pathIds) {
             pWriter.WriteInt(pathId);
         }

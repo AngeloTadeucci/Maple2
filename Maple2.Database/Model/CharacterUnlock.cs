@@ -26,7 +26,7 @@ internal class CharacterUnlock {
     public DateTime LastModified { get; init; }
 
     public static implicit operator CharacterUnlock(Maple2.Model.Game.Unlock? other) {
-        return other == null? new CharacterUnlock {
+        return other == null ? new CharacterUnlock {
             Maps = new SortedSet<int>(),
             Taxis = new SortedSet<int>(),
             Titles = new SortedSet<int>(),

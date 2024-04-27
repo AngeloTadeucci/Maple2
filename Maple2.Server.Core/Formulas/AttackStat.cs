@@ -23,7 +23,7 @@ public static class AttackStat {
             _ => (0.0f, 0.0f, 0.0f),
         };
 
-        return (long) (strCoefficient * str + dexCoefficient  * dex + lukCoefficient * luk);
+        return (long) (strCoefficient * str + dexCoefficient * dex + lukCoefficient * luk);
     }
 
     public static long MagicalAtk(JobCode jobCode, long @int) {

@@ -288,7 +288,7 @@ public enum ConditionType {
     play_rps_draw = 285,
     user_find = 286,
     survival_enter = 287,
-    survival_kill = 288, 
+    survival_kill = 288,
     survival_kill_outside = 289,
     survival_kill_use_skill = 290,
     survival_total_kill_use_skill = 291,

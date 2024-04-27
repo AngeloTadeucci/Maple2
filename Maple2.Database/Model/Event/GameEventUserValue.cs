@@ -11,7 +11,7 @@ internal class GameEventUserValue {
     public string Value { get; set; }
     public int EventId { get; set; }
     public long ExpirationTime { get; set; }
-    
+
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator GameEventUserValue?(Maple2.Model.Game.GameEventUserValue? other) {
         return other == null ? null : new GameEventUserValue {
@@ -31,10 +31,10 @@ internal class GameEventUserValue {
             ExpirationTime = other.ExpirationTime,
         };
     }
-    
+
     public static void Configure(EntityTypeBuilder<GameEventUserValue> builder) {
         builder.ToTable("game-event-user-value");
-        builder.HasKey(value => new {value.CharacterId, value.EventId, value.Type}); 
+        builder.HasKey(value => new { value.CharacterId, value.EventId, value.Type });
         builder.HasOne<Character>()
             .WithMany()
             .HasForeignKey(value => value.CharacterId);

@@ -21,7 +21,7 @@ internal class MesoListing : MesoListingBase {
     public DateTime CreationTime { get; set; }
     public DateTime ExpiryTime { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator MesoListing?(Maple2.Model.Game.MesoListing? other) {
         return other == null ? null : new MesoListing {
             Id = other.Id,
@@ -33,7 +33,7 @@ internal class MesoListing : MesoListingBase {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.MesoListing?(MesoListing? other) {
         return other == null ? null : new Maple2.Model.Game.MesoListing {
             Id = other.Id,
@@ -69,7 +69,7 @@ internal class SoldMesoListing : MesoListingBase {
     public DateTime ListedTime { get; set; }
     public DateTime SoldTime { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator SoldMesoListing?(MesoListing? other) {
         return other == null ? null : new SoldMesoListing {
             Id = other.Id,

@@ -7,7 +7,7 @@ namespace Maple2.Server.Login.PacketHandlers;
 
 public class ResponseVersionHandler : ResponseVersionHandler<LoginSession> {
     public ResponseVersionHandler() { }
-    
+
     public override void Handle(LoginSession session, IByteReader packet) {
         base.Handle(session, packet);
 

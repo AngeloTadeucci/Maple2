@@ -73,7 +73,7 @@ public class Item : IByteSerializable, IByteDeserializable {
         Enchant = new ItemEnchant(tradeable: Transfer.Flag.HasFlag(TransferFlag.Trade) || Transfer.Flag.HasFlag(TransferFlag.LimitTrade));
 
         ExpiryTime = GetExpiryTime();
-        
+
         if (Metadata.Music != null) {
             RemainUses = Metadata.Music.PlayCount;
         }

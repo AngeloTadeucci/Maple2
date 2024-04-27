@@ -129,7 +129,7 @@ public static class PlayerInfoUpdateExtensions {
                 MapId = info.PlotMapId,
                 PlotNumber = info.PlotNumber,
                 ApartmentNumber = info.ApartmentNumber,
-                ExpiryTime = new Timestamp {Seconds = info.PlotExpiryTime},
+                ExpiryTime = new Timestamp { Seconds = info.PlotExpiryTime },
             };
         }
         if (type.HasFlag(UpdateField.Trophy)) {

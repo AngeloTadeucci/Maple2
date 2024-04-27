@@ -55,15 +55,15 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     }
                     continue;
                 case IActor actor: {
-                    switch (actor) {
-                        case IMS2BreakableActor breakable:
-                            yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, breakable.Position, breakable.Rotation)
-                            };
-                            continue;
+                        switch (actor) {
+                            case IMS2BreakableActor breakable:
+                                yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, breakable.Position, breakable.Rotation)
+                                };
+                                continue;
+                        }
+                        continue;
                     }
-                    continue;
-                }
                 case IPortal portal:
                     if (!FeatureEnabled(portal.feature) || !HasLocale(portal.locale)) continue;
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
@@ -173,8 +173,8 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                         Block = new TaxiStation(taxiStation.Position, taxiStation.Rotation)
                                     };
                                     continue;
-                                // Intentionally do not parse IMS2Vibrate, there are 4M entries.
-                                // case IMS2Vibrate vibrate:
+                                    // Intentionally do not parse IMS2Vibrate, there are 4M entries.
+                                    // case IMS2Vibrate vibrate:
                             }
                             continue;
                     }

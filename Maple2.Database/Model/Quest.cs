@@ -17,7 +17,7 @@ internal class Quest {
     public bool Track { get; set; }
     public SortedDictionary<int, QuestCondition> Conditions { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Quest?(Maple2.Model.Game.Quest? other) {
         if (other == null) {
             return null;
@@ -57,7 +57,7 @@ internal class Quest {
     }
 
     public static void Configure(EntityTypeBuilder<Quest> builder) {
-        builder.HasKey(quest => new {quest.OwnerId, quest.Id});
+        builder.HasKey(quest => new { quest.OwnerId, quest.Id });
         builder.Property(quest => quest.Conditions).HasJsonConversion().IsRequired();
     }
 }
@@ -65,7 +65,7 @@ internal class Quest {
 internal class QuestCondition {
     public int Counter { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator QuestCondition?(Maple2.Model.Game.Quest.Condition? other) {
         return other == null ? null : new QuestCondition {
             Counter = other.Counter,

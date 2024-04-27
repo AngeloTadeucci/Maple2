@@ -21,7 +21,7 @@ public static class VectorExtensions {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3 AlignHeight(this in Vector3 position, float interval = BLOCK_SIZE) {
-        return position with {Z = MathF.Floor(MathF.Round(position.Z) / interval) * interval};
+        return position with { Z = MathF.Floor(MathF.Round(position.Z) / interval) * interval };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

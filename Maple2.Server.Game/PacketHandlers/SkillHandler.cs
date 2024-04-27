@@ -91,7 +91,7 @@ public class SkillHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var record = new SkillRecord(metadata, skillUid, session.Player) {ServerTick = serverTick};
+        var record = new SkillRecord(metadata, skillUid, session.Player) { ServerTick = serverTick };
         byte motionPoint = packet.ReadByte();
         if (!record.TrySetMotionPoint(motionPoint)) {
             Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);

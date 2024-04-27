@@ -12,13 +12,13 @@ namespace Maple2.Server.Game.PacketHandlers;
 
 public class EnterEventFieldHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.EnterEventField;
-    
+
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required GameStorage GameStorage { private get; init; }
     // ReSharper restore All
     #endregion
-    
+
     public override void Handle(GameSession session, IByteReader packet) {
         using GameStorage.Request db = GameStorage.Context();
         GameEvent? gameEvent = db.FindEvent(nameof(EventFieldPopup));

@@ -19,7 +19,7 @@ public partial class TriggerContext {
 
     public void EnableLocalCamera(bool enabled) {
         DebugLog("[EnableLocalCamera] enabled:{Enabled}", enabled);
-        Field.AddFieldProperty(new FieldPropertyLocalCamera{Enabled = enabled});
+        Field.AddFieldProperty(new FieldPropertyLocalCamera { Enabled = enabled });
     }
 
     public void LockMyPc(bool isLock) {
@@ -33,7 +33,7 @@ public partial class TriggerContext {
 
     public void SetAmbientLight(Vector3 color) {
         DebugLog("[SetAmbientLight] color:{Color}", color);
-        Field.AddFieldProperty(new FieldPropertyAmbientLight{Color = color});
+        Field.AddFieldProperty(new FieldPropertyAmbientLight { Color = color });
     }
 
     public void SetDirectionalLight(Vector3 diffuseColor, Vector3 specularColor) {
@@ -51,12 +51,12 @@ public partial class TriggerContext {
 
     public void SetPhotoStudio(bool enabled) {
         DebugLog("[SetPhotoStudio] enabled:{Enabled}", enabled);
-        Field.AddFieldProperty(new FieldPropertyPhotoStudio{Enabled = enabled});
+        Field.AddFieldProperty(new FieldPropertyPhotoStudio { Enabled = enabled });
     }
 
     public void UserTagSymbol(string symbol1, string symbol2) {
         DebugLog("[UserTagSymbol] symbol1:{Symbol1}, symbol2:{Symbol2}", symbol1, symbol2);
-        Broadcast(FieldPropertyPacket.Add(new FieldPropertyUserTagSymbol{Symbol1 = symbol1, Symbol2 = symbol2}));
+        Broadcast(FieldPropertyPacket.Add(new FieldPropertyUserTagSymbol { Symbol1 = symbol1, Symbol2 = symbol2 }));
     }
 
     public void VisibleMyPc(bool visible) {
@@ -70,7 +70,7 @@ public partial class TriggerContext {
 
     public void Weather(Maple2.Trigger.Enum.WeatherType weatherType) {
         DebugLog("[Weather] weatherType:{Type}", weatherType);
-        Field.AddFieldProperty(new FieldPropertyWeather{WeatherType = (WeatherType) weatherType});
+        Field.AddFieldProperty(new FieldPropertyWeather { WeatherType = (WeatherType) weatherType });
     }
 
     public void SightRange(bool enabled, byte range, float rangeZ, byte border) {

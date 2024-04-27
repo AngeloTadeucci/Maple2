@@ -4,16 +4,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class Guild : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class Guild : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "guild",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Name = table.Column<string>(type: "longtext", nullable: false)
@@ -39,8 +35,7 @@ namespace Maple2.Server.World.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_guild", x => x.Id);
                     table.ForeignKey(
                         name: "FK_guild_Character_LeaderId",
@@ -53,8 +48,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "guild-application",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     GuildId = table.Column<long>(type: "bigint", nullable: false),
@@ -62,8 +56,7 @@ namespace Maple2.Server.World.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_guild-application", x => x.Id);
                     table.ForeignKey(
                         name: "FK_guild-application_Character_ApplicantId",
@@ -82,8 +75,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "guild-member",
-                columns: table => new
-                {
+                columns: table => new {
                     GuildId = table.Column<long>(type: "bigint", nullable: false),
                     CharacterId = table.Column<long>(type: "bigint", nullable: false),
                     Message = table.Column<string>(type: "longtext", nullable: false)
@@ -98,8 +90,7 @@ namespace Maple2.Server.World.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_guild-member", x => new { x.GuildId, x.CharacterId });
                     table.ForeignKey(
                         name: "FK_guild-member_Character_CharacterId",
@@ -141,8 +132,7 @@ namespace Maple2.Server.World.Migrations
             migrationBuilder.Sql("ALTER TABLE `guild` AUTO_INCREMENT = 70000000000");
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "guild-application");
 

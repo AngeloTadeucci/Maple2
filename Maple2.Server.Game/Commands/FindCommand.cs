@@ -42,7 +42,7 @@ public class FindCommand : Command {
             this.storage = storage;
 
             var query = new Argument<string[]>("query", "Search query.");
-            var page = new Option<int>(new[] {"--page", "-p"}, "Page of query results.");
+            var page = new Option<int>(new[] { "--page", "-p" }, "Page of query results.");
 
             AddArgument(query);
             AddOption(page);
@@ -58,7 +58,7 @@ public class FindCommand : Command {
                     return;
                 }
 
-                int pages = (int)Math.Ceiling(results.Count / (float) PAGE_SIZE);
+                int pages = (int) Math.Ceiling(results.Count / (float) PAGE_SIZE);
                 page = Math.Clamp(page, 1, pages);
                 var builder = new StringBuilder($"<b>{results.Count} results for '{query}' ({page}/{pages}):</b>");
                 foreach (T result in results.Skip(PAGE_SIZE * (page - 1)).Take(PAGE_SIZE)) {

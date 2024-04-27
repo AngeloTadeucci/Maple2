@@ -29,10 +29,10 @@ public class PetMapper : TypeMapper<PetMetadata> {
                     slotNum = property.slotNum,
                     skill = new Skill(),
                     distance = new Distance {
-                      pick = 1050,
-                      warp = property.warpDistance,
-                      trace = property.traceDistance,
-                      battleTrace = property.battleTraceDistance,
+                        pick = 1050,
+                        warp = property.warpDistance,
+                        trace = property.traceDistance,
+                        battleTrace = property.battleTraceDistance,
                     },
                     time = new Time {
                         bore = 120000,
@@ -44,26 +44,26 @@ public class PetMapper : TypeMapper<PetMetadata> {
                 };
             }
             //Debug.Assert(property.slotNum == data.slotNum, $"{id} inventory slots mismatch: {property.slotNum} != {data.slotNum}");
-// 60000026
+            // 60000026
             yield return new PetMetadata(
-                Id:property.code,
-                Name:petNames.GetValueOrDefault(property.code),
-                Type:property.type,
-                NpcId:property.npcID,
-                ItemSlots:property.slotNum,
-                EnableExtraction:property.enablePetExtraction,
-                OptionLevel:property.optionLevel,
-                OptionFactor:property.constantOptionFactor,
-                Skill:data.skill.id == 0 ? null : new PetMetadataSkill(data.skill.id, data.skill.level),
-                Effect:property.additionalEffectID == null ? Array.Empty<PetMetadataEffect>()
+                Id: property.code,
+                Name: petNames.GetValueOrDefault(property.code),
+                Type: property.type,
+                NpcId: property.npcID,
+                ItemSlots: property.slotNum,
+                EnableExtraction: property.enablePetExtraction,
+                OptionLevel: property.optionLevel,
+                OptionFactor: property.constantOptionFactor,
+                Skill: data.skill.id == 0 ? null : new PetMetadataSkill(data.skill.id, data.skill.level),
+                Effect: property.additionalEffectID == null ? Array.Empty<PetMetadataEffect>()
                     : property.additionalEffectID.Zip(property.additionalEffectLevel,
                         (effectId, level) => new PetMetadataEffect(effectId, level)).ToArray(),
                 Distance: new PetMetadataDistance(
-                    Warp:property.warpDistance,
-                    Trace:property.traceDistance,
-                    BattleTrace:property.battleTraceDistance),
+                    Warp: property.warpDistance,
+                    Trace: property.traceDistance,
+                    BattleTrace: property.battleTraceDistance),
                 Time: new PetMetadataTime(
-                    Idle:data.time.idle,
+                    Idle: data.time.idle,
                     Bore: data.time.bore,
                     Summon: data.time.summonCast,
                     Tired: data.time.tired,

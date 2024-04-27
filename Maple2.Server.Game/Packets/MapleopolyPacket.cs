@@ -33,7 +33,7 @@ public static class MapleopolyPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Roll(int tileLocation, int dice1, int dice2, MapleopolyError error = MapleopolyError.ok) {
         var pWriter = Packet.Of(SendOp.Mapleopoly);
         pWriter.Write<Command>(Command.Roll);
@@ -45,7 +45,7 @@ public static class MapleopolyPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Result(BlueMarbleTile tile, int totalTileCount, int freeRollAmount) {
         var pWriter = Packet.Of(SendOp.Mapleopoly);
         pWriter.Write<Command>(Command.Result);
@@ -57,7 +57,7 @@ public static class MapleopolyPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Error(MapleopolyError error) {
         var pWriter = Packet.Of(SendOp.Mapleopoly);
         pWriter.Write<Command>(Command.Error);

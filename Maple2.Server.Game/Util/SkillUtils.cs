@@ -72,7 +72,7 @@ public static class SkillUtils {
 
     public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target) {
         if (caster is FieldPlayer player) {
-            if (condition is not {Probability: 1} && condition.Probability < Random.Shared.NextDouble()) {
+            if (condition is not { Probability: 1 } && condition.Probability < Random.Shared.NextDouble()) {
                 return false;
             }
             if (condition.OnlyShadowWorld && caster.Field.Metadata.Property.Type != MapType.Shadow) {

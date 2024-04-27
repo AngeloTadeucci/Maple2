@@ -31,7 +31,7 @@ public class Circle : IPolygon {
             }
         }
 
-        return new[] {other.Points[result] - Origin};
+        return new[] { other.Points[result] - Origin };
     }
 
     public Range AxisProjection(Vector2 axis) {

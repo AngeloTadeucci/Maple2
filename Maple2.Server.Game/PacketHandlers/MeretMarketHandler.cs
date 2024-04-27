@@ -289,8 +289,8 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
 
         //PlayerInfo? giftedPlayer = GetGiftedPlayerInfo(session, playerName);
         //if (gift && giftedPlayer == null) {
-            // The meret market packet to send to player if the player doesn't exist is FailPurchase (31) but it somehow doesn't
-            // send the correct message to the player.
+        // The meret market packet to send to player if the player doesn't exist is FailPurchase (31) but it somehow doesn't
+        // send the correct message to the player.
         //    return;
         //}
 
@@ -445,7 +445,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Send(MeretMarketPacket.LoadItems(new List<MarketItem> {marketItem}, 1, 1));
+        session.Send(MeretMarketPacket.LoadItems(new List<MarketItem> { marketItem }, 1, 1));
     }
 
     private void HandleSearch(GameSession session, IByteReader packet) {

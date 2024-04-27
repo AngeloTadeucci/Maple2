@@ -3,18 +3,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class Shop : Migration
-    {
+    public partial class Shop : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "shop",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
@@ -37,16 +33,14 @@ namespace Maple2.Server.World.Migrations
                     DisableInstantRestock = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     PersistantInventory = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_shop", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "shop-item",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ShopId = table.Column<int>(type: "int", nullable: false),
@@ -72,8 +66,7 @@ namespace Maple2.Server.World.Migrations
                     RequireFameGrade = table.Column<int>(type: "int", nullable: false),
                     AutoPreviewEquip = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_shop-item", x => x.Id);
                     table.ForeignKey(
                         name: "FK_shop-item_shop_ShopId",
@@ -99,8 +92,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropForeignKey(
                 name: "FK_game-event-user-value_Character_CharacterId",
                 table: "game-event-user-value");

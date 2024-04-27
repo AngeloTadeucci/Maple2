@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
 
 public record IndividualItemDropTable(
-    Dictionary<int, Dictionary<byte, IList<IndividualItemDropTable.Entry>>> Entries): Table {
+    Dictionary<int, Dictionary<byte, IList<IndividualItemDropTable.Entry>>> Entries) : Table {
 
     public record Entry(
         int[] ItemIds,

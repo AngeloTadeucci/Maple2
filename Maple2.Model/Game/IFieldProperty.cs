@@ -50,7 +50,7 @@ public class FieldPropertyHidePlayer : IFieldProperty {
     }
 }
 
-public class FieldPropertyLockPlayer : IFieldProperty  {
+public class FieldPropertyLockPlayer : IFieldProperty {
     public FieldProperty Type => FieldProperty.LockPlayer;
 
     public void WriteTo(IByteWriter writer) {

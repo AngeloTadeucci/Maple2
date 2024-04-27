@@ -102,7 +102,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
     private void HandleCreate(LoginSession session, IByteReader packet) {
         var gender = packet.Read<Gender>();
         var jobCode = packet.Read<JobCode>();
-        var job = (Job) ((int)jobCode * 10);
+        var job = (Job) ((int) jobCode * 10);
         string name = packet.ReadUnicodeString();
 
         if (name.Length < Constant.CharacterNameLengthMin) {

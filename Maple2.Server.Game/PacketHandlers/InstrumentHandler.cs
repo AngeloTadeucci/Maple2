@@ -342,7 +342,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
 
     private bool TryGetScore(GameSession session, long scoreUid, [NotNullWhen(true)] out Item? score) {
         score = session.Item.Inventory.Get(scoreUid, InventoryType.FishingMusic);
-        if (score is not {RemainUses: > 0} || score.IsExpired()) {
+        if (score is not { RemainUses: > 0 } || score.IsExpired()) {
             return false;
         }
 

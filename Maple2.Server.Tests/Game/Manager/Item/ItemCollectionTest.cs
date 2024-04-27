@@ -1,7 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Items;
@@ -244,7 +243,7 @@ public class ItemCollectionTest {
         Assert.AreEqual(35, collection.GetStackResult(stackItem));
         Assert.AreEqual(35, collection.GetStackResult(stackItem, amount: int.MinValue));
         Assert.AreEqual(35, collection.GetStackResult(stackItem, amount: int.MaxValue));
-        Assert.AreEqual(0, collection.GetStackResult(stackItem, amount : 0));
+        Assert.AreEqual(0, collection.GetStackResult(stackItem, amount: 0));
         Assert.AreEqual(0, collection.GetStackResult(stackItem, amount: 10));
         Assert.AreEqual(5, collection.GetStackResult(stackItem, amount: 20));
     }
@@ -260,7 +259,7 @@ public class ItemCollectionTest {
             [5] = item3,
         };
 
-        CollectionAssert.AreEqual(new[] {item1, item2, item3}, collection.ToList());
+        CollectionAssert.AreEqual(new[] { item1, item2, item3 }, collection.ToList());
     }
 
     private static Model.Game.Item CreateItem(int id, int rarity = 1, int amount = 1) {
@@ -269,6 +268,6 @@ public class ItemCollectionTest {
         var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, Array.Empty<JobCode>(), Array.Empty<JobCode>());
         var fakeLife = new ItemMetadataLife(0, 0);
         var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null);
-        return new Model.Game.Item(fakeMetadata, rarity, amount) {Uid = Rng.NextInt64()};
+        return new Model.Game.Item(fakeMetadata, rarity, amount) { Uid = Rng.NextInt64() };
     }
 }

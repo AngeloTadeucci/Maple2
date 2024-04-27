@@ -15,7 +15,7 @@ public class SkillMetadataStorage : MetadataStorage<(int, short), SkillMetadata>
     protected readonly LRUCache<(int Id, short Level), AdditionalEffectMetadata> EffectCache;
 
     public SkillMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        EffectCache = new LRUCache<(int, short), AdditionalEffectMetadata>(EFFECT_CACHE_SIZE, (int)(EFFECT_CACHE_SIZE * 0.05));
+        EffectCache = new LRUCache<(int, short), AdditionalEffectMetadata>(EFFECT_CACHE_SIZE, (int) (EFFECT_CACHE_SIZE * 0.05));
     }
 
     public bool TryGet(int id, short level, [NotNullWhen(true)] out SkillMetadata? skill) {

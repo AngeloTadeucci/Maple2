@@ -35,7 +35,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                         MaxCount: data.BasicProperty.maxBuffCount,
                         KeepOnDeath: data.BasicProperty.deadKeepEffect,
                         RemoveOnLogout: data.BasicProperty.logoutClearEffect,
-                        RemoveOnLeaveField: data.BasicProperty.leaveFieldClearEffect, 
+                        RemoveOnLeaveField: data.BasicProperty.leaveFieldClearEffect,
                         RemoveOnPvpZone: data.BasicProperty.clearEffectFromPVPZone,
                         KeepOnEnterPvpZone: data.BasicProperty.doNotClearEffectFromEnterPVPZone,
                         CasterIndividualBuff: data.BasicProperty.casterIndividualEffect,
@@ -88,10 +88,10 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     private static AdditionalEffectMetadataReflect Convert(ReflectProperty reflect) {
         var values = new Dictionary<BasicAttribute, long>();
         var rates = new Dictionary<BasicAttribute, float>();
-        
+
         values.AddIfNotDefault(BasicAttribute.PhysicalAtk, reflect.physicalReflectionValue);
         values.AddIfNotDefault(BasicAttribute.MagicalAtk, reflect.magicalReflectionValue);
-        
+
         rates.AddIfNotDefault(BasicAttribute.PhysicalAtk, reflect.physicalReflectionRate);
         rates.AddIfNotDefault(BasicAttribute.MagicalAtk, reflect.magicalReflectionRate);
         return new AdditionalEffectMetadataReflect(
@@ -147,7 +147,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         Debug.Assert(status.compulsionEventTypes.Length <= 1 && status.compulsionEventRate.Length <= 1);
         var compulsionEventType = CompulsionEventType.None;
         if (status.compulsionEventTypes.Length > 0) {
-            compulsionEventType = (CompulsionEventType)status.compulsionEventTypes[0];
+            compulsionEventType = (CompulsionEventType) status.compulsionEventTypes[0];
         }
 
         AdditionalEffectMetadataStatus.CompulsionEvent? compulsionEvent = null;
@@ -176,7 +176,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     }
 
     private static AdditionalEffectMetadataRecovery? Convert(RecoveryProperty recovery) {
-        if (recovery is {RecoveryRate: <= 0, hpValue: <= 0, hpRate: <= 0, spValue: <= 0, spRate: <= 0, spConsumeRate: <= 0, epValue: <= 0, epRate: <= 0}) {
+        if (recovery is { RecoveryRate: <= 0, hpValue: <= 0, hpRate: <= 0, spValue: <= 0, spRate: <= 0, spConsumeRate: <= 0, epValue: <= 0, epRate: <= 0 }) {
             return null;
         }
 
@@ -213,7 +213,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     }
 
     private static AdditionalEffectMetadataDot.DotBuff? Convert(DotBuffProperty? dotBuff) {
-        if (dotBuff is not {buffID: > 0}) {
+        if (dotBuff is not { buffID: > 0 }) {
             return null;
         }
 
@@ -221,7 +221,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     }
 
     private static AdditionalEffectMetadataShield? Convert(ShieldProperty shield) {
-        if (shield is {hpValue: <= 0, hpByTargetMaxHP: <= 0}) {
+        if (shield is { hpValue: <= 0, hpByTargetMaxHP: <= 0 }) {
             return null;
         }
 
@@ -229,7 +229,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     }
 
     [return: NotNullIfNotNull(nameof(invokeEffect))]
-    private static AdditionalEffectMetadataInvokeEffect? Convert (InvokeEffectProperty? invokeEffect) {
+    private static AdditionalEffectMetadataInvokeEffect? Convert(InvokeEffectProperty? invokeEffect) {
         if (invokeEffect is null) {
             return null;
         }

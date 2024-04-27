@@ -64,32 +64,32 @@ public class TriggerHandler : PacketHandler<GameSession> {
         int arg = packet.ReadInt();
         switch (mode) {
             case 1: {
-                if (session.Field.Widgets.TryGetValue(WidgetType.Guide, out Widget? widget)) {
-                    widget.Conditions["IsTriggerEvent"] = arg.ToString();
-                }
-                break;
-            }
-            case 5: {
-                if (session.Field.Widgets.TryGetValue(WidgetType.SceneMovie, out Widget? widget)) {
-                    widget.Conditions["IsStop"] = arg.ToString();
-                    session.Send(TriggerPacket.UiSkipMovie(arg));
-                }
-                break;
-            }
-            case 12: {
-                // TODO: This is all a guess
-                if (session.Field.Widgets.TryGetValue(WidgetType.Round, out Widget? widget)) {
-                    switch (arg) {
-                        case 0: // 0 = FailGameProgress
-                            widget.Conditions["GameFail"] = "0";
-                            break;
-                        case 1: // 1 = SuccessGameProgress
-                            widget.Conditions["GameClear"] = "0";
-                            break;
+                    if (session.Field.Widgets.TryGetValue(WidgetType.Guide, out Widget? widget)) {
+                        widget.Conditions["IsTriggerEvent"] = arg.ToString();
                     }
+                    break;
                 }
-                break;
-            }
+            case 5: {
+                    if (session.Field.Widgets.TryGetValue(WidgetType.SceneMovie, out Widget? widget)) {
+                        widget.Conditions["IsStop"] = arg.ToString();
+                        session.Send(TriggerPacket.UiSkipMovie(arg));
+                    }
+                    break;
+                }
+            case 12: {
+                    // TODO: This is all a guess
+                    if (session.Field.Widgets.TryGetValue(WidgetType.Round, out Widget? widget)) {
+                        switch (arg) {
+                            case 0: // 0 = FailGameProgress
+                                widget.Conditions["GameFail"] = "0";
+                                break;
+                            case 1: // 1 = SuccessGameProgress
+                                widget.Conditions["GameClear"] = "0";
+                                break;
+                        }
+                    }
+                    break;
+                }
         }
     }
 

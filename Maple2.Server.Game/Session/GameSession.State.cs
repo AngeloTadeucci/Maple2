@@ -5,7 +5,6 @@ using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Scripting.Npc;
 
 namespace Maple2.Server.Game.Session;

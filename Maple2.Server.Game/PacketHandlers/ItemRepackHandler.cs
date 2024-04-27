@@ -59,13 +59,13 @@ public class ItemRepackHandler : PacketHandler<GameSession> {
                 return;
             }
 
-            if (!int.TryParse(scroll.Metadata.Function?.Parameters, out int scrollId) || 
-                !targetItem.Metadata.Property.RepackScrollIds.Contains(scrollId) || 
+            if (!int.TryParse(scroll.Metadata.Function?.Parameters, out int scrollId) ||
+                !targetItem.Metadata.Property.RepackScrollIds.Contains(scrollId) ||
                 !session.TableMetadata.ItemRepackingScrollTable.Entries.TryGetValue(scrollId, out ItemRepackingScrollMetadata? scrollMetadata)) {
                 session.Send(ItemRepackPacket.Error(ItemRepackError.s_item_repacking_scroll_error_invalid_target));
                 return;
             }
-            
+
             if (!scrollMetadata.Rarities.Contains(targetItem.Rarity)) {
                 session.Send(ItemRepackPacket.Error(ItemRepackError.s_item_repacking_scroll_error_impossible_rank));
                 return;
@@ -80,7 +80,7 @@ public class ItemRepackHandler : PacketHandler<GameSession> {
                 session.Send(ItemRepackPacket.Error(ItemRepackError.s_item_repacking_scroll_error_invalid_target));
                 return;
             }
-            
+
             //TODO: Check item slot type
 
             targetItem.Transfer.RemainTrades++;

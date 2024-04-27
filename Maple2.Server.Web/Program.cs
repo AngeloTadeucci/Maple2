@@ -63,7 +63,7 @@ IEnumerable<ActionDescriptor> routes = provider.ActionDescriptors.Items
     .Where(x => x.AttributeRouteInfo != null);
 
 Log.Logger.Debug("========== ROUTES ==========");
-foreach(ActionDescriptor route in routes) {
+foreach (ActionDescriptor route in routes) {
     Log.Logger.Debug("{Route}", route.AttributeRouteInfo?.Template);
 }
 

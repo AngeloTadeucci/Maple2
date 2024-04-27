@@ -141,7 +141,7 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
             ICollection<MesoListing> listings = db.SearchMesoListings(Constant.MesoMarketPageSize, minMesos, maxMesos);
 
             session.Send(MesoMarketPacket.Search(session.AccountId, listings));
-        } catch(SystemException) {
+        } catch (SystemException) {
             session.Send(MesoMarketPacket.Error(s_mesoMarket_error_errorDB));
         }
     }
@@ -194,7 +194,7 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
         var buyerMail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new [] {
+            ContentArgs = new[] {
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
             },
@@ -208,7 +208,7 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
         var sellerMail = new Mail {
             ReceiverId = listing.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new [] {
+            ContentArgs = new[] {
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
                 ("money", $"{meretFee}"),

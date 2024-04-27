@@ -55,13 +55,22 @@ public class WardrobeHandler : PacketHandler<GameSession> {
         foreach ((EquipSlot slot, Item equip) in isOutfit ? session.Item.Equips.Outfit : session.Item.Equips.Gear) {
             switch (slot) {
                 // Weapons
-                case EquipSlot.LH: case EquipSlot.RH:
+                case EquipSlot.LH:
+                case EquipSlot.RH:
                 // Armor
-                case EquipSlot.CP: case EquipSlot.MT: case EquipSlot.CL:
-                case EquipSlot.PA: case EquipSlot.GL: case EquipSlot.SH:
+                case EquipSlot.CP:
+                case EquipSlot.MT:
+                case EquipSlot.CL:
+                case EquipSlot.PA:
+                case EquipSlot.GL:
+                case EquipSlot.SH:
                 // Accessories
-                case EquipSlot.FH: case EquipSlot.EY: case EquipSlot.EA:
-                case EquipSlot.PD: case EquipSlot.RI: case EquipSlot.BE:
+                case EquipSlot.FH:
+                case EquipSlot.EY:
+                case EquipSlot.EA:
+                case EquipSlot.PD:
+                case EquipSlot.RI:
+                case EquipSlot.BE:
                     wardrobe.Equips[slot] = new Wardrobe.Equip(equip.Uid, equip.Id, slot, equip.Rarity);
                     break;
             }

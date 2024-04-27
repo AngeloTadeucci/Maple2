@@ -569,7 +569,7 @@ public class NpcScriptGenerator {
     private string[] GetScriptText(string scriptText) {
         string id = scriptText[8..^1];
         string? result = strings.GetValueOrDefault(id);
-        return result == null ? new []{""} : result.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+        return result == null ? new[] { "" } : result.Split("\n", StringSplitOptions.RemoveEmptyEntries);
     }
 
     private static void BlankLine(IndentedTextWriter writer) {

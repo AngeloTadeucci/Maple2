@@ -345,7 +345,7 @@ public partial class FieldManager {
                 cubePoints[i] = magicPath.IgnoreAdjust ? position : position.Align();
             }
         } else {
-            cubePoints = new[] {record.Position};
+            cubePoints = new[] { record.Position };
         }
 
         // Condition-Skills are expected to be handled separately.
@@ -401,7 +401,7 @@ public partial class FieldManager {
     private void SetBonusMapPortal(IList<MapMetadata> bonusMaps, Ms2RegionSpawn spawn) {
         // Spawn a hat within a random range of 5 min to 8 hours
         int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
-        var portal = new Portal(NextLocalId(), bonusMaps[Random.Shared.Next(bonusMaps.Count)].Id,  -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
+        var portal = new Portal(NextLocalId(), bonusMaps[Random.Shared.Next(bonusMaps.Count)].Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
             new Vector3(200, 200, 250), 0, true, false, true);
         FieldPortal fieldPortal = SpawnPortal(portal);
         fieldPortal.Model = Metadata.Property.Continent switch {

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;

@@ -47,17 +47,17 @@ public class ItemExchangeScroll : PacketHandler<GameSession> {
             session.Send(ItemExchangeScrollPacket.Error(ItemExchangeScrollError.s_itemslot_exchange_scroll_invalid));
             return;
         }
-            
+
         if (!int.TryParse(scrollItem.Metadata.Function?.Parameters, out int scrollId) || !TableMetadata.ItemExchangeScrollTable.Entries.TryGetValue(scrollId, out ItemExchangeScrollMetadata? scrollMetadata)) {
             session.Send(ItemExchangeScrollPacket.Error(ItemExchangeScrollError.s_itemslot_exchange_unknown));
             return;
         }
-            
+
         if (session.Currency.CanAddMeso(-scrollMetadata.RequiredMeso * quantity) != -scrollMetadata.RequiredMeso * quantity) {
             session.Send(ItemExchangeScrollPacket.Error(ItemExchangeScrollError.s_itemslot_exchange_money_invalid));
             return;
         }
-        
+
         lock (session.Item) {
             // Check if player has enough scrolls
             List<Item> scrolls = session.Item.Inventory.Find(scrollMetadata.RecipeScroll.ItemId, scrollMetadata.RecipeScroll.Rarity).ToList();
@@ -65,7 +65,7 @@ public class ItemExchangeScroll : PacketHandler<GameSession> {
                 session.Send(ItemExchangeScrollPacket.Error(ItemExchangeScrollError.s_itemslot_exchange_count_invalid));
                 return;
             }
-            
+
             // Check and consume required items
             if (!session.Item.Inventory.ConsumeItemComponents(scrollMetadata.RequiredItems, quantity)) {
                 session.Send(ItemExchangeScrollPacket.Error(ItemExchangeScrollError.s_itemslot_exchange_count_invalid));

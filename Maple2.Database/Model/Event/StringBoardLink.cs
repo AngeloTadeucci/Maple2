@@ -4,7 +4,7 @@ namespace Maple2.Database.Model.Event;
 
 internal class StringBoardLink : GameEventInfo {
     public string Url { get; set; }
-    
+
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator StringBoardLink?(Maple2.Model.Game.Event.StringBoardLink? other) {
         return other == null ? null : new StringBoardLink {
@@ -13,7 +13,7 @@ internal class StringBoardLink : GameEventInfo {
             Url = other.Url,
         };
     }
-    
+
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Event.StringBoardLink?(StringBoardLink? other) {
         return other == null ? null : new Maple2.Model.Game.Event.StringBoardLink {

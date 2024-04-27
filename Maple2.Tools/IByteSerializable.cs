@@ -1,6 +1,6 @@
 ﻿using Maple2.PacketLib.Tools;
 
-namespace Maple2.Tools; 
+namespace Maple2.Tools;
 
 public interface IByteSerializable {
     public void WriteTo(IByteWriter writer);

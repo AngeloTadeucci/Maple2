@@ -28,7 +28,7 @@ public class ItemExtractionHandler : PacketHandler<GameSession> {
             Item? anvil = session.Item.Inventory.Get(anvilItemUid);
             Item? sourceItem = session.Item.Inventory.Get(sourceItemUid);
 
-            if (anvil == null || sourceItem is not {GlamorForges: > 0}) {
+            if (anvil == null || sourceItem is not { GlamorForges: > 0 }) {
                 return;
             }
 
@@ -47,7 +47,7 @@ public class ItemExtractionHandler : PacketHandler<GameSession> {
             }
 
             var anvils = new IngredientInfo(ItemTag.ItemExtraction, entry.ScrollCount);
-            if (!session.Item.Inventory.Consume(new []{anvils})) {
+            if (!session.Item.Inventory.Consume(new[] { anvils })) {
                 session.Send(ItemExtractionPacket.InsufficientAnvils());
                 return;
             }

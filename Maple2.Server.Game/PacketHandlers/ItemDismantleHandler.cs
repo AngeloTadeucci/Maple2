@@ -145,7 +145,7 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                 int total = Random.Shared.Next(min, max);
                 result[id] = total;
                 while (total > 0) {
-                    
+
                     Item? item = session.Item.CreateItem(id, amount: total);
                     if (item == null) {
                         continue;

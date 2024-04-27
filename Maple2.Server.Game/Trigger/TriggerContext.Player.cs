@@ -131,7 +131,7 @@ public partial class TriggerContext {
             conditionType = ConditionType.unknown;
         }
 
-        foreach(FieldPlayer player in PlayersInBox(triggerId)) {
+        foreach (FieldPlayer player in PlayersInBox(triggerId)) {
             player.Session.ConditionUpdate(conditionType, codeString: code);
         }
     }

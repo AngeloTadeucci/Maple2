@@ -31,39 +31,39 @@ public class PetHandler : PacketHandler<GameSession> {
         var command = packet.Read<Command>();
 
         switch (command) {
-           case Command.Summon:
-               HandleSummon(session, packet);
-               return;
-           case Command.UnSummon:
-               HandleUnSummon(session, packet);
-               return;
-           case Command.Switch:
-               HandleSwitch(session, packet);
-               return;
-           case Command.Rename:
-               HandleRename(session, packet);
-               return;
-           case Command.UpdatePotionConfig:
-               HandleUpdatePotionConfig(session, packet);
-               return;
-           case Command.UpdateLootConfig:
-               HandleUpdateLootConfig(session, packet);
-               return;
-           case Command.Fusion:
-               HandleFusion(session, packet);
-               return;
-           case Command.Attack:
-               HandleAttack(session, packet);
-               return;
-           case Command.Unknown16:
-               HandleUnknown16(session, packet);
-               return;
-           case Command.Evolve:
-               HandleEvolve(session, packet);
-               return;
-           case Command.EvolvePoints:
-               HandleEvolvePoints(session, packet);
-               return;
+            case Command.Summon:
+                HandleSummon(session, packet);
+                return;
+            case Command.UnSummon:
+                HandleUnSummon(session, packet);
+                return;
+            case Command.Switch:
+                HandleSwitch(session, packet);
+                return;
+            case Command.Rename:
+                HandleRename(session, packet);
+                return;
+            case Command.UpdatePotionConfig:
+                HandleUpdatePotionConfig(session, packet);
+                return;
+            case Command.UpdateLootConfig:
+                HandleUpdateLootConfig(session, packet);
+                return;
+            case Command.Fusion:
+                HandleFusion(session, packet);
+                return;
+            case Command.Attack:
+                HandleAttack(session, packet);
+                return;
+            case Command.Unknown16:
+                HandleUnknown16(session, packet);
+                return;
+            case Command.Evolve:
+                HandleEvolve(session, packet);
+                return;
+            case Command.EvolvePoints:
+                HandleEvolvePoints(session, packet);
+                return;
         }
     }
 

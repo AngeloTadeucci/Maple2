@@ -113,7 +113,7 @@ public static class NpcTalkPacket {
         pWriter.Write<Command>(Command.AllianceTalk);
         pWriter.Write<NpcTalkType>(type);
         pWriter.Write<NpcDialogue>(dialogue);
-        
+
         return pWriter;
     }
 }

@@ -46,7 +46,7 @@ public static class UserEnvPacket {
         var pWriter = Packet.Of(SendOp.UserEnv);
         pWriter.Write<Command>(Command.ItemCollects);
         pWriter.WriteInt(itemCollects.Count);
-        foreach((int itemId, byte quantity) in itemCollects) {
+        foreach ((int itemId, byte quantity) in itemCollects) {
             pWriter.WriteInt(itemId);
             pWriter.WriteByte(quantity);
         }
@@ -58,7 +58,7 @@ public static class UserEnvPacket {
         var pWriter = Packet.Of(SendOp.UserEnv);
         pWriter.Write<Command>(Command.InteractedObjects);
         pWriter.WriteInt(interactedObjects.Count);
-        foreach(int id in interactedObjects) {
+        foreach (int id in interactedObjects) {
             pWriter.WriteInt(id);
         }
 

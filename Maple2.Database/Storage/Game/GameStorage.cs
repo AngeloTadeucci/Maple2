@@ -15,7 +15,7 @@ public partial class GameStorage {
     private readonly QuestMetadataStorage questMetadata;
     private readonly ILogger logger;
 
-    public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata, 
+    public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
                        QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
         this.options = options;
         this.itemMetadata = itemMetadata;

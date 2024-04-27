@@ -146,9 +146,9 @@ public class CharacterInfo {
             gender: player.Character.Gender,
             job: player.Character.Job,
             level: player.Character.Level) {
-                MapId = player.Character.MapId,
-                Channel = player.Character.Channel,
-            };
+            MapId = player.Character.MapId,
+            Channel = player.Character.Channel,
+        };
     }
 
 

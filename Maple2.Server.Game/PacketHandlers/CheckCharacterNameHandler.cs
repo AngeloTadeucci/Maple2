@@ -12,7 +12,7 @@ namespace Maple2.Server.Game.PacketHandlers;
 
 public class CheckCharacterNameHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.CheckCharName;
-    
+
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required GameStorage GameStorage { private get; init; }
@@ -22,12 +22,12 @@ public class CheckCharacterNameHandler : PacketHandler<GameSession> {
     public override void Handle(GameSession session, IByteReader packet) {
         string characterName = packet.ReadUnicodeString();
         long itemUid = packet.ReadLong();
-        
+
         if (characterName.Length < Constant.CharacterNameLengthMin) {
             session.Send(CharacterListPacket.CreateError(s_char_err_name));
             return;
         }
-        
+
         if (characterName.Length > Constant.CharacterNameLengthMax) {
             session.Send(CharacterListPacket.CreateError(s_char_err_system));
             return;

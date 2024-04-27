@@ -18,7 +18,7 @@ public class NpcMetadataStorage : MetadataStorage<int, NpcMetadata>, ISearchable
 
     public NpcMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
         tagLookup = new Dictionary<string, HashSet<int>>();
-        AniCache = new LRUCache<string, AnimationMetadata>(ANI_CACHE_SIZE, (int)(ANI_CACHE_SIZE * 0.05));
+        AniCache = new LRUCache<string, AnimationMetadata>(ANI_CACHE_SIZE, (int) (ANI_CACHE_SIZE * 0.05));
 
         foreach (NpcMetadata npc in Context.NpcMetadata.Where(npc => npc.Id > MOB_BASE_ID)) {
             Cache.AddReplace(npc.Id, npc);

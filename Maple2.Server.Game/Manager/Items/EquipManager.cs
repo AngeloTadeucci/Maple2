@@ -7,7 +7,6 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Server.Core.Packets;
-using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -230,7 +229,7 @@ public class EquipManager {
             if (currentCosmetic != null && !Unequip(currentCosmetic.Uid)) {
                 return false;
             }
-            
+
             // Item needs to be in the Outfit item group to display.
             cosmetic.Group = ItemGroup.Outfit;
             cosmetic.Slot = (short) equipSlot;

@@ -1,8 +1,5 @@
-using System;
-using System.Numerics;
+﻿using System;
 using System.Threading;
-using Maple2.Model.Common;
-using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;

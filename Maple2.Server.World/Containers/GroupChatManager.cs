@@ -3,8 +3,6 @@ using System.Linq;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.GroupChat;
-using Maple2.Model.Metadata;
-using Maple2.Server.Channel.Service;
 using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 

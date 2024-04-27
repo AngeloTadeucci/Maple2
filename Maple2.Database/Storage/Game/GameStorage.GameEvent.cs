@@ -9,7 +9,7 @@ public partial class GameStorage {
     public partial class Request {
         public IList<GameEvent> GetEvents() {
             var results = new List<GameEvent>();
-            foreach(Model.Event.GameEvent @event in Context.GameEvent.Where(model => model.BeginTime <= DateTimeOffset.UtcNow && model.EndTime >= DateTimeOffset.UtcNow)) {
+            foreach (Model.Event.GameEvent @event in Context.GameEvent.Where(model => model.BeginTime <= DateTimeOffset.UtcNow && model.EndTime >= DateTimeOffset.UtcNow)) {
                 GameEvent result = @event;
                 result.EventInfo.Id = @event.Id;
                 result.EventInfo.Name = @event.Name;

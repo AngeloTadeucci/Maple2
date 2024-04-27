@@ -57,6 +57,6 @@ public partial class GlobalService : Global.GlobalBase {
             }
         }
 
-        return Task.FromResult(new LoginResponse{AccountId = account.Id});
+        return Task.FromResult(new LoginResponse { AccountId = account.Id });
     }
 }

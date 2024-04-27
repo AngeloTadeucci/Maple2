@@ -161,7 +161,7 @@ public abstract class Session : IDisposable {
         handshake.Write<uint>(riv);
         handshake.Write<uint>(siv);
         handshake.Write<uint>(BLOCK_IV);
-        handshake.WriteByte((byte)Type);
+        handshake.WriteByte((byte) Type);
 
         // No encryption for handshake
         using PoolByteWriter packet = sendCipher.WriteHeader(handshake.Buffer, 0, handshake.Length);

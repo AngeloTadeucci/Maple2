@@ -51,11 +51,11 @@ internal record Parameter(ScriptType Type, string Name) {
             ScriptType.IntList => string.IsNullOrWhiteSpace(Value) ? "[]"
                 : $"[{string.Join(",", GetIntList(Value).Select(int.Parse))}]",
             ScriptType.StrList => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new []{',', ' '}, StringSplitOptions.RemoveEmptyEntries).Select(str => $"'{str.Replace("'", "\\'")}'"))}]",
+                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => $"'{str.Replace("'", "\\'")}'"))}]",
             ScriptType.StateList => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new []{',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
             ScriptType.Vector3 => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new []{',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
             ScriptType.Bool => Value?.ToLower() == "true" || Value == "1" ? "True" : "False",
             ScriptType.State => string.IsNullOrWhiteSpace(Value) ? "None" : Value,
             _ => throw new ArgumentException($"Unexpected Type: {Type} for {Name}"),
@@ -112,7 +112,7 @@ internal record Parameter(ScriptType Type, string Name) {
     }
 
     private static IList<string> GetIntList(string value) {
-        string[] splits = value.Split(new[] {',', '.', ' '}, StringSplitOptions.RemoveEmptyEntries);
+        string[] splits = value.Split(new[] { ',', '.', ' ' }, StringSplitOptions.RemoveEmptyEntries);
         var result = new List<string>();
         foreach (string split in splits) {
             string[] range = split.Split("-");

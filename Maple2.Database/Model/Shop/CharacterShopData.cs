@@ -36,7 +36,7 @@ internal class CharacterShopData {
 
     public static void Configure(EntityTypeBuilder<CharacterShopData> builder) {
         builder.ToTable("character-shop-data");
-        builder.HasKey(info => new {info.ShopId, info.OwnerId});
+        builder.HasKey(info => new { info.ShopId, info.OwnerId });
         builder.HasOne<Shop>()
             .WithMany()
             .HasForeignKey(shop => shop.ShopId);

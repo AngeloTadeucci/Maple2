@@ -12,7 +12,7 @@ public static class ItemScriptPacket {
         TreasureChest = 4,
         Gacha = 5,
     }
-    
+
     public static ByteWriter LulluBox(ICollection<Item> items) {
         var pWriter = Packet.Of(SendOp.ItemScript);
         pWriter.Write<Command>(Command.LulluBox);

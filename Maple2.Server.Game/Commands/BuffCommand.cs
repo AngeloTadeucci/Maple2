@@ -21,8 +21,8 @@ public class BuffCommand : Command {
         this.skillStorage = skillStorage;
 
         var id = new Argument<int>("id", "Id of buff to activate.");
-        var level = new Option<int>(new[] {"--level", "-l"}, () => 1, "Buff level.");
-        var stack = new Option<int>(new[] {"--stack", "-s"}, () => 1, "Amount of stacks on the buff.");
+        var level = new Option<int>(new[] { "--level", "-l" }, () => 1, "Buff level.");
+        var stack = new Option<int>(new[] { "--stack", "-s" }, () => 1, "Amount of stacks on the buff.");
 
         AddArgument(id);
         AddOption(level);

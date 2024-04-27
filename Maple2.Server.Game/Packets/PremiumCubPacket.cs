@@ -22,7 +22,7 @@ public static class PremiumCubPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter LoadItems(IList<int> itemIds) {
         var pWriter = Packet.Of(SendOp.PremiumClub);
         pWriter.Write<Command>(Command.LoadItems);
@@ -33,7 +33,7 @@ public static class PremiumCubPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter ClaimItem(int benefitId) {
         var pWriter = Packet.Of(SendOp.PremiumClub);
         pWriter.Write<Command>(Command.ClaimItem);
@@ -41,7 +41,7 @@ public static class PremiumCubPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter LoadPackages() {
         var pWriter = Packet.Of(SendOp.PremiumClub);
         pWriter.Write<Command>(Command.LoadPackages);
@@ -49,7 +49,7 @@ public static class PremiumCubPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter PurchasePackage(int packageId) {
         var pWriter = Packet.Of(SendOp.PremiumClub);
         pWriter.Write<Command>(Command.PurchasePackage);

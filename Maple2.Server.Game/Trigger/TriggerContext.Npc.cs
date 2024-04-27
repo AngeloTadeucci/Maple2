@@ -131,7 +131,7 @@ public partial class TriggerContext {
         WarnLog("[SetNpcRotation] spawnId:{SpawnId}, rotation:{Rotation}", spawnId, rotation);
         foreach (FieldNpc npc in Field.Npcs.Values) {
             if (npc.SpawnPointId == spawnId) {
-                npc.Rotation = npc.Rotation with {Z = rotation};
+                npc.Rotation = npc.Rotation with { Z = rotation };
             }
         }
     }

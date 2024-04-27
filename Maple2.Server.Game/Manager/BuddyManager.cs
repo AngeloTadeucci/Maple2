@@ -137,7 +137,7 @@ public class BuddyManager : IDisposable {
 
             BuddyResponse _ = session.World.Buddy(new BuddyRequest {
                 ReceiverId = receiverId,
-                Invite = new BuddyRequest.Types.Invite {SenderId = session.CharacterId},
+                Invite = new BuddyRequest.Types.Invite { SenderId = session.CharacterId },
             });
         } catch (SystemException ex) {
             logger.Warning(ex, "Invite failed");
@@ -184,7 +184,7 @@ public class BuddyManager : IDisposable {
 
             session.World.Buddy(new BuddyRequest {
                 ReceiverId = receiverId,
-                Accept = new BuddyRequest.Types.Accept {EntryId = other.Id},
+                Accept = new BuddyRequest.Types.Accept { EntryId = other.Id },
             });
             if (session.PlayerInfo.GetOrFetch(self.Info.CharacterId, out PlayerInfo? info)) {
                 self.Info.Update(UpdateField.All, info);
@@ -242,7 +242,7 @@ public class BuddyManager : IDisposable {
             session.Send(BuddyPacket.Decline(self));
             BuddyResponse _ = session.World.Buddy(new BuddyRequest {
                 ReceiverId = receiverId,
-                Decline = new BuddyRequest.Types.Decline {EntryId = other.Id},
+                Decline = new BuddyRequest.Types.Decline { EntryId = other.Id },
             });
         } catch (SystemException ex) {
             logger.Warning(ex, "Decline failed");
@@ -325,7 +325,7 @@ public class BuddyManager : IDisposable {
             if (other.Type != BuddyType.Blocked && db.RemoveBuddy(other)) {
                 BuddyResponse _ = session.World.Buddy(new BuddyRequest {
                     ReceiverId = receiverId,
-                    Block = new BuddyRequest.Types.Block {SenderId = session.CharacterId},
+                    Block = new BuddyRequest.Types.Block { SenderId = session.CharacterId },
                 });
             }
         } catch (SystemException ex) {
@@ -392,7 +392,7 @@ public class BuddyManager : IDisposable {
             session.Send(BuddyPacket.Remove(self));
             BuddyResponse _ = session.World.Buddy(new BuddyRequest {
                 ReceiverId = receiverId,
-                Delete = new BuddyRequest.Types.Delete {EntryId = other.Id},
+                Delete = new BuddyRequest.Types.Delete { EntryId = other.Id },
             });
         } catch (SystemException ex) {
             logger.Warning(ex, "Delete failed");
@@ -456,7 +456,7 @@ public class BuddyManager : IDisposable {
             session.Send(BuddyPacket.Cancel(self));
             BuddyResponse _ = session.World.Buddy(new BuddyRequest {
                 ReceiverId = receiverId,
-                Cancel = new BuddyRequest.Types.Cancel {EntryId = other.Id},
+                Cancel = new BuddyRequest.Types.Cancel { EntryId = other.Id },
             });
         } catch (SystemException ex) {
             logger.Warning(ex, "Cancel failed");

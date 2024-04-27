@@ -9,15 +9,15 @@ namespace Maple2.Model.Game.Shop;
 public class Shop : IByteSerializable {
     public readonly int Id;
     public int CategoryId { get; init; }
-    public string Name  { get; init; }
-    public ShopSkin Skin  { get; init; }
-    public bool HideUnuseable  { get; init; }
-    public bool HideStats  { get; init; }
-    public bool DisableBuyback  { get; init; }
-    public bool OpenWallet  { get; init; }
-    public bool DisplayNew  { get; init; }
-    public bool RandomizeOrder  { get; init; }
-    public long RestockTime  { get; set; }
+    public string Name { get; init; }
+    public ShopSkin Skin { get; init; }
+    public bool HideUnuseable { get; init; }
+    public bool HideStats { get; init; }
+    public bool DisableBuyback { get; init; }
+    public bool OpenWallet { get; init; }
+    public bool DisplayNew { get; init; }
+    public bool RandomizeOrder { get; init; }
+    public long RestockTime { get; set; }
     public ShopRestockData? RestockData { get; init; }
     public SortedDictionary<int, ShopItem> Items;
 

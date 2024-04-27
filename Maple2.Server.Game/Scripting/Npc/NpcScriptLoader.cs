@@ -34,7 +34,7 @@ public class NpcScriptLoader {
     public NpcScript? GetNpc(GameSession session, NpcScriptContext context, FieldNpc npc, ScriptMetadata metadata) {
         Console.WriteLine($"Load script for: {npc.Value.Metadata.Id}");
         if (!scriptSources.TryGetValue(npc.Value.Metadata.Id, out ScriptSource? script)) {
-            script = engine.CreateScriptSourceFromFile(Path.Combine(Paths.GAME_SCRIPTS_DIR,$"Npc/{npc.Value.Metadata.Id}.py"));
+            script = engine.CreateScriptSourceFromFile(Path.Combine(Paths.GAME_SCRIPTS_DIR, $"Npc/{npc.Value.Metadata.Id}.py"));
             scriptSources[npc.Value.Metadata.Id] = script;
         }
 
@@ -52,7 +52,7 @@ public class NpcScriptLoader {
 
         return new NpcScript(session, npc, metadata, engine.Operations.CreateInstance(type, context));
     }
-    
+
     public NpcScript? GetQuest(GameSession session, NpcScriptContext context, FieldNpc npc, ScriptMetadata metadata) {
         Console.WriteLine($"Load script for: {metadata.Id}");
         if (!scriptSources.TryGetValue(npc.Value.Metadata.Id, out ScriptSource? script)) {

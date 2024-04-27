@@ -91,7 +91,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Whisper = new ChatRequest.Types.Whisper {RecipientId = info.CharacterId, RecipientName = recipient},
+            Whisper = new ChatRequest.Types.Whisper { RecipientId = info.CharacterId, RecipientName = recipient },
         };
 
         try {
@@ -133,7 +133,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Guild = new ChatRequest.Types.Guild {GuildId = 0},
+            Guild = new ChatRequest.Types.Guild { GuildId = 0 },
         };
 
         try {
@@ -218,7 +218,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Super = new ChatRequest.Types.Super {ItemId = session.SuperChatId},
+            Super = new ChatRequest.Types.Super { ItemId = session.SuperChatId },
         };
 
         if (session.Item.Inventory.Consume(superChatItem.Uid, 1)) {
@@ -238,7 +238,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Club = new ChatRequest.Types.Club {ClubId = clubId},
+            Club = new ChatRequest.Types.Club { ClubId = clubId },
         };
 
         try {
@@ -252,7 +252,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Wedding = new ChatRequest.Types.Wedding {ItemId = 0},
+            Wedding = new ChatRequest.Types.Wedding { ItemId = 0 },
         };
 
         try {

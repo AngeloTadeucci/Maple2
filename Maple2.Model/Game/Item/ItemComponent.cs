@@ -3,7 +3,7 @@
 namespace Maple2.Model.Game;
 
 public record ItemComponent(
-    int ItemId, 
-    int Rarity, 
-    int Amount, 
+    int ItemId,
+    int Rarity,
+    int Amount,
     ItemTag Tag);

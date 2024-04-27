@@ -2,12 +2,9 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class FishAlbum : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class FishAlbum : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<string>(
                 name: "FishAlbum",
                 table: "character-unlock",
@@ -17,8 +14,7 @@ namespace Maple2.Server.World.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "FishAlbum",
                 table: "character-unlock");

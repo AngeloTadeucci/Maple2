@@ -4,12 +4,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
-    public partial class MesoMarket : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+namespace Maple2.Server.World.Migrations {
+    public partial class MesoMarket : Migration {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AlterColumn<DateTime>(
                 name: "LastModified",
                 table: "Item",
@@ -59,8 +56,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "meso-market-sold",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ListedTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -73,8 +69,7 @@ namespace Maple2.Server.World.Migrations
                     LastModified = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_meso-market-sold", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -92,8 +87,7 @@ namespace Maple2.Server.World.Migrations
             migrationBuilder.Sql("ALTER TABLE `meso-market` AUTO_INCREMENT = 60000000000");
         }
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "meso-market");
 

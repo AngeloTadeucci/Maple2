@@ -33,7 +33,7 @@ internal class CharacterShopItemData {
 
     public static void Configure(EntityTypeBuilder<CharacterShopItemData> builder) {
         builder.ToTable("character-shop-item-data");
-        builder.HasKey(info => new {info.ShopItemId, info.OwnerId});
+        builder.HasKey(info => new { info.ShopItemId, info.OwnerId });
         builder.Property(data => data.Item).HasJsonConversion();
         builder.HasOne<Shop>()
             .WithMany()

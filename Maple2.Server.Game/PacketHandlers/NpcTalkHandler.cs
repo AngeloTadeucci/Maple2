@@ -111,7 +111,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
 
     private void HandleContinue(GameSession session, IByteReader packet) {
         // Not talking to an Npc.
-         if (session.NpcScript == null) {
+        if (session.NpcScript == null) {
             return;
         }
 

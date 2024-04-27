@@ -1,7 +1,6 @@
 ﻿using Maple2.Database.Context;
 using Maple2.Tools;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 DotEnv.Load();

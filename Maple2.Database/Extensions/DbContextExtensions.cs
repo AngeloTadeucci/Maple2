@@ -33,7 +33,7 @@ public static class DbContextExtensions {
         }
     }
 
-    public static void Overwrite<T>(this DbContext context, T entity) where T: class {
+    public static void Overwrite<T>(this DbContext context, T entity) where T : class {
         context.Entry(entity).State = EntityState.Modified;
     }
 }

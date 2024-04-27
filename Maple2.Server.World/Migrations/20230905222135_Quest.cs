@@ -2,22 +2,18 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class Quest : Migration
-    {
+    public partial class Quest : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "Quests",
                 table: "character-unlock");
 
             migrationBuilder.CreateTable(
                 name: "Quest",
-                columns: table => new
-                {
+                columns: table => new {
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<int>(type: "int", nullable: false),
                     State = table.Column<int>(type: "int", nullable: false),
@@ -28,16 +24,14 @@ namespace Maple2.Server.World.Migrations
                     Conditions = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Quest", x => new { x.OwnerId, x.Id });
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "Quest");
 

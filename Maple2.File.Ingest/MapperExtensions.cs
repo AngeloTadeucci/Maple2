@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Maple2.File.Ingest.Utils;
 using Maple2.File.Parser.Xml;
 using Maple2.File.Parser.Xml.Common;
@@ -259,7 +258,7 @@ public static class MapperExtensions {
         SkillEffectMetadata.Skill[] skills;
         if (trigger.linkSkillID.Length > 0) {
             skills = trigger.skillID
-                .Zip(trigger.level, (skillId, level) => new {skillId, level})
+                .Zip(trigger.level, (skillId, level) => new { skillId, level })
                 .Zip(trigger.linkSkillID, (skill, linkSkillId) => new SkillEffectMetadata.Skill(skill.skillId, skill.level, linkSkillId))
                 .ToArray();
         } else {
@@ -450,8 +449,8 @@ public static class MapperExtensions {
         }
 
         if (int.TryParse(codes[0], out int integerResult)) {
-            return new ConditionMetadata.Parameters(Integers: new[] {integerResult});
+            return new ConditionMetadata.Parameters(Integers: new[] { integerResult });
         }
-        return new ConditionMetadata.Parameters(Strings: new[] {codes[0]});
+        return new ConditionMetadata.Parameters(Strings: new[] { codes[0] });
     }
 }

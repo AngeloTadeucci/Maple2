@@ -18,7 +18,7 @@ internal class UgcMapCube {
     public int ItemId { get; set; }
     public UgcItemLook? Template { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator PlotCube?(UgcMapCube? other) {
         return other == null ? null : new PlotCube(other.ItemId, other.Id, other.Template) {
             Position = new Vector3B(other.X, other.Y, other.Z),
@@ -26,7 +26,7 @@ internal class UgcMapCube {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator UgcMapCube?(PlotCube? other) {
         return other == null ? null : new UgcMapCube {
             Id = other.Id,

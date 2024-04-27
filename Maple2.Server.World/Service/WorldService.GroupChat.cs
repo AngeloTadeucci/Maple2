@@ -6,7 +6,6 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.GroupChat;
 using Maple2.Server.World.Containers;
-using ChannelPartyRequest = Maple2.Server.Channel.Service.PartyRequest;
 
 namespace Maple2.Server.World.Service;
 

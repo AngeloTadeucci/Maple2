@@ -18,7 +18,7 @@ public static class SuperChatPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Deselect(int objectId) {
         var pWriter = Packet.Of(SendOp.SuperWorldChat);
         pWriter.Write<Command>(Command.Deselect);

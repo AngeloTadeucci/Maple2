@@ -115,66 +115,66 @@ public class FishingHandler : PacketHandler<GameSession> {
         Vector3 checkBlock = checkCoordinates;
         switch (direction) {
             case Constant.NorthEast: {
-                checkBlock.Y += 2 * Constant.BlockSize; // start at the corner
+                    checkBlock.Y += 2 * Constant.BlockSize; // start at the corner
 
-                for (int yAxis = 0; yAxis < 5; yAxis++) {
-                    for (int xAxis = 0; xAxis < 3; xAxis++) {
-                        checkBlock.X += Constant.BlockSize;
+                    for (int yAxis = 0; yAxis < 5; yAxis++) {
+                        for (int xAxis = 0; xAxis < 3; xAxis++) {
+                            checkBlock.X += Constant.BlockSize;
 
-                        // Normally here we would scan Z levels for liquid blocks
-                        // For now we will just add the coordinate in the same level to the list;
-                        yield return checkBlock;
-                    }
-                    checkBlock.Y -= Constant.BlockSize;
-                    checkBlock.X = checkCoordinates.X; // reset X
-                }
-                break;
-            }
-            case Constant.NorthWest: {
-                checkBlock.X += 2 * Constant.BlockSize; // start at the corner
-
-                for (int xAxis = 0; xAxis < 5; xAxis++) {
-                    for (int yAxis = 0; yAxis < 3; yAxis++) {
-                        checkBlock.Y += Constant.BlockSize;
-                        // Normally here we would scan Z levels for liquid blocks
-                        // For now we will just add the coordinate in the same level to the list;
-                        yield return checkBlock;
-                    }
-                    checkBlock.X -= Constant.BlockSize;
-                    checkBlock.Y = checkCoordinates.Y; // reset Y
-                }
-                break;
-            }
-            case Constant.SouthWest: {
-                checkBlock.Y -= 2 * Constant.BlockSize; // start at the corner
-
-                for (int yAxis = 0; yAxis < 5; yAxis++) {
-                    for (int xAxis = 0; xAxis < 3; xAxis++) {
-                        checkBlock.X -= Constant.BlockSize;
-                        // Normally here we would scan Z levels for liquid blocks
-                        // For now we will just add the coordinate in the same level to the list;
-                        yield return checkBlock;
-                    }
-                    checkBlock.Y += Constant.BlockSize;
-                    checkBlock.X = checkCoordinates.X; // reset X
-                }
-                break;
-            }
-            case Constant.SouthEast: {
-                checkBlock.X -= 2 * Constant.BlockSize; // start at the corner
-
-                for (int xAxis = 0; xAxis < 5; xAxis++) {
-                    for (int yAxis = 0; yAxis < 3; yAxis++) {
+                            // Normally here we would scan Z levels for liquid blocks
+                            // For now we will just add the coordinate in the same level to the list;
+                            yield return checkBlock;
+                        }
                         checkBlock.Y -= Constant.BlockSize;
-                        // Normally here we would scan Z levels for liquid blocks
-                        // For now we will just add the coordinate in the same level to the list;
-                        yield return checkBlock;
+                        checkBlock.X = checkCoordinates.X; // reset X
                     }
-                    checkBlock.X += Constant.BlockSize;
-                    checkBlock.Y = checkCoordinates.Y; // reset Y
+                    break;
                 }
-                break;
-            }
+            case Constant.NorthWest: {
+                    checkBlock.X += 2 * Constant.BlockSize; // start at the corner
+
+                    for (int xAxis = 0; xAxis < 5; xAxis++) {
+                        for (int yAxis = 0; yAxis < 3; yAxis++) {
+                            checkBlock.Y += Constant.BlockSize;
+                            // Normally here we would scan Z levels for liquid blocks
+                            // For now we will just add the coordinate in the same level to the list;
+                            yield return checkBlock;
+                        }
+                        checkBlock.X -= Constant.BlockSize;
+                        checkBlock.Y = checkCoordinates.Y; // reset Y
+                    }
+                    break;
+                }
+            case Constant.SouthWest: {
+                    checkBlock.Y -= 2 * Constant.BlockSize; // start at the corner
+
+                    for (int yAxis = 0; yAxis < 5; yAxis++) {
+                        for (int xAxis = 0; xAxis < 3; xAxis++) {
+                            checkBlock.X -= Constant.BlockSize;
+                            // Normally here we would scan Z levels for liquid blocks
+                            // For now we will just add the coordinate in the same level to the list;
+                            yield return checkBlock;
+                        }
+                        checkBlock.Y += Constant.BlockSize;
+                        checkBlock.X = checkCoordinates.X; // reset X
+                    }
+                    break;
+                }
+            case Constant.SouthEast: {
+                    checkBlock.X -= 2 * Constant.BlockSize; // start at the corner
+
+                    for (int xAxis = 0; xAxis < 5; xAxis++) {
+                        for (int yAxis = 0; yAxis < 3; yAxis++) {
+                            checkBlock.Y -= Constant.BlockSize;
+                            // Normally here we would scan Z levels for liquid blocks
+                            // For now we will just add the coordinate in the same level to the list;
+                            yield return checkBlock;
+                        }
+                        checkBlock.X += Constant.BlockSize;
+                        checkBlock.Y = checkCoordinates.Y; // reset Y
+                    }
+                    break;
+                }
         }
     }
 

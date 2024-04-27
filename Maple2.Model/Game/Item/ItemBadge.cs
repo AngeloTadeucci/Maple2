@@ -31,7 +31,7 @@ public sealed class ItemBadge : IByteSerializable, IByteDeserializable {
             _ => BadgeType.None,
         };
 
-        if (transparency is not {Length: TRANSPARENCY_COUNT}) {
+        if (transparency is not { Length: TRANSPARENCY_COUNT }) {
             Transparency = new bool[TRANSPARENCY_COUNT];
         } else {
             Transparency = transparency;
@@ -50,7 +50,7 @@ public sealed class ItemBadge : IByteSerializable, IByteDeserializable {
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteByte(1);
-        writer.WriteByte((byte)Type);
+        writer.WriteByte((byte) Type);
         writer.WriteUnicodeString(Id.ToString());
 
         switch (Type) {

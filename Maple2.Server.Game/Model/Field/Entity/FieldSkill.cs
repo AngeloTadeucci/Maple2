@@ -125,8 +125,8 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         var prism = new Prism(circle, position.Z, box.Z);
 
                         targets = attack.Arrow.BounceOverlap
-                            ? Field.GetTargets(new []{prism}, record.Attack.Range.ApplyTarget, 1, targets).ToArray()
-                            : Field.GetTargets(new []{prism}, record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
+                            ? Field.GetTargets(new[] { prism }, record.Attack.Range.ApplyTarget, 1, targets).ToArray()
+                            : Field.GetTargets(new[] { prism }, record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
                         if (targets.Length <= 0) {
                             break;
                         }
@@ -150,7 +150,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         IActor target = bounceTargets[t];
                         record.TargetUid = targetRecords[t].Uid;
                         record.Position = target.Position;
-                        record.Targets = new []{target};
+                        record.Targets = new[] { target };
 
                         // TODO: There should be some delay between bounces.
                         target.TargetAttack(record);

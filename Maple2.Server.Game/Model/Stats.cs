@@ -55,7 +55,7 @@ public class Stats {
         this[BasicAttribute.MountSpeed] = new Stat(100);
 
         this[BasicAttribute.PhysicalAtk].AddBase(
-            AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base,this[BasicAttribute.Dexterity].Base,this[BasicAttribute.Luck].Base));
+            AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base, this[BasicAttribute.Dexterity].Base, this[BasicAttribute.Luck].Base));
         this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
 
 #if DEBUG

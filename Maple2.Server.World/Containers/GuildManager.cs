@@ -73,7 +73,7 @@ public class GuildManager : IDisposable {
             pendingInvites[player.CharacterId] = (requestor.Name, DateTime.Now.AddSeconds(30));
             var request = new GuildRequest {
                 GuildId = Guild.Id,
-                ReceiverIds = {player.CharacterId},
+                ReceiverIds = { player.CharacterId },
                 Invite = new GuildRequest.Types.Invite {
                     GuildName = Guild.Name,
                     SenderId = requestor.CharacterId,

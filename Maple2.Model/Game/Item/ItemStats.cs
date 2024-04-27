@@ -17,11 +17,11 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
         Static = 1,
         Random = 2,
         Title = 3,
-        Empowerment1= 4,
-        Empowerment2= 5,
-        Empowerment3= 6,
-        Empowerment4= 7,
-        Empowerment5= 8,
+        Empowerment1 = 4,
+        Empowerment2 = 5,
+        Empowerment3 = 6,
+        Empowerment4 = 7,
+        Empowerment5 = 8,
     }
 
     private readonly Option[] options;
@@ -64,12 +64,12 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
             Option option = options[i];
             writer.WriteShort((short) option.Basic.Count);
             foreach ((BasicAttribute type, BasicOption basicOption) in option.Basic) {
-                writer.WriteShort((short)type);
+                writer.WriteShort((short) type);
                 writer.Write<BasicOption>(basicOption);
             }
             writer.WriteShort((short) option.Special.Count);
             foreach ((SpecialAttribute type, SpecialOption specialOption) in option.Special) {
-                writer.WriteShort((short)type);
+                writer.WriteShort((short) type);
                 writer.Write<SpecialOption>(specialOption);
             }
 
@@ -83,12 +83,12 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
             Option option = options[i];
             short basicCount = reader.ReadShort();
             for (int j = 0; j < basicCount; j++) {
-                var type = (BasicAttribute)reader.ReadShort();
+                var type = (BasicAttribute) reader.ReadShort();
                 option.Basic[type] = reader.Read<BasicOption>();
             }
             short specialCount = reader.ReadShort();
             for (int j = 0; j < specialCount; j++) {
-                var type = (SpecialAttribute)reader.ReadShort();
+                var type = (SpecialAttribute) reader.ReadShort();
                 option.Special[type] = reader.Read<SpecialOption>();
             }
 

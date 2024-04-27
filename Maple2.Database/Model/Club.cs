@@ -17,7 +17,7 @@ internal class Club {
     public long LeaderId { get; set; }
     public List<ClubMember>? Members { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Club?(Maple2.Model.Game.Club? other) {
         return other == null ? null : new Club {
             // CreationTime set by DB
@@ -28,7 +28,7 @@ internal class Club {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Club?(Club? other) {
         return other == null ? null : new Maple2.Model.Game.Club {
             LastModified = other.LastModified,
@@ -63,7 +63,7 @@ internal class ClubMember {
     public long CharacterId { get; set; }
     public Character? Character { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ClubMember?(Maple2.Model.Game.ClubMember? other) {
         return other == null ? null : new ClubMember {
             // CreationTime set by DB
@@ -74,7 +74,7 @@ internal class ClubMember {
 
     public static void Configure(EntityTypeBuilder<ClubMember> builder) {
         builder.ToTable("club-member");
-        builder.HasKey(member => new {member.ClubId, member.CharacterId});
+        builder.HasKey(member => new { member.ClubId, member.CharacterId });
 
         builder.HasOne<Character>(member => member.Character)
             .WithMany()

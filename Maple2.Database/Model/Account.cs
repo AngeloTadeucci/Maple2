@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
-using Maple2.Model.Enum;
-using Maple2.Model.Game;
-using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -25,17 +22,17 @@ internal class Account {
 
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
-    
+
     public bool Online { get; set; }
 
     public ICollection<Character>? Characters { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Account?(Maple2.Model.Game.Account? other) {
         if (other == null) {
             return null;
         }
-        
+
         return new Account {
             LastModified = other.LastModified,
             Id = other.Id,
@@ -55,12 +52,12 @@ internal class Account {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Account?(Account? other) {
         if (other == null) {
             return null;
         }
-        
+
         return new Maple2.Model.Game.Account {
             LastModified = other.LastModified,
             Id = other.Id,

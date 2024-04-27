@@ -3,7 +3,6 @@ using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PacketLib.Tools;
 using Maple2.PathEngine;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model.Skill;

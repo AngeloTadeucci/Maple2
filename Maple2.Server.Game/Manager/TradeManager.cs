@@ -114,32 +114,32 @@ public class TradeManager : IDisposable {
         }
 
         lock (mutex)
-        lock (caller.Item) {
-            if (self.Items.OpenSlots <= 0) {
-                caller.Send(TradePacket.Error(s_trade_error_itemcount));
-            }
-            if (!caller.Item.Inventory.Remove(itemUid, out Item? item, amount)) {
-                return;
-            }
-            if (item.Transfer?.Flag.HasFlag(TransferFlag.LimitTrade) == true && item.Transfer.RemainTrades < 1) {
-                caller.Item.Inventory.Add(item);
-                return;
-            }
+            lock (caller.Item) {
+                if (self.Items.OpenSlots <= 0) {
+                    caller.Send(TradePacket.Error(s_trade_error_itemcount));
+                }
+                if (!caller.Item.Inventory.Remove(itemUid, out Item? item, amount)) {
+                    return;
+                }
+                if (item.Transfer?.Flag.HasFlag(TransferFlag.LimitTrade) == true && item.Transfer.RemainTrades < 1) {
+                    caller.Item.Inventory.Add(item);
+                    return;
+                }
 
-            IList<(Item Item, int Added)> results = self.Items.Add(item, true);
-            // Sanity check, this should never fail because we ensure an open slot.
-            if (results.Sum(result => result.Added) != amount) {
-                // caller.Item.Inventory.Add(item); TODO: refund the item to inventory?
-                throw new InvalidOperationException("AddItem: Trade consistency error");
-            }
+                IList<(Item Item, int Added)> results = self.Items.Add(item, true);
+                // Sanity check, this should never fail because we ensure an open slot.
+                if (results.Sum(result => result.Added) != amount) {
+                    // caller.Item.Inventory.Add(item); TODO: refund the item to inventory?
+                    throw new InvalidOperationException("AddItem: Trade consistency error");
+                }
 
-            foreach ((Item Item, int) result in results) {
-                self.Session.Send(TradePacket.AddItem(true, result.Item));
-                other.Session.Send(TradePacket.AddItem(false, result.Item));
-            }
+                foreach ((Item Item, int) result in results) {
+                    self.Session.Send(TradePacket.AddItem(true, result.Item));
+                    other.Session.Send(TradePacket.AddItem(false, result.Item));
+                }
 
-            OnTradeModified();
-        }
+                OnTradeModified();
+            }
     }
 
     public void RemoveItem(GameSession caller, long itemUid, int tradeSlot) {
@@ -154,17 +154,17 @@ public class TradeManager : IDisposable {
         }
 
         lock (mutex)
-        lock (caller.Item) {
-            if (!self.Items.RemoveSlot((short) tradeSlot, out Item? item)) {
-                return;
+            lock (caller.Item) {
+                if (!self.Items.RemoveSlot((short) tradeSlot, out Item? item)) {
+                    return;
+                }
+
+                self.Session.Send(TradePacket.RemoveItem(true, tradeSlot, itemUid));
+                other.Session.Send(TradePacket.RemoveItem(false, tradeSlot, itemUid));
+                caller.Item.Inventory.Add(item);
+
+                OnTradeModified();
             }
-
-            self.Session.Send(TradePacket.RemoveItem(true, tradeSlot, itemUid));
-            other.Session.Send(TradePacket.RemoveItem(false, tradeSlot, itemUid));
-            caller.Item.Inventory.Add(item);
-
-            OnTradeModified();
-        }
     }
 
     public void SetMesos(GameSession caller, long amount) {

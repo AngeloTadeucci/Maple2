@@ -12,7 +12,6 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
-using Maple2.Model.Game.GroupChat;
 using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -152,7 +151,7 @@ public sealed partial class GameSession : Core.Network.Session {
             CharacterId = CharacterId,
         });
 
-        foreach(GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
+        foreach (GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
             GroupChatManager manager = new GroupChatManager(groupChatInfo, this);
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }

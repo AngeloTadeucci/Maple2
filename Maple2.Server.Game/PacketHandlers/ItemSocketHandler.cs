@@ -10,7 +10,6 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Server.Game.Util;
 using static Maple2.Model.Error.ItemSocketError;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -120,7 +119,7 @@ public class ItemSocketHandler : PacketHandler<GameSession> {
                 Lua.CalcItemSocketUnlockIngredient(0, equip.Rarity, (ushort) equip.Metadata.Limit.Level, 0, equip.Metadata.Property.SkinType);
 
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new []{ingredient})) {
+            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }
@@ -334,7 +333,7 @@ public class ItemSocketHandler : PacketHandler<GameSession> {
 
             (string tag, int amount) = Lua.CalcGetGemStonePutOffPrice(Constant.GemstoneGrade, (ushort) entry.Level, 0);
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new []{ingredient})) {
+            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }

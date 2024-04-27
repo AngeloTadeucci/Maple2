@@ -7,7 +7,6 @@ using Maple2.Server.Core.Sync;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util.Sync;
-using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 

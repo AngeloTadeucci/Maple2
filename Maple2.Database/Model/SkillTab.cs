@@ -16,7 +16,7 @@ internal class SkillTab {
 
     public DateTime CreationTime { get; set; }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator SkillTab?(Maple2.Model.Game.SkillTab? other) {
         return other == null ? null : new SkillTab {
             Id = other.Id,
@@ -25,7 +25,7 @@ internal class SkillTab {
         };
     }
 
-    [return:NotNullIfNotNull(nameof(other))]
+    [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.SkillTab?(SkillTab? other) {
         if (other == null) {
             return null;
@@ -39,7 +39,7 @@ internal class SkillTab {
 
     public static void Configure(EntityTypeBuilder<SkillTab> builder) {
         builder.ToTable("skill-tab");
-        builder.HasKey(tab => new {tab.CharacterId, tab.Id});
+        builder.HasKey(tab => new { tab.CharacterId, tab.Id });
         builder.HasIndex(tab => tab.CharacterId);
         builder.Property(tab => tab.Skills).HasJsonConversion().IsRequired();
 

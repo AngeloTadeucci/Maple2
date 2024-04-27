@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Server.Game.Session;
 
@@ -12,7 +12,7 @@ public partial class ChannelService {
 
         session.Mail.Notify(true);
 
-        return Task.FromResult(new MailNotificationResponse{Delivered = true});
+        return Task.FromResult(new MailNotificationResponse { Delivered = true });
     }
 
     public override Task<PlayerUpdateResponse> UpdatePlayer(PlayerUpdateRequest request, ServerCallContext context) {

@@ -2,20 +2,17 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class CharacterAndAccountAddFields : Migration
-    {
+    public partial class CharacterAndAccountAddFields : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<short>(
                 name: "Channel",
                 table: "Character",
                 type: "smallint",
                 nullable: false,
-                defaultValue: (short)0);
+                defaultValue: (short) 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "ReturnMapId",
@@ -33,8 +30,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "Channel",
                 table: "Character");

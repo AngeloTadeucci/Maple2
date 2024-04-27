@@ -53,7 +53,7 @@ public class ScriptMapper : TypeMapper<ScriptMetadata> {
         }
 
         foreach ((int id, QuestScript script) in parser.ParseQuest()) {
-            var states = new  Dictionary<int, ScriptState>();
+            var states = new Dictionary<int, ScriptState>();
             foreach (QuestTalkScript talk in script.script) {
                 states.Add(talk.id, new ScriptState(
                     Id: talk.id,

@@ -31,6 +31,6 @@ public partial class ChannelService {
                 break;
         }
 
-        return Task.FromResult(new BuddyResponse{Channel = session.Channel});
+        return Task.FromResult(new BuddyResponse { Channel = session.Channel });
     }
 }

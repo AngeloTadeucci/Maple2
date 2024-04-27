@@ -8,7 +8,7 @@ namespace Maple2.Server.Core.Formulas;
 
 public static class Shop {
     // Hardcoded values used for items with level >= 57
-    private static readonly int[] PRICES = {1541, 1926, 2465, 9256, 11339, 13653};
+    private static readonly int[] PRICES = { 1541, 1926, 2465, 9256, 11339, 13653 };
 
     public static long SellPrice(ItemMetadata metadata, ItemType type, int rarity) {
         if (metadata.Limit.Level >= 57) {

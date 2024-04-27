@@ -45,13 +45,13 @@ public partial class GameStorage {
 
         public IList<ClubMember> GetClubMembers(long clubId) {
             var results = (from member in Context.ClubMember where member.ClubId == clubId
-                          join account in Context.Account on member.Character.AccountId equals account.Id
-                          join indoor in Context.UgcMap on
-                              new {OwnerId=member.Character.AccountId, Indoor=true} equals new {indoor.OwnerId, indoor.Indoor}
-                          join outdoor in Context.UgcMap on
-                              new {OwnerId=member.Character.AccountId, Indoor=true} equals new {outdoor.OwnerId, outdoor.Indoor} into plot
-                          from outdoor in plot.DefaultIfEmpty()
-                          select new {account, member, indoor, outdoor})
+                           join account in Context.Account on member.Character.AccountId equals account.Id
+                           join indoor in Context.UgcMap on
+                               new { OwnerId = member.Character.AccountId, Indoor = true } equals new { indoor.OwnerId, indoor.Indoor }
+                           join outdoor in Context.UgcMap on
+                               new { OwnerId = member.Character.AccountId, Indoor = true } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
+                           from outdoor in plot.DefaultIfEmpty()
+                           select new { account, member, indoor, outdoor })
                 .AsEnumerable();
 
             return results.Select(result => {

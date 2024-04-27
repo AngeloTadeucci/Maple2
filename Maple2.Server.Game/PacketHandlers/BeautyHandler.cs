@@ -500,7 +500,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
         }
 
         var ingredient = new IngredientInfo(voucherTag, 1);
-        if (!session.Item.Inventory.Consume(new[] {ingredient})) {
+        if (!session.Item.Inventory.Consume(new[] { ingredient })) {
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert, StringCode.s_err_invalid_item));
             return false;
         }
@@ -530,7 +530,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
                 break;
             case ShopCurrencyType.Item:
                 var ingredient = new ItemComponent(cost.ItemId, -1, cost.Amount, ItemTag.None);
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] {ingredient})) {
+                if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
                     session.Send(BeautyPacket.Error(BeautyError.lack_currency));
                     return false;
                 }

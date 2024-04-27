@@ -69,116 +69,116 @@ public class GuildHandler : PacketHandler<GameSession> {
         var command = packet.Read<Command>();
         switch (command) {
             case Command.Create:
-            HandleCreate(session, packet);
-            return;
-        case Command.Disband:
-            HandleDisband(session);
-            return;
-        case Command.Invite:
-            HandleInvite(session, packet);
-            return;
-        case Command.RespondInvite:
-            HandleRespondInvite(session, packet);
-            return;
-        case Command.Leave:
-            HandleLeave(session);
-            return;
-        case Command.Expel:
-            HandleExpel(session, packet);
-            return;
-        case Command.UpdateMemberRank:
-            HandleUpdateMemberRank(session, packet);
-            return;
-        case Command.UpdateMemberMessage:
-            HandleUpdateMemberMessage(session, packet);
-            return;
-        case Command.CheckIn:
-            HandleCheckIn(session);
-            return;
-        case Command.UpdateLeader:
-            HandleUpdateLeader(session, packet);
-            return;
-        case Command.UpdateNotice:
-            HandleUpdateNotice(session, packet);
-            return;
-        case Command.UpdateEmblem:
-            HandleUpdateEmblem(session, packet);
-            return;
-        case Command.IncreaseCapacity:
-            HandleIncreaseCapacity(session);
-            return;
-        case Command.UpdateRank:
-            HandleUpdateRank(session, packet);
-            return;
-        case Command.UpdateFocus:
-            HandleUpdateFocus(session, packet);
-            return;
-        case Command.SendMail:
-            HandleSendMail(session, packet);
-            return;
-        case Command.SendApplication:
-            HandleSendApplication(session, packet);
-            return;
-        case Command.CancelApplication:
-            HandleCancelApplication(session, packet);
-            return;
-        case Command.RespondApplication:
-            HandleRespondApplication(session, packet);
-            return;
-        case Command.ListApplications:
-            HandleListApplications(session);
-            return;
-        case Command.SearchGuilds:
-            HandleSearchGuilds(session, packet);
-            return;
-        case Command.SearchGuildName:
-            HandleSearchGuildName(session, packet);
-            return;
-        case Command.UseBuff:
-            HandleUseBuff(session, packet);
-            return;
-        case Command.UsePersonalBuff:
-            HandleUsePersonalBuff(session, packet);
-            return;
-        case Command.UpgradeBuff:
-            HandleUpgradeBuff(session, packet);
-            return;
-        case Command.StartArcade:
-            HandleStartArcade(session, packet);
-            return;
-        case Command.EnterArcade:
-            HandleEnterArcade(session, packet);
-            return;
-        case Command.UpgradeHouseRank:
-            HandleUpgradeHouseRank(session, packet);
-            return;
-        case Command.UpgradeHouseTheme:
-            HandleUpgradeHouseTheme(session, packet);
-            return;
-        case Command.EnterHouse:
-            HandleEnterHouse(session);
-            return;
-        case Command.SendGift:
-            HandleSendGift(session, packet);
-            return;
-        case Command.UpdateGiftLog:
-            HandleUpdateGiftLog(session);
-            return;
-        case Command.Donate:
-            HandleDonate(session, packet);
-            return;
-        case Command.UpgradeNpc:
-            HandleUpgradeNpc(session, packet);
-            return;
-        case Command.CreateGuildEvent:
-            HandleCreateGuildEvent(session);
-            return;
-        case Command.StartGuildEvent:
-            HandleStartGuildEvent(session);
-            return;
-        case Command.JoinGuildEvent:
-            HandleJoinGuildEvent(session);
-            return;
+                HandleCreate(session, packet);
+                return;
+            case Command.Disband:
+                HandleDisband(session);
+                return;
+            case Command.Invite:
+                HandleInvite(session, packet);
+                return;
+            case Command.RespondInvite:
+                HandleRespondInvite(session, packet);
+                return;
+            case Command.Leave:
+                HandleLeave(session);
+                return;
+            case Command.Expel:
+                HandleExpel(session, packet);
+                return;
+            case Command.UpdateMemberRank:
+                HandleUpdateMemberRank(session, packet);
+                return;
+            case Command.UpdateMemberMessage:
+                HandleUpdateMemberMessage(session, packet);
+                return;
+            case Command.CheckIn:
+                HandleCheckIn(session);
+                return;
+            case Command.UpdateLeader:
+                HandleUpdateLeader(session, packet);
+                return;
+            case Command.UpdateNotice:
+                HandleUpdateNotice(session, packet);
+                return;
+            case Command.UpdateEmblem:
+                HandleUpdateEmblem(session, packet);
+                return;
+            case Command.IncreaseCapacity:
+                HandleIncreaseCapacity(session);
+                return;
+            case Command.UpdateRank:
+                HandleUpdateRank(session, packet);
+                return;
+            case Command.UpdateFocus:
+                HandleUpdateFocus(session, packet);
+                return;
+            case Command.SendMail:
+                HandleSendMail(session, packet);
+                return;
+            case Command.SendApplication:
+                HandleSendApplication(session, packet);
+                return;
+            case Command.CancelApplication:
+                HandleCancelApplication(session, packet);
+                return;
+            case Command.RespondApplication:
+                HandleRespondApplication(session, packet);
+                return;
+            case Command.ListApplications:
+                HandleListApplications(session);
+                return;
+            case Command.SearchGuilds:
+                HandleSearchGuilds(session, packet);
+                return;
+            case Command.SearchGuildName:
+                HandleSearchGuildName(session, packet);
+                return;
+            case Command.UseBuff:
+                HandleUseBuff(session, packet);
+                return;
+            case Command.UsePersonalBuff:
+                HandleUsePersonalBuff(session, packet);
+                return;
+            case Command.UpgradeBuff:
+                HandleUpgradeBuff(session, packet);
+                return;
+            case Command.StartArcade:
+                HandleStartArcade(session, packet);
+                return;
+            case Command.EnterArcade:
+                HandleEnterArcade(session, packet);
+                return;
+            case Command.UpgradeHouseRank:
+                HandleUpgradeHouseRank(session, packet);
+                return;
+            case Command.UpgradeHouseTheme:
+                HandleUpgradeHouseTheme(session, packet);
+                return;
+            case Command.EnterHouse:
+                HandleEnterHouse(session);
+                return;
+            case Command.SendGift:
+                HandleSendGift(session, packet);
+                return;
+            case Command.UpdateGiftLog:
+                HandleUpdateGiftLog(session);
+                return;
+            case Command.Donate:
+                HandleDonate(session, packet);
+                return;
+            case Command.UpgradeNpc:
+                HandleUpgradeNpc(session, packet);
+                return;
+            case Command.CreateGuildEvent:
+                HandleCreateGuildEvent(session);
+                return;
+            case Command.StartGuildEvent:
+                HandleStartGuildEvent(session);
+                return;
+            case Command.JoinGuildEvent:
+                HandleJoinGuildEvent(session);
+                return;
         }
     }
 

@@ -1,7 +1,7 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
-namespace Maple2.Model.Game; 
+namespace Maple2.Model.Game;
 
 public class UgcItemMusicScore : IByteSerializable, IByteDeserializable {
     public void WriteTo(IByteWriter writer) {

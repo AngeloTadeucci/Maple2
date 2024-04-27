@@ -280,9 +280,9 @@ public sealed class ShopManager {
             currencyType = multiplierCost.CurrencyType;
         }
         if (!Pay(new ShopCost {
-                Amount = cost,
-                Type = currencyType,
-            }, activeShop.RestockData.Cost)) {
+            Amount = cost,
+            Type = currencyType,
+        }, activeShop.RestockData.Cost)) {
             return;
         }
 
@@ -441,9 +441,9 @@ public sealed class ShopManager {
         }
 
         if (!Pay(new ShopCost {
-                Type = ShopCurrencyType.Meso,
-                Amount = (int) buyBackItem.Price,
-            }, (int) buyBackItem.Price)) {
+            Type = ShopCurrencyType.Meso,
+            Amount = (int) buyBackItem.Price,
+        }, (int) buyBackItem.Price)) {
             return;
         }
 

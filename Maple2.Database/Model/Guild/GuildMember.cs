@@ -43,7 +43,7 @@ internal class GuildMember {
 
     public static void Configure(EntityTypeBuilder<GuildMember> builder) {
         builder.ToTable("guild-member");
-        builder.HasKey(member => new {member.GuildId, member.CharacterId});
+        builder.HasKey(member => new { member.GuildId, member.CharacterId });
         builder.OneToOne<GuildMember, Character>(member => member.Character)
             .HasForeignKey<GuildMember>(member => member.CharacterId);
         builder.HasOne<Guild>()

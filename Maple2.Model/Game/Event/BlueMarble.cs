@@ -12,7 +12,7 @@ namespace Maple2.Model.Game.Event;
 public class BlueMarble : GameEventInfo {
     public IList<BlueMarbleEntry> Entries { get; set; }
     public IList<BlueMarbleTile> Tiles { get; set; }
-    
+
     public BlueMarble() {
         Entries = new List<BlueMarbleEntry>();
         Tiles = new List<BlueMarbleTile>();
@@ -28,10 +28,10 @@ public class BlueMarble : GameEventInfo {
 }
 
 public class BlueMarbleTile : IByteSerializable {
-    public int Position {get; init;}
-    public BlueMarbleTileType Type {get; init;}
-    public int MoveAmount {get; init;}
-    public BlueMarbleItem Item {get; init;}
+    public int Position { get; init; }
+    public BlueMarbleTileType Type { get; init; }
+    public int MoveAmount { get; init; }
+    public BlueMarbleItem Item { get; init; }
 
     public void WriteTo(IByteWriter writer) {
         writer.Write<BlueMarbleTileType>(Type);

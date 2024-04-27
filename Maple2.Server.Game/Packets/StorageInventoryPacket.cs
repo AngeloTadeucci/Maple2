@@ -79,7 +79,7 @@ public static class StorageInventoryPacket {
         var pWriter = Packet.Of(SendOp.StorageInventory);
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteLong(); // Unknown (0)
-        pWriter.WriteShort((short)items.Count);
+        pWriter.WriteShort((short) items.Count);
         foreach (Item item in items) {
             pWriter.WriteInt(item.Id);
             pWriter.WriteLong(item.Uid);
@@ -96,7 +96,7 @@ public static class StorageInventoryPacket {
         var pWriter = Packet.Of(SendOp.StorageInventory);
         pWriter.Write<Command>(Command.Reload);
         pWriter.WriteLong(); // Unknown (0)
-        pWriter.WriteShort((short)items.Count);
+        pWriter.WriteShort((short) items.Count);
         foreach (Item item in items) {
             pWriter.WriteInt(item.Id);
             pWriter.WriteLong(item.Uid);

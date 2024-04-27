@@ -23,7 +23,7 @@ public partial class ChannelService {
             case GuildRequest.GuildOneofCase.UpdateMember:
                 return Task.FromResult(UpdateGuildMember(request.ReceiverIds, request.UpdateMember));
             default:
-                return Task.FromResult(new GuildResponse {Error = (int) GuildError.s_guild_err_none});
+                return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
     }
 
@@ -31,13 +31,13 @@ public partial class ChannelService {
         // There really should only be 1 receiver here, but whatever.
         foreach (long receiverId in receiverIds) {
             if (!server.GetSession(receiverId, out GameSession? session)) {
-                return new GuildResponse {Error = (int) GuildError.s_guild_err_wait_inviting};
+                return new GuildResponse { Error = (int) GuildError.s_guild_err_wait_inviting };
             }
             if (session.Buddy.IsBlocked(invite.SenderId)) {
-                return new GuildResponse {Error = (int) GuildError.s_guild_err_blocked};
+                return new GuildResponse { Error = (int) GuildError.s_guild_err_blocked };
             }
             if (session.Guild.Guild != null) {
-                return new GuildResponse {Error = (int) GuildError.s_guild_err_has_guild};
+                return new GuildResponse { Error = (int) GuildError.s_guild_err_has_guild };
             }
 
             var guildInvite = new GuildInvite {
@@ -66,7 +66,7 @@ public partial class ChannelService {
 
     private GuildResponse AddGuildMember(long guildId, IEnumerable<long> receiverIds, GuildRequest.Types.AddMember add) {
         if (!playerInfos.GetOrFetch(add.CharacterId, out PlayerInfo? info)) {
-            return new GuildResponse {Error = (int) GuildError.s_guild_err_fail_addmember};
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_fail_addmember };
         }
 
         foreach (long characterId in receiverIds) {

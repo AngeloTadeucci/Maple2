@@ -23,7 +23,7 @@ public class QuestCommand : Command {
         this.questStorage = questStorage;
 
         var id = new Argument<int>("id", "Id of quest to modify.");
-        var state = new Option<QuestState>(new[] {"--state", "-s"}, () => QuestState.None, "State of the quest.");
+        var state = new Option<QuestState>(new[] { "--state", "-s" }, () => QuestState.None, "State of the quest.");
 
         AddArgument(id);
         AddOption(state);

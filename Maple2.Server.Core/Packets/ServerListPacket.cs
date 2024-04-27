@@ -24,10 +24,10 @@ public static class ServerListPacket {
         pWriter.WriteInt(1); // Unknown
         pWriter.WriteUnicodeString(serverName);
         pWriter.WriteByte(4); // IPv4?
-        pWriter.Write<ushort>((ushort)serverIps.Count);
+        pWriter.Write<ushort>((ushort) serverIps.Count);
         foreach (IPEndPoint endpoint in serverIps) {
             pWriter.WriteUnicodeString(endpoint.Address.ToString());
-            pWriter.Write<ushort>((ushort)endpoint.Port);
+            pWriter.Write<ushort>((ushort) endpoint.Port);
         }
         pWriter.WriteInt(100); // Const
 

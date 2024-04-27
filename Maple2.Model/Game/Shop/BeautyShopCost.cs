@@ -16,7 +16,7 @@ public class BeautyShopCost : IByteSerializable {
         Type = type;
         ItemId = itemId;
         Amount = amount;
-        
+
         // TODO: This is a hack to get the icon code for the item ID. This should be replaced with a proper lookup.
         ItemIdIconCode = ItemId is >= 20500001 and < 20600001 ? "20500001" : string.Empty;
     }

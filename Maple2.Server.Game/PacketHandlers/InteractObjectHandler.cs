@@ -76,7 +76,7 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
             ICollection<Item> items = new List<Item>();
             if (interact.Value.Drop.IndividualDropBoxIds.Length > 0) {
                 foreach (int individualDropBoxId in interact.Value.Drop.IndividualDropBoxIds) {
-                    ICollection<Item> individualDropBoxItems =  session.Item.GetIndividualDropBoxItems(individualDropBoxId, interact.Value.Drop.Rarity);
+                    ICollection<Item> individualDropBoxItems = session.Item.GetIndividualDropBoxItems(individualDropBoxId, interact.Value.Drop.Rarity);
                     items.Add(individualDropBoxItems.ElementAt(Random.Shared.Next(individualDropBoxItems.Count)));
                 }
             }

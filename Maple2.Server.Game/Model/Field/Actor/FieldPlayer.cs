@@ -57,7 +57,7 @@ public class FieldPlayer : Actor<Player> {
         if (InBattle && tickCount - battleTick > 2000) {
             InBattle = false;
         }
-        
+
         Buffs.Update(tickCount);
     }
 

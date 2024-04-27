@@ -32,8 +32,8 @@ public class RideMapper : TypeMapper<RideMetadata> {
                     Passengers: passengers.GetValueOrDefault(id)),
                 Speed: new RideMetadataSpeed(
                     WalkSpeed: data.basic.walkSpeed,
-                    RunSpeed:data.basic.runSpeed,
-                    RunXSpeed:data.basic.runXSpeed,
+                    RunSpeed: data.basic.runSpeed,
+                    RunXSpeed: data.basic.runXSpeed,
                     SwimSpeed: data.basic.swimSpeed),
                 Stats: data.stat.ToDictionary()
             );

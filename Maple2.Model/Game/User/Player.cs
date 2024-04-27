@@ -36,7 +36,7 @@ public class Unlock {
     public readonly IDictionary<int, FishEntry> FishAlbum = new Dictionary<int, FishEntry>();
     // TODO: Determine where to save this data.
     public readonly IDictionary<int, Quest> Quests = new Dictionary<int, Quest>();
-    
+
     // Used for trophies
     public readonly ISet<int> InteractedObjects = new SortedSet<int>();
     public readonly IDictionary<int, byte> CollectedItems = new Dictionary<int, byte>();

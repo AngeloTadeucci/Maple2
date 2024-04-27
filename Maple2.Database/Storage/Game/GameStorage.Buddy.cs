@@ -27,7 +27,7 @@ public partial class GameStorage {
         }
 
         public BuddyEntry? CreateBuddy(long ownerId, long buddyId, BuddyType type, string message = "") {
-            var model = new Model.Buddy{
+            var model = new Model.Buddy {
                 OwnerId = ownerId,
                 BuddyId = buddyId,
                 Type = type,

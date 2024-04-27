@@ -10,7 +10,7 @@ public static class ItemExchangeScrollPacket {
         Unknown0 = 0,
         Error = 2
     }
-    
+
     public static ByteWriter Unknown0() {
         var pWriter = Packet.Of(SendOp.ItemExchange);
         pWriter.Write<Command>(Command.Unknown0);

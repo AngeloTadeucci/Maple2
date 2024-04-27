@@ -33,12 +33,12 @@ public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
 
         writer.WriteInt(BasicOptions.Count);
         foreach ((BasicAttribute type, BasicOption option) in BasicOptions) {
-            writer.WriteShort((short)type);
+            writer.WriteShort((short) type);
             writer.Write<BasicOption>(option);
         }
         writer.WriteInt(SpecialOptions.Count);
         foreach ((SpecialAttribute type, SpecialOption option) in SpecialOptions) {
-            writer.WriteShort((short)type);
+            writer.WriteShort((short) type);
             writer.Write<SpecialOption>(option);
         }
     }
@@ -48,12 +48,12 @@ public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
 
         int statCount = reader.ReadInt();
         for (int i = 0; i < statCount; i++) {
-            var type = (BasicAttribute)reader.ReadShort();
+            var type = (BasicAttribute) reader.ReadShort();
             BasicOptions[type] = reader.Read<BasicOption>();
         }
         int specialCount = reader.ReadInt();
         for (int i = 0; i < specialCount; i++) {
-            var type = (SpecialAttribute)reader.ReadShort();
+            var type = (SpecialAttribute) reader.ReadShort();
             SpecialOptions[type] = reader.Read<SpecialOption>();
         }
     }

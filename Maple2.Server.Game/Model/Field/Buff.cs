@@ -149,7 +149,7 @@ public class Buff : IUpdatable, IByteSerializable {
                         break;
                 }
             } else if (effect.Splash != null) {
-                field.AddSkill(Caster, effect, new[] {Owner.Position}, Owner.Rotation);
+                field.AddSkill(Caster, effect, new[] { Owner.Position }, Owner.Rotation);
             }
         }
 

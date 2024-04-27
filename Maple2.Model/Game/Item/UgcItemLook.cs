@@ -1,5 +1,4 @@
-﻿using Maple2.Model.Enum;
-using Maple2.PacketLib.Tools;
+﻿using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
 namespace Maple2.Model.Game;

@@ -9,8 +9,8 @@ public partial class WorldService {
     public override Task<ChatResponse> Chat(ChatRequest request, ServerCallContext context) {
         switch (request.ChatCase) {
             case ChatRequest.ChatOneofCase.Whisper: {
-                return WhisperChat(request);
-            }
+                    return WhisperChat(request);
+                }
             case ChatRequest.ChatOneofCase.Party:
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Guild:

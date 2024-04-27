@@ -4,20 +4,17 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class UgcMarket : Migration
-    {
+    public partial class UgcMarket : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<byte>(
                 name: "Type",
                 table: "ugcresource",
                 type: "tinyint unsigned",
                 nullable: false,
-                defaultValue: (byte)0);
+                defaultValue: (byte) 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "TabId",
@@ -54,8 +51,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "ugc-market-item-sold",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Price = table.Column<long>(type: "bigint", nullable: false),
@@ -66,8 +62,7 @@ namespace Maple2.Server.World.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     AccountId = table.Column<long>(type: "bigint", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_ugc-market-item-sold", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ugc-market-item-sold_Account_AccountId",
@@ -85,8 +80,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "ugc-market-item-sold");
 

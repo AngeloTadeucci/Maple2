@@ -61,7 +61,7 @@ public static class PetInventoryPacket {
     public static ByteWriter Load(ICollection<Item> items) {
         var pWriter = Packet.Of(SendOp.PetInventory);
         pWriter.Write<Command>(Command.Load);
-        pWriter.WriteShort((short)items.Count);
+        pWriter.WriteShort((short) items.Count);
         foreach (Item item in items) {
             pWriter.WriteInt(item.Id);
             pWriter.WriteLong(item.Uid);
