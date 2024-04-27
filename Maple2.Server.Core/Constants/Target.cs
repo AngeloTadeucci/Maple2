@@ -44,7 +44,10 @@ public static class Target {
             GrpcChannelPort = grpcChannelPortOverride;
         }
 
-        if (Uri.TryCreate(Environment.GetEnvironmentVariable("WEB_URI"), UriKind.Absolute, out Uri? webUriOverride)) {
+        string webIP = Environment.GetEnvironmentVariable("WEB_IP") ?? "localhost";
+        string webPort = Environment.GetEnvironmentVariable("WEB_PORT") ?? "4000";
+
+        if (Uri.TryCreate($"http://{webIP}:{webPort}", UriKind.Absolute, out Uri? webUriOverride)) {
             WebUri = webUriOverride;
         }
     }
