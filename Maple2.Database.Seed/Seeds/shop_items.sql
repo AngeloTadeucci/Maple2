@@ -1,3 +1,5 @@
+﻿DROP TABLE IF EXISTS `game-server`.`shop-item`;
+
 INSERT INTO `game-server`.`shop-item` (ShopId,ItemId,CurrencyType,CurrencyItemId,Price,SalePrice,Rarity,StockCount,RequireGuildTrophy,RequireAchievementId,RequireAchievementRank,RequireChampionshipGrade,RequireChampionshipJoinCount,RequireGuildMerchantType,RequireGuildMerchantLevel,Quantity,Label,IconCode,RequireQuestAllianceId,RequireFameGrade,AutoPreviewEquip,Category,RestrictedBuyData) VALUES
 	 (101,63000000,0,0,1000,0,1,0,0,0,0,0,0,0,0,1,0,'',0,0,0,'PS',NULL),
 	 (101,40400020,0,0,50000,0,3,0,0,0,0,0,0,0,0,1,0,'',0,0,0,'Flight',NULL),

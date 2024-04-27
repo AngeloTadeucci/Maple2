@@ -1,3 +1,5 @@
+﻿DROP TABLE IF EXISTS `game-server`.`premium-market-item`;
+
 INSERT INTO `game-server`.`premium-market-item` (Id, ParentId, TabId, ItemId, Rarity, Quantity, BonusQuantity,
                                                  ItemDuration, CurrencyType, Price, SalePrice, SellBeginTime,
                                                  SellEndTime, SalesCount, Label, JobRequirement, RequireAchievementId,
