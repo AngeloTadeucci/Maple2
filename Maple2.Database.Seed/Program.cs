@@ -8,12 +8,11 @@ DotEnv.Load();
 
 string? server = Environment.GetEnvironmentVariable("DB_IP");
 string? port = Environment.GetEnvironmentVariable("DB_PORT");
-string? database = Environment.GetEnvironmentVariable("DATA_DB_NAME");
+string? database = Environment.GetEnvironmentVariable("GAME_DB_NAME");
 string? user = Environment.GetEnvironmentVariable("DB_USER");
 string? password = Environment.GetEnvironmentVariable("DB_PASSWORD");
 
-if (server == null || port == null || database == null || user == null || password == null)
-{
+if (server == null || port == null || database == null || user == null || password == null) {
     throw new ArgumentException("Database connection information was not set");
 }
 
@@ -43,31 +42,36 @@ string[] seeds =
 
 Console.WriteLine("Seeding...");
 
-foreach (string seed in seeds)
-{
+foreach (string seed in seeds) {
     Seed(seed);
 }
 
 Console.WriteLine("Seeding complete!");
 
 
-void Seed(string type)
-{
+void Seed(string type) {
     Stopwatch stopwatch = new();
 
     Console.Write($"Seeding {type}... ");
 
     string fileLines = File.ReadAllText(Path.Combine(Paths.DB_SEEDS_DIR, $"{type}.sql"));
-    ExecuteSqlFile(fileLines);
-
-    Console.Write($"finished in {stopwatch.ElapsedMilliseconds}ms");
-    Console.WriteLine();
+    if (ExecuteSqlFile(fileLines)) {
+        Console.Write($"finished in {stopwatch.ElapsedMilliseconds}ms");
+        Console.WriteLine();
+    } else {
+        Console.WriteLine("Failed to seed {type}");
+    }
 }
 
-void ExecuteSqlFile(string fileLines)
-{
+bool ExecuteSqlFile(string fileLines) {
     fileLines = fileLines.Replace("\n", "").Replace("\r", "").Replace("\t", "").Replace("{", "{{").Replace("}", "}}");
 
-    ms2Context.Database.ExecuteSqlRaw(fileLines);
+    try {
+        ms2Context.Database.ExecuteSqlRaw(fileLines);
+        return true;
+    } catch (Exception e) {
+        Console.Error.WriteLine(e.Message);
+        return false;
+    }
 }
 
