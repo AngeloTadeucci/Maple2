@@ -43,7 +43,7 @@ public static class ChatStickerPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Use(int stickerId, string html) {
         var pWriter = Packet.Of(SendOp.ChatStamp);
         pWriter.Write<Command>(Command.Use);
@@ -53,7 +53,16 @@ public static class ChatStickerPacket {
 
         return pWriter;
     }
-    
+
+    public static ByteWriter GroupChat(int stickerId, string groupChatName) {
+        var pWriter = Packet.Of(SendOp.ChatStamp);
+        pWriter.Write<Command>(Command.GroupChat);
+        pWriter.WriteInt(stickerId);
+        pWriter.WriteUnicodeString(groupChatName);
+
+        return pWriter;
+    }
+
     public static ByteWriter Favorite(int stickerId) {
         var pWriter = Packet.Of(SendOp.ChatStamp);
         pWriter.Write<Command>(Command.Favorite);
@@ -61,7 +70,7 @@ public static class ChatStickerPacket {
 
         return pWriter;
     }
-    
+
     public static ByteWriter Unfavorite(int stickerId) {
         var pWriter = Packet.Of(SendOp.ChatStamp);
         pWriter.Write<Command>(Command.Unfavorite);

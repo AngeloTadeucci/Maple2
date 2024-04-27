@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
 using Maple2.Server.World.Containers;
 using ChannelPartyRequest = Maple2.Server.Channel.Service.PartyRequest;
 

@@ -17,6 +17,8 @@ service Channel {
   rpc Guild(GuildRequest) returns (GuildResponse);
   // Manage party.
   rpc Party(PartyRequest) returns (PartyResponse);
+  // Manage group chat.
+  rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
 
   // Notify character about new mail.
   rpc MailNotification(maple2.MailNotificationRequest) returns (maple2.MailNotificationResponse);

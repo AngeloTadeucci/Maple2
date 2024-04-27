@@ -1,4 +1,4 @@
-﻿namespace Maple2.Model.Game;
+﻿namespace Maple2.Model.Game.Party;
 
 public class PartyInvite {
     public enum Response : byte {

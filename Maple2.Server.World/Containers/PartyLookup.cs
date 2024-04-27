@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
 
 namespace Maple2.Server.World.Containers;
 

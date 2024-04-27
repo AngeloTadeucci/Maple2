@@ -79,3 +79,62 @@ message BuddyRequest {
 message BuddyResponse {
   int32 channel = 1;
 }
+
+message GroupChatInfo {
+  message Member {
+    int64 character_id = 1;
+  }
+
+  int32 id = 1;
+  repeated Member members = 2;
+}
+
+message GroupChatRequest {
+  message Create {}
+
+  message Invite {
+    int64 receiver_id = 1;
+    string receiver_name = 2;
+  }
+
+  message Leave {}
+
+  message RemoveMember {
+    int64 character_id = 1;
+  }
+
+  message AddMember {
+    int64 requester_id = 1;
+    string requester_name = 2;
+    int64 character_id = 3;
+  }
+
+  message Chat {
+    string message = 1;
+    string requester_name = 2;
+  }
+
+  message Disband {}
+
+  int32 group_chat_id = 1;
+  int64 requester_id = 2;
+  repeated int64 receiver_ids = 3;
+  oneof group_chat {
+    Create create = 4;
+    Invite invite = 5;
+    Leave leave = 6;
+    RemoveMember remove_member = 7;
+    AddMember add_member = 8;
+    Chat chat = 9;
+    Disband disband = 10;
+  }
+}
+
+message GroupChatResponse {
+  oneof Info {
+    int32 group_chat_id = 1;
+    GroupChatInfo group_chat = 2;
+  }
+
+  int32 error = 3;
+}

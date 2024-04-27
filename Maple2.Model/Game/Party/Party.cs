@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 
-namespace Maple2.Model.Game;
+namespace Maple2.Model.Game.Party;
 
 public class Party : IByteSerializable {
     private int capacity = Constant.PartyMaxCapacity;

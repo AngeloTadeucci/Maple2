@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
 using Maple2.Server.Core.Sync;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
 using Maple2.Server.Channel.Service;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;

@@ -1,9 +1,14 @@
-﻿using System.Linq;
+﻿using System;
+using System.Numerics;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
+using Maple2.Tools;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-public class PlayerInfo : CharacterInfo, IPlayerInfo {
+public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     // Home/Plot
     public string HomeName { get; set; }
     public int PlotMapId { get; set; }
@@ -30,6 +35,59 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo {
 
     public PlayerInfo Clone() {
         return (PlayerInfo) MemberwiseClone();
+    }
+
+    public void WriteTo(IByteWriter writer) {
+        writer.WriteLong(AccountId);
+        writer.WriteLong(CharacterId);
+        writer.WriteUnicodeString(Name);
+        writer.Write<Gender>(Gender);
+        writer.WriteByte(1);
+        writer.WriteLong();
+        writer.WriteInt();
+        writer.WriteInt(MapId);
+        writer.WriteInt(MapId);
+        writer.WriteInt(PlotMapId);
+        writer.WriteShort(Level);
+        writer.WriteShort(Channel);
+        writer.WriteInt((int) Job.Code());
+        writer.Write<Job>(Job);
+        writer.WriteInt((int) CurrentHp);
+        writer.WriteInt((int) TotalHp);
+        writer.WriteShort();
+        writer.WriteLong();
+        writer.WriteLong();
+        writer.WriteLong();
+        writer.WriteInt();
+        writer.Write<Vector3>(default);
+        writer.WriteInt(GearScore);
+        writer.Write<SkinColor>(default);
+        writer.WriteLong();
+        writer.Write<AchievementInfo>(default);
+        writer.WriteLong();
+        writer.WriteUnicodeString();
+        writer.WriteUnicodeString(Motto);
+        writer.WriteUnicodeString(Picture);
+        writer.WriteByte();
+        writer.WriteByte();
+        writer.WriteClass<Mastery>(new Mastery());
+        writer.WriteUnicodeString();
+        writer.WriteLong();
+        writer.WriteLong();
+        writer.WriteLong();
+        writer.WriteInt();
+        writer.WriteByte();
+        writer.WriteBool(false);
+        writer.WriteLong();
+        writer.WriteInt();
+        writer.WriteInt();
+        writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        writer.WriteInt();
+        writer.WriteLong();
+        writer.WriteInt();
+        writer.WriteInt();
+        writer.WriteShort();
+        writer.WriteLong();
     }
 }
 
@@ -92,4 +150,6 @@ public class CharacterInfo {
                 Channel = player.Character.Channel,
             };
     }
+
+
 }

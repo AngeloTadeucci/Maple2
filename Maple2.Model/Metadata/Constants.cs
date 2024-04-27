@@ -79,6 +79,8 @@ public static class Constant {
     public const int FishingNpcId = 11001609;
     public const int PartyMaxCapacity = 10;
     public const int PartyMinCapacity = 4;
+    public const int GroupChatMaxCapacity = 20;
+    public const int GroupChatMaxCount = 3;
 
 
     public const long FurnishingBaseId = 2870000000000000000;

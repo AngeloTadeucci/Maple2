@@ -24,6 +24,9 @@ service World {
   // Manage party.
   rpc PartyInfo(PartyInfoRequest) returns (PartyInfoResponse);
   rpc Party(PartyRequest) returns (PartyResponse);
+  // Manage group chat.
+  rpc GroupChatInfo(GroupChatInfoRequest) returns (GroupChatInfoResponse);
+  rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
   // Retrieve player info from online player.
   rpc PlayerInfo(maple2.PlayerInfoRequest) returns (maple2.PlayerInfoResponse);
   // Update player info
@@ -175,6 +178,15 @@ message GuildResponse {
   }
 
   int32 error = 3;
+}
+
+message GroupChatInfoRequest {
+  optional int32 group_chat_id = 1;
+  optional int64 character_id = 2;
+}
+
+message GroupChatInfoResponse {
+  repeated GroupChatInfo infos = 3;
 }
 
 message PartyInfo {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -11,6 +12,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
+using Maple2.Model.Game.GroupChat;
 using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -89,6 +91,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public FieldManager? Field { get; set; }
     public FieldPlayer Player { get; private set; }
     public PartyManager Party { get; set; }
+    public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
         this.server = server;
@@ -98,6 +101,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
 
         OnLoop += Scheduler.InvokeAll;
+        GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
@@ -144,6 +148,15 @@ public sealed partial class GameSession : Core.Network.Session {
         UgcMarket = new UgcMarketManager(this);
         Party = new PartyManager(World, this);
 
+        GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
+            CharacterId = CharacterId,
+        });
+
+        foreach(GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
+            GroupChatManager manager = new GroupChatManager(groupChatInfo, this);
+            GroupChats.TryAdd(groupChatInfo.Id, manager);
+        }
+
         if (!PrepareField(player.Character.MapId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
@@ -168,6 +181,9 @@ public sealed partial class GameSession : Core.Network.Session {
         // UserConditionEvent
         // PCBangBonus
         Guild.Load();
+        foreach ((int id, GroupChatManager groupChat) in GroupChats) {
+            groupChat.Load();
+        }
         // Club
         Buddy.Load();
         Party.Load();
@@ -442,6 +458,9 @@ public sealed partial class GameSession : Core.Network.Session {
             Guild.Dispose();
             Buddy.Dispose();
             Party.Dispose();
+            foreach ((int groupChatId, GroupChatManager groupChat) in GroupChats) {
+                groupChat.CheckDisband();
+            }
 
             using (GameStorage.Request db = GameStorage.Context()) {
                 db.BeginTransaction();

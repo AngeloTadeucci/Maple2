@@ -33,6 +33,9 @@ public class ChatStickerHandler : PacketHandler<GameSession> {
             case Command.Use:
                 HandleUse(session, packet);
                 break;
+            case Command.GroupChat:
+                HandleGroupChat(session, packet);
+                break;
             case Command.Favorite:
                 HandleFavorite(session, packet);
                 break;
@@ -51,6 +54,17 @@ public class ChatStickerHandler : PacketHandler<GameSession> {
         }
 
         session.Send(ChatStickerPacket.Use(stickerId, html));
+    }
+
+    private void HandleGroupChat(GameSession session, IByteReader packet) {
+        int stickerId = packet.ReadInt();
+        string groupChatName = packet.ReadUnicodeString();
+
+        if (!TryUseSticker(session.Player.Value.Unlock, stickerId)) {
+            return;
+        }
+
+        session.Send(ChatStickerPacket.GroupChat(stickerId, groupChatName));
     }
 
     private void HandleFavorite(GameSession session, IByteReader packet) {

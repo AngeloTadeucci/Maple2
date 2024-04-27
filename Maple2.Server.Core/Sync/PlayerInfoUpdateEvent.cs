@@ -21,6 +21,7 @@ public enum UpdateField {
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
     Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy,
     Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home,
+    GroupChat = Profile | Job | Level | Map,
     All = int.MaxValue,
 }
 
