@@ -1,3 +1,5 @@
+﻿DROP TABLE IF EXISTS `game-server`.`beauty-shop`;
+
 INSERT INTO `game-server`.`beauty-shop` (Id, Unknown1, Unknown2, Category, ShopType, ShopSubType, VoucherId,
                                          ServiceRewardItemId, ServiceCostCurrencyType, ServiceCostItemId,
                                          ServiceCostAmount, RecolorCostCurrencyType, RecolorCostItemId,

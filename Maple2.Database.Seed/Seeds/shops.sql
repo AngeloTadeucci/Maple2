@@ -1,3 +1,5 @@
+﻿DROP TABLE IF EXISTS `game-server`.`shop`;
+
 INSERT INTO `game-server`.shop (Id, CategoryId,Name,Skin,HideUnuseable,HideStats,DisableBuyback,OpenWallet,DisplayNew,RandomizeOrder,RestockTime,RestockData) VALUES
 	 (101,3,'shop',0,0,0,0,0,0,0,'1969-12-31 16:00:00',NULL),
 	 (103,3,'shop',0,0,0,0,0,0,0,'1969-12-31 16:00:00',NULL),
