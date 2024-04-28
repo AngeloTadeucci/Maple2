@@ -1,6 +1,4 @@
-﻿DROP TABLE IF EXISTS `game-server`.`beauty-shop-entry`;
-
-INSERT INTO `game-server`.`beauty-shop-entry` (ItemId, ShopId, Label, RequireLevel, RequireAchievementId,
+﻿INSERT INTO `game-server`.`beauty-shop-entry` (ItemId, ShopId, Label, RequireLevel, RequireAchievementId,
                                                RequireAchievementRank, CostType, CostAmount, CostItemId)
 VALUES (10200001, 504, 0, 0, 0, 0, 9, 450, 0),
        (10200002, 504, 0, 0, 0, 0, 9, 450, 0),
