@@ -110,7 +110,7 @@ if ($answer -eq "y") {
     (Get-Content .env) | Where-Object { $_ -notmatch "DB_USER" } | Set-Content .env
     (Get-Content .env) | Where-Object { $_ -notmatch "DB_PASSWORD" } | Set-Content .env
 
-    # Write to the .env file under the MYSQL_* variables
+    # Write to the .env file under the DB_* variables
     Add-Content -Path .env -Value "# Database connection"
     Add-Content -Path .env -Value "DB_IP=$ip"
     Add-Content -Path .env -Value "DB_PORT=$port"
