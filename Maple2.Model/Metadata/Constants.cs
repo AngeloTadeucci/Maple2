@@ -3,6 +3,9 @@
 using System;
 using Maple2.Model.Enum;
 
+#pragma warning disable IDE1006 // Naming Styles
+
+
 namespace Maple2.Model.Metadata;
 
 public static class Constant {
@@ -825,5 +828,9 @@ public static class Constant {
     public const int PaybackMaxRewardMeret = 10000;
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
 
+    public const int NextStateTriggerDefaultTick = 100;
+
     #endregion
 }
+
+#pragma warning restore IDE1006 // Naming Styles

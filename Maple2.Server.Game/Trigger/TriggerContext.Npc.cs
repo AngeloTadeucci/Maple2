@@ -46,28 +46,7 @@ public partial class TriggerContext {
 
     private void SpawnMonster(int spawnId) {
         DebugLog("[SpawnMonster] spawnId:{SpawnId}", spawnId);
-        if (!Field.Entities.EventNpcSpawns.TryGetValue(spawnId, out EventSpawnPointNPC? spawn)) {
-            logger.Error("[SpawnMonster] Invalid spawnId:{SpawnId}", spawnId);
-            return;
-        }
-
-        foreach (int npcId in spawn.NpcIds) {
-            if (!Field.NpcMetadata.TryGet(npcId, out NpcMetadata? npc)) {
-                logger.Error("[SpawnMonster] Invalid npcId:{NpcId}", npcId);
-                continue;
-            }
-
-            FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
-            if (fieldNpc == null) {
-                logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", npcId);
-                continue;
-            }
-
-            fieldNpc.SpawnPointId = spawnId;
-
-            Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
-            Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
-        }
+        SpawnNpc(spawnId);
     }
 
     public void InitNpcRotation(int[] spawnIds) {
@@ -120,11 +99,17 @@ public partial class TriggerContext {
     }
 
     public void SetNpcEmotionLoop(int spawnId, string sequenceName, float duration) {
-        ErrorLog("[SetNpcEmotionLoop] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, duration);
+        WarnLog("[SetNpcEmotionLoop] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, duration);
+
+        FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        fieldNpc?.Animate(sequenceName, duration);
     }
 
     public void SetNpcEmotionSequence(int spawnId, string sequenceName, int durationTick) {
-        ErrorLog("[SetNpcEmotionSequence] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, durationTick);
+        WarnLog("[SetNpcEmotionSequence] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, durationTick);
+
+        FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        fieldNpc?.Animate(sequenceName);
     }
 
     public void SetNpcRotation(int spawnId, float rotation) {
@@ -139,6 +124,10 @@ public partial class TriggerContext {
     public void SpawnNpcRange(int[] spawnIds, bool isAutoTargeting, int randomPickCount, int score) {
         ErrorLog("[SpawnNpcRange] spawnIds:{SpawnIds}, isAutoTargeting:{AutoTarget}, randomPickCount:{RandomCount}, score:{Score}",
             string.Join(", ", spawnIds), isAutoTargeting, randomPickCount, score);
+
+        foreach (int spawnId in spawnIds) {
+            SpawnNpc(spawnId);
+        }
     }
 
     #region Conditions
@@ -220,5 +209,30 @@ public partial class TriggerContext {
             .Where(box => box != null)!;
 
         return Field.Npcs.Values.Where(mob => boxes.Any(box => box.Contains(mob.Position)));
+    }
+
+    private void SpawnNpc(int spawnId) {
+        if (!Field.Entities.EventNpcSpawns.TryGetValue(spawnId, out EventSpawnPointNPC? spawn)) {
+            logger.Error("[SpawnMonster] Invalid spawnId:{SpawnId}", spawnId);
+            return;
+        }
+
+        foreach (int npcId in spawn.NpcIds) {
+            if (!Field.NpcMetadata.TryGet(npcId, out NpcMetadata? npc)) {
+                logger.Error("[SpawnMonster] Invalid npcId:{NpcId}", npcId);
+                continue;
+            }
+
+            FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
+            if (fieldNpc == null) {
+                logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", npcId);
+                continue;
+            }
+
+            fieldNpc.SpawnPointId = spawnId;
+
+            Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
+            Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
+        }
     }
 }

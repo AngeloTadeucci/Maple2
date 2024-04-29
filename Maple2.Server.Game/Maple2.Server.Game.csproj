@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
         <LangVersion>11</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -27,7 +28,7 @@
         </PackageReference>
         <PackageReference Include="Maple2.Lua" Version="2.0.0" />
         <PackageReference Include="Maple2.PathEngine" Version="5.36.5" />
-        <PackageReference Include="Maple2.Trigger" Version="1.1.2" />
+        <PackageReference Include="Maple2.Trigger.Tadeucci" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
         <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
         <PackageReference Include="Serilog.Expressions" Version="3.4.1" />

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -81,7 +79,7 @@ public class FieldNpc : Actor<Npc> {
     public int TargetId = 0;
 
     public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base(field, objectId, npc) {
-        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f);
+        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         defaultRoutines = new WeightedSet<string>();
         foreach (NpcAction action in Value.Metadata.Action.Actions) {
@@ -158,5 +156,14 @@ public class FieldNpc : Actor<Npc> {
         CurrentRoutine.OnCompleted();
         SendControl = false;
         Remove(delay: (int) (Value.Metadata.Dead.Time * 1000));
+    }
+
+    public virtual void Animate(string sequenceName, float duration = -1f) {
+        if (!Value.Animations.TryGetValue(sequenceName, out AnimationSequence? sequence)) {
+            Logger.Error("Invalid sequence: {Sequence} for npc {NpcId}", sequenceName, Value.Metadata.Id);
+            return;
+        }
+
+        CurrentRoutine = new AnimateRoutine(this, sequence, duration);
     }
 }

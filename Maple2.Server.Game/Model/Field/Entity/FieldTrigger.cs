@@ -43,7 +43,8 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
             return;
         }
 
-        nextTick += Constant.OnEnterTriggerDefaultTick;
+        nextTick += Constant.NextStateTriggerDefaultTick;
+
         if (nextState != null) {
             context.DebugLog("[OnExit] {State}", state?.GetType().ToString() ?? "null");
             state?.OnExit();
@@ -55,5 +56,11 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         }
 
         nextState = state?.Execute();
+    }
+    /// <summary>
+    /// Should only be used for debugging
+    /// </summary>
+    public void SetNextState(TriggerState state) {
+        nextState = state;
     }
 }

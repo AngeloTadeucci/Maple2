@@ -33,7 +33,13 @@ public partial class FieldManager {
     }
 
     public ICollection<FieldTrigger> EnumerateTrigger() => fieldTriggers.Values;
+
     public bool TryGetTrigger(string name, [NotNullWhen(true)] out FieldTrigger? fieldTrigger) {
         return fieldTriggers.TryGetValue(name, out fieldTrigger);
+    }
+
+    // Used for debugging triggers
+    public bool ReplaceTrigger(FieldTrigger oldFieldTrigger, FieldTrigger newFieldTrigger) {
+        return fieldTriggers.TryUpdate(oldFieldTrigger.Value.Name, newFieldTrigger, oldFieldTrigger);
     }
 }
