@@ -164,6 +164,6 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        CurrentRoutine = new AnimateRoutine(this, sequence!, duration);
+        CurrentRoutine = new AnimateRoutine(this, sequence, duration);
     }
 }
