@@ -16,7 +16,7 @@ public sealed class AgentNavigation : IDisposable {
     private readonly Mesh mesh;
     private readonly CollisionContext context;
 
-    private Path? currentPath;
+    private PathEngine.Path? currentPath;
 
     public AgentNavigation(FieldNpc npc, Agent agent, Mesh mesh, CollisionContext context) {
         this.npc = npc;

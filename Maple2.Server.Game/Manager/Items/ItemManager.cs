@@ -143,7 +143,8 @@ public class ItemManager {
             foreach ((int groupId, IList<IndividualItemDropTable.Entry> list) in entries) {
                 foreach (IndividualItemDropTable.Entry entry in list) {
                     foreach (int entryItemId in entry.ItemIds) {
-                        Item? individualDropItem = CreateItem(entryItemId, rarity > 0 ? entry.Rarity ?? 1 : 1, Random.Shared.Next(entry.MinCount, entry.MaxCount + 1));
+                        int itemRarity = rarity > 0 ? entry.Rarity ?? 1 : 1;
+                        Item? individualDropItem = CreateItem(entryItemId, itemRarity, Random.Shared.Next(entry.MinCount, entry.MaxCount + 1));
                         if (individualDropItem == null) {
                             continue;
                         }
