@@ -18,11 +18,23 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private InstanceFieldTable ParseInstanceField() {
-        var results = new Dictionary<int, InstanceType>();
+        var results = new Dictionary<int, InstanceFieldMetadata>();
         foreach ((int InstanceId, Parser.Xml.Table.Server.InstanceField InstanceField) in parser.ParseInstanceField()) {
             foreach (int fieldId in InstanceField.fieldIDs) {
 
-                results.Add(fieldId, (InstanceType) InstanceField.instanceType);
+                InstanceFieldMetadata instanceFieldMetadata = new(
+                    (InstanceType) InstanceField.instanceType,
+                    InstanceId,
+                    InstanceField.backupSourcePortal,
+                    InstanceField.poolCount,
+                    InstanceField.isSaveField,
+                    InstanceField.npcStatFactorID,
+                    InstanceField.maxCount,
+                    InstanceField.openType,
+                    InstanceField.openValue
+                );
+
+                results.Add(fieldId, instanceFieldMetadata);
             }
         }
 
