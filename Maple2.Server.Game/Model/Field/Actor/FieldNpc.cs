@@ -161,7 +161,6 @@ public class FieldNpc : Actor<Npc> {
     public virtual void Animate(string sequenceName, float duration = -1f) {
         if (!Value.Animations.TryGetValue(sequenceName, out AnimationSequence? sequence)) {
             Logger.Error("Invalid sequence: {Sequence} for npc {NpcId}", sequenceName, Value.Metadata.Id);
-            CurrentRoutine = new WaitRoutine(this, IdleSequence.Id, 1f);
             return;
         }
 
