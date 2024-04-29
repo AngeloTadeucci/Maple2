@@ -26,5 +26,8 @@ public class ServerTableMetadata {
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
 [JsonDerivedType(typeof(InstanceFieldTable), typeDiscriminator: "instancefield")]
+[JsonDerivedType(typeof(ScriptConditionTable), typeDiscriminator: "*scriptCondition")]
+[JsonDerivedType(typeof(ScriptFunctionTable), typeDiscriminator: "*scriptFunction")]
+[JsonDerivedType(typeof(JobConditionTable), typeDiscriminator: "jobConditionTable")]
 
 public abstract record ServerTable;

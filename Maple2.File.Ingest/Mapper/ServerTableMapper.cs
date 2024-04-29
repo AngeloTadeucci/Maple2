@@ -1,6 +1,9 @@
+using System.Globalization;
+using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -14,24 +17,28 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
     protected override IEnumerable<ServerTableMetadata> Map() {
         yield return new ServerTableMetadata { Name = "instancefield.xml", Table = ParseInstanceField() };
+        yield return new ServerTableMetadata {Name = "*scriptCondition.xml", Table = ParseScriptCondition() };
+        yield return new ServerTableMetadata {Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
+        yield return new ServerTableMetadata {Name = "jobCondition.xml", Table = ParseJobCondition() };
 
     }
 
     private InstanceFieldTable ParseInstanceField() {
         var results = new Dictionary<int, InstanceFieldMetadata>();
-        foreach ((int InstanceId, Parser.Xml.Table.Server.InstanceField InstanceField) in parser.ParseInstanceField()) {
-            foreach (int fieldId in InstanceField.fieldIDs) {
+        foreach ((int instanceId, Parser.Xml.Table.Server.InstanceField instanceField) in parser.ParseInstanceField()) {
+            foreach (int fieldId in instanceField.fieldIDs) {
 
                 InstanceFieldMetadata instanceFieldMetadata = new(
-                    (InstanceType) InstanceField.instanceType,
-                    InstanceId,
-                    InstanceField.backupSourcePortal,
-                    InstanceField.poolCount,
-                    InstanceField.isSaveField,
-                    InstanceField.npcStatFactorID,
-                    InstanceField.maxCount,
-                    InstanceField.openType,
-                    InstanceField.openValue
+                    MapId:fieldId,
+                    Type: (InstanceType) instanceField.instanceType,
+                    InstanceId: instanceId,
+                    BackupSourcePortal: instanceField.backupSourcePortal,
+                    PoolCount: instanceField.poolCount,
+                    SaveField: instanceField.isSaveField,
+                    NpcStatFactorId: instanceField.npcStatFactorID,
+                    MaxCount: instanceField.maxCount,
+                    OpenType: instanceField.openType,
+                    OpenValue: instanceField.openValue
                 );
 
                 results.Add(fieldId, instanceFieldMetadata);
@@ -39,5 +46,169 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         }
 
         return new InstanceFieldTable(results);
+    }
+
+    private ScriptConditionTable ParseScriptCondition() {
+        var results = new Dictionary<int, Dictionary<int, ScriptConditionMetadata>>();
+        results = MergeScriptConditions(results, parser.ParseNpcScriptCondition(), ScriptType.Npc);
+        //results = MergeScriptConditions(results, parser.ParseQuestScriptCondition(), ScriptType.Quest);
+
+        return new ScriptConditionTable(results);
+    }
+
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser, ScriptType scriptType) {
+        foreach ((int id, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> scripts) in parser) {
+            var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
+            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptCondition scriptCondition) in scripts) {
+                var questStarted = new Dictionary<int, bool>();
+                foreach (string quest in scriptCondition.quest_start) {
+                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    questStarted.Add(parsedQuest.Key, parsedQuest.Value);
+                }
+
+                var questsCompleted = new Dictionary<int, bool>();
+                foreach (string quest in scriptCondition.quest_complete) {
+                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
+                }
+
+                var items = new List<KeyValuePair<ItemComponent, bool>>();
+                for (int i = 0; i < scriptCondition.item.Length; i++) {
+                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
+                    if (!int.TryParse(itemCount, out int itemAmount)) {
+                        itemAmount = 1;
+                    }
+                    var item = new ItemComponent(parsedItem.Key, -1, itemAmount, ItemTag.None);
+                    items.Add(new KeyValuePair<ItemComponent, bool>(item, parsedItem.Value));
+                }
+
+                scriptConditions.Add(scriptId, new ScriptConditionMetadata(
+                    Id: id,
+                    ScriptId: scriptId,
+                    Type: scriptType,
+                    MaidAuthority: scriptCondition.maid_auth,
+                    MaidExpired: scriptCondition.maid_expired != "!1",
+                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
+                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
+                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
+                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? new List<JobCode>(),
+                    QuestStarted: questStarted,
+                    QuestCompleted: questsCompleted,
+                    Items: items,
+                    Buff: ParseToKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToKeyValuePair(scriptCondition.meso),
+                    Level: ParseToKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    InGuild: scriptCondition.guild
+                ));
+            }
+            results.Add(id, scriptConditions);
+        }
+        return results;
+    }
+
+    private static KeyValuePair<int, bool> ParseToKeyValuePair(string input) {
+        bool value = !input.StartsWith("!");
+
+        if (!value) {
+            input = input.Replace("!", "");
+        }
+
+        if (!int.TryParse(input, out int key)) {
+            key = 0;
+        }
+        return new KeyValuePair<int, bool>(key, value);
+    }
+
+    private ScriptFunctionTable ParseScriptFunction() {
+        var results = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>();
+        results = MergeScriptFunctions(results, parser.ParseNpcScriptFunction(), ScriptType.Npc);
+        //results = MergeScriptFunctions(results, parser.ParseQuestScriptFunction(), ScriptType.Quest);
+
+        return new ScriptFunctionTable(results);
+    }
+
+    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser, ScriptType scriptType) {
+        foreach ((int id, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
+            var scriptFunctions = new Dictionary<int, ScriptFunctionMetadata>();
+            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptFunction scriptFunction) in scripts) {
+                var presentItems = new List<ItemComponent>();
+                for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
+                    short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
+                    int itemAmount = scriptFunction.presentItemAmount.ElementAtOrDefault(i) != default ? scriptFunction.presentItemAmount.ElementAtOrDefault(i) : 1;
+                    presentItems.Add(new ItemComponent(scriptFunction.presentItemID[i], itemRarity, itemAmount, ItemTag.None));
+                }
+
+                var collectItems = new List<ItemComponent>();
+                for (int i = 0; i < scriptFunction.collectItemID.Length; i++) {
+                    int itemAmount = scriptFunction.collectItemAmount.ElementAtOrDefault(i) != default ? scriptFunction.collectItemAmount.ElementAtOrDefault(i) : 1;
+                    collectItems.Add(new ItemComponent(scriptFunction.collectItemID[i], -1, itemAmount, ItemTag.None));
+                }
+
+                scriptFunctions.Add(scriptId, new ScriptFunctionMetadata(
+                    Id: id, // NpcId or QuestId
+                    ScriptId: scriptId,
+                    Type: scriptType,
+                    FunctionId: scriptFunction.functionID,
+                    EndFunction: scriptFunction.endFunction,
+                    PortalId: scriptFunction.portal,
+                    UiName: scriptFunction.uiName,
+                    UiArg: scriptFunction.uiArg,
+                    UiArg2: scriptFunction.uiArg2,
+                    MoveMapId: scriptFunction.moveFieldID,
+                    MovePortalId: scriptFunction.moveFieldPortalID,
+                    MoveMapMovie: scriptFunction.moveFieldMovie,
+                    Emoticon: scriptFunction.emoticon,
+                    PresentItems: presentItems,
+                    CollectItems: collectItems,
+                    SetTriggerValueTriggerId: scriptFunction.setTriggerValueTriggerID,
+                    SetTriggerValueKey: scriptFunction.setTriggerValueKey,
+                    SetTriggerValue: scriptFunction.setTriggerValue,
+                    Divorce: scriptFunction.divorce,
+                    PresentExp: scriptFunction.presentExp,
+                    CollectMeso: scriptFunction.collectMeso,
+                    MaidMoodIncrease: scriptFunction.maidMoodUp,
+                    MaidClosenessIncrease: scriptFunction.maidAffinityUp,
+                    MaidPay: scriptFunction.maidPay
+                ));
+            }
+            results.Add(id, scriptFunctions);
+        }
+        return results;
+    }
+
+    private JobConditionTable ParseJobCondition() {
+        var results = new Dictionary<int, JobConditionMetadata>();
+        foreach ((int npcId, Parser.Xml.Table.Server.JobConditionTable jobCondition) in parser.ParseJobConditionTable()) {
+            DateTime date = DateTime.TryParseExact(jobCondition.date, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ? date : DateTime.MinValue;
+            results.Add(npcId, new JobConditionMetadata(
+                NpcId: npcId,
+                ScriptId: jobCondition.scriptID,
+                StartedQuestId: jobCondition.quest_start,
+                CompletedQuestId: jobCondition.quest_complete,
+                JobCode: (JobCode) jobCondition.job,
+                MaidAuthority: jobCondition.maid_auth,
+                MaidClosenessTime: jobCondition.maid_affinity_time,
+                MaidCosenessRank: jobCondition.maid_affinity_grade,
+                Date: date.ToEpochSeconds(),
+                BuffId: jobCondition.buff,
+                Mesos: jobCondition.meso,
+                Level: jobCondition.level,
+                Home: jobCondition.home,
+                Roulette: jobCondition.roulette,
+                Guild: jobCondition.guild,
+                CompletedAchievement: jobCondition.achieve_complete,
+                IsBirthday: jobCondition.birthday,
+                ChangeToJobCode: (JobCode) jobCondition.jobCode,
+                MapId: jobCondition.map,
+                MoveMapId: jobCondition.moveFieldID,
+                MovePortalId: jobCondition.movePortalID
+            ));
+        }
+
+        return new JobConditionTable(results);
     }
 }

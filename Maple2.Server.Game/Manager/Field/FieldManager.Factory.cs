@@ -55,7 +55,7 @@ public partial class FieldManager {
                 field.Init();
 
                 ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? instanceField);
-                if (instanceField?.type == InstanceType.solo) {
+                if (instanceField?.Type == InstanceType.solo) {
                     fields[(mapId, NextGlobalId())] = field;
                 } else {
                     fields[(mapId, ownerId)] = field;

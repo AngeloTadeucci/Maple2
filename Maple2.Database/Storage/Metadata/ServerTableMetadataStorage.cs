@@ -6,12 +6,20 @@ namespace Maple2.Database.Storage;
 
 public class ServerTableMetadataStorage {
     private readonly Lazy<InstanceFieldTable> instanceFieldTable;
+    private readonly Lazy<ScriptConditionTable> scriptConditionTable;
+    private readonly Lazy<ScriptFunctionTable> scriptFunctionTable;
+    private readonly Lazy<JobConditionTable> jobConditionTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
-
+    public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
+    public ScriptFunctionTable ScriptFunctionTable => scriptFunctionTable.Value;
+    public JobConditionTable JobConditionTable => jobConditionTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
+        scriptConditionTable = Retrieve<ScriptConditionTable>(context, "*scriptCondition.xml");
+        scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, "*scriptFunction.xml");
+        jobConditionTable = Retrieve<JobConditionTable>(context, "jobConditionTable.xml");
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {
