@@ -8,22 +8,27 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: Cache nuget
-      uses: actions/cache@v3
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 7.0.x
+    - name: Cache NuGet Packages
+      id: nuget-packages
+      uses: actions/cache@v3
+      env:
+        cache-name: nuget-package-cache
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ env.cache-name }}
+
+    - name: List NuGet Packages
+      if: ${{ steps.nuget-packages.outputs.cache-hit == 'true' }}
+      continue-on-error: true
+      run: ls -lh ~/.nuget/packages
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
