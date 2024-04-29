@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Autofac;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Serilog;
 
@@ -15,6 +16,7 @@ public partial class FieldManager {
         // ReSharper disable MemberCanBePrivate.Global
         public required MapMetadataStorage MapMetadata { private get; init; }
         public required MapEntityStorage MapEntities { private get; init; }
+        public required ServerTableMetadataStorage ServerTableMetadata { private get; init; }
         // ReSharper restore All
         #endregion
 
@@ -52,7 +54,12 @@ public partial class FieldManager {
                 context.InjectProperties(field);
                 field.Init();
 
-                fields[(mapId, ownerId)] = field;
+                ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? instanceField);
+                if (instanceField?.type == InstanceType.solo) {
+                    fields[(mapId, NextGlobalId())] = field;
+                } else {
+                    fields[(mapId, ownerId)] = field;
+                }
             }
 
             logger.Debug("Field:{MapId} Instance:{InstanceId} initialized in {Time}ms", mapId, field.InstanceId, sw.ElapsedMilliseconds);

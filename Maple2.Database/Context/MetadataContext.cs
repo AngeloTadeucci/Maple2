@@ -23,6 +23,7 @@ public sealed class MetadataContext : DbContext {
     public DbSet<TableMetadata> TableMetadata { get; set; } = null!;
     public DbSet<AchievementMetadata> AchievementMetadata { get; set; } = null!;
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
+    public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
 
     public MetadataContext(DbContextOptions options) : base(options) { }
 
@@ -44,6 +45,7 @@ public sealed class MetadataContext : DbContext {
         modelBuilder.Entity<TableMetadata>(ConfigureTableMetadata);
         modelBuilder.Entity<AchievementMetadata>(ConfigureAchievementMetadata);
         modelBuilder.Entity<UgcMapMetadata>(ConfigureUgcMapMetadata);
+        modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -179,5 +181,11 @@ public sealed class MetadataContext : DbContext {
         builder.ToTable("ugcmap");
         builder.HasKey(map => map.Id);
         builder.Property(map => map.Plots).HasJsonConversion().IsRequired();
+    }
+
+    private static void ConfigureServerTableMetadata(EntityTypeBuilder<ServerTableMetadata> builder) {
+        builder.ToTable("server-table");
+        builder.HasKey(table => table.Name);
+        builder.Property(table => table.Table).HasJsonConversion().IsRequired();
     }
 }

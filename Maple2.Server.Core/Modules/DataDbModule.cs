@@ -44,5 +44,6 @@ public class DataDbModule : Module {
         builder.RegisterType<ScriptMetadataStorage>().SingleInstance();
         builder.RegisterType<SkillMetadataStorage>().SingleInstance();
         builder.RegisterType<TableMetadataStorage>().SingleInstance();
+        builder.RegisterType<ServerTableMetadataStorage>().SingleInstance();
     }
 }

@@ -27,9 +27,22 @@ if (ms2Root == null) {
 string xmlPath = Path.Combine(ms2Root, "Xml.m2d");
 string exportedPath = Path.Combine(ms2Root, "Resource/Exported.m2d");
 string terrainPath = Path.Combine(ms2Root, "Resource/PrecomputedTerrain.m2d");
+string serverPath = Path.Combine(ms2Root, "Server.m2d");
 
-if (!File.Exists(xmlPath) || !File.Exists(exportedPath) || !File.Exists(terrainPath)) {
-    throw new FileNotFoundException("Could not find MapleStory 2 xmls");
+if (!File.Exists(xmlPath)) {
+    throw new FileNotFoundException("Could not find Xml.m2d file");
+}
+
+if (!File.Exists(exportedPath)) {
+    throw new FileNotFoundException("Could not find Exported.m2d file");
+}
+
+if (!File.Exists(terrainPath)) {
+    throw new FileNotFoundException("Could not find PrecomputedTerrain.m2d file");
+}
+
+if (!File.Exists(serverPath)) {
+    throw new FileNotFoundException("Could not find Server.m2d file, check discord for this file. Link in README.md");
 }
 
 string? server = Environment.GetEnvironmentVariable("DB_IP");
@@ -47,6 +60,7 @@ string dataDbConnection = $"Server={server};Port={port};Database={database};User
 using var xmlReader = new M2dReader(xmlPath);
 using var exportedReader = new M2dReader(exportedPath);
 using var terrainReader = new M2dReader(terrainPath);
+using var serverReader = new M2dReader(serverPath);
 
 DbContextOptions options = new DbContextOptionsBuilder()
     .UseMySql(dataDbConnection, ServerVersion.AutoDetect(dataDbConnection)).Options;
@@ -79,6 +93,8 @@ UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
 UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));
 
+UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
+
 // new MusicScoreParser(xmlReader).Parse().ToList();
 // new ScriptParser(xmlReader).ParseNpc().ToList();
 // new ScriptParser(xmlReader).ParseQuest().ToList();
@@ -88,6 +104,8 @@ UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));
 // new AchieveParser(xmlReader).Parse().ToList();
 // new AdditionalEffectParser(xmlReader).Parse().ToList();
 // new QuestParser(xmlReader).Parse().ToList();
+
+Console.WriteLine("Done!");
 
 void UpdateDatabase<T>(DbContext context, TypeMapper<T> mapper) where T : class {
     string? tableName = context.GetTableName<T>();
