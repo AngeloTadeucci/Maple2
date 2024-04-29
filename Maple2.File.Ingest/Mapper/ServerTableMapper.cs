@@ -50,14 +50,14 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
     private ScriptConditionTable ParseScriptCondition() {
         var results = new Dictionary<int, Dictionary<int, ScriptConditionMetadata>>();
-        results = MergeScriptConditions(results, parser.ParseNpcScriptCondition(), ScriptType.Npc);
-        //results = MergeScriptConditions(results, parser.ParseQuestScriptCondition(), ScriptType.Quest);
+        results = MergeNpcScriptConditions(results, parser.ParseNpcScriptCondition());
+        results = MergeQuestScriptConditions(results, parser.ParseQuestScriptCondition());
 
         return new ScriptConditionTable(results);
     }
 
-    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser, ScriptType scriptType) {
-        foreach ((int id, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> scripts) in parser) {
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser) {
+        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
             foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
@@ -84,9 +84,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 }
 
                 scriptConditions.Add(scriptId, new ScriptConditionMetadata(
-                    Id: id,
+                    Id: npcId,
                     ScriptId: scriptId,
-                    Type: scriptType,
+                    Type: ScriptType.Npc,
                     MaidAuthority: scriptCondition.maid_auth,
                     MaidExpired: scriptCondition.maid_expired != "!1",
                     MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
@@ -105,7 +105,61 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     InGuild: scriptCondition.guild
                 ));
             }
-            results.Add(id, scriptConditions);
+            results.Add(npcId, scriptConditions);
+        }
+        return results;
+    }
+
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> ScriptConditions)> parser) {
+        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> scripts) in parser) {
+            var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
+            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptCondition scriptCondition) in scripts) {
+                var questStarted = new Dictionary<int, bool>();
+                foreach (string quest in scriptCondition.quest_start) {
+                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    questStarted.Add(parsedQuest.Key, parsedQuest.Value);
+                }
+
+                var questsCompleted = new Dictionary<int, bool>();
+                foreach (string quest in scriptCondition.quest_complete) {
+                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
+                }
+
+                var items = new List<KeyValuePair<ItemComponent, bool>>();
+                for (int i = 0; i < scriptCondition.item.Length; i++) {
+                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
+                    if (!int.TryParse(itemCount, out int itemAmount)) {
+                        itemAmount = 1;
+                    }
+                    var item = new ItemComponent(parsedItem.Key, -1, itemAmount, ItemTag.None);
+                    items.Add(new KeyValuePair<ItemComponent, bool>(item, parsedItem.Value));
+                }
+
+                scriptConditions.Add(scriptId, new ScriptConditionMetadata(
+                    Id: questId,
+                    ScriptId: scriptId,
+                    Type: ScriptType.Quest,
+                    MaidAuthority: scriptCondition.maid_auth,
+                    MaidExpired: scriptCondition.maid_expired != "!1",
+                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
+                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
+                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
+                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? new List<JobCode>(),
+                    QuestStarted: questStarted,
+                    QuestCompleted: questsCompleted,
+                    Items: items,
+                    Buff: ParseToKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToKeyValuePair(scriptCondition.meso),
+                    Level: ParseToKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    InGuild: scriptCondition.guild
+                ));
+            }
+            results.Add(questId, scriptConditions);
         }
         return results;
     }
@@ -125,14 +179,14 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
     private ScriptFunctionTable ParseScriptFunction() {
         var results = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>();
-        results = MergeScriptFunctions(results, parser.ParseNpcScriptFunction(), ScriptType.Npc);
-        //results = MergeScriptFunctions(results, parser.ParseQuestScriptFunction(), ScriptType.Quest);
+        results = MergeNpcScriptFunctions(results, parser.ParseNpcScriptFunction());
+        results = MergeQuestScriptFunctions(results, parser.ParseQuestScriptFunction());
 
         return new ScriptFunctionTable(results);
     }
 
-    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser, ScriptType scriptType) {
-        foreach ((int id, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
+    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
+        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
             var scriptFunctions = new Dictionary<int, ScriptFunctionMetadata>();
             foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
@@ -149,9 +203,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 }
 
                 scriptFunctions.Add(scriptId, new ScriptFunctionMetadata(
-                    Id: id, // NpcId or QuestId
+                    Id: npcId, // NpcId or QuestId
                     ScriptId: scriptId,
-                    Type: scriptType,
+                    Type: ScriptType.Npc,
                     FunctionId: scriptFunction.functionID,
                     EndFunction: scriptFunction.endFunction,
                     PortalId: scriptFunction.portal,
@@ -175,7 +229,56 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MaidPay: scriptFunction.maidPay
                 ));
             }
-            results.Add(id, scriptFunctions);
+            results.Add(npcId, scriptFunctions);
+        }
+        return results;
+    }
+
+    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
+        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> scripts) in parser) {
+            var scriptFunctions = new Dictionary<int, ScriptFunctionMetadata>();
+            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptFunction scriptFunction) in scripts) {
+                var presentItems = new List<ItemComponent>();
+                for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
+                    short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
+                    int itemAmount = scriptFunction.presentItemAmount.ElementAtOrDefault(i) != default ? scriptFunction.presentItemAmount.ElementAtOrDefault(i) : 1;
+                    presentItems.Add(new ItemComponent(scriptFunction.presentItemID[i], itemRarity, itemAmount, ItemTag.None));
+                }
+
+                var collectItems = new List<ItemComponent>();
+                for (int i = 0; i < scriptFunction.collectItemID.Length; i++) {
+                    int itemAmount = scriptFunction.collectItemAmount.ElementAtOrDefault(i) != default ? scriptFunction.collectItemAmount.ElementAtOrDefault(i) : 1;
+                    collectItems.Add(new ItemComponent(scriptFunction.collectItemID[i], -1, itemAmount, ItemTag.None));
+                }
+
+                scriptFunctions.Add(scriptId, new ScriptFunctionMetadata(
+                    Id: questId,
+                    ScriptId: scriptId,
+                    Type: ScriptType.Quest,
+                    FunctionId: scriptFunction.functionID,
+                    EndFunction: scriptFunction.endFunction,
+                    PortalId: scriptFunction.portal,
+                    UiName: scriptFunction.uiName,
+                    UiArg: scriptFunction.uiArg,
+                    UiArg2: scriptFunction.uiArg2,
+                    MoveMapId: scriptFunction.moveFieldID,
+                    MovePortalId: scriptFunction.moveFieldPortalID,
+                    MoveMapMovie: scriptFunction.moveFieldMovie,
+                    Emoticon: scriptFunction.emoticon,
+                    PresentItems: presentItems,
+                    CollectItems: collectItems,
+                    SetTriggerValueTriggerId: scriptFunction.setTriggerValueTriggerID,
+                    SetTriggerValueKey: scriptFunction.setTriggerValueKey,
+                    SetTriggerValue: scriptFunction.setTriggerValue,
+                    Divorce: scriptFunction.divorce,
+                    PresentExp: scriptFunction.presentExp,
+                    CollectMeso: scriptFunction.collectMeso,
+                    MaidMoodIncrease: scriptFunction.maidMoodUp,
+                    MaidClosenessIncrease: scriptFunction.maidAffinityUp,
+                    MaidPay: scriptFunction.maidPay
+                ));
+            }
+            results.Add(questId, scriptFunctions);
         }
         return results;
     }
