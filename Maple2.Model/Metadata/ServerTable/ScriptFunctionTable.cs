@@ -4,7 +4,7 @@ using Maple2.Model.Game;
 
 namespace Maple2.Model.Metadata;
 
-public record ScriptFunctionTable(IReadOnlyDictionary<int, Dictionary<int, ScriptFunctionMetadata>> Entries) : ServerTable;
+public record ScriptFunctionTable(IReadOnlyDictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> Entries) : ServerTable;
 
 public record ScriptFunctionMetadata(
     int Id, // QuestId or NpcId

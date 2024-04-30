@@ -129,7 +129,7 @@ public sealed class QuestManager {
         }
 
         var quest = new Quest(metadata) {
-            Track = false,
+            Track = true,
             State = QuestState.Started,
             StartTime = DateTime.Now.ToEpochSeconds(),
         };

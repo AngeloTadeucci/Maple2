@@ -57,6 +57,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required ItemMetadataStorage ItemMetadata { get; init; }
     public required SkillMetadataStorage SkillMetadata { get; init; }
     public required TableMetadataStorage TableMetadata { get; init; }
+    public required ServerTableMetadataStorage ServerTableMetadata { get; init; }
     public required MapMetadataStorage MapMetadata { get; init; }
     public required NpcMetadataStorage NpcMetadata { get; init; }
     public required AchievementMetadataStorage AchievementMetadata { get; init; }

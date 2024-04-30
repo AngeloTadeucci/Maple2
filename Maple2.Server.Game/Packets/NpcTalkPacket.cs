@@ -98,6 +98,15 @@ public static class NpcTalkPacket {
         return pWriter;
     }
 
+    public static ByteWriter Cutscene(string movieString) {
+        var pWriter = Packet.Of(SendOp.NpcTalk);
+        pWriter.Write<Command>(Command.Action);
+        pWriter.Write<NpcTalkAction>(NpcTalkAction.Cutscene);
+        pWriter.WriteUnicodeString(movieString);
+
+        return pWriter;
+    }
+
     public static ByteWriter Update(string text, string voiceId = "", string illustration = "") {
         var pWriter = Packet.Of(SendOp.NpcTalk);
         pWriter.Write<Command>(Command.Update);
