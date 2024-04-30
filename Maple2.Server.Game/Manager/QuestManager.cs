@@ -114,7 +114,7 @@ public sealed class QuestManager {
     /// <summary>
     /// Starts a new quest (or prexisting if repeatable).
     /// </summary>
-    public void Start(int questId) {
+    public void Start(int questId, bool bypassRequirements = false) {
         if (characterValues.ContainsKey(questId) || accountValues.ContainsKey(questId)) {
             // TODO: see if you can start the quest again
             return;
@@ -124,7 +124,7 @@ public sealed class QuestManager {
             return;
         }
 
-        if (!CanStart(metadata.Require)) {
+        if (!bypassRequirements && !CanStart(metadata.Require)) {
             return;
         }
 
@@ -261,12 +261,12 @@ public sealed class QuestManager {
     /// <summary>
     /// Gives the player the rewards for completing the quest.
     /// </summary>
-    public bool Complete(Quest quest) {
+    public bool Complete(Quest quest, bool bypassConditions = false) {
         if (quest.State == QuestState.Completed) {
             return false;
         }
 
-        if (!quest.Conditions.All(condition => condition.Value.Counter >= condition.Value.Metadata.Value)) {
+        if (!bypassConditions && !quest.Conditions.All(condition => condition.Value.Counter >= condition.Value.Metadata.Value)) {
             return false;
         }
 

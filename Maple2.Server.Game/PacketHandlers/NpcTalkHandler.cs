@@ -93,17 +93,25 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         session.NpcScript = new NpcScriptManager(session, npc, metadata);
         if (!session.NpcScript.BeginNpcTalk()) {
             session.NpcScript = null;
+            return;
+        }
+
+        // if the first script happens to be a quest, we should change NpcScript
+        if (session.NpcScript?.State != null && session.NpcScript.State.Type == ScriptStateType.Quest) {
+            if (!ScriptMetadata.TryGet(session.NpcScript.QuestId, out ScriptMetadata? questMetadata)) {
+                return;
+            }
+
+            session.NpcScript = new NpcScriptManager(session, npc, questMetadata);
         }
     }
 
     private void HandleContinue(GameSession session, IByteReader packet) {
+        session.NpcScript?.ProcessScriptFunction(false);
         // Not talking to an Npc.
         if (session.NpcScript == null) {
             return;
         }
-
-        session.NpcScript.ProcessScriptFunction(false);
-
         int pick = packet.ReadInt();
 
         /* The ordering is
@@ -169,10 +177,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.NpcScript == null) {
-            session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
-            return;
-        }
+        session.NpcScript = new NpcScriptManager(session, npc, metadata);
 
         if (!session.NpcScript.BeginQuest()) {
             session.NpcScript = null;

@@ -216,7 +216,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest.Load();
         // Send(QuestPacket.LoadSkyFortressMissions(Array.Empty<int>()));
         // Send(QuestPacket.LoadKritiasMissions(Array.Empty<int>()));
-        Send(QuestPacket.LoadQuestStates(player.Unlock.Quests.Values));
         // Send(QuestPacket.LoadQuests(Array.Empty<int>()));
         Achievement.Load();
         // MaidCraftItem
