@@ -15,7 +15,6 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game;
 using Maple2.Server.Game.Commands;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Scripting.Npc;
 using Maple2.Server.Game.Service;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -81,8 +80,6 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .PropertiesAutowired()
         .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()
-        .SingleInstance();
-    autofac.RegisterType<NpcScriptLoader>()
         .SingleInstance();
 
     // Database

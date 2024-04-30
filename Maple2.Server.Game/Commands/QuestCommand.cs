@@ -37,29 +37,34 @@ public class QuestCommand : Command {
             return;
         }
 
-        if (state is QuestState.Started or QuestState.Completed) {
-            Unlock unlock = session.Player.Value.Unlock;
-            if (!unlock.Quests.TryGetValue(id, out Quest? quest)) {
-                quest = new Quest(metadata) {
-                    State = QuestState.Started,
-                    Track = true,
-                    StartTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                };
-                unlock.Quests[id] = quest;
-                session.Send(QuestPacket.Start(quest));
-            }
+        session.Quest.TryGetQuest(id, out Quest? quest);
+        switch (state) {
+            case QuestState.Started:
+                if (quest == null) {
+                    session.Quest.Start(id, true);
+                    break;
+                }
+                if (quest.State == QuestState.Started) {
+                    ctx.Console.Error.WriteLine("Quest is already started.");
+                    return;
+                }
 
-            if (state == quest.State) {
-                ctx.Console.Error.WriteLine($"Quest is already in state: {state}");
-                return;
-            }
-
-            if (state == QuestState.Completed) {
-                quest.State = QuestState.Completed;
-                quest.CompletionCount++;
-                quest.EndTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                session.Send(QuestPacket.Complete(quest));
-            }
+                // Remove then re-add to properly wipe quest
+                session.Quest.Remove(quest);
+                session.Quest.Start(id, true);
+                break;
+            case QuestState.Completed:
+                if (quest == null) {
+                    session.Quest.Start(id, true);
+                    session.Quest.TryGetQuest(id, out quest);
+                    break;
+                }
+                if (quest.State == QuestState.Completed) {
+                    ctx.Console.Error.WriteLine("Quest is already completed.");
+                    return;
+                }
+                session.Quest.Complete(quest, true);
+                break;
         }
     }
 }

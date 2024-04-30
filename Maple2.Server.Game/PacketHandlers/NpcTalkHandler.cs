@@ -6,9 +6,9 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Npc;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -34,12 +34,6 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     public required ScriptMetadataStorage ScriptMetadata { private get; init; }
     // ReSharper restore All
     #endregion
-
-    private readonly NpcScriptLoader scriptLoader;
-
-    public NpcTalkHandler() {
-        scriptLoader = new NpcScriptLoader();
-    }
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
@@ -96,26 +90,28 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var scriptContext = new NpcScriptContext(session);
-        session.NpcScript = scriptLoader.GetNpc(session, scriptContext, npc, metadata);
-        if (session.NpcScript == null) {
-            session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
+        session.NpcScript = new NpcScriptManager(session, npc, metadata);
+        if (!session.NpcScript.BeginNpcTalk()) {
+            session.NpcScript = null;
             return;
         }
 
-        // If we fail to begin the interaction, set script to null.
-        if (!session.NpcScript.Begin()) {
-            session.NpcScript = null;
+        // if the first script happens to be a quest, we should change NpcScript
+        if (session.NpcScript?.State != null && session.NpcScript.State.Type == ScriptStateType.Quest) {
+            if (!ScriptMetadata.TryGet(session.NpcScript.QuestId, out ScriptMetadata? questMetadata)) {
+                return;
+            }
+
+            session.NpcScript = new NpcScriptManager(session, npc, questMetadata);
         }
     }
 
     private void HandleContinue(GameSession session, IByteReader packet) {
+        session.NpcScript?.ProcessScriptFunction(false);
         // Not talking to an Npc.
         if (session.NpcScript == null) {
             return;
         }
-
-        session.NpcScript.ExitState();
         int pick = packet.ReadInt();
 
         /* The ordering is
@@ -134,13 +130,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                         session.NpcScript = null;
                         return;
                     }
-                    var scriptContext = new NpcScriptContext(session);
-                    session.NpcScript = scriptLoader.GetQuest(session, scriptContext, npc, metadata);
-                    if (session.NpcScript == null) {
-                        session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
-                        return;
-                    }
-
+                    session.NpcScript = new NpcScriptManager(session, npc, metadata);
                     if (!session.NpcScript.BeginQuest()) {
                         session.NpcScript = null;
                     }
@@ -153,14 +143,14 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                 addedOptions++;
                 if (pick < addedOptions) {
                     session.NpcScript.EnterDialog();
-                    dialogue = new NpcDialogue(session.NpcScript.State, session.NpcScript.Index, session.NpcScript.Button);
+                    dialogue = new NpcDialogue(session.NpcScript.State?.Id ?? 0, session.NpcScript.Index, session.NpcScript.Button);
                     session.Send(NpcTalkPacket.Continue(session.NpcScript.TalkType, dialogue));
                     return;
                 }
             }
 
             session.NpcScript.EnterTalk();
-            dialogue = new NpcDialogue(session.NpcScript.State, session.NpcScript.Index, session.NpcScript.Button);
+            dialogue = new NpcDialogue(session.NpcScript.State?.Id ?? 0, session.NpcScript.Index, session.NpcScript.Button);
             session.Send(NpcTalkPacket.Continue(session.NpcScript.TalkType, dialogue));
             return;
         }
@@ -186,12 +176,8 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             session.NpcScript = null;
             return;
         }
-        var scriptContext = new NpcScriptContext(session);
-        session.NpcScript = scriptLoader.GetQuest(session, scriptContext, npc, metadata);
-        if (session.NpcScript == null) {
-            session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
-            return;
-        }
+
+        session.NpcScript = new NpcScriptManager(session, npc, metadata);
 
         if (!session.NpcScript.BeginQuest()) {
             session.NpcScript = null;
@@ -214,7 +200,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             return;
         }
         session.NpcScript.EnterTalk();
-        var dialogue = new NpcDialogue(session.NpcScript.State, session.NpcScript.Index, session.NpcScript.Button);
+        var dialogue = new NpcDialogue(session.NpcScript.State?.Id ?? 0, session.NpcScript.Index, session.NpcScript.Button);
         session.Send(NpcTalkPacket.AllianceTalk(session.NpcScript.TalkType, dialogue));
     }
 }

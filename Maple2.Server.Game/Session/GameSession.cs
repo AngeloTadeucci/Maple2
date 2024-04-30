@@ -57,6 +57,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required ItemMetadataStorage ItemMetadata { get; init; }
     public required SkillMetadataStorage SkillMetadata { get; init; }
     public required TableMetadataStorage TableMetadata { get; init; }
+    public required ServerTableMetadataStorage ServerTableMetadata { get; init; }
     public required MapMetadataStorage MapMetadata { get; init; }
     public required NpcMetadataStorage NpcMetadata { get; init; }
     public required AchievementMetadataStorage AchievementMetadata { get; init; }
@@ -215,7 +216,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest.Load();
         // Send(QuestPacket.LoadSkyFortressMissions(Array.Empty<int>()));
         // Send(QuestPacket.LoadKritiasMissions(Array.Empty<int>()));
-        Send(QuestPacket.LoadQuestStates(player.Unlock.Quests.Values));
         // Send(QuestPacket.LoadQuests(Array.Empty<int>()));
         Achievement.Load();
         // MaidCraftItem

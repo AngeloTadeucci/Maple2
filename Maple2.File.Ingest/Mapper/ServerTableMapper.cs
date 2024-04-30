@@ -17,9 +17,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
     protected override IEnumerable<ServerTableMetadata> Map() {
         yield return new ServerTableMetadata { Name = "instancefield.xml", Table = ParseInstanceField() };
-        yield return new ServerTableMetadata {Name = "*scriptCondition.xml", Table = ParseScriptCondition() };
-        yield return new ServerTableMetadata {Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
-        yield return new ServerTableMetadata {Name = "jobCondition.xml", Table = ParseJobCondition() };
+        yield return new ServerTableMetadata { Name = "*scriptCondition.xml", Table = ParseScriptCondition() };
+        yield return new ServerTableMetadata { Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
+        yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
 
     }
 
@@ -29,7 +29,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             foreach (int fieldId in instanceField.fieldIDs) {
 
                 InstanceFieldMetadata instanceFieldMetadata = new(
-                    MapId:fieldId,
+                    MapId: fieldId,
                     Type: (InstanceType) instanceField.instanceType,
                     InstanceId: instanceId,
                     BackupSourcePortal: instanceField.backupSourcePortal,
@@ -178,16 +178,16 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private ScriptFunctionTable ParseScriptFunction() {
-        var results = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>();
+        var results = new Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>>();
         results = MergeNpcScriptFunctions(results, parser.ParseNpcScriptFunction());
         results = MergeQuestScriptFunctions(results, parser.ParseQuestScriptFunction());
 
         return new ScriptFunctionTable(results);
     }
 
-    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
         foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
-            var scriptFunctions = new Dictionary<int, ScriptFunctionMetadata>();
+            var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
@@ -202,7 +202,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     collectItems.Add(new ItemComponent(scriptFunction.collectItemID[i], -1, itemAmount, ItemTag.None));
                 }
 
-                scriptFunctions.Add(scriptId, new ScriptFunctionMetadata(
+                var metadata = new ScriptFunctionMetadata(
                     Id: npcId, // NpcId or QuestId
                     ScriptId: scriptId,
                     Type: ScriptType.Npc,
@@ -227,16 +227,26 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MaidMoodIncrease: scriptFunction.maidMoodUp,
                     MaidClosenessIncrease: scriptFunction.maidAffinityUp,
                     MaidPay: scriptFunction.maidPay
-                ));
+                );
+                if (!scriptDict.TryGetValue(scriptId, out Dictionary<int, ScriptFunctionMetadata>? functionDict)) {
+                    functionDict = new Dictionary<int, ScriptFunctionMetadata> {
+                        {
+                            scriptFunction.functionID, metadata
+                        },
+                    };
+                    scriptDict.Add(scriptId, functionDict);
+                } else {
+                    functionDict.Add(scriptFunction.functionID, metadata);
+                }
             }
-            results.Add(npcId, scriptFunctions);
+            results.Add(npcId, scriptDict);
         }
         return results;
     }
 
-    private static Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, ScriptFunctionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
         foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> scripts) in parser) {
-            var scriptFunctions = new Dictionary<int, ScriptFunctionMetadata>();
+            var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
@@ -251,7 +261,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     collectItems.Add(new ItemComponent(scriptFunction.collectItemID[i], -1, itemAmount, ItemTag.None));
                 }
 
-                scriptFunctions.Add(scriptId, new ScriptFunctionMetadata(
+                var metadata = new ScriptFunctionMetadata(
                     Id: questId,
                     ScriptId: scriptId,
                     Type: ScriptType.Quest,
@@ -276,9 +286,19 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MaidMoodIncrease: scriptFunction.maidMoodUp,
                     MaidClosenessIncrease: scriptFunction.maidAffinityUp,
                     MaidPay: scriptFunction.maidPay
-                ));
+                );
+                if (!scriptDict.TryGetValue(scriptId, out Dictionary<int, ScriptFunctionMetadata>? functionDict)) {
+                    functionDict = new Dictionary<int, ScriptFunctionMetadata> {
+                        {
+                            scriptFunction.functionID, metadata
+                        },
+                    };
+                    scriptDict.Add(scriptId, functionDict);
+                } else {
+                    functionDict.Add(scriptFunction.functionID, metadata);
+                }
             }
-            results.Add(questId, scriptFunctions);
+            results.Add(questId, scriptDict);
         }
         return results;
     }
