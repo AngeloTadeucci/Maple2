@@ -28,6 +28,8 @@ public class ConfigManager {
     private readonly IList<long> favoriteDesigners;
     private readonly IDictionary<LapenshardSlot, int> lapenshards;
     private readonly IDictionary<int, SkillCooldown> skillCooldowns;
+    private long deathPenaltyTick;
+    public int DeathCounter;
     private readonly StatAttributes statAttributes;
     public IDictionary<int, int> GatheringCounts;
 
@@ -50,6 +52,7 @@ public class ConfigManager {
             IList<long>? FavoriteDesigners,
             IDictionary<LapenshardSlot, int>? Lapenshards,
             IList<SkillCooldown>? SkillCooldowns,
+            (long, int) DeathPenalty,
             IDictionary<BasicAttribute, int>? Allocation,
             IDictionary<int, int>? GatheringCounts,
         SkillBook? SkillBook
@@ -75,6 +78,8 @@ public class ConfigManager {
         favoriteDesigners = load.FavoriteDesigners ?? new List<long>();
         lapenshards = load.Lapenshards ?? new Dictionary<LapenshardSlot, int>();
         GatheringCounts = load.GatheringCounts ?? new Dictionary<int, int>();
+        deathPenaltyTick = load.DeathPenalty.Item1;
+        DeathCounter = load.DeathPenalty.Item2;
 
         if (load.SkillCooldowns != null) {
             foreach (SkillCooldown cooldown in load.SkillCooldowns) {
@@ -240,6 +245,13 @@ public class ConfigManager {
 
     public void RemoveFavoriteDesigner(long designer) {
         favoriteDesigners.Remove(designer);
+    }
+
+    public void UpdateDeathPenalty(int tick) {
+        deathPenaltyTick = tick;
+        DeathCounter = tick > 0 ? DeathCounter++ : 0;
+
+        session.Send(RevivalPacket.Confirm(session.Player, (int) deathPenaltyTick, DeathCounter));
     }
 
     #region KeyBind
@@ -458,6 +470,7 @@ public class ConfigManager {
             favoriteDesigners,
             lapenshards,
             skillCooldowns.Values.ToList(),
+            (deathPenaltyTick, DeathCounter),
             statAttributes.Allocation,
             GatheringCounts,
             Skill.SkillBook

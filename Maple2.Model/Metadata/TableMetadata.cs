@@ -65,4 +65,5 @@ public class TableMetadata {
 [JsonDerivedType(typeof(ExpTable), typeDiscriminator: "exp")]
 [JsonDerivedType(typeof(CommonExpTable), typeDiscriminator: "commonexp")]
 [JsonDerivedType(typeof(UgcDesignTable), typeDiscriminator: "ugc_design")]
+[JsonDerivedType(typeof(LearningQuestTable), typeDiscriminator: "learningquest")]
 public abstract record Table;

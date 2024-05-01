@@ -71,7 +71,7 @@ public partial class GameStorage {
 
             // Limit character fetching to those owned by account.
             Character? character = Context.Character.FirstOrDefault(character =>
-                 character.Id == characterId && character.AccountId == accountId);
+                character.Id == characterId && character.AccountId == accountId);
             if (character != null) {
                 character.AchievementInfo = GetAchievementInfo(accountId, characterId);
             }
@@ -224,10 +224,10 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, IDictionary<BasicAttribute, int>?, IDictionary<int, int>? GatheringCounts, SkillBook?) LoadCharacterConfig(long characterId) {
+        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, (long, int) DeathPenalty, IDictionary<BasicAttribute, int>?, IDictionary<int, int>? GatheringCounts, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, null, null, null);
+                return (null, null, null, null, null, null, null, null, (0,0),null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -251,6 +251,7 @@ public partial class GameStorage {
                 config.FavoriteDesigners?.Select(designer => designer).ToList(),
                 config.Lapenshards,
                 config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
+                config.DeathPenalty,
                 config.StatAllocation,
                 config.GatheringCounts,
                 skillBook
@@ -267,6 +268,7 @@ public partial class GameStorage {
                 IList<long> favoriteDesigners,
                 IDictionary<LapenshardSlot, int> lapenshards,
                 IList<SkillCooldown> skillCooldowns,
+                (long, int) deathPenalty,
                 StatAttributes.PointAllocation allocation,
                 IDictionary<int, int> gatheringCounts,
                 SkillBook skillBook) {
@@ -287,6 +289,7 @@ public partial class GameStorage {
             config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64).
                 Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
                 .ToList();
+            config.DeathPenalty = deathPenalty;
             config.StatAllocation = allocation.Attributes.ToDictionary(
                 attribute => attribute,
                 attribute => allocation[attribute]);
