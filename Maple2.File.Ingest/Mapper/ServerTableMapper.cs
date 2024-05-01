@@ -2,9 +2,11 @@ using System.Globalization;
 using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;
+using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -20,6 +22,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "*scriptCondition.xml", Table = ParseScriptCondition() };
         yield return new ServerTableMetadata { Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
         yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
+        yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
 
     }
 
@@ -334,4 +337,44 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
         return new JobConditionTable(results);
     }
+
+    private BonusGameTable ParseBonusGameTable() {
+            var bonusGames = new Dictionary<int, BonusGameTable.Game>();
+            foreach ((int type, int id, BonusGame bonusGame) in parser.ParseBonusGame()) {
+                List<BonusGameTable.Game.Slot> slots = new();
+                foreach (BonusGame.Slot slot in bonusGame.slot) {
+                    slots.Add(new BonusGameTable.Game.Slot(
+                        MinProp: slot.minProp,
+                        MaxProp: slot.maxProp));
+                }
+                bonusGames.Add(id, new BonusGameTable.Game(
+                    Id: id,
+                    ConsumeItem: new ItemComponent(
+                        ItemId: bonusGame.consumeItemID,
+                        Rarity: -1,
+                        Amount: bonusGame.consumeItemCount,
+                        Tag: ItemTag.None),
+                    Slots: slots.ToArray()));
+            }
+
+            var drops = new Dictionary<int, BonusGameTable.Drop>();
+            foreach ((int type, int id, BonusGameDrop gameDrop) in parser.ParseBonusGameDrop()) {
+                List<BonusGameTable.Drop.Item> items = new();
+                foreach (BonusGameDrop.Item item in gameDrop.item) {
+                    items.Add(new BonusGameTable.Drop.Item(
+                        ItemComponent: new ItemComponent(
+                            ItemId: item.id,
+                            Rarity: item.rank,
+                            Amount: item.count,
+                            Tag: ItemTag.None),
+                        Probability: item.prop,
+                        Notice: item.notice));
+                }
+                drops.Add(id, new BonusGameTable.Drop(
+                    Id: id,
+                    Items: items.ToArray()));
+            }
+
+            return new BonusGameTable(bonusGames, drops);
+        }
 }

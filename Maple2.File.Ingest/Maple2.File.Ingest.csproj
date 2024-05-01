@@ -31,10 +31,6 @@
       <None Update="Json\FishingRewards.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Generator\npc_api.py">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <TargetPath>Scripts\Npc\npc_api.py</TargetPath>
-      </None>
     </ItemGroup>
 
 </Project>
