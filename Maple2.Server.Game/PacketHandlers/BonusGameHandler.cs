@@ -6,6 +6,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -73,36 +74,29 @@ public class BonusGameHandler : PacketHandler<GameSession> {
 
         int summedWeight = drop.Items.Sum(item => item.Probability);
 
+        var dropItems = new WeightedSet<(BonusGameTable.Drop.Item, int)>(); // Item, index on wheel
+        for (int i = 0; i < drop.Items.Length; i++) {
+            dropItems.Add((drop.Items[i], i), drop.Items[i].Probability);
+        }
+
+
         IList<KeyValuePair<Item, int>> rewardedItems = new List<KeyValuePair<Item, int>>(); // Item, Index on wheel
         for (int spin = 0; spin < spins; spin++) {
-
-            int randomWeightValue = Random.Shared.Next(summedWeight);
-
-            int processedWeight = 0;
-
-            for (int i = 0; i < drop.Items.Length; i++) {
-                BonusGameTable.Drop.Item item = drop.Items[i];
-                processedWeight += item.Probability;
-                if (randomWeightValue < processedWeight) {
-                    Item? createdItem = session.Item.CreateItem(item.ItemComponent.ItemId, item.ItemComponent.Rarity, item.ItemComponent.Amount);
-                    if (createdItem == null) {
-                        break;
-                    }
-
-                    if (!session.Item.Inventory.ConsumeItemComponents(new[] {
-                            game.ConsumeItem
-                        })) {
-                        // TODO: Close the bonus game if items count is 0
-                        break;
-                    }
-
-                    if (!session.Item.Inventory.Add(createdItem, true)) {
-                        session.Item.MailItem(createdItem);
-                    }
-                    rewardedItems.Add(new KeyValuePair<Item, int>(createdItem, i));
-                    break;
-                }
+            (BonusGameTable.Drop.Item DropItem, int Index) result = dropItems.Get();
+            Item? createdItem = session.Item.CreateItem(result.DropItem.ItemComponent.ItemId, result.DropItem.ItemComponent.Rarity, result.DropItem.ItemComponent.Amount);
+            if (createdItem == null) {
+                break;
             }
+
+            if (!session.Item.Inventory.ConsumeItemComponents(new[] {game.ConsumeItem})) {
+                // TODO: Close the bonus game if items count is 0
+                break;
+            }
+
+            if (!session.Item.Inventory.Add(createdItem, true)) {
+                session.Item.MailItem(createdItem);
+            }
+            rewardedItems.Add(new KeyValuePair<Item, int>(createdItem, result.Index));
         }
 
         session.Send(BonusGamePacket.Spin(rewardedItems));
