@@ -828,8 +828,12 @@ public static class Constant {
     public const int PaybackMaxRewardMeret = 10000;
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
 
-    public const int NextStateTriggerDefaultTick = 100;
+    #endregion
 
+    #region server table/constants.xml
+    public const int NextStateTriggerDefaultTick = 100;
+    public const int UserRevivalPaneltyTick = 3600000;
+    public const int UserRevivalPaneltyMinLevel = 10;
     #endregion
 }
 

@@ -245,8 +245,10 @@ public class ItemEnchantManager {
                     }
                     upgradeItem.Enchant.Enchants++;
 
+                    session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Success, targetLong: upgradeItem.Enchant.Enchants);
                     session.Send(ItemEnchantPacket.Success(upgradeItem, attributeDeltas));
                 } else {
+                    session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Fail, targetLong: upgradeItem.Enchant.Enchants);
                     upgradeItem.Enchant.Charges += FailCharge[enchants];
                     session.Send(ItemEnchantPacket.Failure(upgradeItem, FailCharge[enchants]));
                 }
@@ -264,6 +266,7 @@ public class ItemEnchantManager {
                     }
                     upgradeItem.Enchant.Enchants++;
 
+                    session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Success, targetLong: upgradeItem.Enchant.Enchants);
                     session.Send(ItemEnchantPacket.Success(upgradeItem, attributeDeltas));
                     session.Send(ItemEnchantPacket.UpdateExp(itemUid, 0));
                     Reset();

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using M2dXmlGenerator;
 using Maple2.Database.Extensions;
 using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
@@ -62,6 +63,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "exp*.xml", Table = ParseExpTable() };
         yield return new TableMetadata { Name = "commonexp.xml", Table = ParseCommonExpTable() };
         yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
+        yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
         // Fishing
         yield return new TableMetadata { Name = "fishingspot.xml", Table = ParseFishingSpot() };
         yield return new TableMetadata { Name = "fish.xml", Table = ParseFish() };
@@ -317,7 +319,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
             }
 
             return additionalEffect.invoke.code
-                .Zip(additionalEffect.invoke.level, (effectId, level) => new { skillId = effectId, level })
+                .Zip(additionalEffect.invoke.level, (effectId, level) => new {skillId = effectId, level})
                 .Zip(additionalEffect.invoke.prop, (effect, prop) =>
                     new InteractObjectMetadataEffect.InvokeEffect(effect.skillId, effect.level, prop))
                 .ToArray();
@@ -1236,5 +1238,19 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 MarketMaxPrice: design.marketMaxPrice));
         }
         return new UgcDesignTable(results);
+	}
+
+    private LearningQuestTable ParseLearningQuestTable() {
+        var results = new Dictionary<int, LearningQuestTable.Entry>();
+        foreach ((int id, LearningQuest quest) in parser.ParseLearningQuest()) {
+            results.Add(id, new LearningQuestTable.Entry(
+                Category: quest.category,
+                RequiredLevel: quest.reqLevel,
+                QuestId: quest.reqQuest,
+                RequiredMapId: quest.reqField,
+                GoToMapId: quest.gotoField,
+                GoToPortalId: quest.gotoPortal));
+        }
+        return new LearningQuestTable(results);
     }
 }

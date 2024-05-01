@@ -115,6 +115,7 @@ public class MasteryHandler : PacketHandler<GameSession> {
             }
         }
         session.Exp.AddExp(ExpType.manufacturing);
+        session.ConditionUpdate(ConditionType.mastery_manufacturing, codeLong: recipeId);
         session.Send(MasteryPacket.GetCraftedItem(entry.Type, (ICollection<ItemComponent>) entry.RewardItems));
     }
 }

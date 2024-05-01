@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Enum;
+﻿using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -29,6 +30,12 @@ public class QuestHandler : PacketHandler<GameSession> {
         RemoteComplete = 24, // Maybe? This is mainly used for Navigator
     }
 
+    #region Autofac Autowired
+    // ReSharper disable MemberCanBePrivate.Global
+    public required TableMetadataStorage TableMetadata { private get; init; }
+    // ReSharper restore All
+    #endregion
+
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
         switch (command) {
@@ -46,6 +53,9 @@ public class QuestHandler : PacketHandler<GameSession> {
                 break;
             case Command.GoToNpc:
                 HandleGoToNpc(session, packet);
+                break;
+            case Command.MapleGuide:
+                HandleMapleGuide(session, packet);
                 break;
             case Command.RemoteComplete:
                 HandleRemoteComplete(session, packet);
@@ -117,6 +127,23 @@ public class QuestHandler : PacketHandler<GameSession> {
         }
 
         session.Send(session.PrepareField(quest.Metadata.GoToNpc.MapId, portalId: quest.Metadata.GoToNpc.PortalId)
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+    }
+
+    private void HandleMapleGuide(GameSession session, IByteReader packet) {
+        int id = packet.ReadInt();
+
+        if (!TableMetadata.LearningQuestTable.Entries.TryGetValue(id, out LearningQuestTable.Entry? metadata)) {
+            return;
+        }
+
+        if (session.Player.Value.Character.Level < metadata.RequiredLevel ||
+            (session.Quest.TryGetQuest(metadata.QuestId, out Quest? quest) && quest.State == QuestState.Completed)) {
+            return;
+        }
+
+        session.Send(session.PrepareField(metadata.GoToMapId, metadata.GoToPortalId, session.CharacterId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
