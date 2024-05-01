@@ -72,8 +72,6 @@ metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456
 // Filter Xml results based on feature settings.
 Filter.Load(xmlReader, locale, env);
 
-// new NpcScriptGenerator(xmlReader).Generate();
-// new NpcScriptGenerator(xmlReader).GenerateEvent();
 // new TriggerGenerator(xmlReader).Generate();
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
