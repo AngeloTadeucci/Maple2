@@ -84,11 +84,24 @@ public partial class TriggerContext {
 
     public void AddBalloonTalk(int spawnId, string msg, int duration, int delayTick) {
         DebugLog("[AddBalloonTalk] spawnId:{SpawnId}, msg:{Message}, duration:{Duration}, delayTick:{Delay}", spawnId, msg, duration, delayTick);
-        foreach (FieldNpc npc in Field.Npcs.Values) {
-            if (spawnId == 0 || npc.SpawnPointId == spawnId) {
-                Broadcast(CinematicPacket.BalloonTalk(true, npc.ObjectId, msg, duration, delayTick));
+        if (spawnId == 0) {
+            FieldPlayer? fieldPlayer = Field.Players.Values.FirstOrDefault();
+            if (fieldPlayer == null) {
+                ErrorLog("[AddBalloonTalk] No players found in field");
+                return;
             }
+
+            Broadcast(CinematicPacket.BalloonTalk(false, fieldPlayer.ObjectId, msg, duration, delayTick));
+            return;
         }
+
+        FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        if (fieldNpc == null) {
+            ErrorLog("[AddBalloonTalk] No NPC with spawnId:{SpawnId} found in field", spawnId);
+            return;
+        }
+
+        Broadcast(CinematicPacket.BalloonTalk(true, fieldNpc.ObjectId, msg, duration, delayTick));
     }
 
     public void RemoveBalloonTalk(int spawnId) {

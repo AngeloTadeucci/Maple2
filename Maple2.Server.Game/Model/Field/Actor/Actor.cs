@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using Maple2.Model.Enum;
@@ -24,6 +25,8 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public T Value { get; }
 
     public virtual Stats Stats { get; } = new(0, 0);
+
+    protected readonly ConcurrentDictionary<int, long> DamageDealers = new();
 
     public int ObjectId { get; }
     public virtual Vector3 Position { get; set; }
@@ -57,27 +60,31 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     }
 
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) {
-        if (attack.Damage.Count > 0) {
-            var targetRecord = new DamageRecordTarget {
-                ObjectId = ObjectId,
-                Position = caster.Position,
-                Direction = caster.Rotation, // Idk why this is wrong
-            };
-
-            long damageAmount = 0;
-            for (int i = 0; i < attack.Damage.Count; i++) {
-                Reflect(caster);
-                targetRecord.AddDamage(DamageType.Normal, -2000);
-                damageAmount -= 2000;
-            }
-
-            if (damageAmount != 0) {
-                Stats[BasicAttribute.Health].Add(damageAmount);
-                Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
-            }
-
-            damage.Targets.Add(targetRecord);
+        if (attack.Damage.Count <= 0) {
+            return;
         }
+
+        var targetRecord = new DamageRecordTarget {
+            ObjectId = ObjectId,
+            Position = caster.Position,
+            Direction = caster.Rotation, // Idk why this is wrong
+        };
+
+        long damageAmount = 0;
+        for (int i = 0; i < attack.Damage.Count; i++) {
+            Reflect(caster);
+            targetRecord.AddDamage(DamageType.Normal, -2000);
+            damageAmount -= 2000;
+        }
+
+        if (damageAmount != 0) {
+            long positiveDamage = damageAmount * -1;
+            DamageDealers.AddOrUpdate(caster.ObjectId, positiveDamage, (_, current) => current + positiveDamage);
+            Stats[BasicAttribute.Health].Add(damageAmount);
+            Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
+        }
+
+        damage.Targets.Add(targetRecord);
     }
 
     public virtual void Reflect(IActor target) {

@@ -170,7 +170,7 @@ public partial class TriggerContext {
 
     #region Conditions
     public bool WidgetCondition(WidgetType type, string condition, string value) {
-        ErrorLog("[WidgetCondition] type:{Type}, condition:{Condition}, value:{Value}", type, condition, value);
+        DebugLog("[WidgetCondition] type:{Type}, condition:{Condition}, value:{Value}", type, condition, value);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return false;
         }
