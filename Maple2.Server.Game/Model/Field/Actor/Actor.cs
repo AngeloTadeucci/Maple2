@@ -67,8 +67,8 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             long damageAmount = 0;
             for (int i = 0; i < attack.Damage.Count; i++) {
                 Reflect(caster);
-                targetRecord.AddDamage(DamageType.Normal, -2000);
-                damageAmount -= 2000;
+                targetRecord.AddDamage(DamageType.Normal, -50000);
+                damageAmount -= 50000;
             }
 
             if (damageAmount != 0) {

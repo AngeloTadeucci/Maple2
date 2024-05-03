@@ -4,6 +4,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PathEngine;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Routine;
 using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
@@ -152,6 +153,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     protected override void OnDeath() {
+        DropLoot();
         Owner?.Despawn(ObjectId);
         CurrentRoutine.OnCompleted();
         SendControl = false;
@@ -165,5 +167,23 @@ public class FieldNpc : Actor<Npc> {
         }
 
         CurrentRoutine = new AnimateRoutine(this, sequence, duration);
+    }
+
+    public void DropLoot() {
+        NpcMetadataDropInfo dropInfo = Value.Metadata.DropInfo;
+
+        // Get first player to get the item drop manager?
+        ItemDropManager dropManager = Field.Players.FirstOrDefault().Value.Session.ItemDrop;
+        foreach (int globalDropId in dropInfo.GlobalDropBoxIds) {
+            IList<Item> itemDrops = dropManager.GetGlobalDropItem(globalDropId, Value.Metadata.Basic.Level);
+            foreach (Item item in itemDrops) {
+                float x = Random.Shared.Next((int) Position.X - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.X + Value.Metadata.DropInfo.DropDistanceRandom);
+                float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
+                var position = new Vector3(x, y, Position.Z);
+
+                FieldItem fieldItem = Field.SpawnItem(this, position, Rotation, item, false);
+                Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            }
+        }
     }
 }

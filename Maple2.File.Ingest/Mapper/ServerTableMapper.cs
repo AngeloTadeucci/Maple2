@@ -23,6 +23,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
         yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
         yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
+        yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
 
     }
 
@@ -377,4 +378,57 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             return new BonusGameTable(bonusGames, drops);
         }
+
+    private GlobalDropItemBoxTable ParseGlobalItemDropTable() {
+        var dropGroups = new Dictionary<int, Dictionary<int, IList<GlobalDropItemBoxTable.Group>>>();
+
+        foreach ((int id, GlobalDropItemBox itemDrop) in parser.ParseGlobalDropItemBox()) {
+            var groups = new List<GlobalDropItemBoxTable.Group>();
+            foreach (GlobalDropItemBox.Group group in itemDrop.v) {
+                List<GlobalDropItemBoxTable.Group.DropCount> dropCounts = new();
+                for (int i = 0; i < group.dropCount.Length; i++) {
+                    dropCounts.Add(new GlobalDropItemBoxTable.Group.DropCount(
+                        Amount: group.dropCount[i],
+                        Probability: group.dropCountProbability[i]));
+                }
+                groups.Add(new GlobalDropItemBoxTable.Group(
+                    GroupId: group.dropGroupIDs,
+                    MinLevel: group.minLevel,
+                    MaxLevel: group.maxLevel,
+                    DropCounts:dropCounts,
+                    OwnerDrop: group.isOwnerDrop,
+                    MapTypeCondition: (MapType) group.mapTypeCondition,
+                    ContinentCondition: (Continent) group.continentCondition));
+            }
+
+            if (!dropGroups.TryGetValue(id, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? groupDict)) {
+                groupDict = new Dictionary<int, IList<GlobalDropItemBoxTable.Group>> {
+                    { id, groups }
+                };
+                dropGroups.Add(id, groupDict);
+            } else {
+                groupDict.Add(id, groups);
+            }
+        }
+
+        var dropItems = new Dictionary<int, IList<GlobalDropItemBoxTable.Item>>();
+        foreach ((int id, GlobalDropItemSet itemBox) in parser.ParseGlobalDropItemSet()) {
+            var items = new List<GlobalDropItemBoxTable.Item>();
+
+            foreach (GlobalDropItemSet.Item item in itemBox.v) {
+                items.Add(new GlobalDropItemBoxTable.Item(
+                    Id: item.itemID,
+                    MinLevel: item.minLevel,
+                    MaxLevel: item.maxLevel,
+                    DropCount: new GlobalDropItemBoxTable.Range<int>(item.minCount, item.maxCount == 0 ? item.minCount : item.maxCount),
+                    Rarity: item.grade,
+                    Weight: item.weight,
+                    MapIds: item.mapDependency,
+                    QuestConstraint: item.constraintsQuest));
+            }
+
+            dropItems.Add(id, items);
+        }
+        return new GlobalDropItemBoxTable(dropGroups, dropItems);
+    }
 }

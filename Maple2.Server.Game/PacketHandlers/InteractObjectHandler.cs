@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Maple2.Model.Enum;
@@ -81,8 +82,16 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
                 }
             }
 
-            if (interact.Value.Drop.GlobalDropBoxIds.Length > 0) {
-                // TODO: Handle GlobalDropBoxes
+            IList<Item> globalDropBoxItems = new List<Item>();
+            foreach (int globalDropBoxId in interact.Value.Drop.GlobalDropBoxIds) {
+                globalDropBoxItems = session.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
+            }
+
+            foreach (Item item in globalDropBoxItems) {
+                FieldItem fieldItem = session.Field.SpawnItem(interact, interact.Position with {
+                    Z = interact.Position.Z + interact.Value.Drop.DropHeight,
+                }, interact.Rotation, item, false);
+                session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
             }
 
             foreach (Item item in items) {

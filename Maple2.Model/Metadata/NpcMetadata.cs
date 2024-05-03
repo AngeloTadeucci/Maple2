@@ -11,6 +11,7 @@ public record NpcMetadata(
     NpcMetadataStat Stat,
     NpcMetadataBasic Basic,
     NpcMetadataProperty Property,
+    NpcMetadataDropInfo DropInfo,
     NpcMetadataAction Action,
     NpcMetadataDead Dead) : ISearchResult;
 
@@ -63,6 +64,15 @@ public record NpcMetadataAction(
     string MaidExpired);
 
 public record NpcAction(string Name, int Probability);
+
+public record NpcMetadataDropInfo(
+    float DropDistanceBase,
+    int DropDistanceRandom,
+    int[] GlobalDropBoxIds,
+    int[] DeadGlobalDropBoxIds,
+    int[] IndividualDropBoxIds,
+    int[] GlobalHitDropBoxIds,
+    int[] IndividualHitDropBoxIds);
 
 public record NpcMetadataDead(
     float Time,
