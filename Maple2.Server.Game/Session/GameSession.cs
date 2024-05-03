@@ -136,7 +136,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
         ItemBox = new ItemBoxManager(this);
-        ItemDrop = new ItemDropManager(this);
+        ItemDrop = new ItemDropManager(Player, ItemStatsCalc);
         Beauty = new BeautyManager(this);
         GameEventUserValue = new GameEventUserValueManager(this);
         Exp = new ExperienceManager(this, Lua);

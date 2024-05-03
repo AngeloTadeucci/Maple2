@@ -5,6 +5,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
@@ -33,12 +34,14 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public abstract IPrism Shape { get; }
 
     public BuffManager Buffs { get; }
+    public ItemDropManager ItemDrop { get; }
 
     protected Actor(FieldManager field, int objectId, T value) {
         Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
+        ItemDrop = new ItemDropManager(this, Field.ItemStatsCalc);
     }
 
     public void Dispose() {
