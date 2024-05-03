@@ -153,6 +153,4 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     }
 
     protected abstract void OnDeath();
-
-
 }
