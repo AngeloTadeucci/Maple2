@@ -24,7 +24,7 @@ public partial class TriggerContext {
     public void CreateMonster(int[] spawnIds, bool spawnAnimation, int arg3) {
         WarnLog("[CreateMonster] spawnIds:{SpawnIds}, spawnAnimation:{SpawnAnimation}, arg3:{Arg3}", string.Join(", ", spawnIds), spawnAnimation, arg3);
         foreach (int spawnId in spawnIds) {
-            SpawnMonster(spawnId);
+            SpawnNpc(spawnId);
         }
     }
 
@@ -34,11 +34,22 @@ public partial class TriggerContext {
             foreach (int objectId in Field.Mobs.Keys) {
                 Field.RemoveNpc(objectId);
             }
+
+            foreach (int objectId in Field.Npcs.Keys) {
+                Field.RemoveNpc(objectId);
+            }
             return;
         }
 
-        foreach (FieldNpc fieldMob in Field.Mobs.Values) {
-            if (spawnIds.Contains(fieldMob.SpawnPointId)) {
+        foreach (int spawnPointId in spawnIds) {
+            FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnPointId);
+            if (fieldNpc != null) {
+                Field.RemoveNpc(fieldNpc.ObjectId);
+                continue;
+            }
+
+            FieldNpc? fieldMob = Field.Mobs.Values.FirstOrDefault(mob => mob.SpawnPointId == spawnPointId);
+            if (fieldMob != null) {
                 Field.RemoveNpc(fieldMob.ObjectId);
             }
         }
@@ -140,7 +151,7 @@ public partial class TriggerContext {
         DebugLog("[MonsterDead] spawnIds:{SpawnIds}, arg2:{Arg2}", string.Join(", ", spawnIds), arg2);
         foreach (FieldNpc mob in Field.Mobs.Values) {
             if (mob.SpawnPointId > 0 || !spawnIds.Contains(mob.SpawnPointId)) {
-                continue;
+                return false;
             }
 
             if (!mob.IsDead) {

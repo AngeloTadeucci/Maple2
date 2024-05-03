@@ -183,6 +183,12 @@ public sealed class NpcScriptManager {
                 continue;
             }
 
+            if (scriptState.JobCondition != null && 
+                scriptState.JobCondition != JobCode.None &&
+                scriptState.JobCondition != session.Player.Value.Character.Job.Code()) {
+                continue;
+            }
+
             if (!scriptConditions.TryGetValue(scriptState.Id, out ScriptConditionMetadata? scriptCondition)) {
                 scriptStates.Add(scriptState);
                 continue;
