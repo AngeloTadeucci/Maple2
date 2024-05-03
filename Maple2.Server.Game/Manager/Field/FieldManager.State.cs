@@ -71,7 +71,7 @@ public partial class FieldManager {
         if (Metadata.Property.RevivalReturnId != 0) {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
-        if (Metadata.Property.EnterReturnId != 0 && Metadata.Limit.Capacity > 0) {
+        if (Metadata.Property.EnterReturnId != 0) {
             player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
         }
 

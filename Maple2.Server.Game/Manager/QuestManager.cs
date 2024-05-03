@@ -189,7 +189,7 @@ public sealed class QuestManager {
                     continue;
                 }
 
-                condition.Counter = (int) Math.Max(condition.Counter + counter, condition.Metadata.Value);
+                condition.Counter = (int) Math.Min(condition.Metadata.Value, condition.Counter + counter);
 
                 session.Send(QuestPacket.Update(quest));
             }

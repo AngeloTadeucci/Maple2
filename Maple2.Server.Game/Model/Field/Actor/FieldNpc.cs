@@ -155,6 +155,16 @@ public class FieldNpc : Actor<Npc> {
         Owner?.Despawn(ObjectId);
         CurrentRoutine.OnCompleted();
         SendControl = false;
+
+        foreach (KeyValuePair<int, long> damageDealer in DamageDealers) {
+            Field.TryGetPlayer(damageDealer.Key, out FieldPlayer? player);
+            if (player is null) {
+                continue;
+            }
+
+            player.Session.ConditionUpdate(Maple2.Model.Enum.ConditionType.npc, codeLong: Value.Id);
+        }
+
         Remove(delay: (int) (Value.Metadata.Dead.Time * 1000));
     }
 

@@ -54,16 +54,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             continue;
                     }
                     continue;
-                case IActor actor: {
-                        switch (actor) {
-                            case IMS2BreakableActor breakable:
-                                yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, breakable.Position, breakable.Rotation)
-                                };
-                                continue;
-                        }
-                        continue;
-                    }
+
                 case IPortal portal:
                     if (!FeatureEnabled(portal.feature) || !HasLocale(portal.locale)) continue;
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
@@ -179,6 +170,16 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             continue;
                     }
                     continue;
+                case IActor actor: {
+                        switch (actor) {
+                            case IMS2BreakableActor breakable:
+                                yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, breakable.Position, breakable.Rotation)
+                                };
+                                continue;
+                        }
+                        continue;
+                    }
             }
         }
     }
