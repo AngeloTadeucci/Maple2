@@ -2,7 +2,6 @@
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Util;
 using Maple2.Tools;
 
 namespace Maple2.Server.Game.Manager.Items;
@@ -14,7 +13,7 @@ public class ItemDropManager {
         this.actor = actor;
     }
 
-    public IList<Item> GetGlobalDropItem(int globalDropBoxId, short level) {
+    public IList<Item> GetGlobalDropItem(int globalDropBoxId, int level = 0) {
         if (!actor.Field.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? dropGroup)) {
             return new List<Item>();
         }
@@ -57,7 +56,7 @@ public class ItemDropManager {
 
                 // Randomize list in order to get true random items when pulled from weightedItems.
                 foreach (GlobalDropItemBoxTable.Item itemEntry in items.OrderBy(i => Random.Shared.Next())) {
-                    if (itemEntry.MinLevel > level || itemEntry.MaxLevel < level) {
+                    if (itemEntry.MinLevel > level || (itemEntry.MaxLevel > 0 && itemEntry.MaxLevel < level)) {
                        continue;
                     }
 

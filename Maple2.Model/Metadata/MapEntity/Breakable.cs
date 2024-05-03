@@ -16,6 +16,7 @@ public record BreakableActor(
     int Id,
     int HideTime,
     int ResetTime,
+    int GlobalDropBoxId,
     Vector3 Position,
     Vector3 Rotation)
 : MapBlock;

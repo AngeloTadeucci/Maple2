@@ -1,12 +1,14 @@
 ﻿using System;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -43,6 +45,14 @@ public class BreakableHandler : PacketHandler<GameSession> {
         }
 
         if (session.Field?.TryGetBreakable(entityId, out FieldBreakable? breakable) == true) {
+            if (breakable.Value.GlobalDropBoxId != 0) {
+                IList<Item> items = session.Player.ItemDrop.GetGlobalDropItem(breakable.Value.GlobalDropBoxId, session.Field.Metadata.Drop.Level);
+                Console.WriteLine($"Breakable object {entityId} dropped {items.Count} items.");
+                foreach (Item item in items) {
+                    FieldItem fieldItem = session.Field.SpawnItem(breakable, breakable.Position, breakable.Rotation, item, false);
+                    session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+                }
+            }
             breakable.UpdateState(BreakableState.Break);
         } else {
             Console.WriteLine(entityId + " does not exist...");
