@@ -84,7 +84,7 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
 
             IList<Item> globalDropBoxItems = new List<Item>();
             foreach (int globalDropBoxId in interact.Value.Drop.GlobalDropBoxIds) {
-                globalDropBoxItems = session.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
+                globalDropBoxItems = session.Player.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
             }
 
             foreach (Item item in globalDropBoxItems) {

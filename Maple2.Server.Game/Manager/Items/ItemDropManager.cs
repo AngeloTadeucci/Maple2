@@ -9,11 +9,9 @@ namespace Maple2.Server.Game.Manager.Items;
 
 public class ItemDropManager {
     private readonly IActor actor;
-    private readonly ItemStatsCalculator itemStatsCalc;
 
-    public ItemDropManager(IActor actor, ItemStatsCalculator itemStatsCalc) {
+    public ItemDropManager(IActor actor) {
         this.actor = actor;
-        this.itemStatsCalc = itemStatsCalc;
     }
 
     public IList<Item> GetGlobalDropItem(int globalDropBoxId, short level) {
@@ -108,8 +106,8 @@ public class ItemDropManager {
         }
 
         var item = new Item(itemMetadata, rarity, amount);
-        item.Stats = itemStatsCalc.GetStats(item);
-        item.Socket = itemStatsCalc.GetSockets(item);
+        item.Stats = actor.Field.ItemStatsCalc.GetStats(item);
+        item.Socket = actor.Field.ItemStatsCalc.GetSockets(item);
 
         if (item.Appearance != null) {
             item.Appearance.Color = GetColor(item.Metadata.Customize);

@@ -41,7 +41,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
-        ItemDrop = new ItemDropManager(this, Field.ItemStatsCalc);
+        ItemDrop = new ItemDropManager(this);
     }
 
     public void Dispose() {

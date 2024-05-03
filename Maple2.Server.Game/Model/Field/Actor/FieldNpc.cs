@@ -172,10 +172,8 @@ public class FieldNpc : Actor<Npc> {
     public void DropLoot() {
         NpcMetadataDropInfo dropInfo = Value.Metadata.DropInfo;
 
-        // Get first player to get the item drop manager?
-        ItemDropManager dropManager = Field.Players.FirstOrDefault().Value.Session.ItemDrop;
         foreach (int globalDropId in dropInfo.GlobalDropBoxIds) {
-            IList<Item> itemDrops = dropManager.GetGlobalDropItem(globalDropId, Value.Metadata.Basic.Level);
+            IList<Item> itemDrops = ItemDrop.GetGlobalDropItem(globalDropId, Value.Metadata.Basic.Level);
             foreach (Item item in itemDrops) {
                 float x = Random.Shared.Next((int) Position.X - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.X + Value.Metadata.DropInfo.DropDistanceRandom);
                 float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
