@@ -74,6 +74,14 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                         Dimensions: new Vector3(data.collision.width, data.collision.depth, data.collision.height),
                         Offset: new Vector3(data.collision.widthOffset, data.collision.depthOffset, data.collision.heightOffset)
                     ) : null),
+                DropInfo: new NpcMetadataDropInfo(
+                    DropDistanceBase: data.dropiteminfo.dropDistanceBase,
+                    DropDistanceRandom: data.dropiteminfo.dropDistanceRandom,
+                    GlobalDropBoxIds: data.dropiteminfo.globalDropBoxId,
+                    DeadGlobalDropBoxIds: data.dropiteminfo.globalDeadDropBoxId,
+                    IndividualDropBoxIds: data.dropiteminfo.individualDropBoxId,
+                    GlobalHitDropBoxIds: data.dropiteminfo.globalHitDropBoxId,
+                    IndividualHitDropBoxIds: data.dropiteminfo.globalHitDropBoxId),
                 Action: new NpcMetadataAction(
                     RotateSpeed: data.speed.rotation,
                     WalkSpeed: data.speed.walk,

@@ -49,6 +49,7 @@ public class ItemManager {
         return item ?? Equips.Outfit.Values.FirstOrDefault(outfit => outfit.Uid == uid);
     }
 
+    [Obsolete("Use in actor.ItemDrop instead")]
     public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
         if (!session.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
             return null;
@@ -73,6 +74,7 @@ public class ItemManager {
         return item;
     }
 
+    [Obsolete]
     private EquipColor GetColor(ItemMetadataCustomize metadata) {
         // Item has no color
         if (metadata.ColorPalette == 0 ||

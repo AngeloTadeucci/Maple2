@@ -392,7 +392,7 @@ public partial class TriggerContext {
             // TODO: Implement globalDropBoxId
 
             foreach (Item item in items) {
-                FieldItem fieldItem = Field.SpawnItem(spawn.Position, spawn.Rotation, item, true);
+                FieldItem fieldItem = Field.SpawnItem(spawn.Position, spawn.Rotation, item, 0, true);
 
                 Field.Broadcast(FieldPacket.DropItem(fieldItem));
             }

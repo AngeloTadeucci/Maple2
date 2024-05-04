@@ -6,6 +6,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
@@ -26,7 +27,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual Stats Stats { get; } = new(0, 0);
 
-    protected readonly ConcurrentDictionary<int, long> DamageDealers = new();
+    protected readonly ConcurrentDictionary<int, DamageRecordTarget> DamageDealers = new();
 
     public int ObjectId { get; }
     public virtual Vector3 Position { get; set; }
@@ -73,13 +74,17 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         long damageAmount = 0;
         for (int i = 0; i < attack.Damage.Count; i++) {
             Reflect(caster);
-            targetRecord.AddDamage(DamageType.Normal, -2000);
-            damageAmount -= 2000;
+            targetRecord.AddDamage(DamageType.Normal, -50000);
+            damageAmount -= 50000;
         }
 
         if (damageAmount != 0) {
             long positiveDamage = damageAmount * -1;
-            DamageDealers.AddOrUpdate(caster.ObjectId, positiveDamage, (_, current) => current + positiveDamage);
+            if (!DamageDealers.TryGetValue(caster.ObjectId, out DamageRecordTarget? record)) {
+                record = new DamageRecordTarget();
+                DamageDealers.TryAdd(caster.ObjectId, record);
+            }
+            record.AddDamage(DamageType.Normal, positiveDamage);
             Stats[BasicAttribute.Health].Add(damageAmount);
             Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
         }

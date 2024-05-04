@@ -1,10 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PathEngine;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Routine;
+using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
@@ -170,15 +173,43 @@ public class FieldNpc : Actor<Npc> {
         CurrentRoutine = new AnimateRoutine(this, sequence, duration);
     }
 
+    public void DropLoot(long characterId) {
+        NpcMetadataDropInfo dropInfo = Value.Metadata.DropInfo;
+
+        foreach (int globalDropId in dropInfo.GlobalDropBoxIds) {
+            IList<Item> itemDrops = Field.ItemDrop.GetGlobalDropItem(globalDropId, Value.Metadata.Basic.Level);
+            foreach (Item item in itemDrops) {
+                float x = Random.Shared.Next((int) Position.X - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.X + Value.Metadata.DropInfo.DropDistanceRandom);
+                float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
+                var position = new Vector3(x, y, Position.Z);
+
+                FieldItem fieldItem = Field.SpawnItem(this, position, Rotation, item, characterId);
+                Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            }
+        }
+    }
+
     // mob drops, exp, etc.
     private void HandleDamageDealers() {
-        foreach (KeyValuePair<int, long> damageDealer in DamageDealers) {
-            Field.TryGetPlayer(damageDealer.Key, out FieldPlayer? player);
-            if (player is null) {
+        // TODO: Fix drop loot. Right now we're getting the first player in damage dealers as the receiver of the loot.
+        // How it should work is the person who instigated the first attack on the mob gets tagged. As long as the mob is in aggro, it stays on them, regardless if aggro changes.
+        // If the mob stops aggro to everyone, it resets this and heals/removes all damage records.
+        // Boss drop loot is different. They drop for everyone who did damage to them.
+
+        long firstCharacter = 0;
+        if (Field.TryGetPlayer(DamageDealers.FirstOrDefault().Key, out FieldPlayer? firstPlayer)) {
+            firstCharacter = firstPlayer.Value.Character.Id;
+        }
+        foreach (KeyValuePair<int, DamageRecordTarget> damageDealer in DamageDealers) {
+            if (!Field.TryGetPlayer(damageDealer.Key, out FieldPlayer? player)) {
                 continue;
             }
 
-            player.Session.ConditionUpdate(Maple2.Model.Enum.ConditionType.npc, codeLong: Value.Id);
+            DropLoot(firstCharacter);
+            player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id);
+            foreach (string tag in Value.Metadata.Basic.MainTags) {
+                player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
+            }
         }
     }
 }

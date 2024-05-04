@@ -142,39 +142,33 @@ public partial class FieldManager {
             Owner = owner,
             Position = owner.Position,
             Rotation = owner.Rotation,
+            Type = DropType.Player,
         };
         fieldItems[fieldItem.ObjectId] = fieldItem;
 
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, bool fixedPosition) {
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
             Position = position,
             Rotation = rotation,
             FixedPosition = fixedPosition,
+            ReceiverId = characterId,
+            Type = characterId > 0 ? DropType.Default : DropType.Player,
         };
         fieldItems[fieldItem.ObjectId] = fieldItem;
 
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, bool fixedPosition) {
+    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, long characterId) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
             Owner = owner,
             Position = position,
             Rotation = rotation,
-            FixedPosition = fixedPosition,
-        };
-        fieldItems[fieldItem.ObjectId] = fieldItem;
-
-        return fieldItem;
-    }
-
-    public FieldItem SpawnItem(FieldInteract interact, Item item) {
-        var fieldItem = new FieldItem(this, NextLocalId(), item) {
-            Position = interact.Position,
-            Rotation = interact.Rotation,
+            ReceiverId = characterId,
+            Type = characterId > 0 ? DropType.Default : DropType.Player,
         };
         fieldItems[fieldItem.ObjectId] = fieldItem;
 

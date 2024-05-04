@@ -93,6 +93,7 @@ public sealed class MetadataContext : DbContext {
         builder.Property(npc => npc.Stat).HasJsonConversion();
         builder.Property(npc => npc.Basic).HasJsonConversion();
         builder.Property(npc => npc.Property).HasJsonConversion();
+        builder.Property(npc => npc.DropInfo).HasJsonConversion();
         builder.Property(npc => npc.Action).HasJsonConversion();
         builder.Property(npc => npc.Dead).HasJsonConversion();
     }
