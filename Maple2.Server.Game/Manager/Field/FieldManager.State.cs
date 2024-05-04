@@ -149,11 +149,13 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, bool fixedPosition = false) {
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
             Position = position,
             Rotation = rotation,
             FixedPosition = fixedPosition,
+            ReceiverId = characterId,
+            Type = characterId > 0 ? DropType.Default : DropType.Player,
         };
         fieldItems[fieldItem.ObjectId] = fieldItem;
 
