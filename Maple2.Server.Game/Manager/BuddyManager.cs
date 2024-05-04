@@ -139,6 +139,7 @@ public class BuddyManager : IDisposable {
                 ReceiverId = receiverId,
                 Invite = new BuddyRequest.Types.Invite { SenderId = session.CharacterId },
             });
+            session.ConditionUpdate(ConditionType.buddy_request);
         } catch (SystemException ex) {
             logger.Warning(ex, "Invite failed");
             session.Send(BuddyPacket.Invite(error: s_buddy_err_unknown));

@@ -421,6 +421,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         if (fieldInteract == null) {
             return;
         }
+        session.ConditionUpdate(ConditionType.install_billboard, targetLong: session.Field.MapId);
         session.Field.Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
         session.Item.Inventory.Consume(item.Uid, 1);
     }

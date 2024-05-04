@@ -96,6 +96,9 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             return;
         }
 
+        session.ConditionUpdate(ConditionType.dialogue, codeLong: npc.Value.Id);
+        session.ConditionUpdate(ConditionType.talk_in, codeLong: npc.Value.Id);
+
         // if the first script happens to be a quest, we should change NpcScript
         if (session.NpcScript?.State != null && session.NpcScript.State.Type == ScriptStateType.Quest) {
             if (!ScriptMetadata.TryGet(session.NpcScript.QuestId, out ScriptMetadata? questMetadata)) {

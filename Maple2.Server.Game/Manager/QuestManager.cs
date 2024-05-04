@@ -321,6 +321,7 @@ public sealed class QuestManager {
 
         session.ConditionUpdate(ConditionType.quest_clear_by_chapter, codeLong: quest.Metadata.Basic.ChapterId);
         session.ConditionUpdate(ConditionType.quest, codeLong: quest.Metadata.Id);
+        session.ConditionUpdate(ConditionType.quest_clear, codeLong: quest.Metadata.Id);
 
         quest.EndTime = DateTime.Now.ToEpochSeconds();
         quest.State = QuestState.Completed;
