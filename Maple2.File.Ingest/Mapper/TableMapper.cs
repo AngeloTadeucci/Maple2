@@ -268,7 +268,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private InteractObjectTable ParseInteractObject() {
         var results = new Dictionary<int, InteractObjectMetadata>();
         results = MergeInteractObjectTable(results, parser.ParseInteractObjectMastery());
-        results = MergeInteractObjectTable(results, parser.ParseInteractObjectMastery().Select(entry => (entry.Id, entry.Info)));
+        results = MergeInteractObjectTable(results, parser.ParseInteractObject().Select(entry => (entry.Id, entry.Info)));
         return new InteractObjectTable(results);
     }
     private Dictionary<int, InteractObjectMetadata> MergeInteractObjectTable(Dictionary<int, InteractObjectMetadata> results, IEnumerable<(int Id, InteractObject Info)> parser) {
@@ -319,7 +319,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
             }
 
             return additionalEffect.invoke.code
-                .Zip(additionalEffect.invoke.level, (effectId, level) => new {skillId = effectId, level})
+                .Zip(additionalEffect.invoke.level, (effectId, level) => new { skillId = effectId, level })
                 .Zip(additionalEffect.invoke.prop, (effect, prop) =>
                     new InteractObjectMetadataEffect.InvokeEffect(effect.skillId, effect.level, prop))
                 .ToArray();
@@ -1238,7 +1238,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 MarketMaxPrice: design.marketMaxPrice));
         }
         return new UgcDesignTable(results);
-	}
+    }
 
     private LearningQuestTable ParseLearningQuestTable() {
         var results = new Dictionary<int, LearningQuestTable.Entry>();

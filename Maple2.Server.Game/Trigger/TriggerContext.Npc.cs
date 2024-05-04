@@ -133,7 +133,7 @@ public partial class TriggerContext {
     }
 
     public void SpawnNpcRange(int[] spawnIds, bool isAutoTargeting, int randomPickCount, int score) {
-        ErrorLog("[SpawnNpcRange] spawnIds:{SpawnIds}, isAutoTargeting:{AutoTarget}, randomPickCount:{RandomCount}, score:{Score}",
+        DebugLog("[SpawnNpcRange] spawnIds:{SpawnIds}, isAutoTargeting:{AutoTarget}, randomPickCount:{RandomCount}, score:{Score}",
             string.Join(", ", spawnIds), isAutoTargeting, randomPickCount, score);
 
         foreach (int spawnId in spawnIds) {
