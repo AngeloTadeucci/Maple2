@@ -136,7 +136,7 @@ public class MasteryManager {
             if (item == null) {
                 continue;
             }
-            FieldItem fieldItem = session.Field!.SpawnItem(fieldInteract, item);
+            FieldItem fieldItem = session.Field!.SpawnItem(fieldInteract.Position, fieldInteract.Rotation, item, false);
             session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using Maple2.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
@@ -11,6 +12,9 @@ public class FieldItem : FieldEntity<Item> {
 
     private readonly long despawnTick;
     public bool FixedPosition { get; init; }
+
+    public long ReceiverId { get; init; }
+    public DropType Type { get; init; }
 
     public FieldItem(FieldManager field, int objectId, Item value, long msDuration = 0) : base(field, objectId, value) {
         despawnTick = msDuration == 0 ? Environment.TickCount64 + (int) TimeSpan.FromMinutes(2).TotalMilliseconds :

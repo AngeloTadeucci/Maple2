@@ -25,6 +25,10 @@ public class ItemPickupHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (fieldItem.ReceiverId != 0 && fieldItem.ReceiverId != session.CharacterId) {
+            return;
+        }
+
         // Currency items are handled differently
         if (fieldItem.Value.IsCurrency()) {
             // Remove objectId from Field, make sure item still exists (multiple looters)

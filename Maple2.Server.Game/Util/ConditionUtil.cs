@@ -16,6 +16,7 @@ public static class ConditionUtil {
         switch (conditionType) {
             case ConditionType.emotion:
             case ConditionType.trigger:
+            case ConditionType.npc_race:
                 if (code.Strings != null && code.Strings.Contains(stringValue)) {
                     return true;
                 }

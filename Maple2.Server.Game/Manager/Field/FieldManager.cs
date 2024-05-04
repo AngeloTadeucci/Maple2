@@ -59,6 +59,8 @@ public sealed partial class FieldManager : IDisposable {
 
     private readonly ILogger logger = Log.Logger.ForContext<FieldManager>();
 
+    public ItemDropManager ItemDrop { get; }
+
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
@@ -75,6 +77,8 @@ public sealed partial class FieldManager : IDisposable {
         thread = new Thread(Update);
         OwnerId = ownerId;
         InstanceId = thread.ManagedThreadId;
+
+        ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
     }

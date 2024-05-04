@@ -27,7 +27,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual Stats Stats { get; } = new(0, 0);
 
-    protected readonly ConcurrentDictionary<int, long> DamageDealers = new();
+    protected readonly ConcurrentDictionary<int, DamageRecordTarget> DamageDealers = new();
 
     public int ObjectId { get; }
     public virtual Vector3 Position { get; set; }
@@ -37,14 +37,12 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public abstract IPrism Shape { get; }
 
     public BuffManager Buffs { get; }
-    public ItemDropManager ItemDrop { get; }
 
     protected Actor(FieldManager field, int objectId, T value) {
         Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
-        ItemDrop = new ItemDropManager(this);
     }
 
     public void Dispose() {
@@ -82,7 +80,11 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
         if (damageAmount != 0) {
             long positiveDamage = damageAmount * -1;
-            DamageDealers.AddOrUpdate(caster.ObjectId, positiveDamage, (_, current) => current + positiveDamage);
+            if (!DamageDealers.TryGetValue(caster.ObjectId, out DamageRecordTarget? record)) {
+                record = new DamageRecordTarget();
+                DamageDealers.TryAdd(caster.ObjectId, record);
+            }
+            record.AddDamage(DamageType.Normal, positiveDamage);
             Stats[BasicAttribute.Health].Add(damageAmount);
             Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
         }

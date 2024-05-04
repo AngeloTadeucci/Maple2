@@ -1,20 +1,22 @@
-﻿using Maple2.Model.Common;
+﻿using Maple2.Database.Storage;
+using Maple2.Model.Common;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Tools;
 
 namespace Maple2.Server.Game.Manager.Items;
 
 public class ItemDropManager {
-    private readonly IActor actor;
+    private readonly FieldManager field;
 
-    public ItemDropManager(IActor actor) {
-        this.actor = actor;
+    public ItemDropManager(FieldManager field) {
+        this.field = field;
     }
 
     public IList<Item> GetGlobalDropItem(int globalDropBoxId, int level = 0) {
-        if (!actor.Field.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? dropGroup)) {
+        if (!field.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? dropGroup)) {
             return new List<Item>();
         }
 
@@ -22,7 +24,7 @@ public class ItemDropManager {
 
         foreach ((int groupId, IList<GlobalDropItemBoxTable.Group> list) in dropGroup) {
             foreach (GlobalDropItemBoxTable.Group group in list) {
-                if (!actor.Field.ServerTableMetadata.GlobalDropItemBoxTable.Items.TryGetValue(group.GroupId, out IList<GlobalDropItemBoxTable.Item>? items)) {
+                if (!field.ServerTableMetadata.GlobalDropItemBoxTable.Items.TryGetValue(group.GroupId, out IList<GlobalDropItemBoxTable.Item>? items)) {
                     continue;
                 }
 
@@ -32,11 +34,11 @@ public class ItemDropManager {
                 }
 
                 // Check map and continent conditions.
-                if (group.MapTypeCondition != 0 && group.MapTypeCondition != actor.Field.Metadata.Property.Type) {
+                if (group.MapTypeCondition != 0 && group.MapTypeCondition != field.Metadata.Property.Type) {
                     continue;
                 }
 
-                if (group.ContinentCondition != 0 && group.ContinentCondition != actor.Field.Metadata.Property.Continent) {
+                if (group.ContinentCondition != 0 && group.ContinentCondition != field.Metadata.Property.Continent) {
                     continue;
                 }
 
@@ -57,10 +59,10 @@ public class ItemDropManager {
                 // Randomize list in order to get true random items when pulled from weightedItems.
                 foreach (GlobalDropItemBoxTable.Item itemEntry in items.OrderBy(i => Random.Shared.Next())) {
                     if (itemEntry.MinLevel > level || (itemEntry.MaxLevel > 0 && itemEntry.MaxLevel < level)) {
-                       continue;
+                        continue;
                     }
 
-                    if (itemEntry.MapIds.Length > 0 && !itemEntry.MapIds.Contains(actor.Field.Metadata.Id)) {
+                    if (itemEntry.MapIds.Length > 0 && !itemEntry.MapIds.Contains(field.Metadata.Id)) {
                         continue;
                     }
 
@@ -83,6 +85,7 @@ public class ItemDropManager {
                     if (createdItem == null) {
                         continue;
                     }
+
                     results.Add(createdItem);
                 }
             }
@@ -92,7 +95,7 @@ public class ItemDropManager {
     }
 
     public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
-        if (!actor.Field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
+        if (!field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
             return null;
         }
 
@@ -105,8 +108,8 @@ public class ItemDropManager {
         }
 
         var item = new Item(itemMetadata, rarity, amount);
-        item.Stats = actor.Field.ItemStatsCalc.GetStats(item);
-        item.Socket = actor.Field.ItemStatsCalc.GetSockets(item);
+        item.Stats = field.ItemStatsCalc.GetStats(item);
+        item.Socket = field.ItemStatsCalc.GetSockets(item);
 
         if (item.Appearance != null) {
             item.Appearance.Color = GetColor(item.Metadata.Customize);
@@ -118,7 +121,7 @@ public class ItemDropManager {
     private EquipColor GetColor(ItemMetadataCustomize metadata) {
         // Item has no color
         if (metadata.ColorPalette == 0 ||
-            !actor.Field.TableMetadata.ColorPaletteTable.Entries.TryGetValue(metadata.ColorPalette, out IReadOnlyDictionary<int, ColorPaletteTable.Entry>? palette)) {
+            !field.TableMetadata.ColorPaletteTable.Entries.TryGetValue(metadata.ColorPalette, out IReadOnlyDictionary<int, ColorPaletteTable.Entry>? palette)) {
             return default;
         }
 

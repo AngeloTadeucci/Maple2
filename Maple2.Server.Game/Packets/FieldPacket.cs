@@ -193,15 +193,15 @@ public static class FieldPacket {
         pWriter.WriteInt(item.Id);
         pWriter.WriteInt(item.Amount);
 
-        pWriter.WriteBool(item.Uid >= 0);
-        if (item.Uid >= 0) {
-            pWriter.WriteLong(item.Uid);
+        pWriter.WriteBool(fieldItem.ReceiverId >= 0);
+        if (fieldItem.ReceiverId >= 0) {
+            pWriter.WriteLong(fieldItem.ReceiverId);
         }
 
         pWriter.Write<Vector3>(fieldItem.Position);
         pWriter.WriteInt(fieldItem.Owner?.ObjectId ?? 0);
         pWriter.WriteInt();
-        pWriter.WriteByte(2); // Required for item to show up
+        pWriter.Write<DropType>(fieldItem.Type);
         pWriter.WriteInt(item.Rarity);
         pWriter.WriteShort();
         pWriter.WriteBool(fieldItem.FixedPosition);

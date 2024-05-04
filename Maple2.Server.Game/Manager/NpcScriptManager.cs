@@ -129,7 +129,7 @@ public sealed class NpcScriptManager {
             case 2: // Storage
             case 86: // TODO: BlackMarket
             case 88: // TODO: Birthday
-            case 501: // TODO: Roulette
+            case 501:
                 TalkType |= NpcTalkType.Dialog;
                 break;
             case >= 100 and <= 104: // Sky Fortress
@@ -183,7 +183,7 @@ public sealed class NpcScriptManager {
                 continue;
             }
 
-            if (scriptState.JobCondition != null && 
+            if (scriptState.JobCondition != null &&
                 scriptState.JobCondition != JobCode.None &&
                 scriptState.JobCondition != session.Player.Value.Character.Job.Code()) {
                 continue;

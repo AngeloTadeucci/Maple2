@@ -84,20 +84,20 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
 
             IList<Item> globalDropBoxItems = new List<Item>();
             foreach (int globalDropBoxId in interact.Value.Drop.GlobalDropBoxIds) {
-                globalDropBoxItems = session.Player.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
+                globalDropBoxItems = session.Field.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
             }
 
             foreach (Item item in globalDropBoxItems) {
                 FieldItem fieldItem = session.Field.SpawnItem(interact, interact.Position with {
                     Z = interact.Position.Z + interact.Value.Drop.DropHeight,
-                }, interact.Rotation, item, false);
+                }, interact.Rotation, item, session.CharacterId);
                 session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
             }
 
             foreach (Item item in items) {
                 FieldItem fieldItem = session.Field.SpawnItem(interact, interact.Position with {
                     Z = interact.Position.Z + interact.Value.Drop.DropHeight,
-                }, interact.Rotation, item, false);
+                }, interact.Rotation, item, session.CharacterId);
                 session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
             }
         }
