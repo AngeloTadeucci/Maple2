@@ -176,7 +176,19 @@ public partial class TriggerContext {
     }
 
     public void FaceEmotion(int spawnId, string emotionName) {
-        ErrorLog("[FaceEmotion] spawnId:{SpawnId}, emotionName:{Emotion}", spawnId, emotionName);
+        DebugLog("[FaceEmotion] spawnId:{SpawnId}, emotionName:{Emotion}", spawnId, emotionName);
+        if (spawnId == 0) {
+            FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
+            if (firstPlayer == null) {
+                return;
+            }
+            Field.Broadcast(TriggerPacket.UiFaceEmotion(firstPlayer.ObjectId, emotionName));
+            return;
+        }
+
+        foreach (var npc in Field.Npcs.Values.Where(npc => npc.SpawnPointId == spawnId)) {
+            Field.Broadcast(TriggerPacket.UiFaceEmotion(npc.ObjectId, emotionName));
+        }
     }
 
     public void SetState(byte arg1, string[] arg2, bool arg3) {
