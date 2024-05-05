@@ -1,4 +1,5 @@
 ﻿using Maple2.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
@@ -10,7 +11,7 @@ namespace Maple2.Server.Game.Manager;
 
 public class StatsManager {
     private readonly GameSession session;
-    private readonly IReadOnlyDictionary<short, UserStatMetadata> levelStats;
+    private readonly IReadOnlyDictionary<short, IReadOnlyDictionary<BasicAttribute, long>> levelStats;
 
     public readonly Stats Values;
 
@@ -18,10 +19,10 @@ public class StatsManager {
         this.session = session;
 
         Player player = session.Player;
-        session.ServerTableMetadata.UserStatTable.Stats.TryGetValue(player.Character.Job.Code(), out IReadOnlyDictionary<short, UserStatMetadata>? stats);
+        session.ServerTableMetadata.UserStatTable.JobStats.TryGetValue(player.Character.Job.Code(), out IReadOnlyDictionary<short, IReadOnlyDictionary<BasicAttribute, long>>? stats);
         if (stats is not null) {
             levelStats = stats;
-            stats.TryGetValue(player.Character.Level, out UserStatMetadata? metadata);
+            stats.TryGetValue(player.Character.Level, out IReadOnlyDictionary<BasicAttribute, long>? metadata);
             if (metadata is not null) {
                 Values = new Stats(metadata, player.Character.Job.Code());
                 return;
@@ -36,7 +37,7 @@ public class StatsManager {
 
     public void Refresh() {
         Character character = session.Player.Value.Character;
-        if (levelStats.TryGetValue(character.Level, out UserStatMetadata? metadata)) {
+        if (levelStats.TryGetValue(character.Level, out IReadOnlyDictionary<BasicAttribute, long>? metadata)) {
             Values.Reset(metadata, character.Job.Code());
         } else {
             Log.Logger.Error("Failed to refresh stats for {Job} level {Level}.", character.Job.Code(), character.Level);

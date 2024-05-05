@@ -433,47 +433,48 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private UserStatTable ParseUserStat() {
-        static UserStatMetadata UserStatMetadataMapper(UserStat userStat) {
-            return new UserStatMetadata(
-                level: userStat.lev,
-                strength: (long) userStat.str,
-                dexterity: (long) userStat.dex,
-                intelligence: (long) userStat.@int,
-                luck: (long) userStat.luk,
-                hp: (long) userStat.hp,
-                hpRegen: (long) userStat.hp_rgp,
-                hpRegenInterval: (long) userStat.hp_inv,
-                spirit: (long) userStat.sp,
-                spiritRegen: (long) userStat.sp_rgp,
-                spiritRegenInterval: (long) userStat.sp_inv,
-                stamina: (long) userStat.ep,
-                staminaRegen: (long) userStat.ep_rgp,
-                staminaRegenInterval: (long) userStat.ep_inv,
-                attackSpeed: (long) userStat.asp,
-                movementSpeed: (long) userStat.msp,
-                accuracy: (long) userStat.atp,
-                evasion: (long) userStat.evp,
-                criticalRate: (long) userStat.cap,
-                criticalDamage: (long) userStat.cad,
-                criticalEvasion: (long) userStat.car,
-                defense: (long) userStat.ndd,
-                perfectGuard: (long) userStat.abp,
-                jumpHeight: (long) userStat.jmp,
-                physicalAtk: (long) userStat.pap,
-                magicalAtk: (long) userStat.map,
-                physicalRes: (long) userStat.par,
-                magicalRes: (long) userStat.mar,
-                minWeaponAtk: (long) userStat.wapmin,
-                maxWeaponAtk: (long) userStat.wapmax,
-                damage: (long) userStat.dmg,
-                piercing: (long) userStat.pen,
-                bonusAtk: (long) userStat.base_atk,
-                sp_value: (long) userStat.sp_value
-            );
+        static IReadOnlyDictionary<BasicAttribute, long> UserStatMetadataMapper(UserStat userStat) {
+            Dictionary<BasicAttribute, long> stats = new() {
+                { BasicAttribute.Strength, (long) userStat.str },
+                { BasicAttribute.Dexterity, (long) userStat.dex },
+                { BasicAttribute.Intelligence, (long) userStat.@int },
+                { BasicAttribute.Luck, (long) userStat.luk },
+                { BasicAttribute.Health, (long) userStat.hp },
+                { BasicAttribute.HpRegen, (long) userStat.hp_rgp },
+                { BasicAttribute.HpRegenInterval, (long) userStat.hp_inv },
+                { BasicAttribute.Spirit, (long) userStat.sp },
+                { BasicAttribute.SpRegen, (long) userStat.sp_rgp },
+                { BasicAttribute.SpRegenInterval, (long) userStat.sp_inv },
+                { BasicAttribute.Stamina, (long) userStat.ep },
+                { BasicAttribute.StaminaRegen, (long) userStat.ep_rgp },
+                { BasicAttribute.StaminaRegenInterval, (long) userStat.ep_inv },
+                { BasicAttribute.AttackSpeed, (long) userStat.asp },
+                { BasicAttribute.MovementSpeed, (long) userStat.msp },
+                { BasicAttribute.Accuracy, (long) userStat.atp },
+                { BasicAttribute.Evasion, (long) userStat.evp },
+                { BasicAttribute.CriticalRate, (long) userStat.cap },
+                { BasicAttribute.CriticalDamage, (long) userStat.cad },
+                { BasicAttribute.CriticalEvasion, (long) userStat.car },
+                { BasicAttribute.Defense, (long) userStat.ndd },
+                { BasicAttribute.PerfectGuard, (long) userStat.abp },
+                { BasicAttribute.JumpHeight, (long) userStat.jmp },
+                { BasicAttribute.PhysicalAtk, (long) userStat.pap },
+                { BasicAttribute.MagicalAtk, (long) userStat.map },
+                { BasicAttribute.PhysicalRes, (long) userStat.par },
+                { BasicAttribute.MagicalRes, (long) userStat.mar },
+                { BasicAttribute.MinWeaponAtk, (long) userStat.wapmin },
+                { BasicAttribute.MaxWeaponAtk, (long) userStat.wapmax },
+                { BasicAttribute.Damage, (long) userStat.dmg },
+                { BasicAttribute.Piercing, (long) userStat.pen },
+                { BasicAttribute.BonusAtk, (long) userStat.base_atk },
+                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value }
+            };
+
+            return stats;
         }
 
         return new UserStatTable(
-            new Dictionary<JobCode, IReadOnlyDictionary<short, UserStatMetadata>> {
+            new Dictionary<JobCode, IReadOnlyDictionary<short, IReadOnlyDictionary<BasicAttribute, long>>> {
                 { JobCode.Newbie, parser.ParseUserStat1().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.Knight, parser.ParseUserStat10().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.Berserker, parser.ParseUserStat20().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
