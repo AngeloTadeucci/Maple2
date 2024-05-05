@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Server.Game.Model.State;
 using Maple2.Tools.Extensions;
 

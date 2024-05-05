@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Server.Game.Model.Skill;

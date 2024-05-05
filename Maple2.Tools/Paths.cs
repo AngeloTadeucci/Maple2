@@ -8,4 +8,7 @@ public static class Paths {
     public static readonly string GAME_SCRIPTS_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Server.Game", "Scripts");
 
     public static readonly string DB_SEEDS_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Database.Seed", "Seeds");
+
+    public static readonly string WEB_DATA_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Server.Web/Data");
+
 }

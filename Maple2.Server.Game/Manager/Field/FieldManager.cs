@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Numerics;
-using System.Threading;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -27,7 +23,7 @@ namespace Maple2.Server.Game.Manager.Field;
 // FieldManager is instantiated by Autofac
 // ReSharper disable once ClassNeverInstantiated.Global
 public sealed partial class FieldManager : IDisposable {
-    private static int globalIdCounter = 10000000;
+    private static int _globalIdCounter = 10000000;
     private int localIdCounter = 50000000;
 
     #region Autofac Autowired
@@ -178,7 +174,7 @@ public sealed partial class FieldManager : IDisposable {
     /// Generates an ObjectId unique across all map instances.
     /// </summary>
     /// <returns>Returns a globally unique ObjectId</returns>
-    public static int NextGlobalId() => Interlocked.Increment(ref globalIdCounter);
+    public static int NextGlobalId() => Interlocked.Increment(ref _globalIdCounter);
 
     /// <summary>
     /// Generates an ObjectId unique to this specific map instance.

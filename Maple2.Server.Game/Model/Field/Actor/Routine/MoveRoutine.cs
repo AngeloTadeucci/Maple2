@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Model.Routine;

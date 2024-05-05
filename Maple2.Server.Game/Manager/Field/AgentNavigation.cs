@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.PathEngine;
 using Maple2.PathEngine.Exception;
 using Maple2.PathEngine.Types;

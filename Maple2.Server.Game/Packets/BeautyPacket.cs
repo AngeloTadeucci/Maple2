@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Maple2.Model.Error;
+﻿using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Shop;
 using Maple2.PacketLib.Tools;

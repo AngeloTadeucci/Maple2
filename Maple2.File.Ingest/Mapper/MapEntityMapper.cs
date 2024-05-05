@@ -86,7 +86,6 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                     };
                                     continue;
                             }
-                            continue;
                         case IEventSpawnPointItem itemSpawn:
                             yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
                                 Block = new EventSpawnPointItem(itemSpawn.SpawnPointID, itemSpawn.Position, itemSpawn.Rotation, itemSpawn.LifeTime, int.TryParse(itemSpawn.individualDropBoxId, out int individualDropBoxId) ? individualDropBoxId : 0, int.TryParse(itemSpawn.globalDropBoxId, out int globalDropBoxId) ? globalDropBoxId : 0, (int) itemSpawn.globalDropLevel, itemSpawn.IsVisible)
@@ -172,8 +171,10 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 case IActor actor: {
                         switch (actor) {
                             case IMS2BreakableActor breakable:
+                                int.TryParse(breakable.additionGlobalDropBoxId, out int globalDropBoxId);
                                 yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, int.TryParse(breakable.additionGlobalDropBoxId, out int globalDropBoxId) ? globalDropBoxId : 0, breakable.Position, breakable.Rotation)};
+                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, globalDropBoxId, breakable.Position, breakable.Rotation)
+                                };
                                 continue;
                         }
                         continue;

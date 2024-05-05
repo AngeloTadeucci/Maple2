@@ -1,7 +1,5 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Globalization;
-using System.IO;
 using System.Net;
 using System.Reflection;
 using Autofac;

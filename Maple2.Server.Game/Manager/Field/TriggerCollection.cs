@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 

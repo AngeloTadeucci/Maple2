@@ -1,5 +1,4 @@
-﻿using System;
-using Maple2.Model.Game;
+﻿using Maple2.Model.Game;
 using Maple2.Server.Core.Sync;
 
 namespace Maple2.Server.Game.Util.Sync;

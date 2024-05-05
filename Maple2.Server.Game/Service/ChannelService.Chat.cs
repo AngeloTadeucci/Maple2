@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;

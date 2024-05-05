@@ -1,8 +1,6 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
-using System.Linq;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;

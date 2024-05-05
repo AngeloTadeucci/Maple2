@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Server.Game.Model;
+﻿namespace Maple2.Server.Game.Model;
 
 public class TickTimer {
     public int StartTick { get; private set; }

@@ -1,5 +1,4 @@
-﻿using System;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Error;
 using Maple2.Model.Metadata;

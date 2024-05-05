@@ -1,5 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
+using Maple2.Tools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,12 +7,10 @@ namespace Maple2.Server.Web.Controllers;
 
 [Route("/itemicon/ms2/01/")]
 public class ItemIconController : ControllerBase {
-    private static readonly string SolutionDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../.."));
-    private static readonly string RootDir = Path.Combine(SolutionDir, "Maple2.Server.Web/Data");
 
     [HttpGet("{itemId}/{uid}.png")]
     public IResult GetItem(long itemId, string uid) {
-        string fullPath = $"{RootDir}/itemicon/{itemId}/{uid}.png";
+        string fullPath = $"{Paths.WEB_DATA_DIR}/itemicon/{itemId}/{uid}.png";
         if (!System.IO.File.Exists(fullPath)) {
             return Results.BadRequest();
         }

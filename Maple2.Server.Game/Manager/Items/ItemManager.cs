@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Storage;
+﻿using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -142,7 +139,7 @@ public class ItemManager {
     public ICollection<Item> GetIndividualDropBoxItems(int individualDropBoxId, int rarity = -1) {
         var items = new List<Item>();
         if (session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(individualDropBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? entries)) {
-            foreach ((int groupId, IList<IndividualItemDropTable.Entry> list) in entries) {
+            foreach ((byte groupId, IList<IndividualItemDropTable.Entry> list) in entries) {
                 foreach (IndividualItemDropTable.Entry entry in list) {
                     foreach (int entryItemId in entry.ItemIds) {
                         int itemRarity = rarity > 0 ? entry.Rarity ?? 1 : 1;

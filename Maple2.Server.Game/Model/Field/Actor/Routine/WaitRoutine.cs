@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Server.Game.Model.Routine;
+﻿namespace Maple2.Server.Game.Model.Routine;
 
 public class WaitRoutine : NpcRoutine {
     private TimeSpan duration;

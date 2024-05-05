@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
 
-public record JobConditionTable(IReadOnlyDictionary<int,  JobConditionMetadata> Entries) : ServerTable;
+public record JobConditionTable(IReadOnlyDictionary<int, JobConditionMetadata> Entries) : ServerTable;
 
 public record JobConditionMetadata(
     int NpcId,

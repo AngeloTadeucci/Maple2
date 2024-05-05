@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Maple2.Model.Error;
+﻿using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;

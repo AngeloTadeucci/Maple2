@@ -340,44 +340,44 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private BonusGameTable ParseBonusGameTable() {
-            var bonusGames = new Dictionary<int, BonusGameTable.Game>();
-            foreach ((int type, int id, BonusGame bonusGame) in parser.ParseBonusGame()) {
-                List<BonusGameTable.Game.Slot> slots = new();
-                foreach (BonusGame.Slot slot in bonusGame.slot) {
-                    slots.Add(new BonusGameTable.Game.Slot(
-                        MinProp: slot.minProp,
-                        MaxProp: slot.maxProp));
-                }
-                bonusGames.Add(id, new BonusGameTable.Game(
-                    Id: id,
-                    ConsumeItem: new ItemComponent(
-                        ItemId: bonusGame.consumeItemID,
-                        Rarity: -1,
-                        Amount: bonusGame.consumeItemCount,
-                        Tag: ItemTag.None),
-                    Slots: slots.ToArray()));
+        var bonusGames = new Dictionary<int, BonusGameTable.Game>();
+        foreach ((int type, int id, BonusGame bonusGame) in parser.ParseBonusGame()) {
+            List<BonusGameTable.Game.Slot> slots = new();
+            foreach (BonusGame.Slot slot in bonusGame.slot) {
+                slots.Add(new BonusGameTable.Game.Slot(
+                    MinProp: slot.minProp,
+                    MaxProp: slot.maxProp));
             }
-
-            var drops = new Dictionary<int, BonusGameTable.Drop>();
-            foreach ((int type, int id, BonusGameDrop gameDrop) in parser.ParseBonusGameDrop()) {
-                List<BonusGameTable.Drop.Item> items = new();
-                foreach (BonusGameDrop.Item item in gameDrop.item) {
-                    items.Add(new BonusGameTable.Drop.Item(
-                        ItemComponent: new ItemComponent(
-                            ItemId: item.id,
-                            Rarity: item.rank,
-                            Amount: item.count,
-                            Tag: ItemTag.None),
-                        Probability: item.prop,
-                        Notice: item.notice));
-                }
-                drops.Add(id, new BonusGameTable.Drop(
-                    Id: id,
-                    Items: items.ToArray()));
-            }
-
-            return new BonusGameTable(bonusGames, drops);
+            bonusGames.Add(id, new BonusGameTable.Game(
+                Id: id,
+                ConsumeItem: new ItemComponent(
+                    ItemId: bonusGame.consumeItemID,
+                    Rarity: -1,
+                    Amount: bonusGame.consumeItemCount,
+                    Tag: ItemTag.None),
+                Slots: slots.ToArray()));
         }
+
+        var drops = new Dictionary<int, BonusGameTable.Drop>();
+        foreach ((int type, int id, BonusGameDrop gameDrop) in parser.ParseBonusGameDrop()) {
+            List<BonusGameTable.Drop.Item> items = new();
+            foreach (BonusGameDrop.Item item in gameDrop.item) {
+                items.Add(new BonusGameTable.Drop.Item(
+                    ItemComponent: new ItemComponent(
+                        ItemId: item.id,
+                        Rarity: item.rank,
+                        Amount: item.count,
+                        Tag: ItemTag.None),
+                    Probability: item.prop,
+                    Notice: item.notice));
+            }
+            drops.Add(id, new BonusGameTable.Drop(
+                Id: id,
+                Items: items.ToArray()));
+        }
+
+        return new BonusGameTable(bonusGames, drops);
+    }
 
     private GlobalDropItemBoxTable ParseGlobalItemDropTable() {
         var dropGroups = new Dictionary<int, Dictionary<int, IList<GlobalDropItemBoxTable.Group>>>();
@@ -395,7 +395,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     GroupId: group.dropGroupIDs,
                     MinLevel: group.minLevel,
                     MaxLevel: group.maxLevel,
-                    DropCounts:dropCounts,
+                    DropCounts: dropCounts,
                     OwnerDrop: group.isOwnerDrop,
                     MapTypeCondition: (MapType) group.mapTypeCondition,
                     ContinentCondition: (Continent) group.continentCondition));

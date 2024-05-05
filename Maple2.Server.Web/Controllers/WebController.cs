@@ -5,6 +5,7 @@ using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
+using Maple2.Tools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -13,8 +14,6 @@ namespace Maple2.Server.Web.Controllers;
 
 [Route("")]
 public class WebController : ControllerBase {
-    private static readonly string SolutionDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../.."));
-    private static readonly string RootDir = Path.Combine(SolutionDir, "Maple2.Server.Web/Data");
 
     private readonly WebStorage webStorage;
 
@@ -61,6 +60,9 @@ public class WebController : ControllerBase {
                 return Results.Text($"0,{resource.Path}");
             }
         }
+        if (resource == null) {
+            return Results.BadRequest("Invalid resource.");
+        }
 
         return type switch {
             UgcType.ProfileAvatar => UploadProfileAvatar(fileBytes, characterId),
@@ -71,7 +73,7 @@ public class WebController : ControllerBase {
     }
 
     private static IResult UploadProfileAvatar(byte[] fileBytes, long characterId) {
-        string filePath = $"{RootDir}/profiles/{characterId}/";
+        string filePath = $"{Paths.WEB_DATA_DIR}/profiles/{characterId}/";
         try {
             // Deleting old files in the character folder
             if (Path.Exists(filePath)) {
@@ -89,7 +91,7 @@ public class WebController : ControllerBase {
     }
 
     private IResult UploadItem(byte[] fileBytes, int itemId, long ugcId, UgcResource resource) {
-        string filePath = $"{RootDir}/items/{itemId}/";
+        string filePath = $"{Paths.WEB_DATA_DIR}/items/{itemId}/";
         try {
             Directory.CreateDirectory(filePath);
         } catch (Exception ex) {
@@ -105,7 +107,7 @@ public class WebController : ControllerBase {
     }
 
     private IResult UploadItemIcon(byte[] fileBytes, int itemId, long ugcId, UgcResource resource) {
-        string filePath = $"{RootDir}/itemicon/{itemId}/";
+        string filePath = $"{Paths.WEB_DATA_DIR}/itemicon/{itemId}/";
         try {
             Directory.CreateDirectory(filePath);
         } catch (Exception ex) {

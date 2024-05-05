@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
