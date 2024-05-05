@@ -10,6 +10,7 @@ public sealed class MetadataContext : DbContext {
     public DbSet<TableChecksum> TableChecksum { get; set; } = null!;
     public DbSet<AdditionalEffectMetadata> AdditionalEffectMetadata { get; set; } = null!;
     public DbSet<AnimationMetadata> AnimationMetadata { get; set; } = null!;
+    public DbSet<AiMetadata> AiMetadata { get; set; } = null!;
     public DbSet<ItemMetadata> ItemMetadata { get; set; } = null!;
     public DbSet<NpcMetadata> NpcMetadata { get; set; } = null!;
     public DbSet<MapMetadata> MapMetadata { get; set; } = null!;
@@ -32,6 +33,7 @@ public sealed class MetadataContext : DbContext {
         modelBuilder.Entity<TableChecksum>(Maple2.Database.Model.Metadata.TableChecksum.Configure);
         modelBuilder.Entity<AdditionalEffectMetadata>(ConfigureAdditionalEffectMetadata);
         modelBuilder.Entity<AnimationMetadata>(ConfigureAnimationMetadata);
+        modelBuilder.Entity<AiMetadata>(ConfigureAiMetadata);
         modelBuilder.Entity<ItemMetadata>(ConfigureItemMetadata);
         modelBuilder.Entity<NpcMetadata>(ConfigureNpcMetadata);
         modelBuilder.Entity<MapMetadata>(ConfigureMapMetadata);
@@ -68,6 +70,15 @@ public sealed class MetadataContext : DbContext {
         builder.ToTable("animation");
         builder.HasKey(ani => ani.Model);
         builder.Property(ani => ani.Sequences).HasJsonConversion();
+    }
+
+    private static void ConfigureAiMetadata(EntityTypeBuilder<AiMetadata> builder) {
+        builder.ToTable("ai");
+        builder.HasKey(npcAi => npcAi.Name);
+        builder.Property(npcAi => npcAi.Reserved).HasJsonConversion();
+        builder.Property(npcAi => npcAi.Battle).HasJsonConversion();
+        builder.Property(npcAi => npcAi.BattleEnd).HasJsonConversion();
+        builder.Property(npcAi => npcAi.AiPresets).HasJsonConversion();
     }
 
     private static void ConfigureItemMetadata(EntityTypeBuilder<ItemMetadata> builder) {
