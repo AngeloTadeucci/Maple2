@@ -3,6 +3,7 @@ using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.AI;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -47,7 +48,13 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 aiPresets.Add(new AiMetadata.AiPresetDefinition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray()));
             }
 
-            yield return new AiMetadata(name, reserved.ToArray(), battle.ToArray(), battleEnd.ToArray(), aiPresets.ToArray());
+            yield return new AiMetadata(
+                Name: name,
+                Reserved: reserved.ToArray(),
+                Battle: battle.ToArray(),
+                BattleEnd: battleEnd.ToArray(),
+                AiPresets: aiPresets.ToArray()
+            );
         }
     }
 
@@ -65,35 +72,112 @@ public class AiMapper : TypeMapper<AiMetadata> {
 
         switch(node.name) {
             case "distanceOver":
-                return new AiMetadata.DistanceOverCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.value);
+                return new AiMetadata.DistanceOverCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Value: node.value
+                );
             case "combatTime":
-                return new AiMetadata.CombatTimeCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.battleTimeBegin, node.battleTimeLoop, node.battleTimeEnd);
+                return new AiMetadata.CombatTimeCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    BattleTimeBegin: node.battleTimeBegin,
+                    BattleTimeLoop: node.battleTimeLoop,
+                    BattleTimeEnd: node.battleTimeEnd
+                );
             case "distanceLess":
-                return new AiMetadata.DistanceLessCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.value);
+                return new AiMetadata.DistanceLessCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Value: node.value
+                );
             case "skillRange":
-                return new AiMetadata.SkillRangeCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.skillIdx, node.skillLev, node.isKeepBattle);
+                return new AiMetadata.SkillRangeCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    SkillIdx: node.skillIdx,
+                    SkillLev: node.skillLev,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "extraData":
-                return new AiMetadata.ExtraDataCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, (AiConditionOp)node.op, node.isKeepBattle);
+                return new AiMetadata.ExtraDataCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    Op: (AiConditionOp)node.op,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "SlaveCount": // these are different enough to warrant having their own nodes. blame nexon
-                return new AiMetadata.SlaveCountCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.count, node.useSummonGroup, node.summonGroup);
+                return new AiMetadata.SlaveCountCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Count: node.count,
+                    UseSummonGroup: node.useSummonGroup,
+                    SummonGroup: node.summonGroup
+                );
             case "hpOver":
-                return new AiMetadata.HpOverCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.value);
+                return new AiMetadata.HpOverCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Value: node.value
+                );
             case "state":
-                return new AiMetadata.StateCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), (AiConditionTargetState)node.targetState);
+                return new AiMetadata.StateCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    TargetState: (AiConditionTargetState)node.targetState
+                );
             case "additional":
-                return new AiMetadata.AdditionalCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.id, node.level, node.overlapCount, node.isTarget);
+                return new AiMetadata.AdditionalCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Id: node.id,
+                    Level: node.level,
+                    OverlapCount: node.overlapCount,
+                    IsTarget: node.isTarget
+                );
             case "hpLess":
-                return new AiMetadata.HpLessCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.value);
+                return new AiMetadata.HpLessCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Value: node.value
+                );
             case "DistanceLess":
-                return new AiMetadata.DistanceLessCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.value);
+                return new AiMetadata.DistanceLessCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Value: node.value
+                );
             case "slaveCount": // these are different enough to warrant having their own nodes. blame nexon
-                return new AiMetadata.SlaveCountOpCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.slaveCount, (AiConditionOp) node.slaveCountOp);
+                return new AiMetadata.SlaveCountOpCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    SlaveCount: node.slaveCount,
+                    SlaveCountOp: (AiConditionOp) node.slaveCountOp
+                );
             case "feature": // feature was converted to TrueCondition
             case "true":
                 if (node.name == "feature") {
                     Console.WriteLine("AI feature condition node is being convered to a true node");
                 }
-                return new AiMetadata.TrueCondition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray());
+                return new AiMetadata.TrueCondition(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray()
+                );
             default:
                 throw new NotImplementedException("unknown AI condition name: " + node.name);
         }
@@ -120,83 +204,393 @@ public class AiMapper : TypeMapper<AiMetadata> {
 
         switch(node.name) {
             case "trace":
-                return new AiMetadata.TraceNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.limit, node.skillIdx, node.animation, node.speed, node.till, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.TraceNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Limit: node.limit,
+                    SkillIdx: node.skillIdx,
+                    Animation: node.animation,
+                    Speed: node.speed,
+                    Till: node.till,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "skill":
-                return new AiMetadata.SkillNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.idx, node.level, onlyProb, node.sequence, node.facePos, node.faceTarget, node.faceTargetTick, node.initialCooltime, node.cooltime, node.limit, node.isKeepBattle);
+                return new AiMetadata.SkillNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Idx: node.idx,
+                    Level: node.level,
+                    Prob: onlyProb,
+                    Sequence: node.sequence,
+                    FacePos: node.facePos,
+                    FaceTarget: node.faceTarget,
+                    FaceTargetTick: node.faceTargetTick,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    Limit: node.limit,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "teleport":
-                return new AiMetadata.TeleportNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.pos, onlyProb, node.facePos, node.faceTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.TeleportNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Pos: node.pos,
+                    Prob: onlyProb,
+                    FacePos: node.facePos,
+                    FaceTarget: node.faceTarget,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "standby":
-                return new AiMetadata.StandbyNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.limit, onlyProb, node.animation, node.facePos, node.faceTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.StandbyNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Limit: node.limit,
+                    Prob: onlyProb,
+                    Animation: node.animation,
+                    FacePos: node.facePos,
+                    FaceTarget: node.faceTarget,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "setData":
-                return new AiMetadata.SetDataNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, node.cooltime);
+                return new AiMetadata.SetDataNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    Cooltime: node.cooltime
+                );
             case "target":
                 NodeTargetType targetType = NodeTargetType.Random;
                 Enum.TryParse(node.type, out targetType);
-                return new AiMetadata.TargetNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), targetType, onlyProb, node.rank, node.additionalId, node.additionalLevel, node.from, node.to, node.center, (NodeAiTarget)node.target, node.noChangeWhenNoTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.TargetNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Type: targetType,
+                    Prob: onlyProb,
+                    Rank: node.rank,
+                    AdditionalId: node.additionalId,
+                    AdditionalLevel: node.additionalLevel,
+                    From: node.from,
+                    To: node.to,
+                    Center: node.center,
+                    Target: (NodeAiTarget)node.target,
+                    NoChangeWhenNoTarget: node.noChangeWhenNoTarget,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "say":
-                return new AiMetadata.SayNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.message, onlyProb, node.durationTick, node.delayTick, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.SayNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Message: node.message,
+                    Prob: onlyProb,
+                    DurationTick: node.durationTick,
+                    DelayTick: node.delayTick,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "SetValue":
-                return new AiMetadata.SetValueNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, node.initialCooltime, node.cooltime, node.isModify, node.isKeepBattle);
+                return new AiMetadata.SetValueNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsModify: node.isModify,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "conditions":
-                return new AiMetadata.ConditionsNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), childConditions.ToArray(), node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.ConditionsNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Conditions: childConditions.ToArray(),
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "jump":
                 NodeJumpType jumpType = NodeJumpType.JumpA;
                 Enum.TryParse(node.type, out jumpType);
-                return new AiMetadata.JumpNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.pos, node.speed, node.heightMultiplier, jumpType, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.JumpNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Pos: node.pos,
+                    Speed: node.speed,
+                    HeightMultiplier: node.heightMultiplier,
+                    Type: jumpType,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "select":
-                return new AiMetadata.SelectNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.prob, node.useNpcProb);
+                return new AiMetadata.SelectNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Prob: node.prob,
+                    useNpcProb: node.useNpcProb
+                );
             case "move":
-                return new AiMetadata.MoveNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.destination, onlyProb, node.animation, node.limit, node.speed, node.faceTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.MoveNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Destination: node.destination,
+                    Prob: onlyProb,
+                    Animation: node.animation,
+                    Limit: node.limit,
+                    Speed: node.speed,
+                    FaceTarget: node.faceTarget,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "summon":
-                return new AiMetadata.SummonNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.npcId, node.npcCountMax, node.npcCount, node.delayTick, node.lifeTime, node.summonRot, node.summonPos, node.summonPosOffset, node.summonTargetOffset, node.summonRadius, node.group, (NodeSummonMaster)node.master, Array.ConvertAll(node.option, value => (NodeSummonOption)value), node.cooltime, node.isKeepBattle);
+                return new AiMetadata.SummonNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    NpcId: node.npcId,
+                    NpcCountMax: node.npcCountMax,
+                    NpcCount: node.npcCount,
+                    DelayTick: node.delayTick,
+                    LifeTime: node.lifeTime,
+                    SummonRot: node.summonRot,
+                    SummonPos: node.summonPos,
+                    SummonPosOffset: node.summonPosOffset,
+                    SummonTargetOffset: node.summonTargetOffset,
+                    SummonRadius: node.summonRadius,
+                    Group: node.group,
+                    Master: (NodeSummonMaster)node.master,
+                    Option: Array.ConvertAll(node.option, value => (NodeSummonOption)value),
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "TriggerSetUserValue":
-                return new AiMetadata.TriggerSetUserValueNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.triggerID, node.key, node.value, node.cooltime, node.isKeepBattle);
+                return new AiMetadata.TriggerSetUserValueNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    TriggerID: node.triggerID,
+                    Key: node.key,
+                    Value: node.value,
+                    Cooltime: node.cooltime,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "ride":
                 NodeRideType rideType = NodeRideType.Slave;
                 Enum.TryParse(node.type, out rideType);
-                return new AiMetadata.RideNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), rideType, node.isRideOff, node.rideNpcIDs);
+                return new AiMetadata.RideNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Type: rideType,
+                    IsRideOff: node.isRideOff,
+                    RideNpcIDs: node.rideNpcIDs
+                );
             case "SetSlaveValue":
-                return new AiMetadata.SetSlaveValueNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, node.isRandom, node.cooltime, node.isModify, node.isKeepBattle);
+                return new AiMetadata.SetSlaveValueNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    IsRandom: node.isRandom,
+                    Cooltime: node.cooltime,
+                    IsModify: node.isModify,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "SetMasterValue":
-                return new AiMetadata.SetMasterValueNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, node.isRandom, node.cooltime, node.isModify, node.isKeepBattle);
+                return new AiMetadata.SetMasterValueNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    IsRandom: node.isRandom,
+                    Cooltime: node.cooltime,
+                    IsModify: node.isModify,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "runaway":
-                return new AiMetadata.RunawayNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.animation, node.skillIdx, node.till, node.limit, node.facePos, node.initialCooltime, node.cooltime);
+                return new AiMetadata.RunawayNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Animation: node.animation,
+                    SkillIdx: node.skillIdx,
+                    Till: node.till,
+                    Limit: node.limit,
+                    FacePos: node.facePos,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime
+                );
             case "MinimumHp":
-                return new AiMetadata.MinimumHpNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.hpPercent);
+                return new AiMetadata.MinimumHpNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    HpPercent: node.hpPercent
+                );
             case "buff":
                 NodeBuffType buffType = NodeBuffType.Add;
                 Enum.TryParse(node.type, out buffType);
-                return new AiMetadata.BuffNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.id, buffType, node.level, onlyProb, node.initialCooltime, node.cooltime, node.isTarget, node.isKeepBattle);
+                return new AiMetadata.BuffNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Id: node.id,
+                    Type: buffType,
+                    Level: node.level,
+                    Prob: onlyProb,
+                    InitialCooltime: node.initialCooltime,
+                    Cooltime: node.cooltime,
+                    IsTarget: node.isTarget,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "TargetEffect":
-                return new AiMetadata.TargetEffectNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.effectName);
+                return new AiMetadata.TargetEffectNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    EffectName: node.effectName
+                );
             case "ShowVibrate":
-                return new AiMetadata.ShowVibrateNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.groupID);
+                return new AiMetadata.ShowVibrateNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    GroupId: node.groupID
+                );
             case "sidePopup":
                 NodePopupType popupType = NodePopupType.Talk;
                 Enum.TryParse(node.type, out popupType);
-                return new AiMetadata.SidePopupNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), popupType, node.illust, node.duration, node.script, node.sound, node.voice);
+                return new AiMetadata.SidePopupNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Type: popupType,
+                    Illust: node.illust,
+                    Duration: node.duration,
+                    Script: node.script,
+                    Sound: node.sound,
+                    Voice: node.voice
+                );
             case "SetValueRangeTarget":
-                return new AiMetadata.SetValueRangeTargetNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.key, node.value, node.height, node.radius, node.cooltime, node.isModify, node.isKeepBattle);
+                return new AiMetadata.SetValueRangeTargetNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Key: node.key,
+                    Value: node.value,
+                    Height: node.height,
+                    Radius: node.radius,
+                    Cooltime: node.cooltime,
+                    IsModify: node.isModify,
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "announce":
-                return new AiMetadata.AnnounceNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.message, node.durationTick, node.cooltime);
+                return new AiMetadata.AnnounceNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Message: node.message,
+                    DurationTick: node.durationTick,
+                    Cooltime: node.cooltime
+                );
             case "ModifyRoomTime":
-                return new AiMetadata.ModifyRoomTimeNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.timeTick, node.isShowEffect);
+                return new AiMetadata.ModifyRoomTimeNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    TimeTick: node.timeTick,
+                    IsShowEffect:node.isShowEffect
+                );
             case "HideVibrateAll":
-                return new AiMetadata.HideVibrateAllNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.isKeepBattle);
+                return new AiMetadata.HideVibrateAllNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "TriggerModifyUserValue":
-                return new AiMetadata.TriggerModifyUserValueNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.triggerID, node.key, node.value);
+                return new AiMetadata.TriggerModifyUserValueNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    TriggerID: node.triggerID,
+                    Key: node.key,
+                    Value: node.value
+                );
             case "Buff":
-                return new AiMetadata.BuffNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.id, NodeBuffType.Add, node.level, 100, 0, 0, false, true);
+                return new AiMetadata.BuffNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Id: node.id,
+                    Type: NodeBuffType.Add,
+                    Level: node.level,
+                    Prob: 100,
+                    InitialCooltime: 0,
+                    Cooltime: 0,
+                    IsTarget: false,
+                    IsKeepBattle: true
+                );
             case "RemoveSlaves":
-                return new AiMetadata.RemoveSlavesNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.isKeepBattle);
+                return new AiMetadata.RemoveSlavesNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    IsKeepBattle: node.isKeepBattle
+                );
             case "CreateRandomRoom":
-                return new AiMetadata.CreateRandomRoomNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.randomRoomID, node.portalDuration);
+                return new AiMetadata.CreateRandomRoomNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    RandomRoomId: node.randomRoomID,
+                    PortalDuration: node.portalDuration
+                );
             case "CreateInteractObject":
-                return new AiMetadata.CreateInteractObjectNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray(), node.normal, node.interactID, node.lifeTime, node.kfmName, node.reactable);
+                return new AiMetadata.CreateInteractObjectNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray(),
+                    Normal: node.normal,
+                    InteractID: node.interactID,
+                    LifeTime: node.lifeTime,
+                    KfmName: node.kfmName,
+                    Reactable: node.reactable
+                );
             case "RemoveMe":
-                return new AiMetadata.RemoveMeNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray());
+                return new AiMetadata.RemoveMeNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray());
             case "Suicide":
-                return new AiMetadata.SuicideNode(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray());
+                return new AiMetadata.SuicideNode(
+                    Name: node.name,
+                    Nodes: childNodes.ToArray(),
+                    AiPresets: childAiPresets.ToArray()
+                );
             default:
                 throw new NotImplementedException("unknown AI node name: " + node.name);
         }

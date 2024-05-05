@@ -329,7 +329,7 @@ public record AiMetadata(
         string Name,
         Node[] Nodes,
         AiPreset[] AiPresets,
-        int GroupID) : Node(Name, Nodes, AiPresets);
+        int GroupId) : Node(Name, Nodes, AiPresets);
 
 	public record SidePopupNode(
         string Name,
@@ -393,8 +393,8 @@ public record AiMetadata(
         string Name,
         Node[] Nodes,
         AiPreset[] AiPresets,
-        int randomRoomID,
-        int portalDuration) : Node(Name, Nodes, AiPresets);
+        int RandomRoomId,
+        int PortalDuration) : Node(Name, Nodes, AiPresets);
 
     public record CreateInteractObjectNode(
         string Name,
