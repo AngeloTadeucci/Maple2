@@ -24,7 +24,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
         yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
         yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
-
+        yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
     }
 
     private InstanceFieldTable ParseInstanceField() {
@@ -430,5 +430,63 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             dropItems.Add(id, items);
         }
         return new GlobalDropItemBoxTable(dropGroups, dropItems);
+    }
+
+    private UserStatTable ParseUserStat() {
+        static UserStatMetadata UserStatMetadataMapper(UserStat userStat) {
+            return new UserStatMetadata(
+                level: userStat.lev,
+                strength: (long) userStat.str,
+                dexterity: (long) userStat.dex,
+                intelligence: (long) userStat.@int,
+                luck: (long) userStat.luk,
+                hp: (long) userStat.hp,
+                hpRegen: (long) userStat.hp_rgp,
+                hpRegenInterval: (long) userStat.hp_inv,
+                spirit: (long) userStat.sp,
+                spiritRegen: (long) userStat.sp_rgp,
+                spiritRegenInterval: (long) userStat.sp_inv,
+                stamina: (long) userStat.ep,
+                staminaRegen: (long) userStat.ep_rgp,
+                staminaRegenInterval: (long) userStat.ep_inv,
+                attackSpeed: (long) userStat.asp,
+                movementSpeed: (long) userStat.msp,
+                accuracy: (long) userStat.atp,
+                evasion: (long) userStat.evp,
+                criticalRate: (long) userStat.cap,
+                criticalDamage: (long) userStat.cad,
+                criticalEvasion: (long) userStat.car,
+                defense: (long) userStat.ndd,
+                perfectGuard: (long) userStat.abp,
+                jumpHeight: (long) userStat.jmp,
+                physicalAtk: (long) userStat.pap,
+                magicalAtk: (long) userStat.map,
+                physicalRes: (long) userStat.par,
+                magicalRes: (long) userStat.mar,
+                minWeaponAtk: (long) userStat.wapmin,
+                maxWeaponAtk: (long) userStat.wapmax,
+                damage: (long) userStat.dmg,
+                piercing: (long) userStat.pen,
+                bonusAtk: (long) userStat.base_atk,
+                sp_value: (long) userStat.sp_value
+            );
+        }
+
+        return new UserStatTable(
+            new Dictionary<JobCode, IReadOnlyDictionary<short, UserStatMetadata>> {
+                { JobCode.Newbie, parser.ParseUserStat1().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Knight, parser.ParseUserStat10().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Berserker, parser.ParseUserStat20().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Wizard, parser.ParseUserStat30().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Priest, parser.ParseUserStat40().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Archer, parser.ParseUserStat50().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.HeavyGunner, parser.ParseUserStat60().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Thief, parser.ParseUserStat70().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Assassin, parser.ParseUserStat80().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.RuneBlader, parser.ParseUserStat90().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Striker, parser.ParseUserStat100().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) }
+            }
+        );
     }
 }

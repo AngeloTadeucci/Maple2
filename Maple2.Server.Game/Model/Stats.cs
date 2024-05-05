@@ -11,6 +11,40 @@ public class Stats {
 
     public int GearScore => 12345;
 
+    public Stats(UserStatMetadata metadata, JobCode jobCode) {
+        values = new Dictionary<BasicAttribute, Stat>();
+
+        this[BasicAttribute.Strength].AddBase(metadata.strength);
+        this[BasicAttribute.Dexterity].AddBase(metadata.dexterity);
+        this[BasicAttribute.Intelligence].AddBase(metadata.intelligence);
+        this[BasicAttribute.Luck].AddBase(metadata.luck);
+        this[BasicAttribute.Health].AddBase(metadata.hp);
+        this[BasicAttribute.HpRegen].AddBase(metadata.hpRegen);
+        this[BasicAttribute.HpRegenInterval].AddBase(metadata.hpRegenInterval);
+        this[BasicAttribute.Spirit].AddBase(metadata.spirit);
+        this[BasicAttribute.SpRegen].AddBase(metadata.spiritRegen);
+        this[BasicAttribute.SpRegenInterval].AddBase(metadata.spiritRegenInterval);
+        this[BasicAttribute.Stamina].AddBase(metadata.stamina);
+        this[BasicAttribute.StaminaRegen].AddBase(metadata.staminaRegen);
+        this[BasicAttribute.StaminaRegenInterval].AddBase(metadata.staminaRegenInterval);
+        this[BasicAttribute.AttackSpeed].AddBase(metadata.attackSpeed);
+        this[BasicAttribute.MovementSpeed].AddBase(metadata.movementSpeed);
+        this[BasicAttribute.Accuracy].AddBase(metadata.accuracy);
+        this[BasicAttribute.Evasion].AddBase(metadata.evasion);
+        this[BasicAttribute.CriticalRate].AddBase(metadata.criticalRate);
+        this[BasicAttribute.CriticalDamage].AddBase(metadata.criticalDamage);
+        this[BasicAttribute.CriticalEvasion].AddBase(metadata.criticalEvasion);
+        this[BasicAttribute.Defense].AddBase(metadata.defense);
+        this[BasicAttribute.JumpHeight].AddBase(metadata.jumpHeight);
+        this[BasicAttribute.PhysicalRes].AddBase(metadata.physicalRes);
+        this[BasicAttribute.MagicalRes].AddBase(metadata.magicalRes);
+        this[BasicAttribute.MountSpeed].AddBase(100);
+
+        this[BasicAttribute.PhysicalAtk].AddBase(AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base, this[BasicAttribute.Dexterity].Base, this[BasicAttribute.Luck].Base));
+        this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
+    }
+
+    [Obsolete("Use Stats(UserStatMetadata, JobCode) instead.")]
     public Stats(JobCode jobCode, short level) {
         values = new Dictionary<BasicAttribute, Stat>();
         Reset(jobCode, level);
@@ -23,6 +57,40 @@ public class Stats {
         }
     }
 
+    public void Reset(UserStatMetadata metadata, JobCode jobCode) {
+        values.Clear();
+
+        this[BasicAttribute.Strength].AddBase(metadata.strength);
+        this[BasicAttribute.Dexterity].AddBase(metadata.dexterity);
+        this[BasicAttribute.Intelligence].AddBase(metadata.intelligence);
+        this[BasicAttribute.Luck].AddBase(metadata.luck);
+        this[BasicAttribute.Health].AddBase(metadata.hp);
+        this[BasicAttribute.HpRegen].AddBase(metadata.hpRegen);
+        this[BasicAttribute.HpRegenInterval].AddBase(metadata.hpRegenInterval);
+        this[BasicAttribute.Spirit].AddBase(metadata.spirit);
+        this[BasicAttribute.SpRegen].AddBase(metadata.spiritRegen);
+        this[BasicAttribute.SpRegenInterval].AddBase(metadata.spiritRegenInterval);
+        this[BasicAttribute.Stamina].AddBase(metadata.stamina);
+        this[BasicAttribute.StaminaRegen].AddBase(metadata.staminaRegen);
+        this[BasicAttribute.StaminaRegenInterval].AddBase(metadata.staminaRegenInterval);
+        this[BasicAttribute.AttackSpeed].AddBase(metadata.attackSpeed);
+        this[BasicAttribute.MovementSpeed].AddBase(metadata.movementSpeed);
+        this[BasicAttribute.Accuracy].AddBase(metadata.accuracy);
+        this[BasicAttribute.Evasion].AddBase(metadata.evasion);
+        this[BasicAttribute.CriticalRate].AddBase(metadata.criticalRate);
+        this[BasicAttribute.CriticalDamage].AddBase(metadata.criticalDamage);
+        this[BasicAttribute.CriticalEvasion].AddBase(metadata.criticalEvasion);
+        this[BasicAttribute.Defense].AddBase(metadata.defense);
+        this[BasicAttribute.JumpHeight].AddBase(metadata.jumpHeight);
+        this[BasicAttribute.PhysicalRes].AddBase(metadata.physicalRes);
+        this[BasicAttribute.MagicalRes].AddBase(metadata.magicalRes);
+        this[BasicAttribute.MountSpeed].AddBase(100);
+
+        this[BasicAttribute.PhysicalAtk].AddBase(AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base, this[BasicAttribute.Dexterity].Base, this[BasicAttribute.Luck].Base));
+        this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
+    }
+
+    [Obsolete("Use Reset(UserStatMetadata, JobCode) instead.")]
     public void Reset(JobCode jobCode, short level) {
         values.Clear();
 

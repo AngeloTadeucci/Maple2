@@ -11,6 +11,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<JobConditionTable> jobConditionTable;
     private readonly Lazy<BonusGameTable> bonusGameTable;
     private readonly Lazy<GlobalDropItemBoxTable> globalDropItemBoxTable;
+    private readonly Lazy<UserStatTable> userStatTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -18,6 +19,7 @@ public class ServerTableMetadataStorage {
     public JobConditionTable JobConditionTable => jobConditionTable.Value;
     public BonusGameTable BonusGameTable => bonusGameTable.Value;
     public GlobalDropItemBoxTable GlobalDropItemBoxTable => globalDropItemBoxTable.Value;
+    public UserStatTable UserStatTable => userStatTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -26,6 +28,7 @@ public class ServerTableMetadataStorage {
         jobConditionTable = Retrieve<JobConditionTable>(context, "jobConditionTable.xml");
         bonusGameTable = Retrieve<BonusGameTable>(context, "bonusGame*.xml");
         globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, "globalItemDrop*.xml");
+        userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {
