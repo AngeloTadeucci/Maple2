@@ -2,7 +2,7 @@
 
 public enum AiConditionTargetState {
     GrabTarget,
-    Holdme
+    HoldMe,
 }
 
 public enum AiConditionOp {
@@ -15,21 +15,21 @@ public enum AiConditionOp {
 
 public enum NodeSummonOption {
     None,
-    MasterHP,
+    MasterHp,
     HitDamage,
-    LinkHP
+    LinkHp,
 }
 
 public enum NodeSummonMaster {
     Master,
     Slave,
-    None
+    None,
 }
 
 public enum NodeAiTarget {
     DefaultTarget,
     Hostile,
-    Friendly
+    Friendly,
 }
 
 public enum NodeTargetType {
@@ -38,28 +38,28 @@ public enum NodeTargetType {
     Far,
     Mid,
     NearAssociated,
-    RankAssociate,
-    Hasadditional,
-    Randassociated,
-    Grabbeduser,
-    Random
+    RankAssociated,
+    HasAdditional,
+    RandAssociated,
+    GrabbedUser,
+    Random,
 }
 
 public enum NodeJumpType {
     JumpA = 1,
-    JumpB = 2
+    JumpB = 2,
 }
 
 public enum NodeRideType {
-    Slave
+    Slave,
 }
 
 public enum NodeBuffType {
     Remove,
-    Add
+    Add,
 }
 
 public enum NodePopupType {
     Talk,
-    CutIn
+    CutIn,
 }

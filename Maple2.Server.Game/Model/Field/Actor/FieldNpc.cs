@@ -221,8 +221,6 @@ public class FieldNpc : Actor<Npc> {
     public void SetAi(string name) {
         AiMetadata? metadata;
 
-        if (Field.AiMetadata.TryGet(name, out metadata)) {
-            AiMetadata = metadata;
-        }
+        Field.AiMetadata.TryGet(name, out metadata);
     }
 }
