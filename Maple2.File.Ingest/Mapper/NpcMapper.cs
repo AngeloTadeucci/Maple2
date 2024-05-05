@@ -23,7 +23,7 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
             yield return new NpcMetadata(Id: id,
                 Name: name,
                 Model: data.model.kfm,
-                data.aiInfo.path,
+                AiPath: data.aiInfo.path,
                 Stat: new NpcMetadataStat(Stats: MapStats(data.stat),
                     ScaleStatRate: new[] {
                         data.stat.scaleStatRate_1,

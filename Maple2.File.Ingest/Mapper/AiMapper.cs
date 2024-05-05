@@ -1,6 +1,7 @@
 ﻿using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.AI;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -89,6 +90,9 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 return new AiMetadata.SlaveCountOpCondition(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.slaveCount, (AiConditionOp) node.slaveCountOp);
             case "feature": // feature was converted to TrueCondition
             case "true":
+                if (node.name == "feature") {
+                    Console.WriteLine("AI feature condition node is being convered to a true node");
+                }
                 return new AiMetadata.TrueCondition(node.name, childNodes.ToArray(), childAiPresets.ToArray());
             default:
                 throw new NotImplementedException("unknown AI condition name: " + node.name);
@@ -98,7 +102,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
     AiMetadata.Node MapNode(Node node) {
         List<AiMetadata.Node> childNodes = new List<AiMetadata.Node>();
         List<AiMetadata.Condition> childConditions = new List<AiMetadata.Condition>();
-        List < AiMetadata.AiPreset> childAiPresets = new List<AiMetadata.AiPreset>();
+        List<AiMetadata.AiPreset> childAiPresets = new List<AiMetadata.AiPreset>();
 
         foreach (Node child in node.node) {
             childNodes.Add(MapNode(child));
@@ -118,7 +122,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "trace":
                 return new AiMetadata.TraceNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.limit, node.skillIdx, node.animation, node.speed, node.till, node.initialCooltime, node.cooltime, node.isKeepBattle);
             case "skill":
-                return new AiMetadata.SkillNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.idx, node.level, onlyProb, node.sequence, node.facePos, node.faceTarget, node.faceTargetTick, node.initialCooltime, node.cooltime, node.limit, node.rob, node.isKeepBattle);
+                return new AiMetadata.SkillNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.idx, node.level, onlyProb, node.sequence, node.facePos, node.faceTarget, node.faceTargetTick, node.initialCooltime, node.cooltime, node.limit, node.isKeepBattle);
             case "teleport":
                 return new AiMetadata.TeleportNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.pos, onlyProb, node.facePos, node.faceTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
             case "standby":
@@ -126,9 +130,9 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "setData":
                 return new AiMetadata.SetDataNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.key, node.value, node.cooltime);
             case "target":
-                NodeTargetType targetType = NodeTargetType.random;
+                NodeTargetType targetType = NodeTargetType.Random;
                 Enum.TryParse(node.type, out targetType);
-                return new AiMetadata.TargetNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), targetType, onlyProb, node.rank, node.additionalId, node.additionalLevel, node.from, node.to, node.center, (NodeAiTarget)node.target, node.noChangeWhenNoTarget, node.initialCooltime, node.cooltime, node.rob, node.isKeepBattle);
+                return new AiMetadata.TargetNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), targetType, onlyProb, node.rank, node.additionalId, node.additionalLevel, node.from, node.to, node.center, (NodeAiTarget)node.target, node.noChangeWhenNoTarget, node.initialCooltime, node.cooltime, node.isKeepBattle);
             case "say":
                 return new AiMetadata.SayNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.message, onlyProb, node.durationTick, node.delayTick, node.initialCooltime, node.cooltime, node.isKeepBattle);
             case "SetValue":
@@ -160,7 +164,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "MinimumHp":
                 return new AiMetadata.MinimumHpNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.hpPercent);
             case "buff":
-                NodeBuffType buffType = NodeBuffType.add;
+                NodeBuffType buffType = NodeBuffType.Add;
                 Enum.TryParse(node.type, out buffType);
                 return new AiMetadata.BuffNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.id, buffType, node.level, onlyProb, node.initialCooltime, node.cooltime, node.isTarget, node.isKeepBattle);
             case "TargetEffect":
@@ -168,7 +172,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "ShowVibrate":
                 return new AiMetadata.ShowVibrateNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.groupID);
             case "sidePopup":
-                NodePopupType popupType = NodePopupType.talk;
+                NodePopupType popupType = NodePopupType.Talk;
                 Enum.TryParse(node.type, out popupType);
                 return new AiMetadata.SidePopupNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), popupType, node.illust, node.duration, node.script, node.sound, node.voice);
             case "SetValueRangeTarget":
@@ -182,7 +186,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "TriggerModifyUserValue":
                 return new AiMetadata.TriggerModifyUserValueNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.triggerID, node.key, node.value);
             case "Buff":
-                return new AiMetadata.BuffNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.id, NodeBuffType.add, node.level, 100, 0, 0, false, true);
+                return new AiMetadata.BuffNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.id, NodeBuffType.Add, node.level, 100, 0, 0, false, true);
             case "RemoveSlaves":
                 return new AiMetadata.RemoveSlavesNode(node.name, childNodes.ToArray(), childAiPresets.ToArray(), node.isKeepBattle);
             case "CreateRandomRoom":

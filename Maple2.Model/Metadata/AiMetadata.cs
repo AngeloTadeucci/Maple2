@@ -6,70 +6,6 @@ using Maple2.Model.Game.Event;
 
 namespace Maple2.Model.Metadata;
 
-public enum AiConditionTargetState {
-    grabTarget,
-    holdme
-}
-
-public enum AiConditionOp {
-    Equal,
-    Greater,
-    Less,
-    GreaterEqual,
-    LessEqual,
-}
-
-public enum NodeSummonOption {
-    none,
-    masterHP,
-    hitDamage,
-    linkHP
-}
-
-public enum NodeSummonMaster {
-    Master,
-    Slave,
-    None
-}
-
-public enum NodeAiTarget {
-    defaultTarget,
-    hostile,
-    friendly
-}
-
-public enum NodeTargetType {
-    rand,
-    near,
-    far,
-    mid,
-    nearAssociated,
-    rankAssociate,
-    hasadditional,
-    randassociated,
-    grabbeduser,
-    random
-}
-
-public enum NodeJumpType {
-    JumpA = 1,
-    JumpB = 2
-}
-
-public enum NodeRideType {
-    Slave
-}
-
-public enum NodeBuffType {
-    remove,
-    add
-}
-
-public enum NodePopupType {
-    talk,
-    cutin
-}
-
 public record AiMetadata(
     string Name,
     AiMetadata.Condition[] Reserved,
@@ -174,7 +110,6 @@ public record AiMetadata(
         long InitialCooltime,
         long Cooltime,
         int Limit,
-        int Rob,
         bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
 
 	public record TeleportNode(
@@ -226,7 +161,6 @@ public record AiMetadata(
         bool NoChangeWhenNoTarget,
         long InitialCooltime,
         long Cooltime,
-        int Rob,
         bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
 
 	public record SayNode(

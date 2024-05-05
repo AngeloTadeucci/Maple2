@@ -17,6 +17,4 @@ public sealed class AiManager {
     public AiManager(FieldManager field) {
         Field = field;
     }
-
-
 }
