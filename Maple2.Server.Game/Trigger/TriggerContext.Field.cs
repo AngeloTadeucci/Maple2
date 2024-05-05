@@ -365,14 +365,14 @@ public partial class TriggerContext {
     }
 
     public void CreateItem(int[] spawnIds, int triggerId, int itemId, int arg5) {
-        ErrorLog("[CreateItem] spawnIds:{Ids}, triggerId:{TriggerId}, itemId:{ItemId}, arg5:{Arg5}", string.Join(", ", spawnIds), triggerId, itemId, arg5);
+        DebugLog("[CreateItem] spawnIds:{Ids}, triggerId:{TriggerId}, itemId:{ItemId}, arg5:{Arg5}", string.Join(", ", spawnIds), triggerId, itemId, arg5);
 
-        // Getting player to be able to create items. Should we move CreateItem elsewhere?
+        // TODO: Remove player once we move IndividualDropBoxItems to ItemDropManager
         FieldPlayer player = Field.Players.First().Value;
         foreach (int spawnId in spawnIds) {
             ICollection<Item> items = new List<Item>();
             if (itemId != 0) {
-                Item? item = player.Session.Item.CreateItem(itemId);
+                Item? item = Field.ItemDrop.CreateItem(itemId);
                 if (item != null) {
                     items.Add(item);
                 }
@@ -386,7 +386,9 @@ public partial class TriggerContext {
                 items = items.Concat(player.Session.Item.GetIndividualDropBoxItems(spawn.IndividualDropBoxId)).ToList();
             }
 
-            // TODO: Implement globalDropBoxId
+            if (spawn.GlobalDropBoxId > 0) {
+                items = items.Concat(Field.ItemDrop.GetGlobalDropItem(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
+            }
 
             foreach (Item item in items) {
                 FieldItem fieldItem = Field.SpawnItem(spawn.Position, spawn.Rotation, item, 0, true);
@@ -397,7 +399,32 @@ public partial class TriggerContext {
     }
 
     public void SpawnItemRange(int[] rangeIds, int randomPickCount) {
-        ErrorLog("[SpawnItemRange] rangeIds:{Ids}, randomPickCount:{Count}", string.Join(", ", rangeIds), randomPickCount);
+        DebugLog("[SpawnItemRange] rangeIds:{Ids}, randomPickCount:{Count}", string.Join(", ", rangeIds), randomPickCount);
+        Random.Shared.Shuffle(rangeIds);
+        int[] pickedIds = rangeIds.Take(randomPickCount).ToArray();
+
+        // TODO: Remove player once we move IndividualDropBoxItems to ItemDropManager
+        FieldPlayer player = Field.Players.First().Value;
+        foreach (int spawnIds in pickedIds) {
+            if (!Field.Entities.EventItemSpawns.TryGetValue(spawnIds, out EventSpawnPointItem? spawn)) {
+                continue;
+            }
+
+            ICollection<Item> items = new List<Item>();
+            if (spawn.IndividualDropBoxId > 0) {
+                items = items.Concat(player.Session.Item.GetIndividualDropBoxItems(spawn.IndividualDropBoxId)).ToList();
+            }
+
+            if (spawn.GlobalDropBoxId > 0) {
+                items = items.Concat(Field.ItemDrop.GetGlobalDropItem(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
+            }
+
+            foreach (Item item in items) {
+                FieldItem fieldItem = Field.SpawnItem(spawn.Position, spawn.Rotation, item, 0, true);
+
+                Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            }
+        }
     }
 
     public void StartCombineSpawn(int[] groupIds, bool isStart) {

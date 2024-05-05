@@ -196,6 +196,7 @@ public class UgcHandler : PacketHandler<GameSession> {
         string path = packet.ReadUnicodeString();
         session.Player.Value.Character.Picture = path;
 
+        session.ConditionUpdate(ConditionType.change_profile);
         session.Field?.Broadcast(UgcPacket.ProfilePicture(session.Player));
     }
 

@@ -75,8 +75,11 @@ public static class ConditionUtil {
             case ConditionType.openStoryBook:
             case ConditionType.quest_accept:
             case ConditionType.quest_clear_by_chapter:
+            case ConditionType.quest_clear:
             case ConditionType.buff:
             case ConditionType.enchant_result:
+            case ConditionType.dialogue:
+            case ConditionType.talk_in:
             case ConditionType.npc:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
@@ -107,6 +110,10 @@ public static class ConditionUtil {
             case ConditionType.gemstone_putoff:
             case ConditionType.fish_fail:
             case ConditionType.music_play_grade:
+            case ConditionType.breakable_object:
+            case ConditionType.change_profile:
+            case ConditionType.install_billboard:
+            case ConditionType.buddy_request:
                 return true;
         }
         return false;
@@ -137,6 +144,7 @@ public static class ConditionUtil {
             case ConditionType.level_up:
             case ConditionType.level:
             case ConditionType.enchant_result:
+            case ConditionType.install_billboard:
                 if (target.Integers != null && target.Integers.Any(value => longValue >= value)) {
                     return true;
                 }
@@ -177,7 +185,13 @@ public static class ConditionUtil {
             case ConditionType.mastery_manufacturing:
             case ConditionType.quest_accept:
             case ConditionType.quest_clear_by_chapter:
+            case ConditionType.quest_clear:
             case ConditionType.buff:
+            case ConditionType.npc:
+            case ConditionType.dialogue:
+            case ConditionType.talk_in:
+            case ConditionType.change_profile:
+            case ConditionType.buddy_request:
                 return true;
         }
         return false;
