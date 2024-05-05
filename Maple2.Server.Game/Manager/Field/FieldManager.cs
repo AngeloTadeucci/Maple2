@@ -61,7 +61,7 @@ public sealed partial class FieldManager : IDisposable {
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
-    public AiManager Ai { get; private set; }
+    public readonly AiManager Ai;
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId) {
         Metadata = metadata;

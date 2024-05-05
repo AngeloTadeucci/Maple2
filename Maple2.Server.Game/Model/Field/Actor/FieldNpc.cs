@@ -214,14 +214,25 @@ public class FieldNpc : Actor<Npc> {
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
             }
-		}
-	}
-	
-    public void SetAi(string name) {
+        }
+    }
+
+    [MemberNotNullWhen(true, "AiMetadata")]
+    public bool SetAi(string name) {
+        if (name == string.Empty) {
+            AiMetadata = null;
+
+            return false;
+        }
+
         AiMetadata? metadata;
 
-        Field.AiMetadata.TryGet(name, out metadata);
+        if (!Field.AiMetadata.TryGet(name, out metadata)) {
+            return false;
+        }
 
-        AiMetadata = AiMetadata;
+        AiMetadata = metadata;
+
+        return true;
     }
 }
