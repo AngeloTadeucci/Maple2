@@ -81,7 +81,6 @@ public class FieldNpc : Actor<Npc> {
 
     public override Stats Stats { get; }
     public int TargetId = 0;
-    public string AiName { get => AiMetadata?.Name ?? ""; }
     public AiMetadata? AiMetadata { get; private set; }
 
     public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base(field, objectId, npc) {
@@ -222,5 +221,7 @@ public class FieldNpc : Actor<Npc> {
         AiMetadata? metadata;
 
         Field.AiMetadata.TryGet(name, out metadata);
+
+        AiMetadata = AiMetadata;
     }
 }
