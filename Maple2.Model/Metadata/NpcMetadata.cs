@@ -8,6 +8,7 @@ public record NpcMetadata(
     int Id,
     string? Name,
     string Model,
+    string AiPath,
     NpcMetadataStat Stat,
     NpcMetadataBasic Basic,
     NpcMetadataProperty Property,

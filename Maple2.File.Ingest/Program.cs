@@ -92,6 +92,7 @@ UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedRea
 UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));
 
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
+UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 // new MusicScoreParser(xmlReader).Parse().ToList();
 // new ScriptParser(xmlReader).ParseNpc().ToList();

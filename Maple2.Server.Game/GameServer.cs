@@ -25,6 +25,7 @@ public class GameServer : Server<GameSession> {
     private readonly ConcurrentDictionary<int, PremiumMarketItem> premiumMarketCache;
     private Dictionary<int, Shop> shopCache;
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
+    public AiManager aiManager { get; set; }
     private readonly GameStorage gameStorage;
 
     public int Channel => Target.GameChannel;

@@ -14,6 +14,7 @@ public partial class FieldManager {
         // ReSharper disable MemberCanBePrivate.Global
         public required MapMetadataStorage MapMetadata { private get; init; }
         public required MapEntityStorage MapEntities { private get; init; }
+        public required AiMetadataStorage NpcAi { private get; init; }
         public required ServerTableMetadataStorage ServerTableMetadata { private get; init; }
         // ReSharper restore All
         #endregion

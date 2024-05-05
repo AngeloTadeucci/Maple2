@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Maple2.Model.Enum;
+using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PathEngine;
@@ -80,6 +81,8 @@ public class FieldNpc : Actor<Npc> {
 
     public override Stats Stats { get; }
     public int TargetId = 0;
+    public string AiName { get; private set; }
+    public AiMetadata? AiMetadata { get; private set; }
 
     public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base(field, objectId, npc) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
@@ -96,6 +99,8 @@ public class FieldNpc : Actor<Npc> {
         State = new NpcState();
         SequenceId = -1;
         SequenceCounter = 1;
+
+        SetAi(npc.Metadata.AiPath);
     }
 
     protected override void Dispose(bool disposing) {
@@ -210,6 +215,15 @@ public class FieldNpc : Actor<Npc> {
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
             }
+		}
+	}
+	
+    public void SetAi(string name) {
+        AiMetadata? metadata = null;
+
+        if (Field.AiMetadata.TryGet(name, out metadata)) {
+            AiName = name;
+            AiMetadata = metadata;
         }
     }
 }

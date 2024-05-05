@@ -32,6 +32,7 @@ public sealed partial class FieldManager : IDisposable {
     public ItemMetadataStorage ItemMetadata { get; init; } = null!;
     public MapMetadataStorage MapMetadata { get; init; } = null!;
     public NpcMetadataStorage NpcMetadata { get; init; } = null!;
+    public AiMetadataStorage AiMetadata { get; init; } = null!;
     public SkillMetadataStorage SkillMetadata { get; init; } = null!;
     public TableMetadataStorage TableMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
@@ -60,6 +61,7 @@ public sealed partial class FieldManager : IDisposable {
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
+    public AiManager Ai { get; private set; }
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId) {
         Metadata = metadata;
@@ -71,6 +73,7 @@ public sealed partial class FieldManager : IDisposable {
         FieldActor = new FieldActor(this);
         cancel = new CancellationTokenSource();
         thread = new Thread(Update);
+        Ai = new AiManager(this);
         OwnerId = ownerId;
         InstanceId = thread.ManagedThreadId;
 
