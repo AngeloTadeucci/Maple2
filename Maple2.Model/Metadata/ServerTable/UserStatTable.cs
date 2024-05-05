@@ -8,5 +8,3 @@ namespace Maple2.Model.Metadata;
 public record UserStatTable(
     IReadOnlyDictionary<JobCode, IReadOnlyDictionary<short, IReadOnlyDictionary<BasicAttribute, long>>> JobStats
 ) : ServerTable;
-
-
