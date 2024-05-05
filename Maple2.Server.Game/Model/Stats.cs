@@ -11,6 +11,24 @@ public class Stats {
 
     public int GearScore => 12345;
 
+    public Stats(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
+        values = new Dictionary<BasicAttribute, Stat>();
+
+        foreach (BasicAttribute attribute in metadata.Keys) {
+            if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
+                continue;
+            }
+            this[attribute].AddBase(metadata[attribute]);
+        }
+
+        // TODO: Remove when UserStat has rmsp
+        this[BasicAttribute.MountSpeed].AddBase(100);
+
+        this[BasicAttribute.PhysicalAtk].AddBase(AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base, this[BasicAttribute.Dexterity].Base, this[BasicAttribute.Luck].Base));
+        this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
+    }
+
+    [Obsolete("Use Stats(UserStatMetadata, JobCode) instead.")]
     public Stats(JobCode jobCode, short level) {
         values = new Dictionary<BasicAttribute, Stat>();
         Reset(jobCode, level);
@@ -23,6 +41,24 @@ public class Stats {
         }
     }
 
+    public void Reset(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
+        values.Clear();
+
+        foreach (BasicAttribute attribute in metadata.Keys) {
+            if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
+                continue;
+            }
+            this[attribute].AddBase(metadata[attribute]);
+        }
+
+        // TODO: Remove when UserStat has rmsp
+        this[BasicAttribute.MountSpeed].AddBase(100);
+
+        this[BasicAttribute.PhysicalAtk].AddBase(AttackStat.PhysicalAtk(jobCode, this[BasicAttribute.Strength].Base, this[BasicAttribute.Dexterity].Base, this[BasicAttribute.Luck].Base));
+        this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
+    }
+
+    [Obsolete("Use Reset(UserStatMetadata, JobCode) instead.")]
     public void Reset(JobCode jobCode, short level) {
         values.Clear();
 

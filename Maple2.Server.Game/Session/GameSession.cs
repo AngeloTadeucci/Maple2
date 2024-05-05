@@ -67,27 +67,27 @@ public sealed partial class GameSession : Core.Network.Session {
     // ReSharper restore All
     #endregion
 
-    public ConfigManager Config { get; set; }
-    public MailManager Mail { get; set; }
-    public GuildManager Guild { get; set; }
-    public BuddyManager Buddy { get; set; }
-    public ItemManager Item { get; set; }
-    public HousingManager Housing { get; set; }
-    public CurrencyManager Currency { get; set; }
-    public MasteryManager Mastery { get; set; }
-    public StatsManager Stats { get; set; }
-    public ItemEnchantManager ItemEnchant { get; set; }
-    public ItemBoxManager ItemBox { get; set; }
-    public BeautyManager Beauty { get; set; }
-    public GameEventUserValueManager GameEventUserValue { get; set; }
-    public ExperienceManager Exp { get; set; }
-    public AchievementManager Achievement { get; set; }
-    public QuestManager Quest { get; set; }
-    public ShopManager Shop { get; set; }
-    public UgcMarketManager UgcMarket { get; set; }
-    public FieldManager? Field { get; set; }
-    public FieldPlayer Player { get; private set; }
-    public PartyManager Party { get; set; }
+    public ConfigManager Config { get; set; } = null!;
+    public MailManager Mail { get; set; } = null!;
+    public GuildManager Guild { get; set; } = null!;
+    public BuddyManager Buddy { get; set; } = null!;
+    public ItemManager Item { get; set; } = null!;
+    public HousingManager Housing { get; set; } = null!;
+    public CurrencyManager Currency { get; set; } = null!;
+    public MasteryManager Mastery { get; set; } = null!;
+    public StatsManager Stats { get; set; } = null!;
+    public ItemEnchantManager ItemEnchant { get; set; } = null!;
+    public ItemBoxManager ItemBox { get; set; } = null!;
+    public BeautyManager Beauty { get; set; } = null!;
+    public GameEventUserValueManager GameEventUserValue { get; set; } = null!;
+    public ExperienceManager Exp { get; set; } = null!;
+    public AchievementManager Achievement { get; set; } = null!;
+    public QuestManager Quest { get; set; } = null!;
+    public ShopManager Shop { get; set; } = null!;
+    public UgcMarketManager UgcMarket { get; set; } = null!;
+    public FieldManager Field { get; set; } = null!;
+    public FieldPlayer Player { get; private set; } = null!;
+    public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {

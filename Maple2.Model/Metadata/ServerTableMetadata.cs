@@ -31,5 +31,6 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(JobConditionTable), typeDiscriminator: "jobConditionTable")]
 [JsonDerivedType(typeof(BonusGameTable), typeDiscriminator: "bonusGame")]
 [JsonDerivedType(typeof(GlobalDropItemBoxTable), typeDiscriminator: "globalItemDrop")]
+[JsonDerivedType(typeof(UserStatTable), typeDiscriminator: "userStat*")]
 
 public abstract record ServerTable;

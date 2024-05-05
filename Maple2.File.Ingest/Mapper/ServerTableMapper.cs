@@ -24,7 +24,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
         yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
         yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
-
+        yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
     }
 
     private InstanceFieldTable ParseInstanceField() {
@@ -430,5 +430,64 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             dropItems.Add(id, items);
         }
         return new GlobalDropItemBoxTable(dropGroups, dropItems);
+    }
+
+    private UserStatTable ParseUserStat() {
+        static IReadOnlyDictionary<BasicAttribute, long> UserStatMetadataMapper(UserStat userStat) {
+            Dictionary<BasicAttribute, long> stats = new() {
+                { BasicAttribute.Strength, (long) userStat.str },
+                { BasicAttribute.Dexterity, (long) userStat.dex },
+                { BasicAttribute.Intelligence, (long) userStat.@int },
+                { BasicAttribute.Luck, (long) userStat.luk },
+                { BasicAttribute.Health, (long) userStat.hp },
+                { BasicAttribute.HpRegen, (long) userStat.hp_rgp },
+                { BasicAttribute.HpRegenInterval, (long) userStat.hp_inv },
+                { BasicAttribute.Spirit, (long) userStat.sp },
+                { BasicAttribute.SpRegen, (long) userStat.sp_rgp },
+                { BasicAttribute.SpRegenInterval, (long) userStat.sp_inv },
+                { BasicAttribute.Stamina, (long) userStat.ep },
+                { BasicAttribute.StaminaRegen, (long) userStat.ep_rgp },
+                { BasicAttribute.StaminaRegenInterval, (long) userStat.ep_inv },
+                { BasicAttribute.AttackSpeed, (long) userStat.asp },
+                { BasicAttribute.MovementSpeed, (long) userStat.msp },
+                { BasicAttribute.Accuracy, (long) userStat.atp },
+                { BasicAttribute.Evasion, (long) userStat.evp },
+                { BasicAttribute.CriticalRate, (long) userStat.cap },
+                { BasicAttribute.CriticalDamage, (long) userStat.cad },
+                { BasicAttribute.CriticalEvasion, (long) userStat.car },
+                { BasicAttribute.Defense, (long) userStat.ndd },
+                { BasicAttribute.PerfectGuard, (long) userStat.abp },
+                { BasicAttribute.JumpHeight, (long) userStat.jmp },
+                { BasicAttribute.PhysicalAtk, (long) userStat.pap },
+                { BasicAttribute.MagicalAtk, (long) userStat.map },
+                { BasicAttribute.PhysicalRes, (long) userStat.par },
+                { BasicAttribute.MagicalRes, (long) userStat.mar },
+                { BasicAttribute.MinWeaponAtk, (long) userStat.wapmin },
+                { BasicAttribute.MaxWeaponAtk, (long) userStat.wapmax },
+                { BasicAttribute.Damage, (long) userStat.dmg },
+                { BasicAttribute.Piercing, (long) userStat.pen },
+                { BasicAttribute.BonusAtk, (long) userStat.base_atk },
+                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value }
+            };
+
+            return stats;
+        }
+
+        return new UserStatTable(
+            new Dictionary<JobCode, IReadOnlyDictionary<short, IReadOnlyDictionary<BasicAttribute, long>>> {
+                { JobCode.Newbie, parser.ParseUserStat1().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Knight, parser.ParseUserStat10().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Berserker, parser.ParseUserStat20().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Wizard, parser.ParseUserStat30().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Priest, parser.ParseUserStat40().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Archer, parser.ParseUserStat50().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.HeavyGunner, parser.ParseUserStat60().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Thief, parser.ParseUserStat70().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Assassin, parser.ParseUserStat80().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.RuneBlader, parser.ParseUserStat90().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.Striker, parser.ParseUserStat100().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) }
+            }
+        );
     }
 }
