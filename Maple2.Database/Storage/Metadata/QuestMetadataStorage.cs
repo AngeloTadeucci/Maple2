@@ -7,10 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Storage;
 
-public class QuestMetadataStorage : MetadataStorage<int, QuestMetadata>, ISearchable<QuestMetadata> {
+public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int, QuestMetadata>(context, CACHE_SIZE), ISearchable<QuestMetadata> {
     private const int CACHE_SIZE = 2500; // ~2.2k total items
-
-    public QuestMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public bool TryGet(int id, [NotNullWhen(true)] out QuestMetadata? quest) {
         if (Cache.TryGet(id, out quest)) {

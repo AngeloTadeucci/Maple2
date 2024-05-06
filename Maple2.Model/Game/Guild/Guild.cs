@@ -9,14 +9,16 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-public class Guild : IByteSerializable {
+[method: SetsRequiredMembers]
+public class Guild(long id, string name, long leaderAccountId, long leaderCharacterId, string leaderName)
+    : IByteSerializable {
     public byte Capacity = 60;
 
-    public required long Id { get; init; }
-    public required string Name;
-    public required long LeaderAccountId;
-    public required long LeaderCharacterId;
-    public required string LeaderName;
+    public required long Id { get; init; } = id;
+    public required string Name = name;
+    public required long LeaderAccountId = leaderAccountId;
+    public required long LeaderCharacterId = leaderCharacterId;
+    public required string LeaderName = leaderName;
 
     public string Emblem = string.Empty;
     public string Notice = string.Empty;
@@ -30,30 +32,13 @@ public class Guild : IByteSerializable {
     public int HouseRank;
     public int HouseTheme;
 
-    public readonly ConcurrentDictionary<long, GuildMember> Members;
-    public required IList<GuildRank> Ranks { get; init; }
-    public required IList<GuildBuff> Buffs { get; init; }
-    public required IList<GuildEvent> Events { get; init; }
-    public required IList<GuildPoster> Posters { get; init; }
-    public required IList<GuildNpc> Npcs { get; init; }
-    public required IList<RewardItem> Bank { get; init; }
-
-    [SetsRequiredMembers]
-    public Guild(long id, string name, long leaderAccountId, long leaderCharacterId, string leaderName) {
-        Id = id;
-        Name = name;
-        LeaderAccountId = leaderAccountId;
-        LeaderCharacterId = leaderCharacterId;
-        LeaderName = leaderName;
-
-        Members = new ConcurrentDictionary<long, GuildMember>();
-        Ranks = new List<GuildRank>();
-        Buffs = new List<GuildBuff>();
-        Events = new List<GuildEvent>();
-        Posters = new List<GuildPoster>();
-        Npcs = new List<GuildNpc>();
-        Bank = new List<RewardItem>();
-    }
+    public readonly ConcurrentDictionary<long, GuildMember> Members = new();
+    public required IList<GuildRank> Ranks { get; init; } = new List<GuildRank>();
+    public required IList<GuildBuff> Buffs { get; init; } = new List<GuildBuff>();
+    public required IList<GuildEvent> Events { get; init; } = new List<GuildEvent>();
+    public required IList<GuildPoster> Posters { get; init; } = new List<GuildPoster>();
+    public required IList<GuildNpc> Npcs { get; init; } = new List<GuildNpc>();
+    public required IList<RewardItem> Bank { get; init; } = new List<RewardItem>();
 
     [SetsRequiredMembers]
     public Guild(long id, string name, GuildMember leader) : this(id, name, leader.AccountId, leader.CharacterId, leader.Name) { }

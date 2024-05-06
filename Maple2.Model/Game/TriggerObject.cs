@@ -11,15 +11,12 @@ public interface ITriggerObject : IByteSerializable {
     public bool Visible { get; }
 }
 
-public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
-    public readonly T Metadata;
+public abstract class TriggerObject<T>(T metadata) : ITriggerObject
+    where T : Trigger {
+    public readonly T Metadata = metadata;
 
     public int Id => Metadata.TriggerId;
     public bool Visible { get; set; }
-
-    public TriggerObject(T metadata) {
-        Metadata = metadata;
-    }
 
     public virtual void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);
@@ -27,16 +24,12 @@ public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
     }
 }
 
-public class TriggerObjectSound : TriggerObject<Ms2TriggerSound> {
-    public TriggerObjectSound(Ms2TriggerSound metadata) : base(metadata) { }
-}
+public class TriggerObjectSound(Ms2TriggerSound metadata) : TriggerObject<Ms2TriggerSound>(metadata);
 
-public class TriggerObjectMesh : TriggerObject<Ms2TriggerMesh> {
+public class TriggerObjectMesh(Ms2TriggerMesh metadata) : TriggerObject<Ms2TriggerMesh>(metadata) {
     public bool MinimapVisible { get; init; }
     public int Fade { get; set; }
     public float Scale { get; set; } = 1f;
-
-    public TriggerObjectMesh(Ms2TriggerMesh metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -47,10 +40,8 @@ public class TriggerObjectMesh : TriggerObject<Ms2TriggerMesh> {
     }
 }
 
-public class TriggerObjectActor : TriggerObject<Ms2TriggerActor> {
+public class TriggerObjectActor(Ms2TriggerActor metadata) : TriggerObject<Ms2TriggerActor>(metadata) {
     public string SequenceName { get; set; } = string.Empty;
-
-    public TriggerObjectActor(Ms2TriggerActor metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -58,11 +49,9 @@ public class TriggerObjectActor : TriggerObject<Ms2TriggerActor> {
     }
 }
 
-public class TriggerObjectRope : TriggerObject<Ms2TriggerRope> {
+public class TriggerObjectRope(Ms2TriggerRope metadata) : TriggerObject<Ms2TriggerRope>(metadata) {
     public bool Animate { get; set; }
     public int Delay { get; set; }
-
-    public TriggerObjectRope(Ms2TriggerRope metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -71,11 +60,9 @@ public class TriggerObjectRope : TriggerObject<Ms2TriggerRope> {
     }
 }
 
-public class TriggerObjectLadder : TriggerObject<Ms2TriggerLadder> {
+public class TriggerObjectLadder(Ms2TriggerLadder metadata) : TriggerObject<Ms2TriggerLadder>(metadata) {
     public bool Animate { get; set; }
     public int Delay { get; set; }
-
-    public TriggerObjectLadder(Ms2TriggerLadder metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -84,11 +71,9 @@ public class TriggerObjectLadder : TriggerObject<Ms2TriggerLadder> {
     }
 }
 
-public class TriggerObjectEffect : TriggerObject<Ms2TriggerEffect> {
+public class TriggerObjectEffect(Ms2TriggerEffect metadata) : TriggerObject<Ms2TriggerEffect>(metadata) {
     public bool UnknownBool { get; set; }
     public int UnknownInt { get; set; }
-
-    public TriggerObjectEffect(Ms2TriggerEffect metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -97,13 +82,9 @@ public class TriggerObjectEffect : TriggerObject<Ms2TriggerEffect> {
     }
 }
 
-public class TriggerObjectCube : TriggerObject<Ms2TriggerCube> {
-    public TriggerObjectCube(Ms2TriggerCube metadata) : base(metadata) { }
-}
+public class TriggerObjectCube(Ms2TriggerCube metadata) : TriggerObject<Ms2TriggerCube>(metadata);
 
-public class TriggerObjectCamera : TriggerObject<Ms2TriggerCamera> {
-    public TriggerObjectCamera(Ms2TriggerCamera metadata) : base(metadata) { }
-}
+public class TriggerObjectCamera(Ms2TriggerCamera metadata) : TriggerObject<Ms2TriggerCamera>(metadata);
 
 public class TriggerBox {
     // Some extra height to compensate for entity height

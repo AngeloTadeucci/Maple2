@@ -9,17 +9,11 @@ public class EventQueue {
     public int Queued => nextEvents.Count;
     public int Count => nextEvents.Count + timedEvents.Count;
 
-    private readonly List<ScheduledEvent> timedEvents;
-    private Queue<ScheduledEvent> nextEvents;
-    private long nextTime;
+    private readonly List<ScheduledEvent> timedEvents = [];
+    private Queue<ScheduledEvent> nextEvents = new();
+    private long nextTime = long.MaxValue;
 
     private readonly object mutex = new object();
-
-    public EventQueue() {
-        timedEvents = new List<ScheduledEvent>();
-        nextEvents = new Queue<ScheduledEvent>();
-        nextTime = long.MaxValue;
-    }
 
     public void Start() {
         Running = true;

@@ -25,9 +25,9 @@ public class ItemCommand : Command {
         this.itemStorage = itemStorage;
 
         var id = new Argument<int>("id", "Id of item to spawn.");
-        var amount = new Option<int>(new[] { "--amount", "-a" }, () => 1, "Amount of the item.");
-        var rarity = new Option<int>(new[] { "--rarity", "-r" }, () => 1, "Rarity of the item.");
-        var drop = new Option<bool>(new[] { "--drop" }, "Drop item instead of adding to inventory");
+        var amount = new Option<int>(["--amount", "-a"], () => 1, "Amount of the item.");
+        var rarity = new Option<int>(["--rarity", "-r"], () => 1, "Rarity of the item.");
+        var drop = new Option<bool>(["--drop"], "Drop item instead of adding to inventory");
 
         AddArgument(id);
         AddOption(amount);

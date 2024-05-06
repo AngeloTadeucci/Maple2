@@ -30,7 +30,7 @@ public class InventoryManager {
             tabs[type] = new ItemCollection((short) (BaseSize(type) + expand));
         }
 
-        delete = new List<Item>();
+        delete = [];
         foreach ((InventoryType type, List<Item> load) in db.GetInventory(session.CharacterId)) {
             if (tabs.TryGetValue(type, out ItemCollection? items)) {
                 foreach (Item item in load) {

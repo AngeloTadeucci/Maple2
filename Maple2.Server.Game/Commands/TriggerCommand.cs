@@ -20,9 +20,9 @@ public class TriggerCommand : Command {
     public TriggerCommand(GameSession session) : base(NAME, DESCRIPTION) {
         this.session = session;
 
-        var list = new Option<bool>(new string[] { "--list", "-l" }, () => false, "List all triggers");
-        var triggerName = new Option<string?>(new string[] { "--reset", "-r" }, () => null, "Trigger name");
-        var stateIndex = new Option<int>(new string[] { "--state", "-s" }, () => -1, "State index");
+        var list = new Option<bool>(["--list", "-l"], () => false, "List all triggers");
+        var triggerName = new Option<string?>(["--reset", "-r"], () => null, "Trigger name");
+        var stateIndex = new Option<int>(["--state", "-s"], () => -1, "State index");
 
         AddOption(list);
         AddOption(triggerName);

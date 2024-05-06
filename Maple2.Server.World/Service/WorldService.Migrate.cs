@@ -14,7 +14,7 @@ public partial class WorldService {
     // Duration for which a token remains valid.
     private static readonly TimeSpan AuthExpiry = TimeSpan.FromSeconds(30);
 
-    private readonly IMemoryCache tokenCache;
+    private readonly IMemoryCache tokenCache = tokenCache;
     // private readonly PlayerChannelLookup playerChannels = new();
 
     public override Task<MigrateOutResponse> MigrateOut(MigrateOutRequest request, ServerCallContext context) {

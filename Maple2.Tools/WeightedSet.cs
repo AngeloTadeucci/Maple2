@@ -6,17 +6,12 @@ using System.Threading;
 
 namespace Maple2.Tools;
 
-public class WeightedSet<T> : IEnumerable<(T, int)> {
-    private readonly Random rng;
-    private readonly HashSet<(T, int)> set;
+public class WeightedSet<T>(Random? random = null) : IEnumerable<(T, int)> {
+    private readonly Random rng = random ?? Random.Shared;
+    private readonly HashSet<(T, int)> set = [];
     private int totalWeight;
 
     public int Count => set.Count;
-
-    public WeightedSet(Random? random = null) {
-        rng = random ?? Random.Shared;
-        set = new HashSet<(T, int)>();
-    }
 
     public void Add(T value, int weight) {
         Interlocked.Add(ref totalWeight, weight);

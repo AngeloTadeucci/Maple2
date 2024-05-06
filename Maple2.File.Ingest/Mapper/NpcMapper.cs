@@ -9,12 +9,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class NpcMapper : TypeMapper<NpcMetadata> {
-    private readonly NpcParser parser;
-
-    public NpcMapper(M2dReader xmlReader) {
-        parser = new NpcParser(xmlReader);
-    }
+public class NpcMapper(M2dReader xmlReader) : TypeMapper<NpcMetadata> {
+    private readonly NpcParser parser = new(xmlReader);
 
     protected override IEnumerable<NpcMetadata> Map() {
         foreach ((int id, string name, NpcData data, List<EffectDummy> _) in parser.Parse()) {
@@ -25,30 +21,30 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                 Model: data.model.kfm,
                 AiPath: data.aiInfo.path,
                 Stat: new NpcMetadataStat(Stats: MapStats(data.stat),
-                    ScaleStatRate: new[] {
+                    ScaleStatRate: [
                         data.stat.scaleStatRate_1,
                         data.stat.scaleStatRate_2,
                         data.stat.scaleStatRate_3,
                         data.stat.scaleStatRate_4,
-                    },
-                    ScaleBaseTap: new[] {
+                    ],
+                    ScaleBaseTap: [
                         data.stat.scaleBaseTap_1,
                         data.stat.scaleBaseTap_2,
                         data.stat.scaleBaseTap_3,
                         data.stat.scaleBaseTap_4,
-                    },
-                    ScaleBaseDef: new[] {
+                    ],
+                    ScaleBaseDef: [
                         data.stat.scaleBaseDef_1,
                         data.stat.scaleBaseDef_2,
                         data.stat.scaleBaseDef_3,
                         data.stat.scaleBaseDef_4,
-                    },
-                    ScaleBaseSpaRate: new[] {
+                    ],
+                    ScaleBaseSpaRate: [
                         data.stat.scaleBaseSpaRate_1,
                         data.stat.scaleBaseSpaRate_2,
                         data.stat.scaleBaseSpaRate_3,
                         data.stat.scaleBaseSpaRate_4,
-                    }),
+                    ]),
                 Basic: new NpcMetadataBasic(Friendly: data.basic.friendly,
                     AttackGroup: data.basic.npcAttackGroup,
                     DefenseGroup: data.basic.npcDefenseGroup,

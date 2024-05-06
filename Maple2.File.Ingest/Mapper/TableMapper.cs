@@ -28,14 +28,9 @@ using MeretMarketCategory = Maple2.File.Parser.Xml.Table.MeretMarketCategory;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class TableMapper : TypeMapper<TableMetadata> {
-    private readonly TableParser parser;
-    private readonly ItemOptionParser optionParser;
-
-    public TableMapper(M2dReader xmlReader) {
-        parser = new TableParser(xmlReader);
-        optionParser = new ItemOptionParser(xmlReader);
-    }
+public class TableMapper(M2dReader xmlReader) : TypeMapper<TableMetadata> {
+    private readonly TableParser parser = new(xmlReader);
+    private readonly ItemOptionParser optionParser = new(xmlReader);
 
     protected override IEnumerable<TableMetadata> Map() {
         yield return new TableMetadata { Name = "chatemoticon.xml", Table = ParseChatSticker() };

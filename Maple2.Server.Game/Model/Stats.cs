@@ -112,20 +112,14 @@ public class Stats {
     }
 }
 
-public sealed class Stat {
+public sealed class Stat(long total, long @base, long current) {
     public const int TOTAL = 3;
 
-    public long Total { get; set; }
-    public long Base { get; set; }
-    public long Current { get; set; }
+    public long Total { get; set; } = total;
+    public long Base { get; set; } = @base;
+    public long Current { get; set; } = current;
 
     public Stat(long value) : this(value, value, value) { }
-
-    public Stat(long total, long @base, long current) {
-        Total = total;
-        Base = @base;
-        Current = current;
-    }
 
     public void AddBase(long amount) {
         Total += amount;

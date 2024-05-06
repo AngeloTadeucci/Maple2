@@ -9,15 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Storage;
 
-public class MapMetadataStorage : MetadataStorage<int, MapMetadata>, ISearchable<MapMetadata> {
+public class MapMetadataStorage(MetadataContext context) : MetadataStorage<int, MapMetadata>(context, CACHE_SIZE), ISearchable<MapMetadata> {
     private const int CACHE_SIZE = 1500; // ~1.1k total Maps
     private const int UGC_CACHE_SIZE = 200;
 
-    protected readonly LRUCache<int, UgcMapMetadata> UgcCache;
-
-    public MapMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        UgcCache = new LRUCache<int, UgcMapMetadata>(UGC_CACHE_SIZE, (int) (UGC_CACHE_SIZE * 0.05));
-    }
+    protected readonly LRUCache<int, UgcMapMetadata> UgcCache = new(UGC_CACHE_SIZE, (int) (UGC_CACHE_SIZE * 0.05));
 
     public bool TryGet(int id, [NotNullWhen(true)] out MapMetadata? map) {
         if (Cache.TryGet(id, out map)) {

@@ -5,12 +5,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class AnimationMapper : TypeMapper<AnimationMetadata> {
-    private readonly AniKeyTextParser parser;
-
-    public AnimationMapper(M2dReader xmlReader) {
-        parser = new AniKeyTextParser(xmlReader);
-    }
+public class AnimationMapper(M2dReader xmlReader) : TypeMapper<AnimationMetadata> {
+    private readonly AniKeyTextParser parser = new(xmlReader);
 
     protected override IEnumerable<AnimationMetadata> Map() {
         foreach (AnimationData data in parser.Parse()) {

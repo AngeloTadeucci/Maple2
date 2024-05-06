@@ -8,12 +8,8 @@ using ConditionType = Maple2.Model.Enum.ConditionType;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class AchievementMapper : TypeMapper<AchievementMetadata> {
-    private readonly AchieveParser parser;
-
-    public AchievementMapper(M2dReader xmlReader) {
-        parser = new AchieveParser(xmlReader);
-    }
+public class AchievementMapper(M2dReader xmlReader) : TypeMapper<AchievementMetadata> {
+    private readonly AchieveParser parser = new(xmlReader);
 
     protected override IEnumerable<AchievementMetadata> Map() {
         foreach ((int id, string name, AchieveData data) in parser.Parse()) {

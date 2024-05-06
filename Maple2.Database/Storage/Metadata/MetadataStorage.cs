@@ -5,14 +5,9 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
 
-public abstract class MetadataStorage<TK, TV> {
-    protected readonly MetadataContext Context;
-    protected readonly LRUCache<TK, TV> Cache;
-
-    public MetadataStorage(MetadataContext context, int capacity) {
-        Context = context;
-        Cache = new LRUCache<TK, TV>(capacity, (int) (capacity * 0.05));
-    }
+public abstract class MetadataStorage<TK, TV>(MetadataContext context, int capacity) {
+    protected readonly MetadataContext Context = context;
+    protected readonly LRUCache<TK, TV> Cache = new(capacity, (int) (capacity * 0.05));
 
     public virtual void InvalidateCache() {
         Cache.Clear();

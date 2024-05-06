@@ -14,17 +14,12 @@ using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 namespace Maple2.Server.World.Containers;
 
-public class GuildManager : IDisposable {
+public class GuildManager(Guild guild) : IDisposable {
     public required GameStorage GameStorage { get; init; }
     public required ChannelClientLookup ChannelClients { get; init; }
 
-    public readonly Guild Guild;
-    private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites;
-
-    public GuildManager(Guild guild) {
-        Guild = guild;
-        pendingInvites = new ConcurrentDictionary<long, (string, DateTime)>();
-    }
+    public readonly Guild Guild = guild;
+    private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites = new();
 
     public void Dispose() {
         using GameStorage.Request db = GameStorage.Context();

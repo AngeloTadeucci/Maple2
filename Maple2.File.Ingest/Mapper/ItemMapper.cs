@@ -9,14 +9,9 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class ItemMapper : TypeMapper<ItemMetadata> {
-    private readonly ItemParser parser;
-    private readonly TableParser tableParser;
-
-    public ItemMapper(M2dReader xmlReader) {
-        parser = new ItemParser(xmlReader);
-        tableParser = new TableParser(xmlReader);
-    }
+public class ItemMapper(M2dReader xmlReader) : TypeMapper<ItemMetadata> {
+    private readonly ItemParser parser = new(xmlReader);
+    private readonly TableParser tableParser = new(xmlReader);
 
     protected override IEnumerable<ItemMetadata> Map() {
         IEnumerable<(int Id, ItemExtraction Extraction)> itemExtractionData = tableParser.ParseItemExtraction();
@@ -26,7 +21,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
         var itemSetBonuses = new Dictionary<int, List<int>>();
         foreach ((int id, _, SetItemInfo info) in tableParser.ParseSetItemInfo()) {
             foreach (int itemId in info.itemIDs) {
-                itemSetBonuses.TryAdd(itemId, new List<int>());
+                itemSetBonuses.TryAdd(itemId, []);
                 itemSetBonuses[itemId].Add(id);
             }
         }

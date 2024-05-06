@@ -7,23 +7,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Maple2.Database.Storage;
 
-public partial class GameStorage {
-    private readonly DbContextOptions options;
-    private readonly ItemMetadataStorage itemMetadata;
-    private readonly MapMetadataStorage mapMetadata;
-    private readonly AchievementMetadataStorage achievementMetadata;
-    private readonly QuestMetadataStorage questMetadata;
-    private readonly ILogger logger;
-
-    public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
-                       QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
-        this.options = options;
-        this.itemMetadata = itemMetadata;
-        this.mapMetadata = mapMetadata;
-        this.achievementMetadata = achievementMetadata;
-        this.questMetadata = questMetadata;
-        this.logger = logger;
-    }
+public partial class GameStorage(
+    DbContextOptions options,
+    ItemMetadataStorage itemMetadata,
+    MapMetadataStorage mapMetadata,
+    AchievementMetadataStorage achievementMetadata,
+    QuestMetadataStorage questMetadata,
+    ILogger<GameStorage> logger) {
+    private readonly ItemMetadataStorage itemMetadata = itemMetadata;
+    private readonly MapMetadataStorage mapMetadata = mapMetadata;
+    private readonly AchievementMetadataStorage achievementMetadata = achievementMetadata;
+    private readonly QuestMetadataStorage questMetadata = questMetadata;
+    private readonly ILogger logger = logger;
 
     public Request Context() {
         // We use NoTracking by default since most requests are Read or Overwrite.
@@ -34,12 +29,7 @@ public partial class GameStorage {
         return new Request(this, context, logger);
     }
 
-    public partial class Request : DatabaseRequest<Ms2Context> {
-        private readonly GameStorage game;
-
-        public Request(GameStorage game, Ms2Context context, ILogger logger) : base(context, logger) {
-            this.game = game;
-        }
+    public partial class Request(GameStorage game, Ms2Context context, ILogger logger) : DatabaseRequest<Ms2Context>(context, logger) {
 
         private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo) {
             if (outdoor == null) {

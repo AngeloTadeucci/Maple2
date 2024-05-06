@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Context;
 
-public sealed class Ms2Context : DbContext {
+public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<Account> Account { get; set; } = null!;
     internal DbSet<Character> Character { get; set; } = null!;
     internal DbSet<CharacterConfig> CharacterConfig { get; set; } = null!;
@@ -41,8 +41,6 @@ public sealed class Ms2Context : DbContext {
     internal DbSet<BeautyShopEntry> BeautyShopEntry { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
-
-    public Ms2Context(DbContextOptions options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);

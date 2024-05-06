@@ -32,9 +32,9 @@ public struct AchievementInfo {
     public int Total => Combat + Adventure + Lifestyle;
 }
 
-public class Achievement : IByteSerializable {
-    public readonly AchievementMetadata Metadata;
-    public readonly int Id;
+public class Achievement(AchievementMetadata metadata) : IByteSerializable {
+    public readonly AchievementMetadata Metadata = metadata;
+    public readonly int Id = metadata.Id;
 
     public bool Completed => Metadata.Grades.Count == Grades.Count;
     public AchievementStatus Status => Completed ? AchievementStatus.Completed : AchievementStatus.InProgress;
@@ -42,15 +42,9 @@ public class Achievement : IByteSerializable {
     public int RewardGrade { get; set; }
     public bool Favorite { get; set; }
     public long Counter { get; set; }
-    public AchievementCategory Category { get; init; }
+    public AchievementCategory Category { get; init; } = metadata.Category;
 
     public IDictionary<int, long> Grades { get; set; } = new Dictionary<int, long>();
-
-    public Achievement(AchievementMetadata metadata) {
-        Metadata = metadata;
-        Category = metadata.Category;
-        Id = metadata.Id;
-    }
 
     public void WriteTo(IByteWriter writer) {
         writer.Write<AchievementStatus>(Status);

@@ -7,14 +7,9 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class MapMapper : TypeMapper<MapMetadata> {
-    private readonly TableParser spawnParser;
-    private readonly MapParser parser;
-
-    public MapMapper(M2dReader xmlReader) {
-        spawnParser = new TableParser(xmlReader);
-        parser = new MapParser(xmlReader);
-    }
+public class MapMapper(M2dReader xmlReader) : TypeMapper<MapMetadata> {
+    private readonly TableParser spawnParser = new(xmlReader);
+    private readonly MapParser parser = new(xmlReader);
 
     protected override IEnumerable<MapMetadata> Map() {
         var pets = new Dictionary<int, Dictionary<int, int>>();

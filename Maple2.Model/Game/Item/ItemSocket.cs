@@ -59,18 +59,12 @@ public sealed class ItemSocket : IByteSerializable, IByteDeserializable {
     }
 }
 
-public class ItemGemstone : IByteSerializable, IByteDeserializable {
-    public int ItemId;
-    public ItemBinding? Binding;
-    public bool IsLocked;
-    public long UnlockTime;
-
-    public ItemGemstone(int itemId = 0, ItemBinding? binding = null, bool isLocked = false, long unlockTime = 0) {
-        ItemId = itemId;
-        Binding = binding;
-        IsLocked = isLocked;
-        UnlockTime = unlockTime;
-    }
+public class ItemGemstone(int itemId = 0, ItemBinding? binding = null, bool isLocked = false, long unlockTime = 0)
+    : IByteSerializable, IByteDeserializable {
+    public int ItemId = itemId;
+    public ItemBinding? Binding = binding;
+    public bool IsLocked = isLocked;
+    public long UnlockTime = unlockTime;
 
     public ItemGemstone Clone() {
         return new ItemGemstone(ItemId, Binding?.Clone(), IsLocked, UnlockTime);

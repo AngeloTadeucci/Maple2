@@ -34,10 +34,9 @@ DbContextOptions options = new DbContextOptionsBuilder()
 
 using var ms2Context = new Ms2Context(options);
 
-string[] seeds =
-        {
-            "shops", "shop_items", "beauty_shops", "beauty_shop_items", "game_event", "system_banner", "premium_market_item"
-        };
+string[] seeds = [
+    "shops", "shop_items", "beauty_shops", "beauty_shop_items", "game_event", "system_banner", "premium_market_item",
+];
 
 Console.WriteLine("Seeding...");
 

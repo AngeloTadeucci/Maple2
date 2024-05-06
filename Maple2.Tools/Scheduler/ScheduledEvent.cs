@@ -2,20 +2,9 @@
 
 namespace Maple2.Tools.Scheduler;
 
-internal class ScheduledEvent {
+internal class ScheduledEvent(Action task, long executionTime = 0, int interval = -1, bool strict = false) {
     public bool Completed { get; private set; }
-    public long ExecutionTime { get; private set; }
-
-    private readonly Action task;
-    private readonly int interval;
-    private readonly bool strict;
-
-    public ScheduledEvent(Action task, long executionTime = 0, int interval = -1, bool strict = false) {
-        this.task = task;
-        this.ExecutionTime = executionTime;
-        this.interval = interval;
-        this.strict = strict;
-    }
+    public long ExecutionTime { get; private set; } = executionTime;
 
     public bool IsReady(long time) => ExecutionTime <= time;
 

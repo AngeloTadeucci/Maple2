@@ -5,12 +5,7 @@ using Serilog;
 
 namespace Maple2.Server.Game.Util;
 
-public class LogErrorHandler : IErrorHandler {
-    private readonly ILogger logger;
-
-    public LogErrorHandler(ILogger logger) {
-        this.logger = logger;
-    }
+public class LogErrorHandler(ILogger logger) : IErrorHandler {
 
     public override ErrorResult handle(ErrorType type, string description, IDictionary<string, string> attributes) {
         if (type is ErrorType.Fatal or ErrorType.Assertion) {

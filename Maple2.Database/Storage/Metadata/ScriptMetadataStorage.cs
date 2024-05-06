@@ -4,10 +4,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
 
-public class ScriptMetadataStorage : MetadataStorage<int, ScriptMetadata> {
+public class ScriptMetadataStorage(MetadataContext context) : MetadataStorage<int, ScriptMetadata>(context, CACHE_SIZE) {
     private const int CACHE_SIZE = 7000; // ~6.5k total items
-
-    public ScriptMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public bool TryGet(int id, [NotNullWhen(true)] out ScriptMetadata? script) {
         if (Cache.TryGet(id, out script)) {

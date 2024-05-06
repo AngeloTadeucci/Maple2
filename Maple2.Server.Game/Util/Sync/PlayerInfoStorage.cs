@@ -9,22 +9,14 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Util.Sync;
 
-public class PlayerInfoStorage {
-    private readonly WorldClient world;
+public class PlayerInfoStorage(WorldClient world) {
     // TODO: Just using dictionary for now, might need eviction at some point (LRUCache)
-    private readonly ConcurrentDictionary<long, PlayerInfo> cache;
-    private readonly ConcurrentDictionary<long, IDictionary<int, PlayerInfoListener>> listeners;
+    private readonly ConcurrentDictionary<long, PlayerInfo> cache = new();
+    private readonly ConcurrentDictionary<long, IDictionary<int, PlayerInfoListener>> listeners = new();
 
     private readonly ILogger logger = Log.ForContext<PlayerInfoStorage>();
 
     // private readonly ConcurrentDictionary<Key, IDictionary<PlayerInfoUpdateEvent.Type, PlayerSubscriber>> subscribers;
-
-    public PlayerInfoStorage(WorldClient world) {
-        this.world = world;
-
-        cache = new ConcurrentDictionary<long, PlayerInfo>();
-        listeners = new ConcurrentDictionary<long, IDictionary<int, PlayerInfoListener>>();
-    }
 
     public bool GetOrFetch(long characterId, [NotNullWhen(true)] out PlayerInfo? info) {
         if (cache.TryGetValue(characterId, out info)) {

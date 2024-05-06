@@ -5,13 +5,8 @@
 public class SkillQueue {
     private const int MAX_PENDING = 3;
 
-    private readonly SkillRecord?[] casts;
-    private int index;
-
-    public SkillQueue() {
-        casts = new SkillRecord[MAX_PENDING];
-        index = 0;
-    }
+    private readonly SkillRecord?[] casts = new SkillRecord[MAX_PENDING];
+    private int index = 0;
 
     public void Add(SkillRecord cast) {
         casts[index] = cast;

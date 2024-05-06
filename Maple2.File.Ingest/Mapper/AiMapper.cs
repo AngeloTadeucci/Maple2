@@ -7,19 +7,15 @@ using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class AiMapper : TypeMapper<AiMetadata> {
-    private readonly AiParser parser;
-
-    public AiMapper(M2dReader xmlReader) {
-        parser = new AiParser(xmlReader);
-    }
+public class AiMapper(M2dReader xmlReader) : TypeMapper<AiMetadata> {
+    private readonly AiParser parser = new(xmlReader);
 
     protected override IEnumerable<AiMetadata> Map() {
         foreach ((string name, NpcAi data) in parser.Parse()) {
-            List<AiMetadata.Condition> reserved = new List<AiMetadata.Condition>();
-            List<AiMetadata.Node> battle = new List<AiMetadata.Node>();
-            List<AiMetadata.Node> battleEnd = new List<AiMetadata.Node>();
-            List<AiMetadata.AiPresetDefinition> aiPresets = new List<AiMetadata.AiPresetDefinition>();
+            List<AiMetadata.Condition> reserved = [];
+            List<AiMetadata.Node> battle = [];
+            List<AiMetadata.Node> battleEnd = [];
+            List<AiMetadata.AiPresetDefinition> aiPresets = [];
 
             foreach (Condition node in data.reserved?.condition ?? new List<Condition>()) {
                 reserved.Add(MapCondition(node));
@@ -29,11 +25,11 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 battle.Add(MapNode(node));
             }
 
-            foreach (Node node in data.battleEnd?.node ?? new List<Node>()) {
+            foreach (Node node in data.battleEnd?.node ?? []) {
                 battleEnd.Add(MapNode(node));
             }
 
-            foreach (AiPreset node in data.aiPresets?.aiPreset ?? new List<AiPreset>()) {
+            foreach (AiPreset node in data.aiPresets?.aiPreset ?? []) {
                 var childNodes = new List<AiMetadata.Node>();
                 var childAiPresets = new List<AiMetadata.AiPreset>();
 
@@ -184,9 +180,9 @@ public class AiMapper : TypeMapper<AiMetadata> {
     }
 
     AiMetadata.Node MapNode(Node node) {
-        List<AiMetadata.Node> childNodes = new List<AiMetadata.Node>();
-        List<AiMetadata.Condition> childConditions = new List<AiMetadata.Condition>();
-        List<AiMetadata.AiPreset> childAiPresets = new List<AiMetadata.AiPreset>();
+        List<AiMetadata.Node> childNodes = [];
+        List<AiMetadata.Condition> childConditions = [];
+        List<AiMetadata.AiPreset> childAiPresets = [];
 
         foreach (Node child in node.node) {
             childNodes.Add(MapNode(child));

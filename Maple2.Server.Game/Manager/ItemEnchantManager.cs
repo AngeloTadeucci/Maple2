@@ -7,18 +7,18 @@ using Serilog;
 
 namespace Maple2.Server.Game.Manager;
 
-public class ItemEnchantManager {
+public class ItemEnchantManager(GameSession session, Lua.Lua lua) {
     private const int MAX_RATE = 100;
     private const int MAX_EXP = 10000;
     private const int CHARGE_RATE = 1;
 
     // ReSharper disable RedundantExplicitArraySize
-    private static readonly int[] RequireFodder = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4 };
-    private static readonly int[] GainExp = new int[15] { 10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250 };
-    private static readonly int[] SuccessRate = new int[15] { 100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5 };
-    private static readonly int[] FodderRate = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2 };
-    private static readonly int[] FailCharge = new int[15] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5 };
-    private static readonly float[] StatBonusRate = new float[15] { 0.02f, 0.04f, 0.07f, 0.1f, 0.14f, 0.19f, 0.25f, 0.32f, 0.4f, 0.5f, 0.64f, 0.84f, 1.12f, 1.5f, 2f };
+    private static readonly int[] RequireFodder = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4];
+    private static readonly int[] GainExp = [10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250];
+    private static readonly int[] SuccessRate = [100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5];
+    private static readonly int[] FodderRate = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2];
+    private static readonly int[] FailCharge = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5];
+    private static readonly float[] StatBonusRate = [0.02f, 0.04f, 0.07f, 0.1f, 0.14f, 0.19f, 0.25f, 0.32f, 0.4f, 0.5f, 0.64f, 0.84f, 1.12f, 1.5f, 2f];
     // ReSharper restore RedundantExplicitArraySize
 
     private static readonly IngredientInfo[][] OpheliaCost = new IngredientInfo[15][];
@@ -59,37 +59,26 @@ public class ItemEnchantManager {
         PeachyCost[14] = Build(7784, 20, 84); // 8x
 
         IngredientInfo[] Build(int onyx, int chaosOnyx, int crystalFragment) {
-            return new[] {
+            return [
                 new IngredientInfo(ItemTag.Onix, onyx),
                 new IngredientInfo(ItemTag.ChaosOnix, chaosOnyx),
                 new IngredientInfo(ItemTag.CrystalPiece, crystalFragment),
-            };
+            ];
         }
     }
 
-    private readonly GameSession session;
-    private readonly Lua.Lua lua;
+    private readonly Lua.Lua lua = lua;
     private readonly ILogger logger = Log.Logger.ForContext<ItemEnchantManager>();
 
     public EnchantType Type { get; private set; }
 
     private Item? upgradeItem;
-    private readonly List<IngredientInfo> catalysts;
-    private readonly Dictionary<long, Item> fodders;
-    private readonly Dictionary<BasicAttribute, BasicOption> attributeDeltas;
-    private readonly EnchantRates rates;
+    private readonly List<IngredientInfo> catalysts = [];
+    private readonly Dictionary<long, Item> fodders = new();
+    private readonly Dictionary<BasicAttribute, BasicOption> attributeDeltas = new();
+    private readonly EnchantRates rates = new();
     private int fodderWeight;
     private int useCharges;
-
-    public ItemEnchantManager(GameSession session, Lua.Lua lua) {
-        this.session = session;
-        this.lua = lua;
-
-        catalysts = new List<IngredientInfo>();
-        fodders = new Dictionary<long, Item>();
-        attributeDeltas = new Dictionary<BasicAttribute, BasicOption>();
-        rates = new EnchantRates();
-    }
 
     public void Reset() {
         Type = EnchantType.None;

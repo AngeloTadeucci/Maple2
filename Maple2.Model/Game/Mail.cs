@@ -19,8 +19,8 @@ public class Mail : IByteSerializable {
     public string SenderName = string.Empty;
     public string Title = string.Empty;
     public string Content = string.Empty;
-    public IList<(string Key, string Value)> TitleArgs { get; init; }
-    public IList<(string Key, string Value)> ContentArgs { get; init; }
+    public IList<(string Key, string Value)> TitleArgs { get; init; } = new List<(string Key, string Value)>();
+    public IList<(string Key, string Value)> ContentArgs { get; init; } = new List<(string Key, string Value)>();
 
     public long Meso;
     public long MesoCollectTime;
@@ -30,18 +30,11 @@ public class Mail : IByteSerializable {
     public long GameMeretCollectTime;
 
     public long ReadTime;
-    public long ExpiryTime;
+    public long ExpiryTime = DateTimeOffset.UtcNow.AddDays(Constant.MailExpiryDays).ToUnixTimeSeconds();
     public long SendTime;
 
     // More than 1 item may not display properly
-    public readonly IList<Item> Items;
-
-    public Mail() {
-        TitleArgs = new List<(string Key, string Value)>();
-        ContentArgs = new List<(string Key, string Value)>();
-        Items = new List<Item>();
-        ExpiryTime = DateTimeOffset.UtcNow.AddDays(Constant.MailExpiryDays).ToUnixTimeSeconds();
-    }
+    public readonly IList<Item> Items = new List<Item>();
 
     public void Update(Mail other) {
         if (Id != other.Id || SenderId != other.SenderId || ReceiverId != other.ReceiverId) {

@@ -8,7 +8,9 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Party;
 
-public class Party : IByteSerializable {
+[method: SetsRequiredMembers]
+public class Party(int id, long leaderAccountId, long leaderCharacterId, string leaderName)
+    : IByteSerializable {
     private int capacity = Constant.PartyMaxCapacity;
     public int Capacity {
         get => capacity;
@@ -17,28 +19,17 @@ public class Party : IByteSerializable {
         }
     }
 
-    public required int Id { get; init; }
-    public required long LeaderAccountId;
-    public required long LeaderCharacterId;
-    public required string LeaderName;
-    public long CreationTime;
+    public required int Id { get; init; } = id;
+    public required long LeaderAccountId = leaderAccountId;
+    public required long LeaderCharacterId = leaderCharacterId;
+    public required string LeaderName = leaderName;
+    public long CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     public int DungeonId = 0;
     public string MatchPartyName = "";
     public int MatchPartyId = 0;
     public bool IsMatching = false;
     public bool RequireApproval = false;
-    public readonly ConcurrentDictionary<long, PartyMember> Members;
-
-    [SetsRequiredMembers]
-    public Party(int id, long leaderAccountId, long leaderCharacterId, string leaderName) {
-        Id = id;
-        LeaderAccountId = leaderAccountId;
-        LeaderCharacterId = leaderCharacterId;
-        LeaderName = leaderName;
-        CreationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        Members = new ConcurrentDictionary<long, PartyMember>();
-    }
+    public readonly ConcurrentDictionary<long, PartyMember> Members = new();
 
     [SetsRequiredMembers]
     public Party(int id, PartyMember leader) : this(id, leader.AccountId, leader.CharacterId, leader.Name) { }

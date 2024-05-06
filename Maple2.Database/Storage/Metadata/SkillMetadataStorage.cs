@@ -8,15 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Storage;
 
-public class SkillMetadataStorage : MetadataStorage<(int, short), SkillMetadata>, ISearchable<StoredSkillMetadata> {
+public class SkillMetadataStorage(MetadataContext context) : MetadataStorage<(int, short), SkillMetadata>(context, CACHE_SIZE), ISearchable<StoredSkillMetadata> {
     private const int CACHE_SIZE = 23000; // ~22k total skill levels
     private const int EFFECT_CACHE_SIZE = 15000;  // ~14.5k total additional effect levels
 
-    protected readonly LRUCache<(int Id, short Level), AdditionalEffectMetadata> EffectCache;
-
-    public SkillMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        EffectCache = new LRUCache<(int, short), AdditionalEffectMetadata>(EFFECT_CACHE_SIZE, (int) (EFFECT_CACHE_SIZE * 0.05));
-    }
+    protected readonly LRUCache<(int Id, short Level), AdditionalEffectMetadata> EffectCache = new(EFFECT_CACHE_SIZE, (int) (EFFECT_CACHE_SIZE * 0.05));
 
     public bool TryGet(int id, short level, [NotNullWhen(true)] out SkillMetadata? skill) {
         if (Cache.TryGet((id, level), out skill)) {

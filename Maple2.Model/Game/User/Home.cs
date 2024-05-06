@@ -24,9 +24,9 @@ public class Home : IByteSerializable {
     public HomeLighting Lighting { get; private set; }
     public HomeCamera Camera { get; private set; }
     public string? Passcode { get; set; }
-    public readonly IDictionary<HomePermission, HomePermissionSetting> Permissions;
+    public readonly IDictionary<HomePermission, HomePermissionSetting> Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
 
-    private string message;
+    private string message = "Thanks for visiting. Come back soon!";
     public string Message {
         get => message;
         set {
@@ -45,11 +45,6 @@ public class Home : IByteSerializable {
     public int ApartmentNumber => Outdoor?.ApartmentNumber ?? 0;
     public long PlotExpiryTime => Outdoor?.ExpiryTime ?? 0;
     public PlotState State => Outdoor?.State ?? PlotState.Open;
-
-    public Home() {
-        message = "Thanks for visiting. Come back soon!";
-        Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
-    }
 
     public bool SetArea(int area) {
         if (Area == area) return false;

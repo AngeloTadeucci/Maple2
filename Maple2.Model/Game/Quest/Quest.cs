@@ -6,21 +6,16 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class Quest : IByteSerializable {
+public class Quest(QuestMetadata metadata) : IByteSerializable {
     public int Id => Metadata.Id;
-    public readonly QuestMetadata Metadata;
+    public readonly QuestMetadata Metadata = metadata;
 
     public QuestState State;
     public int CompletionCount;
     public long StartTime;
     public long EndTime;
     public bool Track;
-    public SortedDictionary<int, Condition> Conditions;
-
-    public Quest(QuestMetadata metadata) {
-        Metadata = metadata;
-        Conditions = new SortedDictionary<int, Condition>();
-    }
+    public SortedDictionary<int, Condition> Conditions = new();
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);
@@ -36,12 +31,9 @@ public class Quest : IByteSerializable {
         }
     }
 
-    public class Condition {
-        public readonly ConditionMetadata Metadata;
+    public class Condition(ConditionMetadata metadata) {
+        public readonly ConditionMetadata Metadata = metadata;
         public int Counter;
 
-        public Condition(ConditionMetadata metadata) {
-            Metadata = metadata;
-        }
     }
 }

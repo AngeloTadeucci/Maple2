@@ -3,17 +3,12 @@
 namespace Maple2.File.Ingest.Utils;
 
 internal class TriggerScript {
-    public readonly IList<State> States;
-    public readonly IList<string> Imports;
+    public readonly IList<State> States = new List<State>();
+    public readonly IList<string> Imports = new List<string>();
     public bool Shared { get; init; }
 
-    public TriggerScript() {
-        States = new List<State>();
-        Imports = new List<string>();
-    }
-
     public class State {
-        public readonly List<string> Comments = new();
+        public readonly List<string> Comments = [];
         public string Name = string.Empty;
         public IList<Action> OnEnter = new List<Action>();
         public IList<Condition> Conditions = new List<Condition>();
@@ -68,7 +63,7 @@ internal class TriggerScript {
     }
 
     public class Action {
-        public readonly List<string> Comments = new();
+        public readonly List<string> Comments = [];
         public string? LineComment;
 
         public string Name = string.Empty;
@@ -99,7 +94,7 @@ internal class TriggerScript {
     }
 
     public class Condition {
-        public readonly List<string> Comments = new();
+        public readonly List<string> Comments = [];
         public string? LineComment;
         public string? TransitionComment;
 
@@ -234,7 +229,7 @@ internal class TriggerScriptCommon {
         public string? Description = null;
         public readonly string Name;
         public ScriptType ReturnType { get; init; }
-        private readonly List<Parameter> parameters = new();
+        private readonly List<Parameter> parameters = [];
 
         private readonly Dictionary<string, (ScriptType, string?)> typeOverrides;
         private readonly Dictionary<string, string> nameOverrides;

@@ -7,20 +7,9 @@ using Maple2.Model.Game;
 
 namespace Maple2.Server.World.Containers;
 
-public class GuildLookup : IDisposable {
-    private readonly GameStorage gameStorage;
-    private readonly ChannelClientLookup channelClients;
-    private readonly PlayerInfoLookup playerLookup;
+public class GuildLookup(GameStorage gameStorage, ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) : IDisposable {
 
-    private readonly ConcurrentDictionary<long, GuildManager> guilds;
-
-    public GuildLookup(GameStorage gameStorage, ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) {
-        this.gameStorage = gameStorage;
-        this.channelClients = channelClients;
-        this.playerLookup = playerLookup;
-
-        guilds = new ConcurrentDictionary<long, GuildManager>();
-    }
+    private readonly ConcurrentDictionary<long, GuildManager> guilds = new();
 
     public void Dispose() {
         // We must dispose all GuildManager to save state.

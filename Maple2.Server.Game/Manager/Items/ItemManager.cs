@@ -9,22 +9,11 @@ using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Manager.Items;
 
-public class ItemManager {
-    private readonly GameSession session;
-    private readonly ItemStatsCalculator itemStatsCalc;
+public class ItemManager(GameStorage.Request db, GameSession session, ItemStatsCalculator itemStatsCalc) {
 
-    public readonly EquipManager Equips;
-    public readonly InventoryManager Inventory;
-    public readonly FurnishingManager Furnishing;
-
-    public ItemManager(GameStorage.Request db, GameSession session, ItemStatsCalculator itemStatsCalc) {
-        this.session = session;
-        this.itemStatsCalc = itemStatsCalc;
-
-        Equips = new EquipManager(db, session);
-        Inventory = new InventoryManager(db, session);
-        Furnishing = new FurnishingManager(db, session);
-    }
+    public readonly EquipManager Equips = new(db, session);
+    public readonly InventoryManager Inventory = new(db, session);
+    public readonly FurnishingManager Furnishing = new(db, session);
 
     /// <summary>
     /// Retrieves an gear from inventory or equipment.

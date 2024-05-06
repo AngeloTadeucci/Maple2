@@ -3,14 +3,10 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class SkillCooldown : IByteSerializable {
-    public readonly int SkillId;
+public class SkillCooldown(int skillId) : IByteSerializable {
+    public readonly int SkillId = skillId;
     public int OriginSkillId { get; init; }
     public long EndTick;
-
-    public SkillCooldown(int skillId) {
-        SkillId = skillId;
-    }
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(SkillId);

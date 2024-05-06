@@ -3,18 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace Maple2.Model.Metadata;
 
-public class MapEntity {
-    public string XBlock { get; set; }
-    public Guid Guid { get; set; }
-    public string Name { get; set; }
+public class MapEntity(string xBlock, Guid guid, string name) {
+    public string XBlock { get; set; } = xBlock;
+    public Guid Guid { get; set; } = guid;
+    public string Name { get; set; } = name;
 
     public required MapBlock Block { get; init; }
 
-    public MapEntity(string xBlock, Guid guid, string name) {
-        XBlock = xBlock;
-        Guid = guid;
-        Name = name;
-    }
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]

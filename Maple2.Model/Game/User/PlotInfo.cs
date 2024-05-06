@@ -6,8 +6,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Model.Game;
 
-public class PlotInfo {
-    public readonly UgcMapGroup Metadata;
+public class PlotInfo(UgcMapGroup metadata) {
+    public readonly UgcMapGroup Metadata = metadata;
 
     public long Id { get; set; }
     public long OwnerId { get; set; }
@@ -26,10 +26,6 @@ public class PlotInfo {
 
     public long ExpiryTime { get; set; }
 
-    public PlotInfo(UgcMapGroup metadata) {
-        Metadata = metadata;
-    }
-
     public PlotState State {
         get {
             if (ExpiryTime > DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
@@ -44,8 +40,7 @@ public class PlotInfo {
     }
 }
 
-public class Plot : PlotInfo {
+public class Plot(UgcMapGroup metadata) : PlotInfo(metadata) {
     public readonly Dictionary<Vector3B, PlotCube> Cubes = new();
 
-    public Plot(UgcMapGroup metadata) : base(metadata) { }
 }

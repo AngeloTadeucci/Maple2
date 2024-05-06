@@ -2,14 +2,9 @@
 
 namespace Maple2.Tools.Collision;
 
-public readonly struct Prism : IPrism {
-    public IPolygon Polygon { get; }
-    public Range Height { get; }
-
-    public Prism(IPolygon shape, float baseHeight, float height) {
-        Polygon = shape;
-        Height = new Range(baseHeight, baseHeight + height);
-    }
+public readonly struct Prism(IPolygon shape, float baseHeight, float height) : IPrism {
+    public IPolygon Polygon { get; } = shape;
+    public Range Height { get; } = new(baseHeight, baseHeight + height);
 
     public bool Contains(in Vector3 point) {
         return Height.Min <= point.Z && point.Z <= Height.Max && Polygon.Contains(point.X, point.Y);

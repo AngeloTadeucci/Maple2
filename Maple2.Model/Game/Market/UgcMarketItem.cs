@@ -6,7 +6,7 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-public class UgcMarketItem : MarketItem {
+public class UgcMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
     public long Id { get; init; }
     public required UgcMarketListingStatus Status { get; set; }
     public required long ListingEndTime { get; set; }
@@ -18,8 +18,6 @@ public class UgcMarketItem : MarketItem {
     public required string[] Tags { get; set; } = Array.Empty<string>();
     public required UgcItemLook Look { get; init; }
     public UgcMarketHomeCategory Category = UgcMarketHomeCategory.None;
-
-    public UgcMarketItem(ItemMetadata metadata) : base(metadata) { }
 
     public override void WriteTo(IByteWriter writer) {
         writer.WriteInt();

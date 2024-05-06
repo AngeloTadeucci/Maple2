@@ -4,20 +4,15 @@ using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;
 
-public class Player {
-    public readonly Account Account;
-    public readonly Character Character;
-    public readonly int ObjectId;
+public class Player(Account account, Character character, int objectId) {
+    public readonly Account Account = account;
+    public readonly Character Character = character;
+    public readonly int ObjectId = objectId;
 
     public required Home Home { get; set; }
     public required Currency Currency { get; init; }
     public required Unlock Unlock { get; init; }
 
-    public Player(Account account, Character character, int objectId) {
-        Account = account;
-        Character = character;
-        ObjectId = objectId;
-    }
 }
 
 public class Unlock {

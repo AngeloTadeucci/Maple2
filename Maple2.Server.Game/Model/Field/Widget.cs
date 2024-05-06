@@ -3,12 +3,8 @@ using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.Model;
 
-public class Widget {
-    public readonly WidgetType Type;
-    public readonly ConcurrentDictionary<string, string> Conditions;
+public class Widget(WidgetType type) {
+    public readonly WidgetType Type = type;
+    public readonly ConcurrentDictionary<string, string> Conditions = new();
 
-    public Widget(WidgetType type) {
-        Type = type;
-        Conditions = new ConcurrentDictionary<string, string>();
-    }
 }

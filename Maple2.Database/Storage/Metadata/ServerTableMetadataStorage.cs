@@ -4,14 +4,14 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
 
-public class ServerTableMetadataStorage {
-    private readonly Lazy<InstanceFieldTable> instanceFieldTable;
-    private readonly Lazy<ScriptConditionTable> scriptConditionTable;
-    private readonly Lazy<ScriptFunctionTable> scriptFunctionTable;
-    private readonly Lazy<JobConditionTable> jobConditionTable;
-    private readonly Lazy<BonusGameTable> bonusGameTable;
-    private readonly Lazy<GlobalDropItemBoxTable> globalDropItemBoxTable;
-    private readonly Lazy<UserStatTable> userStatTable;
+public class ServerTableMetadataStorage(MetadataContext context) {
+    private readonly Lazy<InstanceFieldTable> instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
+    private readonly Lazy<ScriptConditionTable> scriptConditionTable = Retrieve<ScriptConditionTable>(context, "*scriptCondition.xml");
+    private readonly Lazy<ScriptFunctionTable> scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, "*scriptFunction.xml");
+    private readonly Lazy<JobConditionTable> jobConditionTable = Retrieve<JobConditionTable>(context, "jobConditionTable.xml");
+    private readonly Lazy<BonusGameTable> bonusGameTable = Retrieve<BonusGameTable>(context, "bonusGame*.xml");
+    private readonly Lazy<GlobalDropItemBoxTable> globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, "globalItemDrop*.xml");
+    private readonly Lazy<UserStatTable> userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -20,16 +20,6 @@ public class ServerTableMetadataStorage {
     public BonusGameTable BonusGameTable => bonusGameTable.Value;
     public GlobalDropItemBoxTable GlobalDropItemBoxTable => globalDropItemBoxTable.Value;
     public UserStatTable UserStatTable => userStatTable.Value;
-
-    public ServerTableMetadataStorage(MetadataContext context) {
-        instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
-        scriptConditionTable = Retrieve<ScriptConditionTable>(context, "*scriptCondition.xml");
-        scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, "*scriptFunction.xml");
-        jobConditionTable = Retrieve<JobConditionTable>(context, "jobConditionTable.xml");
-        bonusGameTable = Retrieve<BonusGameTable>(context, "bonusGame*.xml");
-        globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, "globalItemDrop*.xml");
-        userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
-    }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {
         var result = new Lazy<T>(() => {

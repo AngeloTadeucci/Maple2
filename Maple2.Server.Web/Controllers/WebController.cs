@@ -13,13 +13,7 @@ using Serilog;
 namespace Maple2.Server.Web.Controllers;
 
 [Route("")]
-public class WebController : ControllerBase {
-
-    private readonly WebStorage webStorage;
-
-    public WebController(WebStorage webStorage) {
-        this.webStorage = webStorage;
-    }
+public class WebController(WebStorage webStorage) : ControllerBase {
 
     [HttpPost("urq.aspx")]
     public async Task<IResult> Upload() {

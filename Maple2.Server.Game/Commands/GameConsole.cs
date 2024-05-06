@@ -9,28 +9,16 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class GameConsole : IConsole {
-    public IStandardStreamWriter Out { get; }
+public class GameConsole(GameSession session) : IConsole {
+    public IStandardStreamWriter Out { get; } = new GameOutputStreamWriter(session);
     public bool IsOutputRedirected => true;
-    public IStandardStreamWriter Error { get; }
+    public IStandardStreamWriter Error { get; } = new GameErrorStreamWriter(session);
     public bool IsErrorRedirected => true;
     public bool IsInputRedirected => true;
 
-    public GameConsole(GameSession session) {
-        Error = new GameErrorStreamWriter(session);
-        Out = new GameOutputStreamWriter(session);
-    }
-
-    private struct GameOutputStreamWriter : IStandardStreamWriter {
-        private readonly GameSession session;
-        private readonly StringBuilder pending;
-        private bool joinNewline;
-
-        public GameOutputStreamWriter(GameSession session) {
-            this.session = session;
-            this.pending = new StringBuilder();
-            this.joinNewline = false;
-        }
+    private struct GameOutputStreamWriter(GameSession session) : IStandardStreamWriter {
+        private readonly StringBuilder pending = new();
+        private bool joinNewline = false;
 
         public void Write(string? value) {
             value = value?.Replace("\r", string.Empty);
@@ -64,12 +52,7 @@ public class GameConsole : IConsole {
         }
     }
 
-    private readonly struct GameErrorStreamWriter : IStandardStreamWriter {
-        private readonly GameSession session;
-
-        public GameErrorStreamWriter(GameSession session) {
-            this.session = session;
-        }
+    private readonly struct GameErrorStreamWriter(GameSession session) : IStandardStreamWriter {
 
         public void Write(string? value) {
             if (string.IsNullOrWhiteSpace(value)) {

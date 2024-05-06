@@ -11,15 +11,10 @@ using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 namespace Maple2.Server.World.Containers;
 
-public class PartyManager : IDisposable {
+public class PartyManager(Party party) : IDisposable {
     public required ChannelClientLookup ChannelClients { get; init; }
-    public readonly Party Party;
-    private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites;
-
-    public PartyManager(Party party) {
-        Party = party;
-        pendingInvites = new ConcurrentDictionary<long, (string, DateTime)>();
-    }
+    public readonly Party Party = party;
+    private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites = new();
 
     public void Dispose() {
         Broadcast(new PartyRequest {

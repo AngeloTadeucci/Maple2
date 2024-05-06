@@ -5,27 +5,21 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
+public sealed class ItemLimitBreak(
+    int level,
+    IDictionary<BasicAttribute, BasicOption> basicOptions,
+    IDictionary<SpecialAttribute, SpecialOption> specialOptions) : IByteSerializable, IByteDeserializable {
     public static readonly ItemLimitBreak Default = new ItemLimitBreak();
 
-    public int Level { get; private set; }
-    public readonly IDictionary<BasicAttribute, BasicOption> BasicOptions;
-    public readonly IDictionary<SpecialAttribute, SpecialOption> SpecialOptions;
+    public int Level { get; private set; } = level;
+    public readonly IDictionary<BasicAttribute, BasicOption> BasicOptions = basicOptions;
+    public readonly IDictionary<SpecialAttribute, SpecialOption> SpecialOptions = specialOptions;
 
-    public ItemLimitBreak() {
-        BasicOptions = new Dictionary<BasicAttribute, BasicOption>();
-        SpecialOptions = new Dictionary<SpecialAttribute, SpecialOption>();
+    public ItemLimitBreak() : this(0, new Dictionary<BasicAttribute, BasicOption>(), new Dictionary<SpecialAttribute, SpecialOption>()) {
     }
 
     public ItemLimitBreak Clone() {
         return new ItemLimitBreak(Level, BasicOptions, SpecialOptions);
-    }
-
-    public ItemLimitBreak(int level, IDictionary<BasicAttribute, BasicOption> basicOptions,
-            IDictionary<SpecialAttribute, SpecialOption> specialOptions) {
-        Level = level;
-        BasicOptions = basicOptions;
-        SpecialOptions = specialOptions;
     }
 
     public void WriteTo(IByteWriter writer) {

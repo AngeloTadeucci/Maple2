@@ -7,14 +7,8 @@ using UgcResource = Maple2.Model.Game.UgcResource;
 
 namespace Maple2.Database.Storage;
 
-public partial class WebStorage {
-    private readonly DbContextOptions options;
-    private readonly ILogger logger;
-
-    public WebStorage(DbContextOptions options, ILogger<WebStorage> logger) {
-        this.options = options;
-        this.logger = logger;
-    }
+public partial class WebStorage(DbContextOptions options, ILogger<WebStorage> logger) {
+    private readonly ILogger logger = logger;
 
     public Request Context() {
         // We use NoTracking by default since most requests are Read or Overwrite.
@@ -25,8 +19,7 @@ public partial class WebStorage {
         return new Request(context, logger);
     }
 
-    public partial class Request : DatabaseRequest<WebContext> {
-        public Request(WebContext context, ILogger logger) : base(context, logger) { }
+    public partial class Request(WebContext context, ILogger logger) : DatabaseRequest<WebContext>(context, logger) {
 
         public UgcResource? CreateUgc(UgcType type, long ownerId) {
             var model = new Model.UgcResource {

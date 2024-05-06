@@ -7,19 +7,13 @@ public sealed class UgcItemLook : IByteSerializable, IByteDeserializable {
     public static readonly UgcItemLook Default = new UgcItemLook();
 
     public long Id;
-    public string FileName;
-    public string Name;
+    public string FileName = string.Empty;
+    public string Name = string.Empty;
     public long AccountId;
     public long CharacterId;
-    public string Author;
+    public string Author = string.Empty;
     public long CreationTime;
-    public string Url;
-    public UgcItemLook() {
-        FileName = string.Empty;
-        Name = string.Empty;
-        Author = string.Empty;
-        Url = string.Empty;
-    }
+    public string Url = string.Empty;
 
     public UgcItemLook Clone() {
         return (UgcItemLook) MemberwiseClone();

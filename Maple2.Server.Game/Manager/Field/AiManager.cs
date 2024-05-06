@@ -10,11 +10,8 @@ using System.Threading.Tasks;
 
 namespace Maple2.Server.Game.Manager.Field;
 
-public sealed class AiManager {
+public sealed class AiManager(FieldManager field) {
     private readonly ILogger logger = Log.Logger.ForContext<AiManager>();
-    public FieldManager Field { get; init; }
+    public FieldManager Field { get; init; } = field;
 
-    public AiManager(FieldManager field) {
-        Field = field;
-    }
 }

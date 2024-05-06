@@ -9,14 +9,8 @@ using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Manager;
 
-public class ItemBoxManager {
-    private readonly GameSession session;
-    public int BoxCount { get; private set; }
-
-    public ItemBoxManager(GameSession session) {
-        this.session = session;
-        BoxCount = 0;
-    }
+public class ItemBoxManager(GameSession session) {
+    public int BoxCount { get; private set; } = 0;
 
     public void Reset() {
         BoxCount = 0;

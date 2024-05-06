@@ -3,12 +3,8 @@ using System.Numerics;
 
 namespace Maple2.Tools.Collision;
 
-public sealed class HoleCircle : Circle {
-    private readonly Circle hole;
-
-    public HoleCircle(in Vector2 origin, float innerRadius, float outerRadius) : base(origin, outerRadius) {
-        hole = new Circle(origin, innerRadius);
-    }
+public sealed class HoleCircle(in Vector2 origin, float innerRadius, float outerRadius) : Circle(origin, outerRadius) {
+    private readonly Circle hole = new(origin, innerRadius);
 
     public override bool Contains(in Vector2 point) {
         return base.Contains(point) && !hole.Contains(point);

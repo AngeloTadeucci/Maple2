@@ -32,7 +32,7 @@ public class GameServer : Server<GameSession> {
     public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage)
             : base(Target.GamePort, router, context) {
         this.fieldFactory = fieldFactory;
-        connectingSessions = new HashSet<GameSession>();
+        connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
 

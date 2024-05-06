@@ -22,16 +22,11 @@ public class ConstructionGuideObject : IGuideObject {
     }
 }
 
-public class FishingGuideObject : IGuideObject {
+public class FishingGuideObject(FishingRodTable.Entry rod, FishingSpotTable.Entry spot) : IGuideObject {
     public GuideObjectType Type => GuideObjectType.Fishing;
 
-    public readonly FishingRodTable.Entry Rod;
-    public readonly FishingSpotTable.Entry Spot;
-
-    public FishingGuideObject(FishingRodTable.Entry rod, FishingSpotTable.Entry spot) {
-        Rod = rod;
-        Spot = spot;
-    }
+    public readonly FishingRodTable.Entry Rod = rod;
+    public readonly FishingSpotTable.Entry Spot = spot;
 
     public void WriteTo(IByteWriter writer) { }
 }

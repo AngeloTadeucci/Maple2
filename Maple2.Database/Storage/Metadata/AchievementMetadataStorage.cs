@@ -8,10 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Storage;
 
-public class AchievementMetadataStorage : MetadataStorage<int, AchievementMetadata>, ISearchable<AchievementMetadata> {
+public class AchievementMetadataStorage(MetadataContext context) : MetadataStorage<int, AchievementMetadata>(context, CACHE_SIZE), ISearchable<AchievementMetadata> {
     private const int CACHE_SIZE = 2500; // ~2.2k total trophies
-
-    public AchievementMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public bool TryGet(int id, [NotNullWhen(true)] out AchievementMetadata? achievement) {
         if (Cache.TryGet(id, out achievement)) {

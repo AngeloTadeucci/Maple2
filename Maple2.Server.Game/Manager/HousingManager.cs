@@ -10,15 +10,10 @@ using Serilog;
 
 namespace Maple2.Server.Game.Manager;
 
-public class HousingManager {
-    private readonly GameSession session;
+public class HousingManager(GameSession session) {
     private Home Home => session.Player.Value.Home;
 
     private readonly ILogger logger = Log.Logger.ForContext<HousingManager>();
-
-    public HousingManager(GameSession session) {
-        this.session = session;
-    }
 
     public void SetPlot(PlotInfo? plot) {
         Home.Outdoor = plot;

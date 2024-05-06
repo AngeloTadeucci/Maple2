@@ -10,27 +10,21 @@ using Serilog;
 
 namespace Maple2.Server.Core.Network;
 
-public abstract class Server<T> : BackgroundService, IHealthCheck where T : Session {
+public abstract class Server<T>(ushort port, PacketRouter<T> router, IComponentContext context) : BackgroundService, IHealthCheck
+    where T : Session {
     private enum ServerState {
         Unstarted,
         Running,
         Stopped,
     }
 
-    private readonly PacketRouter<T> router;
-    private readonly IComponentContext context;
+    private readonly IComponentContext context = context ?? throw new ArgumentException("null context provided");
 
     private ServerState state = ServerState.Unstarted;
 
     protected readonly ILogger Logger = Log.Logger.ForContext<T>();
 
-    public ushort Port { get; private set; }
-
-    protected Server(ushort port, PacketRouter<T> router, IComponentContext context) {
-        Port = port;
-        this.router = router;
-        this.context = context ?? throw new ArgumentException("null context provided");
-    }
+    public ushort Port { get; private set; } = port;
 
     public abstract void OnConnected(T session);
     public abstract void OnDisconnected(T session);

@@ -9,14 +9,9 @@ using Serilog;
 // ReSharper disable once CheckNamespace
 namespace Maple2.Server.Global.Service;
 
-public partial class GlobalService : Global.GlobalBase {
-    private readonly GameStorage gameStorage;
+public partial class GlobalService(GameStorage gameStorage) : Global.GlobalBase {
 
     private readonly ILogger logger = Log.Logger.ForContext<GlobalService>();
-
-    public GlobalService(GameStorage gameStorage) {
-        this.gameStorage = gameStorage;
-    }
 
     public override Task<LoginResponse> Login(LoginRequest request, ServerCallContext context) {
 #if !DEBUG // Allow empty username for testing

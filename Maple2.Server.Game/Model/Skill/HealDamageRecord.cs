@@ -5,24 +5,15 @@ using Maple2.Tools;
 
 namespace Maple2.Server.Game.Model.Skill;
 
-public class HealDamageRecord : IByteSerializable {
-    public readonly IActor Caster;
-    public readonly IActor Target;
-    public readonly int OwnerId;
-    public readonly int HpAmount;
-    public readonly int SpAmount;
-    public readonly int EpAmount;
-
-    public HealDamageRecord(IActor caster, IActor target, int ownerId, AdditionalEffectMetadataRecovery recovery) {
-        Caster = caster;
-        Target = target;
-        OwnerId = ownerId;
-
-        HpAmount = (int) (recovery.HpValue + recovery.HpRate * target.Stats[BasicAttribute.Health].Total
-                                           + recovery.RecoveryRate * caster.Stats[BasicAttribute.MagicalAtk].Current);
-        SpAmount = (int) (recovery.SpValue + recovery.SpRate * target.Stats[BasicAttribute.Spirit].Total);
-        EpAmount = (int) (recovery.EpValue + recovery.EpRate * target.Stats[BasicAttribute.Stamina].Total);
-    }
+public class HealDamageRecord(IActor caster, IActor target, int ownerId, AdditionalEffectMetadataRecovery recovery)
+    : IByteSerializable {
+    public readonly IActor Caster = caster;
+    public readonly IActor Target = target;
+    public readonly int OwnerId = ownerId;
+    public readonly int HpAmount = (int) (recovery.HpValue + recovery.HpRate * target.Stats[BasicAttribute.Health].Total
+                                                           + recovery.RecoveryRate * caster.Stats[BasicAttribute.MagicalAtk].Current);
+    public readonly int SpAmount = (int) (recovery.SpValue + recovery.SpRate * target.Stats[BasicAttribute.Spirit].Total);
+    public readonly int EpAmount = (int) (recovery.EpValue + recovery.EpRate * target.Stats[BasicAttribute.Stamina].Total);
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Caster.ObjectId);

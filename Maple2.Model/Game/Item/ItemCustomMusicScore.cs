@@ -6,17 +6,11 @@ namespace Maple2.Model.Game;
 public sealed class ItemCustomMusicScore : IByteSerializable, IByteDeserializable {
     public int Length;
     public int Instrument;
-    public string Title;
-    public string Author;
+    public string Title = string.Empty;
+    public string Author = string.Empty;
     public long AuthorId; // AccountId
     public bool IsLocked; // true=>s_writemusic_error_cant_edit
-    public string Mml;
-
-    public ItemCustomMusicScore() {
-        Title = string.Empty;
-        Author = string.Empty;
-        Mml = string.Empty;
-    }
+    public string Mml = string.Empty;
 
     public ItemCustomMusicScore Clone() {
         return (ItemCustomMusicScore) MemberwiseClone();

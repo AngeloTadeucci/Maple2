@@ -8,13 +8,9 @@ using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 namespace Maple2.Server.World.Containers;
 
-public class GroupChatManager : IDisposable {
+public class GroupChatManager(GroupChat groupChat) : IDisposable {
     public required ChannelClientLookup ChannelClients { get; init; }
-    public readonly GroupChat GroupChat;
-
-    public GroupChatManager(GroupChat groupChat) {
-        GroupChat = groupChat;
-    }
+    public readonly GroupChat GroupChat = groupChat;
 
     public void Dispose() {
         Broadcast(new GroupChatRequest {

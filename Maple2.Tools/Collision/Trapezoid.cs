@@ -14,11 +14,11 @@ public sealed class Trapezoid : Polygon {
         float halfEndWidth = endWidth / 2;
 
         Matrix3x2 transform = Matrix3x2.CreateRotation(radians) * Matrix3x2.CreateTranslation(origin);
-        Points = new[] {
+        Points = [
             Vector2.Transform(new Vector2(-halfWidth, 0), transform),
             Vector2.Transform(new Vector2(halfWidth, 0), transform),
             Vector2.Transform(new Vector2(halfEndWidth, distance), transform),
             Vector2.Transform(new Vector2(-halfEndWidth, distance), transform),
-        };
+        ];
     }
 }

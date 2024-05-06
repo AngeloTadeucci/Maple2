@@ -3,14 +3,9 @@ using System.Numerics;
 
 namespace Maple2.Tools.Collision;
 
-public class Circle : IPolygon {
-    public readonly Vector2 Origin;
-    public readonly float Radius;
-
-    public Circle(in Vector2 origin, float radius) {
-        this.Origin = origin;
-        this.Radius = radius;
-    }
+public class Circle(in Vector2 origin, float radius) : IPolygon {
+    public readonly Vector2 Origin = origin;
+    public readonly float Radius = radius;
 
     public virtual bool Contains(in Vector2 point) {
         return Vector2.DistanceSquared(Origin, point) <= Radius * Radius;
@@ -31,7 +26,7 @@ public class Circle : IPolygon {
             }
         }
 
-        return new[] { other.Points[result] - Origin };
+        return [other.Points[result] - Origin];
     }
 
     public Range AxisProjection(Vector2 axis) {

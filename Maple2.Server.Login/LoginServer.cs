@@ -21,7 +21,7 @@ public class LoginServer : Server<LoginSession> {
 
     public LoginServer(PacketRouter<LoginSession> router, IComponentContext context, GameStorage gameStorage)
             : base(Target.LoginPort, router, context) {
-        connectingSessions = new HashSet<LoginSession>();
+        connectingSessions = [];
         sessions = new Dictionary<long, LoginSession>();
 
         this.gameStorage = gameStorage;

@@ -3,21 +3,15 @@ using Maple2.Server.Game.Manager.Field;
 
 namespace Maple2.Server.Game.Model;
 
-public class FieldPortal : FieldEntity<Portal> {
-    public bool Visible;
-    public bool Enabled;
-    public bool MinimapVisible;
+public class FieldPortal(FieldManager field, int objectId, Portal value) : FieldEntity<Portal>(field, objectId, value) {
+    public bool Visible = value.Visible;
+    public bool Enabled = value.Enable;
+    public bool MinimapVisible = value.MinimapVisible;
     public int EndTick;
     public string Model = "";
     public long HomeId;
     public string OwnerName = "";
     public string Password = "";
-
-    public FieldPortal(FieldManager field, int objectId, Portal value) : base(field, objectId, value) {
-        Visible = value.Visible;
-        Enabled = value.Enable;
-        MinimapVisible = value.MinimapVisible;
-    }
 
     public override void Update(long tickCount) {
         if (EndTick != 0 && tickCount > EndTick) {

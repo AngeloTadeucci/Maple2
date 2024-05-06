@@ -6,19 +6,14 @@ using Force.Crc32;
 namespace Maple2.File.Ingest.Mapper;
 
 public abstract class TypeMapper<T> where T : class {
-    private readonly Stopwatch stopwatch;
-    private readonly List<T> results;
+    private readonly Stopwatch stopwatch = new();
+    private readonly List<T> results = [];
 
     public bool Complete { get; private set; }
 
     public IReadOnlyCollection<T> Results => Complete ? results : Array.Empty<T>();
 
     public long ElapsedMilliseconds => stopwatch.ElapsedMilliseconds;
-
-    protected TypeMapper() {
-        stopwatch = new Stopwatch();
-        results = new List<T>();
-    }
 
     public uint Process() {
         if (Complete) {
