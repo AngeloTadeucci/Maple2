@@ -262,7 +262,7 @@ public partial class TriggerContext {
         UpdateMesh(new ArraySegment<int>(triggerIds, 0, count), visible, arg4, delay);
     }
 
-    private void UpdateMesh(ArraySegment<int> triggerIds, bool visible, int fade, int delay, float scale = 0) {
+    private void UpdateMesh(ArraySegment<int> triggerIds, bool visible, int delay, int interval, float fade = 0) {
         foreach (int triggerId in triggerIds) {
             if (!Objects.Meshes.TryGetValue(triggerId, out TriggerObjectMesh? mesh)) {
                 logger.Warning("Invalid mesh: {Id}", triggerId);
@@ -272,8 +272,8 @@ public partial class TriggerContext {
                 continue;
             }
 
-            if (delay > 0) {
-                Events.Schedule(() => UpdateSetMesh(mesh), delay);
+            if (interval > 0) {
+                Events.Schedule(() => UpdateSetMesh(mesh), interval);
             } else {
                 UpdateSetMesh(mesh);
             }
@@ -281,10 +281,7 @@ public partial class TriggerContext {
 
         void UpdateSetMesh(TriggerObjectMesh mesh) {
             mesh.Visible = visible;
-            mesh.Fade = fade;
-            if (scale != 0) {
-                mesh.Scale = scale;
-            }
+            mesh.Fade = (int) fade;
             Broadcast(TriggerPacket.Update(mesh));
             // TODO: Should Fade be reset after sending packet?
         }
@@ -367,8 +364,6 @@ public partial class TriggerContext {
     public void CreateItem(int[] spawnIds, int triggerId, int itemId, int arg5) {
         DebugLog("[CreateItem] spawnIds:{Ids}, triggerId:{TriggerId}, itemId:{ItemId}, arg5:{Arg5}", string.Join(", ", spawnIds), triggerId, itemId, arg5);
 
-        // TODO: Remove player once we move IndividualDropBoxItems to ItemDropManager
-        FieldPlayer player = Field.Players.First().Value;
         foreach (int spawnId in spawnIds) {
             ICollection<Item> items = new List<Item>();
             if (itemId != 0) {
@@ -383,11 +378,11 @@ public partial class TriggerContext {
             }
 
             if (spawn.IndividualDropBoxId > 0) {
-                items = items.Concat(player.Session.Item.GetIndividualDropBoxItems(spawn.IndividualDropBoxId)).ToList();
+                items = items.Concat(Field.ItemDrop.GetIndividualDropItems(spawn.IndividualDropBoxId)).ToList();
             }
 
             if (spawn.GlobalDropBoxId > 0) {
-                items = items.Concat(Field.ItemDrop.GetGlobalDropItem(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
+                items = items.Concat(Field.ItemDrop.GetGlobalDropItems(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
             }
 
             foreach (Item item in items) {
@@ -403,8 +398,6 @@ public partial class TriggerContext {
         Random.Shared.Shuffle(rangeIds);
         int[] pickedIds = rangeIds.Take(randomPickCount).ToArray();
 
-        // TODO: Remove player once we move IndividualDropBoxItems to ItemDropManager
-        FieldPlayer player = Field.Players.First().Value;
         foreach (int spawnIds in pickedIds) {
             if (!Field.Entities.EventItemSpawns.TryGetValue(spawnIds, out EventSpawnPointItem? spawn)) {
                 continue;
@@ -412,11 +405,11 @@ public partial class TriggerContext {
 
             ICollection<Item> items = new List<Item>();
             if (spawn.IndividualDropBoxId > 0) {
-                items = items.Concat(player.Session.Item.GetIndividualDropBoxItems(spawn.IndividualDropBoxId)).ToList();
+                items = items.Concat(Field.ItemDrop.GetIndividualDropItems(spawn.IndividualDropBoxId)).ToList();
             }
 
             if (spawn.GlobalDropBoxId > 0) {
-                items = items.Concat(Field.ItemDrop.GetGlobalDropItem(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
+                items = items.Concat(Field.ItemDrop.GetGlobalDropItems(spawn.GlobalDropBoxId, spawn.GlobalDropLevel)).ToList();
             }
 
             foreach (Item item in items) {

@@ -177,19 +177,25 @@ public class FieldNpc : Actor<Npc> {
         CurrentRoutine = new AnimateRoutine(this, sequence, duration);
     }
 
-    public void DropLoot(long characterId) {
+    public void DropLoot(FieldPlayer firstPlayer) {
         NpcMetadataDropInfo dropInfo = Value.Metadata.DropInfo;
 
+        ICollection<Item> itemDrops = new List<Item>();
         foreach (int globalDropId in dropInfo.GlobalDropBoxIds) {
-            IList<Item> itemDrops = Field.ItemDrop.GetGlobalDropItem(globalDropId, Value.Metadata.Basic.Level);
-            foreach (Item item in itemDrops) {
-                float x = Random.Shared.Next((int) Position.X - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.X + Value.Metadata.DropInfo.DropDistanceRandom);
-                float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
-                var position = new Vector3(x, y, Position.Z);
+            itemDrops = itemDrops.Concat(Field.ItemDrop.GetGlobalDropItems(globalDropId, Value.Metadata.Basic.Level)).ToList();
+        }
 
-                FieldItem fieldItem = Field.SpawnItem(this, position, Rotation, item, characterId);
-                Field.Broadcast(FieldPacket.DropItem(fieldItem));
-            }
+        foreach (int individualDropId in dropInfo.IndividualDropBoxIds) {
+            itemDrops = itemDrops.Concat(Field.ItemDrop.GetIndividualDropItems(firstPlayer.Session, Value.Metadata.Basic.Level, individualDropId)).ToList();
+        }
+
+        foreach (Item item in itemDrops) {
+            float x = Random.Shared.Next((int) Position.X - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.X + Value.Metadata.DropInfo.DropDistanceRandom);
+            float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
+            var position = new Vector3(x, y, Position.Z);
+
+            FieldItem fieldItem = Field.SpawnItem(this, position, Rotation, item, firstPlayer.Value.Character.Id);
+            Field.Broadcast(FieldPacket.DropItem(fieldItem));
         }
     }
 
@@ -202,14 +208,13 @@ public class FieldNpc : Actor<Npc> {
 
         long firstCharacter = 0;
         if (Field.TryGetPlayer(DamageDealers.FirstOrDefault().Key, out FieldPlayer? firstPlayer)) {
-            firstCharacter = firstPlayer.Value.Character.Id;
         }
         foreach (KeyValuePair<int, DamageRecordTarget> damageDealer in DamageDealers) {
             if (!Field.TryGetPlayer(damageDealer.Key, out FieldPlayer? player)) {
                 continue;
             }
 
-            DropLoot(firstCharacter);
+            DropLoot(firstPlayer);
             player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id);
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);

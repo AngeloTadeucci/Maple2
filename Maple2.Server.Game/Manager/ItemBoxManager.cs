@@ -1,5 +1,4 @@
-﻿using Maple2.Model;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -28,7 +27,7 @@ public class ItemBoxManager {
             ItemFunction.SelectItemBox => SelectItemBox(item, itemBoxParams[0], itemBoxParams[1], index, count),
             ItemFunction.OpenItemBox => OpenItemBox(item, itemBoxParams[0], itemBoxParams[1], itemBoxParams[2], itemBoxParams[3], itemBoxParams.Length == 5 ? itemBoxParams[4] : 1, count),
             ItemFunction.OpenItemBoxWithKey => OpenItemBoxWithKey(item, itemBoxParams[0], itemBoxParams[1], itemBoxParams[2], itemBoxParams[5], count),
-            ItemFunction.OpenGachaBox => OpenGachaBox(item, itemBoxParams[0], itemBoxParams[1], count),
+            ItemFunction.OpenGachaBox => OpenGachaBox(item, itemBoxParams[0], count),
             _ => throw new ArgumentOutOfRangeException(item.Metadata.Function?.Type.ToString(), "Invalid box type"),
         };
     }
@@ -37,14 +36,12 @@ public class ItemBoxManager {
         Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
 
         // Get common dropbox
-        if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId) ||
-            !session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(commonBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? commonDropGroupTable)) {
+        if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
         // Get uncommon dropbox
-        if (!int.TryParse(parameters["unCommonBoxId"], out int unCommonBoxId) ||
-            !session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(unCommonBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? unCommonDropGroupTable)) {
+        if (!int.TryParse(parameters["unCommonBoxId"], out int unCommonBoxId)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -72,33 +69,21 @@ public class ItemBoxManager {
             }
 
             // common dropbox items
-            foreach ((byte dropGroup, IList<IndividualItemDropTable.Entry> drops) in commonDropGroupTable) {
-                IList<IndividualItemDropTable.Entry> filteredDrops = session.ItemBox.FilterDrops(drops);
-
-                // randomize contents
-                IndividualItemDropTable.Entry selectedEntry = filteredDrops[Random.Shared.Next(0, filteredDrops.Count)];
-                IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
-                foreach (Item newItem in itemList) {
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                    }
-                }
-            }
+            ICollection<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, unCommonBoxId);
 
             // uncommon dropbox items
-            foreach ((byte dropGroup, IList<IndividualItemDropTable.Entry> drops) in unCommonDropGroupTable) {
-                IList<IndividualItemDropTable.Entry> filteredDrops = session.ItemBox.FilterDrops(drops);
+            items = items.Concat(session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, commonBoxId)).ToList();
+            if (items.Count == 0) {
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
 
-                // randomize contents
-                IndividualItemDropTable.Entry selectedEntry = filteredDrops[Random.Shared.Next(0, filteredDrops.Count)];
-                IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
-                foreach (Item newItem in itemList) {
-                    totalItems.Add(newItem);
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                    }
+            foreach (Item newItem in items) {
+                totalItems.Add(newItem);
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
                 }
             }
+
             BoxCount++;
         }
 
@@ -111,7 +96,9 @@ public class ItemBoxManager {
 
         // Get common dropbox
         if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId) ||
-            !session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(commonBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? commonDropGroupTable)) {
+            // we're doing a check preemptively here for safety in order to not consume keyItem if the box doesn't exist
+            !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(commonBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -123,17 +110,15 @@ public class ItemBoxManager {
             }
 
             // common dropbox items
-            foreach ((byte dropGroup, IList<IndividualItemDropTable.Entry> drops) in commonDropGroupTable) {
-                IList<IndividualItemDropTable.Entry> filteredDrops = session.ItemBox.FilterDrops(drops);
+            ICollection<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, commonBoxId);
+            if (items.Count == 0) {
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
 
-                // randomize contents
-                IndividualItemDropTable.Entry selectedEntry = filteredDrops[Random.Shared.Next(0, filteredDrops.Count)];
-                IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
-                foreach (Item newItem in itemList) {
-                    totalItems.Add(newItem);
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                    }
+            foreach (Item newItem in items) {
+                totalItems.Add(newItem);
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
                 }
             }
 
@@ -144,34 +129,29 @@ public class ItemBoxManager {
         return ItemBoxError.ok;
     }
 
-    private ItemBoxError SelectItemBox(Item item, int itemRequiredAmount, int boxId, int index, int count = 1) {
+    private ItemBoxError SelectItemBox(Item item, int groupId, int boxId, int index, int count = 1) {
         // check if box count is enough to open
-        if (session.Item.Inventory.Find(item.Id).Sum(box => box.Amount) < itemRequiredAmount) {
+        if (session.Item.Inventory.Find(item.Id).Sum(box => box.Amount) < 1) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        // check if we can get metadata
-        if (!session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(boxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? dropGroupTable)) {
-            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-        }
-
-        // SelectItemBox disregards DropGroup
-        IList<IndividualItemDropTable.Entry> drops = session.ItemBox.FilterDrops(dropGroupTable.Values.SelectMany(x => x).ToList());
-
-
-        IndividualItemDropTable.Entry? selectedEntry = drops.ElementAtOrDefault(index);
-        if (selectedEntry == null) {
+        // we're doing a check preemptively here for safety in order to not consume keyItem if the box doesn't exist
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? boxEntry) ||
+            !boxEntry.ContainsKey(groupId)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
         var error = ItemBoxError.ok;
-        ItemComponent ingredient = new(item.Id, -1, itemRequiredAmount, ItemTag.None);
+        ItemComponent ingredient = new(item.Id, -1, 1, ItemTag.None);
         for (int startCount = 0; startCount < count; startCount++) {
             if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
             }
 
-            IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
+            ICollection<Item> itemList = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, boxId, index, groupId);
+            if (itemList.Count == 0) {
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
             foreach (Item newItem in itemList) {
                 if (!session.Item.Inventory.Add(newItem, true)) {
                     session.Item.MailItem(newItem);
@@ -186,38 +166,31 @@ public class ItemBoxManager {
         return error;
     }
 
-    private ItemBoxError OpenItemBox(Item item, int globalDropBoxId, int unknownId, int itemId, int boxId, int itemRequiredAmount, int count = 1) {
-        // if globalDropBoxId > 0, unknownId is possibly another globalDropBoxId. Not confirmed, just a guess.
-        // otherwise unknownId is treated as a bool. if 1 = receive one item from each drop group, if 0 = receive all items from one drop group
-
-        if (boxId == 0) {
-            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-        }
+    private ItemBoxError OpenItemBox(Item item, int globalDropBoxId, int unknownId, int itemId, int individualDropBoxId, int itemRequiredAmount, int count = 1) {
+        // unknownId is treated as a bool. if 1 = receive one item from each drop group, if 0 = receive all items from one drop group.
+        // There are occasions where this number is higher than 1. No idea what it is as it's not a globaldropBoxId
 
         if (itemRequiredAmount > -1 && session.Item.Inventory.Find(item.Id).Sum(box => box.Amount) < itemRequiredAmount) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        // TODO: branch off to globalDropBoxId. Temp solution
-        if (globalDropBoxId > 0) {
-            return HandleGlobalDropBox(item, itemId, itemRequiredAmount, count);
-        }
-
-        // Get dropbox
-        if (!session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(boxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? dropGroupTable)) {
+        // Verify table exists before consuming items
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDic) ||
+            entryDic.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
         var error = ItemBoxError.ok;
-        if (unknownId == 1) {
-            ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
+        ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
             for (int startCount = 0; startCount < count; startCount++) {
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+                if (!session.Item.Inventory.ConsumeItemComponents(new[] {
+                        ingredient
+                    })) {
                     return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
                 }
 
                 if (itemId > 0) {
-                    Item? newItem = session.Item.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
+                    Item? newItem = session.Field.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
                     if (newItem == null) {
                         continue;
                     }
@@ -227,17 +200,11 @@ public class ItemBoxManager {
                     }
                 }
 
-                foreach ((byte dropGroup, IList<IndividualItemDropTable.Entry> drops) in dropGroupTable) {
-                    IList<IndividualItemDropTable.Entry> filteredDrops = session.ItemBox.FilterDrops(drops);
-
-                    // randomize contents
-                    IndividualItemDropTable.Entry selectedEntry = filteredDrops[Random.Shared.Next(0, filteredDrops.Count)];
-                    IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
-                    foreach (Item newItem in itemList) {
-                        if (!session.Item.Inventory.Add(newItem, true)) {
-                            session.Item.MailItem(newItem);
-                            error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                        }
+                IEnumerable<Item> itemList = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, individualDropBoxId);
+                foreach (Item newItem in itemList) {
+                    if (!session.Item.Inventory.Add(newItem, true)) {
+                        session.Item.MailItem(newItem);
+                        error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
                     }
                 }
                 BoxCount++;
@@ -245,45 +212,6 @@ public class ItemBoxManager {
                     return error;
                 }
             }
-        } else {
-            error = GiveAllDropBoxItems(item, itemId, itemRequiredAmount, count, dropGroupTable);
-        }
-        return error;
-    }
-    private ItemBoxError GiveAllDropBoxItems(Item item, int itemId, int itemRequiredAmount, int count, Dictionary<byte, IList<IndividualItemDropTable.Entry>> dropGroupTable) {
-        var error = ItemBoxError.ok;
-        // get every item in every drop group
-        IList<IndividualItemDropTable.Entry> drops = session.ItemBox.FilterDrops(dropGroupTable.Values.SelectMany(x => x).ToList());
-        ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
-        for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
-                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-            }
-
-            if (itemId > 0) {
-                Item? newItem = session.Item.CreateItem(itemId);
-                if (newItem == null) {
-                    continue;
-                }
-                if (!session.Item.Inventory.Add(newItem, true)) {
-                    session.Item.MailItem(newItem);
-                    error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                }
-            }
-            foreach (IndividualItemDropTable.Entry drop in drops) {
-                IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(drop);
-                foreach (Item newItem in itemList) {
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                        error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                    }
-                }
-            }
-            BoxCount++;
-            if (error != ItemBoxError.ok) {
-                return error;
-            }
-        }
         return error;
     }
 
@@ -298,18 +226,44 @@ public class ItemBoxManager {
         }
 
         // Get dropbox
-        if (!session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(boxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? dropGroupTable)) {
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
-        return GiveAllDropBoxItems(item, itemId, keyAmountRequired, count, dropGroupTable);
+        IEnumerable<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, boxId);
+        List<ItemComponent> ingredients = new List<ItemComponent> {
+            new(item.Id, -item.Rarity, 1, ItemTag.None),
+            new(keyItemId, -1, keyAmountRequired, ItemTag.None),
+        };
+        for (int startCount = 0; startCount < count; startCount++) {
+            if (!session.Item.Inventory.ConsumeItemComponents(ingredients)) {
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
+
+            if (itemId > 0) {
+                Item? newItem = session.Field.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
+                if (newItem == null) {
+                    continue;
+                }
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
+                }
+            }
+
+            foreach (Item newItem in items) {
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
+                }
+            }
+            BoxCount++;
+        }
+        return ItemBoxError.ok;
     }
 
-    private ItemBoxError OpenGachaBox(Item item, int gachaBoxId, int addItemId, int count) {
-        if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaBoxId, out GachaInfoTable.Entry? gachaEntry)) {
-            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-        }
-
-        if (!session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(gachaEntry.DropBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? dropGroupTable)) {
+    private ItemBoxError OpenGachaBox(Item item, int gachaInfoId, int count) {
+        if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaInfoId, out GachaInfoTable.Entry? gachaEntry) ||
+            !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(gachaEntry.DropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -320,27 +274,12 @@ public class ItemBoxManager {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
             }
 
-            // This is only applicable if Feature "ItemCN" is enabled
-            /*Item? additionalItem = session.Item.CreateItem(addItemId);
-            if (additionalItem != null && !session.Item.Inventory.Add(additionalItem, true)) {
-                session.Item.MailItem(additionalItem);
-            }*/
-
-            foreach ((byte dropGroup, IList<IndividualItemDropTable.Entry> drops) in dropGroupTable) {
-                IList<IndividualItemDropTable.Entry> filteredDrops = session.ItemBox.FilterDrops(drops);
-
-                // randomize contents
-                IndividualItemDropTable.Entry selectedEntry = filteredDrops[Random.Shared.Next(0, filteredDrops.Count)];
-                IEnumerable<Item> itemList = session.ItemBox.GetItemsFromGroup(selectedEntry);
-                foreach (Item newItem in itemList) {
-                    newItem.GachaDismantleId = gachaBoxId;
-                    totalItems.Add(newItem);
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                    }
-
-                    // TODO: Implement a weight system, possibly determined by GachaInfoTable.Entry.RandomBoxGroup ??
-                    // TODO: Broadcast server message if item rarity >= 4
+            IEnumerable<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, gachaEntry.DropBoxId);
+            totalItems = totalItems.Concat(items).ToList();
+            foreach (Item createdItem in items) {
+                createdItem.GachaDismantleId = gachaInfoId;
+                if (!session.Item.Inventory.Add(createdItem, true)) {
+                    session.Item.MailItem(createdItem);
                 }
             }
             BoxCount++;
@@ -348,80 +287,5 @@ public class ItemBoxManager {
 
         session.Send(ItemScriptPacket.Gacha(totalItems));
         return ItemBoxError.ok;
-    }
-
-    private IList<IndividualItemDropTable.Entry> FilterDrops(IEnumerable<IndividualItemDropTable.Entry> entries) {
-        var filteredEntries = new List<IndividualItemDropTable.Entry>();
-        foreach (IndividualItemDropTable.Entry entry in entries) {
-            if (!session.ItemMetadata.TryGet(entry.ItemIds[0], out ItemMetadata? itemMetadata)) {
-                continue;
-            }
-
-            // Check for any job restrictions
-            if (entry.SmartDropRate > 0 && itemMetadata.Limit.JobRecommends.Length > 0 &&
-                !itemMetadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code()) && !itemMetadata.Limit.JobRecommends.Contains(JobCode.None)) {
-                continue;
-            }
-
-            if (entry.SmartGender && itemMetadata.Limit.Gender != Gender.All && itemMetadata.Limit.Gender != session.Player.Value.Character.Gender) {
-                continue;
-            }
-            filteredEntries.Add(entry);
-        }
-        return filteredEntries;
-    }
-
-    private IEnumerable<Item> GetItemsFromGroup(IndividualItemDropTable.Entry entry) {
-        var items = new List<Item>();
-        foreach (int id in entry.ItemIds) {
-            Item? newItem = session.Item.CreateItem(id, amount: Random.Shared.Next(entry.MinCount, entry.MaxCount));
-            if (newItem == null) {
-                continue;
-            }
-
-            if (entry.ReduceRepackLimit && newItem.Transfer?.RepackageCount > 0) {
-                newItem.Transfer.RepackageCount++;
-            }
-
-            // TODO: Apply enchant level & stats
-
-            if (entry.ReduceTradeCount && newItem.Transfer?.RemainTrades > 0) {
-                newItem.Transfer.RemainTrades--;
-            }
-
-            if (entry.Bind) {
-                newItem.Transfer?.Bind(session.Player.Value.Character);
-            }
-            items.Add(newItem);
-        }
-        return items;
-    }
-
-    private ItemBoxError HandleGlobalDropBox(Item item, int itemId, int itemRequiredAmount, int count) {
-        var error = ItemBoxError.ok;
-        ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
-        for (int startCount = 0; startCount < count; startCount++) {
-            // assumes itemBoxParams[1] is another globalDropBoxId utilized
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
-                error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-            }
-
-            if (itemId > 0) {
-                Item? newItem = session.Item.CreateItem(itemId);
-                if (newItem == null) {
-                    continue;
-                }
-                if (!session.Item.Inventory.Add(newItem, true)) {
-                    session.Item.MailItem(newItem);
-                    error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                }
-                BoxCount++;
-                if (error != ItemBoxError.ok) {
-                    return error;
-                }
-            }
-        }
-        // return fail error for now until globalDropBox is implemented
-        return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
     }
 }

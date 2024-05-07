@@ -4,17 +4,21 @@ using System.Numerics;
 namespace Maple2.Model.Metadata;
 
 public record IndividualDropItemTable(
-    IReadOnlyDictionary<int, IDictionary<byte, IList<IndividualDropItemTable.Entry>>> Entries) : ServerTable {
+    IReadOnlyDictionary<int, IDictionary<int, IndividualDropItemTable.Entry>> Entries) : ServerTable {
 
     public record Entry(
         int GroupId,
         int SmartDropRate,
-        Range<int> DropCount,
-        Range<int> DropCountProbability,
+        IList<Entry.DropCount> DropCounts,
         int MinLevel,
         bool ServerDrop,
         bool SmartGender,
-        IList<Item> Items);
+        IList<Item> Items) {
+
+        public record DropCount(
+            int Count,
+            int Probability);
+    }
 
     public record Item(
         int[] Ids,
@@ -31,7 +35,7 @@ public record IndividualDropItemTable(
         bool Bind,
         bool DisableBreak,
         int[] MapIds,
-        bool QuestConstraint) {
+        int QuestId) {
 
         public record Rarity(
             int Probability,

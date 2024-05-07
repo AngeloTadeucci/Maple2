@@ -356,25 +356,29 @@ public class ItemUseHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleOpenItemBox(GameSession session, Item item) {
-        session.ItemBox.Open(item);
+        ItemBoxError error = session.ItemBox.Open(item);
+        session.Send(ItemBoxPacket.Open(item.Id, session.ItemBox.BoxCount, error));
         session.ItemBox.Reset();
     }
 
     private static void HandleOpenGacha(GameSession session, IByteReader packet, Item item) {
         string amountString = packet.ReadUnicodeString();
-        session.ItemBox.Open(item, amountString == "multi" ? 10 : 1);
+        ItemBoxError error = session.ItemBox.Open(item, amountString == "multi" ? 10 : 1);
+        session.Send(ItemBoxPacket.Open(item.Id, session.ItemBox.BoxCount, error));
         session.ItemBox.Reset();
     }
 
     private static void HandleOpenItemBoxLullu(GameSession session, IByteReader packet, Item item) {
         string amountString = packet.ReadUnicodeString();
-        session.ItemBox.OpenLulluBox(item, amountString.Contains("multi") ? 10 : 1, autoPay: amountString.Contains("autoPay"));
+        ItemBoxError error = session.ItemBox.OpenLulluBox(item, amountString.Contains("multi") ? 10 : 1, autoPay: amountString.Contains("autoPay"));
+        session.Send(ItemBoxPacket.Open(item.Id, session.ItemBox.BoxCount, error));
         session.ItemBox.Reset();
     }
 
     private static void HandleOpenItemBoxLulluSimple(GameSession session, IByteReader packet, Item item) {
         string amountString = packet.ReadUnicodeString();
-        session.ItemBox.OpenLulluBoxSimple(item, amountString == "multi" ? 10 : 1);
+        ItemBoxError error = session.ItemBox.OpenLulluBoxSimple(item, amountString == "multi" ? 10 : 1);
+        session.Send(ItemBoxPacket.Open(item.Id, session.ItemBox.BoxCount, error));
         session.ItemBox.Reset();
     }
 
