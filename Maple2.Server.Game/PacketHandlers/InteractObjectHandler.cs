@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -74,14 +73,14 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
             ICollection<Item> items = new List<Item>();
             if (interact.Value.Drop.IndividualDropBoxIds.Length > 0) {
                 foreach (int individualDropBoxId in interact.Value.Drop.IndividualDropBoxIds) {
-                    ICollection<Item> individualDropBoxItems = session.Item.GetIndividualDropBoxItems(individualDropBoxId, interact.Value.Drop.Rarity);
+                    ICollection<Item> individualDropBoxItems = session.Field.ItemDrop.GetIndividualDropItems(individualDropBoxId, interact.Value.Drop.Rarity);
                     items.Add(individualDropBoxItems.ElementAt(Random.Shared.Next(individualDropBoxItems.Count)));
                 }
             }
 
-            IList<Item> globalDropBoxItems = new List<Item>();
+            ICollection<Item> globalDropBoxItems = new List<Item>();
             foreach (int globalDropBoxId in interact.Value.Drop.GlobalDropBoxIds) {
-                globalDropBoxItems = session.Field.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
+                globalDropBoxItems = session.Field.ItemDrop.GetGlobalDropItems(globalDropBoxId, session.Player.Value.Character.Level);
             }
 
             foreach (Item item in globalDropBoxItems) {

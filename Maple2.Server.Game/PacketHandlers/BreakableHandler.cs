@@ -45,7 +45,7 @@ public class BreakableHandler : PacketHandler<GameSession> {
 
         if (session.Field?.TryGetBreakable(entityId, out FieldBreakable? breakable) == true) {
             if (breakable.Value.GlobalDropBoxId != 0) {
-                IList<Item> items = session.Field.ItemDrop.GetGlobalDropItem(breakable.Value.GlobalDropBoxId, session.Field.Metadata.Drop.Level);
+                ICollection<Item> items = session.Field.ItemDrop.GetGlobalDropItems(breakable.Value.GlobalDropBoxId, session.Field.Metadata.Drop.Level);
                 foreach (Item item in items) {
                     FieldItem fieldItem = session.Field.SpawnItem(breakable, breakable.Position, breakable.Rotation, item, session.CharacterId);
                     session.Field.Broadcast(FieldPacket.DropItem(fieldItem));

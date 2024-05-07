@@ -25,6 +25,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
         yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
+        yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
+
     }
 
     private InstanceFieldTable ParseInstanceField() {
@@ -416,11 +418,13 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             var items = new List<GlobalDropItemBoxTable.Item>();
 
             foreach (GlobalDropItemSet.Item item in itemBox.v) {
+                int minCount = item.minCount <= 0 ? 1 : item.minCount;
+                int maxCount = item.maxCount < item.minCount ? item.minCount : item.maxCount;
                 items.Add(new GlobalDropItemBoxTable.Item(
                     Id: item.itemID,
                     MinLevel: item.minLevel,
                     MaxLevel: item.maxLevel,
-                    DropCount: new GlobalDropItemBoxTable.Range<int>(item.minCount, item.maxCount == 0 ? item.minCount : item.maxCount),
+                    DropCount: new GlobalDropItemBoxTable.Range<int>(minCount, maxCount),
                     Rarity: item.grade,
                     Weight: item.weight,
                     MapIds: item.mapDependency,
@@ -490,4 +494,76 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             }
         );
     }
+
+    private IndividualDropItemTable ParseIndividualItemDropTable() {
+        var results = new Dictionary<int, IDictionary<int, IndividualDropItemTable.Entry>>();
+
+        foreach ((int id, IndividualItemDrop dropBox) in parser.ParseIndividualItemDrop()) {
+            var entries = new Dictionary<int, IndividualDropItemTable.Entry>();
+
+            foreach (IndividualItemDrop.Group group in dropBox.group) {
+                List<IndividualDropItemTable.Item> items = new();
+                foreach (IndividualItemDrop.Group.Item item in group.v) {
+                    int minCount = item.minCount <= 0 ? 1 : item.minCount;
+                    int maxCount = item.maxCount < item.minCount ? item.minCount : item.maxCount;
+                    items.Add(new IndividualDropItemTable.Item(
+                        Ids: new[] { item.itemID, item.itemID2 },
+                        Announce: item.isAnnounce,
+                        ProperJobWeight: item.properJobWeight,
+                        ImproperJobWeight: item.imProperJobWeight,
+                        Weight: item.weight,
+                        DropCount: new IndividualDropItemTable.Range<int>(minCount, maxCount),
+                        Rarities: item.gradeProbability.Select((probability, i) => new IndividualDropItemTable.Item.Rarity(probability, item.grade[i])).ToList(),
+                        EnchantLevel: item.enchantLevel,
+                        SocketDataId: item.socketDataID,
+                        DeductTradeCount: item.tradableCountDeduction,
+                        DeductRepackLimit: item.rePackingLimitCountDeduction,
+                        Bind: item.isBindCharacter,
+                        DisableBreak: item.disableBreak,
+                        MapIds: item.mapDependency,
+                        QuestId: item.constraintsQuest ? GetQuestId(dropBox.comment, item.reference1) : 0
+                    ));
+                }
+
+                IList<IndividualDropItemTable.Entry.DropCount> dropCounts = group.dropCount.Zip(group.dropCountProbability, (count, probability) => new IndividualDropItemTable.Entry.DropCount(count, probability)).ToList();
+                if (dropCounts.Count == 0) {
+                    dropCounts.Add(new IndividualDropItemTable.Entry.DropCount(1, 100));
+                }
+
+                var entry = new IndividualDropItemTable.Entry(
+                    GroupId: group.dropGroupID,
+                    SmartDropRate: group.smartDropRate,
+                    DropCounts: dropCounts,
+                    MinLevel: group.dropGroupMinLevel,
+                    ServerDrop: group.serverDrop,
+                    SmartGender: group.isApplySmartGenderDrop,
+                    Items: items
+                );
+
+                entries.Add(group.dropGroupID, entry);
+
+            }
+
+            results.Add(id, entries);
+        }
+        return new IndividualDropItemTable(results);
+
+        int GetQuestId(string comment, string reference1) {
+            if (reference1.Contains("Quest")) {
+                string[] referenceArray = reference1.Split("/");
+                int referenceQuestIndex = Array.IndexOf(referenceArray, "Quest");
+
+                if (!int.TryParse(referenceArray[referenceQuestIndex - 2], out int questId) && comment.Contains("Quest")) {
+                    string[] commentArray = comment.Split("/");
+                    int commentQuestIndex = Array.IndexOf(commentArray, "Quest");
+                    if (string.IsNullOrEmpty(commentArray[commentQuestIndex - 2])) {
+                        return 0;
+                    }
+                    return !int.TryParse(commentArray[commentQuestIndex - 2], out questId) ? 0 : questId;
+                }
+            }
+            return 0;
+        }
+    }
 }
+
