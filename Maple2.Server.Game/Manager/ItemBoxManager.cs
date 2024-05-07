@@ -94,13 +94,15 @@ public class ItemBoxManager {
     public ItemBoxError OpenLulluBoxSimple(Item item, int count = 1) {
         Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
 
-        // Validate dropbox
-        // Check if there is a commonBoxId parameter
-        if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId) ||
-            // Check if the commonBoxId is in the drop table
-            !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(commonBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
-            // Check if the drop table is empty
-            entryDict.Count == 0) {
+        if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(commonBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -137,10 +139,11 @@ public class ItemBoxManager {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        // Check if the boxId is in the drop table
-        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? boxEntry) ||
-            // Check if the drop table is empty
-            !boxEntry.ContainsKey(groupId)) {
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? boxEntry)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (boxEntry.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -178,18 +181,18 @@ public class ItemBoxManager {
         }
 
         // Verify table exists before consuming items
-        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDic) ||
-            // Check if the drop table is empty
-            entryDic.Count == 0) {
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDic)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (entryDic.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
         var error = ItemBoxError.ok;
         ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
             for (int startCount = 0; startCount < count; startCount++) {
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] {
-                        ingredient
-                    })) {
+                if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
                     return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
                 }
 
@@ -230,13 +233,16 @@ public class ItemBoxManager {
         }
 
         // Check if the boxId is in the drop table
-        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
-            // Check if the drop table is empty
-            entryDict.Count == 0) {
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
+
+        if (entryDict.Count == 0) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
         IEnumerable<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, boxId);
-        List<ItemComponent> ingredients = new List<ItemComponent> {
+        var ingredients = new List<ItemComponent> {
             new(item.Id, -item.Rarity, 1, ItemTag.None),
             new(keyItemId, -1, keyAmountRequired, ItemTag.None),
         };
@@ -267,11 +273,15 @@ public class ItemBoxManager {
 
     private ItemBoxError OpenGachaBox(Item item, int gachaInfoId, int count) {
         // Check if the gachaInfoId is in the drop table
-        if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaInfoId, out GachaInfoTable.Entry? gachaEntry) ||
-            // Check if gachaEntry.DropBoxId is in the drop table
-            !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(gachaEntry.DropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
-            // Check if the drop table is empty
-            entryDict.Count == 0) {
+        if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaInfoId, out GachaInfoTable.Entry? gachaEntry)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(gachaEntry.DropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
