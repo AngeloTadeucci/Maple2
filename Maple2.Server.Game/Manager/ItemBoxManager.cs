@@ -94,10 +94,12 @@ public class ItemBoxManager {
     public ItemBoxError OpenLulluBoxSimple(Item item, int count = 1) {
         Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
 
-        // Get common dropbox
+        // Validate dropbox
+        // Check if there is a commonBoxId parameter
         if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId) ||
-            // we're doing a check preemptively here for safety in order to not consume keyItem if the box doesn't exist
+            // Check if the commonBoxId is in the drop table
             !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(commonBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            // Check if the drop table is empty
             entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
@@ -135,8 +137,9 @@ public class ItemBoxManager {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        // we're doing a check preemptively here for safety in order to not consume keyItem if the box doesn't exist
+        // Check if the boxId is in the drop table
         if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? boxEntry) ||
+            // Check if the drop table is empty
             !boxEntry.ContainsKey(groupId)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
@@ -176,6 +179,7 @@ public class ItemBoxManager {
 
         // Verify table exists before consuming items
         if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDic) ||
+            // Check if the drop table is empty
             entryDic.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
@@ -225,8 +229,9 @@ public class ItemBoxManager {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        // Get dropbox
+        // Check if the boxId is in the drop table
         if (!session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(boxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            // Check if the drop table is empty
             entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
@@ -261,8 +266,11 @@ public class ItemBoxManager {
     }
 
     private ItemBoxError OpenGachaBox(Item item, int gachaInfoId, int count) {
+        // Check if the gachaInfoId is in the drop table
         if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaInfoId, out GachaInfoTable.Entry? gachaEntry) ||
+            // Check if gachaEntry.DropBoxId is in the drop table
             !session.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(gachaEntry.DropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict) ||
+            // Check if the drop table is empty
             entryDict.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
