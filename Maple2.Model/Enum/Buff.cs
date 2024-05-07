@@ -73,9 +73,3 @@ public enum BuffFlag {
     UpdateBuff = 1,
     UpdateShield = 2,
 }
-
-public enum SpecialEffectType {
-    Fishing = 9,
-    Performance = 10,
-    Pvp = 11,
-}
