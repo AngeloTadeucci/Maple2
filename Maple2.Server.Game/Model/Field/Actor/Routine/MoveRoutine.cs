@@ -29,7 +29,7 @@ public class MoveRoutine : NpcRoutine {
         if (speed <= 0) {
             throw new ArgumentException($"Npc {npc.Value.Id} is not eligible for movement (speed={speed})");
         }
-        if (!npc.Navigation.HasPath) {
+        if (npc.Navigation is not null && !npc.Navigation.HasPath) {
             throw new ArgumentException($"Npc {npc.Value.Id} has no path for movement");
         }
 
@@ -39,6 +39,10 @@ public class MoveRoutine : NpcRoutine {
     }
 
     public override Result Update(TimeSpan elapsed) {
+        if (Npc.Navigation is null) {
+            return Result.Failure;
+        }
+
         if (segmentTime.Ticks > 0) {
             Npc.Position = Npc.Position.Offset((float) elapsed.TotalSeconds * speed, Npc.Rotation);
 
@@ -72,6 +76,6 @@ public class MoveRoutine : NpcRoutine {
         base.OnCompleted();
         segmentTime = TimeSpan.Zero;
         Npc.Velocity = default;
-        Npc.Navigation.UpdatePosition();
+        Npc.Navigation?.UpdatePosition();
     }
 }

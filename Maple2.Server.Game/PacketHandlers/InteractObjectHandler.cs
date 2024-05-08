@@ -41,6 +41,9 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
         string entityId = packet.ReadString();
 
         if (session.Field?.TryGetInteract(entityId, out FieldInteract? interact) == true && interact.React()) {
+            session.ConditionUpdate(ConditionType.interact_object, codeLong: interact.Object.Id);
+            session.ConditionUpdate(ConditionType.interact_object_rep, codeLong: interact.Object.Id);
+
             switch (interact.Value.Type) {
                 case InteractType.Mesh:
                     session.Send(InteractObjectPacket.Interact(interact));
@@ -48,8 +51,9 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
                 case InteractType.Telescope:
                     session.Send(InteractObjectPacket.Interact(interact));
                     session.Send(InteractObjectPacket.Result(InteractResult.s_interact_find_new_telescope, interact));
+
                     if (!session.Player.Value.Unlock.InteractedObjects.Contains(interact.Object.Id)) {
-                        session.ConditionUpdate(ConditionType.interact_object, codeLong: interact.Object.Id);
+                        session.Player.Value.Unlock.InteractedObjects.Add(interact.Object.Id);
                         session.Exp.AddExp(ExpType.telescope);
                     }
                     break;
