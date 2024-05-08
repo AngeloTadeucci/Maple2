@@ -154,6 +154,12 @@ public class FieldNpc : Actor<Npc> {
                     return MoveRoutine.Run(this, sequence.Id);
                 }
                 return new WaitRoutine(this, IdleSequence.Id, sequence.Time);
+            case { }:
+                // Check if routine is an animation
+                if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? animationSequence)) {
+                    break;
+                }
+                return new AnimateRoutine(this, animationSequence);
         }
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
