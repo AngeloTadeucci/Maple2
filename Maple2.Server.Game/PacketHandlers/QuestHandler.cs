@@ -179,7 +179,15 @@ public class QuestHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleSkyFortressTeleport(GameSession session) {
-        session.Send(session.PrepareField(2000422, -1, session.CharacterId)
+        if (!session.Quest.TryGetQuest(Constant.FameContentsRequireQuestID, out Quest? quest) || quest.State != QuestState.Completed) {
+            return;
+        }
+
+        bool canUseField = session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
+            Constant.FameContentsSkyFortressGotoPortalID,
+            session.CharacterId);
+
+        session.Send(canUseField
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
