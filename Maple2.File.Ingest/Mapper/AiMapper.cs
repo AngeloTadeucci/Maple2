@@ -1,9 +1,11 @@
-﻿using Maple2.File.IO;
+﻿using M2dXmlGenerator;
+using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.AI;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using System.Numerics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -17,35 +19,38 @@ public class AiMapper : TypeMapper<AiMetadata> {
     protected override IEnumerable<AiMetadata> Map() {
         foreach ((string name, NpcAi data) in parser.Parse()) {
             List<AiMetadata.Condition> reserved = new List<AiMetadata.Condition>();
-            List<AiMetadata.Node> battle = new List<AiMetadata.Node>();
-            List<AiMetadata.Node> battleEnd = new List<AiMetadata.Node>();
+            List<AiMetadata.Entry> battle = new List<AiMetadata.Entry>();
+            List<AiMetadata.Entry> battleEnd = new List<AiMetadata.Entry>();
             List<AiMetadata.AiPresetDefinition> aiPresets = new List<AiMetadata.AiPresetDefinition>();
 
-            foreach (Condition node in data.reserved?.condition ?? new List<Condition>()) {
+            foreach (Condition node in data.reserved.conditions) {
+                if (node.name == "feature" && !FeatureLocaleFilter.FeatureEnabled(node.feature)) {
+                    continue;
+                }
+
                 reserved.Add(MapCondition(node));
             }
 
-            foreach (Node node in data.battle.node) {
-                battle.Add(MapNode(node));
+            foreach (Entry entry in data.battle.nodes) {
+                MapEntry(battle, entry);
             }
 
-            foreach (Node node in data.battleEnd?.node ?? new List<Node>()) {
+            foreach (Entry entry in data.battleEnd.nodes) {
+                MapEntry(battle, entry);
+            }
+
+            foreach (Node node in data.battleEnd.nodes) {
                 battleEnd.Add(MapNode(node));
             }
 
-            foreach (AiPreset node in data.aiPresets?.aiPreset ?? new List<AiPreset>()) {
-                var childNodes = new List<AiMetadata.Node>();
-                var childAiPresets = new List<AiMetadata.AiPreset>();
+            foreach (AiPresetDefinition node in data.aiPresets.aiPresets) {
+                var childNodes = new List<AiMetadata.Entry>();
 
-                foreach (Node child in node.node) {
-                    childNodes.Add(MapNode(child));
+                foreach (Entry entry in node.entries) {
+                    MapEntry(childNodes, entry);
                 }
 
-                foreach (AiPreset child in node.aiPreset) {
-                    childAiPresets.Add(new AiMetadata.AiPreset(child.name));
-                }
-
-                aiPresets.Add(new AiMetadata.AiPresetDefinition(Name: node.name, Nodes: childNodes.ToArray(), AiPresets: childAiPresets.ToArray()));
+                aiPresets.Add(new AiMetadata.AiPresetDefinition(Name: node.name, Entries: childNodes.ToArray()));
             }
 
             yield return new AiMetadata(
@@ -59,30 +64,23 @@ public class AiMapper : TypeMapper<AiMetadata> {
     }
 
     AiMetadata.Condition MapCondition(Condition node) {
-        var childNodes = new List<AiMetadata.Node>();
-        var childAiPresets = new List<AiMetadata.AiPreset>();
-        
-        foreach (Node child in node.node) {
-            childNodes.Add(MapNode(child));
-        }
+        var childNodes = new List<AiMetadata.Entry>();
 
-        foreach (AiPreset child in node.aiPreset) {
-            childAiPresets.Add(new AiMetadata.AiPreset(child.name));
+        foreach (Entry entry in node.entries) {
+            MapEntry(childNodes, entry);
         }
 
         switch(node.name) {
             case "distanceOver":
                 return new AiMetadata.DistanceOverCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Value: node.value
                 );
             case "combatTime":
                 return new AiMetadata.CombatTimeCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     BattleTimeBegin: node.battleTimeBegin,
                     BattleTimeLoop: node.battleTimeLoop,
                     BattleTimeEnd: node.battleTimeEnd
@@ -90,15 +88,13 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "distanceLess":
                 return new AiMetadata.DistanceLessCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Value: node.value
                 );
             case "skillRange":
                 return new AiMetadata.SkillRangeCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     SkillIdx: node.skillIdx,
                     SkillLev: node.skillLev,
                     IsKeepBattle: node.isKeepBattle
@@ -106,8 +102,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "extraData":
                 return new AiMetadata.ExtraDataCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     Op: (AiConditionOp)node.op,
@@ -116,8 +111,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "SlaveCount": // these are different enough to warrant having their own nodes. blame nexon
                 return new AiMetadata.SlaveCountCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Count: node.count,
                     UseSummonGroup: node.useSummonGroup,
                     SummonGroup: node.summonGroup
@@ -125,22 +119,19 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "hpOver":
                 return new AiMetadata.HpOverCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Value: node.value
                 );
             case "state":
                 return new AiMetadata.StateCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     TargetState: (AiConditionTargetState)node.targetState
                 );
             case "additional":
                 return new AiMetadata.AdditionalCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Id: node.id,
                     Level: node.level,
                     OverlapCount: node.overlapCount,
@@ -149,22 +140,19 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "hpLess":
                 return new AiMetadata.HpLessCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Value: node.value
                 );
             case "DistanceLess":
                 return new AiMetadata.DistanceLessCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Value: node.value
                 );
             case "slaveCount": // these are different enough to warrant having their own nodes. blame nexon
                 return new AiMetadata.SlaveCountOpCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     SlaveCount: node.slaveCount,
                     SlaveCountOp: (AiConditionOp) node.slaveCountOp
                 );
@@ -175,29 +163,43 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 }
                 return new AiMetadata.TrueCondition(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray()
+                    Entries: childNodes.ToArray()
                 );
             default:
                 throw new NotImplementedException("unknown AI condition name: " + node.name);
         }
     }
 
+    void MapEntry(List<AiMetadata.Entry> entries, Entry entry) {
+        if (entry is Node node) {
+            entries.Add(MapNode(node));
+
+            return;
+        }
+
+        if (entry is AiPreset aiPreset) {
+            entries.Add(new AiMetadata.AiPreset(aiPreset.name));
+
+            return;
+        }
+
+        throw new NotImplementedException($"unknown entry type {entry.GetType().Name}");
+    }
+
     AiMetadata.Node MapNode(Node node) {
-        List<AiMetadata.Node> childNodes = new List<AiMetadata.Node>();
-        List<AiMetadata.Condition> childConditions = new List<AiMetadata.Condition>();
-        List<AiMetadata.AiPreset> childAiPresets = new List<AiMetadata.AiPreset>();
+        var childNodes = new List<AiMetadata.Entry>();
+        var childConditions = new List<AiMetadata.Condition>();
 
-        foreach (Node child in node.node) {
-            childNodes.Add(MapNode(child));
+        foreach (Entry entry in node.entries) {
+            MapEntry(childNodes, entry);
         }
 
-        foreach (Condition child in node.condition) {
+        foreach (Condition child in node.conditions) {
+            if (child.name == "feature" && !FeatureLocaleFilter.FeatureEnabled(child.feature)) {
+                continue;
+            }
+
             childConditions.Add(MapCondition(child));
-        }
-
-        foreach (AiPreset child in node.aiPreset) {
-            childAiPresets.Add(new AiMetadata.AiPreset(child.name));
         }
 
         int onlyProb = node.prob.Length > 0 ? node.prob[0] : 100;
@@ -206,8 +208,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "trace":
                 return new AiMetadata.TraceNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Limit: node.limit,
                     SkillIdx: node.skillIdx,
                     Animation: node.animation,
@@ -220,8 +221,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "skill":
                 return new AiMetadata.SkillNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Idx: node.idx,
                     Level: node.level,
                     Prob: onlyProb,
@@ -237,8 +237,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "teleport":
                 return new AiMetadata.TeleportNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Pos: node.pos,
                     Prob: onlyProb,
                     FacePos: node.facePos,
@@ -250,8 +249,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "standby":
                 return new AiMetadata.StandbyNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Limit: node.limit,
                     Prob: onlyProb,
                     Animation: node.animation,
@@ -264,8 +262,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "setData":
                 return new AiMetadata.SetDataNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     Cooltime: node.cooltime
@@ -275,8 +272,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 Enum.TryParse(node.type, out targetType);
                 return new AiMetadata.TargetNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Type: targetType,
                     Prob: onlyProb,
                     Rank: node.rank,
@@ -294,8 +290,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "say":
                 return new AiMetadata.SayNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Message: node.message,
                     Prob: onlyProb,
                     DurationTick: node.durationTick,
@@ -307,8 +302,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "SetValue":
                 return new AiMetadata.SetValueNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     InitialCooltime: node.initialCooltime,
@@ -319,8 +313,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "conditions":
                 return new AiMetadata.ConditionsNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Conditions: childConditions.ToArray(),
                     InitialCooltime: node.initialCooltime,
                     Cooltime: node.cooltime,
@@ -331,8 +324,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 Enum.TryParse(node.type, out jumpType);
                 return new AiMetadata.JumpNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Pos: node.pos,
                     Speed: node.speed,
                     HeightMultiplier: node.heightMultiplier,
@@ -343,16 +335,14 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "select":
                 return new AiMetadata.SelectNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Prob: node.prob,
                     useNpcProb: node.useNpcProb
                 );
             case "move":
                 return new AiMetadata.MoveNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Destination: node.destination,
                     Prob: onlyProb,
                     Animation: node.animation,
@@ -366,8 +356,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "summon":
                 return new AiMetadata.SummonNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     NpcId: node.npcId,
                     NpcCountMax: node.npcCountMax,
                     NpcCount: node.npcCount,
@@ -387,8 +376,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "TriggerSetUserValue":
                 return new AiMetadata.TriggerSetUserValueNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     TriggerID: node.triggerID,
                     Key: node.key,
                     Value: node.value,
@@ -400,8 +388,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 Enum.TryParse(node.type, out rideType);
                 return new AiMetadata.RideNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Type: rideType,
                     IsRideOff: node.isRideOff,
                     RideNpcIDs: node.rideNpcIDs
@@ -409,8 +396,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "SetSlaveValue":
                 return new AiMetadata.SetSlaveValueNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     IsRandom: node.isRandom,
@@ -421,8 +407,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "SetMasterValue":
                 return new AiMetadata.SetMasterValueNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     IsRandom: node.isRandom,
@@ -433,8 +418,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "runaway":
                 return new AiMetadata.RunawayNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Animation: node.animation,
                     SkillIdx: node.skillIdx,
                     Till: node.till,
@@ -446,8 +430,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "MinimumHp":
                 return new AiMetadata.MinimumHpNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     HpPercent: node.hpPercent
                 );
             case "buff":
@@ -455,8 +438,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 Enum.TryParse(node.type, out buffType);
                 return new AiMetadata.BuffNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Id: node.id,
                     Type: buffType,
                     Level: node.level,
@@ -469,15 +451,13 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "TargetEffect":
                 return new AiMetadata.TargetEffectNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     EffectName: node.effectName
                 );
             case "ShowVibrate":
                 return new AiMetadata.ShowVibrateNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     GroupId: node.groupID
                 );
             case "sidePopup":
@@ -485,8 +465,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                 Enum.TryParse(node.type, out popupType);
                 return new AiMetadata.SidePopupNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Type: popupType,
                     Illust: node.illust,
                     Duration: node.duration,
@@ -497,8 +476,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "SetValueRangeTarget":
                 return new AiMetadata.SetValueRangeTargetNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Key: node.key,
                     Value: node.value,
                     Height: node.height,
@@ -510,8 +488,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "announce":
                 return new AiMetadata.AnnounceNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Message: node.message,
                     DurationTick: node.durationTick,
                     Cooltime: node.cooltime
@@ -519,23 +496,20 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "ModifyRoomTime":
                 return new AiMetadata.ModifyRoomTimeNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     TimeTick: node.timeTick,
                     IsShowEffect:node.isShowEffect
                 );
             case "HideVibrateAll":
                 return new AiMetadata.HideVibrateAllNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     IsKeepBattle: node.isKeepBattle
                 );
             case "TriggerModifyUserValue":
                 return new AiMetadata.TriggerModifyUserValueNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     TriggerID: node.triggerID,
                     Key: node.key,
                     Value: node.value
@@ -543,8 +517,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "Buff":
                 return new AiMetadata.BuffNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Id: node.id,
                     Type: NodeBuffType.Add,
                     Level: node.level,
@@ -557,23 +530,20 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "RemoveSlaves":
                 return new AiMetadata.RemoveSlavesNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     IsKeepBattle: node.isKeepBattle
                 );
             case "CreateRandomRoom":
                 return new AiMetadata.CreateRandomRoomNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     RandomRoomId: node.randomRoomID,
                     PortalDuration: node.portalDuration
                 );
             case "CreateInteractObject":
                 return new AiMetadata.CreateInteractObjectNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray(),
+                    Entries: childNodes.ToArray(),
                     Normal: node.normal,
                     InteractID: node.interactID,
                     LifeTime: node.lifeTime,
@@ -583,13 +553,12 @@ public class AiMapper : TypeMapper<AiMetadata> {
             case "RemoveMe":
                 return new AiMetadata.RemoveMeNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray());
+                    Entries: childNodes.ToArray()
+                );
             case "Suicide":
                 return new AiMetadata.SuicideNode(
                     Name: node.name,
-                    Nodes: childNodes.ToArray(),
-                    AiPresets: childAiPresets.ToArray()
+                    Entries: childNodes.ToArray()
                 );
             default:
                 throw new NotImplementedException("unknown AI node name: " + node.name);

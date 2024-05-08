@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Google.Protobuf.WellKnownTypes;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -341,6 +342,24 @@ public sealed partial class FieldManager : IDisposable {
         }
 
         return true;
+    }
+
+    public void BroadcastAiMessage(ByteWriter packet) {
+        foreach ((int objectId, FieldPlayer player) in Players) {
+            if (player.DebugAi) {
+                player.Session.Send(packet);
+            }
+        }
+    }
+
+    public void BroadcastAiType(GameSession requester) {
+        foreach ((int objectId, FieldNpc npc) in Npcs) {
+            npc.SendDebugAiInfo(requester);
+        }
+
+        foreach ((int objectId, FieldPet npc) in Pets) {
+            npc.SendDebugAiInfo(requester);
+        }
     }
 
     public void Broadcast(ByteWriter packet, GameSession? sender = null) {

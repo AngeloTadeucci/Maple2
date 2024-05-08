@@ -13,6 +13,8 @@ using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
+using Maple2.Server.Game.Session;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Maple2.Server.Game.Model;
 
@@ -246,5 +248,16 @@ public class FieldNpc : Actor<Npc> {
         AiMetadata = metadata;
 
         return true;
+    }
+
+    public void SendDebugAiInfo(GameSession requester) {
+        string message = $"{ObjectId}";
+        message += "\n" + (AiMetadata?.Name ?? "[No AI]");
+        if (this is FieldPet pet) {
+            if (Field.TryGetPlayer(pet.OwnerId, out FieldPlayer? player)) {
+                message += "\nOwner: " + player.Value.Character.Name;
+            }
+        }
+        requester.Send(CinematicPacket.BalloonTalk(true, ObjectId, message, 2500, 0));
     }
 }
