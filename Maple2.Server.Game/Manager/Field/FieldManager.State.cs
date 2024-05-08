@@ -77,12 +77,12 @@ public partial class FieldManager {
 
     public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null) {
         Agent? agent = Navigation.AddAgent(npc, position);
-        if (agent == null) {
-            return null;
-        }
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
-        Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
+        Vector3 spawnPosition = position;
+        if (agent is not null) {
+            spawnPosition = Navigation.FromPosition(agent.getPosition());
+        }
         var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation)) {
             Owner = owner,
             Position = spawnPosition,

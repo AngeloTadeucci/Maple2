@@ -70,7 +70,7 @@ public class FieldNpc : Actor<Npc> {
         Value.Metadata.Property.Capsule.Height
     );
 
-    public readonly AgentNavigation Navigation;
+    public readonly AgentNavigation? Navigation;
     public readonly AnimationSequence IdleSequence;
     public readonly AnimationSequence? JumpSequence;
     private readonly WeightedSet<string> defaultRoutines;
@@ -83,7 +83,7 @@ public class FieldNpc : Actor<Npc> {
     public int TargetId = 0;
     public AiMetadata? AiMetadata { get; private set; }
 
-    public FieldNpc(FieldManager field, int objectId, Agent agent, Npc npc) : base(field, objectId, npc) {
+    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc) : base(field, objectId, npc) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         defaultRoutines = new WeightedSet<string>();
@@ -91,7 +91,9 @@ public class FieldNpc : Actor<Npc> {
             defaultRoutines.Add(action.Name, action.Probability);
         }
 
-        Navigation = Field.Navigation.ForAgent(this, agent);
+        if (agent is not null) {
+            Navigation = Field.Navigation.ForAgent(this, agent);
+        }
         CurrentRoutine = new WaitRoutine(this, -1, 1f);
         Stats = new Stats(npc.Metadata.Stat);
 
@@ -103,7 +105,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     protected override void Dispose(bool disposing) {
-        Navigation.Dispose();
+        Navigation?.Dispose();
     }
 
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
@@ -139,16 +141,16 @@ public class FieldNpc : Actor<Npc> {
             case { } when routineName.Contains("Bore_"):
                 return new WaitRoutine(this, sequence.Id, sequence.Time);
             case { } when routineName.StartsWith("Walk_"): {
-                    if (Navigation.RandomPatrol()) {
+                    if (Navigation is not null && Navigation.RandomPatrol()) {
                         return MoveRoutine.Walk(this, sequence.Id);
                     }
                     return new WaitRoutine(this, IdleSequence.Id, sequence.Time);
                 }
             case { } when routineName.StartsWith("Run_"):
-                if (Field.TryGetPlayer(TargetId, out FieldPlayer? target) && Navigation.PathTo(target.Position)) {
+                if (Field.TryGetPlayer(TargetId, out FieldPlayer? target) && Navigation is not null && Navigation.PathTo(target.Position)) {
                     return MoveRoutine.Run(this, sequence.Id);
                 }
-                if (Navigation.RandomPatrol()) {
+                if (Navigation is not null && Navigation.RandomPatrol()) {
                     return MoveRoutine.Run(this, sequence.Id);
                 }
                 return new WaitRoutine(this, IdleSequence.Id, sequence.Time);
@@ -206,9 +208,10 @@ public class FieldNpc : Actor<Npc> {
         // If the mob stops aggro to everyone, it resets this and heals/removes all damage records.
         // Boss drop loot is different. They drop for everyone who did damage to them.
 
-        long firstCharacter = 0;
-        if (Field.TryGetPlayer(DamageDealers.FirstOrDefault().Key, out FieldPlayer? firstPlayer)) {
+        if (!Field.TryGetPlayer(DamageDealers.FirstOrDefault().Key, out FieldPlayer? firstPlayer)) {
+            return;
         }
+
         foreach (KeyValuePair<int, DamageRecordTarget> damageDealer in DamageDealers) {
             if (!Field.TryGetPlayer(damageDealer.Key, out FieldPlayer? player)) {
                 continue;
@@ -222,7 +225,7 @@ public class FieldNpc : Actor<Npc> {
         }
     }
 
-    [MemberNotNullWhen(true, "AiMetadata")]
+    [MemberNotNullWhen(true, nameof(AiMetadata))]
     public bool SetAi(string name) {
         if (name == string.Empty) {
             AiMetadata = null;
@@ -230,9 +233,7 @@ public class FieldNpc : Actor<Npc> {
             return false;
         }
 
-        AiMetadata? metadata;
-
-        if (!Field.AiMetadata.TryGet(name, out metadata)) {
+        if (!Field.AiMetadata.TryGet(name, out AiMetadata? metadata)) {
             return false;
         }
 
