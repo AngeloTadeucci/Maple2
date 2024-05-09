@@ -153,7 +153,7 @@ public record AiMetadata(
         int From,
         int To,
         Vector3 Center,
-        NodeAiTarget Target, // hostile, friendly
+        NodeAiTarget Target,
         bool NoChangeWhenNoTarget,
         long InitialCooltime,
         long Cooltime,
@@ -231,8 +231,8 @@ public record AiMetadata(
         Vector3 SummonTargetOffset,
         Vector3 SummonRadius,
         int Group,
-        NodeSummonMaster Master, // Slave, None
-        NodeSummonOption[] Option, // masterHP,hitDamage
+        NodeSummonMaster Master,
+        NodeSummonOption[] Option,
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 

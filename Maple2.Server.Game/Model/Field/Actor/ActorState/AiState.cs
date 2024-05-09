@@ -1,18 +1,10 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
-using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using static Maple2.Model.Metadata.AiMetadata;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
 
@@ -23,10 +15,14 @@ public class AiState {
 
     private List<StackEntry> aiStack = new List<StackEntry>();
 
+    private long nextUpdate = 0;
+    private AiMetadata? lastEvaluated = null;
+
     public AiState(FieldNpc actor) {
         this.actor = actor;
     }
 
+    // TODO: revisit later & refactor into constructor if no AI is found that needs this kind of context switching
     [MemberNotNullWhen(true, "AiMetadata")]
     public bool SetAi(string name) {
         if (name == string.Empty) {
@@ -47,9 +43,6 @@ public class AiState {
 
         return true;
     }
-
-    private long nextUpdate = 0;
-    private AiMetadata? lastEvaluated = null;
 
     public void Update(long tickCount) {
         if (nextUpdate == 0) {
@@ -102,6 +95,8 @@ public class AiState {
             break;
         }
 
+        // arbitrary delay to process 1 actionable node at a time to get something up and running.
+        // almost certainly wrong, and probably depends on node properties & arbitrary task durations, and probably a value in the server constants.
         nextUpdate = tickCount + 1000;
     }
 

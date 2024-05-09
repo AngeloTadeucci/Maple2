@@ -49,7 +49,11 @@ public class AiMapper : TypeMapper<AiMetadata> {
                     MapEntry(childNodes, entry);
                 }
 
-                aiPresets.Add(new AiMetadata.AiPresetDefinition(Name: node.name, Entries: childNodes.ToArray()));
+                aiPresets.Add(new AiMetadata.AiPresetDefinition(
+                    Name: node.name,
+                    Entries:
+                    childNodes.ToArray()
+                ));
             }
 
             yield return new AiMetadata(
@@ -164,7 +168,9 @@ public class AiMapper : TypeMapper<AiMetadata> {
         }
 
         if (entry is AiPresetEntry aiPreset) {
-            entries.Add(new AiMetadata.AiPreset(aiPreset.name));
+            entries.Add(new AiMetadata.AiPreset(
+                Name: aiPreset.name
+            ));
 
             return;
         }

@@ -6,7 +6,6 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Tools.Extensions;
-using static IronPython.Modules.PythonIterTools;
 
 namespace Maple2.Server.Game.Packets;
 

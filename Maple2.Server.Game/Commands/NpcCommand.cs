@@ -128,7 +128,7 @@ public class DebugNpcAiCommand : Command {
         this.session = session;
         this.npcStorage = npcStorage;
 
-        Argument<bool?> enable = new Argument<bool?>("enable", () => true, "Enables & disables debug messages. Prints all AI state if true.");
+        var enable = new Argument<bool?>("enable", () => true, "Enables & disables debug messages. Prints all AI state if true.");
 
         AddArgument(enable);
 

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using Google.Protobuf.WellKnownTypes;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -373,6 +372,7 @@ public sealed partial class FieldManager : IDisposable {
         return true;
     }
 
+    #region DebugUtils
     public void BroadcastAiMessage(ByteWriter packet) {
         foreach ((int objectId, FieldPlayer player) in Players) {
             if (player.DebugAi) {
@@ -390,6 +390,7 @@ public sealed partial class FieldManager : IDisposable {
             npc.SendDebugAiInfo(requester);
         }
     }
+    #endregion
 
     public void Broadcast(ByteWriter packet, GameSession? sender = null) {
         if (!initialized) {
