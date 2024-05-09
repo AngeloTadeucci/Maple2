@@ -5,7 +5,6 @@ using Maple2.File.Parser.Xml.AI;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using System.Numerics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -23,30 +22,30 @@ public class AiMapper : TypeMapper<AiMetadata> {
             List<AiMetadata.Entry> battleEnd = new List<AiMetadata.Entry>();
             List<AiMetadata.AiPresetDefinition> aiPresets = new List<AiMetadata.AiPresetDefinition>();
 
-            foreach (Condition node in data.reserved.conditions) {
-                if (node.name == "feature" && !FeatureLocaleFilter.FeatureEnabled(node.feature)) {
+            foreach (Entry entry in data.Reserved) {
+                if (entry is not ConditionEntry node) {
+                    continue;
+                }
+
+                if (node is FeatureCondition feature && !FeatureLocaleFilter.FeatureEnabled(feature.feature)) {
                     continue;
                 }
 
                 reserved.Add(MapCondition(node));
             }
-
-            foreach (Entry entry in data.battle.nodes) {
+            
+            foreach (Entry entry in data.Battle) {
                 MapEntry(battle, entry);
             }
 
-            foreach (Entry entry in data.battleEnd.nodes) {
+            foreach (Entry entry in data.BattleEnd) {
                 MapEntry(battle, entry);
             }
 
-            foreach (Node node in data.battleEnd.nodes) {
-                battleEnd.Add(MapNode(node));
-            }
-
-            foreach (AiPresetDefinition node in data.aiPresets.aiPresets) {
+            foreach (Entry node in data.AiPresets) {
                 var childNodes = new List<AiMetadata.Entry>();
 
-                foreach (Entry entry in node.entries) {
+                foreach (Entry entry in node.Entries) {
                     MapEntry(childNodes, entry);
                 }
 
@@ -63,101 +62,88 @@ public class AiMapper : TypeMapper<AiMetadata> {
         }
     }
 
-    AiMetadata.Condition MapCondition(Condition node) {
+    AiMetadata.Condition MapCondition(ConditionEntry node) {
         var childNodes = new List<AiMetadata.Entry>();
 
-        foreach (Entry entry in node.entries) {
+        foreach (Entry entry in node.Entries) {
             MapEntry(childNodes, entry);
         }
 
-        switch(node.name) {
-            case "distanceOver":
+        switch(node) {
+            case DistanceOverCondition distanceOver:
                 return new AiMetadata.DistanceOverCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Value: node.value
+                    Value: distanceOver.value
                 );
-            case "combatTime":
+            case CombatTimeCondition combatTime:
                 return new AiMetadata.CombatTimeCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    BattleTimeBegin: node.battleTimeBegin,
-                    BattleTimeLoop: node.battleTimeLoop,
-                    BattleTimeEnd: node.battleTimeEnd
+                    BattleTimeBegin: combatTime.battleTimeBegin,
+                    BattleTimeLoop: combatTime.battleTimeLoop,
+                    BattleTimeEnd: combatTime.battleTimeEnd
                 );
-            case "distanceLess":
+            case DistanceLessCondition distanceLess:
                 return new AiMetadata.DistanceLessCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Value: node.value
+                    Value: distanceLess.value
                 );
-            case "skillRange":
+            case SkillRangeCondition skillRange:
                 return new AiMetadata.SkillRangeCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    SkillIdx: node.skillIdx,
-                    SkillLev: node.skillLev,
-                    IsKeepBattle: node.isKeepBattle
+                    SkillIdx: skillRange.skillIdx,
+                    SkillLev: skillRange.skillLev,
+                    IsKeepBattle: skillRange.isKeepBattle
                 );
-            case "extraData":
+            case ExtraDataCondition extraData:
                 return new AiMetadata.ExtraDataCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    Op: (AiConditionOp)node.op,
-                    IsKeepBattle: node.isKeepBattle
+                    Key: extraData.key,
+                    Value: extraData.value,
+                    Op: (AiConditionOp) extraData.op,
+                    IsKeepBattle: extraData.isKeepBattle
                 );
-            case "SlaveCount": // these are different enough to warrant having their own nodes. blame nexon
+            case SlaveCountCondition SlaveCount: // these are different enough to warrant having their own nodes. blame nexon
                 return new AiMetadata.SlaveCountCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Count: node.count,
-                    UseSummonGroup: node.useSummonGroup,
-                    SummonGroup: node.summonGroup
+                    Count: SlaveCount.count,
+                    UseSummonGroup: SlaveCount.useSummonGroup,
+                    SummonGroup: SlaveCount.summonGroup
                 );
-            case "hpOver":
+            case HpOverCondition hpOver:
                 return new AiMetadata.HpOverCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Value: node.value
+                    Value: hpOver.value
                 );
-            case "state":
+            case StateCondition state:
                 return new AiMetadata.StateCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    TargetState: (AiConditionTargetState)node.targetState
+                    TargetState: (AiConditionTargetState) state.targetState
                 );
-            case "additional":
+            case AdditionalCondition additional:
                 return new AiMetadata.AdditionalCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Id: node.id,
-                    Level: node.level,
-                    OverlapCount: node.overlapCount,
-                    IsTarget: node.isTarget
+                    Id: additional.id,
+                    Level: additional.level,
+                    OverlapCount: additional.overlapCount,
+                    IsTarget: additional.isTarget
                 );
-            case "hpLess":
+            case HpLessCondition hpLess:
                 return new AiMetadata.HpLessCondition(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Value: node.value
+                    Value: hpLess.value
                 );
-            case "DistanceLess":
-                return new AiMetadata.DistanceLessCondition(
-                    Name: node.name,
-                    Entries: childNodes.ToArray(),
-                    Value: node.value
-                );
-            case "slaveCount": // these are different enough to warrant having their own nodes. blame nexon
-                return new AiMetadata.SlaveCountOpCondition(
-                    Name: node.name,
-                    Entries: childNodes.ToArray(),
-                    SlaveCount: node.slaveCount,
-                    SlaveCountOp: (AiConditionOp) node.slaveCountOp
-                );
-            case "feature": // feature was converted to TrueCondition
-            case "true":
+            case FeatureCondition feature: // feature was converted to TrueCondition
+            case TrueCondition trueNode:
                 if (node.name == "feature") {
                     Console.WriteLine("AI feature condition node is being convered to a true node");
                 }
@@ -171,13 +157,13 @@ public class AiMapper : TypeMapper<AiMetadata> {
     }
 
     void MapEntry(List<AiMetadata.Entry> entries, Entry entry) {
-        if (entry is Node node) {
+        if (entry is NodeEntry node) {
             entries.Add(MapNode(node));
 
             return;
         }
 
-        if (entry is AiPreset aiPreset) {
+        if (entry is AiPresetEntry aiPreset) {
             entries.Add(new AiMetadata.AiPreset(aiPreset.name));
 
             return;
@@ -186,376 +172,359 @@ public class AiMapper : TypeMapper<AiMetadata> {
         throw new NotImplementedException($"unknown entry type {entry.GetType().Name}");
     }
 
-    AiMetadata.Node MapNode(Node node) {
+    AiMetadata.Node MapNode(NodeEntry node) {
         var childNodes = new List<AiMetadata.Entry>();
         var childConditions = new List<AiMetadata.Condition>();
 
-        foreach (Entry entry in node.entries) {
+        foreach (Entry entry in node.Entries) {
+            if (entry is ConditionEntry) {
+                continue;
+            }
+
             MapEntry(childNodes, entry);
         }
 
-        foreach (Condition child in node.conditions) {
-            if (child.name == "feature" && !FeatureLocaleFilter.FeatureEnabled(child.feature)) {
+        foreach (Entry entry in node.Entries) {
+            if (entry is not ConditionEntry child) {
+                continue;
+            }
+
+            if (child is FeatureCondition feature && !FeatureLocaleFilter.FeatureEnabled(feature.feature)) {
                 continue;
             }
 
             childConditions.Add(MapCondition(child));
         }
 
-        int onlyProb = node.prob.Length > 0 ? node.prob[0] : 100;
-
-        switch(node.name) {
-            case "trace":
+        switch(node) {
+            case TraceNode trace:
                 return new AiMetadata.TraceNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Limit: node.limit,
-                    SkillIdx: node.skillIdx,
-                    Animation: node.animation,
-                    Speed: node.speed,
-                    Till: node.till,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Limit: trace.limit,
+                    SkillIdx: trace.skillIdx,
+                    Animation: trace.animation,
+                    Speed: trace.speed,
+                    Till: trace.till,
+                    InitialCooltime: trace.initialCooltime,
+                    Cooltime: trace.cooltime,
+                    IsKeepBattle: trace.isKeepBattle
                 );
-            case "skill":
+            case SkillNode skill:
                 return new AiMetadata.SkillNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Idx: node.idx,
-                    Level: node.level,
-                    Prob: onlyProb,
-                    Sequence: node.sequence,
-                    FacePos: node.facePos,
-                    FaceTarget: node.faceTarget,
-                    FaceTargetTick: node.faceTargetTick,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    Limit: node.limit,
-                    IsKeepBattle: node.isKeepBattle
+                    Idx: skill.idx,
+                    Level: skill.level,
+                    Prob: skill.prob,
+                    Sequence: skill.sequence,
+                    FacePos: skill.facePos,
+                    FaceTarget: skill.faceTarget,
+                    FaceTargetTick: skill.faceTargetTick,
+                    InitialCooltime: skill.initialCooltime,
+                    Cooltime: skill.cooltime,
+                    Limit: skill.limit,
+                    IsKeepBattle: skill.isKeepBattle
                 );
-            case "teleport":
+            case TeleportNode teleport:
                 return new AiMetadata.TeleportNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Pos: node.pos,
-                    Prob: onlyProb,
-                    FacePos: node.facePos,
-                    FaceTarget: node.faceTarget,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Pos: teleport.pos,
+                    Prob: teleport.prob,
+                    FacePos: teleport.facePos,
+                    FaceTarget: teleport.faceTarget,
+                    InitialCooltime: teleport.initialCooltime,
+                    Cooltime: teleport.cooltime,
+                    IsKeepBattle: teleport.isKeepBattle
                 );
-            case "standby":
+            case StandbyNode standby:
                 return new AiMetadata.StandbyNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Limit: node.limit,
-                    Prob: onlyProb,
-                    Animation: node.animation,
-                    FacePos: node.facePos,
-                    FaceTarget: node.faceTarget,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Limit: standby.limit,
+                    Prob: standby.prob,
+                    Animation: standby.animation,
+                    FacePos: standby.facePos,
+                    FaceTarget: standby.faceTarget,
+                    InitialCooltime: standby.initialCooltime,
+                    Cooltime: standby.cooltime,
+                    IsKeepBattle: standby.isKeepBattle
                 );
-            case "setData":
+            case SetDataNode setData:
                 return new AiMetadata.SetDataNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    Cooltime: node.cooltime
+                    Key: setData.key,
+                    Value: setData.value,
+                    Cooltime: setData.cooltime
                 );
-            case "target":
-                NodeTargetType targetType = NodeTargetType.Random;
-                Enum.TryParse(node.type, out targetType);
+            case TargetNode target:
                 return new AiMetadata.TargetNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Type: targetType,
-                    Prob: onlyProb,
-                    Rank: node.rank,
-                    AdditionalId: node.additionalId,
-                    AdditionalLevel: node.additionalLevel,
-                    From: node.from,
-                    To: node.to,
-                    Center: node.center,
-                    Target: (NodeAiTarget)node.target,
-                    NoChangeWhenNoTarget: node.noChangeWhenNoTarget,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Type: (NodeTargetType) target.type,
+                    Prob: target.prob,
+                    Rank: target.rank,
+                    AdditionalId: target.additionalId,
+                    AdditionalLevel: target.additionalLevel,
+                    From: target.from,
+                    To: target.to,
+                    Center: target.center,
+                    Target: (NodeAiTarget) target.target,
+                    NoChangeWhenNoTarget: target.noChangeWhenNoTarget,
+                    InitialCooltime: target.initialCooltime,
+                    Cooltime: target.cooltime,
+                    IsKeepBattle: target.isKeepBattle
                 );
-            case "say":
+            case SayNode say:
                 return new AiMetadata.SayNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Message: node.message,
-                    Prob: onlyProb,
-                    DurationTick: node.durationTick,
-                    DelayTick: node.delayTick,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Message: say.message,
+                    Prob: say.prob,
+                    DurationTick: say.durationTick,
+                    DelayTick: say.delayTick,
+                    InitialCooltime: say.initialCooltime,
+                    Cooltime: say.cooltime,
+                    IsKeepBattle: say.isKeepBattle
                 );
-            case "SetValue":
+            case SetValueNode setValue:
                 return new AiMetadata.SetValueNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsModify: node.isModify,
-                    IsKeepBattle: node.isKeepBattle
+                    Key: setValue.key,
+                    Value: setValue.value,
+                    InitialCooltime: setValue.initialCooltime,
+                    Cooltime: setValue.cooltime,
+                    IsModify: setValue.isModify,
+                    IsKeepBattle: setValue.isKeepBattle
                 );
-            case "conditions":
+            case ConditionsNode conditions:
                 return new AiMetadata.ConditionsNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
                     Conditions: childConditions.ToArray(),
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    InitialCooltime: conditions.initialCooltime,
+                    Cooltime: conditions.cooltime,
+                    IsKeepBattle: conditions.isKeepBattle
                 );
-            case "jump":
-                NodeJumpType jumpType = NodeJumpType.JumpA;
-                Enum.TryParse(node.type, out jumpType);
+            case JumpNode jump:
                 return new AiMetadata.JumpNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Pos: node.pos,
-                    Speed: node.speed,
-                    HeightMultiplier: node.heightMultiplier,
-                    Type: jumpType,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Pos: jump.pos,
+                    Speed: jump.speed,
+                    HeightMultiplier: jump.heightMultiplier,
+                    Type: (NodeJumpType) jump.type,
+                    Cooltime: jump.cooltime,
+                    IsKeepBattle: jump.isKeepBattle
                 );
-            case "select":
+            case SelectNode select:
                 return new AiMetadata.SelectNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Prob: node.prob,
-                    useNpcProb: node.useNpcProb
+                    Prob: select.prob,
+                    useNpcProb: select.useNpcProb
                 );
-            case "move":
+            case MoveNode move:
                 return new AiMetadata.MoveNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Destination: node.destination,
-                    Prob: onlyProb,
-                    Animation: node.animation,
-                    Limit: node.limit,
-                    Speed: node.speed,
-                    FaceTarget: node.faceTarget,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    Destination: move.destination,
+                    Prob: move.prob,
+                    Animation: move.animation,
+                    Limit: move.limit,
+                    Speed: move.speed,
+                    FaceTarget: move.faceTarget,
+                    InitialCooltime: move.initialCooltime,
+                    Cooltime: move.cooltime,
+                    IsKeepBattle: move.isKeepBattle
                 );
-            case "summon":
+            case SummonNode summon:
                 return new AiMetadata.SummonNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    NpcId: node.npcId,
-                    NpcCountMax: node.npcCountMax,
-                    NpcCount: node.npcCount,
-                    DelayTick: node.delayTick,
-                    LifeTime: node.lifeTime,
-                    SummonRot: node.summonRot,
-                    SummonPos: node.summonPos,
-                    SummonPosOffset: node.summonPosOffset,
-                    SummonTargetOffset: node.summonTargetOffset,
-                    SummonRadius: node.summonRadius,
-                    Group: node.group,
-                    Master: (NodeSummonMaster)node.master,
-                    Option: Array.ConvertAll(node.option, value => (NodeSummonOption)value),
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    NpcId: summon.npcId,
+                    NpcCountMax: summon.npcCountMax,
+                    NpcCount: summon.npcCount,
+                    DelayTick: summon.delayTick,
+                    LifeTime: summon.lifeTime,
+                    SummonRot: summon.summonRot,
+                    SummonPos: summon.summonPos,
+                    SummonPosOffset: summon.summonPosOffset,
+                    SummonTargetOffset: summon.summonTargetOffset,
+                    SummonRadius: summon.summonRadius,
+                    Group: summon.group,
+                    Master: (NodeSummonMaster) summon.master,
+                    Option: Array.ConvertAll(summon.option, value => (NodeSummonOption)value),
+                    Cooltime: summon.cooltime,
+                    IsKeepBattle: summon.isKeepBattle
                 );
-            case "TriggerSetUserValue":
+            case TriggerSetUserValueNode triggerSetUserValue:
                 return new AiMetadata.TriggerSetUserValueNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    TriggerID: node.triggerID,
-                    Key: node.key,
-                    Value: node.value,
-                    Cooltime: node.cooltime,
-                    IsKeepBattle: node.isKeepBattle
+                    TriggerID: triggerSetUserValue.triggerID,
+                    Key: triggerSetUserValue.key,
+                    Value: triggerSetUserValue.value,
+                    Cooltime: triggerSetUserValue.cooltime,
+                    IsKeepBattle: triggerSetUserValue.isKeepBattle
                 );
-            case "ride":
-                NodeRideType rideType = NodeRideType.Slave;
-                Enum.TryParse(node.type, out rideType);
+            case RideNode ride:
                 return new AiMetadata.RideNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Type: rideType,
-                    IsRideOff: node.isRideOff,
-                    RideNpcIDs: node.rideNpcIDs
+                    Type: (NodeRideType) ride.type,
+                    IsRideOff: ride.isRideOff,
+                    RideNpcIDs: ride.rideNpcIDs
                 );
-            case "SetSlaveValue":
+            case SetSlaveValueNode setSlaveValue:
                 return new AiMetadata.SetSlaveValueNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    IsRandom: node.isRandom,
-                    Cooltime: node.cooltime,
-                    IsModify: node.isModify,
-                    IsKeepBattle: node.isKeepBattle
+                    Key: setSlaveValue.key,
+                Value: setSlaveValue.value,
+                    IsRandom: setSlaveValue.isRandom,
+                    Cooltime: setSlaveValue.cooltime,
+                    IsModify: setSlaveValue.isModify,
+                    IsKeepBattle: setSlaveValue.isKeepBattle
                 );
-            case "SetMasterValue":
+            case SetMasterValueNode setMasterValue:
                 return new AiMetadata.SetMasterValueNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    IsRandom: node.isRandom,
-                    Cooltime: node.cooltime,
-                    IsModify: node.isModify,
-                    IsKeepBattle: node.isKeepBattle
+                    Key: setMasterValue.key,
+                    Value: setMasterValue.value,
+                    IsRandom: setMasterValue.isRandom,
+                    Cooltime: setMasterValue.cooltime,
+                    IsModify: setMasterValue.isModify,
+                    IsKeepBattle: setMasterValue.isKeepBattle
                 );
-            case "runaway":
+            case RunawayNode runaway:
                 return new AiMetadata.RunawayNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Animation: node.animation,
-                    SkillIdx: node.skillIdx,
-                    Till: node.till,
-                    Limit: node.limit,
-                    FacePos: node.facePos,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime
+                    Animation: runaway.animation,
+                    SkillIdx: runaway.skillIdx,
+                    Till: runaway.till,
+                    Limit: runaway.limit,
+                    FacePos: runaway.facePos,
+                    InitialCooltime: runaway.initialCooltime,
+                    Cooltime: runaway.cooltime
                 );
-            case "MinimumHp":
+            case MinimumHpNode minimumHp:
                 return new AiMetadata.MinimumHpNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    HpPercent: node.hpPercent
+                    HpPercent: minimumHp.hpPercent
                 );
-            case "buff":
-                NodeBuffType buffType = NodeBuffType.Add;
-                Enum.TryParse(node.type, out buffType);
+            case BuffNode buff:
                 return new AiMetadata.BuffNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Id: node.id,
-                    Type: buffType,
-                    Level: node.level,
-                    Prob: onlyProb,
-                    InitialCooltime: node.initialCooltime,
-                    Cooltime: node.cooltime,
-                    IsTarget: node.isTarget,
-                    IsKeepBattle: node.isKeepBattle
+                    Id: buff.id,
+                    Type: (NodeBuffType) buff.type,
+                    Level: buff.level,
+                    Prob: buff.prob,
+                    InitialCooltime: buff.initialCooltime,
+                    Cooltime: buff.cooltime,
+                    IsTarget: buff.isTarget,
+                    IsKeepBattle: buff.isKeepBattle
                 );
-            case "TargetEffect":
+            case TargetEffectNode targetEffect:
                 return new AiMetadata.TargetEffectNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    EffectName: node.effectName
+                    EffectName: targetEffect.effectName
                 );
-            case "ShowVibrate":
+            case ShowVibrateNode showVibrate:
                 return new AiMetadata.ShowVibrateNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    GroupId: node.groupID
+                    GroupId: showVibrate.groupID
                 );
-            case "sidePopup":
-                NodePopupType popupType = NodePopupType.Talk;
-                Enum.TryParse(node.type, out popupType);
+            case SidePopupNode sidePopup:
                 return new AiMetadata.SidePopupNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Type: popupType,
-                    Illust: node.illust,
-                    Duration: node.duration,
-                    Script: node.script,
-                    Sound: node.sound,
-                    Voice: node.voice
+                    Type: (NodePopupType) sidePopup.type,
+                    Illust: sidePopup.illust,
+                    Duration: sidePopup.duration,
+                    Script: sidePopup.script,
+                    Sound: sidePopup.sound,
+                    Voice: sidePopup.voice
                 );
-            case "SetValueRangeTarget":
+            case SetValueRangeTargetNode setValueRangeTarget:
                 return new AiMetadata.SetValueRangeTargetNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Key: node.key,
-                    Value: node.value,
-                    Height: node.height,
-                    Radius: node.radius,
-                    Cooltime: node.cooltime,
-                    IsModify: node.isModify,
-                    IsKeepBattle: node.isKeepBattle
+                    Key: setValueRangeTarget.key,
+                    Value: setValueRangeTarget.value,
+                    Height: setValueRangeTarget.height,
+                    Radius: setValueRangeTarget.radius,
+                    Cooltime: setValueRangeTarget.cooltime,
+                    IsModify: setValueRangeTarget.isModify,
+                    IsKeepBattle: setValueRangeTarget.isKeepBattle
                 );
-            case "announce":
+            case AnnounceNode announce:
                 return new AiMetadata.AnnounceNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Message: node.message,
-                    DurationTick: node.durationTick,
-                    Cooltime: node.cooltime
+                    Message: announce.message,
+                    DurationTick: announce.durationTick,
+                    Cooltime: announce.cooltime
                 );
-            case "ModifyRoomTime":
+            case ModifyRoomTimeNode modifyRoomTime:
                 return new AiMetadata.ModifyRoomTimeNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    TimeTick: node.timeTick,
-                    IsShowEffect:node.isShowEffect
+                    TimeTick: modifyRoomTime.timeTick,
+                    IsShowEffect: modifyRoomTime.isShowEffect
                 );
-            case "HideVibrateAll":
+            case HideVibrateAllNode hideVibrateAll:
                 return new AiMetadata.HideVibrateAllNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    IsKeepBattle: node.isKeepBattle
+                    IsKeepBattle: hideVibrateAll.isKeepBattle
                 );
-            case "TriggerModifyUserValue":
+            case TriggerModifyUserValueNode triggerModifyUserValue:
                 return new AiMetadata.TriggerModifyUserValueNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    TriggerID: node.triggerID,
-                    Key: node.key,
-                    Value: node.value
+                    TriggerID: triggerModifyUserValue.triggerID,
+                    Key: triggerModifyUserValue.key,
+                    Value: triggerModifyUserValue.value
                 );
-            case "Buff":
-                return new AiMetadata.BuffNode(
-                    Name: node.name,
-                    Entries: childNodes.ToArray(),
-                    Id: node.id,
-                    Type: NodeBuffType.Add,
-                    Level: node.level,
-                    Prob: 100,
-                    InitialCooltime: 0,
-                    Cooltime: 0,
-                    IsTarget: false,
-                    IsKeepBattle: true
-                );
-            case "RemoveSlaves":
+            case RemoveSlavesNode removeSlaves:
                 return new AiMetadata.RemoveSlavesNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    IsKeepBattle: node.isKeepBattle
+                    IsKeepBattle: removeSlaves.isKeepBattle
                 );
-            case "CreateRandomRoom":
+            case CreateRandomRoomNode createRandomRoom:
                 return new AiMetadata.CreateRandomRoomNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    RandomRoomId: node.randomRoomID,
-                    PortalDuration: node.portalDuration
+                    RandomRoomId: createRandomRoom.randomRoomID,
+                    PortalDuration: createRandomRoom.portalDuration
                 );
-            case "CreateInteractObject":
+            case CreateInteractObjectNode createInteractObject:
                 return new AiMetadata.CreateInteractObjectNode(
                     Name: node.name,
                     Entries: childNodes.ToArray(),
-                    Normal: node.normal,
-                    InteractID: node.interactID,
-                    LifeTime: node.lifeTime,
-                    KfmName: node.kfmName,
-                    Reactable: node.reactable
+                    Normal: createInteractObject.normal,
+                    InteractID: createInteractObject.interactID,
+                    LifeTime: createInteractObject.lifeTime,
+                    KfmName: createInteractObject.kfmName,
+                    Reactable: createInteractObject.reactable
                 );
-            case "RemoveMe":
+            case RemoveNode removeMe:
                 return new AiMetadata.RemoveMeNode(
                     Name: node.name,
                     Entries: childNodes.ToArray()
                 );
-            case "Suicide":
+            case SuicideNode Suicide:
                 return new AiMetadata.SuicideNode(
                     Name: node.name,
                     Entries: childNodes.ToArray()

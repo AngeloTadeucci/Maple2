@@ -118,7 +118,7 @@ public class AnimateNpcCommand : Command {
 }
 
 public class DebugNpcAiCommand : Command {
-    private const string NAME = "debug-npc-ai";
+    private const string NAME = "debugnpcs";
     private const string DESCRIPTION = "Toggles displaying npc AI debug info.";
 
     private readonly GameSession session;

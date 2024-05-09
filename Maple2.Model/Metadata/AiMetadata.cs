@@ -49,6 +49,7 @@ public record AiMetadata(
     [JsonDerivedType(typeof(CreateInteractObjectNode), typeDiscriminator: nameof(CreateInteractObjectNode))]
     [JsonDerivedType(typeof(RemoveMeNode), typeDiscriminator: nameof(RemoveMeNode))]
     [JsonDerivedType(typeof(SuicideNode), typeDiscriminator: nameof(SuicideNode))]
+    [JsonDerivedType(typeof(AiPresetDefinition), typeDiscriminator: nameof(AiPresetDefinition))]
     public record Entry(
         string Name);
 
@@ -72,12 +73,11 @@ public record AiMetadata(
     [JsonDerivedType(typeof(TrueCondition), typeDiscriminator: nameof(TrueCondition))]
     public record Condition(
         string Name,
-        Entry[] Entries) {
-    }
+        Entry[] Entries) : Node(Name, Entries);
 
     public record AiPresetDefinition(
         string Name,
-        Entry[] Entries) {
+        Entry[] Entries) : Node(Name, Entries) {
     }
 
     public record AiPreset(
@@ -345,6 +345,7 @@ public record AiMetadata(
         Entry[] Entries,
         int TimeTick,
         bool IsShowEffect) : Node(Name, Entries);
+
     public record HideVibrateAllNode(
         string Name,
         Entry[] Entries,
@@ -396,9 +397,9 @@ public record AiMetadata(
 	public record CombatTimeCondition(
         string Name,
         Entry[] Entries,
-        int BattleTimeBegin,
-        int BattleTimeLoop,
-        int BattleTimeEnd) : Condition(Name, Entries);
+        long BattleTimeBegin,
+        long BattleTimeLoop,
+        long BattleTimeEnd) : Condition(Name, Entries);
 
 	public record DistanceLessCondition(
         string Name,

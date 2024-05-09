@@ -20,6 +20,8 @@ public interface IActor : IFieldEntity {
     public virtual void AddBuff(IActor caster, IActor owner, int id, short level, bool notifyField = true) { }
 
     public virtual void TargetAttack(SkillRecord record) { }
+
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) { return null; }
 }
 
 public interface IActor<out T> : IActor {
