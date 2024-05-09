@@ -51,8 +51,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
 
                 aiPresets.Add(new AiMetadata.AiPresetDefinition(
                     Name: node.name,
-                    Entries:
-                    childNodes.ToArray()
+                    Entries: childNodes.ToArray()
                 ));
             }
 

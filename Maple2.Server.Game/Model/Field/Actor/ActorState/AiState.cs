@@ -2,8 +2,10 @@
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
+using Maple2.Tools;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using static Community.CsharpSqlite.Sqlite3;
 using static Maple2.Model.Metadata.AiMetadata;
 
 namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
@@ -11,12 +13,12 @@ namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
 public class AiState {
     private readonly FieldNpc actor;
     public AiMetadata? AiMetadata { get; private set; }
-    private Node? battle = null;
+    private Node? battle;
 
     private List<StackEntry> aiStack = new List<StackEntry>();
 
     private long nextUpdate = 0;
-    private AiMetadata? lastEvaluated = null;
+    private AiMetadata? lastEvaluated;
 
     public AiState(FieldNpc actor) {
         this.actor = actor;
@@ -52,7 +54,7 @@ public class AiState {
         if (nextUpdate > tickCount) {
             return;
         }
-        if (AiMetadata is null) {
+        if (AiMetadata is null || lastEvaluated != AiMetadata) {
             if (actor.Value.Metadata.AiPath != "") {
                 actor.AppendDebugMessage("Missing AI\n");
                 actor.AppendDebugMessage(actor.Value.Metadata.AiPath);
@@ -63,6 +65,7 @@ public class AiState {
             return;
         }
 
+        lastEvaluated = AiMetadata;
 
         if (aiStack.Count == 0) {
             if (AiMetadata.Battle.Length == 0) {
@@ -131,7 +134,9 @@ public class AiState {
             return true;
         }
 
-        return false;
+        // TODO: check cooltime
+
+        return true;
     }
 
     private void Process(Entry entry) {
@@ -150,7 +155,7 @@ public class AiState {
             return;
         }
 
-        actor.Navigation.PathTo(target.Position);
+        actor.Navigation?.PathTo(target.Position);
     }
 
     private void ProcessNode(SkillNode node) {
@@ -187,7 +192,7 @@ public class AiState {
     }
 
     private void ProcessNode(StandbyNode node) {
-        actor.Navigation.PathTo(actor.Position); // stop moving
+        actor.Navigation?.PathTo(actor.Position); // stop moving
     }
 
     private void ProcessNode(SetDataNode node) {
@@ -235,57 +240,58 @@ public class AiState {
     }
 
     private void ProcessNode(SelectNode node) {
-        int totalWeight = 0;
+        var weightedEntries = new WeightedSet<int>();
 
-        foreach (int weight in node.Prob) {
-            totalWeight += weight;
-        }
-
-        int roll = Random.Shared.Next(0, totalWeight);
-        int selected = -1;
+        bool foundZeroProb = false;
 
         for (int i = 0; i < node.Prob.Length; ++i) {
-            if (i >= node.Entries.Length) {
-                break;
-            }
-
-            // TODO: check cooltime
-            if (roll >= node.Prob[i]) {
-                roll -= node.Prob[i];
+            if (node.Prob[i] == 0) {
+                foundZeroProb = true;
 
                 continue;
             }
 
-            selected = i;
+            if (!CanEvaluateNode(node.Entries[i])) {
+                continue;
+            }
+
+            weightedEntries.Add(i, node.Prob[i]);
         }
 
-        if (selected == -1) {
+        int selectedIndex = -1;
+
+        if (weightedEntries.Count > 0) {
+            int stackIndex = weightedEntries.Get();
+
+            selectedIndex = stackIndex;
+        }
+        else if (foundZeroProb) {
+            // only evaluate if prob=0 nodes are found and none of the weighted ones passed
             for (int i = 0; i < node.Prob.Length; ++i) {
                 if (i >= node.Entries.Length) {
                     break;
                 }
 
-                // TODO: check cooltime
-                if (node.Prob[i] == 0) {
-                    selected = i;
+                if (node.Prob[i] == 0 && CanEvaluateNode(node.Entries[i])) {
+                    selectedIndex = i;
 
                     break;
                 }
             }
         }
 
-        if (selected == -1) {
+        if (selectedIndex == -1) {
             return;
         }
 
-        aiStack[aiStack.Count - 1] = new StackEntry { Node = node, Index = selected, LockIndex = true };
+        aiStack[aiStack.Count - 1] = new StackEntry { Node = node, Index = selectedIndex, LockIndex = true };
 
-        Push(node.Entries[selected]);
-        Process(node.Entries[selected]);
+        Push(node.Entries[selectedIndex]);
+        Process(node.Entries[selectedIndex]);
     }
 
     private void ProcessNode(MoveNode node) {
-        actor.Navigation.PathTo(node.Destination);
+        actor.Navigation?.PathTo(node.Destination);
     }
 
     private void ProcessNode(SummonNode node) {
@@ -315,7 +321,7 @@ public class AiState {
 
         Vector3 offset = actor.Position - target.Position;
 
-        actor.Navigation.PathTo(target.Position + (1000 / offset.Length()) * offset);
+        actor.Navigation?.PathTo(target.Position + (1000 / offset.Length()) * offset);
     }
 
     private void ProcessNode(MinimumHpNode node) {
