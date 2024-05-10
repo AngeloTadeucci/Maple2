@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Maple2.Server.Core.Network;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
@@ -154,6 +155,22 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         }
 
         Buffs.Update(tickCount);
+    }
+
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) {
+        if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
+            Logger.Error("Invalid skill use: {SkillId},{Level}", id, level);
+            return null;
+        }
+
+        var record = new SkillRecord(metadata, uid, this);
+        record.Position = Position;
+        record.Rotation = Rotation;
+        record.Rotate2Z = 2 * Rotation.Z;
+
+        Field.Broadcast(SkillPacket.Use(record));
+
+        return record;
     }
 
     protected abstract void OnDeath();

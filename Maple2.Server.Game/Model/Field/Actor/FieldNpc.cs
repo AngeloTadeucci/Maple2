@@ -13,6 +13,10 @@ using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
+using Maple2.Server.Game.Session;
+using Google.Protobuf.WellKnownTypes;
+using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Server.Core.Packets;
 
 namespace Maple2.Server.Game.Model;
 
@@ -74,6 +78,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AnimationSequence IdleSequence;
     public readonly AnimationSequence? JumpSequence;
     private readonly WeightedSet<string> defaultRoutines;
+    public readonly AiState AiState;
     private NpcRoutine CurrentRoutine { get; set; }
 
     // Used for trigger spawn tracking.
@@ -81,7 +86,6 @@ public class FieldNpc : Actor<Npc> {
 
     public override Stats Stats { get; }
     public int TargetId = 0;
-    public AiMetadata? AiMetadata { get; private set; }
 
     public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc) : base(field, objectId, npc) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
@@ -96,12 +100,13 @@ public class FieldNpc : Actor<Npc> {
         }
         CurrentRoutine = new WaitRoutine(this, -1, 1f);
         Stats = new Stats(npc.Metadata.Stat);
+        AiState = new AiState(this);
 
         State = new NpcState();
         SequenceId = -1;
         SequenceCounter = 1;
 
-        SetAi(npc.Metadata.AiPath);
+        AiState.SetAi(npc.Metadata.AiPath);
     }
 
     protected override void Dispose(bool disposing) {
@@ -110,10 +115,33 @@ public class FieldNpc : Actor<Npc> {
 
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
 
+    private List<string> debugMessages = new List<string>();
+    private bool playersListeningToDebug = false; // controls whether messages should log
+
     public override void Update(long tickCount) {
         if (IsDead) return;
 
         base.Update(tickCount);
+
+        // controls whether currently logged messages should print
+        bool playersListeningToDebugNow = false;
+
+        foreach ((int objectId, FieldPlayer player) in Field.Players) {
+            if (player.DebugAi) {
+                playersListeningToDebugNow = true;
+
+                break;
+            }
+        }
+
+        AiState.Update(tickCount);
+
+        if (playersListeningToDebugNow && debugMessages.Count > 0) {
+            Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(true, ObjectId, String.Join("", debugMessages.ToArray()), 2500, 0));
+        }
+
+        debugMessages.Clear();
+        playersListeningToDebug = playersListeningToDebugNow;
 
         NpcRoutine.Result result = CurrentRoutine.Update(TimeSpan.FromMilliseconds(tickCount - lastUpdate));
         if (result is NpcRoutine.Result.Success or NpcRoutine.Result.Failure) {
@@ -207,6 +235,18 @@ public class FieldNpc : Actor<Npc> {
         }
     }
 
+    public override SkillRecord? CastSkill(int id, short level, long uid = 0) {
+        SkillRecord? cast = base.CastSkill(id, level, uid);
+
+        if (cast is null) {
+            return null;
+        }
+
+        cast.ServerTick = (int) Field.FieldTick;
+
+        return cast;
+    }
+
     // mob drops, exp, etc.
     private void HandleDamageDealers() {
         // TODO: Fix drop loot. Right now we're getting the first player in damage dealers as the receiver of the loot.
@@ -231,20 +271,26 @@ public class FieldNpc : Actor<Npc> {
         }
     }
 
-    [MemberNotNullWhen(true, nameof(AiMetadata))]
-    public bool SetAi(string name) {
-        if (name == string.Empty) {
-            AiMetadata = null;
+    public void SendDebugAiInfo(GameSession requester) {
+        string message = $"{ObjectId}";
+        message += "\n" + (AiState.AiMetadata?.Name ?? "[No AI]");
+        if (this is FieldPet pet) {
+            if (Field.TryGetPlayer(pet.OwnerId, out FieldPlayer? player)) {
+                message += "\nOwner: " + player.Value.Character.Name;
+            }
+        }
+        requester.Send(CinematicPacket.BalloonTalk(true, ObjectId, message, 2500, 0));
+    }
 
-            return false;
+    public void AppendDebugMessage(string message) {
+        if (!playersListeningToDebug) {
+            return;
         }
 
-        if (!Field.AiMetadata.TryGet(name, out AiMetadata? metadata)) {
-            return false;
+        if (debugMessages.Count > 0 && debugMessages.Last().Last() != '\n') {
+            debugMessages.Add("\n");
         }
 
-        AiMetadata = metadata;
-
-        return true;
+        debugMessages.Add(message);
     }
 }

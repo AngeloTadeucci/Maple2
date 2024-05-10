@@ -9,11 +9,13 @@ namespace Maple2.Model.Metadata;
 public record AiMetadata(
     string Name,
     AiMetadata.Condition[] Reserved,
-    AiMetadata.Node[] Battle,
-    AiMetadata.Node[] BattleEnd,
+    AiMetadata.Entry[] Battle,
+    AiMetadata.Entry[] BattleEnd,
     AiMetadata.AiPresetDefinition[] AiPresets) {
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
+    [JsonDerivedType(typeof(AiPreset), typeDiscriminator: nameof(AiPreset))]
+    [JsonDerivedType(typeof(Node), typeDiscriminator: nameof(Node))]
     [JsonDerivedType(typeof(TraceNode), typeDiscriminator: nameof(TraceNode))]
     [JsonDerivedType(typeof(SkillNode), typeDiscriminator: nameof(SkillNode))]
     [JsonDerivedType(typeof(TeleportNode), typeDiscriminator: nameof(TeleportNode))]
@@ -47,10 +49,13 @@ public record AiMetadata(
     [JsonDerivedType(typeof(CreateInteractObjectNode), typeDiscriminator: nameof(CreateInteractObjectNode))]
     [JsonDerivedType(typeof(RemoveMeNode), typeDiscriminator: nameof(RemoveMeNode))]
     [JsonDerivedType(typeof(SuicideNode), typeDiscriminator: nameof(SuicideNode))]
+    [JsonDerivedType(typeof(AiPresetDefinition), typeDiscriminator: nameof(AiPresetDefinition))]
+    public record Entry(
+        string Name);
+
     public record Node(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) {
+        Entry[] Entries) : Entry(Name) {
     }
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -68,25 +73,21 @@ public record AiMetadata(
     [JsonDerivedType(typeof(TrueCondition), typeDiscriminator: nameof(TrueCondition))]
     public record Condition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) {
-    }
+        Entry[] Entries) : Node(Name, Entries);
 
     public record AiPresetDefinition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) {
+        Entry[] Entries) : Node(Name, Entries) {
     }
 
     public record AiPreset(
-        string Name) {
+        string Name) : Entry(Name) {
     }
 
     #region Nodes
     public record TraceNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Limit,
         int SkillIdx,
         string Animation,
@@ -94,12 +95,11 @@ public record AiMetadata(
         int Till,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SkillNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Idx,
         short Level,
         int Prob,
@@ -110,24 +110,22 @@ public record AiMetadata(
         long InitialCooltime,
         long Cooltime,
         int Limit,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record TeleportNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         Vector3 Pos,
         int Prob,
         Vector3 FacePos,
         int FaceTarget,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record StandbyNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Limit,
         int Prob,
         string Animation, // kfm anim name
@@ -135,20 +133,18 @@ public record AiMetadata(
         int FaceTarget,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SetDataNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
-        long Cooltime) : Node(Name, Nodes, AiPresets);
+        long Cooltime) : Node(Name, Entries);
 
 	public record TargetNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         NodeTargetType Type,
         int Prob,
         int Rank,
@@ -157,66 +153,60 @@ public record AiMetadata(
         int From,
         int To,
         Vector3 Center,
-        NodeAiTarget Target, // hostile, friendly
+        NodeAiTarget Target,
         bool NoChangeWhenNoTarget,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SayNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Message,
         int Prob,
         int DurationTick,
         int DelayTick,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SetValueNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
         long InitialCooltime,
         long Cooltime,
         bool IsModify,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record ConditionsNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         Condition[] Conditions,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record JumpNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         Vector3 Pos,
         int Speed,
         float HeightMultiplier,
         NodeJumpType Type,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SelectNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int[] Prob,
-        bool useNpcProb) : Node(Name, Nodes, AiPresets);
+        bool useNpcProb) : Node(Name, Entries);
 
 	public record MoveNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         Vector3 Destination,
         int Prob,
         string Animation, // kfm anim name
@@ -225,12 +215,11 @@ public record AiMetadata(
         int FaceTarget,
         long InitialCooltime,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SummonNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int NpcId,
         int NpcCountMax,
         int NpcCount,
@@ -242,73 +231,66 @@ public record AiMetadata(
         Vector3 SummonTargetOffset,
         Vector3 SummonRadius,
         int Group,
-        NodeSummonMaster Master, // Slave, None
-        NodeSummonOption[] Option, // masterHP,hitDamage
+        NodeSummonMaster Master,
+        NodeSummonOption[] Option,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record TriggerSetUserValueNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int TriggerID,
         string Key,
         int Value,
         long Cooltime,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record RideNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         NodeRideType Type,
         bool IsRideOff,
-        int[] RideNpcIDs) : Node(Name, Nodes, AiPresets);
+        int[] RideNpcIDs) : Node(Name, Entries);
 
 	public record SetSlaveValueNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
         bool IsRandom,
         long Cooltime,
         bool IsModify,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record SetMasterValueNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
         bool IsRandom,
         long Cooltime,
         bool IsModify,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record RunawayNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Animation, // kfm anim name
         int SkillIdx,
         int Till,
         int Limit,
         Vector3 FacePos,
         long InitialCooltime,
-        long Cooltime) : Node(Name, Nodes, AiPresets);
+        long Cooltime) : Node(Name, Entries);
 
 	public record MinimumHpNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        float HpPercent) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        float HpPercent) : Node(Name, Entries);
 
 	public record BuffNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Id,
         NodeBuffType Type,
         short Level,
@@ -316,191 +298,167 @@ public record AiMetadata(
         long InitialCooltime,
         long Cooltime,
         bool IsTarget,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record TargetEffectNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string EffectName // xml effect
-        ) : Node(Name, Nodes, AiPresets);
+        ) : Node(Name, Entries);
 
 	public record ShowVibrateNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int GroupId) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        int GroupId) : Node(Name, Entries);
 
 	public record SidePopupNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         NodePopupType Type,
         string Illust, // side popup asset name
         int Duration,
         string Script,
         string Sound, // sound asset name
         string Voice // voice asset path
-        ) : Node(Name, Nodes, AiPresets);
+        ) : Node(Name, Entries);
 
 	public record SetValueRangeTargetNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
         int Height,
         int Radius,
         long Cooltime,
         bool IsModify,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Node(Name, Entries);
 
 	public record AnnounceNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Message,
         int DurationTick,
-        long Cooltime) : Node(Name, Nodes, AiPresets);
+        long Cooltime) : Node(Name, Entries);
 
 	public record ModifyRoomTimeNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int TimeTick,
-        bool IsShowEffect) : Node(Name, Nodes, AiPresets);
+        bool IsShowEffect) : Node(Name, Entries);
+
     public record HideVibrateAllNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        bool IsKeepBattle) : Node(Name, Entries);
 
     public record TriggerModifyUserValueNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int TriggerID,
         string Key,
-        int Value) : Node(Name, Nodes, AiPresets);
+        int Value) : Node(Name, Entries);
 
 	public record RemoveSlavesNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        bool IsKeepBattle) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        bool IsKeepBattle) : Node(Name, Entries);
 
     public record CreateRandomRoomNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int RandomRoomId,
-        int PortalDuration) : Node(Name, Nodes, AiPresets);
+        int PortalDuration) : Node(Name, Entries);
 
     public record CreateInteractObjectNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Normal, // kfm anim name
         int InteractID,
         int LifeTime,
         string KfmName,
         string Reactable // kfm anim name
-        ) : Node(Name, Nodes, AiPresets);
+        ) : Node(Name, Entries);
 
 	public record RemoveMeNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries) : Node(Name, Entries);
 
     public record SuicideNode(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) : Node(Name, Nodes, AiPresets);
+        Entry[] Entries) : Node(Name, Entries);
     #endregion
 
     #region Conditions
     public record DistanceOverCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int Value) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        int Value) : Condition(Name, Entries);
 
 	public record CombatTimeCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int BattleTimeBegin,
-        int BattleTimeLoop,
-        int BattleTimeEnd) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        long BattleTimeBegin,
+        long BattleTimeLoop,
+        long BattleTimeEnd) : Condition(Name, Entries);
 
 	public record DistanceLessCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int Value) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        int Value) : Condition(Name, Entries);
 
 	public record SkillRangeCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int SkillIdx,
         short SkillLev,
-        bool IsKeepBattle) : Condition(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Condition(Name, Entries);
 
 	public record ExtraDataCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         string Key,
         int Value,
         AiConditionOp Op,
-        bool IsKeepBattle) : Condition(Name, Nodes, AiPresets);
+        bool IsKeepBattle) : Condition(Name, Entries);
 
 	public record SlaveCountCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Count,
         bool UseSummonGroup,
-        int SummonGroup) : Condition(Name, Nodes, AiPresets);
+        int SummonGroup) : Condition(Name, Entries);
 
     public record SlaveCountOpCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int SlaveCount,
-        AiConditionOp SlaveCountOp) : Condition(Name, Nodes, AiPresets);
+        AiConditionOp SlaveCountOp) : Condition(Name, Entries);
 
     public record HpOverCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int Value) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        int Value) : Condition(Name, Entries);
 
 	public record StateCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        AiConditionTargetState TargetState) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        AiConditionTargetState TargetState) : Condition(Name, Entries);
 
 	public record AdditionalCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
+        Entry[] Entries,
         int Id,
         short Level,
         int OverlapCount,
-        bool IsTarget) : Condition(Name, Nodes, AiPresets);
+        bool IsTarget) : Condition(Name, Entries);
 
 	public record HpLessCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets,
-        int Value) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries,
+        int Value) : Condition(Name, Entries);
 
 	public record TrueCondition(
         string Name,
-        Node[] Nodes,
-        AiPreset[] AiPresets) : Condition(Name, Nodes, AiPresets);
+        Entry[] Entries) : Condition(Name, Entries);
     #endregion
 }
