@@ -116,19 +116,19 @@ public class FieldNpc : Actor<Npc> {
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
 
     private List<string> debugMessages = new List<string>();
-    private bool playersListeningToDebug = false;
+    private bool playersListeningToDebug = false; // controls whether messages should log
 
     public override void Update(long tickCount) {
         if (IsDead) return;
 
         base.Update(tickCount);
 
-        debugMessages.Clear();
-        playersListeningToDebug = false;
+        // controls whether currently logged messages should print
+        bool playersListeningToDebugNow = false;
 
         foreach ((int objectId, FieldPlayer player) in Field.Players) {
             if (player.DebugAi) {
-                playersListeningToDebug = true;
+                playersListeningToDebugNow = true;
 
                 break;
             }
@@ -136,9 +136,12 @@ public class FieldNpc : Actor<Npc> {
 
         AiState.Update(tickCount);
 
-        if (playersListeningToDebug && debugMessages.Count > 0) {
+        if (playersListeningToDebugNow && debugMessages.Count > 0) {
             Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(true, ObjectId, String.Join("", debugMessages.ToArray()), 2500, 0));
         }
+
+        debugMessages.Clear();
+        playersListeningToDebug = playersListeningToDebugNow;
 
         NpcRoutine.Result result = CurrentRoutine.Update(TimeSpan.FromMilliseconds(tickCount - lastUpdate));
         if (result is NpcRoutine.Result.Success or NpcRoutine.Result.Failure) {
