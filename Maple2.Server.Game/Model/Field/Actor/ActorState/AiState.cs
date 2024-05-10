@@ -54,7 +54,8 @@ public class AiState {
         if (nextUpdate > tickCount) {
             return;
         }
-        if (AiMetadata is null || lastEvaluated != AiMetadata) {
+
+        if (AiMetadata is null) {
             if (actor.Value.Metadata.AiPath != "") {
                 actor.AppendDebugMessage("Missing AI\n");
                 actor.AppendDebugMessage(actor.Value.Metadata.AiPath);
@@ -63,6 +64,10 @@ public class AiState {
             aiStack.Clear();
 
             return;
+        }
+
+        if (lastEvaluated != AiMetadata) {
+            aiStack.Clear();
         }
 
         lastEvaluated = AiMetadata;
