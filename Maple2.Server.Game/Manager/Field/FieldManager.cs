@@ -128,7 +128,7 @@ public sealed partial class FieldManager : IDisposable {
                         continue;
                     }
 
-                    SpawnNpc(npc, spawnPointNpc.Position, spawnPointNpc.Rotation);
+                    SpawnNpc(npc, spawnPointNpc);
                 }
             }
         }

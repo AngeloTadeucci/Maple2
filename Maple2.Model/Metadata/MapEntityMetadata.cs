@@ -27,6 +27,7 @@ public class MapEntityMetadata {
     public required IReadOnlyDictionary<Guid, InteractObject> Interacts { get; init; }
     public required IReadOnlyDictionary<int, TriggerModel> TriggerModels { get; init; }
     public required ITriggerStorage Trigger { get; init; }
+    public required IReadOnlyList<MS2PatrolData> Patrols { get; init; }
 }
 
 public interface ITriggerStorage : IReadOnlyDictionary<int, Trigger> {

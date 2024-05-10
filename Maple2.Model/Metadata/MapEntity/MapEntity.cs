@@ -55,4 +55,5 @@ public class MapEntity {
 [JsonDerivedType(typeof(Ms2TriggerSound), 558345729)]
 [JsonDerivedType(typeof(TriggerModel), 1436346081)]
 [JsonDerivedType(typeof(Ms2Bounding), 1539875768)]
+[JsonDerivedType(typeof(MS2PatrolData), 250722994)]
 public abstract record MapBlock;
