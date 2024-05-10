@@ -75,7 +75,7 @@ public partial class FieldManager {
         return fieldPlayer;
     }
 
-    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null) {
+    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
         Agent? agent = Navigation.AddAgent(npc, position);
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
@@ -83,7 +83,7 @@ public partial class FieldManager {
         if (agent is not null) {
             spawnPosition = Navigation.FromPosition(agent.getPosition());
         }
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation)) {
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,
@@ -97,6 +97,10 @@ public partial class FieldManager {
         }
 
         return fieldNpc;
+    }
+
+    private FieldNpc? SpawnNpc(NpcMetadata npc, SpawnPointNPC spawnPointNpc) {
+        return SpawnNpc(npc, spawnPointNpc.Position, spawnPointNpc.Rotation, null, spawnPointNpc);
     }
 
     public FieldPet? SpawnPet(Item pet, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, FieldPlayer? player = null) {

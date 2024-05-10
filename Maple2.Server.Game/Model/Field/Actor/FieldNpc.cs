@@ -13,6 +13,7 @@ using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
+using Serilog;
 
 namespace Maple2.Server.Game.Model;
 
@@ -73,6 +74,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AgentNavigation? Navigation;
     public readonly AnimationSequence IdleSequence;
     public readonly AnimationSequence? JumpSequence;
+    public readonly AnimationSequence? WalkSequence;
     private readonly WeightedSet<string> defaultRoutines;
     private NpcRoutine CurrentRoutine { get; set; }
 
@@ -82,10 +84,13 @@ public class FieldNpc : Actor<Npc> {
     public override Stats Stats { get; }
     public int TargetId = 0;
     public AiMetadata? AiMetadata { get; private set; }
+    private readonly MS2PatrolData? patrolData;
+    private int currentWaypointIndex = 0;
 
-    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc) : base(field, objectId, npc) {
+    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string? patrolDataUUID = null) : base(field, objectId, npc) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
+        WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         defaultRoutines = new WeightedSet<string>();
         foreach (NpcAction action in Value.Metadata.Action.Actions) {
             defaultRoutines.Add(action.Name, action.Probability);
@@ -93,6 +98,10 @@ public class FieldNpc : Actor<Npc> {
 
         if (agent is not null) {
             Navigation = Field.Navigation.ForAgent(this, agent);
+
+            if (patrolDataUUID is not null) {
+                patrolData = field.Entities.Patrols.FirstOrDefault(x => x.Uuid == patrolDataUUID);
+            }
         }
         CurrentRoutine = new WaitRoutine(this, -1, 1f);
         Stats = new Stats(npc.Metadata.Stat);
@@ -129,6 +138,44 @@ public class FieldNpc : Actor<Npc> {
     }
 
     private NpcRoutine NextRoutine() {
+        if (patrolData is not null && Navigation is not null && patrolData.WayPoints.Count > 0) {
+            MS2WayPoint waypoint = patrolData.WayPoints[currentWaypointIndex];
+
+            if (!string.IsNullOrEmpty(waypoint.ArriveAnimation) && CurrentRoutine is not AnimateRoutine) {
+                if (Value.Animations.TryGetValue(waypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
+                    return new AnimateRoutine(this, arriveSequence);
+                }
+            }
+
+            currentWaypointIndex++;
+
+            if (currentWaypointIndex >= patrolData.WayPoints.Count) {
+                currentWaypointIndex = 0;
+            }
+
+            waypoint = patrolData.WayPoints[currentWaypointIndex];
+
+            if (Navigation.PathTo(waypoint.Position)) {
+                if (Value.Animations.TryGetValue(waypoint.ApproachAnimation, out AnimationSequence? patrolSequence)) {
+                    if (waypoint.ApproachAnimation.StartsWith("Walk_")) {
+                        return MoveRoutine.Walk(this, patrolSequence.Id);
+                    } else if (waypoint.ApproachAnimation.StartsWith("Run_")) {
+                        return MoveRoutine.Run(this, patrolSequence.Id);
+                    }
+                }
+                if (WalkSequence is not null) {
+                    return MoveRoutine.Walk(this, WalkSequence.Id);
+                }
+
+                // Log.Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, patrolData.Uuid);
+                return new WaitRoutine(this, IdleSequence.Id, 1f);
+            } else {
+                // Log.Logger.Warning("Failed to path to waypoint index({WaypointIndex}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypointIndex, waypoint.Position, Value.Metadata.Name, patrolData.Uuid);
+                return new WaitRoutine(this, IdleSequence.Id, 1f);
+            }
+        }
+
+
         string routineName = defaultRoutines.Get();
         if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? sequence)) {
             Logger.Error("Invalid routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
