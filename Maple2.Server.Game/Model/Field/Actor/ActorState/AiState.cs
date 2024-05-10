@@ -240,54 +240,26 @@ public class AiState {
     }
 
     private void ProcessNode(SelectNode node) {
-        var weightedEntries = new WeightedSet<int>();
-
-        bool foundZeroProb = false;
+        var weightedEntries = new WeightedSet<(Entry, int)>();
 
         for (int i = 0; i < node.Prob.Length; ++i) {
-            if (node.Prob[i] == 0) {
-                foundZeroProb = true;
-
-                continue;
-            }
-
             if (!CanEvaluateNode(node.Entries[i])) {
                 continue;
             }
 
-            weightedEntries.Add(i, node.Prob[i]);
+            weightedEntries.Add((node.Entries[i], i), node.Prob[i]);
         }
 
-        int selectedIndex = -1;
-
-        if (weightedEntries.Count > 0) {
-            int stackIndex = weightedEntries.Get();
-
-            selectedIndex = stackIndex;
-        }
-        else if (foundZeroProb) {
-            // only evaluate if prob=0 nodes are found and none of the weighted ones passed
-            for (int i = 0; i < node.Prob.Length; ++i) {
-                if (i >= node.Entries.Length) {
-                    break;
-                }
-
-                if (node.Prob[i] == 0 && CanEvaluateNode(node.Entries[i])) {
-                    selectedIndex = i;
-
-                    break;
-                }
-            }
-        }
-
-        if (selectedIndex == -1) {
+        if (weightedEntries.Count == 0) {
             return;
         }
 
-        aiStack[aiStack.Count - 1] = new StackEntry { Node = node, Index = selectedIndex, LockIndex = true };
+        (Entry entry, int index) selected = weightedEntries.Get();
 
-        Push(node.Entries[selectedIndex]);
-        Process(node.Entries[selectedIndex]);
+        aiStack[aiStack.Count - 1] = new StackEntry { Node = node, Index = selected.index, LockIndex = true };
+
+        Push(selected.entry);
+        Process(selected.entry);
     }
 
     private void ProcessNode(MoveNode node) {
