@@ -33,6 +33,10 @@ public class AiState {
             return false;
         }
 
+        if (name == "AI_DefaultNew.xml") {
+            name = "AI_Default.xml";
+        }
+
         AiMetadata? metadata;
 
         if (!actor.Field.AiMetadata.TryGet(name, out metadata)) {
