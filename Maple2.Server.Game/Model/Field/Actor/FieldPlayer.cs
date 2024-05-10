@@ -20,6 +20,8 @@ public class FieldPlayer : Actor<Player> {
     private long battleTick;
     private bool inBattle;
 
+    private bool debugAi = false;
+
     public int TagId = 1;
 
     private readonly EventQueue scheduler;
@@ -49,6 +51,17 @@ public class FieldPlayer : Actor<Player> {
             if (inBattle) {
                 battleTick = Environment.TickCount64;
             }
+        }
+    }
+
+    public bool DebugAi {
+        get => debugAi;
+        set {
+            if (value) {
+                Field.BroadcastAiType(Session);
+            }
+
+            debugAi = value;
         }
     }
 

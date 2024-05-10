@@ -42,7 +42,7 @@ public enum NodeTargetType {
     HasAdditional,
     RandAssociated,
     GrabbedUser,
-    Random,
+    Random = Rand,
 }
 
 public enum NodeJumpType {
@@ -55,8 +55,8 @@ public enum NodeRideType {
 }
 
 public enum NodeBuffType {
-    Remove,
     Add,
+    Remove,
 }
 
 public enum NodePopupType {

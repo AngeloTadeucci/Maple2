@@ -107,7 +107,7 @@ public static class TriggerPacket {
         return pWriter;
     }
 
-    public static ByteWriter SidePopupTalk(int duration, string illustration, string voice, string script) {
+    public static ByteWriter SidePopupTalk(int duration, string illustration, string voice, string script, string sound = "") {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.SidePopup);
         pWriter.Write(1); // Talk
@@ -115,13 +115,13 @@ public static class TriggerPacket {
         pWriter.WriteString();
         pWriter.WriteString(illustration);
         pWriter.WriteString(voice);
-        pWriter.WriteString(); // sound?
+        pWriter.WriteString(sound); // sound?
         pWriter.WriteUnicodeString(script);
 
         return pWriter;
     }
 
-    public static ByteWriter SidePopupCutIn(int duration, string illustration, string voice, string script) {
+    public static ByteWriter SidePopupCutIn(int duration, string illustration, string voice, string script, string sound = "") {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.SidePopup);
         pWriter.WriteInt(2); // CutIn
@@ -129,7 +129,7 @@ public static class TriggerPacket {
         pWriter.WriteString();
         pWriter.WriteString(illustration);
         pWriter.WriteString(voice);
-        pWriter.WriteString(); // sound?
+        pWriter.WriteString(sound); // sound?
         pWriter.WriteUnicodeString(script);
 
         return pWriter;
