@@ -161,7 +161,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     private NpcRoutine NextRoutine() {
-        if (patrolData is not null && Navigation is not null && patrolData.WayPoints.Count > 0) {
+        if (patrolData?.WayPoints.Count > 0 && Navigation is not null) {
             MS2WayPoint waypoint = patrolData.WayPoints[currentWaypointIndex];
 
             if (!string.IsNullOrEmpty(waypoint.ArriveAnimation) && CurrentRoutine is not AnimateRoutine) {
