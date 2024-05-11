@@ -13,6 +13,7 @@ using Maple2.Tools;
 using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Model;
 
@@ -25,12 +26,13 @@ public class FieldNpc : Actor<Npc> {
     private Vector3 velocity;
     private NpcState state;
     private short sequenceId;
-    public override Vector3 Position { get; set; }
+    public override Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
     public override Vector3 Rotation {
         get => rotation;
         set {
             if (value == rotation) return;
             rotation = value;
+            Transform.RotationAnglesDegrees = value;
             SendControl = true;
         }
     }
@@ -150,6 +152,11 @@ public class FieldNpc : Actor<Npc> {
         NpcRoutine.Result result = CurrentRoutine.Update(TimeSpan.FromMilliseconds(tickCount - lastUpdate));
         if (result is NpcRoutine.Result.Success or NpcRoutine.Result.Failure) {
             CurrentRoutine = CurrentRoutine.NextRoutine?.Invoke() ?? NextRoutine();
+        }
+
+        if (!Transform.RotationAnglesDegrees.IsNearlyEqual(rotation)) {
+            rotation = Transform.RotationAnglesDegrees;
+            SendControl = true;
         }
 
         if (SendControl) {

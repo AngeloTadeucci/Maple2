@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -104,5 +105,48 @@ public static class VectorExtensions {
                 yield return new Vector3(x * BLOCK_SIZE, y * BLOCK_SIZE, position.Z);
             }
         }
+    }
+
+    // Converts Euler angles in radians to degrees
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 AnglesToDegrees(this Vector3 vector) {
+        return new Vector3(
+            180 * vector.X / (float) Math.PI,
+            180 * vector.Y / (float) Math.PI,
+            180 * vector.Z / (float) Math.PI
+        );
+    }
+
+    // Converts Euler angles in degrees to radians
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 AnglesToRadians(this Vector3 vector) {
+        return new Vector3(
+            (float) Math.PI * vector.X / 180,
+            (float) Math.PI * vector.Y / 180,
+            (float) Math.PI * vector.Z / 180
+        );
+    }
+
+    // Used to check if two floating point values are just about equal, within a margin of error.
+    // Used to counteract floating point drift that accumulates over many floating point operations.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsNearlyEqual(this Vector3 vector1, Vector3 vector2, float epsilon = 1e-5f) {
+        bool allComponentsEqual = vector1.X.IsNearlyEqual(vector2.X, epsilon);
+        allComponentsEqual &= vector1.Y.IsNearlyEqual(vector2.Y, epsilon);
+        allComponentsEqual &= vector1.Z.IsNearlyEqual(vector2.Z, epsilon);
+
+        return allComponentsEqual;
+    }
+
+    // Used to check if two floating point values are just about equal, within a margin of error.
+    // Used to counteract floating point drift that accumulates over many floating point operations.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsNearlyEqual(this Vector4 vector1, Vector4 vector2, float epsilon = 1e-5f) {
+        bool allComponentsEqual = vector1.X.IsNearlyEqual(vector2.X, epsilon);
+        allComponentsEqual &= vector1.Y.IsNearlyEqual(vector2.Y, epsilon);
+        allComponentsEqual &= vector1.Z.IsNearlyEqual(vector2.Z, epsilon);
+        allComponentsEqual &= vector1.W.IsNearlyEqual(vector2.W, epsilon);
+
+        return allComponentsEqual;
     }
 }
