@@ -85,7 +85,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     // Init is separate from constructor to allow properties to be injected first.
-    public void Init() {
+    private void Init() {
         if (initialized) {
             return;
         }
