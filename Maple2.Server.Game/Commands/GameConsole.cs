@@ -9,16 +9,28 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class GameConsole(GameSession session) : IConsole {
-    public IStandardStreamWriter Out { get; } = new GameOutputStreamWriter(session);
+public class GameConsole : IConsole {
+    public IStandardStreamWriter Out { get; }
     public bool IsOutputRedirected => true;
-    public IStandardStreamWriter Error { get; } = new GameErrorStreamWriter(session);
+    public IStandardStreamWriter Error { get; }
     public bool IsErrorRedirected => true;
     public bool IsInputRedirected => true;
 
-    private struct GameOutputStreamWriter(GameSession session) : IStandardStreamWriter {
-        private readonly StringBuilder pending = new();
-        private bool joinNewline = false;
+    public GameConsole(GameSession session) {
+        Out = new GameOutputStreamWriter(session);
+        Error = new GameErrorStreamWriter(session);
+    }
+
+    private struct GameOutputStreamWriter : IStandardStreamWriter {
+        private readonly GameSession session;
+        private readonly StringBuilder pending;
+        private bool joinNewline;
+
+        public GameOutputStreamWriter(GameSession session) {
+            this.session = session;
+            this.pending = new StringBuilder();
+            this.joinNewline = false;
+        }
 
         public void Write(string? value) {
             value = value?.Replace("\r", string.Empty);
@@ -53,7 +65,6 @@ public class GameConsole(GameSession session) : IConsole {
     }
 
     private readonly struct GameErrorStreamWriter(GameSession session) : IStandardStreamWriter {
-
         public void Write(string? value) {
             if (string.IsNullOrWhiteSpace(value)) {
                 return;

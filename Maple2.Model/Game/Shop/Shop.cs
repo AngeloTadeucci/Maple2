@@ -6,8 +6,8 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Shop;
 
-public class Shop(int id) : IByteSerializable {
-    public readonly int Id = id;
+public class Shop : IByteSerializable {
+    public readonly int Id;
     public int CategoryId { get; init; }
     public string Name { get; init; }
     public ShopSkin Skin { get; init; }
@@ -19,7 +19,12 @@ public class Shop(int id) : IByteSerializable {
     public bool RandomizeOrder { get; init; }
     public long RestockTime { get; set; }
     public ShopRestockData? RestockData { get; init; }
-    public SortedDictionary<int, ShopItem> Items = new();
+    public SortedDictionary<int, ShopItem> Items;
+
+    public Shop(int id) {
+        Id = id;
+        Items = new SortedDictionary<int, ShopItem>();
+    }
 
     /// <summary>
     /// Clones shops for instanced player shops.

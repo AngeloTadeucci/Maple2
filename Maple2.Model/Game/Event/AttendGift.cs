@@ -18,7 +18,11 @@ public class AttendGift : GameEventInfo {
     public AttendGiftCurrencyType SkipDayCurrencyType { get; init; }
     public int SkipDaysAllowed { get; init; }
     public long SkipDayCost { get; init; }
-    public IDictionary<int, RewardItem> Rewards { get; init; } = new Dictionary<int, RewardItem>();
+    public IDictionary<int, RewardItem> Rewards { get; init; }
+
+    public AttendGift() {
+        Rewards = new Dictionary<int, RewardItem>();
+    }
 
     public override void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);

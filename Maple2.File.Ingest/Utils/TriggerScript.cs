@@ -3,10 +3,14 @@
 namespace Maple2.File.Ingest.Utils;
 
 internal class TriggerScript {
-    public readonly IList<State> States = new List<State>();
-    public readonly IList<string> Imports = new List<string>();
+    public readonly IList<State> States;
+    public readonly IList<string> Imports;
     public bool Shared { get; init; }
 
+    public TriggerScript() {
+        States = new List<State>();
+        Imports = new List<string>();
+    }
     public class State {
         public readonly List<string> Comments = [];
         public string Name = string.Empty;

@@ -50,7 +50,7 @@ if (Test-Path .env) {
 $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{ 
     InitialDirectory = [Environment]::GetFolderPath('Desktop')
     Filter = "MapleStory2.exe|MapleStory2.exe"
-	Title = "Maplestory2 Executable"
+    Title = "Maplestory2 Executable"
 }
 $null = $FileBrowser.ShowDialog()
 

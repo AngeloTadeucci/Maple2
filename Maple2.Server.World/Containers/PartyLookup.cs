@@ -7,10 +7,19 @@ using Maple2.Model.Game.Party;
 
 namespace Maple2.Server.World.Containers;
 
-public class PartyLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) : IDisposable {
+public class PartyLookup : IDisposable {
+    private readonly ChannelClientLookup channelClients;
+    private readonly PlayerInfoLookup playerLookup;
 
-    private readonly ConcurrentDictionary<int, PartyManager> parties = new();
+    private readonly ConcurrentDictionary<int, PartyManager> parties;
     private int nextPartyId = 1;
+
+    public PartyLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) {
+        this.channelClients = channelClients;
+        this.playerLookup = playerLookup;
+
+        parties = new ConcurrentDictionary<int, PartyManager>();
+    }
 
     public void Dispose() {
         foreach (PartyManager manager in parties.Values) {

@@ -6,8 +6,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Model.Game;
 
-public class PlotInfo(UgcMapGroup metadata) {
-    public readonly UgcMapGroup Metadata = metadata;
+public class PlotInfo {
+    public readonly UgcMapGroup Metadata;
 
     public long Id { get; set; }
     public long OwnerId { get; set; }
@@ -25,6 +25,10 @@ public class PlotInfo(UgcMapGroup metadata) {
     public int ApartmentNumber { get; init; }
 
     public long ExpiryTime { get; set; }
+
+    public PlotInfo(UgcMapGroup metadata) {
+        Metadata = metadata;
+    }
 
     public PlotState State {
         get {

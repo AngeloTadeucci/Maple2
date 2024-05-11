@@ -6,9 +6,14 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Manager;
 
-public class CurrencyManager(GameSession session) {
+public class CurrencyManager {
+    private readonly GameSession session;
 
     private Currency Currency => session.Player.Value.Currency;
+
+    public CurrencyManager(GameSession session) {
+        this.session = session;
+    }
 
     public long Meret {
         get => Currency.Meret;

@@ -25,9 +25,14 @@ public class RideOnAction : IByteSerializable {
     }
 }
 
-public class RideOnActionUseItem(int rideId, int objectId, Item item) : RideOnAction(RideOnType.UseItem, rideId, objectId) {
+public class RideOnActionUseItem : RideOnAction {
+    private readonly Item item;
     public int ItemId => item.Id;
     public long ItemUid => item.Uid;
+
+    public RideOnActionUseItem(int rideId, int objectId, Item item) : base(RideOnType.UseItem, rideId, objectId) {
+        this.item = item;
+    }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -37,10 +42,14 @@ public class RideOnActionUseItem(int rideId, int objectId, Item item) : RideOnAc
     }
 }
 
-public class RideOnActionAdditionalEffect(int rideId, int objectId, int skillId, short skillLevel)
-    : RideOnAction(RideOnType.AdditionalEffect, rideId, objectId) {
-    public readonly int SkillId = skillId;
-    public readonly short SkillLevel = skillLevel;
+public class RideOnActionAdditionalEffect : RideOnAction {
+    public readonly int SkillId;
+    public readonly short SkillLevel;
+
+    public RideOnActionAdditionalEffect(int rideId, int objectId, int skillId, short skillLevel) : base(RideOnType.AdditionalEffect, rideId, objectId) {
+        SkillId = skillId;
+        SkillLevel = skillLevel;
+    }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);

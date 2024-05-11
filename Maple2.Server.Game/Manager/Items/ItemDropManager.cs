@@ -6,7 +6,12 @@ using Maple2.Tools;
 
 namespace Maple2.Server.Game.Manager.Items;
 
-public class ItemDropManager(FieldManager field) {
+public class ItemDropManager {
+    private readonly FieldManager field;
+
+    public ItemDropManager(FieldManager field) {
+        this.field = field;
+    }
 
     public IList<Item> GetGlobalDropItem(int globalDropBoxId, int level = 0) {
         if (!field.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? dropGroup)) {

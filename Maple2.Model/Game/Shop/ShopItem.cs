@@ -5,8 +5,8 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Shop;
 
-public class ShopItem(int id) : IByteSerializable {
-    public readonly int Id = id;
+public class ShopItem : IByteSerializable {
+    public readonly int Id;
     public int ItemId { get; init; }
     public ShopCost Cost { get; init; } = ShopCost.Zero;
     public byte Rarity { get; init; }
@@ -28,6 +28,10 @@ public class ShopItem(int id) : IByteSerializable {
     public bool AutoPreviewEquip { get; init; }
     public RestrictedBuyData? RestrictedBuyData { get; init; }
     public Item Item;
+
+    public ShopItem(int id) {
+        Id = id;
+    }
 
     public ShopItem Clone() {
         return new ShopItem(Id) {

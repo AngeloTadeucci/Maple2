@@ -7,8 +7,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class SkillMapper(M2dReader xmlReader) : TypeMapper<StoredSkillMetadata> {
-    private readonly SkillParser parser = new(xmlReader);
+public class SkillMapper : TypeMapper<StoredSkillMetadata> {
+    private readonly SkillParser parser;
+
+    public SkillMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<StoredSkillMetadata> Map() {
         foreach ((int id, string name, SkillData data) in parser.Parse()) {

@@ -5,8 +5,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class UgcMapMapper(M2dReader xmlReader) : TypeMapper<UgcMapMetadata> {
-    private readonly UgcMapParser parser = new(xmlReader);
+public class UgcMapMapper : TypeMapper<UgcMapMetadata> {
+    private readonly UgcMapParser parser;
+
+    public UgcMapMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<UgcMapMetadata> Map() {
         foreach ((int id, UgcMap data) in parser.Parse()) {

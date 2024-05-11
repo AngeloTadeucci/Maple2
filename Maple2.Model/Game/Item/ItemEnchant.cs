@@ -5,24 +5,31 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public sealed class ItemEnchant(
-    int enchants = 0,
-    int enchantExp = 0,
-    byte enchantCharges = 1,
-    bool tradeable = true,
-    int charges = 0,
-    Dictionary<BasicAttribute, BasicOption>? basicOptions = null)
-    : IByteSerializable, IByteDeserializable {
+public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
     public static readonly ItemEnchant Default = new ItemEnchant();
 
-    public int Enchants { get; set; } = enchants;
-    public int EnchantExp { get; set; } = enchantExp;
+    public int Enchants { get; set; }
+    public int EnchantExp { get; set; }
     // Enchant based peachy charges, otherwise always require 10 charges
-    public byte EnchantCharges { get; set; } = enchantCharges;
-    public bool Tradeable { get; private set; } = tradeable;
-    public int Charges { get; set; } = charges;
+    public byte EnchantCharges { get; set; }
+    public bool Tradeable { get; private set; }
+    public int Charges { get; set; }
 
-    public readonly Dictionary<BasicAttribute, BasicOption> BasicOptions = basicOptions ?? new Dictionary<BasicAttribute, BasicOption>();
+    public readonly Dictionary<BasicAttribute, BasicOption> BasicOptions;
+
+    public ItemEnchant(int enchants = 0,
+                       int enchantExp = 0,
+                       byte enchantCharges = 1,
+                       bool tradeable = true,
+                       int charges = 0,
+                       Dictionary<BasicAttribute, BasicOption>? basicOptions = null) {
+        Enchants = enchants;
+        EnchantExp = enchantExp;
+        EnchantCharges = enchantCharges;
+        Tradeable = tradeable;
+        Charges = charges;
+        BasicOptions = basicOptions ?? new Dictionary<BasicAttribute, BasicOption>();
+    }
 
     public ItemEnchant Clone() {
         return new ItemEnchant(Enchants, EnchantExp, EnchantCharges, Tradeable, Charges, new Dictionary<BasicAttribute, BasicOption>(BasicOptions));

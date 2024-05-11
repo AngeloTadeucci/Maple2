@@ -5,7 +5,7 @@ using Maple2.PacketLib.Tools;
 
 namespace Maple2.Model.Game;
 
-public class PremiumMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
+public class PremiumMarketItem : MarketItem {
     public required int Id { get; init; }
     public required int ParentId { get; init; }
     public required MeretMarketItemLabel Label { get; init; }
@@ -29,7 +29,11 @@ public class PremiumMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
     public required bool Giftable { get; init; }
     public required PremiumMarketPromoData? PromoData { get; init; }
     public required bool ShowSaleTime { get; init; }
-    public IList<PremiumMarketItem> AdditionalQuantities { get; set; } = new List<PremiumMarketItem>();
+    public IList<PremiumMarketItem> AdditionalQuantities { get; set; }
+
+    public PremiumMarketItem(ItemMetadata metadata) : base(metadata) {
+        AdditionalQuantities = new List<PremiumMarketItem>();
+    }
 
     public override void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);

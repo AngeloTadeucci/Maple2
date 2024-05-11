@@ -9,8 +9,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class NpcMapper(M2dReader xmlReader) : TypeMapper<NpcMetadata> {
-    private readonly NpcParser parser = new(xmlReader);
+public class NpcMapper : TypeMapper<NpcMetadata> {
+    private readonly NpcParser parser;
+
+    public NpcMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<NpcMetadata> Map() {
         foreach ((int id, string name, NpcData data, List<EffectDummy> _) in parser.Parse()) {

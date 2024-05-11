@@ -6,15 +6,21 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-public sealed class ItemTransfer(TransferFlag flag = 0, int remainTrades = 0, int repackageCount = 0, ItemBinding? binding = null)
-    : IByteSerializable, IByteDeserializable {
+public sealed class ItemTransfer : IByteSerializable, IByteDeserializable {
     public static readonly ItemTransfer Default = new ItemTransfer();
 
-    public TransferFlag Flag { get; set; } = flag;
-    public int RemainTrades { get; set; } = remainTrades;
-    public int RepackageCount { get; set; } = repackageCount;
+    public TransferFlag Flag { get; set; }
+    public int RemainTrades { get; set; }
+    public int RepackageCount { get; set; }
 
-    public ItemBinding? Binding { get; private set; } = binding;
+    public ItemBinding? Binding { get; private set; }
+
+    public ItemTransfer(TransferFlag flag = 0, int remainTrades = 0, int repackageCount = 0, ItemBinding? binding = null) {
+        Flag = flag;
+        RemainTrades = remainTrades;
+        RepackageCount = repackageCount;
+        Binding = binding;
+    }
 
     public ItemTransfer Clone() {
         return new ItemTransfer(Flag, RemainTrades, RepackageCount, Binding?.Clone());

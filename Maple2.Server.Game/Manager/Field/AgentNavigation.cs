@@ -7,11 +7,22 @@ using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
 
-public sealed class AgentNavigation(FieldNpc npc, Agent agent, Mesh mesh, CollisionContext context)
-    : IDisposable {
+public sealed class AgentNavigation : IDisposable {
     private static readonly ILogger Logger = Log.Logger.ForContext<AgentNavigation>();
 
+    private readonly FieldNpc npc;
+    private readonly Agent agent;
+    private readonly Mesh mesh;
+    private readonly CollisionContext context;
+
     private PathEngine.Path? currentPath;
+
+    public AgentNavigation(FieldNpc npc, Agent agent, Mesh mesh, CollisionContext context) {
+        this.npc = npc;
+        this.agent = agent;
+        this.mesh = mesh;
+        this.context = context;
+    }
 
     public void Dispose() {
         // mesh+context are disposed by Navigation

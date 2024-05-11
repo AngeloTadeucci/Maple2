@@ -8,7 +8,15 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Manager;
 
-public class MasteryManager(GameSession session, Lua.Lua lua) {
+public class MasteryManager {
+
+    private readonly GameSession session;
+    private readonly Lua.Lua lua;
+
+    public MasteryManager(GameSession session, Lua.Lua lua) {
+        this.session = session;
+        this.lua = lua;
+    }
 
     private Mastery Mastery => session.Player.Value.Character.Mastery;
     private IDictionary<int, int> gatheringCounts => session.Config.GatheringCounts;

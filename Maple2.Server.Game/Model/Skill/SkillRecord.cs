@@ -3,17 +3,17 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Server.Game.Model.Skill;
 
-public class SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {
-    public readonly SkillMetadata Metadata = metadata;
+public class SkillRecord {
+    public readonly SkillMetadata Metadata;
     public SkillMetadataMotion Motion => Metadata.Data.Motions[MotionPoint];
     public SkillMetadataAttack Attack => Motion.Attacks[AttackPoint];
 
     public int SkillId => Metadata.Id;
     public short Level => Metadata.Level;
 
-    public readonly long CastUid = castUid;
+    public readonly long CastUid;
     public long TargetUid;
-    public readonly IActor Caster = caster;
+    public readonly IActor Caster;
 
     public int ServerTick;
     public byte MotionPoint { get; private set; }
@@ -30,7 +30,14 @@ public class SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {
     public int HoldInt;
     public string HoldString = string.Empty;
 
-    public IList<IActor> Targets = new List<IActor>();
+    public IList<IActor> Targets;
+
+    public SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {
+        Metadata = metadata;
+        CastUid = castUid;
+        Caster = caster;
+        Targets = new List<IActor>();
+    }
 
     public bool TrySetMotionPoint(byte motionPoint) {
         if (Metadata.Data.Motions.Length <= motionPoint) {

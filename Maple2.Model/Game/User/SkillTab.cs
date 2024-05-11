@@ -4,10 +4,15 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class SkillTab(string name) : IByteSerializable, IByteDeserializable {
+public class SkillTab : IByteSerializable, IByteDeserializable {
     public long Id;
-    public string Name = name;
-    public Dictionary<int, int> Skills = new();
+    public string Name;
+    public Dictionary<int, int> Skills;
+
+    public SkillTab(string name) {
+        Name = name;
+        Skills = new Dictionary<int, int>();
+    }
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteLong(Id);

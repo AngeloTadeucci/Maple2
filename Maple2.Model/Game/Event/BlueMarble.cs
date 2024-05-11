@@ -10,8 +10,13 @@ namespace Maple2.Model.Game.Event;
 /// Mapleopoly
 /// </summary>
 public class BlueMarble : GameEventInfo {
-    public IList<BlueMarbleEntry> Entries { get; set; } = new List<BlueMarbleEntry>();
-    public IList<BlueMarbleTile> Tiles { get; set; } = new List<BlueMarbleTile>();
+    public IList<BlueMarbleEntry> Entries { get; set; }
+    public IList<BlueMarbleTile> Tiles { get; set; }
+
+    public BlueMarble() {
+        Entries = new List<BlueMarbleEntry>();
+        Tiles = new List<BlueMarbleTile>();
+    }
 
     public override void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);

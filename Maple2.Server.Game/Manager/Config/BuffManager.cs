@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Maple2.Server.Game.Manager.Config;
 
-public class BuffManager(IActor actor) : IUpdatable {
+public class BuffManager : IUpdatable {
     #region ObjectId
     private int idCounter;
 
@@ -21,13 +21,20 @@ public class BuffManager(IActor actor) : IUpdatable {
     /// <returns>Returns a local ObjectId</returns>
     private int NextLocalId() => Interlocked.Increment(ref idCounter);
     #endregion
+    private readonly IActor actor;
     // TODO: Change this to support multiple buffs of the same id, different casters. Possibly also different levels?
     public ConcurrentDictionary<int, Buff> Buffs { get; } = new();
-    public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; } = new ConcurrentDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>>();
-    public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; } = new ConcurrentDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>>();
+    public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
+    public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
     private Dictionary<BasicAttribute, float> Resistances { get; } = new();
     public ReflectRecord? Reflect;
     private readonly ILogger logger = Log.ForContext<BuffManager>();
+
+    public BuffManager(IActor actor) {
+        this.actor = actor;
+        Invokes = new ConcurrentDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>>();
+        Compulsions = new ConcurrentDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>>();
+    }
 
     public void Initialize() {
         // Load buffs that are not broadcasted to the field

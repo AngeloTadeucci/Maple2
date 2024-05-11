@@ -7,14 +7,22 @@ namespace Maple2.Server.Game.Manager.Items;
 /// <remarks>
 /// This class is thread-safe.
 /// </remarks>
-public class ItemCollection(short size) : IEnumerable<Item> {
-    private readonly ReaderWriterLockSlim mutex = new();
-    private readonly IDictionary<long, short> uidToSlot = new Dictionary<long, short>();
-    private Item?[] items = new Item[size];
+public class ItemCollection : IEnumerable<Item> {
+    private readonly ReaderWriterLockSlim mutex;
+    private readonly IDictionary<long, short> uidToSlot;
+    private Item?[] items;
 
     public short OpenSlots => (short) (Size - Count);
     public short Size => (short) items.Length;
-    public short Count { get; private set; } = 0;
+    public short Count { get; private set; }
+
+    public ItemCollection(short size) {
+        mutex = new ReaderWriterLockSlim();
+        uidToSlot = new Dictionary<long, short>();
+        items = new Item[size];
+
+        Count = 0;
+    }
 
     public Item? this[short slot] {
         get {

@@ -6,16 +6,19 @@ using Maple2.Server.Game.Packets;
 
 namespace Maple2.Server.Game.Model;
 
-public class FieldItem(FieldManager field, int objectId, Item value, long msDuration = 0)
-    : FieldEntity<Item>(field, objectId, value) {
+public class FieldItem : FieldEntity<Item> {
     public IFieldEntity? Owner { get; init; }
 
-    private readonly long despawnTick = msDuration == 0 ? Environment.TickCount64 + (int) TimeSpan.FromMinutes(2).TotalMilliseconds :
-        Environment.TickCount64 + (int) msDuration;
+    private readonly long despawnTick;
     public bool FixedPosition { get; init; }
 
     public long ReceiverId { get; init; }
     public DropType Type { get; init; }
+
+    public FieldItem(FieldManager field, int objectId, Item value, long msDuration = 0) : base(field, objectId, value) {
+        despawnTick = msDuration == 0 ? Environment.TickCount64 + (int) TimeSpan.FromMinutes(2).TotalMilliseconds :
+            Environment.TickCount64 + (int) msDuration;
+    }
 
     public void Pickup(FieldPlayer looter) {
         if (Value.IsMeso()) {

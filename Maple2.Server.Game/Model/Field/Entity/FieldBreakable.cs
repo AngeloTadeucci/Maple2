@@ -5,16 +5,22 @@ using Maple2.Server.Game.Packets;
 
 namespace Maple2.Server.Game.Model;
 
-public class FieldBreakable(FieldManager field, int objectId, string entityId, BreakableActor breakable)
-    : FieldEntity<BreakableActor>(field, objectId, breakable) {
-    public readonly string EntityId = entityId;
+public class FieldBreakable : FieldEntity<BreakableActor> {
+    public readonly string EntityId;
 
     private long nextTick;
 
-    public BreakableState State { get; private set; } = breakable.Visible ? BreakableState.Show : BreakableState.Hide;
+    public BreakableState State { get; private set; }
     public long BaseTick { get; private set; }
 
-    private bool visible = breakable.Visible;
+    private bool visible;
+
+    public FieldBreakable(FieldManager field, int objectId, string entityId, BreakableActor breakable) : base(field, objectId, breakable) {
+        EntityId = entityId;
+        visible = breakable.Visible;
+        State = breakable.Visible ? BreakableState.Show : BreakableState.Hide;
+    }
+
     public bool Visible {
         get => visible;
         set {

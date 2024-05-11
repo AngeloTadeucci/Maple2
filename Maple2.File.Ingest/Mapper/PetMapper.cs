@@ -6,8 +6,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class PetMapper(M2dReader xmlReader) : TypeMapper<PetMetadata> {
-    private readonly PetParser parser = new(xmlReader);
+public class PetMapper : TypeMapper<PetMetadata> {
+    private readonly PetParser parser;
+
+    public PetMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<PetMetadata> Map() {
         var petNames = new Dictionary<int, string>();

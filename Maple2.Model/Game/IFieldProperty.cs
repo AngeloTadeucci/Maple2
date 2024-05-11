@@ -9,11 +9,15 @@ public interface IFieldProperty : IByteSerializable {
     public FieldProperty Type { get; }
 }
 
-public class FieldPropertyGravity(float gravity) : IFieldProperty, IByteDeserializable {
+public class FieldPropertyGravity : IFieldProperty, IByteDeserializable {
     public FieldProperty Type => FieldProperty.Gravity;
 
-    public float Gravity { get; private set; } = gravity;
+    public float Gravity { get; private set; }
 
+    public FieldPropertyGravity(float gravity) {
+        Gravity = gravity;
+    }
+    
     public void WriteTo(IByteWriter writer) {
         writer.Write<FieldProperty>(Type);
         writer.WriteFloat(Gravity);

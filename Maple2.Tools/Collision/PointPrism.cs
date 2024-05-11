@@ -4,11 +4,18 @@ using System.Numerics;
 namespace Maple2.Tools.Collision;
 
 // Point is not a prism but allows us to intersect points with polygons polymorphically.
-public readonly struct PointPrism(Vector3 origin) : IPrism {
-    private readonly Point point = new(origin.X, origin.Y);
+public readonly struct PointPrism : IPrism {
+    private readonly Vector3 origin;
+    private readonly Point point;
 
     public IPolygon Polygon => point;
-    public Range Height { get; } = new(origin.Z, origin.Z);
+    public Range Height { get; }
+
+    public PointPrism(Vector3 origin) {
+        this.origin = origin;
+        point = new Point(origin.X, origin.Y);
+        Height = new Range(origin.Z, origin.Z);
+    }
 
     public bool Contains(in Vector3 other) {
         return origin == other;
@@ -18,7 +25,14 @@ public readonly struct PointPrism(Vector3 origin) : IPrism {
         return prism.Contains(origin);
     }
 
-    private readonly struct Point(float x, float y) : IPolygon {
+    private readonly struct Point : IPolygon {
+        private readonly float x;
+        private readonly float y;
+
+        public Point(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
 
         public bool Contains(in Vector2 point) {
             const float tolerance = 0.0000001f;
@@ -30,7 +44,7 @@ public readonly struct PointPrism(Vector3 origin) : IPrism {
         }
 
         public Vector2[] GetAxes(Polygon? other) {
-            return Array.Empty<Vector2>();
+            return [];
         }
 
         public Range AxisProjection(Vector2 axis) {

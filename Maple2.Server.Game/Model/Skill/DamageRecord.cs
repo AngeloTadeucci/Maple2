@@ -17,8 +17,11 @@ public class DamageRecord {
     public Vector3 Position;
     public Vector3 Direction;
 
-    public readonly List<DamageRecordTarget> Targets = [];
+    public readonly List<DamageRecordTarget> Targets;
 
+    public DamageRecord() {
+        Targets = [];
+    }
 }
 
 public class DamageRecordTarget {
@@ -26,8 +29,12 @@ public class DamageRecordTarget {
     public Vector3 Position;
     public Vector3 Direction;
 
-    private readonly List<(DamageType, long)> damage = new List<(DamageType Type, long Amount)>();
+    private readonly List<(DamageType, long)> damage;
     public IReadOnlyList<(DamageType Type, long Amount)> Damage => damage;
+
+    public DamageRecordTarget() {
+        damage = new List<(DamageType Type, long Amount)>();
+    }
 
     public void AddDamage(DamageType type, long amount) {
         damage.Add((type, amount));

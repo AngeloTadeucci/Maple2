@@ -11,12 +11,15 @@ public interface ITriggerObject : IByteSerializable {
     public bool Visible { get; }
 }
 
-public abstract class TriggerObject<T>(T metadata) : ITriggerObject
-    where T : Trigger {
-    public readonly T Metadata = metadata;
+public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
+    public readonly T Metadata;
 
     public int Id => Metadata.TriggerId;
     public bool Visible { get; set; }
+
+    protected TriggerObject(T metadata) {
+        Metadata = metadata;
+    }
 
     public virtual void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);

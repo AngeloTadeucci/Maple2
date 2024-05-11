@@ -9,8 +9,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class AdditionalEffectMapper(M2dReader xmlReader) : TypeMapper<AdditionalEffectMetadata> {
-    private readonly AdditionalEffectParser parser = new(xmlReader);
+public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
+    private readonly AdditionalEffectParser parser;
+
+    public AdditionalEffectMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<AdditionalEffectMetadata> Map() {
         foreach ((int id, IList<AdditionalEffectData> datas) in parser.Parse()) {

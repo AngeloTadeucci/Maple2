@@ -6,7 +6,11 @@ using System.Threading.Tasks.Dataflow;
 namespace Maple2.Server.Core.Network;
 
 public class QueuedPipeScheduler : PipeScheduler {
-    private readonly BufferBlock<(Action<object?> Action, object? State)> queue = new();
+    private readonly BufferBlock<(Action<object?> Action, object? State)> queue;
+
+    public QueuedPipeScheduler() {
+        queue = new BufferBlock<(Action<object?> Action, object? State)>();
+    }
 
     public Task<bool> OutputAvailableAsync() => queue.OutputAvailableAsync();
     public void Complete() => queue.Complete();

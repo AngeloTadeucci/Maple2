@@ -4,12 +4,18 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class SkillMacro(string name, long keyId, HashSet<int>? skills = null) : IByteSerializable, IByteDeserializable {
-    public string Name { get; private set; } = name;
-    public long KeyId { get; private set; } = keyId;
+public class SkillMacro : IByteSerializable, IByteDeserializable {
+    public string Name { get; private set; }
+    public long KeyId { get; private set; }
     public IReadOnlyCollection<int> Skills => skills;
 
-    private HashSet<int> skills = skills ?? [];
+    private HashSet<int> skills;
+
+    public SkillMacro(string name, long keyId, HashSet<int>? skills = null) {
+        Name = name;
+        KeyId = keyId;
+        this.skills = skills ?? [];
+    }
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteUnicodeString(Name);

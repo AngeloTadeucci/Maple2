@@ -7,8 +7,12 @@ using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class AiMapper(M2dReader xmlReader) : TypeMapper<AiMetadata> {
-    private readonly AiParser parser = new(xmlReader);
+public class AiMapper : TypeMapper<AiMetadata> {
+    private readonly AiParser parser;
+
+    public AiMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<AiMetadata> Map() {
         foreach ((string name, NpcAi data) in parser.Parse()) {
@@ -57,7 +61,7 @@ public class AiMapper(M2dReader xmlReader) : TypeMapper<AiMetadata> {
     AiMetadata.Condition MapCondition(Condition node) {
         var childNodes = new List<AiMetadata.Node>();
         var childAiPresets = new List<AiMetadata.AiPreset>();
-        
+
         foreach (Node child in node.node) {
             childNodes.Add(MapNode(child));
         }

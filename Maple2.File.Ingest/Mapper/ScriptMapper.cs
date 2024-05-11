@@ -10,8 +10,12 @@ using ScriptContent = Maple2.Model.Metadata.ScriptContent;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class ScriptMapper(M2dReader xmlReader) : TypeMapper<ScriptMetadata> {
-    private readonly ScriptParser parser = new(xmlReader);
+public class ScriptMapper : TypeMapper<ScriptMetadata> {
+    private readonly ScriptParser parser;
+
+    public ScriptMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<ScriptMetadata> Map() {
         foreach ((int id, NpcScript script) in parser.ParseNpc()) {

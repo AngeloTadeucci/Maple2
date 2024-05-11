@@ -3,9 +3,14 @@ using System.Runtime.InteropServices;
 
 namespace Maple2.Model.Game;
 
-public class PetConfig(PetPotionConfig[]? potionConfig = null, PetLootConfig? lootConfig = null) {
-    public PetPotionConfig[] PotionConfig = potionConfig ?? Array.Empty<PetPotionConfig>();
-    public PetLootConfig LootConfig = lootConfig ?? new PetLootConfig(true, true, true, true, true, true, true, false, 1, true);
+public class PetConfig {
+    public PetPotionConfig[] PotionConfig;
+    public PetLootConfig LootConfig;
+
+    public PetConfig(PetPotionConfig[]? potionConfig = null, PetLootConfig? lootConfig = null) {
+        PotionConfig = potionConfig ?? [];
+        LootConfig = lootConfig ?? new PetLootConfig(true, true, true, true, true, true, true, false, 1, true);
+    }
 
 }
 

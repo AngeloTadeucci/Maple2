@@ -4,13 +4,19 @@ using Maple2.Tools;
 namespace Maple2.Model.Game;
 
 public sealed class ItemPet : IByteSerializable, IByteDeserializable {
-    public string Name = string.Empty;
+    public string Name;
     public long Exp;
     public int EvolvePoints;
-    public short Level = 1;
+    public short Level;
     public bool HasItems;
 
-    public short RenameRemaining = 1;
+    public short RenameRemaining;
+
+    public ItemPet() {
+        Name = string.Empty;
+        Level = 1;
+        RenameRemaining = 1;
+    }
 
     public ItemPet Clone() {
         return (ItemPet) MemberwiseClone();

@@ -6,9 +6,22 @@ using Serilog;
 
 namespace Maple2.Server.World.Service;
 
-public partial class WorldService(IMemoryCache tokenCache, ChannelClientLookup channelClients, PlayerInfoLookup playerLookup, GuildLookup guildLookup, PartyLookup partyLookup, GroupChatLookup groupChatLookup)
-    : World.WorldBase {
+public partial class WorldService : World.WorldBase {
+    private readonly ChannelClientLookup channelClients;
+    private readonly PlayerInfoLookup playerLookup;
+    private readonly GuildLookup guildLookup;
+    private readonly PartyLookup partyLookup;
+    private readonly GroupChatLookup groupChatLookup;
     private readonly ILogger logger = Log.Logger.ForContext<WorldService>();
+
+    public WorldService(IMemoryCache tokenCache, ChannelClientLookup channelClients, PlayerInfoLookup playerLookup, GuildLookup guildLookup, PartyLookup partyLookup, GroupChatLookup groupChatLookup) {
+        this.tokenCache = tokenCache;
+        this.channelClients = channelClients;
+        this.playerLookup = playerLookup;
+        this.guildLookup = guildLookup;
+        this.partyLookup = partyLookup;
+        this.groupChatLookup = groupChatLookup;
+    }
 
     public override Task<ChannelsResponse> Channels(ChannelsRequest request, ServerCallContext context) {
         var response = new ChannelsResponse();

@@ -305,13 +305,18 @@ public class TradeManager : IDisposable {
     private bool IsTrader(GameSession caller) => caller == sender.Session || caller == receiver.Session;
     private bool IsReceiver(GameSession caller) => caller == receiver.Session;
 
-    private class Trader(GameSession session) {
-        public GameSession Session = session;
-        public readonly ItemCollection Items = new(5);
+    private class Trader {
+        public GameSession Session;
+        public readonly ItemCollection Items;
         public long Mesos;
 
         public bool Finalized;
         public bool Completed;
+
+        public Trader(GameSession session) {
+            Session = session;
+            Items = new ItemCollection(5);
+        }
 
         public void Clear() {
             Mesos = 0;

@@ -9,7 +9,9 @@ using Serilog;
 
 namespace Maple2.Server.Game.Manager;
 
-public sealed class ExperienceManager(GameSession session, Lua.Lua lua) {
+public sealed class ExperienceManager {
+    private readonly GameSession session;
+    private readonly Lua.Lua lua;
     private long Exp {
         get => session.Player.Value.Character.Exp;
         set => session.Player.Value.Character.Exp = value;
@@ -26,6 +28,11 @@ public sealed class ExperienceManager(GameSession session, Lua.Lua lua) {
 
     //public long PrestigeExp => session.Player.Value.Account.PrestigeExp;
     private int ChainKillCount { get; set; }
+
+    public ExperienceManager(GameSession session, Lua.Lua lua) {
+        this.session = session;
+        this.lua = lua;
+    }
 
     public void ResetChainKill() => ChainKillCount = 0;
 

@@ -5,8 +5,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class RideMapper(M2dReader xmlReader) : TypeMapper<RideMetadata> {
-    private readonly RidingParser parser = new(xmlReader);
+public class RideMapper : TypeMapper<RideMetadata> {
+    private readonly RidingParser parser;
+
+    public RideMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<RideMetadata> Map() {
         var passengers = new Dictionary<int, int>();

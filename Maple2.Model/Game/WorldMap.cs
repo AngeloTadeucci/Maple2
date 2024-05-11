@@ -3,12 +3,19 @@
 namespace Maple2.Model.Game;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 19)]
-public struct MapWorldBoss(int npcId, int mapId, short channel, long spawnTime) {
-    public int NpcId = npcId;
-    public int MapId = mapId;
-    public short Channel = channel;
-    public long SpawnTime = spawnTime;
+public struct MapWorldBoss {
+    public int NpcId;
+    public int MapId;
+    public short Channel;
+    public long SpawnTime;
     private readonly byte Unknown = 1;
+
+    public MapWorldBoss(int npcId, int mapId, short channel, long spawnTime) {
+        NpcId = npcId;
+        MapId = mapId;
+        Channel = channel;
+        SpawnTime = spawnTime;
+    }
 
 }
 

@@ -8,30 +8,48 @@ public readonly record struct Color(byte Blue, byte Green, byte Red, byte Alpha)
     public override string ToString() => $"ARGB({Alpha:X2}, {Red:X2}, {Green:X2}, {Blue:X2})";
 }
 
-
 [StructLayout(LayoutKind.Sequential, Size = 8)]
-[method: JsonConstructor]
-public readonly struct SkinColor(Color primary, Color secondary) {
-    public Color Primary { get; } = primary;
-    public Color Secondary { get; } = secondary;
+public readonly struct SkinColor {
+    public Color Primary { get; }
+    public Color Secondary { get; }
 
-    public SkinColor(Color color) : this(color, color) {
+    public SkinColor(Color color) {
+        Primary = color;
+        Secondary = color;
+    }
+
+    [JsonConstructor]
+    public SkinColor(Color primary, Color secondary) {
+        Primary = primary;
+        Secondary = secondary;
     }
 
     public override string ToString() => $"Primary:{Primary}|Secondary:{Secondary}";
 }
 
-
 [StructLayout(LayoutKind.Sequential, Size = 20)]
-[method: JsonConstructor]
-public readonly struct EquipColor(Color primary, Color secondary, Color tertiary, int paletteId, int index = -1) {
-    public Color Primary { get; } = primary;
-    public Color Secondary { get; } = secondary;
-    public Color Tertiary { get; } = tertiary;
-    public int Index { get; } = index;
-    public int PaletteId { get; } = paletteId;
+public readonly struct EquipColor {
+    public Color Primary { get; }
+    public Color Secondary { get; }
+    public Color Tertiary { get; }
+    public int Index { get; }
+    public int PaletteId { get; }
 
-    public EquipColor(Color color) : this(color, color, color, 0, -1) {
+    public EquipColor(Color color) {
+        this.Primary = color;
+        this.Secondary = color;
+        this.Tertiary = color;
+        this.Index = -1;
+        this.PaletteId = 0;
+    }
+
+    [JsonConstructor]
+    public EquipColor(Color primary, Color secondary, Color tertiary, int paletteId, int index = -1) {
+        this.Primary = primary;
+        this.Secondary = secondary;
+        this.Tertiary = tertiary;
+        this.PaletteId = paletteId;
+        this.Index = index;
     }
 
     public override string ToString() =>

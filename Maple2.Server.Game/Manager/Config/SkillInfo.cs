@@ -215,13 +215,22 @@ public class SkillInfo : IByteSerializable {
         }
     }
 
-    public class Skill(int id, Skill[] subSkills, short baseLevel, short maxLevel)
-        : IByteSerializable {
-        public readonly int Id = id;
-        public readonly short BaseLevel = baseLevel;
-        public readonly short MaxLevel = maxLevel;
-        public short Level { get; private set; } = baseLevel;
+    public class Skill : IByteSerializable {
+        public readonly int Id;
+        public readonly short BaseLevel;
+        public readonly short MaxLevel;
+        public short Level { get; private set; }
         public bool Notify;
+
+        private readonly Skill[] subSkills;
+
+        public Skill(int id, Skill[] subSkills, short baseLevel, short maxLevel) {
+            Id = id;
+            this.subSkills = subSkills;
+            BaseLevel = baseLevel;
+            MaxLevel = maxLevel;
+            Level = baseLevel;
+        }
 
         public Skill(int id, short baseLevel, short maxLevel) : this(id, Array.Empty<Skill>(), baseLevel, maxLevel) { }
 

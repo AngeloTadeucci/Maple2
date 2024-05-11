@@ -96,11 +96,16 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
         }
     }
 
-    public class Option(Dictionary<BasicAttribute, BasicOption>? basicOption = null, Dictionary<SpecialAttribute, SpecialOption>? specialOption = null) {
-        public readonly Dictionary<BasicAttribute, BasicOption> Basic = basicOption ?? new Dictionary<BasicAttribute, BasicOption>();
-        public readonly Dictionary<SpecialAttribute, SpecialOption> Special = specialOption ?? new Dictionary<SpecialAttribute, SpecialOption>();
+    public class Option {
+        public readonly Dictionary<BasicAttribute, BasicOption> Basic;
+        public readonly Dictionary<SpecialAttribute, SpecialOption> Special;
 
         public int Count => Basic.Count + Special.Count;
+
+        public Option(Dictionary<BasicAttribute, BasicOption>? basicOption = null, Dictionary<SpecialAttribute, SpecialOption>? specialOption = null) {
+            Basic = basicOption ?? new Dictionary<BasicAttribute, BasicOption>();
+            Special = specialOption ?? new Dictionary<SpecialAttribute, SpecialOption>();
+        }
 
         public override string ToString() {
             var builder = new StringBuilder();

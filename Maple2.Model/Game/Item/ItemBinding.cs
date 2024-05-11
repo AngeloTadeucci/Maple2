@@ -4,11 +4,16 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public sealed class ItemBinding(long characterId = 0, string name = "") : IByteSerializable, IByteDeserializable {
+public sealed class ItemBinding : IByteSerializable, IByteDeserializable {
     public static readonly ItemBinding Default = new ItemBinding();
 
-    public long CharacterId { get; private set; } = characterId;
-    public string Name { get; private set; } = name;
+    public long CharacterId { get; private set; }
+    public string Name { get; private set; }
+
+    public ItemBinding(long characterId = 0, string name = "") {
+        CharacterId = characterId;
+        Name = name;
+    }
 
     public ItemBinding Clone() {
         return (ItemBinding) MemberwiseClone();

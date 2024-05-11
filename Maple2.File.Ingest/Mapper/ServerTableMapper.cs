@@ -10,8 +10,12 @@ using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class ServerTableMapper(M2dReader xmlReader) : TypeMapper<ServerTableMetadata> {
-    private readonly ServerTableParser parser = new(xmlReader);
+public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
+    private readonly ServerTableParser parser;
+
+    public ServerTableMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<ServerTableMetadata> Map() {
         yield return new ServerTableMetadata { Name = "instancefield.xml", Table = ParseInstanceField() };

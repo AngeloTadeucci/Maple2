@@ -32,13 +32,17 @@ public class StatAttributes : IByteSerializable {
 
     public class PointSources : IByteSerializable {
         // MaxPoints - Trophy:38, Exploration:12, Prestige:50
-        public readonly IDictionary<AttributePointSource, int> Points = new Dictionary<AttributePointSource, int>();
+        public readonly IDictionary<AttributePointSource, int> Points;
 
         public int Count => Points.Values.Sum();
 
         public int this[AttributePointSource type] {
             get => Points[type];
             set => Points[type] = value;
+        }
+
+        public PointSources() {
+            Points = new Dictionary<AttributePointSource, int>();
         }
 
         public void WriteTo(IByteWriter writer) {
@@ -51,7 +55,7 @@ public class StatAttributes : IByteSerializable {
     }
 
     public class PointAllocation : IByteSerializable {
-        private readonly Dictionary<BasicAttribute, int> points = new();
+        private readonly Dictionary<BasicAttribute, int> points;
 
         public BasicAttribute[] Attributes => points.Keys.ToArray();
         public int Count => points.Values.Sum();
@@ -69,6 +73,10 @@ public class StatAttributes : IByteSerializable {
 
                 points[type] = value;
             }
+        }
+
+        public PointAllocation() {
+            points = new Dictionary<BasicAttribute, int>();
         }
 
         public static int StatLimit(BasicAttribute type) {

@@ -4,7 +4,12 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class NavMeshMapper(M2dReader terrainReader) : TypeMapper<NavMesh> {
+public class NavMeshMapper : TypeMapper<NavMesh> {
+    private readonly M2dReader terrainReader;
+
+    public NavMeshMapper(M2dReader terrainReader) {
+        this.terrainReader = terrainReader;
+    }
 
     protected override IEnumerable<NavMesh> Map() {
         foreach (PackFileEntry entry in terrainReader.Files) {

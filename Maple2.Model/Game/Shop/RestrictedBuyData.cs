@@ -9,11 +9,15 @@ using Maple2.Tools;
 namespace Maple2.Model.Game.Shop;
 
 public class RestrictedBuyData : IByteSerializable {
-
     public long StartTime { get; init; }
     public long EndTime { get; init; }
-    public IList<BuyTimeOfDay> TimeRanges { get; init; } = new List<BuyTimeOfDay>();
-    public IList<ShopBuyDay> Days { get; init; } = new List<ShopBuyDay>();
+    public IList<BuyTimeOfDay> TimeRanges { get; init; }
+    public IList<ShopBuyDay> Days { get; init; }
+
+    public RestrictedBuyData() {
+        TimeRanges = new List<BuyTimeOfDay>();
+        Days = new List<ShopBuyDay>();
+    }
 
     public RestrictedBuyData Clone() {
         return new RestrictedBuyData() {
@@ -42,10 +46,15 @@ public class RestrictedBuyData : IByteSerializable {
 }
 
 [StructLayout(LayoutKind.Sequential, Size = 8)]
-[method: JsonConstructor]
-public readonly struct BuyTimeOfDay(int startTime, int endTime) {
-    public int StartTimeOfDay { get; } = startTime; // time begin in seconds. ex 1200 = 12:20 AM
-    public int EndTimeOfDay { get; } = endTime; // time end in seconds. ex 10600 = 2:56 AM
+public readonly struct BuyTimeOfDay {
+    public int StartTimeOfDay { get; } // time begin in seconds. ex 1200 = 12:20 AM
+    public int EndTimeOfDay { get; } // time end in seconds. ex 10600 = 2:56 AM
+
+    [method: JsonConstructor]
+    public BuyTimeOfDay(int startTime, int endTime) {
+        StartTimeOfDay = startTime;
+        EndTimeOfDay = endTime;
+    }
 
     public BuyTimeOfDay Clone() {
         return new BuyTimeOfDay(StartTimeOfDay, EndTimeOfDay);

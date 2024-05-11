@@ -9,10 +9,19 @@ using Serilog;
 
 namespace Maple2.Server.World.Containers;
 
-public class GroupChatLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) : IDisposable {
+public class GroupChatLookup : IDisposable {
+    private readonly ChannelClientLookup channelClients;
+    private readonly PlayerInfoLookup playerLookup;
 
-    private readonly ConcurrentDictionary<int, GroupChatManager> groupChats = new();
+    private readonly ConcurrentDictionary<int, GroupChatManager> groupChats;
     private int nextGroupChatId = 1;
+
+    public GroupChatLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) {
+        this.channelClients = channelClients;
+        this.playerLookup = playerLookup;
+
+        groupChats = new ConcurrentDictionary<int, GroupChatManager>();
+    }
 
     public void Dispose() {
         foreach (GroupChatManager manager in groupChats.Values) {

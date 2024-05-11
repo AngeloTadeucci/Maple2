@@ -4,8 +4,8 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class SystemBanner(int id) : IByteSerializable {
-    public int Id { get; init; } = id;
+public class SystemBanner : IByteSerializable {
+    public int Id { get; init; }
     public string Name { get; init; } = string.Empty; // name must start with "homeproduct_" for Meret Market banners
     public SystemBannerType Type { get; init; }
     public SystemBannerFunction Function { get; init; }
@@ -14,6 +14,10 @@ public class SystemBanner(int id) : IByteSerializable {
     public SystemBannerLanguage Language { get; init; }
     public long BeginTime { get; init; }
     public long EndTime { get; init; }
+
+    public SystemBanner(int id) {
+        Id = id;
+    }
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);

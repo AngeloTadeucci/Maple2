@@ -8,15 +8,15 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-public class PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo) : CharacterInfo(character), IPlayerInfo, IByteSerializable {
+public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     // Home/Plot
-    public string HomeName { get; set; } = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
+    public string HomeName { get; set; }
     public int PlotMapId { get; set; }
     public int PlotNumber { get; set; }
     public int ApartmentNumber { get; set; }
     public long PlotExpiryTime { get; set; }
     // Trophy
-    public AchievementInfo AchievementInfo { get; set; } = achievementInfo;
+    public AchievementInfo AchievementInfo { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo) {
@@ -26,6 +26,11 @@ public class PlayerInfo(CharacterInfo character, string homeName, AchievementInf
             PlotExpiryTime = player.Home.PlotExpiryTime,
             AchievementInfo = player.Character.AchievementInfo,
         };
+    }
+
+    public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo) : base(character) {
+        HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
+        AchievementInfo = achievementInfo;
     }
 
     public PlayerInfo Clone() {
@@ -86,16 +91,16 @@ public class PlayerInfo(CharacterInfo character, string homeName, AchievementInf
     }
 }
 
-public class CharacterInfo(long accountId, long characterId, string name, string motto, string picture, Gender gender, Job job, short level) {
-    public long AccountId { get; } = accountId;
-    public long CharacterId { get; } = characterId;
+public class CharacterInfo {
+    public long AccountId { get; }
+    public long CharacterId { get; }
 
-    public string Name { get; set; } = name;
-    public string Motto { get; set; } = motto;
-    public string Picture { get; set; } = picture;
-    public Gender Gender { get; set; } = gender;
-    public Job Job { get; set; } = job;
-    public short Level { get; set; } = level;
+    public string Name { get; set; }
+    public string Motto { get; set; }
+    public string Picture { get; set; }
+    public Gender Gender { get; set; }
+    public Job Job { get; set; }
+    public short Level { get; set; }
     public int GearScore { get; set; }
     // Health
     public long CurrentHp { get; set; }
@@ -107,7 +112,26 @@ public class CharacterInfo(long accountId, long characterId, string name, string
     public long UpdateTime { get; set; }
     public bool Online => Channel != 0;
 
-    public CharacterInfo(CharacterInfo other) : this(other.AccountId, other.CharacterId, other.Name, other.Motto, other.Picture, other.Gender, other.Job, other.Level) {
+    public CharacterInfo(long accountId, long characterId, string name, string motto, string picture, Gender gender, Job job, short level) {
+        AccountId = accountId;
+        CharacterId = characterId;
+        Name = name;
+        Motto = motto;
+        Picture = picture;
+        Gender = gender;
+        Job = job;
+        Level = level;
+    }
+
+    public CharacterInfo(CharacterInfo other) {
+        AccountId = other.AccountId;
+        CharacterId = other.CharacterId;
+        Name = other.Name;
+        Motto = other.Motto;
+        Picture = other.Picture;
+        Gender = other.Gender;
+        Job = other.Job;
+        Level = other.Level;
         MapId = other.MapId;
         Channel = other.Channel;
     }
@@ -126,6 +150,4 @@ public class CharacterInfo(long accountId, long characterId, string name, string
             Channel = player.Character.Channel,
         };
     }
-
-
 }

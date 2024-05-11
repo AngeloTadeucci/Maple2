@@ -6,8 +6,13 @@ using System.Linq;
 namespace Maple2.Tools;
 
 public class ConcurrentMultiDictionary<TK1, TK2, TV> where TK1 : notnull where TK2 : notnull {
-    private readonly ConcurrentDictionary<TK1, TV> data = new();
-    private readonly ConcurrentDictionary<TK2, TK1> mapping = new();
+    private readonly ConcurrentDictionary<TK1, TV> data;
+    private readonly ConcurrentDictionary<TK2, TK1> mapping;
+
+    public ConcurrentMultiDictionary() {
+        data = new ConcurrentDictionary<TK1, TV>();
+        mapping = new ConcurrentDictionary<TK2, TK1>();
+    }
 
     public int Count => data.Count;
 

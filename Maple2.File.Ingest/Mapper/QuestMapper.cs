@@ -11,8 +11,12 @@ using ExpType = Maple2.Model.Enum.ExpType;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class QuestMapper(M2dReader xmlReader) : TypeMapper<QuestMetadata> {
-    private readonly QuestParser parser = new(xmlReader);
+public class QuestMapper : TypeMapper<QuestMetadata> {
+    private readonly QuestParser parser;
+
+    public QuestMapper(M2dReader xmlReader) {
+        parser = new(xmlReader);
+    }
 
     protected override IEnumerable<QuestMetadata> Map() {
         foreach ((int id, string name, QuestData data) in parser.Parse()) {

@@ -9,7 +9,7 @@ using Serilog;
 namespace Maple2.Server.Game.Manager.Field;
 
 public partial class FieldManager {
-    public sealed class Factory(IComponentContext context) : IDisposable {
+    public sealed class Factory : IDisposable {
         #region Autofac Autowired
         // ReSharper disable MemberCanBePrivate.Global
         public required MapMetadataStorage MapMetadata { private get; init; }
@@ -20,7 +20,14 @@ public partial class FieldManager {
 
         private readonly ILogger logger = Log.Logger.ForContext<Factory>();
 
-        private readonly ConcurrentDictionary<(int MapId, long OwnerId), FieldManager> fields = new();
+        private readonly IComponentContext context;
+        private readonly ConcurrentDictionary<(int MapId, long OwnerId), FieldManager> fields;
+
+        public Factory(IComponentContext context) {
+            this.context = context;
+
+            fields = new ConcurrentDictionary<(int, long), FieldManager>();
+        }
 
         public FieldManager? Get(int mapId, long ownerId = 0) {
             var sw = new Stopwatch();

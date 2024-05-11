@@ -12,19 +12,24 @@ public interface IInteractObject : IByteSerializable {
     public int Id { get; }
 }
 
-public abstract class InteractObject<T>(string entityId, T metadata) : IInteractObject
-    where T : InteractObject {
+public abstract class InteractObject<T> : IInteractObject where T : InteractObject {
     public abstract InteractType Type { get; }
 
-    protected T Metadata { get; init; } = metadata;
-    public int Id { get; init; } = metadata.InteractId;
+    protected T Metadata { get; init; }
+    public int Id { get; init; }
     public string Model { get; init; } = "";
     public string Asset { get; init; } = "";
     public string NormalState { get; init; } = "";
     public string Reactable { get; init; } = "";
     public float Scale { get; init; } = 1f;
 
-    public string EntityId { get; init; } = entityId;
+    public string EntityId { get; init; }
+
+    protected InteractObject(string entityId, T metadata) {
+        EntityId = entityId;
+        Metadata = metadata;
+        Id = metadata.InteractId;
+    }
 
     public virtual void WriteTo(IByteWriter writer) {
         writer.WriteString(EntityId);
@@ -83,20 +88,29 @@ public sealed class InteractGuildPosterObject(string entityId, Ms2InteractDispla
 
 }
 
-public sealed class InteractBillBoardObject(string entityId, Ms2InteractMesh metadata, Character owner) : InteractObject<Ms2InteractMesh>(entityId, metadata) {
+public sealed class InteractBillBoardObject : InteractObject<Ms2InteractMesh> {
     public override InteractType Type => InteractType.BillBoard;
 
-    public long OwnerAccountId { get; init; } = owner.AccountId;
-    public long OwnerCharacterId { get; init; } = owner.Id;
-    public string OwnerName { get; init; } = owner.Name;
-    public string OwnerPicture { get; init; } = owner.Picture;
-    public short OwnerLevel { get; init; } = owner.Level;
-    public JobCode OwnerJobCode { get; init; } = owner.Job.Code();
+    public long OwnerAccountId { get; init; }
+    public long OwnerCharacterId { get; init; }
+    public string OwnerName { get; init; }
+    public string OwnerPicture { get; init; }
+    public short OwnerLevel { get; init; }
+    public JobCode OwnerJobCode { get; init; }
     public string Title { get; init; } = "";
     public string Description { get; init; } = "";
     public bool PublicHouse { get; init; }
     public long CreationTime { get; init; }
     public long ExpirationTime { get; init; }
+
+    public InteractBillBoardObject(string entityId, Ms2InteractMesh metadata, Character owner) : base(entityId, metadata) {
+        OwnerAccountId = owner.AccountId;
+        OwnerCharacterId = owner.Id;
+        OwnerName = owner.Name;
+        OwnerPicture = owner.Picture;
+        OwnerLevel = owner.Level;
+        OwnerJobCode = owner.Job.Code();
+    }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);

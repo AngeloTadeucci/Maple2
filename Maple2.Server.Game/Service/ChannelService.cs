@@ -3,8 +3,14 @@ using Serilog;
 
 namespace Maple2.Server.Game.Service;
 
-public partial class ChannelService(GameServer server, PlayerInfoStorage playerInfos) : Channel.Service.Channel.ChannelBase {
+public partial class ChannelService : Channel.Service.Channel.ChannelBase {
+    private readonly GameServer server;
+    private readonly PlayerInfoStorage playerInfos;
 
     private readonly ILogger logger = Log.Logger.ForContext<ChannelService>();
 
+    public ChannelService(GameServer server, PlayerInfoStorage playerInfos) {
+        this.server = server;
+        this.playerInfos = playerInfos;
+    }
 }
