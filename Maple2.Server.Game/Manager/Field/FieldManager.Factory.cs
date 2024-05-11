@@ -67,12 +67,8 @@ public partial class FieldManager {
         }
 
         /// <summary>
-        /// Create a new
+        /// Create a new FieldManager instance for the given mapId. If ownerId is provided, it will be a ugc map.
         /// </summary>
-        /// <param name="mapId"></param>
-        /// <param name="ownerId"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public FieldManager? Create(int mapId, long ownerId = 0) {
             var sw = new Stopwatch();
             sw.Start();
