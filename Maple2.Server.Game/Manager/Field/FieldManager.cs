@@ -38,6 +38,7 @@ public sealed partial class FieldManager : IDisposable {
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { private get; init; } = null!;
+    public Factory FieldFactory { get; init; } = null!;
     // ReSharper restore All
     #endregion
 
@@ -63,7 +64,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly int InstanceId;
     public readonly AiManager Ai;
 
-    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId) {
+    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId = 0) {
         Metadata = metadata;
         this.ugcMetadata = ugcMetadata;
         this.Entities = entities;
@@ -75,17 +76,17 @@ public sealed partial class FieldManager : IDisposable {
         thread = new Thread(Update);
         Ai = new AiManager(this);
         OwnerId = ownerId;
-        InstanceId = thread.ManagedThreadId;
+        InstanceId = NextGlobalId();
 
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
+        Console.WriteLine($"FieldManager created for MapId: {MapId} InstanceId: {InstanceId}");
     }
 
     // Init is separate from constructor to allow properties to be injected first.
     private void Init() {
         if (initialized) {
-            logger.Error("Init() called when map was already initialized");
             return;
         }
 
@@ -128,7 +129,7 @@ public sealed partial class FieldManager : IDisposable {
                         continue;
                     }
 
-                    SpawnNpc(npc, spawnPointNpc.Position, spawnPointNpc.Rotation);
+                    SpawnNpc(npc, spawnPointNpc);
                 }
             }
         }
@@ -185,6 +186,9 @@ public sealed partial class FieldManager : IDisposable {
     /// <returns>Returns a local ObjectId</returns>
     private int NextLocalId() => Interlocked.Increment(ref localIdCounter);
 
+    // Use this to keep systems in sync. Do not use Environment.TickCount directly
+    public long FieldTick { get; private set; }
+
     private void Update() {
         while (!cancel.IsCancellationRequested) {
             if (Players.IsEmpty) {
@@ -194,21 +198,23 @@ public sealed partial class FieldManager : IDisposable {
 
             Scheduler.InvokeAll();
 
-            long tickCount = Environment.TickCount64;
-            foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(tickCount);
+            FieldTick = Environment.TickCount64;
+            foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(FieldTick);
 
-            foreach (FieldPlayer player in Players.Values) player.Update(tickCount);
-            foreach (FieldNpc npc in Npcs.Values) npc.Update(tickCount);
-            foreach (FieldNpc mob in Mobs.Values) mob.Update(tickCount);
-            foreach (FieldPet pet in Pets.Values) pet.Update(tickCount);
-            foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(tickCount);
-            foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(tickCount);
-            foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(tickCount);
-            foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(tickCount);
-            foreach (FieldItem item in fieldItems.Values) item.Update(tickCount);
-            foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(tickCount);
-            foreach (FieldSkill skill in fieldSkills.Values) skill.Update(tickCount);
-            foreach (FieldPortal portal in fieldPortals.Values) portal.Update(tickCount);
+            foreach (FieldPlayer player in Players.Values) player.Update(FieldTick);
+            foreach (FieldNpc npc in Npcs.Values) npc.Update(FieldTick);
+            foreach (FieldNpc mob in Mobs.Values) mob.Update(FieldTick);
+            foreach (FieldPet pet in Pets.Values) pet.Update(FieldTick);
+            foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
+            foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
+            foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
+            foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
+            foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
+            foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
+            foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
+            foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
+
+            RoomTimer?.Update(FieldTick);
 
             // Environment.TickCount has ~16ms precision so sleep until next update
             Thread.Sleep(15);
@@ -232,6 +238,32 @@ public sealed partial class FieldManager : IDisposable {
         }
 
         player = null;
+        return false;
+    }
+
+    public bool TryGetActor(int objectId, [NotNullWhen(true)] out IActor? actor) {
+        if (Players.TryGetValue(objectId, out FieldPlayer? player)) {
+            actor = player;
+            return true;
+        }
+
+        if (Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
+            actor = npc;
+            return true;
+        }
+
+        if (Mobs.TryGetValue(objectId, out FieldNpc? mob)) {
+            actor = mob;
+            return true;
+        }
+
+        if (Pets.TryGetValue(objectId, out FieldPet? pet)) {
+            actor = pet;
+            return true;
+        }
+
+        actor = null;
+
         return false;
     }
 
@@ -342,6 +374,26 @@ public sealed partial class FieldManager : IDisposable {
 
         return true;
     }
+
+    #region DebugUtils
+    public void BroadcastAiMessage(ByteWriter packet) {
+        foreach ((int objectId, FieldPlayer player) in Players) {
+            if (player.DebugAi) {
+                player.Session.Send(packet);
+            }
+        }
+    }
+
+    public void BroadcastAiType(GameSession requester) {
+        foreach ((int objectId, FieldNpc npc) in Npcs) {
+            npc.SendDebugAiInfo(requester);
+        }
+
+        foreach ((int objectId, FieldPet npc) in Pets) {
+            npc.SendDebugAiInfo(requester);
+        }
+    }
+    #endregion
 
     public void Broadcast(ByteWriter packet, GameSession? sender = null) {
         if (!initialized) {

@@ -136,26 +136,6 @@ public class ItemManager {
         return true;
     }
 
-    public ICollection<Item> GetIndividualDropBoxItems(int individualDropBoxId, int rarity = -1) {
-        var items = new List<Item>();
-        if (session.TableMetadata.IndividualItemDropTable.Entries.TryGetValue(individualDropBoxId, out Dictionary<byte, IList<IndividualItemDropTable.Entry>>? entries)) {
-            foreach ((byte groupId, IList<IndividualItemDropTable.Entry> list) in entries) {
-                foreach (IndividualItemDropTable.Entry entry in list) {
-                    foreach (int entryItemId in entry.ItemIds) {
-                        int itemRarity = rarity > 0 ? entry.Rarity ?? 1 : 1;
-                        Item? individualDropItem = CreateItem(entryItemId, itemRarity, Random.Shared.Next(entry.MinCount, entry.MaxCount + 1));
-                        if (individualDropItem == null) {
-                            continue;
-                        }
-                        items.Add(individualDropItem);
-                    }
-                }
-
-            }
-        }
-        return items;
-    }
-
     public void Save(GameStorage.Request db) {
         Equips.Save(db);
         Inventory.Save(db);

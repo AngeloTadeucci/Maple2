@@ -23,7 +23,19 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     }
 
     private IEnumerable<MapEntity> ParseMap(string xblock, IEnumerable<IMapEntity> entities) {
-        IMS2Bounding? otherBounding = null;
+        IMS2Bounding firstBounding = null;
+        IMS2Bounding secondBounding = null;
+
+        Dictionary<string, IMS2WayPoint> ms2WayPoints = new();
+        foreach (var wayPoint in entities) {
+            switch (wayPoint) {
+                case IMS2WayPoint ms2WayPoint:
+                    ms2WayPoints.Add(ms2WayPoint.EntityId, ms2WayPoint);
+                    break;
+                default:
+                    break;
+            }
+        }
 
         foreach (IMapEntity entity in entities) {
             switch (entity) {
@@ -81,8 +93,9 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                     };
                                     continue;
                                 default:
+                                    string? patrolData = npcSpawn.PatrolData != "00000000-0000-0000-0000-000000000000" ? npcSpawn.PatrolData.Replace("-", string.Empty) : null;
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new SpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, (int) npcSpawn.NpcCount, npcIds, (int) npcSpawn.RegenCheckTime)
+                                        Block = new SpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, (int) npcSpawn.NpcCount, npcIds, (int) npcSpawn.RegenCheckTime, patrolData)
                                     };
                                     continue;
                             }
@@ -126,13 +139,17 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     };
                     continue;
                 case IMS2Bounding bounding:
-                    if (otherBounding == null) {
-                        otherBounding = bounding;
+                    if (firstBounding == null) {
+                        firstBounding = bounding;
                         continue;
                     }
-                    yield return new MapEntity(xblock, new Guid(entity.EntityId), $"{otherBounding.EntityName},{bounding.EntityName}") {
-                        Block = new Ms2Bounding(otherBounding.Position, bounding.Position),
-                    };
+                    // Map 020000118 has 3 bounding boxes. Quick fix to ignore the 3rd.
+                    if (secondBounding == null) {
+                        secondBounding = bounding;
+                        yield return new MapEntity(xblock, new Guid(entity.EntityId), $"{firstBounding.EntityName},{bounding.EntityName}") {
+                            Block = new Ms2Bounding(firstBounding.Position, bounding.Position),
+                        };
+                    }
                     continue;
                 case IMS2MapProperties mapProperties:
                     switch (mapProperties) {
@@ -179,8 +196,28 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         }
                         continue;
                     }
+                case IMS2PatrolData patrolData:
+                    List<MS2WayPoint> wayPoints = new();
+                    foreach (KeyValuePair<string, string> wayPointDict in patrolData.WayPoints) {
+                        IMS2WayPoint? wayPoint = ms2WayPoints.GetValueOrDefault(wayPointDict.Value.Replace("-", string.Empty));
+                        if (wayPoint is null) {
+                            continue;
+                        }
+
+                        patrolData.ApproachAnims.TryGetValue(wayPointDict.Key, out string? approachAnimation);
+                        patrolData.ArriveAnims.TryGetValue(wayPointDict.Key, out string? arriveAnimation);
+                        patrolData.ArriveAnimsTime.TryGetValue(wayPointDict.Key, out uint arriveAnimationTime);
+                        wayPoints.Add(new MS2WayPoint(wayPoint.EntityId, wayPoint.IsVisible, wayPoint.Position, wayPoint.Rotation, approachAnimation ?? "", arriveAnimation ?? "", (int) arriveAnimationTime));
+                    }
+
+
+                    yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                        Block = new MS2PatrolData(patrolData.EntityId, patrolData.EntityName, patrolData.IsAirWayPoint, (int) patrolData.PatrolSpeed, patrolData.IsLoop, wayPoints)
+                    };
+                    continue;
             }
         }
+
     }
 
     private MapEntity? ParseTrigger(string xblock, IMS2TriggerObject trigger) {

@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 
 namespace Maple2.Model.Metadata;
 
@@ -21,7 +22,8 @@ public record SpawnPointNPC(
     float SpawnRadius,
     int NpcCount,
     int[] NpcIds,
-    int RegenCheckTime
+    int RegenCheckTime,
+    string? PatrolData
 ) : SpawnPoint(Id, Position, Rotation, Visible);
 
 public record EventSpawnPointNPC(
@@ -36,7 +38,7 @@ public record EventSpawnPointNPC(
     int RegenCheckTime,
     int LifeTime,
     string SpawnAnimation
-) : SpawnPointNPC(Id, Position, Rotation, Visible, SpawnOnFieldCreate, SpawnRadius, NpcCount, NpcIds, RegenCheckTime);
+) : SpawnPointNPC(Id, Position, Rotation, Visible, SpawnOnFieldCreate, SpawnRadius, NpcCount, NpcIds, RegenCheckTime, String.Empty);
 
 public record EventSpawnPointItem(
     int Id,

@@ -48,11 +48,17 @@ public class QuestHandler : PacketHandler<GameSession> {
             case Command.Abandon:
                 HandleForfeit(session, packet);
                 break;
+            case Command.Exploration:
+                HandleAddExplorationQuests(session, packet);
+                break;
             case Command.Tracking:
                 HandleSetTracking(session, packet);
                 break;
             case Command.GoToNpc:
                 HandleGoToNpc(session, packet);
+                break;
+            case Command.SkyFortress:
+                HandleSkyFortressTeleport(session);
                 break;
             case Command.MapleGuide:
                 HandleMapleGuide(session, packet);
@@ -108,6 +114,20 @@ public class QuestHandler : PacketHandler<GameSession> {
         }
     }
 
+    private static void HandleAddExplorationQuests(GameSession session, IByteReader packet) {
+        int listSize = packet.ReadInt();
+
+        for (int i = 0; i < listSize; i++) {
+            int questId = packet.ReadInt();
+
+            if (session.Quest.TryGetQuest(questId, out Quest? _)) {
+                continue;
+            }
+
+            session.Quest.Start(questId);
+        }
+    }
+
     private static void HandleSetTracking(GameSession session, IByteReader packet) {
         int questId = packet.ReadInt();
         bool tracking = packet.ReadBool();
@@ -156,5 +176,19 @@ public class QuestHandler : PacketHandler<GameSession> {
         }
 
         session.Quest.Complete(quest);
+    }
+
+    private static void HandleSkyFortressTeleport(GameSession session) {
+        if (!session.Quest.TryGetQuest(Constant.FameContentsRequireQuestID, out Quest? quest) || quest.State != QuestState.Completed) {
+            return;
+        }
+
+        bool canUseField = session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
+            Constant.FameContentsSkyFortressGotoPortalID,
+            session.CharacterId);
+
+        session.Send(canUseField
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 }

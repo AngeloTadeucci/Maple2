@@ -239,6 +239,10 @@ public class InventoryManager {
                 return false;
             }
 
+            if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
+                add.Transfer?.Bind(session.Player.Value.Character);
+            }
+
             if (add.Amount == 0) {
                 Discard(add, commit);
             } else if (commit) {

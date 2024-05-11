@@ -26,12 +26,9 @@ public static class ConditionUtil {
                 }
                 break;
             case ConditionType.interact_object:
+            case ConditionType.interact_object_rep:
                 if ((code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) ||
                     (code.Integers != null && code.Integers.Contains((int) longValue))) {
-                    if (session.Player.Value.Unlock.InteractedObjects.Contains((int) longValue)) {
-                        return false;
-                    }
-                    session.Player.Value.Unlock.InteractedObjects.Add((int) longValue);
                     return true;
                 }
                 break;

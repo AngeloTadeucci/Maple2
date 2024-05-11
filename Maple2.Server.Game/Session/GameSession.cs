@@ -70,7 +70,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ConfigManager Config { get; set; } = null!;
     public MailManager Mail { get; set; } = null!;
     public GuildManager Guild { get; set; } = null!;
-    public BuddyManager Buddy { get; set; } = null!;
+    public BuddyManager Buddy { get; set; }
     public ItemManager Item { get; set; } = null!;
     public HousingManager Housing { get; set; } = null!;
     public CurrencyManager Currency { get; set; } = null!;
@@ -87,7 +87,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public UgcMarketManager UgcMarket { get; set; } = null!;
     public FieldManager Field { get; set; } = null!;
     public FieldPlayer Player { get; private set; } = null!;
-    public PartyManager Party { get; set; } = null!;
+    public PartyManager Party { get; set; }
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -279,7 +279,9 @@ public sealed partial class GameSession : Core.Network.Session {
             ownerId = AccountId;
         }
 
-        FieldManager? newField = FieldFactory.Get(mapId, ownerId);
+        FieldManager? newField = mapId == Constant.DefaultHomeMapId ?
+            FieldFactory.Get(Constant.DefaultHomeMapId, ownerId) :
+            FieldFactory.Get(mapId);
         if (newField == null) {
             return false;
         }

@@ -145,7 +145,7 @@ public sealed class QuestManager {
 
         // TODO: Confirm inventory can hold all the items.
         foreach (QuestMetadataReward.Item acceptReward in metadata.AcceptReward.EssentialItem) {
-            Item? reward = session.Item.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
+            Item? reward = session.Field.ItemDrop.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
             if (reward == null) {
                 logger.Error("Failed to create quest reward {RewardId}", acceptReward.Id);
                 continue;
@@ -295,7 +295,7 @@ public sealed class QuestManager {
         }
 
         foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            Item? item = session.Item.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item != null) {
                 session.Item.Inventory.Add(item, true);
             }
@@ -308,7 +308,7 @@ public sealed class QuestManager {
             if (metadata.Limit.JobLimits.Length > 0 && !metadata.Limit.JobLimits.Contains(session.Player.Value.Character.Job.Code())) {
                 continue;
             }
-            Item? item = session.Item.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item != null) {
                 session.Item.Inventory.Add(item, true);
             }

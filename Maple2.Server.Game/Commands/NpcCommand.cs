@@ -116,3 +116,34 @@ public class AnimateNpcCommand : Command {
         fieldNpc.Animate(animationKey);
     }
 }
+
+public class DebugNpcAiCommand : Command {
+    private const string NAME = "debugnpcs";
+    private const string DESCRIPTION = "Toggles displaying npc AI debug info.";
+
+    private readonly GameSession session;
+    private readonly NpcMetadataStorage npcStorage;
+
+    public DebugNpcAiCommand(GameSession session, NpcMetadataStorage npcStorage) : base(NAME, DESCRIPTION) {
+        this.session = session;
+        this.npcStorage = npcStorage;
+
+        var enable = new Argument<bool?>("enable", () => true, "Enables & disables debug messages. Prints all AI state if true.");
+
+        AddArgument(enable);
+
+        this.SetHandler<InvocationContext, bool?>(Handle, enable);
+    }
+
+    private void Handle(InvocationContext ctx, bool? enabled) {
+        if (session.Field == null) {
+            ctx.Console.Error.WriteLine("No field loaded.");
+            return;
+        }
+
+        session.Player.DebugAi = enabled ?? true;
+
+        string message = enabled ?? true ? "Enabled" : "Disabled";
+        ctx.Console.Out.WriteLine($"{message} AI debug info printing");
+    }
+}

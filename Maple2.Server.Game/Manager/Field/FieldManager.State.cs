@@ -38,6 +38,9 @@ public partial class FieldManager {
     private string? background;
     private readonly ConcurrentDictionary<FieldProperty, IFieldProperty> fieldProperties = new();
 
+    public RoomTimer? RoomTimer { get; private set; }
+
+
     #region Spawn
     public FieldPlayer SpawnPlayer(GameSession session, Player player, int portalId = -1, in Vector3 position = default, in Vector3 rotation = default) {
         // TODO: Not sure what the difference is between instance ids.
@@ -68,22 +71,28 @@ public partial class FieldManager {
         if (Metadata.Property.RevivalReturnId != 0) {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
-        if (Metadata.Property.EnterReturnId != 0) {
+
+        if (Metadata.Property.EnterReturnId != 0 &&
+            Metadata.Property.Type != MapType.Arcade &&
+            Metadata.Property.Type != MapType.PocketRealm &&
+            Metadata.Property.Type != MapType.Dungeon &&
+            Metadata.Property.Type != MapType.Event &&
+            Metadata.Property.Type != MapType.Event2) {
             player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
         }
 
         return fieldPlayer;
     }
 
-    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null) {
+    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
         Agent? agent = Navigation.AddAgent(npc, position);
-        if (agent == null) {
-            return null;
-        }
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
-        Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation)) {
+        Vector3 spawnPosition = position;
+        if (agent is not null) {
+            spawnPosition = Navigation.FromPosition(agent.getPosition());
+        }
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,
@@ -97,6 +106,10 @@ public partial class FieldManager {
         }
 
         return fieldNpc;
+    }
+
+    private FieldNpc? SpawnNpc(NpcMetadata npc, SpawnPointNPC spawnPointNpc) {
+        return SpawnNpc(npc, spawnPointNpc.Position, spawnPointNpc.Rotation, null, spawnPointNpc);
     }
 
     public FieldPet? SpawnPet(Item pet, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, FieldPlayer? player = null) {
@@ -128,6 +141,17 @@ public partial class FieldManager {
         var fieldPortal = new FieldPortal(this, NextLocalId(), portal) {
             Position = position != default ? position : portal.Position,
             Rotation = rotation != default ? rotation : portal.Rotation,
+        };
+        fieldPortals[fieldPortal.ObjectId] = fieldPortal;
+
+        return fieldPortal;
+    }
+
+    public FieldPortal SpawnPortal(Portal portal, int instanceId, Vector3 position = default, Vector3 rotation = default) {
+        var fieldPortal = new FieldPortal(this, NextLocalId(), portal) {
+            Position = position != default ? position : portal.Position,
+            Rotation = rotation != default ? rotation : portal.Rotation,
+            InstanceId = instanceId,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
 
@@ -392,9 +416,16 @@ public partial class FieldManager {
     private void SetBonusMapPortal(IList<MapMetadata> bonusMaps, Ms2RegionSpawn spawn) {
         // Spawn a hat within a random range of 5 min to 8 hours
         int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
-        var portal = new Portal(NextLocalId(), bonusMaps[Random.Shared.Next(bonusMaps.Count)].Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
+        MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
+        FieldManager? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
+        Console.WriteLine($"Creating bonus map {bonusMapMetadata.Id} at {spawn.Position} in {delay} ms.");
+        if (bonusMap == null) {
+            return;
+        }
+        bonusMap.SetRoomTimer(RoomTimerType.Clock, 90000);
+        var portal = new Portal(NextLocalId(), bonusMapMetadata.Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
             new Vector3(200, 200, 250), 0, true, false, true);
-        FieldPortal fieldPortal = SpawnPortal(portal);
+        FieldPortal fieldPortal = SpawnPortal(portal, bonusMap.InstanceId);
         fieldPortal.Model = Metadata.Property.Continent switch {
             Continent.VictoriaIsland => "Eff_event_portal_A01",
             Continent.KarkarIsland => "Eff_kr_sandswirl_01",
@@ -405,6 +436,10 @@ public partial class FieldManager {
         fieldPortal.EndTick = (int) (Environment.TickCount64 + TimeSpan.FromSeconds(30).TotalMilliseconds);
         Broadcast(PortalPacket.Add(fieldPortal));
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
+    }
+
+    private void SetRoomTimer(RoomTimerType type, int duration) {
+        RoomTimer = new RoomTimer(this, type, duration);
     }
 
     #region Player Managed

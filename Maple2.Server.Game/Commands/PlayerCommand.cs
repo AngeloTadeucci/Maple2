@@ -44,6 +44,8 @@ public class PlayerCommand : Command {
                 session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
                 session.Stats.Refresh();
 
+                session.ConditionUpdate(ConditionType.level, targetLong: level);
+
                 session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                     AccountId = session.AccountId,
                     CharacterId = session.CharacterId,

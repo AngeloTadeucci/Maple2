@@ -3,10 +3,12 @@ using System.Diagnostics;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Maple2.Server.Core.Network;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Tools.VectorMath;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
@@ -29,8 +31,9 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     protected readonly ConcurrentDictionary<int, DamageRecordTarget> DamageDealers = new();
 
     public int ObjectId { get; }
-    public virtual Vector3 Position { get; set; }
-    public virtual Vector3 Rotation { get; set; }
+    public virtual Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
+    public virtual Vector3 Rotation { get => Transform.RotationAnglesDegrees; set => Transform.RotationAnglesDegrees = value; }
+    public Transform Transform { get; init; }
 
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
@@ -42,6 +45,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
+        Transform = new Transform();
     }
 
     public void Dispose() {
@@ -154,6 +158,22 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         }
 
         Buffs.Update(tickCount);
+    }
+
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) {
+        if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
+            Logger.Error("Invalid skill use: {SkillId},{Level}", id, level);
+            return null;
+        }
+
+        var record = new SkillRecord(metadata, uid, this);
+        record.Position = Position;
+        record.Rotation = Rotation;
+        record.Rotate2Z = 2 * Rotation.Z;
+
+        Field.Broadcast(SkillPacket.Use(record));
+
+        return record;
     }
 
     protected abstract void OnDeath();

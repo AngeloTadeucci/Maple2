@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Maple2.Tools.VectorMath;
+using System.Numerics;
 
 namespace Maple2.Server.Game.Model;
 
@@ -10,6 +11,7 @@ public interface IFieldObject {
 
     public Vector3 Position { get; set; }
     public Vector3 Rotation { get; set; }
+    public Transform Transform { get; init; }
 }
 
 /// <summary>

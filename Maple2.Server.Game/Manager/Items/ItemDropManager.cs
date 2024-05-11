@@ -1,7 +1,10 @@
-﻿using Maple2.Model.Common;
+using Maple2.Model;
+using Maple2.Model.Common;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Session;
 using Maple2.Tools;
 
 namespace Maple2.Server.Game.Manager.Items;
@@ -13,12 +16,12 @@ public class ItemDropManager {
         this.field = field;
     }
 
-    public IList<Item> GetGlobalDropItem(int globalDropBoxId, int level = 0) {
+    public ICollection<Item> GetGlobalDropItems(int globalDropBoxId, int level = 0) {
         if (!field.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? dropGroup)) {
             return new List<Item>();
         }
 
-        IList<Item> results = new List<Item>();
+        ICollection<Item> results = new List<Item>();
 
         foreach ((int groupId, IList<GlobalDropItemBoxTable.Group> list) in dropGroup) {
             foreach (GlobalDropItemBoxTable.Group group in list) {
@@ -55,7 +58,7 @@ public class ItemDropManager {
                 var weightedItems = new WeightedSet<GlobalDropItemBoxTable.Item>();
 
                 // Randomize list in order to get true random items when pulled from weightedItems.
-                foreach (GlobalDropItemBoxTable.Item itemEntry in items.OrderBy(i => Random.Shared.Next())) {
+                foreach (GlobalDropItemBoxTable.Item itemEntry in items.OrderBy(_ => Random.Shared.Next())) {
                     if (itemEntry.MinLevel > level || (itemEntry.MaxLevel > 0 && itemEntry.MaxLevel < level)) {
                         continue;
                     }
@@ -90,6 +93,173 @@ public class ItemDropManager {
         }
 
         return results;
+    }
+
+    public ICollection<Item> GetIndividualDropItems(GameSession session, int level, int individualDropBoxId, int index = -1, int dropGroupId = -1) {
+        if (!field.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict)) {
+            return new List<Item>();
+        }
+
+        if (index > 0 && dropGroupId > 0) {
+            if (entryDict.TryGetValue(dropGroupId, out IndividualDropItemTable.Entry? entry)) {
+                return GetAllGroups(session, level, new List<IndividualDropItemTable.Entry> { entry }, index).ToList();
+            }
+        }
+        return GetAllGroups(session, level, entryDict.Values.ToList()).ToList();
+    }
+
+    public ICollection<Item> GetIndividualDropItems(int individualDropBoxId, int rarity = -1) {
+        if (!field.ServerTableMetadata.IndividualDropItemTable.Entries.TryGetValue(individualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entryDict)) {
+            return new List<Item>();
+        }
+
+        ICollection<Item> items = new List<Item>();
+        foreach (IndividualDropItemTable.Entry group in entryDict.Values) {
+            foreach (IndividualDropItemTable.Item itemEntry in group.Items) {
+                if (itemEntry.MapIds.Length > 0 && !itemEntry.MapIds.Contains(field.Metadata.Id)) {
+                    continue;
+                }
+                items = items.Concat(CreateIndividualDropBoxItems(itemEntry, rarity: rarity)).ToList();
+            }
+        }
+
+        return items;
+    }
+
+    private IEnumerable<Item> GetSelectedIndividualDropBoxItem(GameSession session, IEnumerable<IndividualDropItemTable.Item> itemEntries, int index) {
+        ICollection<Item> items = new List<Item>();
+
+        IndividualDropItemTable.Item? selectedItem = itemEntries.ElementAtOrDefault(index);
+        if (selectedItem == null) {
+            return items;
+        }
+
+        // assuming selectedBoxes skip requirements otherwise they wouldn't have seen the item in the item selection.
+        return CreateIndividualDropBoxItems(selectedItem, session.Player.Value.Character).ToList();
+    }
+
+    private IEnumerable<Item> GetAllGroups(GameSession session, int level, List<IndividualDropItemTable.Entry> entry, int index = -1) {
+        var items = new List<Item>();
+        foreach (IndividualDropItemTable.Entry group in entry) {
+            if (group.MinLevel > level) {
+                continue;
+            }
+
+            ICollection<IndividualDropItemTable.Item> itemEntries = group.Items;
+            if (group.SmartGender) {
+                itemEntries = GetGenderedEntries(itemEntries, session.Player.Value.Character.Gender).ToList();
+            }
+
+            var itemsAmount = new WeightedSet<IndividualDropItemTable.Entry.DropCount>();
+            foreach (IndividualDropItemTable.Entry.DropCount dropCount in group.DropCounts) {
+                itemsAmount.Add(dropCount, dropCount.Probability);
+            }
+
+            int amount = itemsAmount.Get().Count;
+            if (amount == 0) {
+                continue;
+            }
+
+            if (index > 0) {
+                items = items.Concat(GetSelectedIndividualDropBoxItem(session, itemEntries, index)).ToList();
+                continue;
+            }
+            var weightedItems = new WeightedSet<IndividualDropItemTable.Item>();
+            foreach (IndividualDropItemTable.Item itemEntry in itemEntries.OrderBy(_ => Random.Shared.Next())) {
+                if (itemEntry.QuestId > 0) {
+                    if (!session.Quest.TryGetQuest(itemEntry.QuestId, out Quest? quest) || quest.State != QuestState.Started) {
+                        continue;
+                    }
+                }
+
+                if (itemEntry.MapIds.Length > 0 && !itemEntry.MapIds.Contains(field.Metadata.Id)) {
+                    continue;
+                }
+
+                int weight = group.SmartDropRate > 0 ? GetWeightByJob(itemEntry.Ids.FirstOrDefault(), session.Player.Value.Character.Job.Code(), itemEntry.Weight, itemEntry.ProperJobWeight, itemEntry.ImproperJobWeight) : itemEntry.Weight;
+
+                weightedItems.Add(itemEntry, weight);
+            }
+
+            if (weightedItems.Count == 0) {
+                continue;
+            }
+
+            for (int i = 0; i < amount; i++) {
+                IndividualDropItemTable.Item selectedItem = weightedItems.Get();
+                items = items.Concat(CreateIndividualDropBoxItems(selectedItem, session.Player.Value.Character)).ToList();
+            }
+        }
+
+        return items;
+    }
+
+    private IEnumerable<Item> CreateIndividualDropBoxItems(IndividualDropItemTable.Item selectedItem, Character? character = null, int rarity = -1) {
+        int itemAmount = Random.Shared.Next(selectedItem.DropCount.Min, selectedItem.DropCount.Max + 1);
+
+
+        if (rarity <= 0) {
+            var raritySet = new WeightedSet<IndividualDropItemTable.Item.Rarity>();
+            foreach (IndividualDropItemTable.Item.Rarity rarityEntry in selectedItem.Rarities) {
+                raritySet.Add(rarityEntry, rarityEntry.Probability);
+            }
+
+            rarity = raritySet.Count > 0 ? raritySet.Get().Grade : -1;
+        }
+
+        foreach (int itemId in selectedItem.Ids) {
+            Item? createdItem = CreateItem(itemId, rarity, itemAmount);
+            if (createdItem == null) {
+                continue;
+            }
+
+            if (createdItem.Transfer?.RemainTrades > 0 && selectedItem.DeductTradeCount) {
+                createdItem.Transfer.RemainTrades--;
+            }
+
+            if (selectedItem.DeductRepackLimit && createdItem.Transfer != null) {
+                createdItem.Transfer.RepackageCount++;
+            }
+
+            if (selectedItem.Bind && character != null) {
+                createdItem.Transfer?.Bind(character);
+            }
+
+            // TODO: SockDataId, EnchantLevel, DisableBreak, Announce
+
+            yield return createdItem;
+        }
+    }
+
+
+    private IEnumerable<IndividualDropItemTable.Item> GetGenderedEntries(ICollection<IndividualDropItemTable.Item> itemEntries, Gender gender) {
+        foreach (IndividualDropItemTable.Item itemEntry in itemEntries) {
+            if (!field.ItemMetadata.TryGet(itemEntry.Ids.FirstOrDefault(), out ItemMetadata? itemMetadata)) {
+                continue;
+            }
+
+            if (itemMetadata.Limit.Gender != Gender.All && itemMetadata.Limit.Gender != gender) {
+                continue;
+            }
+
+            yield return itemEntry;
+        }
+    }
+
+    private int GetWeightByJob(int itemId, JobCode job, int weight, int jobWeight, int improperJobWeight) {
+        if (!field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
+            return weight;
+        }
+
+        if (itemMetadata.Limit.JobRecommends.Length == 0) {
+            return weight;
+        }
+
+        if (!itemMetadata.Limit.JobRecommends.Contains(job) && !itemMetadata.Limit.JobRecommends.Contains(JobCode.None)) {
+            return improperJobWeight;
+        }
+
+        return jobWeight;
     }
 
     public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {

@@ -46,6 +46,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
             var interacts = new Dictionary<Guid, InteractObject>();
             var triggerModels = new Dictionary<int, TriggerModel>();
             var triggers = new List<Trigger>();
+            var patrols = new List<MS2PatrolData>();
             foreach (MapEntity entity in Context.MapEntity.Where(entity => entity.XBlock == xblock)) {
                 switch (entity.Block) {
                     case Breakable breakable:
@@ -105,6 +106,9 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                         float height = Math.Abs(mapBounding.Position2.Z - mapBounding.Position1.Z);
                         bounding = new Prism(box, baseHeight, height);
                         break;
+                    case MS2PatrolData patrol:
+                        patrols.Add(patrol);
+                        break;
                 }
             }
 
@@ -126,6 +130,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                 Interacts = interacts,
                 TriggerModels = triggerModels,
                 Trigger = new TriggerStorage(triggers),
+                Patrols = patrols
             };
             Cache.AddReplace(xblock, mapEntity);
         }

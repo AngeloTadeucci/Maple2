@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -42,6 +41,9 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
         string entityId = packet.ReadString();
 
         if (session.Field?.TryGetInteract(entityId, out FieldInteract? interact) == true && interact.React()) {
+            session.ConditionUpdate(ConditionType.interact_object, codeLong: interact.Object.Id);
+            session.ConditionUpdate(ConditionType.interact_object_rep, codeLong: interact.Object.Id);
+
             switch (interact.Value.Type) {
                 case InteractType.Mesh:
                     session.Send(InteractObjectPacket.Interact(interact));
@@ -49,8 +51,9 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
                 case InteractType.Telescope:
                     session.Send(InteractObjectPacket.Interact(interact));
                     session.Send(InteractObjectPacket.Result(InteractResult.s_interact_find_new_telescope, interact));
+
                     if (!session.Player.Value.Unlock.InteractedObjects.Contains(interact.Object.Id)) {
-                        session.ConditionUpdate(ConditionType.interact_object, codeLong: interact.Object.Id);
+                        session.Player.Value.Unlock.InteractedObjects.Add(interact.Object.Id);
                         session.Exp.AddExp(ExpType.telescope);
                     }
                     break;
@@ -74,14 +77,14 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
             ICollection<Item> items = new List<Item>();
             if (interact.Value.Drop.IndividualDropBoxIds.Length > 0) {
                 foreach (int individualDropBoxId in interact.Value.Drop.IndividualDropBoxIds) {
-                    ICollection<Item> individualDropBoxItems = session.Item.GetIndividualDropBoxItems(individualDropBoxId, interact.Value.Drop.Rarity);
+                    ICollection<Item> individualDropBoxItems = session.Field.ItemDrop.GetIndividualDropItems(individualDropBoxId, interact.Value.Drop.Rarity);
                     items.Add(individualDropBoxItems.ElementAt(Random.Shared.Next(individualDropBoxItems.Count)));
                 }
             }
 
-            IList<Item> globalDropBoxItems = new List<Item>();
+            ICollection<Item> globalDropBoxItems = new List<Item>();
             foreach (int globalDropBoxId in interact.Value.Drop.GlobalDropBoxIds) {
-                globalDropBoxItems = session.Field.ItemDrop.GetGlobalDropItem(globalDropBoxId, session.Player.Value.Character.Level);
+                globalDropBoxItems = session.Field.ItemDrop.GetGlobalDropItems(globalDropBoxId, session.Player.Value.Character.Level);
             }
 
             foreach (Item item in globalDropBoxItems) {
