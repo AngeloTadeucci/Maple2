@@ -8,6 +8,7 @@ using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Tools.VectorMath;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
@@ -30,8 +31,9 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     protected readonly ConcurrentDictionary<int, DamageRecordTarget> DamageDealers = new();
 
     public int ObjectId { get; }
-    public virtual Vector3 Position { get; set; }
-    public virtual Vector3 Rotation { get; set; }
+    public virtual Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
+    public virtual Vector3 Rotation { get => Transform.RotationAnglesDegrees; set => Transform.RotationAnglesDegrees = value; }
+    public Transform Transform { get; init; }
 
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
@@ -43,6 +45,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
+        Transform = new Transform();
     }
 
     public void Dispose() {
