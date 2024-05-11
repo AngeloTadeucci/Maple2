@@ -143,6 +143,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         firstBounding = bounding;
                         continue;
                     }
+                    // Map 020000118 has 3 bounding boxes. Quick fix to ignore the 3rd.
                     if (secondBounding == null) {
                         secondBounding = bounding;
                         yield return new MapEntity(xblock, new Guid(entity.EntityId), $"{firstBounding.EntityName},{bounding.EntityName}") {
