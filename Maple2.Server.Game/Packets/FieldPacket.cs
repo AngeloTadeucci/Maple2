@@ -255,10 +255,10 @@ public static class FieldPacket {
         writer.WriteUnicodeString(character.Name);
         writer.Write<Gender>(character.Gender);
         writer.WriteByte(1);
-        writer.WriteLong();
+        writer.WriteLong(character.AccountId);
         writer.WriteInt();
+        writer.WriteInt(character.ReturnMapId);
         writer.WriteInt(character.MapId);
-        writer.WriteInt(character.InstanceMapId);
         writer.WriteInt(character.InstanceId);
         writer.WriteShort(character.Level);
         writer.WriteShort(character.Channel);

@@ -21,15 +21,59 @@ public partial class FieldManager {
         private readonly ILogger logger = Log.Logger.ForContext<Factory>();
 
         private readonly IComponentContext context;
-        private readonly ConcurrentDictionary<(int MapId, long OwnerId), FieldManager> fields;
+        private readonly ConcurrentDictionary<int, ConcurrentDictionary<long, FieldManager>> homeFields; // K1: MapId, K2: OwnerId
+        private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>> fields; // K1: MapId, K2: InstanceId
 
         public Factory(IComponentContext context) {
             this.context = context;
 
-            fields = new ConcurrentDictionary<(int, long), FieldManager>();
+            fields = new ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>>();
+            homeFields = new ConcurrentDictionary<int, ConcurrentDictionary<long, FieldManager>>();
         }
 
-        public FieldManager? Get(int mapId, long ownerId = 0) {
+        /// <summary>
+        /// Get player home map field or any player owned map. If not found, create a new field.
+        /// </summary>
+        public FieldManager? Get(int mapId, long ownerId) {
+            if (homeFields.TryGetValue(mapId, out ConcurrentDictionary<long, FieldManager>? ownerFields)) {
+                return ownerFields.TryGetValue(ownerId, out FieldManager? field)
+                    ? field : Create(mapId, ownerId);
+            }
+
+            return Create(mapId, ownerId);
+        }
+
+        /// <summary>
+        /// Get map field instance. If not found, create a new field. If the map is defined as instanced, it will create a new instance.
+        /// Else, it will return the first instance found if no instanceId is provided.
+        /// </summary>
+        public FieldManager? Get(int mapId, int instanceId = 0) {
+            ConcurrentDictionary<int, FieldManager> mapFields = fields.GetOrAdd(mapId, new ConcurrentDictionary<int, FieldManager>());
+
+            if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+                return GetOrCreateField(mapFields, mapId, instanceId);
+            }
+
+            // Get first result if possible
+            FieldManager? firstField = mapFields.FirstOrDefault().Value;
+            return firstField ??
+                   // Map is not intentionally an instance, and no fields are found
+                   GetOrCreateField(mapFields, mapId, instanceId);
+
+        }
+
+        private FieldManager? GetOrCreateField(ConcurrentDictionary<int, FieldManager> mapFields, int mapId, int instanceId) {
+            return mapFields.TryGetValue(instanceId, out FieldManager? field) ? field : Create(mapId, instanceId);
+        }
+
+        /// <summary>
+        /// Create a new
+        /// </summary>
+        /// <param name="mapId"></param>
+        /// <param name="ownerId"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public FieldManager? Create(int mapId, long ownerId = 0) {
             var sw = new Stopwatch();
             sw.Start();
             if (!MapMetadata.TryGet(mapId, out MapMetadata? metadata)) {
@@ -41,35 +85,53 @@ public partial class FieldManager {
                 ugcMetadata = new UgcMapMetadata(mapId, new Dictionary<int, UgcMapGroup>());
             }
 
-            // ReSharper disable once HeapView.CanAvoidClosure, defer instantiation unless it's needed.
-            if (!fields.TryGetValue((mapId, ownerId), out FieldManager? field)) {
-                MapEntityMetadata? entities = MapEntities.Get(metadata.XBlock);
-                if (entities == null) {
-                    throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
-                }
+            MapEntityMetadata? entities = MapEntities.Get(metadata.XBlock);
+            if (entities == null) {
+                throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
+            }
+            var field = new FieldManager(metadata, ugcMetadata, entities, ownerId);
+            context.InjectProperties(field);
+            field.Init();
 
-                field = new FieldManager(metadata, ugcMetadata, entities, ownerId);
-                context.InjectProperties(field);
-                field.Init();
 
-                ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? instanceField);
-                if (instanceField?.Type == InstanceType.solo) {
-                    fields[(mapId, NextGlobalId())] = field;
+            if (ownerId > 0) {
+                if (homeFields.TryGetValue(mapId, out ConcurrentDictionary<long, FieldManager>? ownerFields)) {
+                    ownerFields[ownerId] = field;
                 } else {
-                    fields[(mapId, ownerId)] = field;
+                    homeFields[mapId] = new ConcurrentDictionary<long, FieldManager> {
+                        [ownerId] = field
+                    };
+                }
+            } else {
+                if (fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? mapFields)) {
+                    mapFields[field.InstanceId] = field;
+                } else {
+                    fields[mapId] = new ConcurrentDictionary<int, FieldManager> {
+                        [field.InstanceId] = field
+                    };
                 }
             }
+
 
             logger.Debug("Field:{MapId} Instance:{InstanceId} initialized in {Time}ms", mapId, field.InstanceId, sw.ElapsedMilliseconds);
             return field;
         }
 
         public void Dispose() {
-            foreach (FieldManager manager in fields.Values) {
-                manager.Dispose();
+            foreach (ConcurrentDictionary<int, FieldManager> manager in fields.Values) {
+                foreach (FieldManager fieldManager in manager.Values) {
+                    fieldManager.Dispose();
+                }
+            }
+
+            foreach (ConcurrentDictionary<long, FieldManager> manager in homeFields.Values) {
+                foreach (FieldManager fieldManager in manager.Values) {
+                    fieldManager.Dispose();
+                }
             }
 
             fields.Clear();
+            homeFields.Clear();
         }
     }
 }
