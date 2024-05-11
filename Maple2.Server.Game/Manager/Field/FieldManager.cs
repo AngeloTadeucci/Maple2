@@ -38,6 +38,7 @@ public sealed partial class FieldManager : IDisposable {
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { private get; init; } = null!;
+    public Factory FieldFactory { get; init; } = null!;
     // ReSharper restore All
     #endregion
 
@@ -63,7 +64,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly int InstanceId;
     public readonly AiManager Ai;
 
-    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId) {
+    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId = 0) {
         Metadata = metadata;
         this.ugcMetadata = ugcMetadata;
         this.Entities = entities;
@@ -75,17 +76,17 @@ public sealed partial class FieldManager : IDisposable {
         thread = new Thread(Update);
         Ai = new AiManager(this);
         OwnerId = ownerId;
-        InstanceId = thread.ManagedThreadId;
+        InstanceId = NextGlobalId();
 
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
+        Console.WriteLine($"FieldManager created for MapId: {MapId} InstanceId: {InstanceId}");
     }
 
     // Init is separate from constructor to allow properties to be injected first.
     private void Init() {
         if (initialized) {
-            logger.Error("Init() called when map was already initialized");
             return;
         }
 
@@ -212,6 +213,8 @@ public sealed partial class FieldManager : IDisposable {
             foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
             foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
             foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
+
+            RoomTimer?.Update(FieldTick);
 
             // Environment.TickCount has ~16ms precision so sleep until next update
             Thread.Sleep(15);
