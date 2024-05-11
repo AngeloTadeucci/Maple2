@@ -97,7 +97,7 @@ public class TableMetadataStorage {
     public ItemEquipVariationTable PetVariationTable => petVariationTable.Value;
     public ItemEquipVariationTable WeaponVariationTable => weaponVariationTable.Value;
 
-     public TableMetadataStorage(MetadataContext context) {
+    public TableMetadataStorage(MetadataContext context) {
         chatStickerTable = Retrieve<ChatStickerTable>(context, "chatemoticon.xml");
         defaultItemsTable = Retrieve<DefaultItemsTable>(context, "defaultitems.xml");
         itemBreakTable = Retrieve<ItemBreakTable>(context, "itembreakingredient.xml");

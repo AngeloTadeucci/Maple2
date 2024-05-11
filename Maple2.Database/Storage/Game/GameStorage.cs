@@ -13,10 +13,11 @@ public partial class GameStorage {
     private readonly AchievementMetadataStorage achievementMetadata;
     private readonly QuestMetadataStorage questMetadata;
     private readonly ILogger logger;
-    private readonly DbContextOptions options1;
+    private readonly DbContextOptions options;
+
     public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
                        QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
-        options1 = options;
+        this.options = options;
         this.itemMetadata = itemMetadata;
         this.mapMetadata = mapMetadata;
         this.achievementMetadata = achievementMetadata;
@@ -27,7 +28,7 @@ public partial class GameStorage {
     public Request Context() {
         // We use NoTracking by default since most requests are Read or Overwrite.
         // If we need tracking for modifying data, we can set it individually as needed.
-        var context = new Ms2Context(options1);
+        var context = new Ms2Context(options);
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
         return new Request(this, context, logger);

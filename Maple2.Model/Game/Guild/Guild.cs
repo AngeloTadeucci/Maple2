@@ -9,7 +9,6 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
-
 public class Guild : IByteSerializable {
     public byte Capacity = 60;
 

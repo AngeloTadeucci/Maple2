@@ -12,7 +12,7 @@ public class AchievementMapper : TypeMapper<AchievementMetadata> {
     private readonly AchieveParser parser;
 
     public AchievementMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new AchieveParser(xmlReader);
     }
 
     protected override IEnumerable<AchievementMetadata> Map() {
