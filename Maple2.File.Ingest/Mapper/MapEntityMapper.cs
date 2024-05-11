@@ -23,7 +23,8 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     }
 
     private IEnumerable<MapEntity> ParseMap(string xblock, IEnumerable<IMapEntity> entities) {
-        IMS2Bounding? otherBounding = null;
+        IMS2Bounding firstBounding = null;
+        IMS2Bounding secondBounding = null;
 
         Dictionary<string, IMS2WayPoint> ms2WayPoints = new();
         foreach (var wayPoint in entities) {
@@ -138,13 +139,16 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     };
                     continue;
                 case IMS2Bounding bounding:
-                    if (otherBounding == null) {
-                        otherBounding = bounding;
+                    if (firstBounding == null) {
+                        firstBounding = bounding;
                         continue;
                     }
-                    yield return new MapEntity(xblock, new Guid(entity.EntityId), $"{otherBounding.EntityName},{bounding.EntityName}") {
-                        Block = new Ms2Bounding(otherBounding.Position, bounding.Position),
-                    };
+                    if (secondBounding == null) {
+                        secondBounding = bounding;
+                        yield return new MapEntity(xblock, new Guid(entity.EntityId), $"{firstBounding.EntityName},{bounding.EntityName}") {
+                            Block = new Ms2Bounding(firstBounding.Position, bounding.Position),
+                        };
+                    }
                     continue;
                 case IMS2MapProperties mapProperties:
                     switch (mapProperties) {
