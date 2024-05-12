@@ -2,11 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
+using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
@@ -220,10 +223,6 @@ public class PartyManager : IDisposable {
     }
 
     public PartyError StartReadyCheck(long requestorId) {
-        if (Party.Vote != null) {
-            return PartyError.s_party_err_already_vote;
-        }
-
         if (!Party.Members.TryGetValue(requestorId, out PartyMember? requestor)) {
             return PartyError.s_party_err_not_found;
         }
@@ -236,6 +235,26 @@ public class PartyManager : IDisposable {
             StartReadyCheck = new PartyRequest.Types.StartReadyCheck {
                 CharacterId = requestorId,
             },
+        });
+
+        Task.Factory.StartNew(() => {
+            Thread.Sleep(TimeSpan.FromSeconds(Constant.PartyVoteReadyDurationSeconds));
+            if (Party.Vote == null) {
+                return;
+            }
+            int count = Party.Vote.Disapprovals.Count + Party.Vote.Approvals.Count;
+            if (count >= Party.Vote.PartyCharacterIds.Count) {
+                Party.Vote = null;
+                return;
+            }
+
+            Broadcast(new PartyRequest {
+                ExpiredVote = new PartyRequest.Types.ExpiredVote {
+                    PartyId = Party.Id,
+                },
+            });
+
+            Party.Vote = null;
         });
 
         return PartyError.none;
@@ -264,6 +283,7 @@ public class PartyManager : IDisposable {
             ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
                 CharacterId = requestorId,
                 IsReady = ready,
+                PartyId = Party.Id,
             },
         });
 

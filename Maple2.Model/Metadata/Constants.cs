@@ -808,6 +808,7 @@ public static class Constant {
     public const int MaidDescLengthMax = 35;
     public const int GamePadStickMoveValue = 50;
     public const int HighlightMenuUsingLevel = 5;
+    public const int PartyVoteReadyDurationSeconds = 20;
     public const int PartyVoteReadyTagExpireSeconds = 10;
     public const int ShieldBarOffsetY = -10;
     public const int MouseInteractLimitDistance = 2000;

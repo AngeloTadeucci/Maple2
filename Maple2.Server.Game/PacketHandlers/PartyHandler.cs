@@ -256,6 +256,11 @@ public class PartyHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (session.Party.Party.LastVoteTime.FromEpochSeconds().AddSeconds(Constant.PartyVoteReadyDurationSeconds) > DateTime.Now && session.Party.Party.Vote != null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_already_vote));
+            return;
+        }
+
         if (session.Party.Party.Members.Values.Count(member => member.Info.Online) < 2) {
             return;
         }

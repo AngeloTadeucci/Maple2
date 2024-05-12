@@ -29,6 +29,8 @@ public partial class ChannelService {
                 return Task.FromResult(ReadyCheckReply(request.ReceiverIds, request.ReadyCheckReply));
             case PartyRequest.PartyOneofCase.EndReadyCheck:
                 return Task.FromResult((EndReadyCheck(request.ReceiverIds, request.EndReadyCheck)));
+            case PartyRequest.PartyOneofCase.ExpiredVote:
+                return Task.FromResult(ExpiredVote(request.ReceiverIds, request.ExpiredVote));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.s_party_err_not_found });
         }
@@ -150,6 +152,10 @@ public partial class ChannelService {
                 continue;
             }
 
+            if (session.Party.Id != reply.PartyId) {
+                continue;
+            }
+
             session.Party.ReadyCheckReply(reply.CharacterId, reply.IsReady);
         }
 
@@ -162,7 +168,27 @@ public partial class ChannelService {
                 continue;
             }
 
+            if (session.Party.Id != endReadyCheck.PartyId) {
+                continue;
+            }
+
             session.Party.EndVote();
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse ExpiredVote(IEnumerable<long> receiverIds, PartyRequest.Types.ExpiredVote expiredVote) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            if (session.Party.Id != expiredVote.PartyId) {
+                continue;
+            }
+
+            session.Party.ExpiredVote();
         }
 
         return new PartyResponse();

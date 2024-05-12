@@ -182,12 +182,12 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter DungeonNotice() {
+    public static ByteWriter PartyNotice(PartyMessage message, string message2 = "") {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.DungeonNotice);
 
-        pWriter.WriteUnicodeString(); // Notices: s_party_vote_expired|s_field_enteracne_party_notify_reset_dungeon|s_party_vote_rejected_kick_user
-        pWriter.WriteUnicodeString("Field_Enterance_Reset_Dungeon");
+        pWriter.WriteUnicodeString(message.ToString());
+        pWriter.WriteUnicodeString(); // "Field_Enterance_Reset_Dungeon"
         pWriter.WriteUnicodeString();
 
         return pWriter;

@@ -29,6 +29,7 @@ public class Party : IByteSerializable {
     public bool RequireApproval = false;
     public readonly ConcurrentDictionary<long, PartyMember> Members;
     public PartyVote? Vote;
+    public long LastVoteTime = 0;
 
     [SetsRequiredMembers]
     public Party(int id, long leaderAccountId, long leaderCharacterId, string leaderName) {

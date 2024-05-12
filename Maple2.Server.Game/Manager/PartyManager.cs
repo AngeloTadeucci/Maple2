@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Enum;
+﻿using Maple2.Database.Extensions;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
@@ -217,6 +218,8 @@ public class PartyManager : IDisposable {
         }
 
         Party.Vote = new PartyVote(PartyVoteType.ReadyCheck, Party.Members.Keys, characterId);
+        Party.LastVoteTime = DateTime.Now.ToEpochSeconds();
+        Console.WriteLine($"LastVote Time Set to {Party.LastVoteTime.FromEpochSeconds()}, DateTime.UtcNow: {DateTime.Now}");
         session.Send(PartyPacket.StartVote(Party.Vote));
     }
 
@@ -252,6 +255,15 @@ public class PartyManager : IDisposable {
             session.Send(PartyPacket.EndReadyCheck());
         }
         Party.Vote = null;
+    }
+
+    public void ExpiredVote() {
+        if (Party?.Vote == null) {
+            return;
+        }
+
+        session.Send(PartyPacket.PartyNotice(PartyMessage.s_party_vote_expired));
+        EndVote();
     }
 
     public PartyMember? GetMember(string name) {
