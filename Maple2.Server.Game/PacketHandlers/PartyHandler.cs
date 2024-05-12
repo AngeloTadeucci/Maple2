@@ -1,7 +1,10 @@
 ﻿using Grpc.Core;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game.Party;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -74,7 +77,7 @@ public class PartyHandler : PacketHandler<GameSession> {
                 HandleVoteKick(session, packet);
                 return;
             case Command.ReadyCheck:
-                HandleReadyCheck(session, packet);
+                HandleReadyCheck(session);
                 return;
             case Command.ReadyCheckResponse:
                 HandleReadyCheckResponse(session, packet);
@@ -123,7 +126,6 @@ public class PartyHandler : PacketHandler<GameSession> {
             var error = (PartyError) response.Error;
             if (error != PartyError.none) {
                 session.Send(PartyPacket.Error(error, playerName));
-                return;
             }
         } catch (RpcException ex) {
             Logger.Error(ex, "Failed to invite {Name} to party", playerName);
@@ -133,7 +135,7 @@ public class PartyHandler : PacketHandler<GameSession> {
 
     private void HandleInviteResponse(GameSession session, IByteReader packet) {
         string name = packet.ReadUnicodeString();
-        PartyInvite.Response response = (PartyInvite.Response) packet.ReadByte();
+        PartyInviteResponse response = (PartyInviteResponse) packet.ReadByte();
         int partyId = packet.ReadInt();
 
         if (session.Party.Party != null) {
@@ -154,7 +156,7 @@ public class PartyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (response == PartyInvite.Response.Accept) {
+        if (response == PartyInviteResponse.Accept) {
             session.Party.SetParty(partyResponse.Party);
         }
     }
@@ -243,13 +245,59 @@ public class PartyHandler : PacketHandler<GameSession> {
         long targetCharacterId = packet.ReadLong();
     }
 
-    private void HandleReadyCheck(GameSession session, IByteReader packet) {
-        // TODO: Implement
+    private void HandleReadyCheck(GameSession session) {
+        if (session.Party.Party == null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_not_found));
+            return;
+        }
+
+        if (session.Party.Party?.LeaderCharacterId != session.CharacterId) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_not_chief));
+            return;
+        }
+
+        if (session.Party.Party.LastVoteTime.FromEpochSeconds() > DateTime.UtcNow.AddSeconds(Constant.PartyVoteReadyTagExpireSeconds)) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_vote_cooldown));
+            return;
+        }
+
+        if (session.Party.Party.Members.Values.Count(member => member.Info.Online) < 2) {
+            return;
+        }
+
+        PartyResponse response = World.Party(new PartyRequest {
+            RequestorId = session.CharacterId,
+            ReadyCheck = new PartyRequest.Types.ReadyCheck {
+                PartyId = session.Party.Id,
+            },
+        });
+
+        var error = (PartyError) response.Error;
+        if (error != PartyError.none) {
+            session.Send(PartyPacket.Error(error));
+        }
     }
 
     private void HandleReadyCheckResponse(GameSession session, IByteReader packet) {
-        // TODO: Implement
-        int voteId = packet.ReadInt();
+        int counter = packet.ReadInt();
         bool isReady = packet.ReadBool();
+
+        if (session.Party.Party == null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_not_found));
+            return;
+        }
+
+        PartyResponse response = World.Party(new PartyRequest {
+            RequestorId = session.CharacterId,
+            ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+                PartyId = session.Party.Id,
+                Reply = isReady,
+            },
+        });
+
+        var error = (PartyError) response.Error;
+        if (error != PartyError.none) {
+            session.Send(PartyPacket.Error(error));
+        }
     }
 }

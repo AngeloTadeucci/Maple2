@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Error;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -283,30 +284,10 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter StartVote(bool kick, int size) {
+    public static ByteWriter StartVote(PartyVote partyVote) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.StartVote);
-        pWriter.WriteBool(kick); // 0 = Ready Check, 1 = Kick
-        pWriter.WriteInt(kick ? 36 : 34);
-        pWriter.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-
-        // Party Size
-        pWriter.WriteInt(size);
-        for (var i = 0; i < size; i++) {
-            pWriter.WriteLong(); // character id
-        }
-
-        // Ready Count
-        pWriter.WriteInt(size);
-        for (var i = 0; i < size; i++) {
-            pWriter.WriteLong(); // character id
-        }
-
-        // Not Ready Count
-        pWriter.WriteInt(size);
-        for (var i = 0; i < size; i++) {
-            pWriter.WriteLong(); // character id
-        }
+        pWriter.WriteClass<PartyVote>(partyVote);
 
         return pWriter;
     }

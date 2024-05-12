@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
@@ -34,6 +35,10 @@ public partial class WorldService {
                 return Task.FromResult(KickParty(request.RequestorId, request.Kick));
             case PartyRequest.PartyOneofCase.UpdateLeader:
                 return Task.FromResult(UpdateLeader(request.RequestorId, request.UpdateLeader));
+            case PartyRequest.PartyOneofCase.ReadyCheck:
+                return Task.FromResult(StartReadyCheck(request.RequestorId, request.ReadyCheck));
+            case PartyRequest.PartyOneofCase.ReadyCheckReply:
+                return Task.FromResult(ReadyCheckReply(request.RequestorId, request.ReadyCheckReply));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.none });
         }
@@ -88,7 +93,7 @@ public partial class WorldService {
             return new PartyResponse { Error = (int) PartyError.none };
         }
 
-        if (respond.Reply == (int) PartyInvite.Response.Accept) {
+        if (respond.Reply == (int) PartyInviteResponse.Accept) {
             PartyError error = manager.Join(info);
             if (error != PartyError.none) {
                 return new PartyResponse { Error = (int) error };
@@ -149,6 +154,28 @@ public partial class WorldService {
         }
 
         return new PartyResponse { PartyId = update.PartyId };
+    }
+
+    private PartyResponse StartReadyCheck(long requestorId, PartyRequest.Types.ReadyCheck readyCheck) {
+        if (!partyLookup.TryGet(readyCheck.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
+        }
+
+        PartyError error = manager.StartReadyCheck(requestorId);
+        return new PartyResponse {
+            Error = (int) error,
+        };
+    }
+
+    private PartyResponse ReadyCheckReply(long requestorId, PartyRequest.Types.ReadyCheckReply reply) {
+        if (!partyLookup.TryGet(reply.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
+        }
+
+        PartyError error = manager.ReadyCheckReply(requestorId, reply.Reply);
+        return new PartyResponse {
+            Error = (int) error,
+        };
     }
 
     private static PartyInfo ToPartyInfo(Party party) {

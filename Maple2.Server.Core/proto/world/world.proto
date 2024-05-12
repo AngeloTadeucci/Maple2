@@ -243,6 +243,13 @@ message PartyRequest {
     int32 party_id = 1;
     optional int64 character_id = 2;
   }
+  message ReadyCheck {
+    int32 party_id = 1;
+  }
+  message ReadyCheckReply {
+    int32 party_id = 1;
+    bool reply = 2;
+  }
 
   int64 requestor_id = 1;
   oneof party {
@@ -253,6 +260,8 @@ message PartyRequest {
     Leave leave = 6;
     Kick kick = 7;
     UpdateLeader update_leader = 8;
+    ReadyCheck ready_check = 9;
+    ReadyCheckReply ready_check_reply = 10;
   }
 }
 

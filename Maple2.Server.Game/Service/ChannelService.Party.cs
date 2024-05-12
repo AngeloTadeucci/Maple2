@@ -23,6 +23,12 @@ public partial class ChannelService {
                 return Task.FromResult(UpdatePartyLeader(request.ReceiverIds, request.UpdateLeader));
             case PartyRequest.PartyOneofCase.Disband:
                 return Task.FromResult(Disband(request.ReceiverIds, request.Disband));
+            case PartyRequest.PartyOneofCase.StartReadyCheck:
+                return Task.FromResult(StartReadyCheck(request.ReceiverIds, request.StartReadyCheck));
+            case PartyRequest.PartyOneofCase.ReadyCheckReply:
+                return Task.FromResult(ReadyCheckReply(request.ReceiverIds, request.ReadyCheckReply));
+            case PartyRequest.PartyOneofCase.EndReadyCheck:
+                return Task.FromResult((EndReadyCheck(request.ReceiverIds, request.EndReadyCheck)));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.s_party_err_not_found });
         }
@@ -121,6 +127,42 @@ public partial class ChannelService {
             }
 
             session.Party.Disband();
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse StartReadyCheck(IEnumerable<long> receiverIds, PartyRequest.Types.StartReadyCheck startReadyCheck) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Party.StartReadyCheck(startReadyCheck.CharacterId);
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse ReadyCheckReply(IEnumerable<long> receiverIds, PartyRequest.Types.ReadyCheckReply reply) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Party.ReadyCheckReply(reply.CharacterId, reply.IsReady);
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse EndReadyCheck(IEnumerable<long> receiverIds, PartyRequest.Types.EndReadyCheck endReadyCheck) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Party.EndVote();
         }
 
         return new PartyResponse();
