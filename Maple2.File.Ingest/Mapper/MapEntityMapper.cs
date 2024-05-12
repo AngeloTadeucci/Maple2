@@ -19,12 +19,13 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     public MapEntityMapper(MetadataContext db, M2dReader exportedReader) {
         xBlocks = db.MapMetadata.Select(metadata => metadata.XBlock).ToHashSet();
         var index = new FlatTypeIndex(exportedReader);
+        // index.CliExplorer();
         parser = new XBlockParser(exportedReader, index);
     }
 
     private IEnumerable<MapEntity> ParseMap(string xblock, IEnumerable<IMapEntity> entities) {
-        IMS2Bounding firstBounding = null;
-        IMS2Bounding secondBounding = null;
+        IMS2Bounding? firstBounding = null;
+        IMS2Bounding? secondBounding = null;
 
         Dictionary<string, IMS2WayPoint> ms2WayPoints = new();
         foreach (var wayPoint in entities) {
@@ -111,6 +112,12 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         Block = new Ms2RegionSpawn(spawn.SpawnPointID, spawn.UseRotAsSpawnDir, spawn.Position, spawn.Rotation)
                     };
                     continue;
+                case IMS2TriggerObject triggerObject:
+                    MapEntity? trigger = ParseTrigger(xblock, triggerObject);
+                    if (trigger != null) {
+                        yield return trigger;
+                    }
+                    continue;
                 case IMS2RegionSkill skill:
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
                         Block = new Ms2RegionSkill(skill.skillID, (short) skill.skillLevel, skill.Interval, skill.Position, skill.Rotation)
@@ -126,12 +133,6 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 //     }
                 //     continue;
                 // }
-                case IMS2TriggerObject triggerObject:
-                    MapEntity? trigger = ParseTrigger(xblock, triggerObject);
-                    if (trigger != null) {
-                        yield return trigger;
-                    }
-                    continue;
                 case IMS2TriggerModel triggerModel:
                     string name = Path.GetFileNameWithoutExtension(triggerModel.XmlFilePath);
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
