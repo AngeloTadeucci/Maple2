@@ -5,25 +5,30 @@ namespace Maple2.File.Ingest.Utils;
 
 internal enum ScriptType { None = 0, Str, Int, Float, IntList, StrList, StateList, Vector3, Bool, State }
 
-internal record Parameter(ScriptType Type, string Name) {
+internal partial record PyParameter(ScriptType Type, string Name) {
     public string? Value;
 
-    public Parameter(ScriptType type, string name, string? value) : this(type, name) {
+    public PyParameter(ScriptType type, string name, string? value) : this(type, name) {
         Value = value;
     }
 
     public string TypeStr() {
-        return Type switch {
+        return TypeStr(Type);
+    }
+
+    public static string TypeStr(ScriptType type) {
+        return type switch {
+            ScriptType.None => "None",
             ScriptType.Str => "str",
             ScriptType.Int => "int",
             ScriptType.Float => "float",
             ScriptType.IntList => "List[int]",
             ScriptType.StrList => "List[str]",
-            ScriptType.StateList => "List[common.Trigger]",
+            ScriptType.StateList => "List['Trigger']",
             ScriptType.Vector3 => "List[float]",
             ScriptType.Bool => "bool",
             ScriptType.State => "'Trigger'",
-            _ => throw new ArgumentException($"Invalid parameter type: {Type}"),
+            _ => throw new ArgumentException($"Invalid parameter type: {type}"),
         };
     }
 
@@ -42,23 +47,35 @@ internal record Parameter(ScriptType Type, string Name) {
         };
     }
 
-    public string FormatValue() {
-        ValidateValue();
-        return Type switch {
-            ScriptType.Str => string.IsNullOrWhiteSpace(Value) ? "None" : $"'{Value.Replace("'", "\\'")}'",
-            ScriptType.Int => string.IsNullOrWhiteSpace(Value) ? "0" : long.Parse(Value).ToString(),
-            ScriptType.Float => string.IsNullOrWhiteSpace(Value) ? "0.0" : float.Parse(Value).ToString(CultureInfo.InvariantCulture),
-            ScriptType.IntList => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", GetIntList(Value).Select(int.Parse))}]",
-            ScriptType.StrList => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => $"'{str.Replace("'", "\\'")}'"))}]",
-            ScriptType.StateList => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
-            ScriptType.Vector3 => string.IsNullOrWhiteSpace(Value) ? "[]"
-                : $"[{string.Join(",", Value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
-            ScriptType.Bool => Value?.ToLower() == "true" || Value == "1" ? "True" : "False",
-            ScriptType.State => string.IsNullOrWhiteSpace(Value) ? "None" : Value,
-            _ => throw new ArgumentException($"Unexpected Type: {Type} for {Name}"),
+    public string FormatValue(bool validate = true) {
+        if (validate) ValidateValue();
+
+        try {
+            return FormatValue(Type, Value);
+        } catch (Exception) {
+            if (validate) {
+                throw;
+            }
+            return Value ?? "None";
+        }
+    }
+
+    public static string FormatValue(ScriptType type, string? value) {
+        return type switch {
+            ScriptType.Str => string.IsNullOrWhiteSpace(value) ? "None" : $"'{value.Replace(@"\", @"\\").Replace("'", @"\'")}'",
+            ScriptType.Int => string.IsNullOrWhiteSpace(value) ? "0" : long.Parse(value).ToString(),
+            ScriptType.Float => string.IsNullOrWhiteSpace(value) ? "0.0" : float.Parse(value).ToString(CultureInfo.InvariantCulture),
+            ScriptType.IntList => string.IsNullOrWhiteSpace(value) ? "[]"
+                : $"[{string.Join(",", GetIntList(value).Select(int.Parse))}]",
+            ScriptType.StrList => string.IsNullOrWhiteSpace(value) ? "[]"
+                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries).Select(str => $"'{str.Replace("'", "\\'")}'"))}]",
+            ScriptType.StateList => string.IsNullOrWhiteSpace(value) ? "[]"
+                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+            ScriptType.Vector3 => string.IsNullOrWhiteSpace(value) ? "[]"
+                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+            ScriptType.Bool => value?.ToLower() == "true" || value == "1" ? "True" : "False",
+            ScriptType.State => string.IsNullOrWhiteSpace(value) ? "None" : value,
+            _ => throw new ArgumentException($"Unexpected Type: {type} for {value}"),
         };
     }
 
@@ -98,7 +115,7 @@ internal record Parameter(ScriptType Type, string Name) {
                 }
                 return;
             case ScriptType.Bool:
-                if (Name == "returnView" && Value == "11000032") {
+                if (Name == "return_view" && Value == "11000032") {
                     Value = "1";
                 }
                 string boolValue = Value.ToLower();
