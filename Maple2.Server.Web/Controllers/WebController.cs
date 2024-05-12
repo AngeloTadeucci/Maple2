@@ -62,7 +62,6 @@ public class WebController : ControllerBase {
         }
 
         if (type is UgcType.ItemIcon or UgcType.Item && resource == null) {
-            Console.WriteLine("Invalid UGC resource.");
             return Results.BadRequest("Invalid UGC resource.");
         }
 
