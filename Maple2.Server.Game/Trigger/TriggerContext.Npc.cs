@@ -67,7 +67,19 @@ public partial class TriggerContext {
     }
 
     public void MoveNpc(int spawnId, string patrolName) {
-        ErrorLog("[MoveNpc] spawnId:{SpawnId}", spawnId);
+        DebugLog("[MoveNpc] spawnId:{SpawnId} patrolName:{PatrolName}", spawnId, patrolName);
+        var fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        if (fieldNpc == null) {
+            return;
+        }
+
+        MS2PatrolData? patrolData = Field.Entities.Patrols.FirstOrDefault(patrol => patrol.Name == patrolName);
+
+        if (patrolData is null) {
+            return;
+        }
+
+        fieldNpc.SetPatrolData(patrolData);
     }
 
     public void MoveNpcToPos(int spawnId, Vector3 position, Vector3 rotation) {
@@ -98,8 +110,28 @@ public partial class TriggerContext {
     }
 
     public void SetConversation(byte type, int spawnId, string script, int delay, byte arg5, Align align) {
-        ErrorLog("[SetConversation] type:{Type}, spawnId:{SpawnId}, script:{Script}, delay:{Delay}, arg5:{Arg5}, align:{Align}",
+        DebugLog("[SetConversation] type:{Type}, spawnId:{SpawnId}, script:{Script}, delay:{Delay}, arg5:{Arg5}, align:{Align}",
             type, spawnId, script, delay, arg5, align);
+
+        if (spawnId == 0) {
+            var player = Field.Players.Values.FirstOrDefault();
+            if (player == null) {
+                return;
+            }
+            Broadcast(CinematicPacket.BalloonTalk(false, player.ObjectId, script, delay * 1000, 0));
+            return;
+        }
+
+        if (type == 1) {
+            var npc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+            if (npc == null) {
+                return;
+            }
+
+            Broadcast(CinematicPacket.BalloonTalk(false, npc.ObjectId, script, delay * 1000, 0));
+            return;
+        }
+
         Broadcast(CinematicPacket.Talk(spawnId, spawnId.ToString(), script, delay * 1000, align));
     }
 
