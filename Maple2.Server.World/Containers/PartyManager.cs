@@ -2,10 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
+using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
@@ -23,7 +27,7 @@ public class PartyManager : IDisposable {
 
     public void Dispose() {
         Broadcast(new PartyRequest {
-            Disband = new PartyRequest.Types.Disband { },
+            Disband = new PartyRequest.Types.Disband(),
         });
     }
 
@@ -57,7 +61,7 @@ public class PartyManager : IDisposable {
     }
 
     public bool CheckForDisband() {
-        if (Party.Members.Count < 2) {
+        if (Party.Members.Count <= 2) {
             Dispose();
             return true;
         }
@@ -86,7 +90,9 @@ public class PartyManager : IDisposable {
             pendingInvites[player.CharacterId] = (requestor.Name, DateTime.Now.AddSeconds(30));
             var request = new PartyRequest {
                 PartyId = Party.Id,
-                ReceiverIds = { player.CharacterId },
+                ReceiverIds = {
+                    player.CharacterId
+                },
                 Invite = new PartyRequest.Types.Invite {
                     SenderId = requestor.CharacterId,
                     SenderName = requestor.Name,
@@ -214,5 +220,91 @@ public class PartyManager : IDisposable {
         }
 
         return string.Empty;
+    }
+
+    public PartyError StartReadyCheck(long requestorId) {
+        if (!Party.Members.TryGetValue(requestorId, out PartyMember? requestor)) {
+            return PartyError.s_party_err_not_found;
+        }
+        if (requestorId != Party.LeaderCharacterId) {
+            return PartyError.s_party_err_not_chief;
+        }
+
+        Party.Vote = new PartyVote(PartyVoteType.ReadyCheck, Party.Members.Keys, requestorId);
+        Broadcast(new PartyRequest {
+            StartReadyCheck = new PartyRequest.Types.StartReadyCheck {
+                CharacterId = requestorId,
+            },
+        });
+
+        Task.Factory.StartNew(() => {
+            Thread.Sleep(TimeSpan.FromSeconds(Constant.PartyVoteReadyDurationSeconds));
+            if (Party.Vote == null) {
+                return;
+            }
+            int count = Party.Vote.Disapprovals.Count + Party.Vote.Approvals.Count;
+            if (count >= Party.Vote.PartyCharacterIds.Count) {
+                Party.Vote = null;
+                return;
+            }
+
+            Broadcast(new PartyRequest {
+                ExpiredVote = new PartyRequest.Types.ExpiredVote {
+                    PartyId = Party.Id,
+                },
+            });
+
+            Party.Vote = null;
+        });
+
+        return PartyError.none;
+    }
+
+    public PartyError ReadyCheckReply(long requestorId, bool ready) {
+        if (Party.Vote == null) {
+            return PartyError.s_party_err_not_found;
+        }
+
+        if (!Party.Members.TryGetValue(requestorId, out PartyMember? requestor)) {
+            return PartyError.s_party_err_not_found;
+        }
+
+        if (Party.Vote.Approvals.Contains(requestorId) || Party.Vote.Disapprovals.Contains(requestorId)) {
+            return PartyError.s_party_err_already_vote;
+        }
+
+        if (ready) {
+            Party.Vote.Approvals.Add(requestorId);
+        } else {
+            Party.Vote.Disapprovals.Add(requestorId);
+        }
+
+        Broadcast(new PartyRequest {
+            ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+                CharacterId = requestorId,
+                IsReady = ready,
+                PartyId = Party.Id,
+            },
+        });
+
+        CheckEndReadyCheck();
+
+        return PartyError.none;
+    }
+
+    private void CheckEndReadyCheck() {
+        if (Party.Vote == null) {
+            return;
+        }
+
+        int votes = Party.Vote.Approvals.Count + Party.Vote.Disapprovals.Count;
+        if (votes >= Party.Vote.PartyCharacterIds.Count) {
+            Broadcast(new PartyRequest {
+                EndReadyCheck = new PartyRequest.Types.EndReadyCheck {
+                    PartyId = Party.Id,
+                },
+            });
+            Party.Vote = null;
+        }
     }
 }

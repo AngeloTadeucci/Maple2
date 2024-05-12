@@ -91,6 +91,20 @@ message PartyRequest {
   message Disband {
     int64 character_id = 1;
   }
+  message StartReadyCheck {
+    int64 character_id = 1;
+  }
+  message ReadyCheckReply {
+    int64 character_id = 1;
+    bool is_ready = 2;
+    int32 party_id = 3;
+  }
+  message EndReadyCheck {
+    int32 party_id = 1;
+  }
+  message ExpiredVote {
+    int32 party_id = 1;
+  }
 
   int32 party_id = 1;
   repeated int64 receiver_ids = 2;
@@ -101,6 +115,10 @@ message PartyRequest {
     RemoveMember remove_member = 6;
     UpdateLeader update_leader = 7;
     Disband disband = 8;
+    StartReadyCheck start_ready_check = 9;
+    ReadyCheckReply ready_check_reply = 10;
+    EndReadyCheck end_ready_check = 11;
+    ExpiredVote expired_vote = 12;
   }
 }
 

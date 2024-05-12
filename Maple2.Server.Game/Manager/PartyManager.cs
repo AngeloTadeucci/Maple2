@@ -1,4 +1,6 @@
-﻿using Maple2.Model.Error;
+﻿using Maple2.Database.Extensions;
+using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
 using Maple2.Server.Core.Sync;
@@ -46,6 +48,18 @@ public class PartyManager : IDisposable {
 
         foreach (PartyMember member in Party.Members.Values) {
             member.Dispose();
+        }
+
+        if (Party.Vote != null) {
+            if (!Party.Vote.Approvals.Contains(session.CharacterId) && !Party.Vote.Disapprovals.Contains(session.CharacterId)) {
+                world.Party(new PartyRequest {
+                    RequestorId = session.CharacterId,
+                    ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+                        PartyId = Party.Id,
+                        Reply = false,
+                    },
+                });
+            }
         }
 
         if (!CheckDisband(session.CharacterId)) {
@@ -196,6 +210,59 @@ public class PartyManager : IDisposable {
             return true;
         }
         return false;
+    }
+
+    public void StartReadyCheck(long characterId) {
+        if (Party == null) {
+            return;
+        }
+
+        Party.Vote = new PartyVote(PartyVoteType.ReadyCheck, Party.Members.Keys, characterId);
+        Party.LastVoteTime = DateTime.Now.ToEpochSeconds();
+        session.Send(PartyPacket.StartVote(Party.Vote));
+    }
+
+    public void ReadyCheckReply(long characterId, bool ready) {
+        if (Party?.Vote == null) {
+            return;
+        }
+
+        if (!Party.Members.TryGetValue(characterId, out PartyMember? member)) {
+            return;
+        }
+
+        if (Party.Vote.Approvals.Contains(characterId) ||
+            Party.Vote.Disapprovals.Contains(characterId)) {
+            return;
+        }
+
+        if (ready) {
+            Party.Vote.Approvals.Add(characterId);
+        } else {
+            Party.Vote.Disapprovals.Add(characterId);
+        }
+
+        session.Send(PartyPacket.ReadyCheck(characterId, ready));
+    }
+
+    public void EndVote() {
+        if (Party?.Vote == null) {
+            return;
+        }
+
+        if (Party.Vote.Type == PartyVoteType.ReadyCheck) {
+            session.Send(PartyPacket.EndReadyCheck());
+        }
+        Party.Vote = null;
+    }
+
+    public void ExpiredVote() {
+        if (Party?.Vote == null) {
+            return;
+        }
+
+        session.Send(PartyPacket.PartyNotice(PartyMessage.s_party_vote_expired));
+        EndVote();
     }
 
     public PartyMember? GetMember(string name) {
