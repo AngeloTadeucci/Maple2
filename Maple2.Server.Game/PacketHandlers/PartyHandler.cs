@@ -62,7 +62,7 @@ public class PartyHandler : PacketHandler<GameSession> {
                 HandleMatchPartyJoin(session, packet);
                 return;
             case Command.SummonParty:
-                HandleSummonParty(session, packet);
+                HandleSummonParty(session);
                 return;
             case Command.Unknown:
                 HandleUnknown(session, packet);
@@ -216,8 +216,8 @@ public class PartyHandler : PacketHandler<GameSession> {
         long unk1 = packet.ReadLong();
     }
 
-    private void HandleSummonParty(GameSession session, IByteReader packet) {
-        // TODO: Implement
+    private void HandleSummonParty(GameSession session) {
+        // This only reaches if player does not have a summon scroll
     }
 
     private void HandleUnknown(GameSession session, IByteReader packet) {

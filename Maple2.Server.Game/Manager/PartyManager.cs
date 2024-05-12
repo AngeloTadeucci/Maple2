@@ -219,7 +219,6 @@ public class PartyManager : IDisposable {
 
         Party.Vote = new PartyVote(PartyVoteType.ReadyCheck, Party.Members.Keys, characterId);
         Party.LastVoteTime = DateTime.Now.ToEpochSeconds();
-        Console.WriteLine($"LastVote Time Set to {Party.LastVoteTime.FromEpochSeconds()}, DateTime.UtcNow: {DateTime.Now}");
         session.Send(PartyPacket.StartVote(Party.Vote));
     }
 
