@@ -33,22 +33,34 @@ public partial class TriggerContext : ITriggerContext {
 
     private void Broadcast(ByteWriter packet) => Field.Broadcast(packet);
 
+    private string lastDebugKey = "";
+
     [Conditional("TRIGGER_DEBUG")]
     [MessageTemplateFormatMethod("messageTemplate")]
     internal void DebugLog(string messageTemplate, params object[] args) {
-        logger.Debug(messageTemplate, args);
+        LogOnce(logger.Debug, messageTemplate, args);
     }
 
     [Conditional("TRIGGER_DEBUG")]
     [MessageTemplateFormatMethod("messageTemplate")]
     internal void WarnLog(string messageTemplate, params object[] args) {
-        logger.Warning(messageTemplate, args);
+        LogOnce(logger.Warning, messageTemplate, args);
     }
 
     [Conditional("TRIGGER_DEBUG")]
     [MessageTemplateFormatMethod("messageTemplate")]
     internal void ErrorLog(string messageTemplate, params object[] args) {
-        logger.Error(messageTemplate, args);
+        LogOnce(logger.Error, messageTemplate, args);
+    }
+
+    private void LogOnce(Action<string, object[]> logAction, string messageTemplate, params object[] args) {
+        string key = messageTemplate + string.Join(", ", args);
+        if (key == lastDebugKey) {
+            return;
+        }
+
+        logAction(messageTemplate, args);
+        lastDebugKey = key;
     }
 
     // Accessors

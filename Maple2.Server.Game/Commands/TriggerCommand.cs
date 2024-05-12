@@ -74,7 +74,7 @@ public class TriggerCommand : Command {
         }
 
         if (reset is not null && stateIndex < 0) {
-            FieldTrigger? fieldTrigger = fieldTriggers.FirstOrDefault(t => t.Value.Name == reset);
+            FieldTrigger? fieldTrigger = fieldTriggers.FirstOrDefault(t => t.Value.Name.ToLower() == reset.ToLower());
             if (fieldTrigger is null) {
                 ctx.Console.Error.WriteLine($"Trigger {reset} not found.");
                 return;

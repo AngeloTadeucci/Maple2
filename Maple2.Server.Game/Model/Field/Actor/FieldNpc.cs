@@ -85,7 +85,8 @@ public class FieldNpc : Actor<Npc> {
 
     public override Stats Stats { get; }
     public int TargetId = 0;
-    private readonly MS2PatrolData? patrolData;
+
+    private MS2PatrolData? patrolData;
     private int currentWaypointIndex = 0;
 
     public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string? patrolDataUUID = null) : base(field, objectId, npc) {
@@ -175,6 +176,11 @@ public class FieldNpc : Actor<Npc> {
                 if (Value.Animations.TryGetValue(waypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
                     return new AnimateRoutine(this, arriveSequence);
                 }
+            }
+
+            if (currentWaypointIndex + 1 >= patrolData.WayPoints.Count && !patrolData.IsLoop) {
+                patrolData = null;
+                return new WaitRoutine(this, IdleSequence.Id, 1f);
             }
 
             currentWaypointIndex++;
@@ -341,5 +347,10 @@ public class FieldNpc : Actor<Npc> {
         }
 
         debugMessages.Add(message);
+    }
+
+    public void SetPatrolData(MS2PatrolData newPatrolData) {
+        patrolData = newPatrolData;
+        currentWaypointIndex = 0;
     }
 }
