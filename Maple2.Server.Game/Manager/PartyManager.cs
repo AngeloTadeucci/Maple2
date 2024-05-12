@@ -251,7 +251,6 @@ public class PartyManager : IDisposable {
         if (Party.Vote.Type == PartyVoteType.ReadyCheck) {
             session.Send(PartyPacket.EndReadyCheck());
         }
-        Party.LastVoteTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         Party.Vote = null;
     }
 
