@@ -60,14 +60,16 @@ public class WebController : ControllerBase {
                 return Results.Text($"0,{resource.Path}");
             }
         }
-        if (resource == null) {
-            return Results.BadRequest("Invalid resource.");
+
+        if (type is UgcType.ItemIcon or UgcType.Item && resource == null) {
+            Console.WriteLine("Invalid UGC resource.");
+            return Results.BadRequest("Invalid UGC resource.");
         }
 
         return type switch {
             UgcType.ProfileAvatar => UploadProfileAvatar(fileBytes, characterId),
-            UgcType.Item or UgcType.Mount or UgcType.Furniture => UploadItem(fileBytes, id, ugcUid, resource),
-            UgcType.ItemIcon => UploadItemIcon(fileBytes, id, ugcUid, resource),
+            UgcType.Item or UgcType.Mount or UgcType.Furniture => UploadItem(fileBytes, id, ugcUid, resource!),
+            UgcType.ItemIcon => UploadItemIcon(fileBytes, id, ugcUid, resource!),
             _ => HandleUnknownMode(type),
         };
     }
