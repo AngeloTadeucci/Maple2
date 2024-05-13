@@ -64,11 +64,12 @@ internal partial record PyParameter(ScriptType Type, string Name) {
         return type switch {
             ScriptType.Str => string.IsNullOrWhiteSpace(value) ? "None" : $"'{value.Replace(@"\", @"\\").Replace("'", @"\'")}'",
             ScriptType.Int => string.IsNullOrWhiteSpace(value) ? "0" : long.Parse(value).ToString(),
-            ScriptType.Float => string.IsNullOrWhiteSpace(value) ? "0.0" : float.Parse(value).ToString(CultureInfo.InvariantCulture),
+            ScriptType.Float => string.IsNullOrWhiteSpace(value) ? "0.0" : float.Parse(value).ToString("0.0###", CultureInfo.InvariantCulture),
             ScriptType.IntList => string.IsNullOrWhiteSpace(value) ? "[]"
                 : $"[{string.Join(",", GetIntList(value).Select(int.Parse))}]",
             ScriptType.StrList => string.IsNullOrWhiteSpace(value) ? "[]"
-                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries).Select(str => $"'{str.Replace("'", "\\'")}'"))}]",
+                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(str => $"'{str.Replace(@"\", @"\\").Replace("'", @"\'")}'"))}]",
             ScriptType.StateList => string.IsNullOrWhiteSpace(value) ? "[]"
                 : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
             ScriptType.Vector3 => string.IsNullOrWhiteSpace(value) ? "[]"

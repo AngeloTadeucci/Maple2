@@ -317,6 +317,10 @@ public class TriggerGenerator {
 
         var args = new List<PyParameter>();
         foreach ((string argName, string argValue) in strArgs) {
+            if (name == "reset_camera" && argValue == "interpolationTime") {
+                continue;
+            }
+
             (ScriptType Type, string Name) param = function.AddParameter(ScriptType.Str, argName);
             if (param.Type != ScriptType.None) {
                 args.Add(new PyParameter(param.Type, param.Name, argValue));

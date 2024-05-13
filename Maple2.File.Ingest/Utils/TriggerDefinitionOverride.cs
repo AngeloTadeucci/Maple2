@@ -147,7 +147,7 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("spawnIds", IntList, null), ("triggerId", Int, null), ("itemId", Int, null), ("arg5", Int, null)),
         };
         ActionOverride["spawn_monster"] = new TriggerDefinitionOverride("spawn_monster") {
-            Names = BuildNameOverride(("arg1", "spawnIds"), ("arg2", "autoTarget"), ("agr2", "autoTarget"), ("arg3", "delay")),
+            Names = BuildNameOverride(("arg1", "spawnIds"), ("arg2", "autoTarget"), ("agr2", "autoTarget"), ("arg", "autoTarget"), ("arg3", "delay")),
             Types = BuildTypeOverride(("spawnIds", IntList, null), ("autoTarget", Bool, "True"), ("delay", Int, null)),
         };
         ActionOverride["create_widget"] = new TriggerDefinitionOverride("create_widget") {
@@ -194,7 +194,7 @@ internal class TriggerDefinitionOverride {
 
         ActionOverride["dungeon_enable_give_up"] = new TriggerDefinitionOverride("dungeon_enable_give_up") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("enable", Bool, null)),
+            Types = BuildTypeOverride(("isEnable", Bool, null)),
         };
 
         ActionOverride["dungeon_fail"] = new TriggerDefinitionOverride("dungeon_fail") {
@@ -424,7 +424,7 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("spawnId", Int, null)),
         };
         ActionOverride["reset_camera"] = new TriggerDefinitionOverride("reset_camera") {
-            Names = BuildNameOverride(("arg2", "interpolationTime")),
+            Names = BuildNameOverride(("arg1", "interpolationTime"), ("arg2", "interpolationTime")),
             Types = BuildTypeOverride(("interpolationTime", Float, null)),
         };
         ActionOverride["reset_timer"] = new TriggerDefinitionOverride("reset_timer") {
@@ -537,10 +537,10 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["set_npc_duel_hp_bar"] = new TriggerDefinitionOverride("set_npc_duel_hp_bar") {
             Names = BuildNameOverride(("spawnPointID", "spawnId")),
-            Types = BuildTypeOverride(("isOpen", Bool, null), ("spawnId", IntList, null), ("durationTick", Int, null), ("npcHpStep", Int, null)),
+            Types = BuildTypeOverride(("isOpen", Bool, null), ("spawnId", Int, null), ("durationTick", Int, null), ("npcHpStep", Int, null)),
         };
         ActionOverride["set_npc_emotion_loop"] = new TriggerDefinitionOverride("set_npc_emotion_loop") {
-            Names = BuildNameOverride(("arg1", "spawnId"), ("arg2", "sequenceName"), ("arg3", "duration")),
+            Names = BuildNameOverride(("arg1", "spawnId"), ("arg2", "sequenceName"), ("arg3", "duration"), ("arg", "duration")),
             Types = BuildTypeOverride(("spawnId", Int, null), ("duration", Float, null)),
         };
         ActionOverride["set_npc_emotion_sequence"] = new TriggerDefinitionOverride("set_npc_emotion_sequence") {
@@ -600,7 +600,7 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("state", State, null)),
         };
         ActionOverride["set_skill"] = new TriggerDefinitionOverride("set_skill") {
-            Names = BuildNameOverride(("objectIDs", "triggerIds"), ("arg1", "triggerIds"), ("arg2", "enable")),
+            Names = BuildNameOverride(("objectIDs", "triggerIds"), ("arg1", "triggerIds"), ("arg2", "enable"), ("isEnable", "enable")),
             Types = BuildTypeOverride(("triggerIds", IntList, null), ("enable", Bool, null)),
         };
         ActionOverride["set_skip"] = new TriggerDefinitionOverride("set_skip") {
@@ -620,7 +620,7 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("enable", Bool, null), ("startScale", Float, null), ("endScale", Float, null), ("duration", Float, null), ("interpolator", Int, null)),
         };
         ActionOverride["set_timer"] = new TriggerDefinitionOverride("set_timer") {
-            Names = BuildNameOverride(("arg1", "timerId"), ("arg2", "seconds"), ("arg3", "startDelay"), ("arg4", "interval"), ("arg5", "vOffset"), ("arg6", "type")),
+            Names = BuildNameOverride(("arg1", "timerId"), ("arg2", "seconds"), ("arg3", "startDelay"), ("ara3", "startDelay"), ("arg4", "interval"), ("arg5", "vOffset"), ("arg6", "type")),
             Types = BuildTypeOverride(("seconds", Int, null), ("startDelay", Int, null), ("interval", Int, null), ("vOffset", Int, null)),
         };
         ActionOverride["set_user_value"] = new TriggerDefinitionOverride("set_user_value") {
@@ -777,8 +777,8 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("widgetArgNum", Int, null)),
         };
         ActionOverride["write_log"] = new TriggerDefinitionOverride("write_log") {
-            Names = BuildNameOverride(("arg1", "logName"), ("arg2", "triggerId"), ("arg3", "event"), ("arg5", "subEvent")),
-            Types = BuildTypeOverride(("triggerId", Int, null), ("arg4", Int, null)),
+            Names = BuildNameOverride(("arg1", "logName"), ("arg2", "triggerId"), ("arg3", "event"), ("arg4", "level"), ("arg5", "subEvent")),
+            Types = BuildTypeOverride(("triggerId", Int, null), ("level", Int, null)),
         };
 
         // Condition Override
@@ -918,8 +918,8 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(),
         };
         ConditionOverride["monster_dead"] = new TriggerDefinitionOverride("monster_dead") {
-            Names = BuildNameOverride(("arg1", "spawnIds")),
-            Types = BuildTypeOverride(("spawnIds", IntList, null), ("arg2", Bool, "True")),
+            Names = BuildNameOverride(("arg1", "spawnIds"), ("arg2", "autoTarget")),
+            Types = BuildTypeOverride(("spawnIds", IntList, null), ("autoTarget", Bool, "True")),
         };
         ConditionOverride["monster_in_combat"] = new TriggerDefinitionOverride("monster_in_combat") {
             Names = BuildNameOverride(("arg1", "spawnIds")),
