@@ -51,6 +51,32 @@ public class PartyManager : IDisposable {
         }
     }
 
+    /// <summary>
+    /// Differs from Broadcast as it only broadcasts to voters.
+    /// </summary>
+    private void BroadcastVote(PartyRequest request) {
+        if (Party.Vote == null) {
+            return;
+        }
+        if (request.PartyId > 0 && request.PartyId != Party.Id) {
+            throw new InvalidOperationException($"Broadcasting {request.PartyCase} for incorrect party: {request.PartyId} => {Party.Id}");
+        }
+
+        request.PartyId = Party.Id;
+        foreach (IGrouping<short, PartyMember> group in Party.Members.Values.Where(member => Party.Vote.Voters.Contains(member.CharacterId)).GroupBy(member => member.Info.Channel)) {
+            if (!ChannelClients.TryGetClient(group.Key, out ChannelClient? client)) {
+                continue;
+            }
+
+            request.ReceiverIds.Clear();
+            request.ReceiverIds.AddRange(group.Select(member => member.Info.CharacterId).Where(member => Party.Vote.Voters.Contains(member)));
+
+            try {
+                client.Party(request);
+            } catch { }
+        }
+    }
+
     public void FindNewLeader(long characterId) {
         PartyMember? newLeader = Party.Members.Values.FirstOrDefault(m => m.CharacterId != characterId);
         if (newLeader == null) {
@@ -243,7 +269,7 @@ public class PartyManager : IDisposable {
                 return;
             }
             int count = Party.Vote.Disapprovals.Count + Party.Vote.Approvals.Count;
-            if (count >= Party.Vote.PartyCharacterIds.Count) {
+            if (count >= Party.Vote.Voters.Count) {
                 Party.Vote = null;
                 return;
             }
@@ -260,7 +286,7 @@ public class PartyManager : IDisposable {
         return PartyError.none;
     }
 
-    public PartyError ReadyCheckReply(long requestorId, bool ready) {
+    public PartyError ReadyCheckReply(long requestorId, bool reply) {
         if (Party.Vote == null) {
             return PartyError.s_party_err_not_found;
         }
@@ -273,38 +299,99 @@ public class PartyManager : IDisposable {
             return PartyError.s_party_err_already_vote;
         }
 
-        if (ready) {
+        if (reply) {
             Party.Vote.Approvals.Add(requestorId);
         } else {
             Party.Vote.Disapprovals.Add(requestorId);
         }
 
         Broadcast(new PartyRequest {
-            ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+            VoteReply = new PartyRequest.Types.VoteReply {
                 CharacterId = requestorId,
-                IsReady = ready,
+                Reply = reply,
                 PartyId = Party.Id,
             },
         });
 
-        CheckEndReadyCheck();
+
+        CheckEndVote();
 
         return PartyError.none;
     }
 
-    private void CheckEndReadyCheck() {
+    private void CheckEndVote() {
         if (Party.Vote == null) {
             return;
         }
 
-        int votes = Party.Vote.Approvals.Count + Party.Vote.Disapprovals.Count;
-        if (votes >= Party.Vote.PartyCharacterIds.Count) {
+        switch (Party.Vote.Type) {
+            case PartyVoteType.ReadyCheck:
+                int votes = Party.Vote.Approvals.Count + Party.Vote.Disapprovals.Count;
+                if (votes >= Party.Vote.Voters.Count) {
+                    Broadcast(new PartyRequest {
+                        EndVote = new PartyRequest.Types.EndVote {
+                            PartyId = Party.Id,
+                        },
+                    });
+                    Party.Vote = null;
+                }
+                break;
+            case PartyVoteType.Kick:
+                if (Party.Vote.Type == PartyVoteType.Kick &&
+                    Party.Vote.Approvals.Count >= Party.Vote.VotesNeeded) {
+                    Kick(Party.Vote.InitiatorId, Party.Vote.TargetMember!.CharacterId);
+
+                    Broadcast(new PartyRequest {
+                        EndVote = new PartyRequest.Types.EndVote {
+                            PartyId = Party.Id,
+                        },
+                    });
+                }
+
+                break;
+        }
+
+    }
+
+    public PartyError VoteKick(long requestorId, long targetId) {
+        if (!Party.Members.ContainsKey(requestorId)) {
+            return PartyError.s_party_err_not_found;
+        }
+
+        if (!Party.Members.TryGetValue(targetId, out PartyMember? target)) {
+            return PartyError.s_party_err_not_found;
+        }
+
+        ICollection<long> voters = Party.Members.Keys.Where(member => member != targetId).ToList();
+        Party.Vote = new PartyVote(PartyVoteType.Kick, voters, requestorId) {
+            TargetMember = target,
+        };
+
+        BroadcastVote(new PartyRequest {
+            PartyId = Party.Id,
+            StartVoteKick = new PartyRequest.Types.StartVoteKick {
+                CharacterId = requestorId,
+                TargetId = targetId,
+                ReceiverIds = { Party.Vote.Voters },
+            },
+        });
+
+        Task.Factory.StartNew(() => {
+            // TODO: The duration is wrong.
+            Thread.Sleep(TimeSpan.FromSeconds(Constant.PartyVoteReadyDurationSeconds));
+            if (Party.Vote == null) {
+                return;
+            }
+
             Broadcast(new PartyRequest {
-                EndReadyCheck = new PartyRequest.Types.EndReadyCheck {
+                ExpiredVote = new PartyRequest.Types.ExpiredVote {
                     PartyId = Party.Id,
                 },
             });
+
             Party.Vote = null;
-        }
+        });
+
+        return PartyError.none;
     }
 }

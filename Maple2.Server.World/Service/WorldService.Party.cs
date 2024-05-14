@@ -37,8 +37,10 @@ public partial class WorldService {
                 return Task.FromResult(UpdateLeader(request.RequestorId, request.UpdateLeader));
             case PartyRequest.PartyOneofCase.ReadyCheck:
                 return Task.FromResult(StartReadyCheck(request.RequestorId, request.ReadyCheck));
-            case PartyRequest.PartyOneofCase.ReadyCheckReply:
-                return Task.FromResult(ReadyCheckReply(request.RequestorId, request.ReadyCheckReply));
+            case PartyRequest.PartyOneofCase.VoteReply:
+                return Task.FromResult(VoteReply(request.RequestorId, request.VoteReply));
+            case PartyRequest.PartyOneofCase.VoteKick:
+                return Task.FromResult(VoteKick(request.RequestorId, request.VoteKick));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.none });
         }
@@ -167,12 +169,23 @@ public partial class WorldService {
         };
     }
 
-    private PartyResponse ReadyCheckReply(long requestorId, PartyRequest.Types.ReadyCheckReply reply) {
+    private PartyResponse VoteReply(long requestorId, PartyRequest.Types.VoteReply reply) {
         if (!partyLookup.TryGet(reply.PartyId, out PartyManager? manager)) {
             return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
         }
 
         PartyError error = manager.ReadyCheckReply(requestorId, reply.Reply);
+        return new PartyResponse {
+            Error = (int) error,
+        };
+    }
+
+    private PartyResponse VoteKick(long requestorId, PartyRequest.Types.VoteKick voteKick) {
+        if (!partyLookup.TryGet(voteKick.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
+        }
+
+        PartyError error = manager.VoteKick(requestorId, voteKick.TargetUserId);
         return new PartyResponse {
             Error = (int) error,
         };

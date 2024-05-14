@@ -54,7 +54,7 @@ public class PartyManager : IDisposable {
             if (!Party.Vote.Approvals.Contains(session.CharacterId) && !Party.Vote.Disapprovals.Contains(session.CharacterId)) {
                 world.Party(new PartyRequest {
                     RequestorId = session.CharacterId,
-                    ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+                    VoteReply = new PartyRequest.Types.VoteReply {
                         PartyId = Party.Id,
                         Reply = false,
                     },
@@ -161,6 +161,10 @@ public class PartyManager : IDisposable {
         }
         EndListen(member);
 
+        if (Party.Vote != null && Party.Vote.TargetMember?.CharacterId == characterId) {
+            EndVote();
+        }
+
         session.Send(isKick ? PartyPacket.Kicked(member.CharacterId) : PartyPacket.Leave(member.CharacterId, isSelf));
         return true;
     }
@@ -250,9 +254,12 @@ public class PartyManager : IDisposable {
             return;
         }
 
-        if (Party.Vote.Type == PartyVoteType.ReadyCheck) {
-            session.Send(PartyPacket.EndReadyCheck());
+        if (Party.Vote.Type == PartyVoteType.Kick &&
+            Party.Vote.VotesNeeded > Party.Vote.Approvals.Count) {
+            session.Send(PartyPacket.PartyNotice(PartyMessage.s_party_vote_rejected_kick_user));
         }
+
+        session.Send(PartyPacket.EndVote());
         Party.Vote = null;
     }
 
@@ -263,6 +270,23 @@ public class PartyManager : IDisposable {
 
         session.Send(PartyPacket.PartyNotice(PartyMessage.s_party_vote_expired));
         EndVote();
+    }
+
+    public void StartVoteKick(long requestorId, long targetId, ICollection<long> receiverIds) {
+        if (Party == null) {
+            return;
+        }
+
+        if (!Party.Members.TryGetValue(targetId, out PartyMember? target)) {
+            return;
+        }
+
+        Party.LastVoteTime = DateTime.Now.ToEpochSeconds();
+        Party.Vote = new PartyVote(PartyVoteType.Kick, receiverIds, requestorId) {
+            TargetMember = target,
+            VoteTime = Party.LastVoteTime,
+        };
+        session.Send(PartyPacket.StartVote(Party.Vote));
     }
 
     public PartyMember? GetMember(string name) {

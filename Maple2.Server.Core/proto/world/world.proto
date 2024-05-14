@@ -246,9 +246,13 @@ message PartyRequest {
   message ReadyCheck {
     int32 party_id = 1;
   }
-  message ReadyCheckReply {
+  message VoteReply {
     int32 party_id = 1;
     bool reply = 2;
+  }
+  message VoteKick {
+    int32 party_id = 1;
+    int64 target_user_id = 2;
   }
 
   int64 requestor_id = 1;
@@ -261,7 +265,8 @@ message PartyRequest {
     Kick kick = 7;
     UpdateLeader update_leader = 8;
     ReadyCheck ready_check = 9;
-    ReadyCheckReply ready_check_reply = 10;
+    VoteReply vote_reply = 10;
+    VoteKick vote_kick = 11;
   }
 }
 
