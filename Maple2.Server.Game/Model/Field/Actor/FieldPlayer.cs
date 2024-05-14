@@ -43,7 +43,7 @@ public class FieldPlayer : Actor<Player> {
         return gender switch {
             Gender.Male => "male",
             Gender.Female => "female",
-            _ => ""
+            _ => "male"
         };
     }
 

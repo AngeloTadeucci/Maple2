@@ -32,7 +32,7 @@ internal sealed class FieldActor : IActor {
         Buffs = new BuffManager(this);
         Transform = new Transform();
         NpcMetadata = npcMetadata;
-        AnimationState = new AnimationState(this, "");
+        AnimationState = new AnimationState(this, string.Empty); // not meant to have animations
     }
 
     public void Update(long tickCount) { }

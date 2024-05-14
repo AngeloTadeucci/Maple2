@@ -8,6 +8,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Game.Model.Field.Actor.ActorState;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
@@ -134,7 +135,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = metadata.Data.Motions[0].MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationState.Type.Skill);
+        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
 
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
             session.Player.ApplyEffect(session.Player, session.Player, effect);
@@ -334,7 +335,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = record.Metadata.Data.Motions[motionPoint].MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationState.Type.Skill);
+        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
     }
 
     private void HandleTickSync(GameSession session, IByteReader packet) {

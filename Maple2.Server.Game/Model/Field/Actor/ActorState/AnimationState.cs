@@ -1,12 +1,6 @@
 ﻿using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static IronPython.Modules._ast;
+using Maple2.Server.Game.Model.Enum;
 
 namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
 
@@ -14,12 +8,6 @@ public class AnimationState {
     // TODO: maybe make this a ping based variable?
     private const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
     private readonly IActor actor;
-
-    public enum Type {
-        Misc,
-        Move,
-        Skill
-    }
 
     private struct LoopData {
         public float start;
@@ -50,7 +38,7 @@ public class AnimationState {
 
     public AnimationMetadata? RigMetadata { get; init; }
     public AnimationSequence? PlayingSequence { get; private set; }
-    public TickPair CastStartTick { get; private set; }
+    private bool IsPlayerAnimation { get; set; }
     public float MoveSpeed { get; set; }
     public float AttackSpeed { get; set; }
     private float sequenceSpeed { get; set; }
@@ -59,10 +47,10 @@ public class AnimationState {
     private LoopData sequenceLoop { get; set; }
     private long sequenceEndTick { get; set; }
     private long sequenceLoopEndTick { get; set; }
-    private TickPair lastTick { get; set; }
+    private long lastTick { get; set; }
     private bool isLooping { get; set; }
     private bool loopOnlyOnce { get; set; }
-    private Type sequenceType { get; set; }
+    private AnimationType sequenceType { get; set; }
 
     private bool debugPrintAnimations;
     public bool DebugPrintAnimations {
@@ -80,21 +68,21 @@ public class AnimationState {
         RigMetadata = actor.NpcMetadata.GetAnimation(modelName);
         MoveSpeed = 1;
         AttackSpeed = 1;
+        IsPlayerAnimation = actor is FieldPlayer;
     }
 
     private void ResetSequence() {
         PlayingSequence = null;
-        CastStartTick = new TickPair(0);
         sequenceSpeed = 1;
         lastSequenceTime = 0;
         sequenceLoop = new LoopData(0, 0);
-        lastTick = new TickPair(0);
+        lastTick =0;
         isLooping = false;
         sequenceEnd = 0;
-        sequenceType = Type.Misc;
+        sequenceType = AnimationType.Misc;
     }
 
-    public bool TryPlaySequence(string name, float speed, Type type, long clientTick = 0) {
+    public bool TryPlaySequence(string name, float speed, AnimationType type) {
         if (RigMetadata is null) {
             return false;
         }
@@ -117,8 +105,7 @@ public class AnimationState {
 
         long fieldTick = actor.Field.FieldTick;
 
-        lastTick = new TickPair(fieldTick, clientTick == 0 ? fieldTick : clientTick);
-        CastStartTick = lastTick;
+        lastTick = fieldTick;
 
         return true;
     }
@@ -144,12 +131,12 @@ public class AnimationState {
         }
 
         float sequenceSpeedModifier = sequenceType switch {
-            Type.Move => MoveSpeed,
-            Type.Skill => AttackSpeed,
+            AnimationType.Move => MoveSpeed,
+            AnimationType.Skill => AttackSpeed,
             _ => 1
         };
 
-        long lastServerTick = lastTick.server == 0 ? tickCount : lastTick.server;
+        long lastServerTick = lastTick == 0 ? tickCount : lastTick;
         float speed = sequenceSpeed * sequenceSpeedModifier / 1000;
         float delta = (float) (tickCount - lastServerTick) * speed;
         float sequenceTime = lastSequenceTime + delta;
@@ -162,7 +149,7 @@ public class AnimationState {
 
         // TODO: maybe make client grace period ping based instead?
         if (isLooping && sequenceLoop.end != 0 && sequenceTime > sequenceLoop.end) {
-            if (lastTick.server == lastTick.client || tickCount <= sequenceLoopEndTick + ClientGraceTimeTick) {
+            if (!IsPlayerAnimation || tickCount <= sequenceLoopEndTick + ClientGraceTimeTick) {
                 if (loopOnlyOnce) {
                     isLooping = false;
                     loopOnlyOnce = false;
@@ -181,12 +168,12 @@ public class AnimationState {
         }
 
         if (sequenceEnd != 0 && sequenceTime > sequenceEnd) {
-            if (lastTick.server == lastTick.client || tickCount <= sequenceEndTick + ClientGraceTimeTick) {
+            if (!IsPlayerAnimation || tickCount <= sequenceEndTick + ClientGraceTimeTick) {
                 ResetSequence();
             }
         }
 
-        lastTick = new TickPair(tickCount, lastTick.client + tickCount - lastTick.server);
+        lastTick = tickCount;
         lastSequenceTime = sequenceTime;
     }
 
