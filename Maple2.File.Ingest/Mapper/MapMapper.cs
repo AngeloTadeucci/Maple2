@@ -12,8 +12,8 @@ public class MapMapper : TypeMapper<MapMetadata> {
     private readonly MapParser parser;
 
     public MapMapper(M2dReader xmlReader) {
-        spawnParser = new(xmlReader);
-        parser = new(xmlReader);
+        spawnParser = new TableParser(xmlReader);
+        parser = new MapParser(xmlReader);
     }
 
     protected override IEnumerable<MapMetadata> Map() {

@@ -5,7 +5,7 @@ namespace Maple2.File.Ingest.Utils;
 
 public static class TriggerTranslate {
     private static readonly Dictionary<string, string> ActionLookup = new() {
-        {"대화를설정한다", "Set Conversation"},
+        {"대화를설정한다", "Set Dialogue"},
         {"랜덤메쉬를설정한다", "Set Random Mesh"},
         {"로그를남긴다", "Write Log"},
         {"로프를설정한다", "Set Rope"},
@@ -14,7 +14,7 @@ public static class TriggerTranslate {
         {"메쉬를설정한다", "Set Mesh"},
         {"메쉬애니를설정한다", "Set Mesh Animation"},
         {"몬스터를변경한다", "Change Monster"},
-        {"몬스터를생성한다", "Create Monster"},
+        {"몬스터를생성한다", "Spawn Monster"},
         {"몬스터소멸시킨다", "Destroy Monster"},
         {"무작위유저를이동시킨다", "Move Random User"},
         {"버프를걸어준다", "Add Buff"},
@@ -44,6 +44,8 @@ public static class TriggerTranslate {
         {"포탈을설정한다", "Set Portal"},
         {"연출UI를설정한다", "Set Cinematic UI"},
         {"이벤트UI를설정한다", "Set Event UI"},
+        {"공지를한다", "Announce"},
+        {"전장점수를준다", "Allocate Battlefield Points"},
     };
 
     private static readonly Dictionary<string, string> ConditionLookup = new() {
@@ -51,7 +53,7 @@ public static class TriggerTranslate {
         {"NPC를감지했으면", "NPC Detected"},
         {"몬스터가전투상태면", "Monster In Combat"},
         {"몬스터가죽어있으면", "Monster Dead"},
-        {"무조건", "True"},
+        {"무조건", "Always"},
         {"보너스게임보상받은유저를감지했으면", "Bonus Game Reward Detected"},
         {"시간이경과했으면", "Time Expired"},
         {"여러명의유저를감지했으면", "Count Users"},
@@ -80,6 +82,11 @@ public static class TriggerTranslate {
 
         TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
         return textInfo.ToTitleCase(sb.ToString().ToLower()).Replace(" ", "");
+    }
+
+    public static string ToCamelName(string text) {
+        string pascal = ToPascalCase(text);
+        return pascal[..1].ToLower() + pascal[1..];
     }
 
     public static string ToSnakeCase(string text) {

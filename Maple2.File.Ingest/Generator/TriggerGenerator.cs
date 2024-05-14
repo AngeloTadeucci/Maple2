@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using Maple2.File.Ingest.Utils;
+using Maple2.File.Ingest.Utils.Trigger;
 using Maple2.File.IO;
 using Maple2.File.IO.Crypto.Common;
 using static System.Char;
@@ -18,7 +19,7 @@ public class TriggerGenerator {
 
     private static readonly HashSet<(string, bool, bool, bool)> ProcessedStrings = [];
     private static readonly SortedDictionary<string, (bool IsState, bool IsAction, bool IsCondition)> KoreanStrings = new();
-    private static readonly TriggerScriptCommon ApiScript = new();
+    private static readonly TriggerApiScript ApiScript = new();
 
     public TriggerGenerator(M2dReader xmlReader) {
         reader = xmlReader;
@@ -101,14 +102,44 @@ public class TriggerGenerator {
 
                 foreach (XmlNode stateNode in stateNodes) {
                     TriggerScript.State scriptState = ParseState(stateNode, stateIndex, entry.Name);
-                    XmlNode current = stateNode;
-                    while (current.PreviousSibling is XmlComment comment && comment.Value != null) {
-                        if (comment.Value.Contains("</state")) {
-                            break;
+
+                    IList<string> comments = SiblingComments(stateNode);
+                    // Join all comments and attempt to parse as XML
+                    if (TryParseXml(string.Join("\n", comments).Trim(), "state", out List<XmlNode> commentNodes)) {
+                        foreach (XmlNode commentNode in commentNodes) {
+                            switch (commentNode.Name) {
+                                case "state":
+                                    script.States.Add(new CommentWrapper(ParseState(commentNode, stateIndex, entry.Name)));
+                                    break;
+                                default:
+                                    Debug.Assert(commentNode.Value != null);
+                                    script.States.Add(new Comment(commentNode.Value));
+                                    break;
+                            }
                         }
-                        scriptState.Comments.Insert(0, comment.Value);
-                        current = comment;
+                    } else {
+                        // If unable to parse full block comment, attempt individual blocks
+                        foreach (string comment in comments) {
+                            if (TryParseXml(comment, "state", out commentNodes)) {
+                                foreach (XmlNode commentNode in commentNodes) {
+                                    switch (commentNode.Name) {
+                                        case "state":
+                                            script.States.Add(new CommentWrapper(ParseState(commentNode, stateIndex, entry.Name)));
+                                            break;
+                                        default:
+                                            Debug.Assert(commentNode.Value != null);
+                                            script.States.Add(new Comment(commentNode.Value));
+                                            break;
+                                    }
+                                }
+                                continue;
+                            }
+
+                            // Anything unparsed is added back as a comment
+                            scriptState.Comments.Add(comment);
+                        }
                     }
+
                     script.States.Add(scriptState);
                 }
 
@@ -125,48 +156,136 @@ public class TriggerGenerator {
         using var apiStream = new StreamWriter("Scripts/Trigger/trigger_api.py");
         using var apiWriter = new IndentedTextWriter(apiStream, "    ");
         ApiScript.WriteTo(apiWriter);
+
+        using var csStream = new StreamWriter("Scripts/ITriggerContext.cs");
+        using var csWriter = new IndentedTextWriter(csStream, "    ");
+        ApiScript.WriteInterface(csWriter);
     }
 
     private static TriggerScript.State ParseState(XmlNode node, Dictionary<string, string> stateIndex, string filePath) {
         string name = FixClassName(node.Attributes["name"].Value);
         // IndexStrings(name, isState: true);
 
-        var onEnter = new List<TriggerScript.Action>();
-        foreach (XmlNode actionNode in node.SelectNodes("onEnter/action")!) {
-            TriggerScript.Action action = ParseAction(actionNode, stateIndex);
-            if (actionNode.NextSibling is XmlComment comment) {
-                action.LineComment = comment.Value;
+        var onEnter = new List<IScriptBlock>();
+        TriggerScript.Transition? onEnterTransition = null;
+        XmlNode? onEnterNode = node.SelectSingleNode("onEnter");
+        if (onEnterNode != null) {
+            IEnumerator<XmlNode> it = onEnterNode.ChildNodes.Cast<XmlNode>().GetEnumerator();
+            while(it.MoveNext()) {
+                switch (it.Current.Name) {
+                    case "action":
+                        onEnter.Add(ParseAction(it, stateIndex));
+                        break;
+                    case "transition":
+                        onEnterTransition = ParseTransition(it, stateIndex);
+                        break;
+                    case "#comment":
+                        if (it.Current.Value == null) {
+                            break;
+                        }
+                        if (TryParseXml(it.Current.Value, "action", out List<XmlNode> commentActionNodes)) {
+                            foreach (XmlNode commentNode in commentActionNodes) {
+                                switch (commentNode.Name) {
+                                    case "action":
+                                        onEnter.Add(new CommentWrapper(ParseAction(commentNode, stateIndex)));
+                                        break;
+                                    default:
+                                        Debug.Assert(commentNode.Value != null);
+                                        AppendCommentOrAdd(onEnter, commentNode);
+                                        break;
+                                }
+                            }
+                        } else {
+                            AppendCommentOrAdd(onEnter, it.Current);
+                        }
+                        break;
+                    case "#text":
+                        if (!string.IsNullOrWhiteSpace(node.Value)) {
+                            Console.WriteLine($"Unexpected text: {node.Value}");
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException($"[{filePath}] Unexpected node <onEnter><{it.Current.Name}>: {onEnterNode.InnerXml}");
+                }
             }
-            onEnter.Add(action);
         }
 
-        var conditions = new List<TriggerScript.Condition>();
+        var conditions = new List<IScriptBlock>();
         foreach (XmlNode conditionNode in node.SelectNodes("condition")!) {
             TriggerScript.Condition condition = ParseCondition(conditionNode, stateIndex, filePath);
             if (conditionNode.NextSibling is XmlComment comment) {
-                condition.LineComment = comment.Value;
+                if (TryParseXml(comment.Value, "condition", out List<XmlNode> commentNodes, allowComments:false)) {
+                    foreach (TriggerScript.Condition commentedCondition in commentNodes.Select(commentNode => ParseCondition(commentNode, stateIndex, filePath))) {
+                        conditions.Add(new CommentWrapper(commentedCondition));
+                    }
+                } else {
+                    condition.LineComment = comment.Value;
+                }
             }
             conditions.Add(condition);
         }
 
-        var onExit = new List<TriggerScript.Action>();
-        foreach (XmlNode actionNode in node.SelectNodes("onExit/action")!) {
-            TriggerScript.Action action = ParseAction(actionNode, stateIndex);
-            if (actionNode.NextSibling is XmlComment comment) {
-                action.LineComment = comment.Value;
+        var onExit = new List<IScriptBlock>();
+        XmlNode? onExitNode = node.SelectSingleNode("onExit");
+        if (onExitNode != null) {
+            foreach (XmlNode child in onExitNode.ChildNodes) {
+                switch (child.Name) {
+                    case "action":
+                        onExit.Add(ParseAction(child, stateIndex));
+                        break;
+                    case "condition":
+                        Console.WriteLine($"[{filePath}] Moving onExit <condition> to onTick");
+                        conditions.Add(ParseCondition(child, stateIndex, filePath));
+                        break;
+                    case "#comment":
+                        if (child.Value == null) {
+                            break;
+                        }
+                        if (TryParseXml(child.Value, "action", out List<XmlNode> commentNodes)) {
+                            foreach (TriggerScript.Action commentedAction in commentNodes.Select(commentNode => ParseAction(commentNode, stateIndex))) {
+                                onExit.Add(new CommentWrapper(commentedAction));
+                            }
+                        } else {
+                            AppendCommentOrAdd(onExit, child);
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException($"Unexpected node in onExit: {child.Name}\n{child.OuterXml}");
+                }
             }
-            onExit.Add(action);
         }
 
-        return new TriggerScript.State {
-            Name = name,
+        return new TriggerScript.State(name) {
             OnEnter = onEnter,
+            OnEnterTransition = onEnterTransition,
             Conditions = conditions,
             OnExit = onExit,
         };
     }
 
+    private static TriggerScript.Action ParseAction(IEnumerator<XmlNode> it, Dictionary<string, string> stateIndex) {
+        TriggerScript.Action action = ParseAction(it.Current, stateIndex);
+        if (it.Current.NextSibling is XmlComment {Value: not null} lineComment) {
+            string trimmed = lineComment.Value.Trim();
+            if (trimmed.StartsWith("<") || trimmed.StartsWith("action name=")) {
+                return action;
+            }
+
+            if (action.LineComment != null) {
+                action.LineComment += ", " + lineComment.Value;
+            } else {
+                action.LineComment = lineComment.Value;
+            }
+
+            it.MoveNext(); // Advance iterator
+        }
+
+        return action;
+    }
+
     private static TriggerScript.Action ParseAction(XmlNode node, Dictionary<string, string> stateIndex) {
+        Debug.Assert(node.Name == "action", $"ParseAction(node) where node is not <action>: {node.OuterXml}");
+
         var strArgs = new List<(string, string)>();
         string? origName = null;
         foreach (XmlAttribute attribute in node.Attributes) {
@@ -180,45 +299,76 @@ public class TriggerGenerator {
 
         // IndexStrings(name, isAction: true);
         string name = Translate(origName, TriggerTranslate.TranslateAction);
-        if (!ApiScript.Actions.TryGetValue(name, out TriggerScriptCommon.Function? function)) {
-            function = new TriggerScriptCommon.Function(name, false) {
-                Description = origName,
-            };
-            ApiScript.Actions.Add(name, function);
+        string? splitName = null;//TriggerDefinitionOverride.ActionOverride.GetValueOrDefault(name)?.FunctionLookup
+        string? extraDescription = null;
+        if (TriggerDefinitionOverride.ActionOverride.TryGetValue(name, out TriggerDefinitionOverride? @override) && @override.FunctionSplitter != null) {
+            (string argName, string argValue) = strArgs.Single(e => e.Item1 == @override.FunctionSplitter);
+            Debug.Assert(@override.FunctionLookup.ContainsKey(argValue), $"Unknown function split in {name} for {argValue}");
+            splitName = @override.FunctionLookup[argValue];
+            extraDescription = $"{argName}={argValue}";
         }
 
-        var args = new List<Parameter>();
+        if (!ApiScript.Actions.TryGetValue((name, splitName), out TriggerApiScript.Function? function)) {
+            function = new TriggerApiScript.Function(name, splitName, false) {
+                Description = extraDescription != null ? $"{origName}: {extraDescription}" : origName,
+            };
+            ApiScript.Actions.Add((name, splitName), function);
+        }
+
+        var args = new List<PyParameter>();
         foreach ((string argName, string argValue) in strArgs) {
+            if (name == "reset_camera" && argValue == "interpolationTime") {
+                continue;
+            }
+
             (ScriptType Type, string Name) param = function.AddParameter(ScriptType.Str, argName);
             if (param.Type != ScriptType.None) {
-                args.Add(new Parameter(param.Type, param.Name, argValue));
+                args.Add(new PyParameter(param.Type, param.Name, argValue));
             }
         }
+
+        var action = new TriggerScript.Action(name, splitName) {
+            Args = args,
+        };
+
         // Fix state names referenced in args
-        string? comment = null;
         if (name is "set_skip" or "set_scene_skip") {
-            Parameter? result = args.Find(arg => arg.Name == "state");
+            PyParameter? result = action.Args.FirstOrDefault(arg => arg.Name == "state");
             if (result != null) {
                 string? fixedName = FixClassName(result.Value);
                 if (fixedName != null && stateIndex.ContainsKey(fixedName)) {
                     result.Value = fixedName;
                 } else {
                     if (!string.IsNullOrWhiteSpace(fixedName)) {
-                        comment = $"Missing State: {fixedName}";
+                        action.LineComment = $"Missing State: {fixedName}";
                     }
                     result.Value = null;
                 }
             }
         }
 
-        var action = new TriggerScript.Action {
-            Name = name,
-            Args = args,
-        };
-        if (comment != null) {
-            action.Comments.Insert(0, comment);
-        }
         return action;
+    }
+
+    private static TriggerScript.Transition ParseTransition(IEnumerator<XmlNode> it, Dictionary<string, string> stateIndex) {
+        string? transition = FixClassName(it.Current.Attributes?["state"]?.Value);
+        bool isValid = false;
+        if (transition != null) {
+            isValid = stateIndex.ContainsKey(transition);
+            // if (!isValid) {
+            //     Console.WriteLine($"Script {filePath} Missing transition: {transition}");
+            //     Console.WriteLine($"- {string.Join(",", stateIndex.Keys)}");
+            // }
+        }
+        string? transitionComment = null;
+        if (it.Current.NextSibling is XmlComment {Value: not null} comment) {
+            if (!comment.Value.StartsWith('<') && !comment.Value.StartsWith("action name=")) {
+                transitionComment = comment.Value;
+                it.MoveNext(); // Advance iterator
+            }
+        }
+
+        return new TriggerScript.Transition(transition, isValid, transitionComment);
     }
 
     private static TriggerScript.Condition ParseCondition(XmlNode node, Dictionary<string, string> stateIndex, string filePath) {
@@ -237,54 +387,93 @@ public class TriggerGenerator {
         origName = origName.TrimStart('!');
         // IndexStrings(name, isCondition: true);
         string name = Translate(origName, TriggerTranslate.TranslateCondition);
-        if (!ApiScript.Conditions.TryGetValue(name, out TriggerScriptCommon.Function? function)) {
-            function = new TriggerScriptCommon.Function(name, true) {
+        if (!ApiScript.Conditions.TryGetValue(name, out TriggerApiScript.Function? function)) {
+            function = new TriggerApiScript.Function(name, null, true) {
                 Description = origName,
-                ReturnType = ScriptType.Bool,
             };
             ApiScript.Conditions.Add(name, function);
         }
 
-        var args = new List<Parameter>();
+        var args = new List<PyParameter>();
         foreach ((string argName, string argValue) in strArgs) {
             (ScriptType Type, string Name) param = function.AddParameter(ScriptType.Str, argName);
             if (param.Type != ScriptType.None) {
-                args.Add(new Parameter(param.Type, param.Name, argValue));
+                args.Add(new PyParameter(param.Type, param.Name, argValue));
             }
         }
         // Negative boxId matching
         if (name is "user_detected") {
-            Parameter? result = args.Find(arg => arg.Name == "boxIds");
+            PyParameter? result = args.Find(arg => arg.Name == "box_ids");
             if (result != null && result.Value?.StartsWith("!") == true) {
                 result.Value = result.Value.TrimStart('!');
                 negated = !negated;
             }
         }
 
-        var actions = new List<TriggerScript.Action>();
-        foreach (XmlNode action in node.SelectNodes("action")!) {
-            actions.Add(ParseAction(action, stateIndex));
-        }
-
-        string? transition = FixClassName(node.SelectSingleNode("transition")?.Attributes?["state"]?.Value);
-        if (transition != null) {
-            if (stateIndex.TryGetValue(transition, out string? result)) {
-                transition = result;
-            } else {
-                // Console.WriteLine($"Script {filePath} Missing transition: {transition}");
-                // Console.WriteLine($"- {string.Join(",", stateIndex.Keys)}");
-                transition = null;
+        var condition = new TriggerScript.Condition(name) {
+            Negated = negated,
+            Args = args,
+        };
+        IEnumerator<XmlNode> it = node.ChildNodes.Cast<XmlNode>().GetEnumerator();
+        while (it.MoveNext()) {
+            switch (it.Current.Name) {
+                case "action":
+                    condition.Actions.Add(ParseAction(it, stateIndex));
+                    break;
+                case "transition":
+                    condition.Transition = ParseTransition(it, stateIndex);
+                    break;
+                case "group":
+                    foreach (XmlNode child in it.Current.ChildNodes) {
+                        switch (child.Name) {
+                            case "condition":
+                                condition.Group.Add(ParseCondition(child, stateIndex, filePath));
+                                break;
+                            case "#comment":
+                                condition.Comments.Add($"{name}: {child.Value}");
+                                break;
+                            default:
+                                Console.WriteLine($"[{filePath}] Unknown <condition><group>: {child.OuterXml}");
+                                break;
+                        }
+                    }
+                    break;
+                case "#comment":
+                    if (it.Current.Value == null) {
+                        break;
+                    }
+                    if (TryParseXml(it.Current.Value, "action", out List<XmlNode> commentNodes)) {
+                        foreach (XmlNode commentNode in commentNodes) {
+                            switch (commentNode.Name) {
+                                case "action":
+                                    condition.Actions.Add(new CommentWrapper(ParseAction(commentNode, stateIndex)));
+                                    break;
+                                default:
+                                    Debug.Assert(commentNode.Value != null);
+                                    AppendCommentOrAdd(condition.Actions, commentNode);
+                                    break;
+                            }
+                        }
+                    } else {
+                        AppendCommentOrAdd(condition.Actions, it.Current);
+                    }
+                    break;
+                case "#text":
+                    if (!string.IsNullOrWhiteSpace(it.Current.Value) && it.Current.Value != ">") {
+                        if (condition.LineComment == null) {
+                            condition.LineComment = it.Current.Value.Trim();
+                        } else {
+                            Console.WriteLine($"Unexpected text: {it.Current.Value}");
+                        }
+                    }
+                    break;
+                default:
+                    Console.WriteLine($"[{filePath}] Unknown <condition>: {it.Current.OuterXml}");
+                    break;
             }
         }
 
-        return new TriggerScript.Condition {
-            Name = name,
-            Negated = negated,
-            Args = args,
-            Actions = actions,
-            Transition = transition,
-            TransitionComment = FixClassName(node.SelectSingleNode("transition")?.Attributes?["state"]?.Value),
-        };
+        return condition;
     }
 
     private static readonly Dictionary<string, string> SubStart = new() {
@@ -296,17 +485,29 @@ public class TriggerGenerator {
         {"6th", "Sixth"},
         {"7th", "Seventh"},
     };
+
     [return: NotNullIfNotNull(nameof(name))]
     private static string? FixClassName(string? name) {
         if (name == null) {
             return null;
         }
-
-        if (name == "None") {
-            return "StateNone";
+        if (string.IsNullOrWhiteSpace(name)) {
+            return "State";
         }
 
-        name = name.Replace("-", "To");
+        // Reserved Keywords
+        switch (name) {
+            case "None":
+                return "StateNone";
+            case "True":
+                return "StateTrue";
+            case "False":
+                return "StateFalse";
+            case "del":
+                return "StateDelete";
+        }
+
+        name = name.Replace("-", "To").Replace(" ", "_").Replace(".", "_");
         foreach ((string key, string value) in SubStart) {
             if (name.StartsWith(key)) {
                 name = name.Replace(key, value);
@@ -374,15 +575,88 @@ public class TriggerGenerator {
         }
     }
 
-    private static void WriteXmlComments(IndentedTextWriter writer, XmlNode? node) {
+    private static IList<string> SiblingComments(XmlNode? node, bool before = true, bool after = false) {
+        var comments = new List<string>();
         if (node == null) {
+            return comments;
+        }
+
+        XmlNode? sibling = node.PreviousSibling;
+        while (before && sibling is XmlComment {Value: not null} comment) {
+            comments.Insert(0, comment.Value);
+            sibling = sibling.PreviousSibling;
+        }
+
+        var afterComments = new List<string>();
+        sibling = node.NextSibling;
+        while (after && sibling is XmlComment {Value: not null} comment) {
+            afterComments.Add(comment.Value);
+            sibling = sibling.NextSibling;
+        }
+
+        if (comments.Count > 0 && afterComments.Count > 0) {
+            comments.Add(""); // Linebreak between comment groups
+        }
+        comments.AddRange(afterComments);
+
+        return comments;
+    }
+
+    private static bool TryParseXml(string? xml, string name, out List<XmlNode> nodes, bool allowComments = true) {
+        if (xml == null || !Regex.Match(xml, $"{name} +name=").Success) {
+            nodes = new List<XmlNode>();
+            return false;
+        }
+        // Attempt to close some unclosed xml elements
+        xml = xml.Trim();
+        if (!xml.Contains("\n")) {
+            if (xml.Contains($"<{name}") && !xml.Contains("/>")) {
+                xml = xml.Replace(">", "/>");
+            }
+        }
+
+        // Always first try without allowing comments
+        if (allowComments && TryParseXml(xml, name, out nodes, false)) {
+            return true;
+        }
+
+        // Many cases of valid xml missing first and last <>
+        foreach (string tryXml in new[] {xml, $"<{xml.Trim()}>", $"<{xml.Trim()}/>"}) {
+            try {
+                var stateDocument = new XmlDocument();
+                stateDocument.LoadXml($"<root>{tryXml}</root>");
+                if (stateDocument.DocumentElement != null) {
+                    List<XmlNode> children = stateDocument.DocumentElement.ChildNodes.Cast<XmlNode>().ToList();
+                    if (children.All(node => node.Name == name || (allowComments && node.Name is "#comment" or "#text"))) {
+                        nodes = children.ToList();
+                        return true;
+                    }
+                }
+            } catch (XmlException) { /* ignored */ }
+        }
+
+        nodes = new List<XmlNode>();
+        return false;
+    }
+
+    // Appends a LineComment to the previous Action block if possible
+    // otherwise, just adds a separate Comment block
+    private static void AppendCommentOrAdd(IList<IScriptBlock> list, XmlNode comment) {
+        Debug.Assert(comment is XmlComment or XmlText && comment.Value != null);
+        if (list.Count == 0) {
+            list.Add(new Comment(comment.Value));
             return;
         }
 
-        foreach (XmlNode comment in node.ChildNodes) {
-            if (comment is XmlComment) {
-                writer.WriteLine($"# {comment.Value}");
-            }
+        IScriptBlock prevBlock = list[^1];
+        if (prevBlock is CommentWrapper wrapper) {
+            prevBlock = wrapper.Child;
+        }
+
+        if (prevBlock is TriggerScript.Action {LineComment: null} prevAction) {
+            prevAction.LineComment = comment.Value;
+        } else {
+            list.Add(new Comment(comment.Value));
         }
     }
 }
