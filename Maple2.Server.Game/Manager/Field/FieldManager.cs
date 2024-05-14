@@ -64,14 +64,14 @@ public sealed partial class FieldManager : IDisposable {
     public readonly int InstanceId;
     public readonly AiManager Ai;
 
-    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, long ownerId = 0) {
+    public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0) {
         Metadata = metadata;
         this.ugcMetadata = ugcMetadata;
         this.Entities = entities;
         TriggerObjects = new TriggerCollection(entities);
 
         Scheduler = new EventQueue();
-        FieldActor = new FieldActor(this);
+        FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(Update);
         Ai = new AiManager(this);

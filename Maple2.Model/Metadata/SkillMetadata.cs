@@ -69,7 +69,12 @@ public record SkillMetadataRecovery(
     float SpRate);
 
 public record SkillMetadataMotion(
+    SkillMetadataMotionProperty MotionProperty,
     SkillMetadataAttack[] Attacks);
+
+public record SkillMetadataMotionProperty(
+    string SequenceName,
+    float SequenceSpeed);
 
 public record SkillMetadataAttack(
     string Point,

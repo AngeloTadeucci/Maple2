@@ -124,7 +124,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
         db.Commit();
 
-        Player = new FieldPlayer(this, player);
+        Player = new FieldPlayer(this, player, NpcMetadata);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
         Stats = new StatsManager(this);

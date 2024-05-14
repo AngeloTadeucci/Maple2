@@ -19,6 +19,8 @@ public class PlayerCommand : Command {
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
+        AddCommand(new DebugAnimationCommand(session));
+        AddCommand(new DebugSkillsCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -162,6 +164,48 @@ public class PlayerCommand : Command {
             ctx.Console.Out.WriteLine($"Player: {session.Player.ObjectId} ({session.PlayerName})");
             ctx.Console.Out.WriteLine($"  Position: {session.Player.Position}");
             ctx.Console.Out.WriteLine($"  Rotation: {session.Player.Rotation}");
+        }
+    }
+
+    private class DebugAnimationCommand : Command {
+        private readonly GameSession session;
+
+        public DebugAnimationCommand(GameSession session) : base("debuganims", "Prints player animation info.") {
+            this.session = session;
+
+            var enable = new Argument<bool?>("enable", () => true, "Enables & disables debug messages. Prints all animation state if true.");
+
+            AddArgument(enable);
+
+            this.SetHandler<InvocationContext, bool?>(Handle, enable);
+        }
+
+        private void Handle(InvocationContext ctx, bool? enabled) {
+            session.Player.AnimationState.DebugPrintAnimations = enabled ?? true;
+
+            string message = enabled ?? true ? "Enabled" : "Disabled";
+            ctx.Console.Out.WriteLine($"{message} animation debug info printing");
+        }
+    }
+
+    private class DebugSkillsCommand : Command {
+        private readonly GameSession session;
+
+        public DebugSkillsCommand(GameSession session) : base("debugskills", "Prints player skill packet info.") {
+            this.session = session;
+
+            var enable = new Argument<bool?>("enable", () => true, "Enables & disables debug messages. Prints all skill cast packets if true.");
+
+            AddArgument(enable);
+
+            this.SetHandler<InvocationContext, bool?>(Handle, enable);
+        }
+
+        private void Handle(InvocationContext ctx, bool? enabled) {
+            session.Player.DebugSkills = enabled ?? true;
+
+            string message = enabled ?? true ? "Enabled" : "Disabled";
+            ctx.Console.Out.WriteLine($"{message} skill cast packet debug info printing");
         }
     }
 }

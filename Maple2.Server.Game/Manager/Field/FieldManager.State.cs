@@ -48,7 +48,7 @@ public partial class FieldManager {
         player.Character.InstanceMapId = MapId;
         player.Character.InstanceId = InstanceId;
 
-        var fieldPlayer = new FieldPlayer(session, player) {
+        var fieldPlayer = new FieldPlayer(session, player, NpcMetadata) {
             Position = position,
             Rotation = rotation,
         };

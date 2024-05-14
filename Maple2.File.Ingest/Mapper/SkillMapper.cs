@@ -35,6 +35,10 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                         SpRate: level.recoveryProperty.spRate),
                     Skills: level.conditionSkill.Select(skill => skill.Convert()).ToArray(),
                     Motions: level.motion.Select(motion => new SkillMetadataMotion(
+                        new SkillMetadataMotionProperty(
+                            SequenceName: motion.motionProperty.sequenceName,
+                            SequenceSpeed: motion.motionProperty.sequenceSpeed
+                        ),
                         Attacks: motion.attack.Select(attack => new SkillMetadataAttack(
                             Point: attack.point,
                             PointGroup: attack.pointGroupID,

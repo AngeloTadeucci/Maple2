@@ -8,6 +8,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Field.Actor.ActorState;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -109,6 +110,13 @@ public class SkillHandler : PacketHandler<GameSession> {
         if (record.IsHold) {
             record.HoldInt = packet.ReadInt();
             record.HoldString = packet.ReadUnicodeString();
+
+            if (session.Player.DebugSkills) {
+                session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: true; HoldInt: {record.HoldInt}; HoldString: {record.HoldString}; UnkBool: {record.Unknown}"));
+            }
+        }
+        else if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: false; UnkBool: {record.Unknown}"));
         }
 
         if (itemUid > 0) {
@@ -123,6 +131,10 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Player.InBattle = itemUid <= 0;
         session.ActiveSkills.Add(record);
         session.Field?.Broadcast(SkillPacket.Use(record));
+
+        SkillMetadataMotionProperty motion = metadata.Data.Motions[0].MotionProperty;
+
+        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationState.Type.Skill);
 
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
             session.Player.ApplyEffect(session.Player, session.Player, effect);
@@ -147,6 +159,10 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         record.Position = packet.Read<Vector3>();
         record.Direction = packet.Read<Vector3>();
+
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Attack.Point: {skillUid}; AttackPoint: {attackPoint}"));
+        }
 
         byte count = packet.ReadByte();
         // Note: counts up for skills that are held down (reused skillUid)
@@ -211,6 +227,10 @@ public class SkillHandler : PacketHandler<GameSession> {
             Logger.Error("Unhandled skill-Target value2({Value}): {Record}", unknown2, record);
         }
 
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Attack.Damage: {skillUid}; AttackPoint: {attackPoint}"));
+        }
+
         for (byte i = 0; i < count; i++) {
             int targetId = packet.ReadInt();
             packet.ReadByte();
@@ -265,6 +285,10 @@ public class SkillHandler : PacketHandler<GameSession> {
             Logger.Error("Unhandled skill-MagicPath value2({Value}): {Record}", unknown2, record);
         }
 
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Attack.Region: {skillUid}; AttackPoint: {attackPoint}; UnkInt: {unknown1}; UnkInt: {unknown2}"));
+        }
+
         record.Position = packet.Read<Vector3>();
         record.Rotation = packet.Read<Vector3>();
 
@@ -279,8 +303,38 @@ public class SkillHandler : PacketHandler<GameSession> {
             Logger.Warning("Invalid Sync Skill {SkillUid}", skillUid);
             return;
         }
+        int skillId = packet.ReadInt();
+        short skillLevel = packet.ReadShort();
+        byte motionPoint = packet.ReadByte();
+
+        if (record.Metadata.Data.Motions.Length >= motionPoint) {
+            Logger.Warning($"Invalid motion point {motionPoint} for {record}", skillUid);
+            return;
+        }
+
+        if (session.Player.AnimationState.PlayingSequence is null) {
+            Logger.Warning($"Last motion already expired on skill {skillUid}");
+        }
+
+        record.TrySetMotionPoint(motionPoint);
+
+        Vector3 position = packet.Read<Vector3>();
+        Vector3 unk = packet.Read<Vector3>(); // either velocity or direction
+        Vector3 rotation = packet.Read<Vector3>();
+        Vector3 input = packet.Read<Vector3>(); // x and y match with wasd/arrow input, not normalized
+        bool toggle = packet.ReadByte() == 1;
+        int unk3 = packet.ReadInt();
+        byte unk4 = packet.ReadByte();
 
         session.Field?.Broadcast(SkillPacket.Sync(record), session);
+
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Sync: {skillId},{skillUid}; AttackPoint: {motionPoint}; Toggle: {toggle}; UnkInt: {unk3}; UnkByte: {unk4}; UnkVec: {unk}"));
+        }
+
+        SkillMetadataMotionProperty motion = record.Metadata.Data.Motions[motionPoint].MotionProperty;
+
+        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationState.Type.Skill);
     }
 
     private void HandleTickSync(GameSession session, IByteReader packet) {
@@ -292,6 +346,20 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         record.ServerTick = packet.ReadInt();
+
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.SyncTick: {skillUid}"));
+        }
+
+        string skillSequence = record.Motion.MotionProperty.SequenceName;
+        string playingSequence = session.Player.AnimationState.PlayingSequence?.Name ?? "";
+
+        if (skillSequence != playingSequence) {
+            Logger.Warning($"Motion point on skill cast {skillUid} '{skillSequence}' doesn't match playing sequence '{playingSequence}'", skillUid);
+            return;
+        }
+
+        session.Player.AnimationState.SetLoopSequence(true, true);
     }
 
     private void HandleCancel(GameSession session, IByteReader packet) {
@@ -304,5 +372,11 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         session.Player.InBattle = true;
         session.Field?.Broadcast(SkillPacket.Cancel(record), session);
+
+        if (session.Player.DebugSkills) {
+            session.Send(NoticePacket.Message($"Skill.Cancel: {skillUid}"));
+        }
+
+        session.Player.AnimationState.CancelSequence();
     }
 }
