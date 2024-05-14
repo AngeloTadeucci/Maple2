@@ -25,12 +25,14 @@ public partial class ChannelService {
                 return Task.FromResult(Disband(request.ReceiverIds, request.Disband));
             case PartyRequest.PartyOneofCase.StartReadyCheck:
                 return Task.FromResult(StartReadyCheck(request.ReceiverIds, request.StartReadyCheck));
-            case PartyRequest.PartyOneofCase.ReadyCheckReply:
-                return Task.FromResult(ReadyCheckReply(request.ReceiverIds, request.ReadyCheckReply));
-            case PartyRequest.PartyOneofCase.EndReadyCheck:
-                return Task.FromResult((EndReadyCheck(request.ReceiverIds, request.EndReadyCheck)));
+            case PartyRequest.PartyOneofCase.VoteReply:
+                return Task.FromResult(ReadyCheckReply(request.ReceiverIds, request.VoteReply));
+            case PartyRequest.PartyOneofCase.EndVote:
+                return Task.FromResult(EndVote(request.ReceiverIds, request.EndVote));
             case PartyRequest.PartyOneofCase.ExpiredVote:
                 return Task.FromResult(ExpiredVote(request.ReceiverIds, request.ExpiredVote));
+            case PartyRequest.PartyOneofCase.StartVoteKick:
+                return Task.FromResult(StartVoteKick(request.ReceiverIds, request.PartyId, request.StartVoteKick));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.s_party_err_not_found });
         }
@@ -146,7 +148,7 @@ public partial class ChannelService {
         return new PartyResponse();
     }
 
-    private PartyResponse ReadyCheckReply(IEnumerable<long> receiverIds, PartyRequest.Types.ReadyCheckReply reply) {
+    private PartyResponse ReadyCheckReply(IEnumerable<long> receiverIds, PartyRequest.Types.VoteReply reply) {
         foreach (long characterId in receiverIds) {
             if (!server.GetSession(characterId, out GameSession? session)) {
                 continue;
@@ -156,19 +158,19 @@ public partial class ChannelService {
                 continue;
             }
 
-            session.Party.ReadyCheckReply(reply.CharacterId, reply.IsReady);
+            session.Party.ReadyCheckReply(reply.CharacterId, reply.Reply);
         }
 
         return new PartyResponse();
     }
 
-    private PartyResponse EndReadyCheck(IEnumerable<long> receiverIds, PartyRequest.Types.EndReadyCheck endReadyCheck) {
+    private PartyResponse EndVote(IEnumerable<long> receiverIds, PartyRequest.Types.EndVote endVote) {
         foreach (long characterId in receiverIds) {
             if (!server.GetSession(characterId, out GameSession? session)) {
                 continue;
             }
 
-            if (session.Party.Id != endReadyCheck.PartyId) {
+            if (session.Party.Id != endVote.PartyId) {
                 continue;
             }
 
@@ -189,6 +191,22 @@ public partial class ChannelService {
             }
 
             session.Party.ExpiredVote();
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse StartVoteKick(IEnumerable<long> receiverIds, int partyId, PartyRequest.Types.StartVoteKick startVoteKick) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            if (session.Party.Id != partyId) {
+                continue;
+            }
+
+            session.Party.StartVoteKick(startVoteKick.CharacterId, startVoteKick.TargetId, startVoteKick.ReceiverIds);
         }
 
         return new PartyResponse();

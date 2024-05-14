@@ -94,16 +94,21 @@ message PartyRequest {
   message StartReadyCheck {
     int64 character_id = 1;
   }
-  message ReadyCheckReply {
+  message VoteReply {
     int64 character_id = 1;
-    bool is_ready = 2;
+    bool reply = 2;
     int32 party_id = 3;
   }
-  message EndReadyCheck {
+  message EndVote {
     int32 party_id = 1;
   }
   message ExpiredVote {
     int32 party_id = 1;
+  }
+  message StartVoteKick {
+    int64 character_id = 1;
+    int64 target_id = 2;
+    repeated int64 receiver_ids = 3;
   }
 
   int32 party_id = 1;
@@ -116,9 +121,10 @@ message PartyRequest {
     UpdateLeader update_leader = 7;
     Disband disband = 8;
     StartReadyCheck start_ready_check = 9;
-    ReadyCheckReply ready_check_reply = 10;
-    EndReadyCheck end_ready_check = 11;
+    VoteReply vote_reply = 10;
+    EndVote end_vote = 11;
     ExpiredVote expired_vote = 12;
+    StartVoteKick start_vote_kick = 13;
   }
 }
 

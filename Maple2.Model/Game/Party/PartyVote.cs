@@ -1,25 +1,30 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
-using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Party;
 
 public class PartyVote : IByteSerializable {
     public readonly PartyVoteType Type;
-    public readonly ICollection<long> PartyCharacterIds;
+    public readonly ICollection<long> Voters;
     public readonly ICollection<long> Approvals;
     public readonly ICollection<long> Disapprovals;
+    public readonly long InitiatorId;
+    public PartyMember? TargetMember;
+    public long VoteTime { get; init; }
+    public readonly byte VotesNeeded;
 
-    public PartyVote(PartyVoteType type, ICollection<long> partyCharacterIds, long requestorId) {
+    public PartyVote(PartyVoteType type, ICollection<long> voters, long requestorId) {
         Type = type;
-        PartyCharacterIds = partyCharacterIds;
-        Approvals = new List<long>() { requestorId };
+        Voters = voters;
+        InitiatorId = requestorId;
+        Approvals = new List<long> { requestorId };
         Disapprovals = new List<long>();
+        if (type == PartyVoteType.Kick) {
+            VotesNeeded = (byte) Math.Ceiling(Voters.Count / 2.0);
+        }
     }
 
     public void WriteTo(IByteWriter writer) {
@@ -27,8 +32,8 @@ public class PartyVote : IByteSerializable {
         writer.WriteInt(); // Counter
         writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
-        writer.WriteInt(PartyCharacterIds.Count);
-        foreach (long characterId in PartyCharacterIds) {
+        writer.WriteInt(Voters.Count);
+        foreach (long characterId in Voters) {
             writer.WriteLong(characterId);
         }
 
@@ -40,6 +45,13 @@ public class PartyVote : IByteSerializable {
         writer.WriteInt(Disapprovals.Count);
         foreach (long characterId in Disapprovals) {
             writer.WriteLong(characterId);
+        }
+
+        if (Type == PartyVoteType.Kick) {
+            writer.WriteLong(InitiatorId);
+            writer.WriteLong(TargetMember!.CharacterId);
+            writer.WriteUnicodeString(TargetMember.Name);
+            writer.WriteByte(VotesNeeded);
         }
     }
 }

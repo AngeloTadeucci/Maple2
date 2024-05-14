@@ -39,7 +39,7 @@ public static class PartyPacket {
         JoinRequest = 44,
         StartVote = 47,
         ReadyCheck = 48,
-        EndReadyCheck = 49,
+        EndVote = 49,
         SurvivalPartySearch = 54,
     }
 
@@ -301,9 +301,9 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter EndReadyCheck() {
+    public static ByteWriter EndVote() {
         var pWriter = Packet.Of(SendOp.Party);
-        pWriter.Write<Command>(Command.EndReadyCheck);
+        pWriter.Write<Command>(Command.EndVote);
 
         return pWriter;
     }

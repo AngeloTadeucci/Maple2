@@ -3,7 +3,6 @@ using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
-using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -31,7 +30,7 @@ public class PartyHandler : PacketHandler<GameSession> {
         CancelPartySearch = 34,
         VoteKick = 45,
         ReadyCheck = 46,
-        ReadyCheckResponse = 48
+        VoteReply = 48
     }
 
     #region Autofac Autowired
@@ -79,8 +78,8 @@ public class PartyHandler : PacketHandler<GameSession> {
             case Command.ReadyCheck:
                 HandleReadyCheck(session);
                 return;
-            case Command.ReadyCheckResponse:
-                HandleReadyCheckResponse(session, packet);
+            case Command.VoteReply:
+                HandleVoteReply(session, packet);
                 return;
         }
 
@@ -241,8 +240,37 @@ public class PartyHandler : PacketHandler<GameSession> {
     }
 
     private void HandleVoteKick(GameSession session, IByteReader packet) {
-        // TODO: Implement
         long targetCharacterId = packet.ReadLong();
+        if (session.Party.Party == null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_not_found));
+            return;
+        }
+
+        if (targetCharacterId == session.CharacterId) {
+            return;
+        }
+
+        if (session.Party.GetMember(targetCharacterId) == null) {
+            return;
+        }
+
+        if (session.Party.Party.LastVoteTime.FromEpochSeconds().AddSeconds(Constant.PartyVoteReadyDurationSeconds) > DateTime.Now && session.Party.Party.Vote != null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_already_vote));
+            return;
+        }
+
+        if (session.Party.Party.Members.Values.Count(member => member.Info.Online) < 2 ||
+            session.Party.Party.Members.Count < 4) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_vote_need_more_people));
+        }
+
+        PartyResponse response = World.Party(new PartyRequest {
+            RequestorId = session.CharacterId,
+            VoteKick = new PartyRequest.Types.VoteKick {
+                PartyId = session.Party.Id,
+                TargetUserId = targetCharacterId,
+            },
+        });
     }
 
     private void HandleReadyCheck(GameSession session) {
@@ -278,7 +306,7 @@ public class PartyHandler : PacketHandler<GameSession> {
         }
     }
 
-    private void HandleReadyCheckResponse(GameSession session, IByteReader packet) {
+    private void HandleVoteReply(GameSession session, IByteReader packet) {
         int counter = packet.ReadInt();
         bool isReady = packet.ReadBool();
 
@@ -289,7 +317,7 @@ public class PartyHandler : PacketHandler<GameSession> {
 
         PartyResponse response = World.Party(new PartyRequest {
             RequestorId = session.CharacterId,
-            ReadyCheckReply = new PartyRequest.Types.ReadyCheckReply {
+            VoteReply = new PartyRequest.Types.VoteReply {
                 PartyId = session.Party.Id,
                 Reply = isReady,
             },
