@@ -57,7 +57,7 @@ void Seed(string type) {
         Console.Write($"finished in {stopwatch.ElapsedMilliseconds}ms");
         Console.WriteLine();
     } else {
-        Console.WriteLine("Failed to seed {type}");
+        Console.WriteLine($"Failed to seed {type}");
     }
 }
 
