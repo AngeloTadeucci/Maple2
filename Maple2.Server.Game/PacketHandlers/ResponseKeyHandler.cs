@@ -31,10 +31,10 @@ public class ResponseKeyHandler : PacketHandler<GameSession> {
                 AccountId = accountId,
                 Token = token,
                 MachineId = machineId.ToString(),
-                Channel = session.Channel,
             };
+
             MigrateInResponse response = World.MigrateIn(request);
-            if (!session.EnterServer(accountId, response.CharacterId, machineId)) {
+            if (!session.EnterServer(accountId, response.CharacterId, machineId, response.Channel)) {
                 throw new InvalidOperationException($"Invalid player: {accountId}, {response.CharacterId}");
             }
 

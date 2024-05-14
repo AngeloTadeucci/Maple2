@@ -45,7 +45,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
-    public int Channel => server.Channel;
+    public int Channel;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -96,6 +96,7 @@ public sealed partial class GameSession : Core.Network.Session {
         CommandHandler = context.Resolve<CommandRouter>(new NamedParameter("session", this));
         Scheduler = new EventQueue();
         Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
+        Channel = Target.GameChannel;
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
@@ -105,10 +106,11 @@ public sealed partial class GameSession : Core.Network.Session {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId) {
+    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel) {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
+        Channel = channel;
 
         State = SessionState.ChangeMap;
         server.OnConnected(this);
