@@ -15,12 +15,6 @@ public class FieldBreakable : FieldEntity<BreakableActor> {
 
     private bool visible;
 
-    public FieldBreakable(FieldManager field, int objectId, string entityId, BreakableActor breakable) : base(field, objectId, breakable) {
-        EntityId = entityId;
-        visible = breakable.Visible;
-        State = breakable.Visible ? BreakableState.Show : BreakableState.Hide;
-    }
-
     public bool Visible {
         get => visible;
         set {
@@ -29,6 +23,12 @@ public class FieldBreakable : FieldEntity<BreakableActor> {
             }
             visible = value;
         }
+    }
+
+    public FieldBreakable(FieldManager field, int objectId, string entityId, BreakableActor breakable) : base(field, objectId, breakable) {
+        EntityId = entityId;
+        visible = breakable.Visible;
+        State = breakable.Visible ? BreakableState.Show : BreakableState.Hide;
     }
 
     public bool UpdateState(BreakableState state) {

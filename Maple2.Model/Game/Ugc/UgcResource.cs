@@ -10,5 +10,4 @@ public class UgcResource {
     public UgcResource() {
         Path = string.Empty;
     }
-
 }

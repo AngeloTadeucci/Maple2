@@ -12,7 +12,7 @@ public abstract class MarketItem : IByteSerializable {
     public required int TabId { get; init; }
     public long CreationTime { get; init; }
 
-    protected MarketItem(ItemMetadata itemMetadata) {
+    public MarketItem(ItemMetadata itemMetadata) {
         ItemMetadata = itemMetadata;
     }
 

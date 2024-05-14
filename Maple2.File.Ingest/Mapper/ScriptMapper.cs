@@ -14,7 +14,7 @@ public class ScriptMapper : TypeMapper<ScriptMetadata> {
     private readonly ScriptParser parser;
 
     public ScriptMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new ScriptParser(xmlReader);
     }
 
     protected override IEnumerable<ScriptMetadata> Map() {

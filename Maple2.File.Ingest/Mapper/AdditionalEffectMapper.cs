@@ -13,7 +13,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
     private readonly AdditionalEffectParser parser;
 
     public AdditionalEffectMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new AdditionalEffectParser(xmlReader);
     }
 
     protected override IEnumerable<AdditionalEffectMetadata> Map() {

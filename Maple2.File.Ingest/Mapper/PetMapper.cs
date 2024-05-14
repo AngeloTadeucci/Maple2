@@ -10,7 +10,7 @@ public class PetMapper : TypeMapper<PetMetadata> {
     private readonly PetParser parser;
 
     public PetMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new PetParser(xmlReader);
     }
 
     protected override IEnumerable<PetMetadata> Map() {

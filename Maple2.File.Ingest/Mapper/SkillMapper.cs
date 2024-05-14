@@ -11,7 +11,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
     private readonly SkillParser parser;
 
     public SkillMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new SkillParser(xmlReader);
     }
 
     protected override IEnumerable<StoredSkillMetadata> Map() {

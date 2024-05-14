@@ -11,7 +11,7 @@ public abstract class MetadataStorage<TK, TV> {
 
     protected MetadataStorage(MetadataContext context, int capacity) {
         Context = context;
-        Cache = new(capacity, (int) (capacity * 0.05));
+        Cache = new LRUCache<TK, TV>(capacity, (int) (capacity * 0.05));
     }
 
     public virtual void InvalidateCache() {

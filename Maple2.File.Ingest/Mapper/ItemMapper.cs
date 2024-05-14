@@ -14,8 +14,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
     private readonly TableParser tableParser;
 
     public ItemMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
-        tableParser = new(xmlReader);
+        parser = new ItemParser(xmlReader);
+        tableParser = new TableParser(xmlReader);
     }
 
     protected override IEnumerable<ItemMetadata> Map() {

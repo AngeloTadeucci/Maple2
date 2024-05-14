@@ -13,7 +13,7 @@ public readonly struct RewardItem {
     public bool Unknown3 { get; }
     public bool Unknown4 { get; }
 
-    [method: JsonConstructor]
+    [JsonConstructor]
     public RewardItem(int itemId, short rarity, int amount) {
         ItemId = itemId;
         Rarity = rarity;

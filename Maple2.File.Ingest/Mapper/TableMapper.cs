@@ -33,8 +33,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private readonly ItemOptionParser optionParser;
 
     public TableMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
-        optionParser = new(xmlReader);
+        parser = new TableParser(xmlReader);
+        optionParser = new ItemOptionParser(xmlReader);
     }
 
     protected override IEnumerable<TableMetadata> Map() {

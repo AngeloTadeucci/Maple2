@@ -17,7 +17,7 @@ public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
     public int Id => Metadata.TriggerId;
     public bool Visible { get; set; }
 
-    protected TriggerObject(T metadata) {
+    public TriggerObject(T metadata) {
         Metadata = metadata;
     }
 

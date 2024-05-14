@@ -9,7 +9,7 @@ public class UgcMapMapper : TypeMapper<UgcMapMetadata> {
     private readonly UgcMapParser parser;
 
     public UgcMapMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new UgcMapParser(xmlReader);
     }
 
     protected override IEnumerable<UgcMapMetadata> Map() {

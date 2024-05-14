@@ -9,7 +9,7 @@ public class RideMapper : TypeMapper<RideMetadata> {
     private readonly RidingParser parser;
 
     public RideMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new RidingParser(xmlReader);
     }
 
     protected override IEnumerable<RideMetadata> Map() {

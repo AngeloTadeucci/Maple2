@@ -14,7 +14,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     private readonly ServerTableParser parser;
 
     public ServerTableMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new ServerTableParser(xmlReader);
     }
 
     protected override IEnumerable<ServerTableMetadata> Map() {

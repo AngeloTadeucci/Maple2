@@ -9,7 +9,7 @@ public class AnimationMapper : TypeMapper<AnimationMetadata> {
     private readonly AniKeyTextParser parser;
 
     public AnimationMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new AniKeyTextParser(xmlReader);
     }
 
     protected override IEnumerable<AnimationMetadata> Map() {

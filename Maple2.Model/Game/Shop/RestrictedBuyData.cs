@@ -50,7 +50,7 @@ public readonly struct BuyTimeOfDay {
     public int StartTimeOfDay { get; } // time begin in seconds. ex 1200 = 12:20 AM
     public int EndTimeOfDay { get; } // time end in seconds. ex 10600 = 2:56 AM
 
-    [method: JsonConstructor]
+    [JsonConstructor]
     public BuyTimeOfDay(int startTime, int endTime) {
         StartTimeOfDay = startTime;
         EndTimeOfDay = endTime;

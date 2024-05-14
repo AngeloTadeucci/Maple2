@@ -13,7 +13,7 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
     private readonly NpcParser parser;
 
     public NpcMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new NpcParser(xmlReader);
     }
 
     protected override IEnumerable<NpcMetadata> Map() {

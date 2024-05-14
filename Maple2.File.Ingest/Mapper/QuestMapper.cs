@@ -15,7 +15,7 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
     private readonly QuestParser parser;
 
     public QuestMapper(M2dReader xmlReader) {
-        parser = new(xmlReader);
+        parser = new QuestParser(xmlReader);
     }
 
     protected override IEnumerable<QuestMetadata> Map() {

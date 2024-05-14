@@ -17,11 +17,7 @@ public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
 
     public readonly Dictionary<BasicAttribute, BasicOption> BasicOptions;
 
-    public ItemEnchant(int enchants = 0,
-                       int enchantExp = 0,
-                       byte enchantCharges = 1,
-                       bool tradeable = true,
-                       int charges = 0,
+    public ItemEnchant(int enchants = 0, int enchantExp = 0, byte enchantCharges = 1, bool tradeable = true, int charges = 0,
                        Dictionary<BasicAttribute, BasicOption>? basicOptions = null) {
         Enchants = enchants;
         EnchantExp = enchantExp;

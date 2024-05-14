@@ -21,9 +21,9 @@ public class ItemManager {
         this.session = session;
         this.itemStatsCalc = itemStatsCalc;
 
-        Equips = new(db, session);
-        Inventory = new(db, session);
-        Furnishing = new(db, session);
+        Equips = new EquipManager(db, session);
+        Inventory = new InventoryManager(db, session);
+        Furnishing = new FurnishingManager(db, session);
     }
 
     /// <summary>
