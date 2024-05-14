@@ -30,7 +30,7 @@ public class PartyVote : IByteSerializable {
     public void WriteTo(IByteWriter writer) {
         writer.Write<PartyVoteType>(Type);
         writer.WriteInt(); // Counter
-        writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds()); // TODO: This is wrong. Will not display a proper time on vote kicking.
 
         writer.WriteInt(Voters.Count);
         foreach (long characterId in Voters) {
