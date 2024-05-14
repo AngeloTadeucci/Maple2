@@ -20,7 +20,7 @@ public class DamageRecord {
     public readonly List<DamageRecordTarget> Targets;
 
     public DamageRecord() {
-        Targets = new List<DamageRecordTarget>();
+        Targets = [];
     }
 }
 

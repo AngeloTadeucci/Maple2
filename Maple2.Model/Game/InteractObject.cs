@@ -47,25 +47,22 @@ public abstract class InteractObject<T> : IInteractObject where T : InteractObje
     }
 }
 
-public sealed class InteractMeshObject : InteractObject<Ms2InteractMesh> {
+public sealed class InteractMeshObject(string entityId, Ms2InteractMesh metadata) : InteractObject<Ms2InteractMesh>(entityId, metadata) {
     public override InteractType Type => InteractType.Mesh;
 
-    public InteractMeshObject(string entityId, Ms2InteractMesh metadata) : base(entityId, metadata) { }
 }
 
-public sealed class InteractTelescopeObject : InteractObject<Ms2Telescope> {
+public sealed class InteractTelescopeObject(string entityId, Ms2Telescope metadata) : InteractObject<Ms2Telescope>(entityId, metadata) {
     public override InteractType Type => InteractType.Telescope;
 
-    public InteractTelescopeObject(string entityId, Ms2Telescope metadata) : base(entityId, metadata) { }
 }
 
 // sw_co_fi_funct_roulette_A01_
 // co_fi_funct_roulette_A01_
 // co_in_funct_extract_A01_
-public sealed class InteractUiObject : InteractObject<Ms2SimpleUiObject> {
+public sealed class InteractUiObject(string entityId, Ms2SimpleUiObject metadata) : InteractObject<Ms2SimpleUiObject>(entityId, metadata) {
     public override InteractType Type => InteractType.Ui;
 
-    public InteractUiObject(string entityId, Ms2SimpleUiObject metadata) : base(entityId, metadata) { }
 }
 
 // public sealed class InteractWebObject : InteractObject<InteractObject> {
@@ -74,24 +71,21 @@ public sealed class InteractUiObject : InteractObject<Ms2SimpleUiObject> {
 //     public InteractWebObject(string entityId, InteractObject metadata) : base(entityId, metadata) { }
 // }
 
-public sealed class InteractDisplayImage : InteractObject<Ms2InteractDisplay> {
+public sealed class InteractDisplayImage(string entityId, Ms2InteractDisplay metadata) : InteractObject<Ms2InteractDisplay>(entityId, metadata) {
     public override InteractType Type => InteractType.DisplayImage;
 
-    public InteractDisplayImage(string entityId, Ms2InteractDisplay metadata) : base(entityId, metadata) { }
 }
 
-public sealed class InteractGatheringObject : InteractObject<Ms2InteractActor> {
+public sealed class InteractGatheringObject(string entityId, Ms2InteractActor metadata) : InteractObject<Ms2InteractActor>(entityId, metadata) {
     public override InteractType Type => InteractType.Gathering;
 
     public int Count;
 
-    public InteractGatheringObject(string entityId, Ms2InteractActor metadata) : base(entityId, metadata) { }
 }
 
-public sealed class InteractGuildPosterObject : InteractObject<Ms2InteractDisplay> {
+public sealed class InteractGuildPosterObject(string entityId, Ms2InteractDisplay metadata) : InteractObject<Ms2InteractDisplay>(entityId, metadata) {
     public override InteractType Type => InteractType.GuildPoster;
 
-    public InteractGuildPosterObject(string entityId, Ms2InteractDisplay metadata) : base(entityId, metadata) { }
 }
 
 public sealed class InteractBillBoardObject : InteractObject<Ms2InteractMesh> {

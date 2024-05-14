@@ -4,10 +4,8 @@ using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
 
-public class RideMetadataStorage : MetadataStorage<int, RideMetadata> {
+public class RideMetadataStorage(MetadataContext context) : MetadataStorage<int, RideMetadata>(context, CACHE_SIZE) {
     private const int CACHE_SIZE = 500; // ~500 total items
-
-    public RideMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public bool TryGet(int id, [NotNullWhen(true)] out RideMetadata? ride) {
         if (Cache.TryGet(id, out ride)) {

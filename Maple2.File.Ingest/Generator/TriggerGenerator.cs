@@ -17,7 +17,7 @@ public class TriggerGenerator {
     private readonly Dictionary<string, string> checkUserCountStates = new();
     private readonly Dictionary<string, string> checkUser10States = new();
 
-    private static readonly HashSet<(string, bool, bool, bool)> ProcessedStrings = new();
+    private static readonly HashSet<(string, bool, bool, bool)> ProcessedStrings = [];
     private static readonly SortedDictionary<string, (bool IsState, bool IsAction, bool IsCondition)> KoreanStrings = new();
     private static readonly TriggerApiScript ApiScript = new();
 

@@ -22,7 +22,7 @@ public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
     }
 
     public ItemLimitBreak(int level, IDictionary<BasicAttribute, BasicOption> basicOptions,
-            IDictionary<SpecialAttribute, SpecialOption> specialOptions) {
+                          IDictionary<SpecialAttribute, SpecialOption> specialOptions) {
         Level = level;
         BasicOptions = basicOptions;
         SpecialOptions = specialOptions;

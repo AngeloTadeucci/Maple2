@@ -21,12 +21,10 @@ public class Guild : IByteSerializable {
     public string Emblem = string.Empty;
     public string Notice = string.Empty;
     public long CreationTime;
-
     public AchievementInfo AchievementInfo;
     public GuildFocus Focus;
     public int Experience;
     public int Funds;
-
     public int HouseRank;
     public int HouseTheme;
 

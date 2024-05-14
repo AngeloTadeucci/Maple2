@@ -22,8 +22,7 @@ public class RideOffAction : IByteSerializable {
     }
 }
 
-public class RideOffActionUseSkill : RideOffAction {
-    public RideOffActionUseSkill() : base(RideOffType.UseSkill) { }
+public class RideOffActionUseSkill() : RideOffAction(RideOffType.UseSkill) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -33,8 +32,7 @@ public class RideOffActionUseSkill : RideOffAction {
     }
 }
 
-public class RideOffActionInteract : RideOffAction {
-    public RideOffActionInteract() : base(RideOffType.Interact) { }
+public class RideOffActionInteract() : RideOffAction(RideOffType.Interact) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -43,8 +41,7 @@ public class RideOffActionInteract : RideOffAction {
     }
 }
 
-public class RideOffActionTaxi : RideOffAction {
-    public RideOffActionTaxi() : base(RideOffType.Taxi) { }
+public class RideOffActionTaxi() : RideOffAction(RideOffType.Taxi) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -52,8 +49,7 @@ public class RideOffActionTaxi : RideOffAction {
     }
 }
 
-public class RideOffActionCashCall : RideOffAction {
-    public RideOffActionCashCall() : base(RideOffType.CashCall) { }
+public class RideOffActionCashCall() : RideOffAction(RideOffType.CashCall) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -63,12 +59,9 @@ public class RideOffActionCashCall : RideOffAction {
     }
 }
 
-public class RideOffActionBeautyShop : RideOffAction {
-    public RideOffActionBeautyShop() : base(RideOffType.BeautyShop) { }
-}
+public class RideOffActionBeautyShop() : RideOffAction(RideOffType.BeautyShop);
 
-public class RideOffActionTakeLr : RideOffAction {
-    public RideOffActionTakeLr() : base(RideOffType.TakeLr) { }
+public class RideOffActionTakeLr() : RideOffAction(RideOffType.TakeLr) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -77,12 +70,9 @@ public class RideOffActionTakeLr : RideOffAction {
     }
 }
 
-public class RideOffActionHold : RideOffAction {
-    public RideOffActionHold() : base(RideOffType.Hold) { }
-}
+public class RideOffActionHold() : RideOffAction(RideOffType.Hold);
 
-public class RideOffActionRecall : RideOffAction {
-    public RideOffActionRecall() : base(RideOffType.Recall) { }
+public class RideOffActionRecall() : RideOffAction(RideOffType.Recall) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -90,8 +80,7 @@ public class RideOffActionRecall : RideOffAction {
     }
 }
 
-public class RideOffActionSummonPetOn : RideOffAction {
-    public RideOffActionSummonPetOn() : base(RideOffType.SummonPetOn) { }
+public class RideOffActionSummonPetOn() : RideOffAction(RideOffType.SummonPetOn) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -100,8 +89,7 @@ public class RideOffActionSummonPetOn : RideOffAction {
     }
 }
 
-public class RideOffActionSummonPetTransfer : RideOffAction {
-    public RideOffActionSummonPetTransfer() : base(RideOffType.SummonPetTransfer) { }
+public class RideOffActionSummonPetTransfer() : RideOffAction(RideOffType.SummonPetTransfer) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -109,8 +97,7 @@ public class RideOffActionSummonPetTransfer : RideOffAction {
     }
 }
 
-public class RideOffActionHomeConvenient : RideOffAction {
-    public RideOffActionHomeConvenient() : base(RideOffType.HomeConvenient) { }
+public class RideOffActionHomeConvenient() : RideOffAction(RideOffType.HomeConvenient) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -118,24 +105,15 @@ public class RideOffActionHomeConvenient : RideOffAction {
     }
 }
 
-public class RideOffActionDisableField : RideOffAction {
-    public RideOffActionDisableField() : base(RideOffType.DisableField) { }
-}
+public class RideOffActionDisableField() : RideOffAction(RideOffType.DisableField);
 
-public class RideOffActionDead : RideOffAction {
-    public RideOffActionDead() : base(RideOffType.Dead) { }
-}
+public class RideOffActionDead() : RideOffAction(RideOffType.Dead);
 
-public class RideOffActionAdditionalEffect : RideOffAction {
-    public RideOffActionAdditionalEffect() : base(RideOffType.AdditionalEffect) { }
-}
+public class RideOffActionAdditionalEffect() : RideOffAction(RideOffType.AdditionalEffect);
 
-public class RideOffActionRidingUi : RideOffAction {
-    public RideOffActionRidingUi() : base(RideOffType.RidingUi) { }
-}
+public class RideOffActionRidingUi() : RideOffAction(RideOffType.RidingUi);
 
-public class RideOffActionHomemade : RideOffAction {
-    public RideOffActionHomemade() : base(RideOffType.Homemade) { }
+public class RideOffActionHomemade() : RideOffAction(RideOffType.Homemade) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -146,8 +124,7 @@ public class RideOffActionHomemade : RideOffAction {
     }
 }
 
-public class RideOffActionAutoInteraction : RideOffAction {
-    public RideOffActionAutoInteraction() : base(RideOffType.AutoInteraction) { }
+public class RideOffActionAutoInteraction() : RideOffAction(RideOffType.AutoInteraction) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -157,12 +134,9 @@ public class RideOffActionAutoInteraction : RideOffAction {
     }
 }
 
-public class RideOffActionAutoClimb : RideOffAction {
-    public RideOffActionAutoClimb() : base(RideOffType.AutoClimb) { }
-}
+public class RideOffActionAutoClimb() : RideOffAction(RideOffType.AutoClimb);
 
-public class RideOffActionCoupleEmotion : RideOffAction {
-    public RideOffActionCoupleEmotion() : base(RideOffType.CoupleEmotion) { }
+public class RideOffActionCoupleEmotion() : RideOffAction(RideOffType.CoupleEmotion) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -182,8 +156,7 @@ public class RideOffActionCoupleEmotion : RideOffAction {
 //     }
 // }
 
-public class RideOffActionUseFunctionItem : RideOffAction {
-    public RideOffActionUseFunctionItem() : base(RideOffType.UseFunctionItem) { }
+public class RideOffActionUseFunctionItem() : RideOffAction(RideOffType.UseFunctionItem) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -192,8 +165,7 @@ public class RideOffActionUseFunctionItem : RideOffAction {
     }
 }
 
-public class RideOffActionNurturing : RideOffAction {
-    public RideOffActionNurturing() : base(RideOffType.Nurturing) { }
+public class RideOffActionNurturing() : RideOffAction(RideOffType.Nurturing) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -202,16 +174,11 @@ public class RideOffActionNurturing : RideOffAction {
     }
 }
 
-public class RideOffActionGroggy : RideOffAction {
-    public RideOffActionGroggy() : base(RideOffType.Groggy) { }
-}
+public class RideOffActionGroggy() : RideOffAction(RideOffType.Groggy);
 
-public class RideOffActionUnRideSkill : RideOffAction {
-    public RideOffActionUnRideSkill() : base(RideOffType.UnRideSkill) { }
-}
+public class RideOffActionUnRideSkill() : RideOffAction(RideOffType.UnRideSkill);
 
-public class RideOffActionUseGlideItem : RideOffAction {
-    public RideOffActionUseGlideItem() : base(RideOffType.UseGlideItem) { }
+public class RideOffActionUseGlideItem() : RideOffAction(RideOffType.UseGlideItem) {
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);
@@ -221,6 +188,4 @@ public class RideOffActionUseGlideItem : RideOffAction {
     }
 }
 
-public class RideOffActionHideAndSeek : RideOffAction {
-    public RideOffActionHideAndSeek() : base(RideOffType.HideAndSeek) { }
-}
+public class RideOffActionHideAndSeek() : RideOffAction(RideOffType.HideAndSeek);

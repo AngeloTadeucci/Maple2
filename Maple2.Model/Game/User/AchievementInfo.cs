@@ -48,8 +48,8 @@ public class Achievement : IByteSerializable {
 
     public Achievement(AchievementMetadata metadata) {
         Metadata = metadata;
-        Category = metadata.Category;
         Id = metadata.Id;
+        Category = metadata.Category;
     }
 
     public void WriteTo(IByteWriter writer) {

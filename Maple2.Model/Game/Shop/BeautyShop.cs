@@ -4,12 +4,10 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Shop;
 
-public sealed class BeautyShop : BeautyShopData {
+public sealed class BeautyShop(int id) : BeautyShopData(id) {
     public byte Unknown1 { get; init; }
     public byte Unknown2 { get; init; }
     public IList<BeautyShopEntry> Entries;
-
-    public BeautyShop(int id) : base(id) { }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);

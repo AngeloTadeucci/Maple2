@@ -10,10 +10,8 @@ using System.Threading.Tasks;
 
 namespace Maple2.Database.Storage;
 
-public class AiMetadataStorage : MetadataStorage<string, AiMetadata> {
+public class AiMetadataStorage(MetadataContext context) : MetadataStorage<string, AiMetadata>(context, CACHE_SIZE) {
     private const int CACHE_SIZE = 2500; // ~2.2k total items
-
-    public AiMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public bool TryGet(string name, [NotNullWhen(true)] out AiMetadata? npcAi) {
         if (Cache.TryGet(name, out npcAi)) {

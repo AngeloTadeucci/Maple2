@@ -11,7 +11,7 @@ public class ItemAppearance : IByteSerializable, IByteDeserializable {
     public EquipColor Color;
 
     public ItemAppearance(EquipColor color) {
-        this.Color = color;
+        Color = color;
     }
 
     public virtual ItemAppearance Clone() {
@@ -36,8 +36,8 @@ public sealed class HairAppearance : ItemAppearance {
     public Vector3 FrontPosition2 { get; private set; }
 
     public HairAppearance(EquipColor color, float backLength = default, Vector3 backPosition1 = default,
-            Vector3 backPosition2 = default, float frontLength = default, Vector3 frontPosition1 = default,
-            Vector3 frontPosition2 = default) : base(color) {
+                          Vector3 backPosition2 = default, float frontLength = default, Vector3 frontPosition1 = default,
+                          Vector3 frontPosition2 = default) : base(color) {
         BackLength = backLength;
         BackPosition1 = backPosition1;
         BackPosition2 = backPosition2;
@@ -78,7 +78,7 @@ public sealed class DecalAppearance : ItemAppearance {
     public float Position4 { get; private set; }
 
     public DecalAppearance(EquipColor color, float position1 = default, float position2 = default,
-            float position3 = default, float position4 = default) : base(color) {
+                           float position3 = default, float position4 = default) : base(color) {
         Position1 = position1;
         Position2 = position2;
         Position3 = position3;
@@ -114,7 +114,7 @@ public sealed class CapAppearance : ItemAppearance {
     public float Unknown { get; private set; }
 
     public CapAppearance(EquipColor color, Vector3 position1 = default, Vector3 position2 = default,
-            Vector3 position3 = default, Vector3 position4 = default, float unknown = default) : base(color) {
+                         Vector3 position3 = default, Vector3 position4 = default, float unknown = default) : base(color) {
         Position1 = position1;
         Position2 = position2;
         Position3 = position3;

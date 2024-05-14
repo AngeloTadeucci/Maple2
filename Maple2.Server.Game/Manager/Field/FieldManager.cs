@@ -47,7 +47,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly Navigation Navigation;
     private readonly UgcMapMetadata ugcMetadata;
 
-    private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = new();
+    private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = [];
 
     internal readonly EventQueue Scheduler;
     internal readonly FieldActor FieldActor;

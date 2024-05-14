@@ -16,6 +16,7 @@ public struct MapWorldBoss {
         Channel = channel;
         SpawnTime = spawnTime;
     }
+
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 10)]

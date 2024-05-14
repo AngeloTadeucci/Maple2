@@ -11,6 +11,6 @@ public class SkillBook {
     public SkillBook() {
         MaxSkillTabs = 1;
         ActiveSkillTabId = 0;
-        SkillTabs = new List<SkillTab>();
+        SkillTabs = [];
     }
 }

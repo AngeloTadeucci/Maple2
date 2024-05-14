@@ -30,6 +30,14 @@ Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "======= Maple2 Setup Script ========" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 
+$dotnetVersion = (Get-Command dotnet -ErrorAction SilentlyContinue).FileVersionInfo.ProductVersion
+
+if ($dotnetVersion -lt "8.0") {
+	Write-Host "Please install .Net 8.0 and run this script again." -ForegroundColor Red
+	Start-Process "https://dotnet.microsoft.com/en-us/download/dotnet/8.0"
+    exit
+}
+
 # Create a copy of .env.example and rename it to .env
 if (Test-Path .env) {
     Write-Host ".env file already exists. Skipping." -ForegroundColor Blue
@@ -42,6 +50,7 @@ if (Test-Path .env) {
 $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{ 
     InitialDirectory = [Environment]::GetFolderPath('Desktop')
     Filter = "MapleStory2.exe|MapleStory2.exe"
+    Title = "Maplestory2 Executable"
 }
 $null = $FileBrowser.ShowDialog()
 

@@ -122,8 +122,8 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         var prism = new Prism(circle, position.Z, box.Z);
 
                         targets = attack.Arrow.BounceOverlap
-                            ? Field.GetTargets(new[] { prism }, record.Attack.Range.ApplyTarget, 1, targets).ToArray()
-                            : Field.GetTargets(new[] { prism }, record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
+                            ? Field.GetTargets([prism], record.Attack.Range.ApplyTarget, 1, targets).ToArray()
+                            : Field.GetTargets([prism], record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
                         if (targets.Length <= 0) {
                             break;
                         }

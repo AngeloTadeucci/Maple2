@@ -24,7 +24,7 @@ public class NpcMetadataStorage : MetadataStorage<int, NpcMetadata>, ISearchable
             Cache.AddReplace(npc.Id, npc);
             foreach (string tag in npc.Basic.MainTags) {
                 if (!tagLookup.ContainsKey(tag)) {
-                    tagLookup[tag] = new HashSet<int>();
+                    tagLookup[tag] = [];
                 }
 
                 tagLookup[tag].Add(npc.Id);

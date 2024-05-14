@@ -58,6 +58,4 @@ public class RideOnActionAdditionalEffect : RideOnAction {
     }
 }
 
-public class RideOnActionHideAndSeek : RideOnAction {
-    public RideOnActionHideAndSeek(int rideId, int objectId) : base(RideOnType.HideAndSeek, rideId, objectId) { }
-}
+public class RideOnActionHideAndSeek(int rideId, int objectId) : RideOnAction(RideOnType.HideAndSeek, rideId, objectId);

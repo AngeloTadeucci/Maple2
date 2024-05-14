@@ -59,11 +59,11 @@ public class ItemEnchantManager {
         PeachyCost[14] = Build(7784, 20, 84); // 8x
 
         IngredientInfo[] Build(int onyx, int chaosOnyx, int crystalFragment) {
-            return new[] {
+            return [
                 new IngredientInfo(ItemTag.Onix, onyx),
                 new IngredientInfo(ItemTag.ChaosOnix, chaosOnyx),
                 new IngredientInfo(ItemTag.CrystalPiece, crystalFragment),
-            };
+            ];
         }
     }
 

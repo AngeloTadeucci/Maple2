@@ -17,7 +17,7 @@ public abstract class TypeMapper<T> where T : class {
 
     protected TypeMapper() {
         stopwatch = new Stopwatch();
-        results = new List<T>();
+        results = [];
     }
 
     public uint Process() {

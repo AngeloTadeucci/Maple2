@@ -14,7 +14,7 @@ public class SkillMacro : IByteSerializable, IByteDeserializable {
     public SkillMacro(string name, long keyId, HashSet<int>? skills = null) {
         Name = name;
         KeyId = keyId;
-        this.skills = skills ?? new HashSet<int>();
+        this.skills = skills ?? [];
     }
 
     public void WriteTo(IByteWriter writer) {
@@ -28,7 +28,7 @@ public class SkillMacro : IByteSerializable, IByteDeserializable {
     }
 
     public void ReadFrom(IByteReader reader) {
-        skills = new HashSet<int>(); // Clear any existing settings
+        skills = []; // Clear any existing settings
 
         Name = reader.ReadUnicodeString();
         KeyId = reader.ReadLong();

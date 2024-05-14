@@ -6,7 +6,7 @@ public class HotBar {
     private const int MAX_SLOTS = 25;
     private const int ASSIGNABLE_SLOTS = 22;
     // Slot order is used if target slot is -1
-    private static readonly int[] SLOT_ORDER = { 4, 5, 6, 7, 0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 };
+    private static readonly int[] SLOT_ORDER = [4, 5, 6, 7, 0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
     public QuickSlot[] Slots { get; } = new QuickSlot[MAX_SLOTS];
 

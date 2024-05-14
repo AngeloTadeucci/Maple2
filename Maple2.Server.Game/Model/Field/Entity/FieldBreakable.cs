@@ -14,6 +14,7 @@ public class FieldBreakable : FieldEntity<BreakableActor> {
     public long BaseTick { get; private set; }
 
     private bool visible;
+
     public bool Visible {
         get => visible;
         set {

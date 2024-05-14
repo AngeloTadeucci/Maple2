@@ -7,10 +7,8 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Model;
 
-public class FieldGuideObject : FieldEntity<IGuideObject>, IByteSerializable {
+public class FieldGuideObject(FieldManager field, int objectId, IGuideObject value) : FieldEntity<IGuideObject>(field, objectId, value), IByteSerializable {
     public long CharacterId { get; init; }
-
-    public FieldGuideObject(FieldManager field, int objectId, IGuideObject value) : base(field, objectId, value) { }
 
     public void WriteTo(IByteWriter writer) {
         writer.Write<GuideObjectType>(Value.Type);

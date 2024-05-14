@@ -409,9 +409,9 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         IList<MarketItem> entries = ToMarketSection(section) switch {
             MeretMarketSection.All => session.GetPremiumMarketItems(tabId).Cast<MarketItem>().ToList(),
             MeretMarketSection.Premium => session.GetPremiumMarketItems(tabId).Cast<MarketItem>().ToList(),
-            MeretMarketSection.Ugc => new List<MarketItem>(),
-            MeretMarketSection.RedMeret => new List<MarketItem>(),
-            _ => new List<MarketItem>(),
+            MeretMarketSection.Ugc => [],
+            MeretMarketSection.RedMeret => [],
+            _ => [],
         };
 
         // Featured page needs a multiple of 2 slots. Add to the entries total if odd number.

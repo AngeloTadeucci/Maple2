@@ -8,7 +8,6 @@ public readonly record struct Color(byte Blue, byte Green, byte Red, byte Alpha)
     public override string ToString() => $"ARGB({Alpha:X2}, {Red:X2}, {Green:X2}, {Blue:X2})";
 }
 
-
 [StructLayout(LayoutKind.Sequential, Size = 8)]
 public readonly struct SkinColor {
     public Color Primary { get; }
@@ -27,7 +26,6 @@ public readonly struct SkinColor {
 
     public override string ToString() => $"Primary:{Primary}|Secondary:{Secondary}";
 }
-
 
 [StructLayout(LayoutKind.Sequential, Size = 20)]
 public readonly struct EquipColor {

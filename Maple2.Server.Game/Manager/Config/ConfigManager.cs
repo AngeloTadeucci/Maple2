@@ -35,7 +35,7 @@ public class ConfigManager {
     public ConfigManager(GameStorage.Request db, GameSession session) {
         this.session = session;
         keyBinds = new Dictionary<int, KeyBind>();
-        hotBars = new List<HotBar>();
+        hotBars = [];
         skillMacros = new List<SkillMacro>();
         lapenshards = new Dictionary<LapenshardSlot, int>();
         skillCooldowns = new Dictionary<int, SkillCooldown>();
@@ -201,7 +201,7 @@ public class ConfigManager {
 
     #region ChatStickers
     public void LoadChatStickers() {
-        List<ChatSticker> stickers = new();
+        List<ChatSticker> stickers = [];
         foreach (KeyValuePair<int, long> set in session.Player.Value.Unlock.StickerSets) {
             stickers.Add(new(set.Key, set.Value));
         }

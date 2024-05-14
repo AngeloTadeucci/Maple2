@@ -14,6 +14,7 @@ public sealed class UgcItemLook : IByteSerializable, IByteDeserializable {
     public string Author;
     public long CreationTime;
     public string Url;
+
     public UgcItemLook() {
         FileName = string.Empty;
         Name = string.Empty;

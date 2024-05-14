@@ -10,7 +10,7 @@ using Maple2.Tools.Collision;
 
 namespace Maple2.Database.Storage;
 
-public class MapEntityStorage : MetadataStorage<string, MapEntityMetadata> {
+public class MapEntityStorage(MetadataContext context) : MetadataStorage<string, MapEntityMetadata>(context, CACHE_SIZE) {
     private const int CACHE_SIZE = 1500; // ~1.1k total Maps
 
     private const float MAP_LIMIT = sbyte.MaxValue * 150f;
@@ -18,8 +18,6 @@ public class MapEntityStorage : MetadataStorage<string, MapEntityMetadata> {
         new Vector2(-MAP_LIMIT, -MAP_LIMIT),
         new Vector2(MAP_LIMIT, MAP_LIMIT)),
         -MAP_LIMIT, MAP_LIMIT * 2);
-
-    public MapEntityStorage(MetadataContext context) : base(context, CACHE_SIZE) { }
 
     public MapEntityMetadata? Get(string xblock) {
         if (Cache.TryGet(xblock, out MapEntityMetadata mapEntity)) {

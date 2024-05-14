@@ -17,8 +17,8 @@ public class GameConsole : IConsole {
     public bool IsInputRedirected => true;
 
     public GameConsole(GameSession session) {
-        Error = new GameErrorStreamWriter(session);
         Out = new GameOutputStreamWriter(session);
+        Error = new GameErrorStreamWriter(session);
     }
 
     private struct GameOutputStreamWriter : IStandardStreamWriter {
@@ -64,13 +64,7 @@ public class GameConsole : IConsole {
         }
     }
 
-    private readonly struct GameErrorStreamWriter : IStandardStreamWriter {
-        private readonly GameSession session;
-
-        public GameErrorStreamWriter(GameSession session) {
-            this.session = session;
-        }
-
+    private readonly struct GameErrorStreamWriter(GameSession session) : IStandardStreamWriter {
         public void Write(string? value) {
             if (string.IsNullOrWhiteSpace(value)) {
                 return;

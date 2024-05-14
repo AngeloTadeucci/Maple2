@@ -91,12 +91,12 @@ public sealed class Navigation : IDisposable {
 
         int halfWidth = Math.Max(width / 2, 1);
         int halfHeight = Math.Max(height / 2, 1);
-        List<Point> vertices = new() {
+        List<Point> vertices = [
             new Point(-halfWidth, -halfHeight),
             new Point(-halfWidth, halfHeight),
             new Point(halfWidth, halfHeight),
             new Point(halfWidth, -halfHeight),
-        };
+        ];
 
         shape = PathEngine.newShape(vertices);
         mesh.generateUnobstructedSpaceFor(shape, true);

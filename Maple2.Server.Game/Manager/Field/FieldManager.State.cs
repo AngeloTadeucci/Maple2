@@ -360,7 +360,7 @@ public partial class FieldManager {
                 cubePoints[i] = magicPath.IgnoreAdjust ? position : position.Align();
             }
         } else {
-            cubePoints = new[] { record.Position };
+            cubePoints = [record.Position];
         }
 
         // Condition-Skills are expected to be handled separately.

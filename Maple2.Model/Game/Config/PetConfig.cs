@@ -8,9 +8,10 @@ public class PetConfig {
     public PetLootConfig LootConfig;
 
     public PetConfig(PetPotionConfig[]? potionConfig = null, PetLootConfig? lootConfig = null) {
-        PotionConfig = potionConfig ?? Array.Empty<PetPotionConfig>();
+        PotionConfig = potionConfig ?? [];
         LootConfig = lootConfig ?? new PetLootConfig(true, true, true, true, true, true, true, false, 1, true);
     }
+
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 12)]

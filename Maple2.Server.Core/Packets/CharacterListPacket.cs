@@ -116,9 +116,9 @@ public static class CharacterListPacket {
         pWriter.WriteLong(character.DeleteTime);
 
         equips.TryGetValue(ItemGroup.Gear, out List<Item>? gears);
-        gears ??= new List<Item>();
+        gears ??= [];
         equips.TryGetValue(ItemGroup.Outfit, out List<Item>? outfits);
-        outfits ??= new List<Item>();
+        outfits ??= [];
         pWriter.WriteByte((byte) (gears.Count + outfits.Count));
         foreach (Item gear in gears) {
             pWriter.WriteEquip(gear);
@@ -128,7 +128,7 @@ public static class CharacterListPacket {
         }
 
         equips.TryGetValue(ItemGroup.Badge, out List<Item>? badges);
-        badges ??= new List<Item>();
+        badges ??= [];
         pWriter.WriteByte((byte) badges.Count);
         foreach (Item badge in badges) {
             pWriter.WriteBadge(badge);

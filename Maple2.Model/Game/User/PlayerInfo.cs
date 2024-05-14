@@ -150,6 +150,4 @@ public class CharacterInfo {
             Channel = player.Character.Channel,
         };
     }
-
-
 }

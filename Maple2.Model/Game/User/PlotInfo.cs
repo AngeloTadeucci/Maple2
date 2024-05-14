@@ -44,8 +44,7 @@ public class PlotInfo {
     }
 }
 
-public class Plot : PlotInfo {
+public class Plot(UgcMapGroup metadata) : PlotInfo(metadata) {
     public readonly Dictionary<Vector3B, PlotCube> Cubes = new();
 
-    public Plot(UgcMapGroup metadata) : base(metadata) { }
 }

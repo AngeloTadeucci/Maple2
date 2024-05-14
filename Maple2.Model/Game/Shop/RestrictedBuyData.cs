@@ -9,7 +9,6 @@ using Maple2.Tools;
 namespace Maple2.Model.Game.Shop;
 
 public class RestrictedBuyData : IByteSerializable {
-
     public long StartTime { get; init; }
     public long EndTime { get; init; }
     public IList<BuyTimeOfDay> TimeRanges { get; init; }

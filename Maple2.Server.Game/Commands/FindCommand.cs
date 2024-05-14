@@ -39,7 +39,7 @@ public class FindCommand : Command {
             this.storage = storage;
 
             var query = new Argument<string[]>("query", "Search query.");
-            var page = new Option<int>(new[] { "--page", "-p" }, "Page of query results.");
+            var page = new Option<int>(["--page", "-p"], "Page of query results.");
 
             AddArgument(query);
             AddOption(page);

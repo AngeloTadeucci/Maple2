@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maple2.Database.Context;
 
-public sealed class MetadataContext : DbContext {
+public sealed class MetadataContext(DbContextOptions options) : DbContext(options) {
     public DbSet<TableChecksum> TableChecksum { get; set; } = null!;
     public DbSet<AdditionalEffectMetadata> AdditionalEffectMetadata { get; set; } = null!;
     public DbSet<AnimationMetadata> AnimationMetadata { get; set; } = null!;
@@ -25,8 +25,6 @@ public sealed class MetadataContext : DbContext {
     public DbSet<AchievementMetadata> AchievementMetadata { get; set; } = null!;
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
-
-    public MetadataContext(DbContextOptions options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);

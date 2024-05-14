@@ -6,17 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Maple2.Database.Storage;
 
-public abstract class DatabaseRequest<TContext> : IDisposable where TContext : DbContext {
-    protected readonly TContext Context;
-    protected readonly ILogger Logger;
+public abstract class DatabaseRequest<TContext>(TContext context, ILogger logger) : IDisposable
+    where TContext : DbContext {
+    protected readonly TContext Context = context;
+    protected readonly ILogger Logger = logger;
 
     private IDbContextTransaction? transaction;
     public bool IsTransaction => transaction != null;
-
-    public DatabaseRequest(TContext context, ILogger logger) {
-        Context = context;
-        Logger = logger;
-    }
 
     public void BeginTransaction() {
         transaction = Context.Database.BeginTransaction();

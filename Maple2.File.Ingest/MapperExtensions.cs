@@ -449,8 +449,8 @@ public static class MapperExtensions {
         }
 
         if (int.TryParse(codes[0], out int integerResult)) {
-            return new ConditionMetadata.Parameters(Integers: new[] { integerResult });
+            return new ConditionMetadata.Parameters(Integers: [integerResult]);
         }
-        return new ConditionMetadata.Parameters(Strings: new[] { codes[0] });
+        return new ConditionMetadata.Parameters(Strings: [codes[0]]);
     }
 }

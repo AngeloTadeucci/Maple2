@@ -95,7 +95,7 @@ public class LoginSession : Core.Network.Session {
         CharacterId = character.Id;
 
         var unlock = new Unlock();
-        int[] defaultEmotes = {
+        int[] defaultEmotes = [
             90200011, // Greet
             90200004, // Scheme
             90200024, // Reject
@@ -116,7 +116,7 @@ public class LoginSession : Core.Network.Session {
             90200019, // Scissors
             90200020, // Rock
             90200021, // Paper
-        };
+        ];
         foreach (int emoteId in defaultEmotes) {
             unlock.Emotes.Add(emoteId);
         }

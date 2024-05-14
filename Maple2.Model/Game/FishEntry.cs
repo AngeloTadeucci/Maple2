@@ -4,7 +4,6 @@ using Maple2.Tools;
 namespace Maple2.Model.Game;
 
 public class FishEntry : IByteSerializable {
-
     public int Id;
     public int TotalCaught;
     public int TotalPrizeFish;

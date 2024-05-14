@@ -25,15 +25,7 @@ public readonly struct PointPrism : IPrism {
         return prism.Contains(origin);
     }
 
-    private readonly struct Point : IPolygon {
-        private readonly float x;
-        private readonly float y;
-
-        public Point(float x, float y) {
-            this.x = x;
-            this.y = y;
-        }
-
+    private readonly struct Point(float x, float y) : IPolygon {
         public bool Contains(in Vector2 point) {
             const float tolerance = 0.0000001f;
             return Math.Abs(x - point.X) < tolerance && Math.Abs(y - point.Y) < tolerance;
@@ -44,7 +36,7 @@ public readonly struct PointPrism : IPrism {
         }
 
         public Vector2[] GetAxes(Polygon? other) {
-            return Array.Empty<Vector2>();
+            return [];
         }
 
         public Range AxisProjection(Vector2 axis) {

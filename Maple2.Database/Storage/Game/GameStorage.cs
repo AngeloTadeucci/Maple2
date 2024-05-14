@@ -8,12 +8,12 @@ using Microsoft.Extensions.Logging;
 namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
-    private readonly DbContextOptions options;
     private readonly ItemMetadataStorage itemMetadata;
     private readonly MapMetadataStorage mapMetadata;
     private readonly AchievementMetadataStorage achievementMetadata;
     private readonly QuestMetadataStorage questMetadata;
     private readonly ILogger logger;
+    private readonly DbContextOptions options;
 
     public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
                        QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
@@ -36,7 +36,6 @@ public partial class GameStorage {
 
     public partial class Request : DatabaseRequest<Ms2Context> {
         private readonly GameStorage game;
-
         public Request(GameStorage game, Ms2Context context, ILogger logger) : base(context, logger) {
             this.game = game;
         }

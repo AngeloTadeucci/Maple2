@@ -15,11 +15,11 @@ public sealed class Rectangle : Polygon {
 
         Matrix3x2 transform = Matrix3x2.CreateRotation(radians) * Matrix3x2.CreateTranslation(origin);
 
-        Points = new[] {
+        Points = [
             Vector2.Transform(new Vector2(-halfWidth, -halfLength), transform),
             Vector2.Transform(new Vector2(halfWidth, -halfLength), transform),
             Vector2.Transform(new Vector2(halfWidth, halfLength), transform),
             Vector2.Transform(new Vector2(-halfWidth, halfLength), transform),
-        };
+        ];
     }
 }

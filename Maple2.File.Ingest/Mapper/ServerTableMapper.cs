@@ -100,7 +100,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
                     MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
                     MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
-                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? new List<JobCode>(),
+                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
@@ -154,7 +154,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
                     MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
                     MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
-                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? new List<JobCode>(),
+                    JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
@@ -344,7 +344,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     private BonusGameTable ParseBonusGameTable() {
         var bonusGames = new Dictionary<int, BonusGameTable.Game>();
         foreach ((int type, int id, BonusGame bonusGame) in parser.ParseBonusGame()) {
-            List<BonusGameTable.Game.Slot> slots = new();
+            List<BonusGameTable.Game.Slot> slots = [];
             foreach (BonusGame.Slot slot in bonusGame.slot) {
                 slots.Add(new BonusGameTable.Game.Slot(
                     MinProp: slot.minProp,
@@ -362,7 +362,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
         var drops = new Dictionary<int, BonusGameTable.Drop>();
         foreach ((int type, int id, BonusGameDrop gameDrop) in parser.ParseBonusGameDrop()) {
-            List<BonusGameTable.Drop.Item> items = new();
+            List<BonusGameTable.Drop.Item> items = [];
             foreach (BonusGameDrop.Item item in gameDrop.item) {
                 items.Add(new BonusGameTable.Drop.Item(
                     ItemComponent: new ItemComponent(
@@ -387,7 +387,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         foreach ((int id, GlobalDropItemBox itemDrop) in parser.ParseGlobalDropItemBox()) {
             var groups = new List<GlobalDropItemBoxTable.Group>();
             foreach (GlobalDropItemBox.Group group in itemDrop.v) {
-                List<GlobalDropItemBoxTable.Group.DropCount> dropCounts = new();
+                List<GlobalDropItemBoxTable.Group.DropCount> dropCounts = [];
                 for (int i = 0; i < group.dropCount.Length; i++) {
                     dropCounts.Add(new GlobalDropItemBoxTable.Group.DropCount(
                         Amount: group.dropCount[i],

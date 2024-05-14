@@ -22,7 +22,7 @@ public class WarpCommand : Command {
         this.mapStorage = mapStorage;
 
         var mapId = new Argument<int>("id", "Id of map to warp to.");
-        var portalId = new Option<int>(new[] { "--portal", "-p" }, () => -1, "Id of portal to teleport to.");
+        var portalId = new Option<int>(["--portal", "-p"], () => -1, "Id of portal to teleport to.");
 
         AddArgument(mapId);
         AddOption(portalId);
