@@ -15,7 +15,7 @@ public sealed class NpcScriptManager {
     private readonly GameSession session;
 
     public readonly FieldNpc Npc;
-    private readonly ScriptMetadata metadata;
+    private readonly ScriptMetadata? metadata;
     public SortedDictionary<int, QuestMetadata> Quests = new();
 
     public NpcTalkType TalkType;
@@ -26,11 +26,11 @@ public sealed class NpcScriptManager {
     public int QuestId { get; private set; } = 0;
     private readonly ILogger logger = Log.Logger.ForContext<NpcScriptManager>();
 
-    public NpcScriptManager(GameSession session, FieldNpc npc, ScriptMetadata metadata) {
+    public NpcScriptManager(GameSession session, FieldNpc npc, ScriptMetadata? metadata) {
         this.session = session;
         Npc = npc;
         this.metadata = metadata;
-        if (this.metadata.Type == ScriptType.Quest) {
+        if (this.metadata?.Type == ScriptType.Quest) {
             TalkType = NpcTalkType.Quest;
             State = GetQuestScriptState(this.metadata);
         }
@@ -59,7 +59,7 @@ public sealed class NpcScriptManager {
         Button = GetButton();
 
         var dialogue = new NpcDialogue(State.Id, Index, Button);
-        session.Send(NpcTalkPacket.Continue(TalkType, dialogue, metadata.Id));
+        session.Send(NpcTalkPacket.Continue(TalkType, dialogue, metadata!.Id));
         return true;
     }
 
@@ -87,7 +87,7 @@ public sealed class NpcScriptManager {
     }
 
     private bool SetInitialScript() {
-        if (metadata.Type == ScriptType.Quest) {
+        if (metadata?.Type == ScriptType.Quest) {
             TalkType = NpcTalkType.Quest;
             return true;
         }
@@ -163,6 +163,9 @@ public sealed class NpcScriptManager {
     }
 
     private ScriptState? GetFirstScriptState() {
+        if (metadata == null) {
+            return null;
+        }
         // Check if player meets the requirements for the job script.
         ScriptState? jobScriptState = metadata.States.Values.FirstOrDefault(state => state.Type == ScriptStateType.Job);
         if (jobScriptState != null) {
@@ -213,7 +216,7 @@ public sealed class NpcScriptManager {
         }
 
         int questId = 0;
-        if (metadata.Type == ScriptType.Quest) {
+        if (metadata!.Type == ScriptType.Quest) {
             questId = metadata.Id;
         }
         if ((nextState != State && !metadata.States.ContainsKey(nextState.Id))) {
@@ -254,7 +257,7 @@ public sealed class NpcScriptManager {
 
             IList<ScriptState> goToScripts = new List<ScriptState>();
             foreach (int goToScriptId in distractor.Goto) {
-                if (!metadata.States.TryGetValue(goToScriptId, out ScriptState? goToScript)) {
+                if (!metadata!.States.TryGetValue(goToScriptId, out ScriptState? goToScript)) {
                     continue;
                 }
 
@@ -275,7 +278,7 @@ public sealed class NpcScriptManager {
 
             IList<ScriptState> goToFailScripts = new List<ScriptState>();
             foreach (int goToFailScriptId in distractor.GotoFail) {
-                if (!metadata.States.TryGetValue(goToFailScriptId, out ScriptState? goToFailScript)) {
+                if (!metadata!.States.TryGetValue(goToFailScriptId, out ScriptState? goToFailScript)) {
                     continue;
                 }
 
@@ -467,6 +470,9 @@ public sealed class NpcScriptManager {
     }
 
     private ScriptState? GetSelectScriptState() {
+        if (metadata == null) {
+            return null;
+        }
         IList<ScriptState> scriptStates = new List<ScriptState>();
         foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Type == ScriptStateType.Select)) {
             if (!session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions)) {
@@ -499,7 +505,10 @@ public sealed class NpcScriptManager {
         return GetQuestScriptState(questMetadata);
     }
 
-    private ScriptState? GetQuestScriptState(ScriptMetadata scriptMetadata) {
+    private ScriptState? GetQuestScriptState(ScriptMetadata? scriptMetadata) {
+        if (scriptMetadata == null) {
+            return null;
+        }
         session.Quest.TryGetQuest(scriptMetadata.Id, out Quest? quest);
         QuestState questState = quest?.State ?? QuestState.None;
 

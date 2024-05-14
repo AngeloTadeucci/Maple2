@@ -84,10 +84,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             session.Shop.Load(npc.Value.Metadata.Basic.ShopId, npc.Value.Id);
         }
 
-        if (!ScriptMetadata.TryGet(npc.Value.Id, out ScriptMetadata? metadata)) {
-            session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
-            return;
-        }
+        ScriptMetadata.TryGet(npc.Value.Id, out ScriptMetadata? metadata);
 
         session.NpcScript = new NpcScriptManager(session, npc, metadata);
         if (!session.NpcScript.BeginNpcTalk()) {
