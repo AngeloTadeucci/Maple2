@@ -19,8 +19,6 @@ public class PlayerCommand : Command {
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
-        AddCommand(new DebugAnimationCommand(session));
-        AddCommand(new DebugSkillsCommand(session));
     }
 
     private class LevelCommand : Command {

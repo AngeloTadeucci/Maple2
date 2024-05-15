@@ -91,7 +91,7 @@ public class FieldNpc : Actor<Npc> {
     private int currentWaypointIndex = 0;
 
     public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model, field.NpcMetadata) {
-        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence("Idle_A", -1, 1f, null);
+        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence("", -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         defaultRoutines = new WeightedSet<string>();

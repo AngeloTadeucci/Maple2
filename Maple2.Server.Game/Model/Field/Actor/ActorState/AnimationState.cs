@@ -5,8 +5,6 @@ using Maple2.Server.Game.Model.Enum;
 namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
 
 public class AnimationState {
-    // TODO: maybe make this a ping based variable?
-    private const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
     private readonly IActor actor;
 
     private struct LoopData {
@@ -76,7 +74,7 @@ public class AnimationState {
         sequenceSpeed = 1;
         lastSequenceTime = 0;
         sequenceLoop = new LoopData(0, 0);
-        lastTick =0;
+        lastTick = 0;
         isLooping = false;
         sequenceEnd = 0;
         sequenceType = AnimationType.Misc;
@@ -103,9 +101,7 @@ public class AnimationState {
         sequenceSpeed = speed;
         sequenceType = type;
 
-        long fieldTick = actor.Field.FieldTick;
-
-        lastTick = fieldTick;
+        lastTick = actor.Field.FieldTick;
 
         return true;
     }
@@ -149,7 +145,7 @@ public class AnimationState {
 
         // TODO: maybe make client grace period ping based instead?
         if (isLooping && sequenceLoop.end != 0 && sequenceTime > sequenceLoop.end) {
-            if (!IsPlayerAnimation || tickCount <= sequenceLoopEndTick + ClientGraceTimeTick) {
+            if (!IsPlayerAnimation || tickCount <= sequenceLoopEndTick + Constant.ClientGraceTimeTick) {
                 if (loopOnlyOnce) {
                     isLooping = false;
                     loopOnlyOnce = false;
@@ -168,7 +164,7 @@ public class AnimationState {
         }
 
         if (sequenceEnd != 0 && sequenceTime > sequenceEnd) {
-            if (!IsPlayerAnimation || tickCount <= sequenceEndTick + ClientGraceTimeTick) {
+            if (!IsPlayerAnimation || tickCount <= sequenceEndTick + Constant.ClientGraceTimeTick) {
                 ResetSequence();
             }
         }
