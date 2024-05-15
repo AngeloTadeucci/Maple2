@@ -189,7 +189,7 @@ public enum SendOp : ushort {
     CharMaxCount = 0x00BA,
     World = 0x00BB,
     ItemDropNotice = 0x00BC,
-    MatchParty = 0x00BD,
+    PartySearch = 0x00BD,
     RecallScroll = 0x00BE,
     UserConditionEvent = 0x00BF,
     PotentialAbility = 0x00C0,

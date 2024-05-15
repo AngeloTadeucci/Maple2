@@ -23,7 +23,7 @@ public class PartyHandler : PacketHandler<GameSession> {
         Leave = 3,
         Kick = 4,
         SetLeader = 17,
-        MatchPartyJoin = 23,
+        SearchPartyJoin = 23,
         SummonParty = 29,
         Unknown = 32,
         PartySearch = 33,
@@ -57,7 +57,7 @@ public class PartyHandler : PacketHandler<GameSession> {
             case Command.SetLeader:
                 HandleSetLeader(session, packet);
                 return;
-            case Command.MatchPartyJoin:
+            case Command.SearchPartyJoin:
                 HandleMatchPartyJoin(session, packet);
                 return;
             case Command.SummonParty:
@@ -209,10 +209,29 @@ public class PartyHandler : PacketHandler<GameSession> {
     }
 
     private void HandleMatchPartyJoin(GameSession session, IByteReader packet) {
-        // TODO: Implement
         int partyId = packet.ReadInt();
         string leaderName = packet.ReadUnicodeString();
-        long unk1 = packet.ReadLong();
+        long partySearchId = packet.ReadLong();
+
+        if (session.Party.Party != null) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_already));
+            return;
+        }
+
+        PartyResponse? response = World.Party(new PartyRequest {
+            RequestorId = session.CharacterId,
+            JoinByPartySearch = new PartyRequest.Types.JoinByPartySearch {
+                PartyId = partyId,
+                PartySearchId = partySearchId,
+            },
+        });
+
+        if (response.Error != (int) PartyError.none) {
+            session.Send(PartyPacket.Error((PartyError) response.Error));
+            return;
+        }
+
+        session.Party.SetParty(response.Party);
     }
 
     private void HandleSummonParty(GameSession session) {

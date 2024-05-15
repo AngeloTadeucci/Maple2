@@ -116,6 +116,7 @@ public static class Constant {
     public const ShopCurrencyType InitialTierExcessRestockCurrency = ShopCurrencyType.Meso;
     public const float UGCShopProfitFee = 0.25f;
     public const int UGCShopProfitDelayDays = 10;
+    public const int PartyFinderListingsPageCount = 12;
     #endregion
 
     #region table/constants.xml

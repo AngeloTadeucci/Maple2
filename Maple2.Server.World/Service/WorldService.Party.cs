@@ -41,6 +41,8 @@ public partial class WorldService {
                 return Task.FromResult(VoteReply(request.RequestorId, request.VoteReply));
             case PartyRequest.PartyOneofCase.VoteKick:
                 return Task.FromResult(VoteKick(request.RequestorId, request.VoteKick));
+            case PartyRequest.PartyOneofCase.JoinByPartySearch:
+                return Task.FromResult(JoinByPartySearch(request.RequestorId, request.JoinByPartySearch));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.none });
         }
@@ -191,6 +193,39 @@ public partial class WorldService {
         };
     }
 
+    private PartyResponse JoinByPartySearch(long requestorId, PartyRequest.Types.JoinByPartySearch joinByPartySearch) {
+        if (!partyLookup.TryGet(joinByPartySearch.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
+        }
+
+        if (manager.Party.Search == null) {
+            return new PartyResponse{ Error = (int) PartyError.s_party_err_invalid_recruit };
+        }
+
+        if (!manager.Party.Search.NoApproval) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_myself };
+        }
+
+        if (manager.Party.Search.Id != joinByPartySearch.PartySearchId) {
+            return new PartyResponse{ Error = (int) PartyError.s_party_err_wrong_recruit };
+        }
+
+        if (manager.Party.Search.Size <= manager.Party.Members.Count) {
+            return new PartyResponse{ Error = (int) PartyError.s_party_err_full_limit_player };
+        }
+
+        if (!playerLookup.TryGet(requestorId, out PlayerInfo? info)) {
+            return new PartyResponse { Error = (int) PartyError.none };
+        }
+
+        PartyError error = manager.Join(info);
+        if (error != PartyError.none) {
+            return new PartyResponse { Error = (int) error };
+        }
+
+        return new PartyResponse { Party = ToPartyInfo(manager.Party) };
+    }
+
     private static PartyInfo ToPartyInfo(Party party) {
         return new PartyInfo {
             Id = party.Id,
@@ -199,10 +234,6 @@ public partial class WorldService {
             LeaderCharacterId = party.LeaderCharacterId,
             LeaderName = party.LeaderName,
             DungeonId = party.DungeonId,
-            MatchPartyName = party.MatchPartyName,
-            MatchPartyId = party.MatchPartyId,
-            IsMatching = party.IsMatching,
-            RequireApproval = party.RequireApproval,
             Members = {
                 party.Members.Values.Select(member => new PartyInfo.Types.Member {
                     CharacterId = member.CharacterId,
