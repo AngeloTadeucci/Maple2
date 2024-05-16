@@ -9,7 +9,7 @@ public partial class TriggerContext {
     public void AddCinematicTalk(int npcId, string illustId, string msg, int duration, Align align, int delayTick) {
         DebugLog("[AddCinematicTalk] npcId:{NpcId}, illustId:{IllustrationId}, msg:{Message}, duration:{Duration}, align:{Align}, delayTick:{Delay}",
             npcId, illustId, msg, duration, align, delayTick);
-        Broadcast(CinematicPacket.Talk(npcId, illustId, msg, delayTick, align));
+        Broadcast(CinematicPacket.Talk(npcId, illustId, msg, duration, align));
     }
 
     public void RemoveCinematicTalk() {

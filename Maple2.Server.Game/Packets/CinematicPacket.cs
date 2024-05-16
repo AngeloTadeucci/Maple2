@@ -109,13 +109,13 @@ public static class CinematicPacket {
         return pWriter;
     }
 
-    public static ByteWriter Talk(int npcId, string illustration, string script, int delay, Align align) {
+    public static ByteWriter Talk(int npcId, string illustration, string script, int duration, Align align) {
         var pWriter = Packet.Of(SendOp.Cinematic);
         pWriter.Write<Command>(Command.Talk);
         pWriter.WriteInt(npcId);
         pWriter.WriteString(illustration);
         pWriter.WriteUnicodeString(script);
-        pWriter.WriteInt(delay);
+        pWriter.WriteInt(duration);
         pWriter.WriteByte((byte) align);
 
         return pWriter;
