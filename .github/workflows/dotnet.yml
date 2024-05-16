@@ -1,37 +1,37 @@
 name: Build+Test .NET
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    push:
+        branches: ["master"]
+    pull_request:
+        branches: ["master"]
 
 jobs:
-  build:
-    runs-on: windows-latest
+    build:
+        runs-on: windows-latest
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Cache NuGet Packages
-      id: nuget-packages
-      uses: actions/cache@v3
-      env:
-        cache-name: nuget-package-cache
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-${{ env.cache-name }}
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: 8.0.x
+            - name: Cache NuGet Packages
+              id: nuget-packages
+              uses: actions/cache@v3
+              env:
+                  cache-name: nuget-package-cache
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-${{ env.cache-name }}
 
-    - name: List NuGet Packages
-      if: ${{ steps.nuget-packages.outputs.cache-hit == 'true' }}
-      continue-on-error: true
-      run: ls -lh ~/.nuget/packages
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+            - name: List NuGet Packages
+              if: ${{ steps.nuget-packages.outputs.cache-hit == 'true' }}
+              continue-on-error: true
+              run: ls -lh ~/.nuget/packages
+            - name: Restore dependencies
+              run: dotnet restore
+            - name: Build
+              run: dotnet build --no-restore
+            - name: Test
+              run: dotnet test --no-build --verbosity normal

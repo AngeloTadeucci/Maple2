@@ -151,12 +151,12 @@ public class PartySearchHandler : PacketHandler<GameSession> {
         }
 
         PartySearchResponse response = session.World.PartySearch(new PartySearchRequest {
-                Fetch = new PartySearchRequest.Types.Fetch {
-                    Page = pageNumber,
-                    SearchString = searchString,
-                    SortBy = sort,
-                },
-            }
+            Fetch = new PartySearchRequest.Types.Fetch {
+                Page = pageNumber,
+                SearchString = searchString,
+                SortBy = sort,
+            },
+        }
         );
 
         if (response.Error != (int) PartySearchError.none) {

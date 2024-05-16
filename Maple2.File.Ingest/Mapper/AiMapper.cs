@@ -33,7 +33,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
 
                 reserved.Add(MapCondition(node));
             }
-            
+
             foreach (Entry entry in data.Battle) {
                 MapEntry(battle, entry);
             }
@@ -72,7 +72,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             MapEntry(childNodes, entry);
         }
 
-        switch(node) {
+        switch (node) {
             case DistanceOverCondition distanceOver:
                 return new AiMetadata.DistanceOverCondition(
                     Name: node.name,
@@ -201,7 +201,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
             childConditions.Add(MapCondition(child));
         }
 
-        switch(node) {
+        switch (node) {
             case TraceNode trace:
                 return new AiMetadata.TraceNode(
                     Name: node.name,
@@ -362,7 +362,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                     SummonRadius: summon.summonRadius,
                     Group: summon.group,
                     Master: (NodeSummonMaster) summon.master,
-                    Option: Array.ConvertAll(summon.option, value => (NodeSummonOption)value),
+                    Option: Array.ConvertAll(summon.option, value => (NodeSummonOption) value),
                     Cooltime: summon.cooltime,
                     IsKeepBattle: summon.isKeepBattle
                 );

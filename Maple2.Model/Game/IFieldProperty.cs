@@ -17,7 +17,7 @@ public class FieldPropertyGravity : IFieldProperty, IByteDeserializable {
     public FieldPropertyGravity(float gravity) {
         Gravity = gravity;
     }
-    
+
     public void WriteTo(IByteWriter writer) {
         writer.Write<FieldProperty>(Type);
         writer.WriteFloat(Gravity);

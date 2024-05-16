@@ -177,7 +177,7 @@ internal class TriggerApiScript {
                 writer.WriteLine($@"""""""{Description}");
                 if (!string.IsNullOrWhiteSpace(overrides.Description)) {
                     writer.WriteBlankLine();
-                    foreach (string line in overrides.Description.Split(new []{"\n", "\r\n"}, StringSplitOptions.None)) {
+                    foreach (string line in overrides.Description.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None)) {
                         writer.WriteLine(line);
                     }
                 }
@@ -229,7 +229,7 @@ internal class TriggerApiScript {
             return parameter.Name == overrides.Compare.Field || parameter.Name == overrides.Compare.Op;
         }
 
-        private readonly HashSet<string> csReserved = new() {"operator", "event", "string"};
+        private readonly HashSet<string> csReserved = new() { "operator", "event", "string" };
         public void WriteInterface(IndentedTextWriter writer) {
             string fullName = overrides.Name;
             if (splitName != null) {

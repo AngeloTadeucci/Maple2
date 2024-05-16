@@ -191,34 +191,34 @@ public class ItemBoxManager {
 
         var error = ItemBoxError.ok;
         ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
-            for (int startCount = 0; startCount < count; startCount++) {
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
-                    return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
-                }
+        for (int startCount = 0; startCount < count; startCount++) {
+            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
 
-                if (itemId > 0) {
-                    Item? newItem = session.Field.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
-                    if (newItem == null) {
-                        continue;
-                    }
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                        error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                    }
+            if (itemId > 0) {
+                Item? newItem = session.Field.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
+                if (newItem == null) {
+                    continue;
                 }
-
-                IEnumerable<Item> itemList = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, individualDropBoxId);
-                foreach (Item newItem in itemList) {
-                    if (!session.Item.Inventory.Add(newItem, true)) {
-                        session.Item.MailItem(newItem);
-                        error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
-                    }
-                }
-                BoxCount++;
-                if (error != ItemBoxError.ok) {
-                    return error;
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
+                    error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
                 }
             }
+
+            IEnumerable<Item> itemList = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, individualDropBoxId);
+            foreach (Item newItem in itemList) {
+                if (!session.Item.Inventory.Add(newItem, true)) {
+                    session.Item.MailItem(newItem);
+                    error = ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
+                }
+            }
+            BoxCount++;
+            if (error != ItemBoxError.ok) {
+                return error;
+            }
+        }
         return error;
     }
 

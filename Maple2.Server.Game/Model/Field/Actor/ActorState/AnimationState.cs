@@ -190,13 +190,13 @@ public class AnimationState {
 
         actor.KeyframeEvent(key.Name);
 
-        switch(key.Name) {
+        switch (key.Name) {
             case "loopstart":
                 sequenceLoop = new LoopData(key.Time, 0);
                 break;
             case "loopend":
                 sequenceLoop = new LoopData(sequenceLoop.start, key.Time);
-                sequenceLoopEndTick = (long)((sequenceTime - key.Time) / speed);
+                sequenceLoopEndTick = (long) ((sequenceTime - key.Time) / speed);
 
                 break;
             case "end":

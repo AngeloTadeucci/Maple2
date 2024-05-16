@@ -178,14 +178,14 @@ public class AiState {
         // idx starts at 1
         if (node.Idx > skills.Length) {
             actor.AppendDebugMessage($"{actor.Value.Metadata.Name}[{actor.Value.Id}]\n");
-            actor.AppendDebugMessage($"{ AiMetadata!.Name}\n");
+            actor.AppendDebugMessage($"{AiMetadata!.Name}\n");
             actor.AppendDebugMessage($"Invalid Skill Idx {node.Idx}\n");
 
             return;
         }
 
         skillId = skills[node.Idx - 1].Id;
-        skillLevel = (short)skills[node.Idx - 1].Level;
+        skillLevel = (short) skills[node.Idx - 1].Level;
 
         SkillRecord? cast = actor.CastSkill(skillId, skillLevel);
 
@@ -226,7 +226,7 @@ public class AiState {
         Condition? passed = null;
 
         foreach (Condition condition in node.Conditions) {
-            if (ProcessCondition((dynamic)condition)) {
+            if (ProcessCondition((dynamic) condition)) {
                 passed = condition;
 
                 break;
@@ -321,7 +321,7 @@ public class AiState {
 
             target = newTarget;
         }
-        
+
         if (node.Type == NodeBuffType.Remove) {
             target.Buffs.Remove(node.Id);
 

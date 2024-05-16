@@ -51,7 +51,7 @@ public class Transform {
 
             return (rotation.axis, 180 * rotation.angle / (float) Math.PI);
         }
-        set { RotationAxis = (value.axis, (float)Math.PI * value.angle / 180); }
+        set { RotationAxis = (value.axis, (float) Math.PI * value.angle / 180); }
     }
 
     // Describes the rotation with a quaternion. Quaternions are 4D vectors of imaginary numbers that behave and look similarly to 3D axis angles.
@@ -121,7 +121,7 @@ public class Transform {
     // Rotations happen in yaw -> roll -> pitch order, which is MS2's Euler angles format.
     public static Matrix4x4 NewRotationAngles(float pitch, float roll, float yaw) {
         return Matrix4x4.CreateFromYawPitchRoll(roll, pitch, yaw);
-    } 
+    }
 
     // Rotates around around the Z, up & down axis.
     public static Matrix4x4 NewYawRotation(float angle) {

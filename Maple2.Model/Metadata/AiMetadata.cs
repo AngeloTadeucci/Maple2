@@ -97,7 +97,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SkillNode(
+    public record SkillNode(
         string Name,
         Entry[] Entries,
         int Idx,
@@ -112,7 +112,7 @@ public record AiMetadata(
         int Limit,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record TeleportNode(
+    public record TeleportNode(
         string Name,
         Entry[] Entries,
         Vector3 Pos,
@@ -123,7 +123,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record StandbyNode(
+    public record StandbyNode(
         string Name,
         Entry[] Entries,
         int Limit,
@@ -135,14 +135,14 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SetDataNode(
+    public record SetDataNode(
         string Name,
         Entry[] Entries,
         string Key,
         int Value,
         long Cooltime) : Node(Name, Entries);
 
-	public record TargetNode(
+    public record TargetNode(
         string Name,
         Entry[] Entries,
         NodeTargetType Type,
@@ -159,7 +159,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SayNode(
+    public record SayNode(
         string Name,
         Entry[] Entries,
         string Message,
@@ -170,7 +170,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SetValueNode(
+    public record SetValueNode(
         string Name,
         Entry[] Entries,
         string Key,
@@ -180,7 +180,7 @@ public record AiMetadata(
         bool IsModify,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record ConditionsNode(
+    public record ConditionsNode(
         string Name,
         Entry[] Entries,
         Condition[] Conditions,
@@ -188,7 +188,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record JumpNode(
+    public record JumpNode(
         string Name,
         Entry[] Entries,
         Vector3 Pos,
@@ -198,13 +198,13 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SelectNode(
+    public record SelectNode(
         string Name,
         Entry[] Entries,
         int[] Prob,
         bool useNpcProb) : Node(Name, Entries);
 
-	public record MoveNode(
+    public record MoveNode(
         string Name,
         Entry[] Entries,
         Vector3 Destination,
@@ -217,7 +217,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SummonNode(
+    public record SummonNode(
         string Name,
         Entry[] Entries,
         int NpcId,
@@ -236,7 +236,7 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record TriggerSetUserValueNode(
+    public record TriggerSetUserValueNode(
         string Name,
         Entry[] Entries,
         int TriggerID,
@@ -245,14 +245,14 @@ public record AiMetadata(
         long Cooltime,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record RideNode(
+    public record RideNode(
         string Name,
         Entry[] Entries,
         NodeRideType Type,
         bool IsRideOff,
         int[] RideNpcIDs) : Node(Name, Entries);
 
-	public record SetSlaveValueNode(
+    public record SetSlaveValueNode(
         string Name,
         Entry[] Entries,
         string Key,
@@ -262,7 +262,7 @@ public record AiMetadata(
         bool IsModify,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record SetMasterValueNode(
+    public record SetMasterValueNode(
         string Name,
         Entry[] Entries,
         string Key,
@@ -272,7 +272,7 @@ public record AiMetadata(
         bool IsModify,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record RunawayNode(
+    public record RunawayNode(
         string Name,
         Entry[] Entries,
         string Animation, // kfm anim name
@@ -283,12 +283,12 @@ public record AiMetadata(
         long InitialCooltime,
         long Cooltime) : Node(Name, Entries);
 
-	public record MinimumHpNode(
+    public record MinimumHpNode(
         string Name,
         Entry[] Entries,
         float HpPercent) : Node(Name, Entries);
 
-	public record BuffNode(
+    public record BuffNode(
         string Name,
         Entry[] Entries,
         int Id,
@@ -300,18 +300,18 @@ public record AiMetadata(
         bool IsTarget,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record TargetEffectNode(
+    public record TargetEffectNode(
         string Name,
         Entry[] Entries,
         string EffectName // xml effect
         ) : Node(Name, Entries);
 
-	public record ShowVibrateNode(
+    public record ShowVibrateNode(
         string Name,
         Entry[] Entries,
         int GroupId) : Node(Name, Entries);
 
-	public record SidePopupNode(
+    public record SidePopupNode(
         string Name,
         Entry[] Entries,
         NodePopupType Type,
@@ -322,7 +322,7 @@ public record AiMetadata(
         string Voice // voice asset path
         ) : Node(Name, Entries);
 
-	public record SetValueRangeTargetNode(
+    public record SetValueRangeTargetNode(
         string Name,
         Entry[] Entries,
         string Key,
@@ -333,14 +333,14 @@ public record AiMetadata(
         bool IsModify,
         bool IsKeepBattle) : Node(Name, Entries);
 
-	public record AnnounceNode(
+    public record AnnounceNode(
         string Name,
         Entry[] Entries,
         string Message,
         int DurationTick,
         long Cooltime) : Node(Name, Entries);
 
-	public record ModifyRoomTimeNode(
+    public record ModifyRoomTimeNode(
         string Name,
         Entry[] Entries,
         int TimeTick,
@@ -358,7 +358,7 @@ public record AiMetadata(
         string Key,
         int Value) : Node(Name, Entries);
 
-	public record RemoveSlavesNode(
+    public record RemoveSlavesNode(
         string Name,
         Entry[] Entries,
         bool IsKeepBattle) : Node(Name, Entries);
@@ -379,7 +379,7 @@ public record AiMetadata(
         string Reactable // kfm anim name
         ) : Node(Name, Entries);
 
-	public record RemoveMeNode(
+    public record RemoveMeNode(
         string Name,
         Entry[] Entries) : Node(Name, Entries);
 
@@ -394,26 +394,26 @@ public record AiMetadata(
         Entry[] Entries,
         int Value) : Condition(Name, Entries);
 
-	public record CombatTimeCondition(
+    public record CombatTimeCondition(
         string Name,
         Entry[] Entries,
         long BattleTimeBegin,
         long BattleTimeLoop,
         long BattleTimeEnd) : Condition(Name, Entries);
 
-	public record DistanceLessCondition(
+    public record DistanceLessCondition(
         string Name,
         Entry[] Entries,
         int Value) : Condition(Name, Entries);
 
-	public record SkillRangeCondition(
+    public record SkillRangeCondition(
         string Name,
         Entry[] Entries,
         int SkillIdx,
         short SkillLev,
         bool IsKeepBattle) : Condition(Name, Entries);
 
-	public record ExtraDataCondition(
+    public record ExtraDataCondition(
         string Name,
         Entry[] Entries,
         string Key,
@@ -421,7 +421,7 @@ public record AiMetadata(
         AiConditionOp Op,
         bool IsKeepBattle) : Condition(Name, Entries);
 
-	public record SlaveCountCondition(
+    public record SlaveCountCondition(
         string Name,
         Entry[] Entries,
         int Count,
@@ -439,12 +439,12 @@ public record AiMetadata(
         Entry[] Entries,
         int Value) : Condition(Name, Entries);
 
-	public record StateCondition(
+    public record StateCondition(
         string Name,
         Entry[] Entries,
         AiConditionTargetState TargetState) : Condition(Name, Entries);
 
-	public record AdditionalCondition(
+    public record AdditionalCondition(
         string Name,
         Entry[] Entries,
         int Id,
@@ -452,12 +452,12 @@ public record AiMetadata(
         int OverlapCount,
         bool IsTarget) : Condition(Name, Entries);
 
-	public record HpLessCondition(
+    public record HpLessCondition(
         string Name,
         Entry[] Entries,
         int Value) : Condition(Name, Entries);
 
-	public record TrueCondition(
+    public record TrueCondition(
         string Name,
         Entry[] Entries) : Condition(Name, Entries);
     #endregion

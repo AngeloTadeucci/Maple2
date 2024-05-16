@@ -12,7 +12,7 @@ public static class TextWriterExtensions {
 
     public static void WriteLineCommentString(this IndentedTextWriter writer, string str, bool sameLine = true) {
         if (str.Contains('\n')) {
-            writer.WriteComments(new []{str.Trim()});
+            writer.WriteComments(new[] { str.Trim() });
         } else {
             writer.WriteLine(sameLine ? $" # {str.Trim()}" : $"# {str.Trim()}");
         }

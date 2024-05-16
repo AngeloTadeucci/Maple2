@@ -2,14 +2,11 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class SurvivalStats : Migration
-    {
+    public partial class SurvivalStats : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<bool>(
                 name: "ActiveGoldPass",
                 table: "Account",
@@ -47,8 +44,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "ActiveGoldPass",
                 table: "Account");

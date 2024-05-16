@@ -68,12 +68,12 @@ internal partial record PyParameter(ScriptType Type, string Name) {
             ScriptType.IntList => string.IsNullOrWhiteSpace(value) ? "[]"
                 : $"[{string.Join(",", GetIntList(value).Select(int.Parse))}]",
             ScriptType.StrList => string.IsNullOrWhiteSpace(value) ? "[]"
-                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries)
+                : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(str => $"'{str.Replace(@"\", @"\\").Replace("'", @"\'")}'"))}]",
             ScriptType.StateList => string.IsNullOrWhiteSpace(value) ? "[]"
-                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+                : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
             ScriptType.Vector3 => string.IsNullOrWhiteSpace(value) ? "[]"
-                : $"[{string.Join(",", value.Split(new[] {',', ' '}, StringSplitOptions.RemoveEmptyEntries))}]",
+                : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
             ScriptType.Bool => value?.ToLower() == "true" || value == "1" ? "True" : "False",
             ScriptType.State => string.IsNullOrWhiteSpace(value) ? "None" : value,
             _ => throw new ArgumentException($"Unexpected Type: {type} for {value}"),
