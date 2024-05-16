@@ -187,6 +187,8 @@ public sealed partial class GameSession : Core.Network.Session {
         Buddy.Load();
         Party.Load();
 
+        Send(SurvivalPacket.UpdateStats(player.Account));
+
         Send(TimeSyncPacket.Reset(DateTimeOffset.UtcNow));
         Send(TimeSyncPacket.Set(DateTimeOffset.UtcNow));
 
