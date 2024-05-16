@@ -24,7 +24,7 @@ internal class Comment : IScriptBlock {
             writer.WriteLine("\"\"\"");
             // TODO: preserve tabbing instead of trimming all
             // str = str.Replace("\t", "    ");
-            foreach (string line in Value.Split(new []{"\n", "\r\n"}, StringSplitOptions.TrimEntries)) {
+            foreach (string line in Value.Split(new[] { "\n", "\r\n" }, StringSplitOptions.TrimEntries)) {
                 writer.WriteLine(line);
             }
             writer.WriteLine("\"\"\"");

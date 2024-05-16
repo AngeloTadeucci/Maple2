@@ -1,4 +1,4 @@
-using Maple2.Model;
+﻿using Maple2.Model;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;

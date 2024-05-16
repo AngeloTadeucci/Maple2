@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;

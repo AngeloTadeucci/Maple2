@@ -115,8 +115,7 @@ public class SkillHandler : PacketHandler<GameSession> {
             if (session.Player.DebugSkills) {
                 session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: true; HoldInt: {record.HoldInt}; HoldString: {record.HoldString}; UnkBool: {record.Unknown}"));
             }
-        }
-        else if (session.Player.DebugSkills) {
+        } else if (session.Player.DebugSkills) {
             session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: false; UnkBool: {record.Unknown}"));
         }
 

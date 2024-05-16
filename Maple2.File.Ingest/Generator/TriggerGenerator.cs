@@ -171,7 +171,7 @@ public class TriggerGenerator {
         XmlNode? onEnterNode = node.SelectSingleNode("onEnter");
         if (onEnterNode != null) {
             IEnumerator<XmlNode> it = onEnterNode.ChildNodes.Cast<XmlNode>().GetEnumerator();
-            while(it.MoveNext()) {
+            while (it.MoveNext()) {
                 switch (it.Current.Name) {
                     case "action":
                         onEnter.Add(ParseAction(it, stateIndex));
@@ -214,7 +214,7 @@ public class TriggerGenerator {
         foreach (XmlNode conditionNode in node.SelectNodes("condition")!) {
             TriggerScript.Condition condition = ParseCondition(conditionNode, stateIndex, filePath);
             if (conditionNode.NextSibling is XmlComment comment) {
-                if (TryParseXml(comment.Value, "condition", out List<XmlNode> commentNodes, allowComments:false)) {
+                if (TryParseXml(comment.Value, "condition", out List<XmlNode> commentNodes, allowComments: false)) {
                     foreach (TriggerScript.Condition commentedCondition in commentNodes.Select(commentNode => ParseCondition(commentNode, stateIndex, filePath))) {
                         conditions.Add(new CommentWrapper(commentedCondition));
                     }
@@ -265,7 +265,7 @@ public class TriggerGenerator {
 
     private static TriggerScript.Action ParseAction(IEnumerator<XmlNode> it, Dictionary<string, string> stateIndex) {
         TriggerScript.Action action = ParseAction(it.Current, stateIndex);
-        if (it.Current.NextSibling is XmlComment {Value: not null} lineComment) {
+        if (it.Current.NextSibling is XmlComment { Value: not null } lineComment) {
             string trimmed = lineComment.Value.Trim();
             if (trimmed.StartsWith("<") || trimmed.StartsWith("action name=")) {
                 return action;
@@ -361,7 +361,7 @@ public class TriggerGenerator {
             // }
         }
         string? transitionComment = null;
-        if (it.Current.NextSibling is XmlComment {Value: not null} comment) {
+        if (it.Current.NextSibling is XmlComment { Value: not null } comment) {
             if (!comment.Value.StartsWith('<') && !comment.Value.StartsWith("action name=")) {
                 transitionComment = comment.Value;
                 it.MoveNext(); // Advance iterator
@@ -582,14 +582,14 @@ public class TriggerGenerator {
         }
 
         XmlNode? sibling = node.PreviousSibling;
-        while (before && sibling is XmlComment {Value: not null} comment) {
+        while (before && sibling is XmlComment { Value: not null } comment) {
             comments.Insert(0, comment.Value);
             sibling = sibling.PreviousSibling;
         }
 
         var afterComments = new List<string>();
         sibling = node.NextSibling;
-        while (after && sibling is XmlComment {Value: not null} comment) {
+        while (after && sibling is XmlComment { Value: not null } comment) {
             afterComments.Add(comment.Value);
             sibling = sibling.NextSibling;
         }
@@ -621,7 +621,7 @@ public class TriggerGenerator {
         }
 
         // Many cases of valid xml missing first and last <>
-        foreach (string tryXml in new[] {xml, $"<{xml.Trim()}>", $"<{xml.Trim()}/>"}) {
+        foreach (string tryXml in new[] { xml, $"<{xml.Trim()}>", $"<{xml.Trim()}/>" }) {
             try {
                 var stateDocument = new XmlDocument();
                 stateDocument.LoadXml($"<root>{tryXml}</root>");
@@ -653,7 +653,7 @@ public class TriggerGenerator {
             prevBlock = wrapper.Child;
         }
 
-        if (prevBlock is TriggerScript.Action {LineComment: null} prevAction) {
+        if (prevBlock is TriggerScript.Action { LineComment: null } prevAction) {
             prevAction.LineComment = comment.Value;
         } else {
             list.Add(new Comment(comment.Value));

@@ -91,6 +91,6 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public override void KeyframeEvent(long tickCount, long keyTick, string keyName) {
-        
+
     }
 }

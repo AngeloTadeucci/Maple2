@@ -52,7 +52,7 @@ public partial class WorldService {
 
     private PartySearchResponse Fetch(PartySearchRequest.Types.Fetch fetch) {
         ICollection<PartySearch> entries = partySearchLookup.FetchEntries((PartySearchSort) fetch.SortBy, fetch.SearchString, fetch.Page);
-        return new PartySearchResponse { PartySearches = { entries.Select(ToPartySearchInfo).ToList() }};
+        return new PartySearchResponse { PartySearches = { entries.Select(ToPartySearchInfo).ToList() } };
     }
 
     private PartySearchResponse Remove(long listingId, PartySearchRequest.Types.Remove remove) {

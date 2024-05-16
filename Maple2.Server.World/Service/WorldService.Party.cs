@@ -199,7 +199,7 @@ public partial class WorldService {
         }
 
         if (manager.Party.Search == null) {
-            return new PartyResponse{ Error = (int) PartyError.s_party_err_invalid_recruit };
+            return new PartyResponse { Error = (int) PartyError.s_party_err_invalid_recruit };
         }
 
         if (!manager.Party.Search.NoApproval) {
@@ -207,11 +207,11 @@ public partial class WorldService {
         }
 
         if (manager.Party.Search.Id != joinByPartySearch.PartySearchId) {
-            return new PartyResponse{ Error = (int) PartyError.s_party_err_wrong_recruit };
+            return new PartyResponse { Error = (int) PartyError.s_party_err_wrong_recruit };
         }
 
         if (manager.Party.Search.Size <= manager.Party.Members.Count) {
-            return new PartyResponse{ Error = (int) PartyError.s_party_err_full_limit_player };
+            return new PartyResponse { Error = (int) PartyError.s_party_err_full_limit_player };
         }
 
         if (!playerLookup.TryGet(requestorId, out PlayerInfo? info)) {
