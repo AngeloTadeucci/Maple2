@@ -20,6 +20,12 @@ public class Account {
     public int MesoMarketListed { get; set; }
     public int MesoMarketPurchased { get; set; }
 
+    public int SurvivalLevel { get; set; }
+    public long SurvivalExp { get; set; }
+    public int SurvivalSilverLevelRewardClaimed { get; set; }
+    public int SurvivalGoldLevelRewardClaimed { get; set; }
+    public bool ActiveGoldPass { get; set; }
+
     public bool Online { get; set; }
 
     public Account() {
