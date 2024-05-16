@@ -57,9 +57,7 @@ public partial class WorldService {
         if (!tokenCache.TryGetValue(request.Token, out TokenEntry data)) {
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Invalid token"));
         }
-        if (data.Channel != request.Channel) {
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"Migrating to incorrect channel {request.Channel}, expected {data.Channel}"));
-        }
+
         if (data.AccountId != request.AccountId) {
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Invalid token for account"));
         }
@@ -68,7 +66,7 @@ public partial class WorldService {
         }
 
         tokenCache.Remove(request.Token);
-        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId });
+        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId, Channel = data.Channel });
     }
 
     // Generates a 64-bit token that does not exist in cache.
