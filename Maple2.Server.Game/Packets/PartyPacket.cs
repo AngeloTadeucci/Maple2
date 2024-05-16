@@ -30,7 +30,7 @@ public static class PartyPacket {
         DungeonNotice = 20,
         Unknown2 = 21,
         DungeonReset = 25,
-        PartyFinder = 26,
+        PartySearchListing = 26,
         PartySearch = 30,
         PartySearchDungeon = 31,
         DungeonRecord = 35,
@@ -114,7 +114,10 @@ public static class PartyPacket {
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteClass<Party>(party);
         pWriter.WriteByte(); // Unknown
-        pWriter.WriteMatchParty(party);
+        pWriter.WriteBool(party.Search != null);
+        if (party.Search != null) {
+            pWriter.WriteClass<PartySearch>(party.Search);
+        }
 
         return pWriter;
     }
@@ -212,10 +215,13 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter PartyFinderListing(Party party) {
+    public static ByteWriter LoadPartySearchListing(Party party) {
         var pWriter = Packet.Of(SendOp.Party);
-        pWriter.Write<Command>(Command.PartyFinder);
-        pWriter.WriteMatchParty(party);
+        pWriter.Write<Command>(Command.PartySearchListing);
+        pWriter.WriteBool(party.Search != null);
+        if (party.Search != null) {
+            pWriter.WriteClass<PartySearch>(party.Search);
+        }
 
         return pWriter;
     }
@@ -315,23 +321,5 @@ public static class PartyPacket {
         pWriter.WriteBool(true); // always true
 
         return pWriter;
-    }
-
-    private static void WriteMatchParty(this IByteWriter writer, Party party) {
-        writer.WriteBool(party.IsMatching);
-        if (party.IsMatching) {
-            writer.WriteLong(party.MatchPartyId);
-            writer.WriteInt(party.Id);
-            writer.WriteInt(); // Unknown
-            writer.WriteInt(); // Unknown
-            writer.WriteUnicodeString(party.MatchPartyName);
-            writer.WriteBool(party.RequireApproval);
-            writer.WriteInt(party.Members.Count);
-            writer.WriteInt(party.Capacity);
-            writer.WriteLong(party.LeaderAccountId);
-            writer.WriteLong(party.LeaderCharacterId);
-            writer.WriteUnicodeString(party.LeaderName);
-            writer.WriteLong(party.CreationTime);
-        }
     }
 }

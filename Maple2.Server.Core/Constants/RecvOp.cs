@@ -111,7 +111,7 @@ public enum RecvOp : ushort {
     Insignia = 0x006C,
     RequestMoveField = 0x006D,
     WaitingTicket = 0x006E,
-    MatchParty = 0x006F,
+    PartySearch = 0x006F,
     RecallScroll = 0x0070,
     PotentialAbility = 0x0071,
     EnchantScroll = 0x0072,

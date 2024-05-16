@@ -140,7 +140,7 @@ public class PartyManager : IDisposable {
             return PartyError.s_party_err_alreadyInvite;
         }
 
-        PartyMember member = new PartyMember {
+        var member = new PartyMember {
             PartyId = Party.Id,
             Info = info.Clone(),
             JoinTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
@@ -154,7 +154,9 @@ public class PartyManager : IDisposable {
                 LoginTime = member.LoginTime,
             },
         });
-        Party.Members.TryAdd(info.CharacterId, member);
+        if (Party.Members.TryAdd(info.CharacterId, member) && Party.Search != null) {
+            Party.Search.MemberCount++;
+        }
         return PartyError.none;
     }
 
@@ -181,7 +183,9 @@ public class PartyManager : IDisposable {
                 IsKicked = true,
             },
         });
-        Party.Members.TryRemove(member.CharacterId, out _);
+        if (Party.Members.TryRemove(member.CharacterId, out _) && Party.Search != null) {
+            Party.Search.MemberCount--;
+        }
         return PartyError.none;
     }
 
@@ -203,7 +207,9 @@ public class PartyManager : IDisposable {
                 CharacterId = member.CharacterId,
             },
         });
-        Party.Members.TryRemove(member.CharacterId, out _);
+        if (Party.Members.TryRemove(member.CharacterId, out _) && Party.Search != null) {
+            Party.Search.MemberCount--;
+        }
         return PartyError.none;
     }
 
@@ -227,6 +233,12 @@ public class PartyManager : IDisposable {
                 CharacterId = characterId,
             },
         });
+
+        if (Party.Search != null) {
+            Party.Search.LeaderCharacterId = member.Info.CharacterId;
+            Party.Search.LeaderAccountId = member.Info.AccountId;
+            Party.Search.LeaderName = member.Info.Name;
+        }
 
         return PartyError.none;
     }
@@ -347,10 +359,8 @@ public class PartyManager : IDisposable {
                         },
                     });
                 }
-
                 break;
         }
-
     }
 
     public PartyError VoteKick(long requestorId, long targetId) {

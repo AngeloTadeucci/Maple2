@@ -17,6 +17,7 @@ service Channel {
   rpc Guild(GuildRequest) returns (GuildResponse);
   // Manage party.
   rpc Party(PartyRequest) returns (PartyResponse);
+  rpc PartySearch(maple2.PartySearchRequest) returns (maple2.PartySearchResponse);
   // Manage group chat.
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
 
@@ -110,6 +111,10 @@ message PartyRequest {
     int64 target_id = 2;
     repeated int64 receiver_ids = 3;
   }
+  message CreateSearch {
+    int32 party_id = 1;
+    PartySearchInfo party_search = 2;
+  }
 
   int32 party_id = 1;
   repeated int64 receiver_ids = 2;
@@ -125,6 +130,7 @@ message PartyRequest {
     EndVote end_vote = 11;
     ExpiredVote expired_vote = 12;
     StartVoteKick start_vote_kick = 13;
+    CreateSearch create_search = 14;
   }
 }
 

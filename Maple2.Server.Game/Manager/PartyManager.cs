@@ -112,10 +112,6 @@ public class PartyManager : IDisposable {
         var party = new Party(info.Id, leader) {
             CreationTime = info.CreationTime,
             DungeonId = info.DungeonId,
-            MatchPartyName = info.MatchPartyName,
-            MatchPartyId = info.MatchPartyId,
-            IsMatching = info.IsMatching,
-            RequireApproval = info.RequireApproval,
         };
         foreach (PartyMember member in members) {
             if (party.Members.TryAdd(member.CharacterId, member)) {
@@ -126,6 +122,19 @@ public class PartyManager : IDisposable {
         Party = party;
 
         session.Player.Value.Character.PartyId = Party.Id;
+
+        if (info.PartySearch != null) {
+            Party.Search = new PartySearch(info.PartySearch.Id, info.PartySearch.Name, info.PartySearch.Size) {
+                PartyId = Party.Id,
+                CreationTime = info.PartySearch.CreationTime,
+                NoApproval = info.PartySearch.NoApproval,
+                LeaderAccountId = info.PartySearch.LeaderAccountId,
+                LeaderCharacterId = info.PartySearch.LeaderCharacterId,
+                LeaderName = info.PartySearch.LeaderName,
+                MemberCount = info.PartySearch.MemberCount,
+            };
+        }
+
         session.Send(PartyPacket.Load(Party));
         return true;
     }
@@ -198,7 +207,9 @@ public class PartyManager : IDisposable {
             EndListen(member);
         }
 
-        session.Send(PartyPacket.Disband());
+        if (Party.Members.Count > 1) {
+            session.Send(PartyPacket.Disband());
+        }
         RemoveParty();
         return true;
     }
@@ -287,6 +298,21 @@ public class PartyManager : IDisposable {
             VoteTime = Party.LastVoteTime,
         };
         session.Send(PartyPacket.StartVote(Party.Vote));
+    }
+
+    public void SetPartySearch(PartySearch? partySearch) {
+        if (Party == null) {
+            return;
+        }
+
+        if (partySearch != null && Party.Id != partySearch.PartyId) {
+            logger.Error("Party {PartyId} does not match search info {SearchPartyId}", Party.Id, partySearch.PartyId);
+            session.Send(PartyPacket.Error(PartyError.s_party_err_not_found));
+            return;
+        }
+
+        Party.Search = partySearch;
+        session.Send(PartyPacket.LoadPartySearchListing(Party));
     }
 
     public PartyMember? GetMember(string name) {
