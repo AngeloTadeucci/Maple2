@@ -1,4 +1,4 @@
-name: Build+Test .NET
+name: Format
 
 on:
     push:
@@ -29,9 +29,8 @@ jobs:
               if: ${{ steps.nuget-packages.outputs.cache-hit == 'true' }}
               continue-on-error: true
               run: ls -lh ~/.nuget/packages
-            - name: Restore dependencies
-              run: dotnet restore
-            - name: Build
-              run: dotnet build --no-restore
-            - name: Test
-              run: dotnet test --no-build --verbosity normal
+            - name: Install dotnet-format tool
+              run: dotnet tool install -g dotnet-format
+
+            - name: Run dotnet-format
+              run: dotnet-format --check --no-restore
