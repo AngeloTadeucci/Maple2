@@ -15,6 +15,7 @@ public partial class FieldManager {
         public required MapMetadataStorage MapMetadata { private get; init; }
         public required MapEntityStorage MapEntities { private get; init; }
         public required ServerTableMetadataStorage ServerTableMetadata { private get; init; }
+        public required NpcMetadataStorage NpcMetadata { get; init; } = null!;
         // ReSharper restore All
         #endregion
 
@@ -85,7 +86,7 @@ public partial class FieldManager {
             if (entities == null) {
                 throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
             }
-            var field = new FieldManager(metadata, ugcMetadata, entities, ownerId);
+            var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata, ownerId);
             context.InjectProperties(field);
             field.Init();
 

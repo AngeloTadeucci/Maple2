@@ -10,13 +10,15 @@ namespace Maple2.Server.World.Containers;
 public class PartyLookup : IDisposable {
     private readonly ChannelClientLookup channelClients;
     private readonly PlayerInfoLookup playerLookup;
+    private readonly PartySearchLookup partySearchLookup;
 
     private readonly ConcurrentDictionary<int, PartyManager> parties;
     private int nextPartyId = 1;
 
-    public PartyLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) {
+    public PartyLookup(ChannelClientLookup channelClients, PlayerInfoLookup playerLookup, PartySearchLookup partySearchLookup) {
         this.channelClients = channelClients;
         this.playerLookup = playerLookup;
+        this.partySearchLookup = partySearchLookup;
 
         parties = new ConcurrentDictionary<int, PartyManager>();
     }
@@ -24,6 +26,10 @@ public class PartyLookup : IDisposable {
     public void Dispose() {
         foreach (PartyManager manager in parties.Values) {
             manager.Dispose();
+        }
+
+        if (partySearchLookup.TryGetByPartyId(nextPartyId, out PartySearchManager? partySearch)) {
+            partySearch.Dispose();
         }
     }
 
@@ -50,8 +56,8 @@ public class PartyLookup : IDisposable {
             return PartyError.s_party_err_not_found;
         }
 
-        Party party = new Party(partyId, leaderInfo.AccountId, leaderInfo.CharacterId, leaderInfo.Name);
-        PartyManager manager = new PartyManager(party) {
+        var party = new Party(partyId, leaderInfo.AccountId, leaderInfo.CharacterId, leaderInfo.Name);
+        var manager = new PartyManager(party) {
             ChannelClients = channelClients,
         };
 

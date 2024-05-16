@@ -24,6 +24,8 @@ service World {
   // Manage party.
   rpc PartyInfo(PartyInfoRequest) returns (PartyInfoResponse);
   rpc Party(PartyRequest) returns (PartyResponse);
+  rpc PartySearchInfo(PartySearchInfoRequest) returns (PartySearchInfoResponse);
+  rpc PartySearch(PartySearchRequest) returns (PartySearchResponse);
   // Manage group chat.
   rpc GroupChatInfo(GroupChatInfoRequest) returns (GroupChatInfoResponse);
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
@@ -208,6 +210,7 @@ message PartyInfo {
   optional bool is_matching = 9;
   optional bool require_approval = 10;
   repeated Member members = 11;
+  optional PartySearchInfo party_search = 12;
 }
 
 message PartyInfoRequest {
@@ -255,6 +258,10 @@ message PartyRequest {
     int32 party_id = 1;
     int64 target_user_id = 2;
   }
+  message JoinByPartySearch {
+    int64 party_search_id = 1;
+    int32 party_id = 2;
+  }
 
   int64 requestor_id = 1;
   oneof party {
@@ -268,6 +275,7 @@ message PartyRequest {
     ReadyCheck ready_check = 9;
     VoteReply vote_reply = 10;
     VoteKick vote_kick = 11;
+    JoinByPartySearch join_by_party_search = 12;
   }
 }
 

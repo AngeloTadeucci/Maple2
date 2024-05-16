@@ -138,3 +138,64 @@ message GroupChatResponse {
 
   int32 error = 3;
 }
+
+message PartySearchInfo {
+  int64 id = 1;
+  int32 party_id = 2;
+  string name = 3;
+  int32 size = 4;
+  int64 creation_time = 5;
+  bool no_approval = 6;
+  int32 member_count = 7;
+  int64 leader_account_id = 8;
+  int64 leader_character_id = 9;
+  string leader_name = 10;
+}
+
+message PartySearchInfoRequest {
+  int32 id = 1;
+  int32 party_id = 2;
+}
+
+message PartySearchInfoResponse {
+  optional PartySearchInfo party_search = 1;
+}
+
+message PartySearchRequest {
+  message Create {
+    string name = 1;
+    int32 size = 2;
+    bool no_approval = 3;
+    int64 requestor_id = 4;
+  }
+  message Set {
+    PartySearchInfo party_search = 1;
+    int64 requestor_id = 2;
+  }
+  message Fetch {
+    int32 sort_by = 1;
+    string search_string = 2;
+    int32 page = 3;
+  }
+  message Remove { }
+
+  int64 id = 1;
+  int32 party_id = 2;
+  repeated int64 receiver_ids = 3;
+  oneof party_search {
+    Create create = 4;
+    Set set = 5;
+    Fetch fetch = 6;
+    Remove remove = 7;
+  }
+}
+
+message PartySearchResponse {
+  oneof Info {
+    int32 party_id = 1;
+  }
+  repeated PartySearchInfo party_searches = 2;
+
+  int32 error = 3;
+  int32 error_category = 4;
+}

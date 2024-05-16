@@ -23,12 +23,9 @@ public class Party : IByteSerializable {
     public required string LeaderName;
     public long CreationTime;
     public int DungeonId = 0;
-    public string MatchPartyName = "";
-    public int MatchPartyId = 0;
-    public bool IsMatching = false;
-    public bool RequireApproval = false;
     public readonly ConcurrentDictionary<long, PartyMember> Members;
     public PartyVote? Vote;
+    public PartySearch? Search;
     public long LastVoteTime = 0;
 
     [SetsRequiredMembers]

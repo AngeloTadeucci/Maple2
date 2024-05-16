@@ -84,6 +84,7 @@ public static class Constant {
     public const int PartyMinCapacity = 4;
     public const int GroupChatMaxCapacity = 20;
     public const int GroupChatMaxCount = 3;
+    public const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
 
 
     public const long FurnishingBaseId = 2870000000000000000;
@@ -116,6 +117,7 @@ public static class Constant {
     public const ShopCurrencyType InitialTierExcessRestockCurrency = ShopCurrencyType.Meso;
     public const float UGCShopProfitFee = 0.25f;
     public const int UGCShopProfitDelayDays = 10;
+    public const int PartyFinderListingsPageCount = 12;
     #endregion
 
     #region table/constants.xml

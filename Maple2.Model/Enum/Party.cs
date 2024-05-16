@@ -21,3 +21,10 @@ public enum PartyMessage {
     [Description("The vote to kick failed.")]
     s_party_vote_rejected_kick_user,
 }
+
+public enum PartySearchSort : byte {
+    MostMembers = 12,
+    LeastMembers = 13,
+    Newest = 21,
+    Oldest = 22,
+}

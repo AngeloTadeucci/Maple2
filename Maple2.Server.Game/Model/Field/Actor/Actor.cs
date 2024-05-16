@@ -12,6 +12,8 @@ using Maple2.Tools.VectorMath;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
+using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Database.Storage;
 
 namespace Maple2.Server.Game.Model;
 
@@ -22,6 +24,7 @@ namespace Maple2.Server.Game.Model;
 public abstract class Actor<T> : IActor<T>, IDisposable {
 
     protected readonly ILogger Logger = Log.ForContext<T>();
+    public NpcMetadataStorage NpcMetadata { get; init; }
 
     public FieldManager Field { get; }
     public T Value { get; }
@@ -34,18 +37,21 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public virtual Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
     public virtual Vector3 Rotation { get => Transform.RotationAnglesDegrees; set => Transform.RotationAnglesDegrees = value; }
     public Transform Transform { get; init; }
+    public AnimationState AnimationState { get; init; }
 
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
 
     public BuffManager Buffs { get; }
 
-    protected Actor(FieldManager field, int objectId, T value) {
+    protected Actor(FieldManager field, int objectId, T value, string modelName, NpcMetadataStorage npcMetadata) {
         Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
         Transform = new Transform();
+        NpcMetadata = npcMetadata;
+        AnimationState = new AnimationState(this, modelName);
     }
 
     public void Dispose() {
@@ -157,8 +163,11 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             return;
         }
 
+        AnimationState.Update(tickCount);
         Buffs.Update(tickCount);
     }
+
+    public virtual void KeyframeEvent(long tickCount, long keyTick, string keyName) { }
 
     public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
