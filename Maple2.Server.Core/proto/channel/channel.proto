@@ -135,5 +135,5 @@ message PartyRequest {
 }
 
 message PartyResponse {
-  int32 error = 2;
+  int32 error = 1;
 }
