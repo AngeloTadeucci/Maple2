@@ -14,6 +14,7 @@ using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Model.Field.Actor.ActorState;
 using Maple2.Tools.Extensions;
+using Maple2.Database.Storage;
 
 namespace Maple2.Server.Game.Model;
 
@@ -89,8 +90,8 @@ public class FieldNpc : Actor<Npc> {
     private MS2PatrolData? patrolData;
     private int currentWaypointIndex = 0;
 
-    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string? patrolDataUUID = null) : base(field, objectId, npc) {
-        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(-1, 1f, null);
+    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model, field.NpcMetadata) {
+        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         defaultRoutines = new WeightedSet<string>();

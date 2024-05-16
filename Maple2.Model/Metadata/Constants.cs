@@ -84,6 +84,7 @@ public static class Constant {
     public const int PartyMinCapacity = 4;
     public const int GroupChatMaxCapacity = 20;
     public const int GroupChatMaxCount = 3;
+    public const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
 
 
     public const long FurnishingBaseId = 2870000000000000000;
