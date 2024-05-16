@@ -9,6 +9,7 @@ public enum ItemGroup : byte {
     Outfit = 2,
     Outfit2 = 3,
     Badge = 4,
+    Medal = 5,
 
     SavedHair = 8,
 

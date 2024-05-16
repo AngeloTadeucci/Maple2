@@ -20,6 +20,12 @@ internal class Account {
     public required AccountCurrency Currency { get; set; }
     public required MarketLimits MarketLimits { get; set; }
 
+    public int SurvivalLevel { get; set; }
+    public long SurvivalExp { get; set; }
+    public int SurvivalSilverLevelRewardClaimed { get; set; }
+    public int SurvivalGoldLevelRewardClaimed { get; set; }
+    public bool ActiveGoldPass { get; set; }
+
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
 
@@ -48,6 +54,11 @@ internal class Account {
                 MesoListed = other.MesoMarketListed,
                 MesoPurchased = other.MesoMarketPurchased,
             },
+            SurvivalLevel = other.SurvivalLevel,
+            SurvivalExp = other.SurvivalExp,
+            SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
+            SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
+            ActiveGoldPass = other.ActiveGoldPass,
             Online = other.Online,
         };
     }
@@ -70,6 +81,11 @@ internal class Account {
             PremiumRewardsClaimed = other.PremiumRewardsClaimed,
             MesoMarketListed = other.MarketLimits.MesoListed,
             MesoMarketPurchased = other.MarketLimits.MesoPurchased,
+            SurvivalLevel = other.SurvivalLevel,
+            SurvivalExp = other.SurvivalExp,
+            SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
+            SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
+            ActiveGoldPass = other.ActiveGoldPass,
             Online = other.Online,
         };
     }
@@ -103,4 +119,3 @@ internal class MarketLimits {
     public int MesoListed { get; set; }
     public int MesoPurchased { get; set; }
 }
-
