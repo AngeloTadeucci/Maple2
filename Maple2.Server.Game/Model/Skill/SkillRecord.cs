@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Server.Game.Model.Skill;
@@ -37,6 +38,20 @@ public class SkillRecord {
         CastUid = castUid;
         Caster = caster;
         Targets = new List<IActor>();
+    }
+
+    public int GetSpCost() {
+        if (Metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
+            return (int) spiritCost;
+        }
+        return 0;
+    }
+
+    public int GetStaCost() {
+        if (Metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
+            return (int) staminaCost;
+        }
+        return 0;
     }
 
     public bool TrySetMotionPoint(byte motionPoint) {

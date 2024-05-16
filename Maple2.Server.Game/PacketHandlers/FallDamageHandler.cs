@@ -18,7 +18,7 @@ public class FallDamageHandler : PacketHandler<GameSession> {
         int damage = CalcFallDamage(session.Player.Stats[BasicAttribute.Health].Total, distance);
 
         if (damage > 0) {
-            session.Player.Stats[BasicAttribute.Health].Add(-damage);
+            session.Player.ConsumeHp(damage);
             session.Player.Field.Broadcast(StatsPacket.Update(session.Player, BasicAttribute.Health));
             session.Send(FallDamagePacket.FallDamage(session.Player.ObjectId, damage));
             session.ConditionUpdate(ConditionType.fall_damage, targetLong: damage);
