@@ -78,6 +78,7 @@ public static class ConditionUtil {
             case ConditionType.dialogue:
             case ConditionType.talk_in:
             case ConditionType.npc:
+            case ConditionType.skill:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -189,6 +190,7 @@ public static class ConditionUtil {
             case ConditionType.talk_in:
             case ConditionType.change_profile:
             case ConditionType.buddy_request:
+            case ConditionType.skill:
                 return true;
         }
         return false;
