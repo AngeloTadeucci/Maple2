@@ -16,6 +16,7 @@ public class PlayerCommand : Command {
 
     public PlayerCommand(GameSession session) : base(NAME, DESCRIPTION) {
         AddCommand(new LevelCommand(session));
+        AddCommand(new PrestigeCommand(session));
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
@@ -76,6 +77,35 @@ public class PlayerCommand : Command {
         private void Handle(InvocationContext ctx, long exp) {
             try {
                 session.Exp.AddExp(ExpType.none, exp);
+
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
+        }
+    }
+
+    private class PrestigeCommand : Command {
+        private readonly GameSession session;
+
+        public PrestigeCommand(GameSession session) : base("prestige", "Sets prestige level") {
+            this.session = session;
+
+            var level = new Argument<int>("level", "Prestige level of the player.");
+            AddArgument(level);
+            this.SetHandler<InvocationContext, int>(Handle, level);
+        }
+
+        private void Handle(InvocationContext ctx, int level) {
+            try {
+                if (level is < 1 or > Constant.AdventureLevelLimit) {
+                    ctx.Console.Error.WriteLine($"Invalid level: {level}. Must be between 1 and {Constant.AdventureLevelLimit}.");
+                    return;
+                }
+
+                int currentLevel = session.Exp.PrestigeLevel;
+                session.Exp.PrestigeLevelUp(level - currentLevel);
 
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {

@@ -93,7 +93,6 @@ public sealed class QuestManager {
             Add(quest);
             session.Send(QuestPacket.Start(quest));
         }
-
     }
 
     /// <summary>

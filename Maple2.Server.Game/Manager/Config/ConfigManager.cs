@@ -28,7 +28,7 @@ public class ConfigManager {
     private long deathPenaltyTick;
     public int DeathCounter;
     private readonly StatAttributes statAttributes;
-    public IDictionary<int, int> GatheringCounts;
+    public readonly IDictionary<int, int> GatheringCounts;
 
     public readonly SkillManager Skill;
 

@@ -14,7 +14,11 @@ public class Account {
 
     public int MaxCharacters { get; set; }
     public int PrestigeLevel { get; set; }
+    public int PrestigeLevelsGained { get; set; }
     public long PrestigeExp { get; set; }
+    public long PrestigeCurrentExp { get; set; }
+    public IList<PrestigeMission> PrestigeMissions { get; set; }
+    public IList<int> PrestigeRewardsClaimed { get; set; }
     public long PremiumTime { get; set; }
     public IList<int> PremiumRewardsClaimed { get; set; }
     public int MesoMarketListed { get; set; }
@@ -30,5 +34,7 @@ public class Account {
 
     public Account() {
         PremiumRewardsClaimed = new List<int>();
+        PrestigeMissions = new List<PrestigeMission>();
+        PrestigeRewardsClaimed = new List<int>();
     }
 }

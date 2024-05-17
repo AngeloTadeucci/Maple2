@@ -1,5 +1,6 @@
 ﻿using Maple2.Model;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -26,12 +27,43 @@ public sealed class ExperienceManager {
         set => session.Player.Value.Character.Level = value;
     }
 
-    //public long PrestigeExp => session.Player.Value.Account.PrestigeExp;
+    public int PrestigeLevel {
+        get => session.Player.Value.Account.PrestigeLevel;
+        set => session.Player.Value.Account.PrestigeLevel = value;
+    }
+
+    public int PrestigeLevelsGained {
+        get => session.Player.Value.Account.PrestigeLevelsGained;
+        set => session.Player.Value.Account.PrestigeLevelsGained = value;
+    }
+
+    public long PrestigeExp {
+        get => session.Player.Value.Account.PrestigeExp;
+        set => session.Player.Value.Account.PrestigeExp = value;
+    }
+
+    public long PrestigeCurrentExp {
+        get => session.Player.Value.Account.PrestigeCurrentExp;
+        set => session.Player.Value.Account.PrestigeCurrentExp = value;
+    }
+
+    public IList<PrestigeMission> PrestigeMissions => session.Player.Value.Account.PrestigeMissions;
+    public IList<int> PrestigeRewardsClaimed => session.Player.Value.Account.PrestigeRewardsClaimed;
+
     private int ChainKillCount { get; set; }
 
     public ExperienceManager(GameSession session, Lua.Lua lua) {
         this.session = session;
         this.lua = lua;
+        Init();
+    }
+
+    private void Init() {
+        if (session.Player.Value.Account.PrestigeMissions.Count == 0) {
+            foreach ((int missionId, PrestigeMissionMetadata _) in session.TableMetadata.PrestigeMissionTable.Entries) {
+                session.Player.Value.Account.PrestigeMissions.Add(new PrestigeMission(missionId));
+            }
+        }
     }
 
     public void ResetChainKill() => ChainKillCount = 0;
@@ -65,17 +97,16 @@ public sealed class ExperienceManager {
     }
 
     public void AddExp(ExpMessageCode message, long expGained) {
-        expGained += GetRestExp(expGained);
         if (expGained <= 0) {
             return;
         }
+        expGained += GetRestExp(expGained);
         LevelUp();
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
     }
 
     public void AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
-        if (session.Field == null
-            || !session.TableMetadata.CommonExpTable.Entries.TryGetValue(expType, out CommonExpTable.Entry? entry)
+        if (!session.TableMetadata.CommonExpTable.Entries.TryGetValue(expType, out CommonExpTable.Entry? entry)
             || !session.TableMetadata.ExpTable.ExpBase.TryGetValue(entry.ExpTableId, out IReadOnlyDictionary<int, long>? expBase)) {
             return;
         }
@@ -122,6 +153,7 @@ public sealed class ExperienceManager {
         };
 
         AddExp(message, (long) ((expValue * modifier) * entry.Factor) + additionalExp);
+        AddPrestigeExp(expType);
     }
 
     public bool LevelUp() {
@@ -147,5 +179,59 @@ public sealed class ExperienceManager {
             });
         }
         return startLevel != Level;
+    }
+
+    private void AddPrestigeExp(ExpType expType) {
+        if (Level < Constant.AdventureLevelStartLevel) {
+            return;
+        }
+
+        if (!session.ServerTableMetadata.PrestigeExpTable.Entries.TryGetValue(expType, out long amount)) {
+            return;
+        }
+
+        if (PrestigeCurrentExp - PrestigeExp + (PrestigeLevelsGained * Constant.AdventureLevelLvUpExp) >= Constant.AdventureLevelLvUpExp) {
+            amount = (long) (amount * Constant.AdventureLevelFactor);
+        }
+
+        PrestigeCurrentExp = Math.Min(amount + PrestigeCurrentExp, long.MaxValue);
+
+        int startLevel = PrestigeLevel;
+        for (int level = startLevel; level < Constant.AdventureLevelLimit; level++) {
+            if (Constant.AdventureLevelLvUpExp > PrestigeCurrentExp) {
+                break;
+            }
+
+            PrestigeCurrentExp -= Constant.AdventureLevelLvUpExp;
+            PrestigeLevel++;
+        }
+        session.Send(PrestigePacket.AddExp(PrestigeCurrentExp, amount));
+        if (PrestigeLevel > startLevel) {
+            PrestigeLevelUp(PrestigeLevel - startLevel);
+        }
+    }
+
+    public void PrestigeLevelUp(int amount = 1) {
+        PrestigeLevel = Math.Clamp(PrestigeLevel + amount, amount, Constant.AdventureLevelLimit);
+        PrestigeLevelsGained += amount;
+        session.ConditionUpdate(ConditionType.adventure_level, counter: amount);
+        session.ConditionUpdate(ConditionType.adventure_level_up, counter: amount);
+        foreach (PrestigeMission mission in PrestigeMissions) {
+            mission.GainedLevels += amount;
+        }
+
+        for (int i = 0; i < amount; i++) {
+            Item? item = session.Field.ItemDrop.CreateItem(Constant.AdventureLevelLvUpRewardItem);
+            if (item == null) {
+                break;
+            }
+
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
+            }
+        }
+
+        session.Send(PrestigePacket.LevelUp(session.Player.ObjectId, PrestigeLevel));
+        session.Send(PrestigePacket.LoadMissions(session.Player.Value.Account));
     }
 }

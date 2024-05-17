@@ -524,7 +524,7 @@ public class AiMapper : TypeMapper<AiMetadata> {
                     KfmName: createInteractObject.kfmName,
                     Reactable: createInteractObject.reactable
                 );
-            case RemoveNode removeMe:
+            case RemoveMeNode removeMe:
                 return new AiMetadata.RemoveMeNode(
                     Name: node.name,
                     Entries: childNodes.ToArray()

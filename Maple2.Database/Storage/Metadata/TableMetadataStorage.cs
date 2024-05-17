@@ -34,6 +34,9 @@ public class TableMetadataStorage {
     private readonly Lazy<CommonExpTable> commonExpTable;
     private readonly Lazy<UgcDesignTable> ugcDesignTable;
     private readonly Lazy<LearningQuestTable> learningQuestTable;
+    private readonly Lazy<PrestigeLevelAbilityTable> prestigeLevelAbilityTable;
+    private readonly Lazy<PrestigeLevelRewardTable> prestigeLevelRewardTable;
+    private readonly Lazy<PrestigeMissionTable> prestigeMissionTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -80,6 +83,9 @@ public class TableMetadataStorage {
     public CommonExpTable CommonExpTable => commonExpTable.Value;
     public UgcDesignTable UgcDesignTable => ugcDesignTable.Value;
     public LearningQuestTable LearningQuestTable => learningQuestTable.Value;
+    public PrestigeLevelAbilityTable PrestigeLevelAbilityTable => prestigeLevelAbilityTable.Value;
+    public PrestigeLevelRewardTable PrestigeLevelRewardTable => prestigeLevelRewardTable.Value;
+    public PrestigeMissionTable PrestigeMissionTable => prestigeMissionTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -127,6 +133,9 @@ public class TableMetadataStorage {
         commonExpTable = Retrieve<CommonExpTable>(context, "commonexp.xml");
         ugcDesignTable = Retrieve<UgcDesignTable>(context, "ugcdesign.xml");
         learningQuestTable = Retrieve<LearningQuestTable>(context, "learningquest.xml");
+        prestigeLevelAbilityTable = Retrieve<PrestigeLevelAbilityTable>(context, "adventurelevelability.xml");
+        prestigeLevelRewardTable = Retrieve<PrestigeLevelRewardTable>(context, "adventurelevelreward.xml");
+        prestigeMissionTable = Retrieve<PrestigeMissionTable>(context, "adventurelevelmission.xml");
         enchantScrollTable = Retrieve<EnchantScrollTable>(context, "enchantscroll.xml");
         itemRemakeScrollTable = Retrieve<ItemRemakeScrollTable>(context, "itemremakescroll.xml");
         itemRepackingScrollTable = Retrieve<ItemRepackingScrollTable>(context, "itemrepackingscroll.xml");

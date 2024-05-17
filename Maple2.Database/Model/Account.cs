@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Maple2.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -14,7 +15,11 @@ internal class Account {
     public Guid MachineId { get; set; }
     public int MaxCharacters { get; set; }
     public int PrestigeLevel { get; set; }
+    public int PrestigeLevelsGained { get; set; }
     public long PrestigeExp { get; set; }
+    public long PrestigeCurrentExp { get; set; }
+    public IList<PrestigeMission> PrestigeMissions { get; set; }
+    public IList<int> PrestigeRewardsClaimed { get; set; }
     public long PremiumTime { get; set; }
     public IList<int> PremiumRewardsClaimed { get; set; } // TODO: clear list on daily reset
     public required AccountCurrency Currency { get; set; }
@@ -46,7 +51,15 @@ internal class Account {
             MachineId = other.MachineId,
             MaxCharacters = other.MaxCharacters,
             PrestigeLevel = other.PrestigeLevel,
+            PrestigeLevelsGained = other.PrestigeLevelsGained,
             PrestigeExp = other.PrestigeExp,
+            PrestigeCurrentExp = other.PrestigeCurrentExp,
+            PrestigeRewardsClaimed = other.PrestigeRewardsClaimed,
+            PrestigeMissions = other.PrestigeMissions.Select(mission => new PrestigeMission {
+                Id = mission.Id,
+                GainedLevels = mission.GainedLevels,
+                Awarded = mission.Awarded,
+            }).ToList(),
             PremiumTime = other.PremiumTime,
             PremiumRewardsClaimed = other.PremiumRewardsClaimed,
             Currency = new AccountCurrency(),
@@ -76,7 +89,14 @@ internal class Account {
             MachineId = other.MachineId,
             MaxCharacters = other.MaxCharacters,
             PrestigeLevel = other.PrestigeLevel,
+            PrestigeLevelsGained = other.PrestigeLevelsGained,
             PrestigeExp = other.PrestigeExp,
+            PrestigeCurrentExp = other.PrestigeCurrentExp,
+            PrestigeRewardsClaimed = other.PrestigeRewardsClaimed,
+            PrestigeMissions = other.PrestigeMissions.Select(mission => new Maple2.Model.Game.PrestigeMission(mission.Id) {
+                GainedLevels = mission.GainedLevels,
+                Awarded = mission.Awarded,
+            }).ToList(),
             PremiumTime = other.PremiumTime,
             PremiumRewardsClaimed = other.PremiumRewardsClaimed,
             MesoMarketListed = other.MarketLimits.MesoListed,
@@ -101,6 +121,8 @@ internal class Account {
         builder.Property(account => account.Currency).HasJsonConversion().IsRequired();
         builder.Property(account => account.MarketLimits).HasJsonConversion().IsRequired();
         builder.Property(account => account.PremiumRewardsClaimed).HasJsonConversion();
+        builder.Property(account => account.PrestigeMissions).HasJsonConversion();
+        builder.Property(account => account.PrestigeRewardsClaimed).HasJsonConversion();
 
         builder.Property(account => account.LastModified).IsRowVersion();
         IMutableProperty creationTime = builder.Property(account => account.CreationTime)
@@ -118,4 +140,10 @@ internal class AccountCurrency {
 internal class MarketLimits {
     public int MesoListed { get; set; }
     public int MesoPurchased { get; set; }
+}
+
+internal class PrestigeMission {
+    public long Id { get; set; }
+    public long GainedLevels { get; set; }
+    public bool Awarded { get; set; }
 }

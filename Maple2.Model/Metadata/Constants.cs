@@ -763,6 +763,7 @@ public static class Constant {
     public const float AdventureLevelFactor = 0.02f;
     public const int AdventureExpFactorElite = 10;
     public const int AdventureExpFactorBoss = 100;
+    public const int AdventureLevelStartLevel = 50;
     public const int AdventureLevelLvUpRewardItem = 30001133;
     public const int NameColorDeadDuration = 2000;
     public const float MesoRevivalFeeReduceLimit = 0.5f;
