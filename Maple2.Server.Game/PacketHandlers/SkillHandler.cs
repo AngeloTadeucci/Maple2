@@ -128,29 +128,27 @@ public class SkillHandler : PacketHandler<GameSession> {
             }
         }
 
-        int spiritCost = record.GetSpCost();
         //TODO: Proper invoke cost
         /*
         InvokeStatValue invokeStat = Stats.GetSkillStats(skillCast.SkillId, skillCast.GetSkillGroups(), InvokeEffectType.ReduceSpiritCost);
         spiritCost = Math.Max(0, (int) (-invokeStat.Value + (1 - invokeStat.Rate) * spiritCost));
         */
-        if (spiritCost > 0) {
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
             if (session.Player.Stats[BasicAttribute.Spirit].Current < spiritCost) {
                 Logger.Error("Not enough spirit to cast skill: {SkillId},{Level}", skillId, level);
                 return;
             }
         }
 
-        int staminaCost = record.GetStaCost();
-        if (staminaCost > 0) {
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
             if (session.Player.Stats[BasicAttribute.Stamina].Current < staminaCost) {
                 Logger.Error("Not enough stamina to cast skill: {SkillId},{Level}", skillId, level);
                 return;
             }
         }
 
-        session.Player.ConsumeSp(spiritCost);
-        session.Player.ConsumeStamina(staminaCost);
+        session.Player.ConsumeSp((int) spiritCost);
+        session.Player.ConsumeStamina((int) staminaCost);
         session.Field.Broadcast(StatsPacket.Update(session.Player, [BasicAttribute.Spirit, BasicAttribute.Stamina]));
 
         session.ConditionUpdate(ConditionType.skill, 1, codeLong: skillId);
