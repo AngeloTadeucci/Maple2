@@ -210,7 +210,8 @@ public sealed partial class GameSession : Core.Network.Session {
         // Pvp
         Send(StateSyncPacket.SyncNumber(0));
         // SyncWorld
-        // Prestige
+        Send(PrestigePacket.Load(player.Account));
+        Send(PrestigePacket.LoadMissions(player.Account));
         Item.Inventory.Load();
         Item.Furnishing.Load();
         // Load Quests
