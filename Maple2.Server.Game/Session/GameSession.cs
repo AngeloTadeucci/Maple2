@@ -297,6 +297,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Player = Field.SpawnPlayer(this, Player, portalId, position, rotation);
         Config.Skill.UpdatePassiveBuffs();
         Player.Buffs.LoadFieldBuffs();
+        Player.CheckRegen();
 
         return true;
     }

@@ -219,4 +219,24 @@ public class FieldPlayer : Actor<Player> {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }
     }
+
+    public void CheckRegen() {
+        // Health
+        var health = Stats[BasicAttribute.Health];
+        if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
+            regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
+        }
+
+        // Spirit
+        var spirit = Stats[BasicAttribute.Spirit];
+        if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
+            regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
+        }
+
+        // Stamina
+        var stamina = Stats[BasicAttribute.Stamina];
+        if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
+            regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
+        }
+    }
 }
