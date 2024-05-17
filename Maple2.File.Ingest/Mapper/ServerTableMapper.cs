@@ -2,10 +2,13 @@
 using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;
+using Maple2.File.Parser.Enum;
 using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using ExpType = Maple2.Model.Enum.ExpType;
+using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -26,6 +29,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
+        yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
 
     }
 
@@ -564,6 +568,72 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             }
             return 0;
         }
+    }
+
+    private PrestigeExpTable ParsePrestigeExpTable() {
+        var results = new Dictionary<ExpType, long>();
+
+        foreach ((AdventureExpType type, AdventureExpTable table) in parser.ParseAdventureExp()) {
+            ExpType expType = ToExpType(type);
+            results.Add(expType, table.value);
+        }
+
+        return new PrestigeExpTable(results);
+    }
+
+    private static ExpType ToExpType(AdventureExpType type) {
+        return type switch {
+            AdventureExpType.Exp_MapCommon => ExpType.mapCommon,
+            AdventureExpType.Exp_MapHidden => ExpType.mapHidden,
+            AdventureExpType.Exp_TaxiStation => ExpType.taxi,
+            AdventureExpType.Exp_Telescope => ExpType.telescope,
+            AdventureExpType.Exp_RareChest => ExpType.rareChest,
+            AdventureExpType.Exp_RareChestFirst => ExpType.rareChestFirst,
+            AdventureExpType.Exp_NormalChest => ExpType.normalChest,
+            AdventureExpType.Exp_DropItem => ExpType.dropItem,
+            AdventureExpType.Exp_DungeonBoss => ExpType.dungeonBoss,
+            AdventureExpType.Exp_MusicMasteryLv1 => ExpType.musicMastery1,
+            AdventureExpType.Exp_MusicMasteryLv2 => ExpType.musicMastery2,
+            AdventureExpType.Exp_MusicMasteryLv3 => ExpType.musicMastery3,
+            AdventureExpType.Exp_MusicMasteryLv4 => ExpType.musicMastery4,
+            AdventureExpType.Exp_Arcade => ExpType.arcade,
+            AdventureExpType.Exp_Fishing => ExpType.fishing,
+            AdventureExpType.Exp_Rest => ExpType.rest,
+            AdventureExpType.Exp_Quest => ExpType.quest,
+            AdventureExpType.Exp_PvpBloodMineRank1 => ExpType.bloodMineRank1,
+            AdventureExpType.Exp_PvpBloodMineRank2 => ExpType.bloodMineRank2,
+            AdventureExpType.Exp_PvpBloodMineRank3 => ExpType.bloodMineRank3,
+            AdventureExpType.Exp_PvpBloodMineRankOther => ExpType.bloodMineRankOther,
+            AdventureExpType.Exp_PvpRedDuelWin => ExpType.redDuelWin,
+            AdventureExpType.Exp_PvpRedDuelLose => ExpType.redDuelLose,
+            AdventureExpType.Exp_PvpBtiTeamWin => ExpType.btiTeamWin,
+            AdventureExpType.Exp_PvpBtiTeamLose => ExpType.btiTeamLose,
+            AdventureExpType.Exp_PvpRankDuelWin => ExpType.rankDuelWin,
+            AdventureExpType.Exp_PvpRankDuelLose => ExpType.rankDuelLose,
+            AdventureExpType.Exp_Gathering => ExpType.gathering,
+            AdventureExpType.Exp_Manufacturing => ExpType.manufacturing,
+            AdventureExpType.Exp_RandomDungeonBonus => ExpType.randomDungeonBonus,
+            AdventureExpType.Exp_MiniGame => ExpType.miniGame,
+            AdventureExpType.Exp_UserMiniGame => ExpType.userMiniGame,
+            AdventureExpType.Exp_UserMiniGameExtra => ExpType.userMiniGameExtra,
+            AdventureExpType.Exp_Mission => ExpType.mission,
+            AdventureExpType.Exp_DungeonRelative => ExpType.dungeonRelative,
+            AdventureExpType.Exp_GuildUserExp => ExpType.guildUserExp,
+            AdventureExpType.Exp_DailyGuildQuest => ExpType.dailyGuildQuest,
+            AdventureExpType.Exp_WeeklyGuildQuest => ExpType.weeklyGuildQuest,
+            AdventureExpType.Exp_PetTaming => ExpType.petTaming,
+            AdventureExpType.Exp_DailyMission => ExpType.dailymission,
+            AdventureExpType.Exp_DailyMissionLevelUp => ExpType.dailymissionLevelUp,
+            AdventureExpType.Exp_mapleSurvival => ExpType.mapleSurvival,
+            AdventureExpType.Exp_DarkStream => ExpType.darkStream,
+            AdventureExpType.Exp_DungeonClear => ExpType.dungeonClear,
+            AdventureExpType.Exp_KillMonster => ExpType.monster,
+            AdventureExpType.Exp_QuestETC => ExpType.questEtc,
+            AdventureExpType.Exp_EpicQuest => ExpType.epicQuest,
+            AdventureExpType.Exp_KillMonsterBoss => ExpType.monsterBoss,
+            AdventureExpType.Exp_KillMonsterElite => ExpType.monsterElite,
+            _ => ExpType.none,
+        };
     }
 }
 

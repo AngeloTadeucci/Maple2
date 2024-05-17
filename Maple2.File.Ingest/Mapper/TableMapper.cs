@@ -63,6 +63,11 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "commonexp.xml", Table = ParseCommonExpTable() };
         yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
         yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
+        // Prestige
+        yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
+        yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
+        yield return new TableMetadata { Name = "adventurelevelmission.xml", Table = ParsePrestigeMissionTable() };
+
         // Fishing
         yield return new TableMetadata { Name = "fishingspot.xml", Table = ParseFishingSpot() };
         yield return new TableMetadata { Name = "fish.xml", Table = ParseFish() };
@@ -1251,5 +1256,49 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 GoToPortalId: quest.gotoPortal));
         }
         return new LearningQuestTable(results);
+    }
+
+    private PrestigeLevelAbilityTable ParsePrestigeLevelAbilityTable() {
+        var results = new Dictionary<int, PrestigeLevelAbilityMetadata>();
+        foreach ((int id, AdventureLevelAbility ability) in parser.ParseAdventureLevelAbility()) {
+            results.Add(id, new PrestigeLevelAbilityMetadata(
+                Id: id,
+                RequiredLevel: ability.requireLevel,
+                Interval: ability.interval,
+                MaxCount: ability.maxCount,
+                BuffId: ability.additionalEffectId,
+                StartValue: ability.startValue,
+                AddValue: ability.addValue));
+        }
+        return new PrestigeLevelAbilityTable(results);
+    }
+
+    private PrestigeLevelRewardTable ParsePrestigeLevelRewardTable() {
+        var results = new Dictionary<int, PrestigeLevelRewardMetadata>();
+        foreach ((int id, AdventureLevelReward reward) in parser.ParseAdventureLevelReward()) {
+            results.Add(id, new PrestigeLevelRewardMetadata(
+                Id: reward.id,
+                Level: reward.level,
+                Type: Enum.TryParse(reward.type, out PrestigeAwardType type) ? type : PrestigeAwardType.none,
+                Rarity: reward.rank,
+                Value: reward.value
+                ));
+        }
+        return new PrestigeLevelRewardTable(results);
+    }
+
+    private PrestigeMissionTable ParsePrestigeMissionTable() {
+        var results = new Dictionary<int, PrestigeMissionMetadata>();
+        foreach ((int id, AdventureLevelMission mission) in parser.ParseAdventureLevelMission()) {
+            results.Add(id, new PrestigeMissionMetadata(
+                Id: mission.missionId,
+                Count: mission.missionCount,
+                Item: new ItemComponent(
+                    ItemId: mission.itemId,
+                    Rarity: mission.itemRank,
+                    mission.itemCount,
+                    Tag: ItemTag.None)));
+        }
+        return new PrestigeMissionTable(results);
     }
 }

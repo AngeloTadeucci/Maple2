@@ -50,4 +50,12 @@ public enum ExpType {
     monster,
     assist,
     assistBonus,
+
+    dropItem,
+    darkStream,
+    dungeonClear,
+    dungeonBoss,
+    monsterBoss,
+    monsterElite,
+    questEtc,
 }

@@ -61,6 +61,7 @@ public static class PrestigePacket {
     public static ByteWriter UpdateMissions(Account account) {
         var pWriter = Packet.Of(SendOp.Prestige);
         pWriter.Write<Command>(Command.UpdateMissions);
+        pWriter.WriteBool(true);
         pWriter.WriteInt(account.PrestigeMissions.Count);
         foreach (PrestigeMission mission in account.PrestigeMissions) {
             pWriter.WriteClass<PrestigeMission>(mission);

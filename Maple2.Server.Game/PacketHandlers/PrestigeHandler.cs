@@ -87,6 +87,6 @@ public class PrestigeHandler : PacketHandler<GameSession> {
         }
 
         mission.Awarded = true;
-        session.Send(PrestigePacket.LoadMissions(session.Player.Value.Account));
+        session.Send(PrestigePacket.UpdateMissions(session.Player.Value.Account));
     }
 }
