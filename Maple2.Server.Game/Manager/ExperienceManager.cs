@@ -190,7 +190,7 @@ public sealed class ExperienceManager {
             return;
         }
 
-        if (PrestigeCurrentExp - PrestigeExp >= Constant.AdventureLevelLvUpExp) {
+        if (PrestigeCurrentExp - PrestigeExp + (PrestigeLevelsGained * Constant.AdventureLevelLvUpExp) >= Constant.AdventureLevelLvUpExp) {
             amount = (long) (amount * Constant.AdventureLevelFactor);
         }
 
