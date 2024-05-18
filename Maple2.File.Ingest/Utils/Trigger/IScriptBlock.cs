@@ -7,6 +7,8 @@ internal interface IScriptBlock {
     public bool IsCode => true;
 
     public void WriteTo(IndentedTextWriter writer, bool isCommented = false);
+
+    public ISet<string> Imports();
 }
 
 internal class Comment : IScriptBlock {
@@ -24,7 +26,7 @@ internal class Comment : IScriptBlock {
             writer.WriteLine("\"\"\"");
             // TODO: preserve tabbing instead of trimming all
             // str = str.Replace("\t", "    ");
-            foreach (string line in Value.Split(new[] { "\n", "\r\n" }, StringSplitOptions.TrimEntries)) {
+            foreach (string line in Value.Split(["\n", "\r\n"], StringSplitOptions.TrimEntries)) {
                 writer.WriteLine(line);
             }
             writer.WriteLine("\"\"\"");
@@ -32,6 +34,8 @@ internal class Comment : IScriptBlock {
             writer.WriteLine($"# {Value}");
         }
     }
+
+    public ISet<string> Imports() => new HashSet<string>();
 }
 
 internal class CommentWrapper : IScriptBlock {
@@ -54,4 +58,6 @@ internal class CommentWrapper : IScriptBlock {
             writer.WriteLine("\"\"\""); // End block comment
         }
     }
+
+    public ISet<string> Imports() => new HashSet<string>();
 }

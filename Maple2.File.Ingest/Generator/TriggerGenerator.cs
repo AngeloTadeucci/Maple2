@@ -61,7 +61,7 @@ public class TriggerGenerator {
             };
 
             try {
-                var stateIndex = new Dictionary<string, string>();
+                Dictionary<string, string> stateIndex = [];
                 foreach (XmlNode importNode in document.SelectNodes("ms2/import")!) {
                     string path = importNode.Attributes["path"].Value.ToLower();
                     string importModule = Directory.GetParent(path).Name;
@@ -160,13 +160,17 @@ public class TriggerGenerator {
         using var csStream = new StreamWriter("Scripts/ITriggerContext.cs");
         using var csWriter = new IndentedTextWriter(csStream, "    ");
         ApiScript.WriteInterface(csWriter);
+
+        using var csEnumStream = new StreamWriter("Scripts/TriggerEnums.cs");
+        using var csEnumWriter = new IndentedTextWriter(csEnumStream, "    ");
+        ApiScript.WriteEnums(csEnumWriter);
     }
 
     private static TriggerScript.State ParseState(XmlNode node, Dictionary<string, string> stateIndex, string filePath) {
         string name = FixClassName(node.Attributes["name"].Value);
         // IndexStrings(name, isState: true);
 
-        var onEnter = new List<IScriptBlock>();
+        List<IScriptBlock> onEnter = [];
         TriggerScript.Transition? onEnterTransition = null;
         XmlNode? onEnterNode = node.SelectSingleNode("onEnter");
         if (onEnterNode != null) {
@@ -210,7 +214,7 @@ public class TriggerGenerator {
             }
         }
 
-        var conditions = new List<IScriptBlock>();
+        List<IScriptBlock> conditions = [];
         foreach (XmlNode conditionNode in node.SelectNodes("condition")!) {
             TriggerScript.Condition condition = ParseCondition(conditionNode, stateIndex, filePath);
             if (conditionNode.NextSibling is XmlComment comment) {
@@ -225,7 +229,7 @@ public class TriggerGenerator {
             conditions.Add(condition);
         }
 
-        var onExit = new List<IScriptBlock>();
+        List<IScriptBlock> onExit = [];
         XmlNode? onExitNode = node.SelectSingleNode("onExit");
         if (onExitNode != null) {
             foreach (XmlNode child in onExitNode.ChildNodes) {
@@ -267,7 +271,7 @@ public class TriggerGenerator {
         TriggerScript.Action action = ParseAction(it.Current, stateIndex);
         if (it.Current.NextSibling is XmlComment { Value: not null } lineComment) {
             string trimmed = lineComment.Value.Trim();
-            if (trimmed.StartsWith("<") || trimmed.StartsWith("action name=")) {
+            if (trimmed.StartsWith('<') || trimmed.StartsWith("action name=")) {
                 return action;
             }
 
@@ -286,7 +290,7 @@ public class TriggerGenerator {
     private static TriggerScript.Action ParseAction(XmlNode node, Dictionary<string, string> stateIndex) {
         Debug.Assert(node.Name == "action", $"ParseAction(node) where node is not <action>: {node.OuterXml}");
 
-        var strArgs = new List<(string, string)>();
+        List<(string, string)> strArgs = [];
         string? origName = null;
         foreach (XmlAttribute attribute in node.Attributes) {
             if (attribute.Name == "name") {
@@ -299,23 +303,31 @@ public class TriggerGenerator {
 
         // IndexStrings(name, isAction: true);
         string name = Translate(origName, TriggerTranslate.TranslateAction);
-        string? splitName = null;//TriggerDefinitionOverride.ActionOverride.GetValueOrDefault(name)?.FunctionLookup
         string? extraDescription = null;
+        string? splitArgValue = null;
+        string? splitName = null;
         if (TriggerDefinitionOverride.ActionOverride.TryGetValue(name, out TriggerDefinitionOverride? @override) && @override.FunctionSplitter != null) {
-            (string argName, string argValue) = strArgs.Single(e => e.Item1 == @override.FunctionSplitter);
-            Debug.Assert(@override.FunctionLookup.ContainsKey(argValue), $"Unknown function split in {name} for {argValue}");
-            splitName = @override.FunctionLookup[argValue];
-            extraDescription = $"{argName}={argValue}";
+            string? splitArgName;
+            if (strArgs.Any(e => e.Item1 == @override.FunctionSplitter)) {
+                (splitArgName, splitArgValue) = strArgs.Single(e => e.Item1 == @override.FunctionSplitter);
+            } else {
+                splitArgName = @override.FunctionSplitter;
+                splitArgValue = @override.Types[@override.FunctionSplitter].Default!;
+            }
+
+            Debug.Assert(@override.FunctionLookup.ContainsKey(splitArgValue), $"Unknown function split in {name} for {splitArgValue}");
+            splitName = @override.FunctionLookup[splitArgValue].Name;
+            extraDescription = $"{splitArgName}={splitArgValue}";
         }
 
         if (!ApiScript.Actions.TryGetValue((name, splitName), out TriggerApiScript.Function? function)) {
-            function = new TriggerApiScript.Function(name, splitName, false) {
+            function = new TriggerApiScript.Function(name, splitArgValue, false) {
                 Description = extraDescription != null ? $"{origName}: {extraDescription}" : origName,
             };
             ApiScript.Actions.Add((name, splitName), function);
         }
 
-        var args = new List<PyParameter>();
+        List<PyParameter> args = [];
         foreach ((string argName, string argValue) in strArgs) {
             if (name == "reset_camera" && argValue == "interpolationTime") {
                 continue;
@@ -327,7 +339,7 @@ public class TriggerGenerator {
             }
         }
 
-        var action = new TriggerScript.Action(name, splitName) {
+        var action = new TriggerScript.Action(name, splitArgValue) {
             Args = args,
         };
 
@@ -372,7 +384,7 @@ public class TriggerGenerator {
     }
 
     private static TriggerScript.Condition ParseCondition(XmlNode node, Dictionary<string, string> stateIndex, string filePath) {
-        var strArgs = new List<(string, string)>();
+        List<(string, string)> strArgs = [];
         string? origName = null;
         foreach (XmlAttribute attribute in node.Attributes) {
             if (attribute.Name == "name") {
@@ -394,7 +406,7 @@ public class TriggerGenerator {
             ApiScript.Conditions.Add(name, function);
         }
 
-        var args = new List<PyParameter>();
+        List<PyParameter> args = [];
         foreach ((string argName, string argValue) in strArgs) {
             (ScriptType Type, string Name) param = function.AddParameter(ScriptType.Str, argName);
             if (param.Type != ScriptType.None) {
@@ -576,7 +588,7 @@ public class TriggerGenerator {
     }
 
     private static IList<string> SiblingComments(XmlNode? node, bool before = true, bool after = false) {
-        var comments = new List<string>();
+        List<string> comments = [];
         if (node == null) {
             return comments;
         }
@@ -587,7 +599,7 @@ public class TriggerGenerator {
             sibling = sibling.PreviousSibling;
         }
 
-        var afterComments = new List<string>();
+        List<string> afterComments = [];
         sibling = node.NextSibling;
         while (after && sibling is XmlComment { Value: not null } comment) {
             afterComments.Add(comment.Value);
@@ -604,7 +616,7 @@ public class TriggerGenerator {
 
     private static bool TryParseXml(string? xml, string name, out List<XmlNode> nodes, bool allowComments = true) {
         if (xml == null || !Regex.Match(xml, $"{name} +name=").Success) {
-            nodes = new List<XmlNode>();
+            nodes = [];
             return false;
         }
         // Attempt to close some unclosed xml elements
@@ -635,7 +647,7 @@ public class TriggerGenerator {
             } catch (XmlException) { /* ignored */ }
         }
 
-        nodes = new List<XmlNode>();
+        nodes = [];
         return false;
     }
 

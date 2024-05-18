@@ -4,40 +4,30 @@ using System.Diagnostics;
 namespace Maple2.File.Ingest.Utils.Trigger;
 
 internal partial class TriggerScript {
-    public class Transition {
-        public readonly string? State;
-        public readonly bool IsValid;
-        public string? LineComment;
-
-        public Transition(string? state, bool isValid, string? lineComment) {
-            State = state;
-            IsValid = isValid;
-            LineComment = lineComment;
-        }
-
+    public class Transition(string? state, bool isValid, string? lineComment) {
         public void WriteTo(IndentedTextWriter writer, bool isCommented = false) {
-            if (State == null) {
+            if (state == null) {
                 writer.WriteLine("return None");
                 return;
             }
 
-            if (LineComment != null && (LineComment.Contains('\n') || LineComment.Length > LineCommentMax || !IsValid)) {
-                Debug.Assert(!LineComment.StartsWith('<'), LineComment);
-                writer.WriteLineCommentString(LineComment, sameLine: false);
+            if (lineComment != null && (lineComment.Contains('\n') || lineComment.Length > LineCommentMax || !isValid)) {
+                Debug.Assert(!lineComment.StartsWith('<'), lineComment);
+                writer.WriteLineCommentString(lineComment, sameLine: false);
 
                 // Set null to avoid writing twice.
-                LineComment = null;
+                lineComment = null;
             }
 
-            if (IsValid || isCommented) {
-                writer.Write($"return {State}(self.ctx)");
-                if (LineComment != null) {
-                    Debug.Assert(!LineComment.StartsWith('<'), LineComment);
-                    writer.Write($" # {LineComment.Trim()}");
+            if (isValid || isCommented) {
+                writer.Write($"return {state}(self.ctx)");
+                if (lineComment != null) {
+                    Debug.Assert(!lineComment.StartsWith('<'), lineComment);
+                    writer.Write($" # {lineComment.Trim()}");
                 }
                 writer.WriteBlankLine();
             } else {
-                writer.WriteLine($"return None # Missing State: {State}");
+                writer.WriteLine($"return None # Missing State: {state}");
             }
         }
     }
