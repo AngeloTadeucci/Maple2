@@ -41,6 +41,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<BeautyShopEntry> BeautyShopEntry { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
+    internal DbSet<ServerInfo> ServerInfo { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -81,5 +82,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
 
         modelBuilder.Entity<GameEvent>(Maple2.Database.Model.Event.GameEvent.Configure);
         modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.Event.GameEventUserValue.Configure);
+
+        modelBuilder.Entity<ServerInfo>(Maple2.Database.Model.ServerInfo.Configure);
     }
 }

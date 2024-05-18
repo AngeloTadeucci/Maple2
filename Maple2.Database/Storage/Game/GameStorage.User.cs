@@ -309,17 +309,6 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public void DailyReset() {
-            lock (Context) {
-                Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeRewardsClaimed` = DEFAULT");
-                Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeExp` = `PrestigeCurrentExp`");
-                Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeLevelsGained` = DEFAULT");
-                Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PremiumRewardsClaimed` = DEFAULT");
-                Context.Database.ExecuteSqlRaw("UPDATE `character-config` SET `GatheringCounts` = DEFAULT");
-                // TODO: Death counter
-            }
-        }
-
         #region Create
         public Account CreateAccount(Account account) {
             Model.Account model = account;
