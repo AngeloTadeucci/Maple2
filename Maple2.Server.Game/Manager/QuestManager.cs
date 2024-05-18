@@ -188,6 +188,10 @@ public sealed class QuestManager {
                 condition.Counter = (int) Math.Min(condition.Metadata.Value, condition.Counter + counter);
 
                 session.Send(QuestPacket.Update(quest));
+                if (quest.Metadata.Basic.Type == QuestType.FieldMission &&
+                    CanComplete(quest)) {
+                    Complete(quest);
+                }
             }
         }
     }
