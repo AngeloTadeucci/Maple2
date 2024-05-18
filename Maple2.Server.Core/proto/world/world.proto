@@ -33,9 +33,10 @@ service World {
   rpc PlayerInfo(maple2.PlayerInfoRequest) returns (maple2.PlayerInfoResponse);
   // Update player info
   rpc UpdatePlayer(maple2.PlayerUpdateRequest) returns (maple2.PlayerUpdateResponse);
-
   // Notify character about new mail.
   rpc MailNotification(maple2.MailNotificationRequest) returns (maple2.MailNotificationResponse);
+  // Daily/weekly resets
+  rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
 }
 
 enum Server {

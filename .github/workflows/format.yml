@@ -22,4 +22,4 @@ jobs:
               run: dotnet tool install -g dotnet-format --version "8.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json
 
             - name: Run dotnet-format
-              run: dotnet-format whitespace --verify-no-changes
+              run: dotnet-format whitespace --verify-no-changes --exclude 'Maple2.Server.World/Migrations/*.cs'

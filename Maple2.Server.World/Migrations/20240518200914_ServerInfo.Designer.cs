@@ -3,6 +3,7 @@ using System;
 using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    partial class Ms2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240518200914_ServerInfo")]
+    partial class ServerInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

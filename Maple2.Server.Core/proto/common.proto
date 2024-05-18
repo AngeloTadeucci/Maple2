@@ -44,6 +44,19 @@ message ChatRequest {
 message ChatResponse {
 }
 
+message GameResetRequest {
+  message Daily {}
+  message Weekly {}
+
+  oneof reset {
+    Daily daily = 1;
+    Weekly weekly = 2;
+  }
+}
+message GameResetResponse {
+  int32 error = 1;
+}
+
 message BuddyRequest {
   message Invite {
     int64 sender_id = 1;
