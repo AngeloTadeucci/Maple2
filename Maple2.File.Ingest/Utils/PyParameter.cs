@@ -3,13 +3,44 @@ using System.Globalization;
 
 namespace Maple2.File.Ingest.Utils;
 
-internal enum ScriptType { None = 0, Str, Int, Float, IntList, StrList, StateList, Vector3, Bool, State }
+internal enum ScriptType {
+    None = 0, Str, Int, Float, IntList, StrList, StateList, Vector3, Bool, State,
+    EnumAlign, EnumFieldGame, EnumLocale, EnumWeather,
+}
 
-internal partial record PyParameter(ScriptType Type, string Name) {
+internal record PyParameter(ScriptType Type, string Name) {
     public string? Value;
 
     public PyParameter(ScriptType type, string name, string? value) : this(type, name) {
         Value = value;
+    }
+
+    public string? Import() {
+        return Type switch {
+            ScriptType.Vector3 => "Vector3",
+            ScriptType.EnumAlign => "Align",
+            ScriptType.EnumFieldGame => "FieldGame",
+            ScriptType.EnumLocale => "Locale",
+            ScriptType.EnumWeather => "Weather",
+            _ => null,
+        };
+    }
+
+    public bool IsDefault(string? defaultOverride) {
+        if (string.IsNullOrWhiteSpace(Value)) {
+            return true;
+        }
+        if (defaultOverride == "<required>") {
+            return false;
+        }
+
+        string valueStr = FormatValue();
+        // Alternative format that's also equivalent to default.
+        if (Type == ScriptType.Vector3 && valueStr == "Vector3(0,0,0)") {
+            valueStr = "Vector3()";
+        }
+
+        return valueStr == (defaultOverride ?? DefaultStr());
     }
 
     public string TypeStr() {
@@ -25,24 +56,33 @@ internal partial record PyParameter(ScriptType Type, string Name) {
             ScriptType.IntList => "List[int]",
             ScriptType.StrList => "List[str]",
             ScriptType.StateList => "List['Trigger']",
-            ScriptType.Vector3 => "List[float]",
+            ScriptType.Vector3 => "Vector3",
             ScriptType.Bool => "bool",
             ScriptType.State => "'Trigger'",
+            // Enums
+            ScriptType.EnumAlign => "Align",
+            ScriptType.EnumFieldGame => "FieldGame",
+            ScriptType.EnumLocale => "Locale",
+            ScriptType.EnumWeather => "Weather",
             _ => throw new ArgumentException($"Invalid parameter type: {type}"),
         };
     }
 
     public string DefaultStr() {
-        return Value ?? Type switch {
+        return Type switch {
             ScriptType.Str => "None",
             ScriptType.Int => "0",
             ScriptType.Float => "0.0",
             ScriptType.IntList => "[]",
             ScriptType.StrList => "[]",
             ScriptType.StateList => "[]",
-            ScriptType.Vector3 => "[0,0,0]",
+            ScriptType.Vector3 => "Vector3()",
             ScriptType.Bool => "False",
             ScriptType.State => "None",
+            // Enums
+            ScriptType.EnumAlign => "Align.Top",
+            ScriptType.EnumLocale => "Locale.ALL",
+            ScriptType.EnumWeather => "Weather.Clear",
             _ => throw new ArgumentException($"Invalid parameter type: {Type}"),
         };
     }
@@ -51,7 +91,7 @@ internal partial record PyParameter(ScriptType Type, string Name) {
         if (validate) ValidateValue();
 
         try {
-            return FormatValue(Type, Value);
+            return FormatValue(Type, Value) ?? DefaultStr();
         } catch (Exception) {
             if (validate) {
                 throw;
@@ -60,22 +100,40 @@ internal partial record PyParameter(ScriptType Type, string Name) {
         }
     }
 
-    public static string FormatValue(ScriptType type, string? value) {
+    private static string? FormatValue(ScriptType type, string? value) {
         return type switch {
-            ScriptType.Str => string.IsNullOrWhiteSpace(value) ? "None" : $"'{value.Replace(@"\", @"\\").Replace("'", @"\'")}'",
-            ScriptType.Int => string.IsNullOrWhiteSpace(value) ? "0" : long.Parse(value).ToString(),
-            ScriptType.Float => string.IsNullOrWhiteSpace(value) ? "0.0" : float.Parse(value).ToString("0.0###", CultureInfo.InvariantCulture),
-            ScriptType.IntList => string.IsNullOrWhiteSpace(value) ? "[]"
+            ScriptType.Str => string.IsNullOrWhiteSpace(value) ? null : $"'{value.Replace(@"\", @"\\").Replace("'", @"\'")}'",
+            ScriptType.Int => string.IsNullOrWhiteSpace(value) ? null : long.Parse(value).ToString(),
+            ScriptType.Float => string.IsNullOrWhiteSpace(value) ? null : float.Parse(value).ToString("0.0###", CultureInfo.InvariantCulture),
+            ScriptType.IntList => string.IsNullOrWhiteSpace(value) ? null
                 : $"[{string.Join(",", GetIntList(value).Select(int.Parse))}]",
-            ScriptType.StrList => string.IsNullOrWhiteSpace(value) ? "[]"
+            ScriptType.StrList => string.IsNullOrWhiteSpace(value) ? null
                 : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(str => $"'{str.Replace(@"\", @"\\").Replace("'", @"\'")}'"))}]",
-            ScriptType.StateList => string.IsNullOrWhiteSpace(value) ? "[]"
+            ScriptType.StateList => string.IsNullOrWhiteSpace(value) ? null
                 : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
-            ScriptType.Vector3 => string.IsNullOrWhiteSpace(value) ? "[]"
-                : $"[{string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))}]",
-            ScriptType.Bool => value?.ToLower() == "true" || value == "1" ? "True" : "False",
-            ScriptType.State => string.IsNullOrWhiteSpace(value) ? "None" : value,
+            ScriptType.Vector3 => string.IsNullOrWhiteSpace(value) ? null
+                : $"Vector3({string.Join(",", value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))})",
+            ScriptType.Bool => string.IsNullOrWhiteSpace(value) ? null : value.ToLower() == "true" || value == "1" ? "True" : "False",
+            ScriptType.State => string.IsNullOrWhiteSpace(value) ? null : value,
+            // Enums
+            ScriptType.EnumAlign => string.IsNullOrWhiteSpace(value) ? null : value.ToLower() switch {
+                "center" => "Align.Center",
+                "left" => "Align.Left",
+                "right" => "Align.Right",
+                "topcenter" => "Align.Top | Align.Center",
+                "centerleft" => "Align.Center | Align.Left",
+                "centerright" => "Align.Center | Align.Right",
+                "bottomleft" => "Align.Bottom | Align.Left",
+                "bottomright" => "Align.Bottom | Align.Right",
+                _ => throw new ArgumentException($"Unexpected Align: {value}"),
+            },
+            ScriptType.EnumFieldGame => string.IsNullOrWhiteSpace(value) ? null : $"FieldGame.{value}",
+            ScriptType.EnumLocale => string.IsNullOrWhiteSpace(value) ? null : $"Locale.{value.ToUpper()}",
+            ScriptType.EnumWeather => string.IsNullOrWhiteSpace(value) ? null : value switch {
+                "None" => "Weather.Clear",
+                _ => $"Weather.{TriggerTranslate.ToPascalCase(value)}",
+            },
             _ => throw new ArgumentException($"Unexpected Type: {type} for {value}"),
         };
     }
@@ -124,6 +182,28 @@ internal partial record PyParameter(ScriptType Type, string Name) {
                 return;
             case ScriptType.State:
                 return;
+            case ScriptType.EnumAlign:
+                if (Value == "Reft") {
+                    Value = "Left";
+                }
+                string alignValue = Value.ToLower();
+                Debug.Assert(alignValue is "top" or "center" or "bottom" or "left" or "right" or "topcenter"
+                        or "centerleft" or "centerright" or "bottomleft" or "bottomright", $"Invalid: {this}");
+                return;
+            case ScriptType.EnumFieldGame:
+                if (Value == "MapleSurvive") {
+                    Value = "MapleSurvival";
+                }
+                Debug.Assert(Value is "HideAndSeek" or "GuildVsGame" or "MapleSurvival" or "MapleSurvivalTeam" or "WaterGunBattle", $"Invalid: {this}");
+                break;
+            case ScriptType.EnumLocale:
+                string localeValue = Value.ToUpper();
+                Debug.Assert(localeValue is "KR" or "CN" or "NA" or "JP" or "TH" or "TW", $"Invalid: {this}");
+                break;
+            case ScriptType.EnumWeather:
+                string weatherValue = Value.ToLower();
+                Debug.Assert(weatherValue is "none" or "snow" or "heavysnow" or "rain" or "heavyrain" or "sandstorm" or "cherryblossom" or "leaffall", $"Invalid: {this}");
+                return;
             default:
                 throw new ArgumentException($"Unexpected Type: {Type} for {Name}");
         }
@@ -131,7 +211,7 @@ internal partial record PyParameter(ScriptType Type, string Name) {
 
     private static IList<string> GetIntList(string value) {
         string[] splits = value.Split(new[] { ',', '.', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = new List<string>();
+        List<string> result = [];
         foreach (string split in splits) {
             string[] range = split.Split("-");
             if (range.Length == 2 && long.TryParse(range[0], out long min) && long.TryParse(range[1], out long max)) {

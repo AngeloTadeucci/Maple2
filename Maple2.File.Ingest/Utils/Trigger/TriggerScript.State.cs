@@ -7,11 +7,11 @@ internal partial class TriggerScript {
         public bool SingleLine => false;
 
         public readonly string Name;
-        public readonly List<string> Comments = new();
-        public IList<IScriptBlock> OnEnter = new List<IScriptBlock>();
+        public readonly List<string> Comments = [];
+        public IList<IScriptBlock> OnEnter = [];
         public Transition? OnEnterTransition;
-        public IList<IScriptBlock> Conditions = new List<IScriptBlock>();
-        public IList<IScriptBlock> OnExit = new List<IScriptBlock>();
+        public IList<IScriptBlock> Conditions = [];
+        public IList<IScriptBlock> OnExit = [];
 
         public State(string name) {
             Name = name;
@@ -72,6 +72,13 @@ internal partial class TriggerScript {
                 writer.WriteLine("pass");
             }
             writer.Indent--;
+        }
+
+        public ISet<string> Imports() {
+            return Conditions.SelectMany(c => c.Imports())
+                .Concat(OnEnter.SelectMany(o => o.Imports()))
+                .Concat(OnExit.SelectMany(o => o.Imports()))
+                .ToHashSet();
         }
     }
 }

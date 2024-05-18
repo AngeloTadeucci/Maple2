@@ -1,6 +1,7 @@
 ﻿using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.File.Ingest.Utils.Trigger;
 
@@ -9,13 +10,13 @@ internal partial class TriggerScript {
         public bool SingleLine => false;
 
         public readonly string Name;
-        public readonly List<string> Comments = new();
+        public readonly List<string> Comments = [];
         public string? LineComment;
 
         public bool Negated;
-        public IList<PyParameter> Args = new List<PyParameter>();
-        public readonly IList<IScriptBlock> Actions = new List<IScriptBlock>();
-        public readonly IList<Condition> Group = new List<Condition>();
+        public IList<PyParameter> Args = [];
+        public readonly IList<IScriptBlock> Actions = [];
+        public readonly IList<Condition> Group = [];
         public Transition? Transition;
 
         private readonly TriggerDefinitionOverride overrides;
@@ -66,6 +67,13 @@ internal partial class TriggerScript {
             if (!unconditional) writer.Indent--;
         }
 
+        public ISet<string> Imports() {
+            return Actions.SelectMany(a => a.Imports())
+                .Concat(Args.Select(a => a.Import()).WhereNotNull())
+                .Concat(Group.SelectMany(g => g.Imports()))
+                .ToHashSet();
+        }
+
         private string ConditionString() {
             // Comparison is overridden.
             if (overrides.Compare.Type != ScriptType.None) {
@@ -101,7 +109,12 @@ internal partial class TriggerScript {
                     _ => throw new ArgumentException($"Unexpected comparison operation: {compareOp}"),
                 };
 
+                foreach ((string? argName, _) in overrides.Types.Where(o => o.Value.Default == "<required>")) {
+                    Debug.Assert(Args.Any(arg => arg.Name == argName), $"Condition {overrides.Name} is missing required arg: {argName}");
+                }
+
                 IEnumerable<string> args = Args.Where(arg => arg.Name != overrides.Compare.Field && arg.Name != overrides.Compare.Op)
+                    .Where(arg => !arg.IsDefault(overrides.Types.GetValueOrDefault(arg.Name).Default))
                     .Select(arg => $"{arg.Name}={arg.FormatValue()}");
                 if (overrides.Compare.Type == ScriptType.Bool) {
                     return compareValue switch {
