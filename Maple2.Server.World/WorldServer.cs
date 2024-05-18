@@ -26,7 +26,8 @@ public class WorldServer {
     }
 
     public void DailyReset() {
-
+        using GameStorage.Request db = gameStorage.Context();
+        db.DailyReset();
         scheduler.ScheduleRepeated(DailyReset, (int) TimeSpan.FromDays(1).TotalMilliseconds, true);
     }
 }

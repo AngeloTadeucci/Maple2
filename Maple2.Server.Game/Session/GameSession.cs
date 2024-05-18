@@ -426,7 +426,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PremiumRewardsClaimed.Clear();
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
         // Prestige
-        Player.Value.Account.PrestigeCurrentExp = Player.Value.Account.PrestigeExp;
+        Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
     }
