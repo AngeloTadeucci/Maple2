@@ -23,6 +23,8 @@ service Channel {
 
   // Notify character about new mail.
   rpc MailNotification(maple2.MailNotificationRequest) returns (maple2.MailNotificationResponse);
+  // Daily/weekly resets
+  rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
 }
 
 message GuildRequest {

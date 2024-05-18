@@ -415,6 +415,22 @@ public sealed partial class GameSession : Core.Network.Session {
         return true;
     }
 
+    public void DailyReset() {
+        // Gathering counts reset
+        Config.GatheringCounts.Clear();
+        Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
+        // Death Counter
+        Config.DeathCounter = 0;
+        Send(RevivalPacket.Count(Config.DeathCounter));
+        // Premium Rewards Claimed
+        Player.Value.Account.PremiumRewardsClaimed.Clear();
+        Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
+        // Prestige
+        Player.Value.Account.PrestigeCurrentExp = Player.Value.Account.PrestigeExp;
+        Player.Value.Account.PrestigeLevelsGained = 0;
+        Send(PrestigePacket.Load(Player.Value.Account));
+    }
+
     public void OnStateSync(StateSync stateSync) {
         Player.Position = stateSync.Position;
         Player.Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
