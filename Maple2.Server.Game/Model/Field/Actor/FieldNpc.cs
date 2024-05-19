@@ -81,8 +81,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AiState AiState;
     private NpcRoutine CurrentRoutine { get; set; }
 
-    // Used for trigger spawn tracking.
-    public int SpawnPointId = -1;
+    public int SpawnPointId = 0;
 
     public override Stats Stats { get; }
     public int TargetId = 0;

@@ -97,6 +97,7 @@ public partial class FieldManager {
             Position = spawnPosition,
             Rotation = rotation,
             Origin = owner?.Position ?? spawnPosition,
+            SpawnPointId = owner?.Value.Id ?? NextGlobalId(),
         };
 
         if (npc.Basic.Friendly > 0) {
