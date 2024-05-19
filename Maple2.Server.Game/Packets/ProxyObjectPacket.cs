@@ -33,7 +33,7 @@ public static class ProxyObjectPacket {
         pWriter.WriteUnicodeString(player.Character.Name);
         pWriter.WriteUnicodeString(player.Character.Picture);
         pWriter.WriteUnicodeString(player.Character.Motto);
-        pWriter.WriteByte(); // CProxyGameObject+3C
+        pWriter.WriteBool(fieldPlayer.IsDead);
         pWriter.Write<Vector3>(fieldPlayer.Position);
         pWriter.WriteShort(player.Character.Level);
         pWriter.Write<JobCode>(player.Character.Job.Code());
@@ -57,32 +57,32 @@ public static class ProxyObjectPacket {
         return pWriter;
     }
 
-    public static ByteWriter UpdatePlayer(FieldPlayer fieldPlayer, byte flag = 0) {
+    public static ByteWriter UpdatePlayer(FieldPlayer fieldPlayer, PlayerObjectFlag flag = PlayerObjectFlag.None) {
         var pWriter = Packet.Of(SendOp.ProxyGameObj);
         pWriter.Write<Command>(Command.UpdatePlayer);
         pWriter.WriteInt(fieldPlayer.ObjectId);
 
-        pWriter.WriteByte(flag);
-        if ((flag & 1) != 0) {
-            pWriter.WriteByte(); // CProxyGameObject+3C
+        pWriter.Write<PlayerObjectFlag>(flag);
+        if (flag.HasFlag(PlayerObjectFlag.Dead)) {
+            pWriter.WriteBool(fieldPlayer.IsDead);
         }
-        if ((flag & 2) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.Position)) {
             pWriter.Write<Vector3>(fieldPlayer.Position);
         }
-        if ((flag & 4) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.Level)) {
             pWriter.WriteShort(fieldPlayer.Value.Character.Level);
         }
-        if ((flag & 8) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.Job)) {
             pWriter.Write<JobCode>(fieldPlayer.Value.Character.Job.Code());
             pWriter.Write<Job>(fieldPlayer.Value.Character.Job);
         }
-        if ((flag & 16) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.Motto)) {
             pWriter.WriteUnicodeString(fieldPlayer.Value.Character.Motto);
         }
-        if ((flag & 32) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.GearScore)) {
             pWriter.WriteInt(fieldPlayer.Stats.GearScore);
         }
-        if ((flag & 64) != 0) {
+        if (flag.HasFlag(PlayerObjectFlag.State)) {
             pWriter.WriteShort((short) fieldPlayer.State);
         }
 
@@ -94,8 +94,8 @@ public static class ProxyObjectPacket {
         pWriter.Write<Command>(Command.AddNpc);
         pWriter.WriteInt(fieldNpc.ObjectId);
         pWriter.WriteInt(fieldNpc.Value.Id);
-        pWriter.WriteByte(); // CProxyGameObject+3C
-        pWriter.WriteInt(200); // CProxyGameObject+50, Counter
+        pWriter.WriteBool(fieldNpc.IsDead);
+        pWriter.WriteInt(fieldNpc.Owner?.Value.Id ?? 0);
         pWriter.Write<Vector3>(fieldNpc.Position);
 
         return pWriter;
@@ -113,7 +113,7 @@ public static class ProxyObjectPacket {
         var pWriter = Packet.Of(SendOp.ProxyGameObj);
         pWriter.Write<Command>(Command.UpdateNpc);
         pWriter.WriteInt(fieldNpc.ObjectId);
-        pWriter.WriteByte(); // CProxyGameObject+3C
+        pWriter.WriteBool(fieldNpc.IsDead);
         pWriter.Write<Vector3>(fieldNpc.Position);
 
         return pWriter;
@@ -125,7 +125,7 @@ public static class ProxyObjectPacket {
         pWriter.WriteInt(fieldPet.ObjectId);
         pWriter.WriteInt(fieldPet.SkinId);
         pWriter.WriteInt(fieldPet.Value.Id);
-        pWriter.WriteByte(); // CProxyGameObject+3C
+        pWriter.WriteBool(fieldPet.IsDead);
         pWriter.Write<Vector3>(fieldPet.Position);
 
         return pWriter;
@@ -143,7 +143,7 @@ public static class ProxyObjectPacket {
         var pWriter = Packet.Of(SendOp.ProxyGameObj);
         pWriter.Write<Command>(Command.UpdatePet);
         pWriter.WriteInt(fieldPet.ObjectId);
-        pWriter.WriteByte(); // CProxyGameObject+3C
+        pWriter.WriteBool(fieldPet.IsDead);
         pWriter.Write<Vector3>(fieldPet.Position);
 
         return pWriter;

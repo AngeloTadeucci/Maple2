@@ -42,7 +42,7 @@ public class FieldPlayer : Actor<Player> {
         lastRegenTime = new Dictionary<BasicAttribute, long>();
 
         scheduler = new EventQueue();
-        scheduler.ScheduleRepeated(() => Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, 66)), 2000);
+        scheduler.ScheduleRepeated(() => Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, PlayerObjectFlag.Position | PlayerObjectFlag.State)), 2000);
         scheduler.Start();
     }
 
