@@ -81,7 +81,6 @@ public sealed partial class FieldManager : IDisposable {
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
-        Console.WriteLine($"FieldManager created for MapId: {MapId} InstanceId: {InstanceId}");
     }
 
     // Init is separate from constructor to allow properties to be injected first.
