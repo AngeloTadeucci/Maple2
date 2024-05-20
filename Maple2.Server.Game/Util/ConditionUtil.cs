@@ -81,6 +81,7 @@ public static class ConditionUtil {
             case ConditionType.skill:
             case ConditionType.job:
             case ConditionType.job_change:
+            case ConditionType.item_move:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -195,6 +196,7 @@ public static class ConditionUtil {
             case ConditionType.skill:
             case ConditionType.job:
             case ConditionType.job_change:
+            case ConditionType.item_move:
                 return true;
         }
         return false;

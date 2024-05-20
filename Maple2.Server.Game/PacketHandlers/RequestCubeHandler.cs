@@ -224,6 +224,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 session.Field.Broadcast(LiftablePacket.Update(fieldLiftable));
                 break;
         }
+
+        session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId);
     }
 
     private void HandleRemoveCube(GameSession session, IByteReader packet) {
