@@ -37,6 +37,8 @@ service World {
   rpc MailNotification(maple2.MailNotificationRequest) returns (maple2.MailNotificationResponse);
   // Daily/weekly resets
   rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
+  // Black Market
+  rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
 }
 
 enum Server {
@@ -287,4 +289,47 @@ message PartyResponse {
   }
 
   int32 error = 3;
+}
+
+message BlackMarketRequest {
+  message Add {
+    int64 listing_id = 1;
+  }
+
+  message Search {
+    repeated string categories = 1;
+    int32 min_level = 2;
+    int32 max_level = 3;
+    int32 job_flag = 4;
+    int32 rarity = 5;
+    int32 min_enchant_level = 6;
+    int32 max_enchant_level = 7;
+    int32 min_socket_count = 8;
+    int32 max_socket_count = 9;
+    string name = 10;
+    int32 start_page = 11;
+    int32 sort_by = 12;
+    repeated StatOption stat_options = 13;
+  }
+
+  oneof black_market {
+    Add add = 1;
+    Search search = 2;
+  }
+}
+
+message BlackMarketResponse {
+  message Search {
+    repeated int64 listing_ids = 1;
+  }
+
+  oneof BlackMarket {
+    Search search = 1;
+  }
+  int32 error = 2;
+}
+
+message StatOption {
+  int32 stat_id = 1;
+  int32 value = 2;
 }

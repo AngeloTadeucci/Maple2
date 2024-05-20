@@ -68,6 +68,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<PartySearchLookup>()
         .SingleInstance();
+    autofac.RegisterType<BlackMarketLookup>()
+        .SingleInstance();
 });
 
 WebApplication app = builder.Build();
