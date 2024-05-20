@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Maple2.Model.Metadata;
@@ -13,6 +14,8 @@ public record SpawnPointPC(
     bool Enable
 ) : SpawnPoint(Id, Position, Rotation, Visible);
 
+public record SpawnPointNPCListEntry(int NpcId, int Count);
+
 public record SpawnPointNPC(
     int Id,
     Vector3 Position,
@@ -20,8 +23,7 @@ public record SpawnPointNPC(
     bool Visible,
     bool SpawnOnFieldCreate,
     float SpawnRadius,
-    int NpcCount,
-    int[] NpcIds,
+    IList<SpawnPointNPCListEntry> NpcList,
     int RegenCheckTime,
     string? PatrolData
 ) : SpawnPoint(Id, Position, Rotation, Visible);
@@ -33,12 +35,11 @@ public record EventSpawnPointNPC(
     bool Visible,
     bool SpawnOnFieldCreate,
     float SpawnRadius,
-    int NpcCount,
-    int[] NpcIds,
+    IList<SpawnPointNPCListEntry> NpcList,
     int RegenCheckTime,
     int LifeTime,
     string SpawnAnimation
-) : SpawnPointNPC(Id, Position, Rotation, Visible, SpawnOnFieldCreate, SpawnRadius, NpcCount, NpcIds, RegenCheckTime, String.Empty);
+) : SpawnPointNPC(Id, Position, Rotation, Visible, SpawnOnFieldCreate, SpawnRadius, NpcList, RegenCheckTime, String.Empty);
 
 public record EventSpawnPointItem(
     int Id,

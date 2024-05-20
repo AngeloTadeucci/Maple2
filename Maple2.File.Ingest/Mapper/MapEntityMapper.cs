@@ -81,8 +81,16 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             };
                             continue;
                         case ISpawnPointNPC npcSpawn:
-                            int[] npcIds = npcSpawn.NpcList.Keys.TrySelect<string, int>(int.TryParse).ToArray();
-                            if (npcSpawn.NpcCount == 0 || npcIds.Length == 0) {
+                            IList<SpawnPointNPCListEntry> npcList = npcSpawn.NpcList.Select(entry => {
+                                if (!int.TryParse(entry.Key, out int npcId)) {
+                                    return null;
+                                }
+                                if (!int.TryParse(entry.Value, out int npcCount)) {
+                                    npcCount = 1;
+                                }
+                                return new SpawnPointNPCListEntry(npcId, npcCount);
+                            }).OfType<SpawnPointNPCListEntry>().ToList();
+                            if (npcSpawn.NpcCount == 0 || npcList.Count == 0) {
                                 Console.WriteLine($"No NPCs for {xblock}:{entity.EntityId}");
                                 continue;
                             }
@@ -90,13 +98,13 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             switch (npcSpawn) {
                                 case IEventSpawnPointNPC eventNpcSpawn:
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new EventSpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, (int) npcSpawn.NpcCount, npcIds, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation)
+                                        Block = new EventSpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation)
                                     };
                                     continue;
                                 default:
                                     string? patrolData = npcSpawn.PatrolData != "00000000-0000-0000-0000-000000000000" ? npcSpawn.PatrolData.Replace("-", string.Empty) : null;
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new SpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, (int) npcSpawn.NpcCount, npcIds, (int) npcSpawn.RegenCheckTime, patrolData)
+                                        Block = new SpawnPointNPC(npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, patrolData)
                                     };
                                     continue;
                             }
