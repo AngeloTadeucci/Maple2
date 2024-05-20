@@ -1,7 +1,10 @@
-﻿using Maple2.Model.Enum;
+﻿using Maple2.Model;
+using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -11,6 +14,7 @@ public class JobHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.Job;
 
     private enum Command : byte {
+        Advance = 2,
         Unknown = 7,
         Load = 8,
         Update = 9,
@@ -21,6 +25,9 @@ public class JobHandler : PacketHandler<GameSession> {
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
         switch (command) {
+            case Command.Advance:
+                HandleAdvance(session, packet);
+                return;
             case Command.Unknown:
                 packet.ReadInt();
                 packet.ReadLong();
@@ -40,6 +47,56 @@ public class JobHandler : PacketHandler<GameSession> {
                 AutoDistribute(session, packet);
                 return;
         }
+    }
+
+    private void HandleAdvance(GameSession session, IByteReader packet) {
+        int npcId = packet.ReadInt();
+
+        if (!session.Field.Npcs.TryGetValue(npcId, out FieldNpc? npc)) {
+            return;
+        }
+
+        if (session.NpcScript?.Npc.Value.Id != npc.Value.Id ||
+            session.NpcScript.JobCondition == null) {
+            return;
+        }
+
+        // TODO: Does awakening use this same packet? Handle if so.
+
+        Job job = session.NpcScript.JobCondition.ChangeToJobCode switch {
+            JobCode.Newbie => Job.Newbie,
+            JobCode.Knight => Job.Knight,
+            JobCode.Berserker => Job.Berserker,
+            JobCode.Wizard => Job.Wizard,
+            JobCode.Priest => Job.Priest,
+            JobCode.Archer => Job.Archer,
+            JobCode.HeavyGunner => Job.HeavyGunner,
+            JobCode.Thief => Job.Thief,
+            JobCode.Assassin => Job.Assassin,
+            JobCode.RuneBlader => Job.RuneBlader,
+            JobCode.Striker => Job.Striker,
+            JobCode.SoulBinder => Job.SoulBinder,
+            _ => throw new ArgumentException($"Invalid JobCode: {session.NpcScript.JobCondition.ChangeToJobCode}"),
+        };
+
+        Job currentJob = session.Player.Value.Character.Job;
+        if (currentJob.Code() != job.Code()) {
+            foreach (SkillTab skillTab in session.Config.Skill.SkillBook.SkillTabs) {
+                skillTab.Skills.Clear();
+            }
+            session.ConditionUpdate(ConditionType.job_change, codeLong: (int) session.NpcScript.JobCondition.ChangeToJobCode);
+        }
+
+        session.Player.Value.Character.Job = job;
+        session.Config.Skill.SkillInfo.SetJob(job);
+
+        session.Player.Buffs.Buffs.Clear();
+        session.Player.Buffs.Initialize();
+        session.Player.Buffs.LoadFieldBuffs();
+        session.Stats.Refresh();
+        session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
+        session.ConditionUpdate(ConditionType.job, codeLong: (int) session.NpcScript.JobCondition.ChangeToJobCode);
+        session.Player.Flag |= PlayerObjectFlag.Job;
     }
 
     private void HandleLoad(GameSession session) {

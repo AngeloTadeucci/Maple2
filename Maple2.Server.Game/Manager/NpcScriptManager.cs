@@ -16,6 +16,8 @@ public sealed class NpcScriptManager {
 
     public readonly FieldNpc Npc;
     private readonly ScriptMetadata? metadata;
+    private readonly Dictionary<int, ScriptConditionMetadata>? scriptConditions;
+    public JobConditionMetadata? JobCondition;
     public SortedDictionary<int, QuestMetadata> Quests = new();
 
     public NpcTalkType TalkType;
@@ -30,6 +32,9 @@ public sealed class NpcScriptManager {
         this.session = session;
         Npc = npc;
         this.metadata = metadata;
+        if (session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditionMetadata)) {
+            scriptConditions = scriptConditionMetadata;
+        }
         if (this.metadata?.Type == ScriptType.Quest) {
             TalkType = NpcTalkType.Quest;
             State = GetQuestScriptState(this.metadata);
@@ -172,7 +177,8 @@ public sealed class NpcScriptManager {
             if (!session.ServerTableMetadata.JobConditionTable.Entries.TryGetValue(Npc.Value.Id, out JobConditionMetadata? jobCondition)) {
                 return jobScriptState;
             }
-            if (MeetsJobCondition(jobCondition)) {
+            this.JobCondition = jobCondition;
+            if (MeetsJobCondition()) {
                 return jobScriptState;
             }
         }
@@ -181,7 +187,7 @@ public sealed class NpcScriptManager {
         IList<ScriptState> scriptStates = new List<ScriptState>();
         // Check if player meets the requirements for each pick script.
         foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Pick)) {
-            if (!session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions)) {
+            if (scriptConditions == null) {
                 scriptStates.Add(scriptState);
                 continue;
             }
@@ -261,8 +267,7 @@ public sealed class NpcScriptManager {
                     continue;
                 }
 
-                if (!session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions) ||
-                    !scriptConditions.TryGetValue(goToScript.Id, out ScriptConditionMetadata? scriptConditionMetadata)) {
+                if (scriptConditions == null || !scriptConditions.TryGetValue(goToScript.Id, out ScriptConditionMetadata? scriptConditionMetadata)) {
                     goToScripts.Add(goToScript);
                     continue;
                 }
@@ -282,8 +287,7 @@ public sealed class NpcScriptManager {
                     continue;
                 }
 
-                if (!session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions) ||
-                    !scriptConditions.TryGetValue(goToFailScript.Id, out ScriptConditionMetadata? scriptConditionMetadata)) {
+                if (scriptConditions == null || !scriptConditions.TryGetValue(goToFailScript.Id, out ScriptConditionMetadata? scriptConditionMetadata)) {
                     goToFailScripts.Add(goToFailScript);
                     continue;
                 }
@@ -305,79 +309,76 @@ public sealed class NpcScriptManager {
         return State;
     }
 
-    private bool MeetsJobCondition(JobConditionMetadata jobCondition) {
-        if (jobCondition.StartedQuestId > 0 &&
-            (!session.Quest.TryGetQuest(jobCondition.StartedQuestId, out Quest? startedQuest) || startedQuest.State != QuestState.Started)) {
+    private bool MeetsJobCondition() {
+        if (JobCondition == null) {
+            return false;
+        }
+        if (JobCondition.StartedQuestId > 0 &&
+            (!session.Quest.TryGetQuest(JobCondition.StartedQuestId, out Quest? startedQuest) || startedQuest.State != QuestState.Started)) {
             return false;
         }
 
-        if (jobCondition.CompletedQuestId > 0 &&
-            (!session.Quest.TryGetQuest(jobCondition.CompletedQuestId, out Quest? completedQuest) || completedQuest.State != QuestState.Completed)) {
+        if (JobCondition.CompletedQuestId > 0 &&
+            (!session.Quest.TryGetQuest(JobCondition.CompletedQuestId, out Quest? completedQuest) || completedQuest.State != QuestState.Completed)) {
             return false;
         }
 
-        if (jobCondition.JobCode != JobCode.None && session.Player.Value.Character.Job.Code() != jobCondition.JobCode) {
+        if (JobCondition.JobCode != JobCode.None && session.Player.Value.Character.Job.Code() != JobCondition.JobCode) {
             return false;
         }
 
         // TODO: Maid checks
 
-        if (jobCondition.BuffId > 0 && !session.Player.Buffs.Buffs.ContainsKey(jobCondition.BuffId)) {
+        if (JobCondition.BuffId > 0 && !session.Player.Buffs.Buffs.ContainsKey(JobCondition.BuffId)) {
             return false;
         }
 
-        if (jobCondition.Mesos > 0 && session.Currency.Meso < jobCondition.Mesos) {
+        if (JobCondition.Mesos > 0 && session.Currency.Meso < JobCondition.Mesos) {
             return false;
         }
 
-        if (jobCondition.Level > 0 && session.Player.Value.Character.Level < jobCondition.Level) {
+        if (JobCondition.Level > 0 && session.Player.Value.Character.Level < JobCondition.Level) {
             return false;
         }
 
         // TODO: Check if player is in home
 
-        if (jobCondition.Guild && session.Player.Value.Character.GuildId == 0) {
+        if (JobCondition.Guild && session.Player.Value.Character.GuildId == 0) {
             return false;
         }
 
-        if (jobCondition.CompletedAchievement > 0 && !session.Achievement.HasAchievement(jobCondition.CompletedAchievement)) {
+        if (JobCondition.CompletedAchievement > 0 && !session.Achievement.HasAchievement(JobCondition.CompletedAchievement)) {
             return false;
         }
 
         // TODO: Check if it's the player's birthday
 
-        // TODO: Change to Jobcode?
-
-        if (jobCondition.MapId > 0 && session.Field?.MapId != jobCondition.MapId) {
+        if (JobCondition.MapId > 0 && session.Field?.MapId != JobCondition.MapId) {
             return false;
         }
 
         return true;
     }
 
-    public void PerformJobScript() {
+    private void PerformJobScript() {
         if (State?.Type != ScriptStateType.Job) {
             return;
         }
 
-        if (!session.ServerTableMetadata.JobConditionTable.Entries.TryGetValue(Npc.Value.Id, out JobConditionMetadata? jobCondition)) {
+        if (JobCondition == null) {
             return;
         }
 
-        if (jobCondition.Mesos > 0) {
-            if (session.Currency.CanAddMeso(-jobCondition.Mesos) != -jobCondition.Mesos) {
+        if (JobCondition.Mesos > 0) {
+            if (session.Currency.CanAddMeso(-JobCondition.Mesos) != -JobCondition.Mesos) {
                 session.Send(ChatPacket.Alert(StringCode.s_err_lack_meso));
                 return;
             }
-            session.Currency.Meso -= jobCondition.Mesos;
+            session.Currency.Meso -= JobCondition.Mesos;
         }
 
-        if (jobCondition.ChangeToJobCode != JobCode.None) {
-            // TODO: Change job
-        }
-
-        if (jobCondition.MoveMapId > 0) {
-            session.Send(session.PrepareField(jobCondition.MoveMapId, portalId: jobCondition.MovePortalId > 0 ? jobCondition.MovePortalId : -1)
+        if (JobCondition.MoveMapId > 0) {
+            session.Send(session.PrepareField(JobCondition.MoveMapId, portalId: JobCondition.MovePortalId > 0 ? JobCondition.MovePortalId : -1)
                 ? FieldEnterPacket.Request(session.Player)
                 : FieldEnterPacket.Error(MigrationError.s_move_err_default));
         }
@@ -426,10 +427,6 @@ public sealed class NpcScriptManager {
             if (scriptCondition.Buff.Value && !session.Player.Buffs.Buffs.ContainsKey(scriptCondition.Buff.Key)) {
                 return false;
             }
-
-            if (!scriptCondition.Buff.Value && session.Player.Buffs.Buffs.ContainsKey(scriptCondition.Buff.Key)) {
-                return false;
-            }
         }
 
         if (scriptCondition.Meso.Key > 0) {
@@ -475,7 +472,7 @@ public sealed class NpcScriptManager {
         }
         IList<ScriptState> scriptStates = new List<ScriptState>();
         foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Type == ScriptStateType.Select)) {
-            if (!session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions)) {
+            if (scriptConditions == null) {
                 scriptStates.Add(scriptState);
                 continue;
             }
