@@ -13,7 +13,7 @@ public static class JobPacket {
     private enum Command : byte {
         Notify = 0,
         Basic = 1,
-        Awakening = 2,
+        Advance = 2,
         Error = 3,
         Unknown = 7,
         Load = 8,
@@ -41,10 +41,10 @@ public static class JobPacket {
         return pWriter;
     }
 
-    public static ByteWriter Awakening(IActor<Player> player, SkillInfo skillInfo) {
+    public static ByteWriter Advance(IActor<Player> player, SkillInfo skillInfo) {
         var pWriter = Packet.Of(SendOp.Job);
         pWriter.Write(player.ObjectId);
-        pWriter.Write<Command>(Command.Awakening);
+        pWriter.Write<Command>(Command.Advance);
         pWriter.WriteClass<SkillInfo>(skillInfo);
 
         return pWriter;

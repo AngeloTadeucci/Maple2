@@ -170,7 +170,7 @@ public class PlayerCommand : Command {
                 session.Player.Buffs.Initialize();
                 session.Player.Buffs.LoadFieldBuffs();
                 session.Stats.Refresh();
-                session.Field?.Broadcast(JobPacket.Awakening(session.Player, session.Config.Skill.SkillInfo));
+                session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
                 ctx.Console.Error.WriteLine(ex.Message);
