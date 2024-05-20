@@ -42,22 +42,14 @@
       <None Update="appsettings.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Scripting\Scripts\Npc\**">
-        <TargetPath>Scripts\Npc\%(Filename)%(Extension)</TargetPath>
+      <None Update="Scripting\Scripts\Trigger\**\*.py">
+        <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').TrimEnd('\'))))\</ParentDir>
+        <TargetPath>Scripts\Trigger\%(ParentDir)\%(Filename)%(Extension)</TargetPath>
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Scripting\Scripts\Quest\**">
-        <TargetPath>Scripts\Quest\%(Filename)%(Extension)</TargetPath>
+      <None Update="Scripting\Scripts\Trigger\trigger_api.py">
+        <TargetPath>Scripts\Trigger\trigger_api.py</TargetPath>
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-        <None Update="Scripting\Scripts\Trigger\**\*.py">
-          <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').TrimEnd('\'))))\</ParentDir>
-          <TargetPath>Scripts\Trigger\%(ParentDir)\%(Filename)%(Extension)</TargetPath>
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="Scripting\Scripts\Trigger\trigger_api.py">
-          <TargetPath>Scripts\Trigger\trigger_api.py</TargetPath>
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 </Project>

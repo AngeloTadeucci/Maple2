@@ -46,7 +46,7 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         nextTick += Constant.NextStateTriggerDefaultTick;
 
         if (nextState != null) {
-            Context.DebugLog("[OnExit] {State}", state?.Name ?? "null");
+            Context.DebugLog("[OnExit] {State}", state?.Name?.Value ?? "null");
             state?.OnExit();
             state = nextState;
             Context.StartTick = Environment.TickCount64;

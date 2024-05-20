@@ -48,7 +48,7 @@ public class TriggerCommand : Command {
                 string triggerName = trigger.Value.Name;
                 string result = "";
 
-                foreach (string var in trigger.Context.Scope.GetVariableNames()) {
+                foreach (string var in trigger.Context.Scope.GetVariableNames().Where(v => !v.StartsWith("__") && v != "trigger_api" && v != "initial_state")) {
                     ctx.Console.Out.WriteLine(var);
                 }
 
