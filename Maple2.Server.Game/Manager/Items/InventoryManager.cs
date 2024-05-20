@@ -233,14 +233,15 @@ public class InventoryManager {
                 }
             }
 
-            IList<(Item, int Added)> result = items.Add(add, true);
+            if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
+                add.Transfer?.Bind(session.Player.Value.Character);
+            }
+
+            bool stack = !(add.ExpiryTime > 0);
+            IList<(Item, int Added)> result = items.Add(add, stack);
             if (result.Count == 0) {
                 session.Send(ItemInventoryPacket.Error(s_err_inventory));
                 return false;
-            }
-
-            if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
-                add.Transfer?.Bind(session.Player.Value.Character);
             }
 
             if (add.Amount == 0) {
