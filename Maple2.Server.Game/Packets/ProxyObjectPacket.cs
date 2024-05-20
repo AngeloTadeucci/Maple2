@@ -95,7 +95,7 @@ public static class ProxyObjectPacket {
         pWriter.WriteInt(fieldNpc.ObjectId);
         pWriter.WriteInt(fieldNpc.Value.Id);
         pWriter.WriteBool(fieldNpc.IsDead);
-        pWriter.WriteInt(fieldNpc.Owner?.Value.Id ?? 0);
+        pWriter.WriteInt(fieldNpc.SpawnPointId);
         pWriter.Write<Vector3>(fieldNpc.Position);
 
         return pWriter;

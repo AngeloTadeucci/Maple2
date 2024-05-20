@@ -432,8 +432,15 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void OnStateSync(StateSync stateSync) {
+        if (Player.Position != stateSync.Position) {
+            Player.Flag |= PlayerObjectFlag.Position;
+        }
         Player.Position = stateSync.Position;
         Player.Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
+
+        if (Player.State != stateSync.State) {
+            Player.Flag |= PlayerObjectFlag.State;
+        }
         Player.State = stateSync.State;
         Player.SubState = stateSync.SubState;
 

@@ -18,6 +18,8 @@ public class FieldPlayer : Actor<Player> {
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
     public ActorState State { get; set; }
     public ActorSubState SubState { get; set; }
+    public PlayerObjectFlag Flag { get; set; }
+    private long flagTick;
 
     private long battleTick;
     private bool inBattle;
@@ -42,7 +44,6 @@ public class FieldPlayer : Actor<Player> {
         lastRegenTime = new Dictionary<BasicAttribute, long>();
 
         scheduler = new EventQueue();
-        scheduler.ScheduleRepeated(() => Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, PlayerObjectFlag.Position | PlayerObjectFlag.State)), 2000);
         scheduler.Start();
     }
 
@@ -90,6 +91,12 @@ public class FieldPlayer : Actor<Player> {
             InBattle = false;
         }
 
+        if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
+            Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
+            Flag = PlayerObjectFlag.None;
+            flagTick = (long) (tickCount + TimeSpan.FromSeconds(2).TotalMilliseconds);
+        }
+
         // Loops through each registered regen stat and applies regen
         foreach (var attribute in regenStats.Keys) {
             var stat = Stats[attribute];
@@ -115,7 +122,7 @@ public class FieldPlayer : Actor<Player> {
     }
 
     protected override void OnDeath() {
-        throw new NotImplementedException();
+        Flag |= PlayerObjectFlag.Dead; // TODO: Need to also send this flag upon revival
     }
 
     public override void KeyframeEvent(long tickCount, long keyTick, string keyName) {
