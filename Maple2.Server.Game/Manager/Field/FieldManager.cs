@@ -292,6 +292,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public ICollection<FieldInteract> EnumerateInteract() => fieldInteracts.Values;
+    public ICollection<FieldLiftable> EnumerateLiftables() => fieldLiftables.Values;
     public bool TryGetInteract(string entityId, [NotNullWhen(true)] out FieldInteract? fieldInteract) {
         return fieldInteracts.TryGetValue(entityId, out fieldInteract) || fieldAdBalloons.TryGetValue(entityId, out fieldInteract);
     }

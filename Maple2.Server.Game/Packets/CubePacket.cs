@@ -161,13 +161,13 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter PlaceLiftable(int objectId, LiftableCube liftable, in Vector3 position, float rotation) {
+    public static ByteWriter PlaceLiftable(int objectId, LiftableCube liftable, in Vector3 position, float rotation, bool isBound = false) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.PlaceCube);
         pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
         pWriter.WriteInt(objectId); // Owner
         pWriter.WriteInt(objectId); // Player
-        pWriter.WriteInt();
+        pWriter.WriteInt(); // plot #
         pWriter.WriteInt();
         pWriter.Write<Vector3B>(position);
         pWriter.WriteLong(liftable.Id);
@@ -175,7 +175,11 @@ public static class CubePacket {
         pWriter.WriteBool(true); // Unknown
         pWriter.WriteFloat(rotation);
         pWriter.WriteInt(); // Unknown
-        pWriter.WriteBool(false);
+        pWriter.WriteBool(isBound);
+        if (isBound) {
+            pWriter.WriteString();
+            pWriter.WriteByte();
+        }
 
         return pWriter;
     }

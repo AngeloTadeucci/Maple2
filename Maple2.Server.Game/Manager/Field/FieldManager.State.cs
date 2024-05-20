@@ -224,7 +224,9 @@ public partial class FieldManager {
             Rotation = liftable.Rotation,
         };
 
-        fieldLiftables[entityId] = fieldLiftable;
+        if (!fieldLiftables.TryAdd(entityId, fieldLiftable)) {
+            return null;
+        }
         return fieldLiftable;
     }
 
