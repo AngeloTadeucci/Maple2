@@ -12,7 +12,6 @@ using Maple2.Model.Game;
 namespace Maple2.Server.World.Containers;
 
 public class BlackMarketLookup : IDisposable {
-    public const int BATCH_SIZE = 70;
     private readonly GameStorage gameStorage;
 
     private readonly ConcurrentDictionary<long, BlackMarketListing> listings;
@@ -51,12 +50,6 @@ public class BlackMarketLookup : IDisposable {
                 continue;
             }
 
-            bool check1 = listing.Item.Metadata.Limit.JobRecommends.Length > 0;
-            bool check2 = !listing.Item.Metadata.Limit.JobRecommends.Contains(JobCode.None);
-            bool check3 = (jobFilterFlag & listing.Item.Metadata.Limit.JobRecommends.FilterFlags()) != JobFilterFlag.None;
-            var itemFlag = listing.Item.Metadata.Limit.JobRecommends.FilterFlags();
-
-
             if (listing.Item.Metadata.Limit.JobRecommends.Length != 0 &&
                 !listing.Item.Metadata.Limit.JobRecommends.Contains(JobCode.None) &&
                 (jobFilterFlag & listing.Item.Metadata.Limit.JobRecommends.FilterFlags()) == JobFilterFlag.None) {
@@ -83,8 +76,8 @@ public class BlackMarketLookup : IDisposable {
                 continue;
             }
 
-            if (listing.Item.Stats != null) {
-
+            if (listing.Item.Stats != null && !ItemStatCheck(listing.Item.Stats, basicOptions, specialOptions)) {
+                continue;
             }
 
             results.Add(listing);
@@ -108,6 +101,42 @@ public class BlackMarketLookup : IDisposable {
             .Take(numPages * itemsPerPage + Math.Min(0, offset))
             .Select(listing => listing.Id)
             .ToList();
+    }
+
+    private bool ItemStatCheck(ItemStats stats, Dictionary<BasicAttribute, BasicOption> basicOptions, Dictionary<SpecialAttribute, SpecialOption> specialOptions) {
+        foreach (KeyValuePair<BasicAttribute, BasicOption> basicOption in basicOptions) {
+            float rate = 0f;
+            int value = 0;
+
+            foreach (ItemStats.Type type in Enum.GetValues(typeof(ItemStats.Type))) {
+                if (stats[type].Basic.TryGetValue(basicOption.Key, out BasicOption option)) {
+                    rate += option.Rate;
+                    value += option.Value;
+                }
+            }
+
+            if (rate < basicOption.Value.Rate || value < basicOption.Value.Value) {
+                return false;
+            }
+        }
+
+        foreach (KeyValuePair<SpecialAttribute, SpecialOption> specialOption in specialOptions) {
+            float rate = 0f;
+            float value = 0;
+
+            foreach (ItemStats.Type type in Enum.GetValues(typeof(ItemStats.Type))) {
+                if (stats[type].Special.TryGetValue(specialOption.Key, out SpecialOption option)) {
+                    rate += option.Rate;
+                    value += option.Value;
+                }
+            }
+
+            if (rate < specialOption.Value.Rate || value < specialOption.Value.Value) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public BlackMarketError Add(long listingId) {
