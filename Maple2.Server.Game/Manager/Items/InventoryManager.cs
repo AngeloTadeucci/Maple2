@@ -201,7 +201,6 @@ public class InventoryManager {
                         session.Currency[CurrencyType.StarPoint] += add.Amount;
                         break;
                     // case 90000026: // Unknown (Blank)
-
                 }
                 session.Item.Inventory.Discard(add);
                 return true;
