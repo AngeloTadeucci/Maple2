@@ -18,7 +18,6 @@ public class FieldLiftable : FieldEntity<Liftable> {
     public FieldLiftable(FieldManager field, int objectId, string entityId, Liftable value) : base(field, objectId, value) {
         EntityId = entityId;
         Count = Value.ItemStackCount;
-        FinishTick = Value.ItemLifetime > 0 ? Environment.TickCount64 + Value.ItemLifetime : 0;
     }
 
     public LiftableCube? Pickup() {
