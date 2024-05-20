@@ -102,12 +102,8 @@ public sealed class BlackMarketManager {
             return;
         }
         var type = new ItemType(metadata.Id);
-        long sellPrice =  Core.Formulas.Shop.SellPrice(metadata, type, rarity);
+        long sellPrice = Core.Formulas.Shop.SellPrice(metadata, type, rarity);
 
         session.Send(BlackMarketPacket.Preview(itemId, rarity, sellPrice));
-    }
-
-    public void Search() {
-
     }
 }
