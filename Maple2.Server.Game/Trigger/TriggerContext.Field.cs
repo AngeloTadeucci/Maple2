@@ -464,9 +464,9 @@ public partial class TriggerContext {
         // Gets the list of valid fieldliftables, only check ones that are placed
         var liftables = Field.EnumerateLiftables().Where(x => x.Value.ItemId == itemId && (x.State == LiftableState.Default || x.State == LiftableState.Disabled));
         foreach (FieldLiftable liftable in liftables) {
-           if (boxes.Any(box => box.Contains(liftable.Position))) {
-               return true;
-           }
+            if (boxes.Any(box => box.Contains(liftable.Position))) {
+                return true;
+            }
         }
 
         return false;
