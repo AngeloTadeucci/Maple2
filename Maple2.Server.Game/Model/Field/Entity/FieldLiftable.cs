@@ -35,7 +35,7 @@ public class FieldLiftable : FieldEntity<Liftable> {
         if (Count > 0) {
             Field.Broadcast(LiftablePacket.Update(this));
         } else {
-            State = LiftableState.Respawning;
+            State = Value.RegenCheckTime > 0 ? LiftableState.Respawning : LiftableState.Removed;
             Field.Broadcast(LiftablePacket.Remove(EntityId));
             Field.Broadcast(CubePacket.RemoveCube(ObjectId, Position));
         }
