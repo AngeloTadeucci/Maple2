@@ -200,7 +200,7 @@ public class InventoryManager {
                     case 90000025: // StarPoint
                         session.Currency[CurrencyType.StarPoint] += add.Amount;
                         break;
-                        // case 90000026: // Unknown (Blank)
+                    // case 90000026: // Unknown (Blank)
 
                 }
                 session.Item.Inventory.Discard(add);
@@ -233,14 +233,15 @@ public class InventoryManager {
                 }
             }
 
-            IList<(Item, int Added)> result = items.Add(add, true);
+            if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
+                add.Transfer?.Bind(session.Player.Value.Character);
+            }
+
+            bool stack = !(add.ExpiryTime > 0);
+            IList<(Item, int Added)> result = items.Add(add, stack);
             if (result.Count == 0) {
                 session.Send(ItemInventoryPacket.Error(s_err_inventory));
                 return false;
-            }
-
-            if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
-                add.Transfer?.Bind(session.Player.Value.Character);
             }
 
             if (add.Amount == 0) {
