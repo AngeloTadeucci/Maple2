@@ -1,7 +1,7 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
-using Maple2.Trigger.Enum;
+using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -148,10 +148,10 @@ public static class CinematicPacket {
         return pWriter;
     }
 
-    public static ByteWriter Caption(CaptionType type, string title, string script, Align align, float offsetRateX, float offsetRateY, int duration, float scale) {
+    public static ByteWriter Caption(string type, string title, string script, Align align, float offsetRateX, float offsetRateY, int duration, float scale) {
         var pWriter = Packet.Of(SendOp.Cinematic);
         pWriter.Write<Command>(Command.Caption);
-        pWriter.WriteUnicodeString($"{type}Caption");
+        pWriter.WriteUnicodeString(type);
         pWriter.WriteUnicodeString(title);
         pWriter.WriteUnicodeString(script);
         pWriter.WriteUnicodeString(align.ToString().Replace(", ", ""));

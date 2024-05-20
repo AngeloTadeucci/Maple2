@@ -22,13 +22,12 @@
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="Grpc.AspNetCore.Server" Version="2.51.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.51.0" />
-        <PackageReference Include="IronPython" Version="3.4.0" />
-        <PackageReference Include="IronPython.StdLib" Version="3.4.0">
+        <PackageReference Include="IronPython" Version="3.4.1" />
+        <PackageReference Include="IronPython.StdLib" Version="3.4.1">
 <!--            <ExcludeAssets>contentFiles</ExcludeAssets>-->
         </PackageReference>
         <PackageReference Include="Maple2.Lua" Version="2.0.0" />
         <PackageReference Include="Maple2.PathEngine" Version="5.36.5" />
-        <PackageReference Include="Maple2.Trigger.Tadeucci" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
         <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
         <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
@@ -51,9 +50,14 @@
         <TargetPath>Scripts\Quest\%(Filename)%(Extension)</TargetPath>
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Scripting\Scripts\Trigger\**">
-        <TargetPath>Scripts\Trigger\%(Filename)%(Extension)</TargetPath>
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <None Update="Scripting\Scripts\Trigger\**\*.py">
+          <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').TrimEnd('\'))))\</ParentDir>
+          <TargetPath>Scripts\Trigger\%(ParentDir)\%(Filename)%(Extension)</TargetPath>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scripting\Scripts\Trigger\trigger_api.py">
+          <TargetPath>Scripts\Trigger\trigger_api.py</TargetPath>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

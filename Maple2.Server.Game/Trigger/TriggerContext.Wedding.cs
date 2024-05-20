@@ -1,37 +1,36 @@
 ﻿using System.Numerics;
-using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void WeddingBroken() { }
 
-    public void WeddingMoveUser(WeddingEntryType type, int mapId, int[] portalIds, int boxId) { }
+    public void WeddingMoveUser(string type, int mapId, int[] portalIds, int boxId) { }
 
-    public void WeddingMutualAgree(WeddingAgreeType type) { }
+    public void WeddingMutualAgree(string type) { }
 
-    public void WeddingMutualCancel(WeddingAgreeType type) { }
+    public void WeddingMutualCancel(string type) { }
 
-    public void WeddingSetUserEmotion(WeddingEntryType type, byte id) { }
+    public void WeddingSetUserEmotion(string type, int id) { }
 
-    public void WeddingSetUserLookAt(WeddingEntryType type, WeddingEntryType lookAtType, bool immediate) { }
+    public void WeddingSetUserLookAt(string type, string lookAtType, bool immediate) { }
 
-    public void WeddingSetUserRotation(WeddingEntryType type, Vector3 rotation, bool immediate) { }
+    public void WeddingSetUserRotation(string type, Vector3 rotation, bool immediate) { }
 
-    public void WeddingUserToPatrol(string patrolName, WeddingEntryType type, byte patrolIndex) { }
+    public void WeddingUserToPatrol(string patrolName, string type, int patrolIndex) { }
 
     public void WeddingVowComplete() { }
 
     #region Conditions
-    public bool WeddingEntryInField(WeddingEntryType type) {
+    public bool WeddingEntryInField(string entryType, bool isInField) {
         return false;
     }
 
-    public bool WeddingHallState(string hallState) {
-        return false;
+    public string WeddingHallState(bool success) {
+        return string.Empty;
     }
 
-    public bool? WeddingMutualAgreeResult(WeddingAgreeType type) {
+    public bool WeddingMutualAgreeResult(string type) {
         return false;
     }
     #endregion

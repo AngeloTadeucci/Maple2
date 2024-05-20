@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
-using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.Manager.Field;
 
@@ -13,7 +12,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<string, FieldTrigger> fieldTriggers = new();
     public readonly Dictionary<string, TickTimer> Timers = new();
     public readonly Dictionary<string, int> UserValues = new();
-    public readonly Dictionary<WidgetType, Widget> Widgets = new();
+    public readonly Dictionary<string, Widget> Widgets = new();
 
     public FieldTrigger? AddTrigger(TriggerModel trigger) {
         try {
@@ -26,6 +25,7 @@ public partial class FieldManager {
             return fieldTrigger;
         } catch (ArgumentException ex) {
             logger.Warning("Invalid Trigger: {Exception}", ex.Message);
+            logger.Warning(ex.StackTrace);
             return null;
         }
     }

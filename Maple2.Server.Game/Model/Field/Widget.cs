@@ -1,14 +1,13 @@
 ﻿using System.Collections.Concurrent;
-using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.Model;
 
 public class Widget {
-    public readonly WidgetType Type;
-    public readonly ConcurrentDictionary<string, string> Conditions;
+    public readonly string Type;
+    public readonly ConcurrentDictionary<string, int> Conditions;
 
-    public Widget(WidgetType type) {
+    public Widget(string type) {
         Type = type;
-        Conditions = new ConcurrentDictionary<string, string>();
+        Conditions = new ConcurrentDictionary<string, int>();
     }
 }

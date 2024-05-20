@@ -1,34 +1,56 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Tools.Scheduler;
-using Maple2.Trigger;
+using Microsoft.Scripting.Hosting;
 using Serilog;
 using Serilog.Core;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext : ITriggerContext {
+    private readonly ScriptEngine engine;
     private readonly FieldTrigger owner;
     private readonly ILogger logger = Log.Logger.ForContext<TriggerContext>();
 
+    public readonly ScriptScope Scope;
     private FieldManager Field => owner.Field;
     private TriggerCollection Objects => owner.Field.TriggerObjects;
 
     private float currentRandom = float.MaxValue;
 
-    public TriggerState? Skip { get; internal set; }
+    // Skip state class reference, must instantiate before using.
+    private dynamic? skipState;
     public readonly EventQueue Events;
     public long StartTick;
 
-    public TriggerContext(FieldTrigger owner) {
+    public TriggerContext(ScriptEngine engine, FieldTrigger owner) {
+        this.engine = engine;
         this.owner = owner;
 
+        Scope = engine.CreateScope();
         Events = new EventQueue();
         Events.Start();
         StartTick = Environment.TickCount64;
+    }
+
+    public bool TryGetSkip([NotNullWhen(true)] out TriggerState? state) {
+        if (skipState == null) {
+            state = null;
+            return false;
+        }
+
+        state = engine.Operations.CreateInstance(skipState, this);
+        if (state == null) {
+            return false;
+        }
+
+        state = new TriggerState(state);
+        return true;
     }
 
     private void Broadcast(ByteWriter packet) => Field.Broadcast(packet);
@@ -64,47 +86,55 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     // Accessors
-    public int GetShadowExpeditionPoints() {
+    public int ShadowExpeditionPoints() {
         ErrorLog("[GetShadowExpeditionPoints]");
         return 0;
     }
 
-    public bool GetDungeonVariable(int id) {
+    public int DungeonVariable(int id) {
         ErrorLog("[GetDungeonVariable] id:{Id}", id);
-        return false;
+        return 0;
     }
 
-    public float GetNpcDamageRate(int spawnPointId) {
+    public float NpcDamage(int spawnPointId) {
         ErrorLog("[GetNpcDamageRate] spawnPointId:{Id}", spawnPointId);
         return 1.0f;
     }
 
-    public float GetNpcHpRate(int spawnPointId) {
+    public int NpcHp(int spawnPointId, bool isRelative) {
         ErrorLog("[GetNpcHpRate] spawnPointId:{Id}", spawnPointId);
-        return 1.0f;
+        return 100;
     }
 
-    public int GetDungeonId() {
+    public int DungeonId() {
         ErrorLog("[GetDungeonId]");
         return 0;
     }
 
-    public int GetDungeonLevel() {
+    public int DungeonLevel() {
         ErrorLog("[GetDungeonLevel]");
         return 3;
     }
 
-    public int GetDungeonMaxUserCount() {
+    public int DungeonMaxUserCount() {
         ErrorLog("[GetDungeonMaxUserCount]");
         return 1;
     }
 
-    public int GetDungeonRoundsRequired() {
+    public int DungeonRound() {
         ErrorLog("[GetDungeonRoundsRequired]");
         return int.MaxValue;
     }
 
-    public int GetUserCount(int boxId, int userTagId) {
+    public bool CheckUser() {
+        return !Field.Players.IsEmpty;
+    }
+
+    public int UserCount() {
+        return Field.Players.Count;
+    }
+
+    public int CountUsers(int boxId, int userTagId) {
         DebugLog("[GetUserCount] boxId:{BoxId}, userTagId:{TagId}", boxId, userTagId);
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
             return 0;
@@ -117,33 +147,33 @@ public partial class TriggerContext : ITriggerContext {
         return Field.Players.Values.Count(player => box.Contains(player.Position));
     }
 
-    public int GetNpcExtraData(int spawnId, string extraDataKey) {
+    public int NpcExtraData(int spawnId, string extraDataKey) {
         ErrorLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
         return 0;
     }
 
-    public int GetDungeonPlayTime() {
+    public int DungeonPlayTime() {
         ErrorLog("[GetDungeonPlayTime]");
         return 0;
     }
 
     // Scripts seem to just check if this is "Fail"
-    public string GetDungeonState() {
+    public string DungeonState() {
         ErrorLog("[GetDungeonState]");
         return "";
     }
 
-    public int GetDungeonFirstUserMissionScore() {
+    public int DungeonFirstUserMissionScore() {
         ErrorLog("[GetDungeonFirstUserMissionScore]");
         return 0;
     }
 
-    public int GetScoreBoardScore() {
+    public int ScoreBoardScore() {
         ErrorLog("[GetScoreBoardScore]");
         return 0;
     }
 
-    public int GetUserValue(string key) {
+    public int UserValue(string key) {
         WarnLog("[GetUserValue] key:{Key}", key);
         return Field.UserValues.GetValueOrDefault(key, 0);
     }
@@ -152,14 +182,13 @@ public partial class TriggerContext : ITriggerContext {
         logger.Debug("{Value} [{Feature}]", value, feature);
     }
 
-    public void WriteLog(string logName, string @event, int triggerId, int arg4, string arg5) {
-        logger.Information("{Log}: {Event}, {TriggerId}, {Arg4}, {Arg5}", logName, @event, triggerId, arg4, arg5);
+    public void WriteLog(string logName, string @event, int triggerId, string subEvent, int level) {
+        logger.Information("{Log}: {Event}, {TriggerId}, {SubEvent}, {Level}", logName, @event, triggerId, subEvent, level);
     }
 
     #region Conditions
-    public bool DayOfWeek(byte[] dayOfWeeks, string description) {
-        byte day = (byte) (DateTime.UtcNow.DayOfWeek + 1);
-        return dayOfWeeks.Any(dayOfWeek => day == dayOfWeek);
+    public int DayOfWeek(string description) {
+        return (int) DateTime.UtcNow.DayOfWeek + 1;
     }
 
     public bool RandomCondition(float rate, string description) {
