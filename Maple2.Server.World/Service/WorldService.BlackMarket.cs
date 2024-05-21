@@ -22,34 +22,33 @@ public partial class WorldService {
     }
 
     private BlackMarketResponse Search(BlackMarketRequest.Types.Search search) {
-         IList<StatOption>? sd = search.StatOptions;
+        Dictionary<BasicAttribute, BasicOption> basicOptions = new();
+        Dictionary<SpecialAttribute, SpecialOption> specialOptions = new();
+        if (search.StatOptions != null) {
+            foreach (StatOption statOption in search.StatOptions) {
+                switch (statOption.StatId) {
+                    case >= 1000 and < 11000: // BasicAttribute with percent value
+                        basicOptions[(BasicAttribute) (statOption.StatId - 1000)] = new BasicOption((float) (statOption.Value + 5) / 10000);
+                        break;
+                    case >= 11000: // SpecialAttribute with percent value
+                        specialOptions[(SpecialAttribute) (statOption.StatId - 11000)] = new SpecialOption((float) (statOption.Value + 5) / 10000);
+                        break;
+                    default: // BasicAttribute with flat value
+                        basicOptions[(BasicAttribute) statOption.StatId] = new BasicOption(statOption.Value);
+                        break;
+                }
+            }
+        }
 
-         Dictionary<BasicAttribute, BasicOption> basicOptions = new();
-         Dictionary<SpecialAttribute, SpecialOption> specialOptions = new();
-         if (search.StatOptions != null) {
-             foreach (StatOption statOption in search.StatOptions) {
-                 switch (statOption.StatId) {
-                     case >= 1000 and < 11000: // BasicAttribute with percent value
-                         basicOptions[(BasicAttribute) (statOption.StatId - 1000)] = new BasicOption((float) (statOption.Value + 5) / 10000);
-                         break;
-                     case >= 11000: // SpecialAttribute with percent value
-                         specialOptions[(SpecialAttribute) (statOption.StatId - 11000)] = new SpecialOption((float) (statOption.Value + 5) / 10000);
-                         break;
-                     default: // BasicAttribute with flat value
-                         basicOptions[(BasicAttribute) statOption.StatId] = new BasicOption(statOption.Value);
-                         break;
-                 }
-             }
-         }
-
-         ICollection<long> listingIds = blackMarketLookup.Search(search.Categories.ToArray(), search.MinLevel, search.MaxLevel, (JobFilterFlag) search.JobFlag, search.Rarity, search.MinEnchantLevel,
-             search.MaxEnchantLevel, search.MinSocketCount, search.MaxSocketCount, search.Name, search.StartPage, (BlackMarketSort) search.SortBy, basicOptions, specialOptions);
-
+        ICollection<long> listingIds = blackMarketLookup.Search(search.Categories.ToArray(), search.MinLevel, search.MaxLevel, (JobFilterFlag) search.JobFlag, search.Rarity, search.MinEnchantLevel,
+            search.MaxEnchantLevel, search.MinSocketCount, search.MaxSocketCount, search.Name, search.StartPage, (BlackMarketSort) search.SortBy, basicOptions, specialOptions);
 
 
         return new BlackMarketResponse {
             Search = new BlackMarketResponse.Types.Search {
-                ListingIds = { listingIds },
+                ListingIds = {
+                    listingIds
+                },
             }
         };
     }
