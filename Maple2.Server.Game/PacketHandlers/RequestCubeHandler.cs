@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -213,7 +214,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 session.HeldCube = null;
                 fieldLiftable.Count = 1;
                 fieldLiftable.State = LiftableState.Disabled;
-                fieldLiftable.FinishTick = Environment.TickCount64 + fieldLiftable.Value.ItemLifetime;
+                fieldLiftable.Position = position;
+                fieldLiftable.Rotation = new Vector3(0, 0, rotation);
+                fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.FinishTime + fieldLiftable.Value.ItemLifetime;
 
                 session.Field.Broadcast(LiftablePacket.Add(fieldLiftable));
                 session.Field.Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
@@ -221,6 +224,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 session.Field.Broadcast(LiftablePacket.Update(fieldLiftable));
                 break;
         }
+
+        session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId);
     }
 
     private void HandleRemoveCube(GameSession session, IByteReader packet) {

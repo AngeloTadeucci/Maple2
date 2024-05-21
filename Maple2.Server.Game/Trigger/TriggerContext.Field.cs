@@ -451,7 +451,24 @@ public partial class TriggerContext {
 
     #region Conditions
     public bool DetectLiftableObject(int[] boxIds, int itemId) {
-        ErrorLog("[DetectLiftableObject] boxIds:{Ids}, itemId:{ItemId}", string.Join(", ", boxIds), itemId);
+        DebugLog("[DetectLiftableObject] boxIds:{Ids}, itemId:{ItemId}", string.Join(", ", boxIds), itemId);
+
+        if (itemId == 0) {
+            return false;
+        }
+
+        IEnumerable<TriggerBox> boxes = boxIds
+            .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
+            .Where(box => box != null)!;
+
+        // Gets the list of valid fieldliftables, only check ones that are placed
+        var liftables = Field.EnumerateLiftables().Where(x => x.Value.ItemId == itemId && (x.State == LiftableState.Default || x.State == LiftableState.Disabled));
+        foreach (FieldLiftable liftable in liftables) {
+            if (boxes.Any(box => box.Contains(liftable.Position))) {
+                return true;
+            }
+        }
+
         return false;
     }
 
