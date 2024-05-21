@@ -120,15 +120,15 @@ public sealed partial class FieldManager : IDisposable {
             }
 
             if (spawnPointNpc.SpawnOnFieldCreate) {
-                for (int i = 0; i < spawnPointNpc.NpcCount; i++) {
-                    // TODO: get other NpcIds too
-                    int npcId = spawnPointNpc.NpcIds[0];
-                    if (!NpcMetadata.TryGet(npcId, out NpcMetadata? npc)) {
-                        logger.Warning("Npc {NpcId} failed to load for map {MapId}", npcId, MapId);
+                foreach (SpawnPointNPCListEntry spawn in spawnPointNpc.NpcList) {
+                    if (!NpcMetadata.TryGet(spawn.NpcId, out NpcMetadata? npcMetadata)) {
+                        logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, MapId);
                         continue;
                     }
 
-                    SpawnNpc(npc, spawnPointNpc);
+                    for (int i = 0; i < spawn.Count; i++) {
+                        SpawnNpc(npcMetadata, spawnPointNpc);
+                    }
                 }
             }
         }

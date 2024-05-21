@@ -258,22 +258,24 @@ public partial class TriggerContext {
             return;
         }
 
-        foreach (int npcId in spawn.NpcIds) {
-            if (!Field.NpcMetadata.TryGet(npcId, out NpcMetadata? npc)) {
-                logger.Error("[SpawnMonster] Invalid npcId:{NpcId}", npcId);
+        foreach (SpawnPointNPCListEntry entry in spawn.NpcList) {
+            if (!Field.NpcMetadata.TryGet(entry.NpcId, out NpcMetadata? npc)) {
+                logger.Error("[SpawnMonster] Invalid npcId:{NpcId}", entry.NpcId);
                 continue;
             }
 
-            FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
-            if (fieldNpc == null) {
-                logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", npcId);
-                continue;
+            for (int i = 0; i < entry.Count; i++) {
+                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
+                if (fieldNpc == null) {
+                    logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", entry.NpcId);
+                    continue;
+                }
+
+                fieldNpc.SpawnPointId = spawnId;
+
+                Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
+                Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
             }
-
-            fieldNpc.SpawnPointId = spawnId;
-
-            Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
-            Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
         }
     }
 }
