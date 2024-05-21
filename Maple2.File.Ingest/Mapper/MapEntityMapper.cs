@@ -88,6 +88,12 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                 if (!int.TryParse(entry.Value, out int npcCount)) {
                                     npcCount = 1;
                                 }
+
+                                // Some NPC spawns have these be equal, so default to 1
+                                if (npcId == npcCount) {
+                                    npcCount = 1;
+                                }
+
                                 return new SpawnPointNPCListEntry(npcId, npcCount);
                             }).WhereNotNull().ToList();
                             if (npcSpawn.NpcCount == 0 || npcList.Count == 0) {
