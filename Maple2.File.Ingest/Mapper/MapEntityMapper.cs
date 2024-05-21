@@ -89,7 +89,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                     npcCount = 1;
                                 }
                                 return new SpawnPointNPCListEntry(npcId, npcCount);
-                            }).OfType<SpawnPointNPCListEntry>().ToList();
+                            }).WhereNotNull().ToList();
                             if (npcSpawn.NpcCount == 0 || npcList.Count == 0) {
                                 Console.WriteLine($"No NPCs for {xblock}:{entity.EntityId}");
                                 continue;
