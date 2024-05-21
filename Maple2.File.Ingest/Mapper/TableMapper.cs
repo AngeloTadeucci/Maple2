@@ -63,6 +63,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "commonexp.xml", Table = ParseCommonExpTable() };
         yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
         yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
+        yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -1300,5 +1301,24 @@ public class TableMapper : TypeMapper<TableMetadata> {
                     Tag: ItemTag.None)));
         }
         return new PrestigeMissionTable(results);
+    }
+
+    private BlackMarketTable ParseBlackMarketTable() {
+        var results = new Dictionary<int, string[]>();
+        (int id, BlackMarketCategory blackMarket) category = parser.ParseBlackMarketCategory();
+        foreach (BlackMarketCategory.BlackMarketTab item in category.blackMarket.tab) {
+            ParseBlackMarketTab(item, results);
+        }
+
+        return new BlackMarketTable(results);
+    }
+
+    private void ParseBlackMarketTab(BlackMarketCategory.BlackMarketTab tab, Dictionary<int, string[]> results) {
+        results.Add(tab.id, tab.category);
+        if (tab.tab.Count > 0) {
+            foreach (BlackMarketCategory.BlackMarketTab subTab in tab.tab) {
+                ParseBlackMarketTab(subTab, results);
+            }
+        }
     }
 }

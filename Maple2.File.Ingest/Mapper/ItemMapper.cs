@@ -161,6 +161,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     Type: data.property.type,
                     SubType: data.property.subtype,
                     Category: data.property.category,
+                    BlackMarketCategory: data.property.blackMarketCategory,
                     Tag: string.IsNullOrWhiteSpace(data.basic.stringTag) ? ItemTag.None : Enum.Parse<ItemTag>(data.basic.stringTag),
                     Group: data.property.itemGroup,
                     Collection: data.property.collection,

@@ -37,6 +37,7 @@ public class TableMetadataStorage {
     private readonly Lazy<PrestigeLevelAbilityTable> prestigeLevelAbilityTable;
     private readonly Lazy<PrestigeLevelRewardTable> prestigeLevelRewardTable;
     private readonly Lazy<PrestigeMissionTable> prestigeMissionTable;
+    private readonly Lazy<BlackMarketTable> blackMarketTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -86,6 +87,7 @@ public class TableMetadataStorage {
     public PrestigeLevelAbilityTable PrestigeLevelAbilityTable => prestigeLevelAbilityTable.Value;
     public PrestigeLevelRewardTable PrestigeLevelRewardTable => prestigeLevelRewardTable.Value;
     public PrestigeMissionTable PrestigeMissionTable => prestigeMissionTable.Value;
+    public BlackMarketTable BlackMarketTable => blackMarketTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -136,6 +138,7 @@ public class TableMetadataStorage {
         prestigeLevelAbilityTable = Retrieve<PrestigeLevelAbilityTable>(context, "adventurelevelability.xml");
         prestigeLevelRewardTable = Retrieve<PrestigeLevelRewardTable>(context, "adventurelevelreward.xml");
         prestigeMissionTable = Retrieve<PrestigeMissionTable>(context, "adventurelevelmission.xml");
+        blackMarketTable = Retrieve<BlackMarketTable>(context, "blackmarkettable.xml");
         enchantScrollTable = Retrieve<EnchantScrollTable>(context, "enchantscroll.xml");
         itemRemakeScrollTable = Retrieve<ItemRemakeScrollTable>(context, "itemremakescroll.xml");
         itemRepackingScrollTable = Retrieve<ItemRepackingScrollTable>(context, "itemrepackingscroll.xml");
