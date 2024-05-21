@@ -44,13 +44,13 @@ public partial class TriggerContext : ITriggerContext {
             return false;
         }
 
-        state = engine.Operations.CreateInstance(skipState, this);
-        if (state == null) {
-            return false;
-        }
-
-        state = new TriggerState(state);
+        state = CreateState(skipState);
         return true;
+    }
+
+    public TriggerState? CreateState(dynamic stateClass) {
+        dynamic? state = engine.Operations.CreateInstance(stateClass, this);
+        return state == null ? null : new TriggerState(state);
     }
 
     private void Broadcast(ByteWriter packet) => Field.Broadcast(packet);

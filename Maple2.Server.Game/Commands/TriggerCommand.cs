@@ -1,12 +1,11 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
+using System.Text;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Server.Game.Session;
-using Maple2.Server.Game.Trigger;
 
 namespace Maple2.Server.Game.Commands;
 
@@ -36,82 +35,59 @@ public class TriggerCommand : Command {
             return;
         }
 
-        if (session.Field is null) {
-            ctx.Console.Error.WriteLine("Field not found.");
-            return;
-        }
-
         List<FieldTrigger> fieldTriggers = session.Field!.EnumerateTrigger().ToList();
         if (list) {
             ctx.Console.Out.WriteLine($"Triggers: {fieldTriggers.Count}");
             foreach (FieldTrigger trigger in fieldTriggers) {
                 string triggerName = trigger.Value.Name;
-                string result = "";
+                string[] triggerStates = GetStateNames(trigger);
+                var result = new StringBuilder($"TriggerStates for {triggerName}, count: {triggerStates.Length}\n");
 
-                foreach (string var in trigger.Context.Scope.GetVariableNames().Where(v => !v.StartsWith("__") && v != "trigger_api" && v != "initial_state")) {
-                    ctx.Console.Out.WriteLine(var);
+                for (int i = 0; i < triggerStates.Length; i++) {
+                    result.AppendLine($"  -[{i}] {triggerStates[i]}");
                 }
 
-                // IReadOnlyDictionary<string, List<Func<ITriggerContext, TriggerState>>> triggerTable = triggerDebugger.GetTriggerTable(session.Field!.Metadata.XBlock);
-                // foreach (List<Func<ITriggerContext, TriggerState>> states in triggerTable.Values) {
-                //     if (states is null) {
-                //         ctx.Console.Error.WriteLine($"Invalid trigger for {session.Field.Metadata.XBlock}");
-                //         return;
-                //     }
-                //
-                //     result += $"TriggerStates for {triggerName}, count: {states.Count}\n";
-                //
-                //     int i = 0;
-                //     foreach (Func<ITriggerContext, TriggerState>? initialState in states) {
-                //         TriggerState nextState = initialState(context);
-                //         result += $"  -[{i++}] {nextState.GetType().ToString().Replace("Maple2.Trigger.", "")}\n";
-                //     }
-                // }
-
-                ctx.Console.Out.WriteLine(result);
+                ctx.Console.Out.WriteLine(result.ToString());
             }
             return;
         }
 
-        // if (reset is not null && stateIndex < 0) {
-        //     FieldTrigger? fieldTrigger = fieldTriggers.FirstOrDefault(t => t.Value.Name.ToLower() == reset.ToLower());
-        //     if (fieldTrigger is null) {
-        //         ctx.Console.Error.WriteLine($"Trigger {reset} not found.");
-        //         return;
-        //     }
-        //
-        //     TriggerModel triggerModel = fieldTrigger.Value;
-        //     var newFieldTrigger = new FieldTrigger(session.Field, FieldManager.NextGlobalId(), triggerModel) {
-        //         Position = triggerModel.Position,
-        //         Rotation = triggerModel.Rotation,
-        //     };
-        //
-        //     session.Field.ReplaceTrigger(fieldTrigger, newFieldTrigger);
-        //     ctx.Console.Out.WriteLine($"Trigger {reset} reset.");
-        // }
-        //
-        //
-        // if (reset is not null && stateIndex >= 0) {
-        //     session.Field.TryGetTrigger(reset, out FieldTrigger? currentFieldTrigger);
-        //     if (currentFieldTrigger is null) {
-        //         ctx.Console.Error.WriteLine($"Trigger {reset} not found.");
-        //         return;
-        //     }
-        //
-        //     IReadOnlyDictionary<string, List<Func<ITriggerContext, TriggerState>>> triggerTable = triggerDebugger.GetTriggerTable(session.Field!.Metadata.XBlock);
-        //     if (!triggerTable.TryGetValue(reset, out List<Func<ITriggerContext, TriggerState>>? triggerStates)) {
-        //         ctx.Console.Error.WriteLine($"Invalid trigger for {session.Field.Metadata.XBlock}");
-        //         return;
-        //     }
-        //
-        //     if (stateIndex >= triggerStates.Count) {
-        //         ctx.Console.Error.WriteLine($"Invalid state index for {reset}");
-        //         return;
-        //     }
-        //
-        //     TriggerState nextState = triggerStates.ElementAt(stateIndex)(new TriggerContext(currentFieldTrigger));
-        //     currentFieldTrigger.SetNextState(nextState);
-        //     ctx.Console.Out.WriteLine($"Trigger {reset} state set to {nextState.GetType().ToString().Replace("Maple2.Trigger.", "")}");
-        // }
+        if (reset != null && stateIndex < 0) {
+            FieldTrigger? fieldTrigger = fieldTriggers.FirstOrDefault(t => t.Value.Name.ToLower() == reset.ToLower());
+            if (fieldTrigger is null) {
+                ctx.Console.Error.WriteLine($"Trigger {reset} not found.");
+                return;
+            }
+
+            TriggerModel triggerModel = fieldTrigger.Value;
+            var newFieldTrigger = new FieldTrigger(session.Field, FieldManager.NextGlobalId(), triggerModel) {
+                Position = triggerModel.Position,
+                Rotation = triggerModel.Rotation,
+            };
+
+            session.Field.ReplaceTrigger(fieldTrigger, newFieldTrigger);
+            ctx.Console.Out.WriteLine($"Trigger {reset} reset.");
+        } else if (reset != null && stateIndex >= 0) {
+            if (!session.Field.TryGetTrigger(reset, out FieldTrigger? currentFieldTrigger)) {
+                ctx.Console.Error.WriteLine($"Trigger {reset} not found.");
+                return;
+            }
+
+            string[] triggerStates = GetStateNames(currentFieldTrigger);
+            if (stateIndex >= triggerStates.Length) {
+                ctx.Console.Error.WriteLine($"Invalid state index for {reset}");
+                return;
+            }
+
+            if (currentFieldTrigger.SetNextState(triggerStates[stateIndex])) {
+                ctx.Console.Out.WriteLine($"Trigger {reset} state set to {triggerStates[stateIndex]}");
+            }
+        }
+    }
+
+    private static string[] GetStateNames(FieldTrigger trigger) {
+        return trigger.Context.Scope.GetVariableNames()
+            .Where(v => !v.StartsWith("__") && v != "trigger_api" && v != "initial_state")
+            .ToArray();
     }
 }

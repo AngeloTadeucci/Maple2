@@ -65,7 +65,13 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
     /// <summary>
     /// Should only be used for debugging
     /// </summary>
-    public void SetNextState(TriggerState state) {
-        nextState = state;
+    public bool SetNextState(string next) {
+        dynamic? stateClass = Context.Scope.GetVariable(next);
+        if (stateClass == null) {
+            return false;
+        }
+
+        nextState = Context.CreateState(stateClass);
+        return nextState != null;
     }
 }
