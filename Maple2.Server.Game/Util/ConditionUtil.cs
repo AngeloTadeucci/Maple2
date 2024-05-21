@@ -128,7 +128,7 @@ public static class ConditionUtil {
                     return true;
                 }
 
-                if (target.Integers != null && target.Integers.Any(i => i == session.Player.Value.Character.MapId)) { 
+                if (target.Integers != null && target.Integers.Any(i => i == session.Player.Value.Character.MapId)) {
                     return true;
                 }
 
