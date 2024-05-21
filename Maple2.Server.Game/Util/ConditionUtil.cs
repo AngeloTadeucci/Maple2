@@ -127,6 +127,11 @@ public static class ConditionUtil {
                     target.Range.Value.Max <= session.Player.Value.Character.MapId) {
                     return true;
                 }
+
+                if (target.Integers != null && target.Integers.Any(i => i == session.Player.Value.Character.MapId)) {
+                    return true;
+                }
+
                 break;
             case ConditionType.fish:
             case ConditionType.fish_big:
