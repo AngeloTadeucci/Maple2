@@ -177,18 +177,17 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool MonsterDead(int[] spawnIds, bool arg2) {
-        DebugLog("[MonsterDead] spawnIds:{SpawnIds}, arg2:{Arg2}", string.Join(", ", spawnIds), arg2);
-        foreach (FieldNpc mob in Field.Mobs.Values) {
-            if (mob.SpawnPointId > 0 || !spawnIds.Contains(mob.SpawnPointId)) {
-                return false;
-            }
+    public bool MonsterDead(int[] spawnIds, bool autoTarget) {
+        DebugLog("[MonsterDead] spawnIds:{SpawnIds}, arg2:{Arg2}", string.Join(", ", spawnIds), autoTarget);
+        IEnumerable<FieldNpc> matchingMobs = Field.Mobs.Values.Where(x => spawnIds.Contains(x.SpawnPointId));
 
+        foreach (FieldNpc mob in matchingMobs) {
             if (!mob.IsDead) {
                 return false;
             }
         }
 
+        // Either no mobs were found or they are all dead
         return true;
     }
 
