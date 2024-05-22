@@ -216,7 +216,7 @@ public partial class TriggerContext {
         foreach (FieldPlayer player in PlayersInBox(boxIds)) {
             foreach (int questId in questIds) {
                 if (!player.Session.Quest.TryGetQuest(questId, out Quest? quest)) {
-                    return false;
+                    continue;
                 }
 
                 switch (questStates[0]) {
