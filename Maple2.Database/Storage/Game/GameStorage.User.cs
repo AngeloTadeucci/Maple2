@@ -74,6 +74,8 @@ public partial class GameStorage {
                 character.Id == characterId && character.AccountId == accountId);
             if (character != null) {
                 character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                Account? accountFind = Context.Account.Find(accountId);
+                character.PremiumTime = accountFind?.PremiumTime ?? 0;
             }
             return character;
         }
@@ -92,14 +94,14 @@ public partial class GameStorage {
                           join outdoor in Context.UgcMap on
                               new { OwnerId = character.AccountId, Indoor = false } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
                           from outdoor in plot.DefaultIfEmpty()
-                          select new { character, indoor, outdoor })
+                          select new { character, indoor, outdoor, account.PremiumTime })
                 .FirstOrDefault();
             if (result == null) {
                 return null;
             }
 
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo);
+            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime);
         }
 
         public Home? GetHome(long ownerId) {
@@ -180,6 +182,7 @@ public partial class GameStorage {
             player.Character.GuildName = guild.Item2;
 
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+            player.Character.PremiumTime = account.PremiumTime;
 
             return player;
         }

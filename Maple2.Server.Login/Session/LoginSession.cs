@@ -121,6 +121,7 @@ public class LoginSession : Core.Network.Session {
             unlock.Emotes.Add(emoteId);
         }
         character.AchievementInfo = db.GetAchievementInfo(AccountId, character.Id);
+        character.PremiumTime = account.PremiumTime;
 
         db.InitNewCharacter(character.Id, unlock);
 

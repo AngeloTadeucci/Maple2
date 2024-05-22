@@ -16,6 +16,7 @@ public enum UpdateField {
     Channel = 64,
     Home = 128,
     Trophy = 256,
+    PremiumTime = 512,
 
     // Presets
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
@@ -87,6 +88,12 @@ public class PlayerInfoUpdateEvent {
                 Type |= UpdateField.Trophy;
             } else if (player.AchievementInfo.Lifestyle != request.Trophy.Lifestyle) {
                 Type |= UpdateField.Trophy;
+            }
+        }
+
+        if (request.HasPremiumTime && player.PremiumTime != request.PremiumTime) {
+            if (player.PremiumTime != request.PremiumTime) {
+                Type |= UpdateField.PremiumTime;
             }
         }
     }

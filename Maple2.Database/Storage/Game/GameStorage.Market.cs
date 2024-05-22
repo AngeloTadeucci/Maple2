@@ -292,6 +292,23 @@ public partial class GameStorage {
             }
         }
 
+        public bool DeleteBlackMarketListing(long listingId) {
+            Model.BlackMarketListing? listing = Context.BlackMarketListing.Find(listingId);
+            if (listing == null) {
+                return false;
+            }
+
+            Context.BlackMarketListing.Remove(listing);
+            return Context.TrySaveChanges();
+        }
+
+        public bool SaveBlackMarketListing(BlackMarketListing listing) {
+            Model.BlackMarketListing? model = listing;
+
+            Context.BlackMarketListing.Update(model);
+            return Context.TrySaveChanges();
+        }
+
         private BlackMarketListing? ToBlackMarketingListing(Model.BlackMarketListing? model) {
             if (model == null) {
                 return null;

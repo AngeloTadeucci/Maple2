@@ -56,7 +56,7 @@ public partial class GameStorage {
 
             return results.Select(result => {
                 AchievementInfo achievementInfo = GetAchievementInfo(result.account.Id, result.member.CharacterId);
-                PlayerInfo playerInfo = BuildPlayerInfo(result.member.Character, result.indoor, result.outdoor, achievementInfo);
+                PlayerInfo playerInfo = BuildPlayerInfo(result.member.Character, result.indoor, result.outdoor, achievementInfo, result.account.PremiumTime);
                 return new ClubMember(playerInfo, result.member.CreationTime.ToEpochSeconds(), result.member.Character.LastModified.ToEpochSeconds());
             }).ToList();
         }

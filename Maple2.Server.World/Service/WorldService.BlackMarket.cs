@@ -5,6 +5,7 @@ using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 
 namespace Maple2.Server.World.Service;
@@ -16,6 +17,10 @@ public partial class WorldService {
                 return Task.FromResult(Search(request.Search));
             case BlackMarketRequest.BlackMarketOneofCase.Add:
                 return Task.FromResult(Add(request.Add));
+            case BlackMarketRequest.BlackMarketOneofCase.Remove:
+                return Task.FromResult(Remove(request.Remove));
+            case BlackMarketRequest.BlackMarketOneofCase.Purchase:
+                return Task.FromResult(Purchase(request.Purchase));
             default:
                 return Task.FromResult(new BlackMarketResponse());
         }
@@ -62,5 +67,32 @@ public partial class WorldService {
         return new BlackMarketResponse {
             Error = (int) error,
         };
+    }
+
+    private BlackMarketResponse Remove(BlackMarketRequest.Types.Remove remove) {
+        BlackMarketError error = blackMarketLookup.Remove(remove.ListingId);
+        return new BlackMarketResponse {
+            Error = (int) error,
+        };
+    }
+
+    private BlackMarketResponse Purchase(BlackMarketRequest.Types.Purchase purchase) {
+        BlackMarketError error = blackMarketLookup.Purchase(purchase.ListingId);
+        if (error != BlackMarketError.none) {
+            return new BlackMarketResponse {
+                Error = (int) error,
+            };
+        }
+
+        PlayerInfo? playerInfo = playerLookup.GetPlayerInfo(purchase.SellerId);
+        if (playerInfo != null && channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? client)) {
+            client.BlackMarket(new Channel.Service.BlackMarketRequest {
+                PurchaseResponse = new Channel.Service.BlackMarketRequest.Types.PurchaseResponse {
+                    SellerId = playerInfo.CharacterId,
+                },
+            });
+        }
+
+        return new BlackMarketResponse();
     }
 }

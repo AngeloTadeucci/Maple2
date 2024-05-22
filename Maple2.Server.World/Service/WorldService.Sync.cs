@@ -29,6 +29,7 @@ public partial class WorldService {
             Job = (int) info.Job,
             Level = info.Level,
             GearScore = info.GearScore,
+            PremiumTime = info.PremiumTime,
             MapId = info.MapId,
             Channel = info.Channel,
             Health = new HealthInfo {

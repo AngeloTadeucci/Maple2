@@ -13,6 +13,7 @@ public interface IPlayerInfo {
     public Job Job { get; set; }
     public short Level { get; set; }
     public int GearScore { get; set; }
+    public long PremiumTime { get; set; }
     // Health
     public long CurrentHp { get; set; }
     public long TotalHp { get; set; }

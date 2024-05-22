@@ -188,6 +188,13 @@ public class ConfigManager {
         }
 
         session.Send(PremiumCubPacket.Activate(session.Player.ObjectId, session.Player.Value.Account.PremiumTime));
+        session.Player.Value.Character.PremiumTime = session.Player.Value.Account.PremiumTime;
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            PremiumTime = session.Player.Value.Account.PremiumTime,
+            Async = true,
+        });
     }
 
     public void RefreshPremiumClubBuffs() {
@@ -197,6 +204,8 @@ public class ConfigManager {
             }
         }
     }
+
+    public bool IsPremiumClubActive() => session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds();
     #endregion
 
     #region ChatStickers
