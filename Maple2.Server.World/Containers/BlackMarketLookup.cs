@@ -150,6 +150,37 @@ public class BlackMarketLookup : IDisposable {
         return BlackMarketError.none;
     }
 
+    public BlackMarketError Remove(long listingId) {
+        if (!listings.TryRemove(listingId, out _)) {
+            return BlackMarketError.s_blackmarket_error_close;
+        }
+
+        using GameStorage.Request db = gameStorage.Context();
+        if (!db.DeleteBlackMarketListing(listingId)) {
+            return BlackMarketError.s_blackmarket_error_close;
+        }
+
+        return BlackMarketError.none;
+    }
+
+    public BlackMarketError Purchase(long listingId) {
+        using GameStorage.Request db = gameStorage.Context();
+
+        BlackMarketListing? listing = db.GetBlackMarketListing(listingId);
+
+        if (listing == null) {
+            listings.TryRemove(listingId, out _);
+            return BlackMarketError.none;
+        }
+
+        listings[listingId] = listing;
+        return BlackMarketError.none;
+    }
+
     public void Dispose() {
+        foreach (BlackMarketListing listing in listings.Values) {
+            using GameStorage.Request db = gameStorage.Context();
+            db.SaveItems(listing.Id, listing.Item);
+        }
     }
 }

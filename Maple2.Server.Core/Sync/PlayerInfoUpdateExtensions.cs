@@ -18,6 +18,9 @@ public static class PlayerInfoUpdateExtensions {
                 info.Picture = update.Request.Picture;
             }
         }
+        if (update.Type.HasFlag(UpdateField.PremiumTime) && update.Request.HasPremiumTime) {
+            info.PremiumTime = update.Request.PremiumTime;
+        }
         if (update.Type.HasFlag(UpdateField.Job) && update.Request.HasJob) {
             info.Job = (Job) update.Request.Job;
         }
@@ -92,6 +95,9 @@ public static class PlayerInfoUpdateExtensions {
         if (type.HasFlag(UpdateField.Trophy)) {
             self.AchievementInfo = other.AchievementInfo;
         }
+        if (type.HasFlag(UpdateField.PremiumTime)) {
+            self.PremiumTime = other.PremiumTime;
+        }
 
         self.UpdateTime = other.UpdateTime;
     }
@@ -138,6 +144,9 @@ public static class PlayerInfoUpdateExtensions {
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
             };
+        }
+        if (type.HasFlag(UpdateField.PremiumTime)) {
+            request.PremiumTime = info.PremiumTime;
         }
     }
 }

@@ -46,9 +46,10 @@ message PlayerUpdateRequest {
   optional int32 gear_score = 10;
   optional int32 map_id = 11;
   optional int32 channel = 12;
-  optional HealthInfo health = 13;
-  optional HomeInfo home = 14;
-  optional TrophyInfo trophy = 15;
+  optional int64 premium_time = 13;
+  optional HealthInfo health = 14;
+  optional HomeInfo home = 15;
+  optional TrophyInfo trophy = 16;
 
   // Batch updates in a queue rather than immediately forwarding.
   bool async = 20;
@@ -73,9 +74,10 @@ message PlayerInfoResponse {
   int32 job = 8;
   int32 level = 9;
   int32 gear_score = 10;
-  int32 map_id = 11;
-  int32 channel = 12;
-  HealthInfo health = 13;
-  HomeInfo home = 14;
-  TrophyInfo trophy = 15;
+  int64 premium_time = 11;
+  int32 map_id = 12;
+  int32 channel = 13;
+  HealthInfo health = 14;
+  HomeInfo home = 15;
+  TrophyInfo trophy = 16;
 }

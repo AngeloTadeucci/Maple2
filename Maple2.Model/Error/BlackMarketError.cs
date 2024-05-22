@@ -36,7 +36,7 @@ public enum BlackMarketError : int {
     s_system_property_protection_time = 37,
     [Description("The game will not run due to fatigue time.")]
     s_anti_addiction_cannot_receive = 38,
-    [Description("The Black Market can&apos;t be used right now.")]
+    [Description("The Black Market can't be used right now.")]
     s_blackmarket_error_close = 39,
     [Description("Not enough quantity available for purchase.")]
     s_blackmarket_error_purchase_count = 41,
