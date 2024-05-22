@@ -237,7 +237,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // LegionBattle
         // CharacterAbility
         Config.LoadKeyTable();
-        // GuideRecord
+        Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
         GameEventUserValue.Load();
         Send(GameEventPacket.Load(db.GetEvents()));
@@ -424,8 +424,8 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.GatheringCounts.Clear();
         Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
         // Death Counter
-        Config.DeathCounter = 0;
-        Send(RevivalPacket.Count(Config.DeathCounter));
+        Config.DeathCount = 0;
+        Send(RevivalPacket.Count(0));
         // Premium Rewards Claimed
         Player.Value.Account.PremiumRewardsClaimed.Clear();
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
