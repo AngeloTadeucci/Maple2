@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
+using Maple2.Server.World.Containers;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 namespace Maple2.Server.World.Service;
@@ -12,9 +15,9 @@ public partial class WorldService {
                     return WhisperChat(request);
                 }
             case ChatRequest.ChatOneofCase.Party:
-                return Task.FromResult(new ChatResponse());
+                return PartyChat(request);
             case ChatRequest.ChatOneofCase.Guild:
-                return Task.FromResult(new ChatResponse());
+                return GuildChat(request);
             case ChatRequest.ChatOneofCase.World:
                 return WorldChat(request);
             case ChatRequest.ChatOneofCase.Super:
@@ -59,6 +62,50 @@ public partial class WorldService {
             logger.Information("{CharacterId} not found...", request.CharacterId);
             return Task.FromResult(new ChatResponse());
         }
+    }
+
+    private Task<ChatResponse> PartyChat(ChatRequest request) {
+        if (!partyLookup.TryGet(request.Party.PartyId, out PartyManager? info)) {
+            logger.Information("Party {PartyPartyId} not found...", request.Party.PartyId);
+            return Task.FromResult(new ChatResponse());
+        }
+
+        foreach (IGrouping<short, PartyMember> group in info.Party.Members.Values.GroupBy(member => member.Info.Channel)) {
+            if (!channelClients.TryGetClient(group.Key, out ChannelClient? client)) {
+                continue;
+            }
+
+            request.Party.MemberIds.Clear();
+            request.Party.MemberIds.AddRange(group.Select(member => member.Info.CharacterId));
+
+            try {
+                client.Chat(request);
+            } catch { /* ignored */ }
+        }
+
+        return Task.FromResult(new ChatResponse());
+    }
+
+    private Task<ChatResponse> GuildChat(ChatRequest request) {
+        if (!guildLookup.TryGet(request.Guild.GuildId, out GuildManager? info)) {
+            logger.Information("Guild {GuildGuildId} not found...", request.Guild.GuildId);
+            return Task.FromResult(new ChatResponse());
+        }
+
+        foreach (IGrouping<short, GuildMember> group in info.Guild.Members.Values.GroupBy(member => member.Info.Channel)) {
+            if (!channelClients.TryGetClient(group.Key, out ChannelClient? client)) {
+                continue;
+            }
+
+            request.Guild.MemberIds.Clear();
+            request.Guild.MemberIds.AddRange(group.Select(member => member.Info.CharacterId));
+
+            try {
+                client.Chat(request);
+            } catch { /* ignored */ }
+        }
+
+        return Task.FromResult(new ChatResponse());
     }
 
     private Task<ChatResponse> WorldChat(ChatRequest request) {
