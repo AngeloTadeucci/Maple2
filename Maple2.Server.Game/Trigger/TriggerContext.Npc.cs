@@ -3,7 +3,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Trigger.Enum;
+using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -19,7 +19,7 @@ public partial class TriggerContext {
         SpawnMonster(addSpawnId);
     }
 
-    public void CreateMonster(int[] spawnIds, bool spawnAnimation, int arg3) {
+    public void SpawnMonster(int[] spawnIds, bool spawnAnimation, int arg3) {
         WarnLog("[CreateMonster] spawnIds:{SpawnIds}, spawnAnimation:{SpawnAnimation}, arg3:{Arg3}", string.Join(", ", spawnIds), spawnAnimation, arg3);
         foreach (int spawnId in spawnIds) {
             SpawnNpc(spawnId);
@@ -62,7 +62,7 @@ public partial class TriggerContext {
         ErrorLog("[InitNpcRotation] spawnIds:{SpawnIds}", string.Join(", ", spawnIds));
     }
 
-    public void LimitSpawnNpcCount(int limitCount) {
+    public void LimitSpawnNpcCount(int limitCount, string desc) {
         ErrorLog("[LimitSpawnNpcCount] limitCount:{Count}", limitCount);
     }
 
@@ -109,8 +109,8 @@ public partial class TriggerContext {
         ErrorLog("[SetAiExtraData] key:{Key}, value:{Value}, isModify:{IsModify}, boxId:{BoxId}", key, value, isModify, boxId);
     }
 
-    public void SetConversation(byte type, int spawnId, string script, int delay, byte arg5, Align align) {
-        DebugLog("[SetConversation] type:{Type}, spawnId:{SpawnId}, script:{Script}, delay:{Delay}, arg5:{Arg5}, align:{Align}",
+    public void SetDialogue(int type, int spawnId, string script, int delay, int arg5, Align align) {
+        DebugLog("[SetDialogue] type:{Type}, spawnId:{SpawnId}, script:{Script}, delay:{Delay}, arg5:{Arg5}, align:{Align}",
             type, spawnId, script, delay, arg5, align);
 
         if (spawnId == 0) {
@@ -172,7 +172,7 @@ public partial class TriggerContext {
     }
 
     #region Conditions
-    public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, short level) {
+    public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, int level) {
         ErrorLog("[CheckNpcAdditionalEffect] spawnId:{SpawnId}, additionalEffectId:{EffectId}, level:{Level}", spawnId, additionalEffectId, level);
         return false;
     }

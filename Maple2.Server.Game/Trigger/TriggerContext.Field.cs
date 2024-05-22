@@ -4,11 +4,20 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
+    public void AllocateBattlefieldPoints(int boxId, int points) {
+        DebugLog("[AllocateBattlefieldPoints] boxId:{BoxId}, points:{Points}", boxId, points);
+    }
+
+    public void Announce(int type, string content, bool arg3) {
+        DebugLog("[Announce] type:{Type}, content:{Content}", type, content);
+    }
+
     public void ChangeBackground(string dds) {
         DebugLog("[ChangeBackground] dds:{Dds}", dds);
         Field.SetBackground(dds);
@@ -28,9 +37,9 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetAmbientLight(Vector3 color) {
-        DebugLog("[SetAmbientLight] color:{Color}", color);
-        Field.AddFieldProperty(new FieldPropertyAmbientLight { Color = color });
+    public void SetAmbientLight(Vector3 primary, Vector3 secondary, Vector3 tertiary) {
+        DebugLog("[SetAmbientLight] color:{Color}", primary);
+        Field.AddFieldProperty(new FieldPropertyAmbientLight { Color = primary });
     }
 
     public void SetDirectionalLight(Vector3 diffuseColor, Vector3 specularColor) {
@@ -65,34 +74,34 @@ public partial class TriggerContext {
         }
     }
 
-    public void Weather(Maple2.Trigger.Enum.WeatherType weatherType) {
-        DebugLog("[Weather] weatherType:{Type}", weatherType);
-        Field.AddFieldProperty(new FieldPropertyWeather { WeatherType = (WeatherType) weatherType });
+    public void Weather(Weather weather) {
+        DebugLog("[Weather] weatherType:{Type}", weather);
+        Field.AddFieldProperty(new FieldPropertyWeather { WeatherType = (WeatherType) weather });
     }
 
-    public void SightRange(bool enabled, byte range, float rangeZ, byte border) {
+    public void SightRange(bool enabled, int range, int rangeZ, int border) {
         DebugLog("[SightRange] enabled:{Enabled}, range:{Range}, rangeZ:{RangeZ}, border:{Border}", enabled, range, rangeZ, border);
         // range seems to be some ID? (3)
         if (enabled) {
             Field.AddFieldProperty(new FieldPropertySightRange {
                 Range = rangeZ,
-                Opacity = border,
+                Opacity = (byte) border,
             });
         } else {
             Field.RemoveFieldProperty(FieldProperty.SightRange);
         }
     }
 
-    public void SetPvpZone(int boxId, byte arg2, int duration, int additionalEffectId, byte arg5, params int[] boxIds) {
-        ErrorLog("[SetPvpZone] boxId:{BoxId}, arg2:{Arg2}, duration:{Duration}, additionalEffectId:{AdditionalEffectId}, arg5:{Arg5}, boxIds:{BoxIds}",
-            boxId, arg2, duration, additionalEffectId, arg5, string.Join(", ", boxIds));
+    public void SetPvpZone(int boxId, int prepareTime, int matchTime, int additionalEffectId, int type, params int[] boxIds) {
+        ErrorLog("[SetPvpZone] boxId:{BoxId}, prepareTime:{PrepareTime}, matchTime:{MatchTime}, additionalEffectId:{AdditionalEffectId}, type:{Type}, boxIds:{BoxIds}",
+            boxId, prepareTime, matchTime, additionalEffectId, type, string.Join(", ", boxIds));
     }
 
-    public void SetTimeScale(bool enabled, float startScale, float endScale, float duration, byte interpolator) {
+    public void SetTimeScale(bool enabled, float startScale, float endScale, float duration, int interpolator) {
         DebugLog("[SetTimeScale] enabled:{Enabled}, startScale:{StartScale}, endScale:{EndScale}, duration:{Duration}, interpolator:{Interpolator}",
             enabled, startScale, endScale, duration, interpolator);
         // TODO: Does this need to be persisted on the field?
-        Broadcast(FieldPropertyPacket.TimeScale(enabled, startScale, endScale, duration, interpolator));
+        Broadcast(FieldPropertyPacket.TimeScale(enabled, startScale, endScale, duration, (byte) interpolator));
     }
 
     public void SetLocalCamera(int cameraId, bool enabled) {
@@ -100,12 +109,12 @@ public partial class TriggerContext {
         Broadcast(CameraPacket.Local(cameraId, enabled));
     }
 
-    public void CameraReset(float interpolationTime) {
+    public void ResetCamera(float interpolationTime) {
         DebugLog("[CameraReset] interpolationTime:{Time}", interpolationTime);
         Broadcast(CameraPacket.Interpolate(interpolationTime));
     }
 
-    public void CameraSelect(int triggerId, bool enabled) {
+    public void SelectCamera(int triggerId, bool enabled) {
         DebugLog("[CameraSelect] triggerId:{Id}, enabled:{Enabled}", triggerId, enabled);
         if (!Objects.Cameras.TryGetValue(triggerId, out TriggerObjectCamera? camera)) {
             return;
@@ -118,7 +127,7 @@ public partial class TriggerContext {
         Broadcast(TriggerPacket.Update(camera));
     }
 
-    public void CameraSelectPath(int[] pathIds, bool returnView) {
+    public void SelectCameraPath(int[] pathIds, bool returnView) {
         DebugLog("[CameraSelectPath] pathIds:{Ids}, returnView:{ReturnView}", string.Join(", ", pathIds), returnView);
         Broadcast(TriggerPacket.CameraStart(pathIds, returnView));
     }
@@ -176,8 +185,8 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetEffect(int[] triggerIds, bool visible, int arg3, byte arg4) {
-        DebugLog("[SetEffect] triggerIds:{Ids}, visible:{Visible}, arg3:{Arg3}, arg4:{Arg4}", string.Join(", ", triggerIds), visible, arg3, arg4);
+    public void SetEffect(int[] triggerIds, bool visible, int startDelay, int interval) {
+        DebugLog("[SetEffect] triggerIds:{Ids}, visible:{Visible}, startDelay:{StartDelay}, interval:{Interval}", string.Join(", ", triggerIds), visible, startDelay, interval);
         foreach (int triggerId in triggerIds) {
             if (!Objects.Effects.TryGetValue(triggerId, out TriggerObjectEffect? effect)) {
                 continue;
@@ -191,7 +200,7 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetInteractObject(int[] interactIds, byte stateValue, bool arg3, bool arg4) {
+    public void SetInteractObject(int[] interactIds, int stateValue, bool arg3, bool arg4) {
         var state = (InteractState) stateValue;
         DebugLog("[SetInteractObject] interactIds:{Ids}, state:{State}, arg3:{Arg3}, arg4:{Arg4}", string.Join(", ", interactIds), state, arg3, arg4);
         foreach (FieldInteract interact in Field.EnumerateInteract()) {
@@ -201,28 +210,30 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetLadder(int triggerId, bool visible, bool animationEffect, int animationDelay) {
-        DebugLog("[SetLadder] triggerId:{Id}, visible:{Visible}, animationEffect:{Effect}, animationDelay:{Delay}",
-            triggerId, visible, animationEffect, animationDelay);
-        if (!Objects.Ladders.TryGetValue(triggerId, out TriggerObjectLadder? ladder)) {
-            return;
-        }
+    public void SetLadder(int[] triggerIds, bool visible, bool animationEffect, int animationDelay) {
+        DebugLog("[SetLadder] triggerIds:[{Id}], visible:{Visible}, animationEffect:{Effect}, animationDelay:{Delay}",
+            string.Join(",", triggerIds), visible, animationEffect, animationDelay);
+        foreach (int triggerId in triggerIds) {
+            if (!Objects.Ladders.TryGetValue(triggerId, out TriggerObjectLadder? ladder)) {
+                return;
+            }
 
-        ladder.Visible = visible;
-        ladder.Animate = animationEffect;
-        ladder.Delay = animationDelay;
-        Broadcast(TriggerPacket.Update(ladder));
+            ladder.Visible = visible;
+            ladder.Animate = animationEffect;
+            ladder.Delay = animationDelay;
+            Broadcast(TriggerPacket.Update(ladder));
+        }
     }
 
-    public void SetMesh(int[] triggerIds, bool visible, int arg3, int delay, float scale) {
+    public void SetMesh(int[] triggerIds, bool visible, int arg3, int delay, float scale, string desc) {
         DebugLog("[SetMesh] triggerIds:{Ids}, visible:{Visible}, arg3:{Arg3}, delay:{Delay}, scale:{Scale}",
             string.Join(", ", triggerIds), visible, arg3, delay, scale);
         UpdateMesh(triggerIds, visible, arg3, delay, scale);
     }
 
     // examples: arg3=200, arg4=3
-    public void SetMeshAnimation(int[] triggerIds, bool visible, int arg3, byte arg4) {
-        DebugLog("[SetMeshAnimation] triggerIds:{Ids}, visible:{Visible}, arg3:{Arg3}, arg4:{Arg4}", string.Join(", ", triggerIds), visible, arg3, arg4);
+    public void SetMeshAnimation(int[] triggerIds, bool visible, int startDelay, int interval) {
+        DebugLog("[SetMeshAnimation] triggerIds:{Ids}, visible:{Visible}, startDelay:{StartDelay}, interval:{Interval}", string.Join(", ", triggerIds), visible, startDelay, interval);
         foreach (int triggerId in triggerIds) {
             if (!Objects.Meshes.TryGetValue(triggerId, out TriggerObjectMesh? mesh)) {
                 continue;
@@ -232,7 +243,7 @@ public partial class TriggerContext {
             }
 
             mesh.Visible = visible;
-            mesh.Fade = arg3;
+            mesh.Fade = startDelay;
             Broadcast(TriggerPacket.Update(mesh));
         }
     }
@@ -329,7 +340,7 @@ public partial class TriggerContext {
         Field.Broadcast(BreakablePacket.Update(updated));
     }
 
-    public void AddBuff(int[] boxIds, int buffId, short level, bool isPlayer, bool isSkillSet, string feature) {
+    public void AddBuff(int[] boxIds, int buffId, int level, bool isPlayer, bool isSkillSet, string feature) {
         DebugLog("[AddBuff] boxIds:{Ids}, buffId:{BuffId}, level:{Level}, isPlayer:{IsPlayer}, isSkillSet:{Arg5}, feature:{Feature}",
             string.Join(", ", boxIds), buffId, level, isPlayer, isSkillSet, feature);
         if (isSkillSet) {
@@ -339,11 +350,11 @@ public partial class TriggerContext {
 
         if (isPlayer) {
             foreach (IActor player in PlayersInBox(boxIds)) {
-                player.AddBuff(Field.FieldActor, player, buffId, level);
+                player.AddBuff(Field.FieldActor, player, buffId, (short) level);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxIds)) {
-                monster.AddBuff(Field.FieldActor, monster, buffId, level);
+                monster.AddBuff(Field.FieldActor, monster, buffId, (short) level);
             }
         }
     }
@@ -424,10 +435,10 @@ public partial class TriggerContext {
         ErrorLog("[StartCombineSpawn] groupIds:{Ids}, isStart:{IsStart}", string.Join(", ", groupIds), isStart);
     }
 
-    public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type) {
+    public void SetTimer(string timerId, int seconds, int startDelay, int interval, int vOffset, string type, string desc) {
         DebugLog("[SetTimer] timerId:{Id}, seconds:{Seconds}", timerId, seconds);
         Field.Timers[timerId] = new TickTimer(seconds * 1000);
-        if (display) {
+        if (startDelay > 0) {
             Broadcast(TriggerPacket.TimerDialog(Field.Timers[timerId]));
         }
     }
@@ -472,7 +483,7 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool ObjectInteracted(int[] interactIds, byte stateValue) {
+    public bool ObjectInteracted(int[] interactIds, int stateValue) {
         var state = (InteractState) stateValue;
         DebugLog("[ObjectInteracted] interactIds:{Ids}, state:{State}", string.Join(", ", interactIds), state);
         foreach (FieldInteract interact in Field.EnumerateInteract()) {

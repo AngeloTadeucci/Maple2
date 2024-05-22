@@ -1,7 +1,6 @@
 ﻿using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Trigger;
-using Maple2.Trigger.Enum;
+using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -38,7 +37,7 @@ public partial class TriggerContext {
         Broadcast(CinematicPacket.OneTimeEffect(id, enabled, path));
     }
 
-    public void SetCinematicUI(byte type, string script, bool arg3) {
+    public void SetCinematicUi(int type, string script, bool arg3) {
         WarnLog("[SetCinematicUI] type:{Type}, script:{Script}, arg3:{Arg3}", type, script, arg3);
         switch (type) {
             case 0:
@@ -70,20 +69,20 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetSceneSkip(TriggerState? state, string nextState) {
+    public void SetSceneSkip(dynamic state, string nextState) {
         WarnLog("[SetSceneSkip] state:{State}, nextState:{NextState}", nameof(state), nextState);
-        Skip = state;
+        skipState = state;
         Broadcast(CinematicPacket.SetSkipScene(nextState));
     }
 
-    public void SetSkip(TriggerState? state) {
+    public void SetSkip(dynamic state) {
         WarnLog("[SetSkip] state:{State}", nameof(state));
-        Skip = state;
+        skipState = state;
         Broadcast(CinematicPacket.SetSkipState(""));
     }
 
-    public void AddBalloonTalk(int spawnId, string msg, int duration, int delayTick) {
-        DebugLog("[AddBalloonTalk] spawnId:{SpawnId}, msg:{Message}, duration:{Duration}, delayTick:{Delay}", spawnId, msg, duration, delayTick);
+    public void AddBalloonTalk(int spawnId, string msg, int duration, int delayTick, int npcId) {
+        DebugLog("[AddBalloonTalk] spawnId:{SpawnId}, msg:{Message}, duration:{Duration}, delayTick:{Delay}, npcId:{NpcId}", spawnId, msg, duration, delayTick, npcId);
         if (spawnId == 0) {
             FieldPlayer? fieldPlayer = Field.Players.Values.FirstOrDefault();
             if (fieldPlayer == null) {
@@ -114,7 +113,7 @@ public partial class TriggerContext {
     }
 
     public void ShowCaption(
-        CaptionType type,
+        string type,
         string title,
         string script,
         Align align,
@@ -123,7 +122,7 @@ public partial class TriggerContext {
         int duration,
         float scale
     ) {
-        DebugLog("[ShowCaption] type:{CaptionType}, title:{Title}, script:{Script}", type, title, script);
+        DebugLog("[ShowCaption] type:{Type}, title:{Title}, script:{Script}", type, title, script);
         Broadcast(CinematicPacket.Caption(type, title, script, align, offsetRateX, offsetRateY, duration, scale));
     }
 }
