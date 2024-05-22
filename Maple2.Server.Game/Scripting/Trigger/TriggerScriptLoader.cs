@@ -38,7 +38,7 @@ public class TriggerScriptLoader {
         ScriptSource dungeonCommonScript = engine.CreateScriptSourceFromFile("Scripts/Trigger/dungeon_common/checkusercount.py");
         dungeonCommonScript.Execute(context.Scope);
 
-        ScriptSource guildRaidScript = engine.CreateScriptSourceFromFile("Scripts/Trigger/guild_raid/checkuser10_guildraid.py");
+        ScriptSource guildRaidScript = engine.CreateScriptSourceFromFile("Scripts/Trigger/dungeon_common/checkuser10_guildraid.py");
         guildRaidScript.Execute(context.Scope);
 
         script.Execute(context.Scope);
