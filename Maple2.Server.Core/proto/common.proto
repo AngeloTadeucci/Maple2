@@ -9,9 +9,11 @@ message ChatRequest {
   }
   message Party {
     int32 party_id = 1;
+    repeated int64 member_ids = 2;
   }
   message Guild {
     int64 guild_id = 1;
+    repeated int64 member_ids = 2;
   }
   message World {
   }
