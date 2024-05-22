@@ -92,9 +92,6 @@ public sealed partial class GameSession : Core.Network.Session {
     public PartyManager Party { get; set; }
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
-    public ConcurrentDictionary<ActorState, float> StateSyncDistanceTracking { get; set; }
-    public ConcurrentDictionary<ActorState, long> StateSyncTimeTracking { get; set; }
-    public long StateSyncTrackingTick { get; set; }
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
         this.server = server;
@@ -106,10 +103,6 @@ public sealed partial class GameSession : Core.Network.Session {
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
-
-        StateSyncDistanceTracking = new ConcurrentDictionary<ActorState, float>();
-        StateSyncTimeTracking = new ConcurrentDictionary<ActorState, long>();
-        StateSyncTrackingTick = Environment.TickCount64;
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
@@ -440,121 +433,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
-    }
-
-    public void OnStateSync(StateSync stateSync) {
-        if (Player.Position != stateSync.Position) {
-            Player.Flag |= PlayerObjectFlag.Position;
-        }
-
-        float syncDistance = Vector3.Distance(Player.Position, stateSync.Position); // distance between old player position and new state sync position
-        long syncTick = Field.FieldTick - StateSyncTrackingTick; // time elapsed since last state sync
-        StateSyncTrackingTick = Field.FieldTick;
-
-        Player.Position = stateSync.Position;
-        Player.Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
-
-        if (Player.State != stateSync.State) {
-            Player.Flag |= PlayerObjectFlag.State;
-        }
-        Player.State = stateSync.State;
-        Player.SubState = stateSync.SubState;
-
-        if (stateSync.SyncNumber != int.MaxValue) {
-            Player.LastGroundPosition = stateSync.Position;
-        }
-
-        bool UpdateStateSyncTracking(ActorState state) {
-            if (StateSyncDistanceTracking.TryGetValue(state, out float totalDistance)) {
-                totalDistance += syncDistance;
-                // 150f = BLOCK_SIZE = 1 meter
-                if (totalDistance >= 150F) {
-                    StateSyncDistanceTracking[state] = 0f;
-                    return true;
-                }
-                StateSyncDistanceTracking[state] = totalDistance;
-                return false;
-            }
-            StateSyncDistanceTracking[state] = syncDistance;
-            return false;
-        }
-
-        bool UpdateStateSyncTimeTracking(ActorState state) {
-            if (StateSyncTimeTracking.TryGetValue(state, out long totalTime)) {
-                totalTime += syncTick;
-                if (totalTime >= 1000) {
-                    StateSyncTimeTracking[state] = 0;
-                    return true;
-                }
-                StateSyncTimeTracking[state] = totalTime;
-                return false;
-            }
-            StateSyncTimeTracking[state] = syncTick;
-            return false;
-        }
-
-        // Condition updates
-        // Distance conditions are in increments of 1 meter, while time conditions are 1 second.
-        switch (stateSync.State) {
-            case ActorState.Fall:
-                if (UpdateStateSyncTracking(ActorState.Fall)) {
-                    ConditionUpdate(ConditionType.fall, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.SwimDash:
-            case ActorState.Swim:
-                if (UpdateStateSyncTracking(ActorState.Swim)) {
-                    ConditionUpdate(ConditionType.swim, codeLong: Player.Value.Character.MapId);
-                }
-
-                if (UpdateStateSyncTimeTracking(ActorState.Swim)) {
-                    ConditionUpdate(ConditionType.swimtime, targetLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Walk:
-                if (UpdateStateSyncTracking(ActorState.Walk)) {
-                    ConditionUpdate(ConditionType.run, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Crawl:
-                if (UpdateStateSyncTracking(ActorState.Crawl)) {
-                    ConditionUpdate(ConditionType.crawl, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Glide:
-                if (UpdateStateSyncTracking(ActorState.Glide)) {
-                    ConditionUpdate(ConditionType.glide, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Climb:
-                if (UpdateStateSyncTracking(ActorState.Climb)) {
-                    ConditionUpdate(ConditionType.climb, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Rope:
-                if (UpdateStateSyncTimeTracking(ActorState.Rope)) {
-                    ConditionUpdate(ConditionType.ropetime, targetLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Ladder:
-                if (UpdateStateSyncTimeTracking(ActorState.Ladder)) {
-                    ConditionUpdate(ConditionType.laddertime, targetLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Hold:
-                if (UpdateStateSyncTimeTracking(ActorState.Hold)) {
-                    ConditionUpdate(ConditionType.holdtime, targetLong: Player.Value.Character.MapId);
-                }
-                break;
-            case ActorState.Ride:
-                if (UpdateStateSyncTracking(ActorState.Ride)) {
-                    ConditionUpdate(ConditionType.riding, codeLong: Player.Value.Character.MapId);
-                }
-                break;
-                // TODO: Any more condition states?
-        }
-
-        Field?.EnsurePlayerPosition(Player);
     }
 
     #region Dispose
