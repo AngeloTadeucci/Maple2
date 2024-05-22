@@ -92,6 +92,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public PartyManager Party { get; set; }
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
+
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
         this.server = server;
         State = SessionState.ChangeMap;
@@ -432,26 +433,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
-    }
-
-    public void OnStateSync(StateSync stateSync) {
-        if (Player.Position != stateSync.Position) {
-            Player.Flag |= PlayerObjectFlag.Position;
-        }
-        Player.Position = stateSync.Position;
-        Player.Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
-
-        if (Player.State != stateSync.State) {
-            Player.Flag |= PlayerObjectFlag.State;
-        }
-        Player.State = stateSync.State;
-        Player.SubState = stateSync.SubState;
-
-        if (stateSync.SyncNumber != int.MaxValue) {
-            Player.LastGroundPosition = stateSync.Position;
-        }
-
-        Field?.EnsurePlayerPosition(Player);
     }
 
     #region Dispose
