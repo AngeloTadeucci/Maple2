@@ -5,12 +5,11 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Extensions;
-using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
-    public void CreateWidget(WidgetType type) {
+    public void CreateWidget(string type) {
         ErrorLog("[CreateWidget] type:{Type}", type);
         Field.Widgets[type] = new Widget(type);
     }
@@ -25,8 +24,8 @@ public partial class TriggerContext {
         Broadcast(TriggerPacket.UiHideSummary(entityId));
     }
 
-    public void Notice(bool arg1, string script, bool arg3) {
-        DebugLog("[Notice] arg1:{Arg1}, script:{Script}, arg3:{Arg3}", arg1, script, arg3);
+    public void Notice(int type, string script, bool arg3) {
+        DebugLog("[Notice] type:{Type}, script:{Script}, arg3:{Arg3}", type, script, arg3);
         Broadcast(NoticePacket.Notice(NoticePacket.Flags.Mint, new InterfaceText(script), 3000));
     }
 
@@ -53,7 +52,7 @@ public partial class TriggerContext {
         }
     }
 
-    public void ScoreBoardCreate(string type, int maxScore) {
+    public void ScoreBoardCreate(string type, string title, int maxScore) {
         ErrorLog("[ScoreBoardCreate] type:{Type}, maxScore:{MaxScore}", type, maxScore);
     }
 
@@ -61,11 +60,15 @@ public partial class TriggerContext {
         ErrorLog("[ScoreBoardRemove]");
     }
 
-    public void ScoreBoardSetScore(bool score) {
+    public void ScoreBoardSetScore(int score) {
         ErrorLog("[ScoreBoardSetScore] score:{Score}", score);
     }
 
-    public void SetEventUI(byte type, string script, int duration, int boxId, int notBoxId) {
+    public void SetEventUi(int type, string arg2, string arg3, string arg4) {
+        // TODO: map to other func
+    }
+
+    public void SetEventUi(int type, string script, int duration, int boxId, int notBoxId) {
         DebugLog("[SetEventUI] type:{Type}, script:{Script}, duration:{Duration}, boxId:{BoxId}, notBoxID:{NotBoxId}", type, script, duration, boxId, notBoxId);
         Func<ByteWriter> getPacket;
         switch (type) {
@@ -115,16 +118,16 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetVisibleUI(string[] uiNames, bool visible) {
+    public void SetVisibleUi(string[] uiNames, bool visible) {
         ErrorLog("[SetVisibleUI] uiNames:{UiNames}, visible:{Visible}", string.Join(", ", uiNames), visible);
     }
 
-    public void ShowCountUI(string text, byte stage, byte count, byte soundType) {
+    public void ShowCountUi(string text, int stage, int count, int soundType) {
         DebugLog("[ShowCountUI] text:{Text}, stage:{Stage}, count:{Count}, soundType:{SoundType}", text, stage, count, soundType);
         Broadcast(MassiveEventPacket.Countdown(text, stage, count, soundType));
     }
 
-    public void ShowEventResult(EventResultType type, string text, int duration, int userTagId, int boxId, bool isOutSide) {
+    public void ShowEventResult(string type, string text, int duration, int userTagId, int boxId, bool isOutSide) {
         ErrorLog("[ShowEventResult] type:{Type}, text:{Text}, duration:{Duration}, userTagId:{TagId}, boxId:{BoxId}, isOutSide:{IsOutside}",
             type, text, duration, userTagId, boxId, isOutSide);
     }
@@ -134,49 +137,45 @@ public partial class TriggerContext {
         Broadcast(TriggerPacket.UiShowSummary(entityId, textId, duration));
     }
 
-    public void ShowRoundUI(int round, int duration) {
+    public void ShowRoundUi(int round, int duration, bool isFinalRound) {
         DebugLog("[ShowRoundUI] round:{Round}, duration:{Duration}", round, duration);
         Broadcast(MassiveEventPacket.StartRound(round, duration));
     }
 
-    public void SideNpcTalk(int npcId, string illust, int duration, string script, string voice, SideNpcTalkType type, string usm) {
-        WarnLog("[SideNpcTalk] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}, voice:{Voice}, type:{Type}, usm:{Usm}",
-            npcId, illust, duration, script, voice, type, usm);
-        switch (type) {
-            case SideNpcTalkType.Default:
-                return;
-            case SideNpcTalkType.Talk:
-                Broadcast(TriggerPacket.SidePopupTalk(duration, illust, voice, script));
-                return;
-            case SideNpcTalkType.TalkBottom:
-                return;
-            case SideNpcTalkType.CutIn:
-                Broadcast(TriggerPacket.SidePopupCutIn(duration, illust, voice, script));
-                return;
-            case SideNpcTalkType.Movie:
-                return;
-        }
+    public void SideNpcTalk(int npcId, string illust, int duration, string script, string voice) {
+        WarnLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}, voice:{Voice}",
+            npcId, illust, duration, script, voice);
+        Broadcast(TriggerPacket.SidePopupTalk(duration, illust, voice, script));
     }
 
-    public void WidgetAction(WidgetType type, string name, int widgetArgType, string args) {
-        ErrorLog("[WidgetAction] type:{Type}, name:{Name}, widgetArgType:{ArgType}, args:{Args}", type, name, widgetArgType, args);
+    public void SideNpcTalkBottom(int npcId, string illust, int duration, string script) {
+        WarnLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}", npcId, illust, duration, script);
+    }
+
+    public void SideNpcMovie(string usm, int duration) {
+        WarnLog("[SideNpcMovie] usm:{Usm}, duration:{Duration}", usm, duration);
+    }
+
+    public void SideNpcCutin(string illust, int duration) {
+        WarnLog("[SideNpcMovie] illust:{Illustration}, duration:{Duration}", illust, duration);
+        Broadcast(TriggerPacket.SidePopupCutIn(duration, illust));
+    }
+
+    public void WidgetAction(string type, string func, string widgetArg, string desc, int widgetArgNum) {
+        ErrorLog("[WidgetAction] type:{Type}, func:{Func}, widgetArg:{Args}, desc:{Desc}, widgetArgNum:{ArgNum}", type, func, widgetArg, desc, widgetArgNum);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return;
         }
     }
 
     #region Conditions
-    public bool WidgetCondition(WidgetType type, string condition, string value) {
-        DebugLog("[WidgetCondition] type:{Type}, condition:{Condition}, value:{Value}", type, condition, value);
+    public int WidgetValue(string type, string name, string desc) {
+        DebugLog("[WidgetValue] type:{Type}, name:{Name}, desc:{Desc}", type, name, desc);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
-            return false;
-        }
-        if (!widget.Conditions.TryGetValue(condition, out string? widgetValue)) {
-            return false;
+            return 0;
         }
 
-        value = value.Trim();
-        return string.IsNullOrWhiteSpace(value) || widgetValue == value;
+        return widget.Conditions.GetValueOrDefault(name);
     }
     #endregion
 }

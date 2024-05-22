@@ -82,6 +82,17 @@ public static class ConditionUtil {
             case ConditionType.job:
             case ConditionType.job_change:
             case ConditionType.item_move:
+            case ConditionType.fall:
+            case ConditionType.swim:
+            case ConditionType.swimtime:
+            case ConditionType.run:
+            case ConditionType.crawl:
+            case ConditionType.glide:
+            case ConditionType.climb:
+            case ConditionType.ropetime:
+            case ConditionType.laddertime:
+            case ConditionType.holdtime:
+            case ConditionType.riding:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -115,6 +126,8 @@ public static class ConditionUtil {
             case ConditionType.change_profile:
             case ConditionType.install_billboard:
             case ConditionType.buddy_request:
+            case ConditionType.fall_survive:
+            case ConditionType.fall_die:
                 return true;
         }
         return false;
@@ -127,6 +140,11 @@ public static class ConditionUtil {
                     target.Range.Value.Max <= session.Player.Value.Character.MapId) {
                     return true;
                 }
+
+                if (target.Integers != null && target.Integers.Any(i => i == session.Player.Value.Character.MapId)) {
+                    return true;
+                }
+
                 break;
             case ConditionType.fish:
             case ConditionType.fish_big:
@@ -147,6 +165,26 @@ public static class ConditionUtil {
             case ConditionType.enchant_result:
             case ConditionType.install_billboard:
                 if (target.Integers != null && target.Integers.Any(value => longValue >= value)) {
+                    return true;
+                }
+                break;
+            case ConditionType.swim:
+            case ConditionType.swimtime:
+            case ConditionType.run:
+            case ConditionType.crawl:
+            case ConditionType.glide:
+            case ConditionType.climb:
+            case ConditionType.fall:
+            case ConditionType.ropetime:
+            case ConditionType.laddertime:
+            case ConditionType.holdtime:
+            case ConditionType.riding:
+                if (target.Range != null && target.Range.Value.Min >= longValue &&
+                    target.Range.Value.Max <= longValue) {
+                    return true;
+                }
+
+                if (target.Integers != null && target.Integers.Contains((int) longValue)) {
                     return true;
                 }
                 break;
@@ -197,6 +235,8 @@ public static class ConditionUtil {
             case ConditionType.job:
             case ConditionType.job_change:
             case ConditionType.item_move:
+            case ConditionType.fall_survive:
+            case ConditionType.fall_die:
                 return true;
         }
         return false;

@@ -4,7 +4,6 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Trigger.Enum;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -64,27 +63,27 @@ public class TriggerHandler : PacketHandler<GameSession> {
         int arg = packet.ReadInt();
         switch (mode) {
             case 1: {
-                    if (session.Field.Widgets.TryGetValue(WidgetType.Guide, out Widget? widget)) {
-                        widget.Conditions["IsTriggerEvent"] = arg.ToString();
+                    if (session.Field.Widgets.TryGetValue("Guide", out Widget? widget)) {
+                        widget.Conditions["IsTriggerEvent"] = arg;
                     }
                     break;
                 }
             case 5: {
-                    if (session.Field.Widgets.TryGetValue(WidgetType.SceneMovie, out Widget? widget)) {
-                        widget.Conditions["IsStop"] = arg.ToString();
+                    if (session.Field.Widgets.TryGetValue("SceneMovie", out Widget? widget)) {
+                        widget.Conditions["IsStop"] = arg;
                         session.Send(TriggerPacket.UiSkipMovie(arg));
                     }
                     break;
                 }
             case 12: {
                     // TODO: This is all a guess
-                    if (session.Field.Widgets.TryGetValue(WidgetType.Round, out Widget? widget)) {
+                    if (session.Field.Widgets.TryGetValue("Round", out Widget? widget)) {
                         switch (arg) {
                             case 0: // 0 = FailGameProgress
-                                widget.Conditions["GameFail"] = "0";
+                                widget.Conditions["GameFail"] = 0;
                                 break;
                             case 1: // 1 = SuccessGameProgress
-                                widget.Conditions["GameClear"] = "0";
+                                widget.Conditions["GameClear"] = 0;
                                 break;
                         }
                     }

@@ -34,10 +34,34 @@ public partial class TriggerContext {
 
     public void ArcadeThreeTwoOneStartRound(int round, int uiDuration) { }
 
-    public void ArcadeThreeTwoOneResultRound(byte resultDirection) { }
+    public void ArcadeThreeTwoOneResultRound(int resultDirection) { }
 
     public void ArcadeThreeTwoOneResultRound2(int round) { }
 
     public void ArcadeThreeTwoOneClearRound(int round) { }
+
+    public void ArcadeThreeTwoOne2StartGame(int lifeCount, int initScore) { }
+
+    public void ArcadeThreeTwoOne2EndGame() { }
+
+    public void ArcadeThreeTwoOne2StartRound(int round, int uiDuration) { }
+
+    public void ArcadeThreeTwoOne2ResultRound(int resultDirection) { }
+
+    public void ArcadeThreeTwoOne2ResultRound2(int round) { }
+
+    public void ArcadeThreeTwoOne2ClearRound(int round) { }
+
+    public void ArcadeThreeTwoOne3StartGame(int lifeCount, int initScore) { }
+
+    public void ArcadeThreeTwoOne3EndGame() { }
+
+    public void ArcadeThreeTwoOne3StartRound(int round, int uiDuration) { }
+
+    public void ArcadeThreeTwoOne3ResultRound(int resultDirection) { }
+
+    public void ArcadeThreeTwoOne3ResultRound2(int round) { }
+
+    public void ArcadeThreeTwoOne3ClearRound(int round) { }
     #endregion
 }

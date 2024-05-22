@@ -47,6 +47,6 @@ public class UserSyncHandler : PacketHandler<GameSession> {
             session.Field?.Broadcast(buffer, sender: session);
         }
 
-        session.OnStateSync(stateSyncs[^1]);
+        session.Player.OnStateSync(stateSyncs[^1]);
     }
 }
