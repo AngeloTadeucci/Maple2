@@ -296,6 +296,15 @@ message BlackMarketRequest {
     int64 listing_id = 1;
   }
 
+  message Remove {
+    int64 listing_id = 1;
+  }
+
+  message Purchase {
+    int64 listing_id = 1;
+    int64 seller_id = 3;
+  }
+
   message Search {
     repeated string categories = 1;
     int32 min_level = 2;
@@ -315,6 +324,8 @@ message BlackMarketRequest {
   oneof black_market {
     Add add = 1;
     Search search = 2;
+    Remove remove = 3;
+    Purchase purchase = 4;
   }
 }
 

@@ -17,6 +17,9 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public long PlotExpiryTime { get; set; }
     // Trophy
     public AchievementInfo AchievementInfo { get; set; }
+    // Premium
+    public long PremiumTime { get; set; }
+
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo) {
@@ -25,6 +28,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             ApartmentNumber = player.Home.ApartmentNumber,
             PlotExpiryTime = player.Home.PlotExpiryTime,
             AchievementInfo = player.Character.AchievementInfo,
+            PremiumTime = player.Character.PremiumTime,
         };
     }
 

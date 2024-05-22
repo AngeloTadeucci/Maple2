@@ -29,7 +29,7 @@ public sealed class MailManager {
 
     public void Notify(bool force = false) {
         if (Fetch(force) || force) {
-            session.Send(MailPacket.Notify(inbox.Count, unreadMail, unreadMail > 0));
+            session.Send(MailPacket.Notify(unreadMail, unreadMail > 0));
         }
     }
 

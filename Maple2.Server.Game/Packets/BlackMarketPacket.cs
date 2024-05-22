@@ -15,6 +15,7 @@ public static class BlackMarketPacket {
         Remove = 3,
         Search = 4,
         Purchase = 5,
+        PurchaseResponse = 7,
         Preview = 8,
     }
 
@@ -49,6 +50,15 @@ public static class BlackMarketPacket {
         return pWriter;
     }
 
+    public static ByteWriter Remove(long listingId) {
+        var pWriter = Packet.Of(SendOp.BlackMarket);
+        pWriter.Write<Command>(Command.Remove);
+        pWriter.WriteLong(listingId);
+        pWriter.WriteByte();
+
+        return pWriter;
+    }
+
     public static ByteWriter Search(ICollection<BlackMarketListing> listings) {
         var pWriter = Packet.Of(SendOp.BlackMarket);
         pWriter.Write<Command>(Command.Search);
@@ -56,6 +66,22 @@ public static class BlackMarketPacket {
         foreach (BlackMarketListing listing in listings) {
             pWriter.WriteClass<BlackMarketListing>(listing);
         }
+
+        return pWriter;
+    }
+
+    public static ByteWriter Purchase(long listingId, int amount) {
+        var pWriter = Packet.Of(SendOp.BlackMarket);
+        pWriter.Write<Command>(Command.Purchase);
+        pWriter.WriteLong(listingId);
+        pWriter.WriteInt(amount);
+
+        return pWriter;
+    }
+
+    public static ByteWriter PurchaseResponse() {
+        var pWriter = Packet.Of(SendOp.BlackMarket);
+        pWriter.Write<Command>(Command.PurchaseResponse);
 
         return pWriter;
     }

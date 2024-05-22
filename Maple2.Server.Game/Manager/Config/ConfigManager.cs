@@ -26,9 +26,10 @@ public class ConfigManager {
     private readonly IDictionary<LapenshardSlot, int> lapenshards;
     private readonly IDictionary<int, SkillCooldown> skillCooldowns;
     private long deathPenaltyTick;
-    public int DeathCounter;
+    public int DeathCount;
     private readonly StatAttributes statAttributes;
     public readonly IDictionary<int, int> GatheringCounts;
+    public readonly IDictionary<int, int> GuideRecords;
 
     public readonly SkillManager Skill;
 
@@ -49,9 +50,11 @@ public class ConfigManager {
             IList<long>? FavoriteDesigners,
             IDictionary<LapenshardSlot, int>? Lapenshards,
             IList<SkillCooldown>? SkillCooldowns,
-            (long, int) DeathPenalty,
+            long deathPenaltyTick,
+            int DeathCounter,
             IDictionary<BasicAttribute, int>? Allocation,
             IDictionary<int, int>? GatheringCounts,
+            IDictionary<int, int>? GuideRecords,
         SkillBook? SkillBook
             ) load = db.LoadCharacterConfig(session.CharacterId);
         if (load.KeyBinds != null) {
@@ -75,8 +78,9 @@ public class ConfigManager {
         favoriteDesigners = load.FavoriteDesigners ?? new List<long>();
         lapenshards = load.Lapenshards ?? new Dictionary<LapenshardSlot, int>();
         GatheringCounts = load.GatheringCounts ?? new Dictionary<int, int>();
-        deathPenaltyTick = load.DeathPenalty.Item1;
-        DeathCounter = load.DeathPenalty.Item2;
+        GuideRecords = load.GuideRecords ?? new Dictionary<int, int>();
+        deathPenaltyTick = load.deathPenaltyTick;
+        DeathCount = load.DeathCounter;
 
         if (load.SkillCooldowns != null) {
             foreach (SkillCooldown cooldown in load.SkillCooldowns) {
@@ -188,6 +192,13 @@ public class ConfigManager {
         }
 
         session.Send(PremiumCubPacket.Activate(session.Player.ObjectId, session.Player.Value.Account.PremiumTime));
+        session.Player.Value.Character.PremiumTime = session.Player.Value.Account.PremiumTime;
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            PremiumTime = session.Player.Value.Account.PremiumTime,
+            Async = true,
+        });
     }
 
     public void RefreshPremiumClubBuffs() {
@@ -197,6 +208,8 @@ public class ConfigManager {
             }
         }
     }
+
+    public bool IsPremiumClubActive() => session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds();
     #endregion
 
     #region ChatStickers
@@ -246,9 +259,9 @@ public class ConfigManager {
 
     public void UpdateDeathPenalty(int tick) {
         deathPenaltyTick = tick;
-        DeathCounter = tick > 0 ? DeathCounter++ : 0;
+        DeathCount = tick > 0 ? DeathCount++ : 0;
 
-        session.Send(RevivalPacket.Confirm(session.Player, (int) deathPenaltyTick, DeathCounter));
+        session.Send(RevivalPacket.Confirm(session.Player, (int) deathPenaltyTick, DeathCount));
     }
 
     #region KeyBind
@@ -467,9 +480,11 @@ public class ConfigManager {
             favoriteDesigners,
             lapenshards,
             skillCooldowns.Values.ToList(),
-            (deathPenaltyTick, DeathCounter),
+            deathPenaltyTick,
+            DeathCount,
             statAttributes.Allocation,
             GatheringCounts,
+            GuideRecords,
             Skill.SkillBook
         );
     }

@@ -12,8 +12,10 @@ public partial class ChannelService {
                 WhisperChat(request);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Party:
+                PartyChat(request);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Guild:
+                GuildChat(request);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.World:
                 WorldChat(request);
@@ -37,6 +39,26 @@ public partial class ChannelService {
         }
 
         session.Send(ChatPacket.Whisper(request.AccountId, request.CharacterId, request.Name, request.Message, request.Name));
+    }
+
+    private void PartyChat(ChatRequest request) {
+        foreach (long characterId in request.Party.MemberIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Party, request.Message));
+        }
+    }
+
+    private void GuildChat(ChatRequest request) {
+        foreach (long characterId in request.Guild.MemberIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Guild, request.Message));
+        }
     }
 
     private void WorldChat(ChatRequest request) {
