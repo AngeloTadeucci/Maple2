@@ -274,7 +274,7 @@ public sealed class BlackMarketManager {
 
         bool sellerIsPremium = false;
         long savings = tax;
-        if (session.PlayerInfo.GetOrFetch(listing.CharacterId, out PlayerInfo? seller) && seller.PremiumTime > DateTime.Now.ToEpochSeconds()){
+        if (session.PlayerInfo.GetOrFetch(listing.CharacterId, out PlayerInfo? seller) && seller.PremiumTime > DateTime.Now.ToEpochSeconds()) {
             savings = (long) (tax * Constant.BlackMarketPremiumClubDiscount);
             sellerIsPremium = true;
         }
@@ -313,7 +313,7 @@ public sealed class BlackMarketManager {
             mail.SetContent(sellerIsPremium ?
                 StringCode.s_blackmarket_mail_to_vipseller_content_soldout :
                 StringCode.s_blackmarket_mail_to_seller_content_soldout
-                );
+            );
         } else {
             mail.SetContent(sellerIsPremium ?
                 StringCode.s_blackmarket_mail_to_vipseller_content :
