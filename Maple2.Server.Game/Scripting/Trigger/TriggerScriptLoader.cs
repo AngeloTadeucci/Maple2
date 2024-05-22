@@ -35,6 +35,12 @@ public class TriggerScriptLoader {
             scriptSources[(xBlock, name)] = script;
         }
 
+        ScriptSource dungeonCommonScript = engine.CreateScriptSourceFromFile("Scripts/Trigger/dungeon_common/checkusercount.py");
+        dungeonCommonScript.Execute(context.Scope);
+
+        ScriptSource guildRaidScript = engine.CreateScriptSourceFromFile("Scripts/Trigger/guild_raid/checkuser10_guildraid.py");
+        guildRaidScript.Execute(context.Scope);
+
         script.Execute(context.Scope);
         dynamic? initialStateClass = context.Scope.GetVariable("initial_state");
         if (initialStateClass == null) {

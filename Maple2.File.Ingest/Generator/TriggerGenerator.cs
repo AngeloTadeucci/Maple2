@@ -67,7 +67,7 @@ public class TriggerGenerator {
                     string importModule = Directory.GetParent(path).Name;
                     string importName = Path.GetFileNameWithoutExtension(path);
 
-                    script.Imports.Add($"{importModule}.{importName}");
+                    // Ignores the actual import but keep the name for the state index
                     switch (importName) {
                         case "checkusercount":
                             foreach (KeyValuePair<string, string> state in checkUserCountStates) {
