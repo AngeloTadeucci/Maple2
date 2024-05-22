@@ -18,6 +18,7 @@ public class DebugCommand : Command {
         AddCommand(new DebugNpcAiCommand(session, npcStorage));
         AddCommand(new DebugAnimationCommand(session));
         AddCommand(new DebugSkillsCommand(session));
+        AddCommand(new DebugPacketCommand(session));
     }
 
     public class DebugNpcAiCommand : Command {
@@ -88,6 +89,36 @@ public class DebugCommand : Command {
 
             string message = enabled ?? true ? "Enabled" : "Disabled";
             ctx.Console.Out.WriteLine($"{message} skill cast packet debug info printing");
+        }
+    }
+
+    private class DebugPacketCommand : Command {
+        private readonly GameSession session;
+
+        public DebugPacketCommand(GameSession session) : base("packet", "Send raw packet to GameServer") {
+            this.session = session;
+
+            var packet = new Argument<string[]>("packet", () => [], "your packet");
+
+            AddArgument(packet);
+
+            this.SetHandler<InvocationContext, string[]>(Handle, packet);
+        }
+
+        private void Handle(InvocationContext ctx, string[] packet) {
+            if (packet.Length == 0) {
+                ctx.Console.Error.WriteLine("No packet provided.");
+                return;
+            }
+
+
+            // if (packet.Length % 2 != 0) {
+            //     ctx.Console.Error.WriteLine("Invalid packet format, must be even number of bytes.");
+            //     return;
+            // }
+
+            byte[] packetBytes = packet.Select(x => Convert.ToByte(x, 16)).ToArray();
+            session.Send(packetBytes);
         }
     }
 }

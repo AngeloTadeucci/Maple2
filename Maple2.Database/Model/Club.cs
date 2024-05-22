@@ -30,11 +30,9 @@ internal class Club {
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Club?(Club? other) {
-        return other == null ? null : new Maple2.Model.Game.Club {
+        return other == null ? null : new Maple2.Model.Game.Club(other.Id, other.Name, other.LeaderId) {
             LastModified = other.LastModified,
             CreationTime = other.CreationTime.ToEpochSeconds(),
-            Id = other.Id,
-            Name = other.Name,
             // Leader and Members set separately
         };
     }

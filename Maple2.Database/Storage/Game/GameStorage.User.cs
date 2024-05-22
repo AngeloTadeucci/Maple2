@@ -151,6 +151,12 @@ public partial class GameStorage {
                     (member, guild) => new Tuple<long, string>(guild.Id, guild.Name))
                 .FirstOrDefault() ?? new Tuple<long, string>(0, string.Empty);
 
+            List<Tuple<long, string>> clubs = Context.ClubMember
+                .Where(member => member.CharacterId == characterId)
+                .Join(Context.Club, member => member.ClubId, club => club.Id,
+                    (member, club) => new Tuple<long, string>(club.Id, club.Name))
+                .ToList();
+
             Home? home = GetHome(accountId);
             if (home == null) {
                 return null;
@@ -178,6 +184,8 @@ public partial class GameStorage {
 
             player.Character.GuildId = guild.Item1;
             player.Character.GuildName = guild.Item2;
+
+            player.Character.Clubs = clubs.ToDictionary(club => club.Item1, club => club.Item2);
 
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
 

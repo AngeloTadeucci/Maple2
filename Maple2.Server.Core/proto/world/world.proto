@@ -26,6 +26,9 @@ service World {
   rpc Party(PartyRequest) returns (PartyResponse);
   rpc PartySearchInfo(PartySearchInfoRequest) returns (PartySearchInfoResponse);
   rpc PartySearch(PartySearchRequest) returns (PartySearchResponse);
+  // Manage club.
+  rpc ClubInfo(ClubInfoRequest) returns (ClubInfoResponse);
+  rpc Club(ClubRequest) returns (ClubResponse);
   // Manage group chat.
   rpc GroupChatInfo(GroupChatInfoRequest) returns (GroupChatInfoResponse);
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
@@ -286,4 +289,46 @@ message PartyResponse {
   }
 
   int32 error = 3;
+}
+
+message ClubRequest {
+  message Create {
+    string club_name = 1;
+  }
+
+  int64 requestor_id = 4;
+  oneof club {
+    Create create = 1;
+  }
+}
+
+message ClubResponse {
+  oneof Info {
+    int64 club_id = 1;
+    ClubInfo club = 2;
+  }
+
+  int32 error = 3;
+}
+
+message ClubInfo {
+  message Member {
+    int64 character_id = 1;
+    string character_name = 2;
+  }
+
+  int64 id = 1;
+  string name = 2;
+  int64 leader_id = 3;
+  string leader_name = 4;
+  int64 creation_time = 5;
+  repeated Member members = 6;
+}
+
+message ClubInfoRequest {
+  int64 character_id = 1;
+}
+
+message ClubInfoResponse {
+  repeated ClubInfo clubs = 1;
 }

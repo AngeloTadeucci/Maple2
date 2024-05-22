@@ -89,6 +89,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; }
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
+    public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
         this.server = server;
@@ -100,6 +101,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
+        Clubs = new ConcurrentDictionary<long, ClubManager>();
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
@@ -156,6 +158,15 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
+        ClubInfoResponse clubInfoResponse = World.ClubInfo(new ClubInfoRequest {
+            CharacterId = CharacterId,
+        });
+
+        foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
+            ClubManager manager = new ClubManager(clubInfo, this);
+            Clubs.TryAdd(clubInfo.Id, manager);
+        }
+
         if (!PrepareField(player.Character.MapId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
@@ -183,7 +194,10 @@ public sealed partial class GameSession : Core.Network.Session {
         foreach ((int id, GroupChatManager groupChat) in GroupChats) {
             groupChat.Load();
         }
-        // Club
+        foreach ((long id, ClubManager club) in Clubs) {
+            club.Load();
+        }
+
         Buddy.Load();
         Party.Load();
 

@@ -800,6 +800,7 @@ public static class Constant {
     public const int TooltipLabelMaxWidth = 408;
     public const int ClubNameLengthMin = 2;
     public const int ClubNameLengthMax = 25;
+    public const int ClubMaxCount = 3;
     public const int UgcNameLengthMin = 3;
     public const int UgcNameLengthMax = 25;
     public const int UgcTagLengthMax = 12;

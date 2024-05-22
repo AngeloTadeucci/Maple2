@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -44,6 +45,7 @@ public class Character {
     public string GuildName = string.Empty;
     public long GuildId;
     public int PartyId;
+    public Dictionary<long, string> Clubs = []; // ClubId, ClubName
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
 }

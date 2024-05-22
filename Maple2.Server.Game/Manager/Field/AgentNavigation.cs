@@ -36,7 +36,7 @@ public sealed class AgentNavigation : IDisposable {
     public bool UpdatePosition() {
         Position position = mesh.positionNear3DPoint((int) npc.Position.X, (int) npc.Position.Y, (int) npc.Position.Z, horizontalRange: 500, verticalRange: 50);
         if (!mesh.positionIsValid(position)) {
-            Logger.Error("Failed to find valid position from {Source} => {Position}", npc.Position, position);
+            // Logger.Error("Failed to find valid position from {Source} => {Position}", npc.Position, position);
             return false;
         }
 
