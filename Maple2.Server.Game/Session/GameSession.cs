@@ -425,7 +425,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
         // Death Counter
         Config.DeathCount = 0;
-        Send(RevivalPacket.Count(Config.DeathCount));
+        Send(RevivalPacket.Count(0));
         // Premium Rewards Claimed
         Player.Value.Account.PremiumRewardsClaimed.Clear();
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
