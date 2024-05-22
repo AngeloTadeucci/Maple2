@@ -10,10 +10,9 @@ namespace Maple2.Server.World.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
+            migrationBuilder.DropColumn(
                 name: "DeathPenalty",
-                table: "character-config",
-                newName: "GuideRecords");
+                table: "character-config");
 
             migrationBuilder.AddColumn<int>(
                 name: "DeathCount",
@@ -28,6 +27,14 @@ namespace Maple2.Server.World.Migrations
                 type: "bigint",
                 nullable: false,
                 defaultValue: 0L);
+
+            migrationBuilder.AddColumn<string>(
+                name: "GuideRecords",
+                table: "character-config",
+                type: "json",
+                nullable: true,
+                defaultValue: "{}")
+                .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
@@ -41,10 +48,16 @@ namespace Maple2.Server.World.Migrations
                 name: "DeathTick",
                 table: "character-config");
 
-            migrationBuilder.RenameColumn(
+            migrationBuilder.DropColumn(
                 name: "GuideRecords",
+                table: "character-config");
+
+            migrationBuilder.AddColumn<string>(
+                name: "DeathPenalty",
                 table: "character-config",
-                newName: "DeathPenalty");
+                type: "json",
+                nullable: false)
+                .Annotation("MySql:CharSet", "utf8mb4");
         }
     }
 }

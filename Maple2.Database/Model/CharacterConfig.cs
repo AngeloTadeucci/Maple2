@@ -25,7 +25,7 @@ internal class CharacterConfig {
     public long DeathTick { get; set; }
     public int DeathCount { get; set; }
     public IDictionary<int, int>? GatheringCounts { get; set; }
-    public IDictionary<int, int> GuideRecords { get; set; }
+    public IDictionary<int, int>? GuideRecords { get; set; }
 
     public DateTime LastModified { get; set; }
 

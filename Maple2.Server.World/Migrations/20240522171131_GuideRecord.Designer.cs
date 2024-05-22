@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240522165349_GuideRecord")]
+    [Migration("20240522171131_GuideRecord")]
     partial class GuideRecord
     {
         /// <inheritdoc />
@@ -313,7 +313,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("json");
 
                     b.Property<string>("GuideRecords")
-                        .IsRequired()
                         .HasColumnType("json");
 
                     b.Property<string>("HotBars")

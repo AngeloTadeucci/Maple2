@@ -310,7 +310,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("json");
 
                     b.Property<string>("GuideRecords")
-                        .IsRequired()
                         .HasColumnType("json");
 
                     b.Property<string>("HotBars")
