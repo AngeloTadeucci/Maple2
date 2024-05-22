@@ -40,8 +40,14 @@ public class BlackMarketHandler : PacketHandler<GameSession> {
             case Command.Add:
                 HandleAdd(session, packet);
                 break;
+            case Command.Remove:
+                HandleRemove(session, packet);
+                break;
             case Command.Search:
                 HandleSearch(session, packet);
+                break;
+            case Command.Purchase:
+                HandlePurchase(session, packet);
                 break;
             case Command.Preview:
                 HandlePreview(session, packet);
@@ -59,6 +65,12 @@ public class BlackMarketHandler : PacketHandler<GameSession> {
         int quantity = packet.ReadInt();
 
         session.BlackMarket.Add(itemUid, price, quantity);
+    }
+
+    private void HandleRemove(GameSession session, IByteReader packet) {
+        long listingId = packet.ReadLong();
+
+        session.BlackMarket.Remove(listingId);
     }
 
     private void HandleSearch(GameSession session, IByteReader packet) {
@@ -134,18 +146,11 @@ public class BlackMarketHandler : PacketHandler<GameSession> {
         session.Send(BlackMarketPacket.Search(listings));
     }
 
-    private static void ReadStat(Dictionary<BasicAttribute, BasicOption> basicOptions, Dictionary<SpecialAttribute, SpecialOption> specialOptions, int statId, int value) {
-        switch (statId) {
-            case >= 1000 and < 11000: // BasicAttribute with percent value
-                basicOptions[(BasicAttribute) (statId - 1000)] = new BasicOption((float) (value + 5) / 10000);
-                return;
-            case >= 11000: // SpecialAttribute with percent value
-                specialOptions[(SpecialAttribute) (statId - 11000)] = new SpecialOption((float) (value + 5) / 10000);
-                break;
-            default: // BasicAttribute with flat value
-                basicOptions[(BasicAttribute) statId] = new BasicOption(value);
-                break;
-        }
+    private void HandlePurchase(GameSession session, IByteReader packet) {
+        long listingId = packet.ReadLong();
+        int amount = packet.ReadInt();
+
+        session.BlackMarket.Purchase(listingId, amount);
     }
 
     private void HandlePreview(GameSession session, IByteReader packet) {

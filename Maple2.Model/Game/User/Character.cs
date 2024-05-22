@@ -46,4 +46,5 @@ public class Character {
     public int PartyId;
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
+    public long PremiumTime;
 }

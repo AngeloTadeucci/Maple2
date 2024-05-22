@@ -10,7 +10,7 @@ public class BlackMarketListing : IByteSerializable {
     public long CreationTime { get; init; }
     public long ExpiryTime { get; init; }
     public long Price { get; init; }
-    public int Quantity { get; init; }
+    public int Quantity { get; set; }
     public long AccountId { get; init; }
     public long CharacterId { get; init; }
     public long Deposit { get; init; }
