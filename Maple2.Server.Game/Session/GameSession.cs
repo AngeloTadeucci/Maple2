@@ -106,7 +106,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
-        
+
         StateSyncDistanceTracking = new ConcurrentDictionary<ActorState, float>();
         StateSyncTimeTracking = new ConcurrentDictionary<ActorState, long>();
         StateSyncTrackingTick = Environment.TickCount64;
@@ -551,7 +551,7 @@ public sealed partial class GameSession : Core.Network.Session {
                     ConditionUpdate(ConditionType.riding, codeLong: Player.Value.Character.MapId);
                 }
                 break;
-            // TODO: Any more condition states?
+                // TODO: Any more condition states?
         }
 
         Field?.EnsurePlayerPosition(Player);
