@@ -30,7 +30,6 @@ public class UserChatHandler : PacketHandler<GameSession> {
     public override void Handle(GameSession session, IByteReader packet) {
         var type = packet.Read<ChatType>();
         string message = packet.ReadUnicodeString();
-        Console.WriteLine(message);
         string recipient = packet.ReadUnicodeString();
         long clubId = packet.ReadLong();
         ICollection<long> itemUids = LinkedItemUids(session, message);

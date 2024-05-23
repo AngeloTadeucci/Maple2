@@ -11,9 +11,8 @@ namespace Maple2.Server.World.Service;
 public partial class WorldService {
     public override Task<ChatResponse> Chat(ChatRequest request, ServerCallContext context) {
         switch (request.ChatCase) {
-            case ChatRequest.ChatOneofCase.Whisper: {
+            case ChatRequest.ChatOneofCase.Whisper:
                 return WhisperChat(request);
-            }
             case ChatRequest.ChatOneofCase.Party:
                 return PartyChat(request);
             case ChatRequest.ChatOneofCase.Guild:
