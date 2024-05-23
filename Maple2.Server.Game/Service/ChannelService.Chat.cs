@@ -65,7 +65,6 @@ public partial class ChannelService {
             if (items.Count > 0) {
                 session.Send(MessengerBrowserPacket.Link(items.ToArray()));
             }
-
             session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Party, request.Message));
         }
     }
