@@ -1,4 +1,6 @@
-﻿using Grpc.Core;
+﻿using System.Text.RegularExpressions;
+using System.Xml;
+using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -10,6 +12,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Util;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -29,6 +32,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         string message = packet.ReadUnicodeString();
         string recipient = packet.ReadUnicodeString();
         long clubId = packet.ReadLong();
+        ICollection<long> itemUids = LinkedItemUids(session, message);
 
         // Handle ChatCommands
         if (message.StartsWith('/')) {
@@ -38,40 +42,54 @@ public class UserChatHandler : PacketHandler<GameSession> {
 
         switch (type) {
             case ChatType.Normal:
-                HandleNormal(session, message);
+                HandleNormal(session, message, itemUids);
                 return;
             case ChatType.WhisperTo:
-                HandleWhisper(session, message, recipient);
+                HandleWhisper(session, message, recipient, itemUids);
                 return;
             case ChatType.Party:
-                HandleParty(session, message);
+                HandleParty(session, message, itemUids);
                 return;
             case ChatType.Guild:
-                HandleGuild(session, message);
+                HandleGuild(session, message, itemUids);
                 return;
             case ChatType.World:
-                HandleWorld(session, message);
+                HandleWorld(session, message, itemUids);
                 return;
             case ChatType.Channel:
-                HandleChannel(session, message);
+                HandleChannel(session, message, itemUids);
                 return;
             case ChatType.Super:
-                HandleSuper(session, message);
+                HandleSuper(session, message, itemUids);
                 return;
             case ChatType.Club:
-                HandleClub(session, message, clubId);
+                HandleClub(session, message, clubId, itemUids);
                 return;
             case ChatType.Wedding:
-                HandleWedding(session, message);
+                HandleWedding(session, message, itemUids);
                 return;
         }
     }
 
-    private static void HandleNormal(GameSession session, string message) {
+    private static void HandleNormal(GameSession session, string message, ICollection<long> itemUids) {
+        if (itemUids.Count > 0) {
+            List<Item> items = [];
+            using GameStorage.Request db = session.GameStorage.Context();
+            foreach (long itemUid in itemUids) {
+                Item? item = db.GetItem(itemUid);
+                if (item != null) {
+                    items.Add(item);
+                }
+            }
+            if (items.Count > 0) {
+                session.Send(MessengerBrowserPacket.Link(items.ToArray()));
+            }
+        }
+
         session.Field?.Broadcast(ChatPacket.Message(session.Player.Value, ChatType.Normal, message));
     }
 
-    private void HandleWhisper(GameSession session, string message, string recipient) {
+    private void HandleWhisper(GameSession session, string message, string recipient, ICollection<long> itemUids) {
         if (recipient == session.PlayerName) {
             session.Send(ChatPacket.Alert(StringCode.s_whisper_err_myself));
             return;
@@ -89,6 +107,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Whisper = new ChatRequest.Types.Whisper { RecipientId = info.CharacterId, RecipientName = recipient },
         };
 
@@ -109,7 +128,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         }
     }
 
-    private void HandleParty(GameSession session, string message) {
+    private void HandleParty(GameSession session, string message, ICollection<long> itemUids) {
         if (session.Party.Party == null) {
             return;
         }
@@ -119,6 +138,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Party = new ChatRequest.Types.Party {
                 PartyId = session.Party.Id,
             },
@@ -129,7 +149,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         } catch (RpcException) { }
     }
 
-    private void HandleGuild(GameSession session, string message) {
+    private void HandleGuild(GameSession session, string message, ICollection<long> itemUids) {
         if (session.Guild.Guild == null) {
             return;
         }
@@ -139,6 +159,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Guild = new ChatRequest.Types.Guild {
                 GuildId = session.Guild.Id,
             },
@@ -149,7 +170,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         } catch (RpcException) { }
     }
 
-    private void HandleWorld(GameSession session, string message) {
+    private void HandleWorld(GameSession session, string message, ICollection<long> itemUids) {
         var voucher = session.Item.Inventory.Filter(item => item.Metadata.Property.Tag == ItemTag.FreeWorldChatCoupon).FirstOrDefault();
         if (voucher != null) {
             if (!session.Item.Inventory.Consume(voucher.Uid, 1)) {
@@ -175,6 +196,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             World = new ChatRequest.Types.World(),
         };
 
@@ -183,7 +205,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         } catch (RpcException) { }
     }
 
-    private void HandleChannel(GameSession session, string message) {
+    private void HandleChannel(GameSession session, string message, ICollection<long> itemUids) {
         var voucher = session.Item.Inventory.Filter(item => item.Metadata.Property.Tag == ItemTag.FreeChannelChatCoupon).FirstOrDefault();
         if (voucher != null) {
             if (!session.Item.Inventory.Consume(voucher.Uid, 1)) {
@@ -207,7 +229,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         session.ChannelBroadcast(ChatPacket.Message(session.AccountId, session.CharacterId, session.PlayerName, ChatType.Channel, message));
     }
 
-    private void HandleSuper(GameSession session, string message) {
+    private void HandleSuper(GameSession session, string message, ICollection<long> itemUids) {
         if (session.SuperChatId == 0) {
             return;
         }
@@ -226,6 +248,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Super = new ChatRequest.Types.Super { ItemId = session.SuperChatId },
         };
 
@@ -240,12 +263,13 @@ public class UserChatHandler : PacketHandler<GameSession> {
 
     }
 
-    private void HandleClub(GameSession session, string message, long clubId) {
+    private void HandleClub(GameSession session, string message, long clubId, ICollection<long> itemUids) {
         var request = new ChatRequest {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Club = new ChatRequest.Types.Club { ClubId = clubId },
         };
 
@@ -254,17 +278,60 @@ public class UserChatHandler : PacketHandler<GameSession> {
         } catch (RpcException) { }
     }
 
-    private void HandleWedding(GameSession session, string message) {
+    private void HandleWedding(GameSession session, string message, ICollection<long> itemUids) {
         var request = new ChatRequest {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
+            ItemUids = { itemUids },
             Wedding = new ChatRequest.Types.Wedding { ItemId = 0 },
         };
 
         try {
             World.Chat(request);
         } catch (RpcException) { }
+    }
+
+    private ICollection<long> LinkedItemUids(GameSession session, string message) {
+        List<long> itemUids = [];
+
+        MatchCollection matches = Regex.Matches(message, "<A HREF=\"event:[^\"]+\">[^<]+</A>");
+        string[] links = matches.Select(match => match.Value).ToArray();
+        foreach (string link in links) {
+            string linkHtml = System.Net.WebUtility.HtmlDecode(link);
+            XmlDocument xml = new();
+            xml.LoadXml(linkHtml);
+
+            // Select the 'A' node and get the 'HREF' attribute
+            XmlNode? aNode = xml.SelectSingleNode("//A");
+
+            string? hrefValue = aNode?.Attributes?["HREF"]?.Value;
+            if (hrefValue == null) {
+                continue;
+            }
+
+            // Remove "event:" and split by comma
+            string eventValue = hrefValue.Substring("event:".Length);
+            string[] parameters = eventValue.Split(',');
+
+            switch (parameters[0]) {
+                case "itemTooltip":
+                    if (!long.TryParse(parameters[1], out long itemUid)) {
+                        continue;
+                    }
+                    // Can only link items player owns.
+                    Item? item = session.Item.Inventory.Get(itemUid) ?? session.Item.Equips.Get(itemUid);
+                    if (item != null) {
+                        itemUids.Add(item.Uid);
+                    }
+                    break;
+                case "achieveTooltip":
+                case "billDialog":
+                case "searchFromMeratmarket":
+                    break;
+            }
+        }
+        return itemUids;
     }
 }
