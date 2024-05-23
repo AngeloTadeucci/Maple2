@@ -12,8 +12,8 @@ public partial class WorldService {
     public override Task<ChatResponse> Chat(ChatRequest request, ServerCallContext context) {
         switch (request.ChatCase) {
             case ChatRequest.ChatOneofCase.Whisper: {
-                    return WhisperChat(request);
-                }
+                return WhisperChat(request);
+            }
             case ChatRequest.ChatOneofCase.Party:
                 return PartyChat(request);
             case ChatRequest.ChatOneofCase.Guild:
@@ -50,6 +50,7 @@ public partial class WorldService {
             CharacterId = request.CharacterId,
             Name = request.Name,
             Message = request.Message,
+            ItemUids = { request.ItemUids },
             Whisper = new ChatRequest.Types.Whisper {
                 RecipientId = request.Whisper.RecipientId,
                 RecipientName = request.Whisper.RecipientName,
