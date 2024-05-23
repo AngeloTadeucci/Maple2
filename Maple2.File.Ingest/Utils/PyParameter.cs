@@ -70,7 +70,7 @@ internal record PyParameter(ScriptType Type, string Name) {
 
     public string DefaultStr() {
         return Type switch {
-            ScriptType.Str => "None",
+            ScriptType.Str => "''",
             ScriptType.Int => "0",
             ScriptType.Float => "0.0",
             ScriptType.IntList => "[]",

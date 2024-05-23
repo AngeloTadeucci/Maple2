@@ -53,7 +53,7 @@ public static class LiftablePacket {
         pWriter.WriteUnicodeString(liftable.Value.MaskQuestState);
         pWriter.WriteUnicodeString(liftable.Value.EffectQuestId);
         pWriter.WriteUnicodeString(liftable.Value.EffectQuestState);
-        pWriter.WriteBool(true);
+        pWriter.WriteBool(true); // UseEffect
 
         return pWriter;
     }

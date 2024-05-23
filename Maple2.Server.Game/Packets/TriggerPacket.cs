@@ -121,16 +121,16 @@ public static class TriggerPacket {
         return pWriter;
     }
 
-    public static ByteWriter SidePopupCutIn(int duration, string illustration, string voice, string script, string sound = "") {
+    public static ByteWriter SidePopupCutIn(int duration, string illustration) {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.SidePopup);
         pWriter.WriteInt(2); // CutIn
         pWriter.WriteInt(duration);
         pWriter.WriteString();
         pWriter.WriteString(illustration);
-        pWriter.WriteString(voice);
-        pWriter.WriteString(sound); // sound?
-        pWriter.WriteUnicodeString(script);
+        pWriter.WriteString();
+        pWriter.WriteString(); // sound?
+        pWriter.WriteUnicodeString();
 
         return pWriter;
     }

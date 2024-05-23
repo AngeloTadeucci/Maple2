@@ -81,7 +81,6 @@ public sealed partial class FieldManager : IDisposable {
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
-        Console.WriteLine($"FieldManager created for MapId: {MapId} InstanceId: {InstanceId}");
     }
 
     // Init is separate from constructor to allow properties to be injected first.
@@ -121,15 +120,15 @@ public sealed partial class FieldManager : IDisposable {
             }
 
             if (spawnPointNpc.SpawnOnFieldCreate) {
-                for (int i = 0; i < spawnPointNpc.NpcCount; i++) {
-                    // TODO: get other NpcIds too
-                    int npcId = spawnPointNpc.NpcIds[0];
-                    if (!NpcMetadata.TryGet(npcId, out NpcMetadata? npc)) {
-                        logger.Warning("Npc {NpcId} failed to load for map {MapId}", npcId, MapId);
+                foreach (SpawnPointNPCListEntry spawn in spawnPointNpc.NpcList) {
+                    if (!NpcMetadata.TryGet(spawn.NpcId, out NpcMetadata? npcMetadata)) {
+                        logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, MapId);
                         continue;
                     }
 
-                    SpawnNpc(npc, spawnPointNpc);
+                    for (int i = 0; i < spawn.Count; i++) {
+                        SpawnNpc(npcMetadata, spawnPointNpc);
+                    }
                 }
             }
         }
@@ -293,6 +292,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public ICollection<FieldInteract> EnumerateInteract() => fieldInteracts.Values;
+    public ICollection<FieldLiftable> EnumerateLiftables() => fieldLiftables.Values;
     public bool TryGetInteract(string entityId, [NotNullWhen(true)] out FieldInteract? fieldInteract) {
         return fieldInteracts.TryGetValue(entityId, out fieldInteract) || fieldAdBalloons.TryGetValue(entityId, out fieldInteract);
     }

@@ -7,6 +7,7 @@ using Maple2.Database.Storage;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Global.Service;
+using Maple2.Server.World;
 using Maple2.Server.World.Containers;
 using Maple2.Server.World.Service;
 using Maple2.Tools;
@@ -45,8 +46,12 @@ builder.Logging.AddSerilog(dispose: true);
 builder.Services.AddGrpc();
 builder.Services.AddMemoryCache();
 
+builder.Services.AddSingleton<WorldServer>();
+
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
+    autofac.RegisterType<WorldServer>()
+        .SingleInstance();
     // Database
     autofac.RegisterModule<GameDbModule>();
     autofac.RegisterModule<DataDbModule>();
@@ -65,9 +70,12 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<ClubLookup>()
         .SingleInstance();
+    autofac.RegisterType<BlackMarketLookup>()
+        .SingleInstance();
 });
 
 WebApplication app = builder.Build();
+app.Services.GetService<WorldServer>();
 app.UseRouting();
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client.");
 app.MapGrpcService<WorldService>();

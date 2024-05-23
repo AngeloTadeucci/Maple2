@@ -5,6 +5,7 @@ using System.Numerics;
 using Autofac;
 using Grpc.Core;
 using Maple2.Database.Storage;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -85,11 +86,13 @@ public sealed partial class GameSession : Core.Network.Session {
     public QuestManager Quest { get; set; } = null!;
     public ShopManager Shop { get; set; } = null!;
     public UgcMarketManager UgcMarket { get; set; } = null!;
+    public BlackMarketManager BlackMarket { get; set; } = null!;
     public FieldManager Field { get; set; } = null!;
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; }
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
     public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
+
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
         this.server = server;
@@ -147,6 +150,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Buddy = new BuddyManager(db, this);
         Item = new ItemManager(db, this, ItemStatsCalc);
         UgcMarket = new UgcMarketManager(this);
+        BlackMarket = new BlackMarketManager(this, Lua);
         Party = new PartyManager(World, this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
@@ -247,7 +251,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // LegionBattle
         // CharacterAbility
         Config.LoadKeyTable();
-        // GuideRecord
+        Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
         GameEventUserValue.Load();
         Send(GameEventPacket.Load(db.GetEvents()));
@@ -267,7 +271,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadWardrobe();
 
         // Online Notifications
-
 
         return true;
     }
@@ -364,6 +367,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(PremiumCubPacket.Activate(Player.ObjectId, Player.Value.Account.PremiumTime));
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
         ConditionUpdate(ConditionType.map, codeLong: Player.Value.Character.MapId);
+        ConditionUpdate(ConditionType.job_change, codeLong: (int) Player.Value.Character.Job.Code());
         return true;
     }
 
@@ -429,17 +433,20 @@ public sealed partial class GameSession : Core.Network.Session {
         return true;
     }
 
-    public void OnStateSync(StateSync stateSync) {
-        Player.Position = stateSync.Position;
-        Player.Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
-        Player.State = stateSync.State;
-        Player.SubState = stateSync.SubState;
-
-        if (stateSync.SyncNumber != int.MaxValue) {
-            Player.LastGroundPosition = stateSync.Position;
-        }
-
-        Field?.EnsurePlayerPosition(Player);
+    public void DailyReset() {
+        // Gathering counts reset
+        Config.GatheringCounts.Clear();
+        Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
+        // Death Counter
+        Config.DeathCount = 0;
+        Send(RevivalPacket.Count(0));
+        // Premium Rewards Claimed
+        Player.Value.Account.PremiumRewardsClaimed.Clear();
+        Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
+        // Prestige
+        Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
+        Player.Value.Account.PrestigeLevelsGained = 0;
+        Send(PrestigePacket.Load(Player.Value.Account));
     }
 
     #region Dispose

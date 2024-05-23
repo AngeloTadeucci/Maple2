@@ -42,7 +42,7 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("boxIds", IntList, Required), ("skillId", Int, Required), ("level", Int, Required), ("isPlayer", Bool, "True"), ("isSkillSet", Bool, "True")),
         };
         ActionOverride["add_cinematic_talk"] = new TriggerDefinitionOverride("add_cinematic_talk") {
-            Names = BuildNameOverride(("npcID", "npcId"), ("illustID", "illustId"), ("delay", "delayTick")),
+            Names = BuildNameOverride(("npcID", "npcId"), ("illustID", "illustId"), ("illust", "illustId"), ("delay", "delayTick")),
             Types = BuildTypeOverride(("npcId", Int, Required), ("duration", Int, null), ("align", EnumAlign, null), ("delayTick", Int, null)),
         };
         ActionOverride["add_effect_nif"] = new TriggerDefinitionOverride("add_effect_nif") {
@@ -331,7 +331,7 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["end_mini_game"] = new TriggerDefinitionOverride("end_mini_game") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("winnerBoxId", Int, null), ("isEnable", Bool, null)),
+            Types = BuildTypeOverride(("winnerBoxId", Int, null), ("isEnable", Bool, null), ("isOnlyWinner", Bool, null)),
         };
         ActionOverride["end_mini_game_round"] = new TriggerDefinitionOverride("end_mini_game_round") {
             Names = BuildNameOverride(),
@@ -930,7 +930,7 @@ internal class TriggerDefinitionOverride {
         };
         ConditionOverride["check_npc_extra_data"] = new TriggerDefinitionOverride("npc_extra_data") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("spawnPointId", Str, Required), ("extraDataKey", Str, Required)),
+            Types = BuildTypeOverride(("spawnPointId", Int, Required), ("extraDataKey", Str, Required), ("extraDataValue", Int, Required)),
             Compare = BuildCompareOverride(Int, "extraDataValue", "operator", Required),
         };
         ConditionOverride["check_npc_hp"] = new TriggerDefinitionOverride("npc_hp") {
@@ -977,7 +977,7 @@ internal class TriggerDefinitionOverride {
         ConditionOverride["dungeon_check_state"] = new TriggerDefinitionOverride("dungeon_state") {
             Names = BuildNameOverride(),
             Types = BuildTypeOverride(),
-            Compare = BuildCompareOverride(Int, "checkState", "<none>"),
+            Compare = BuildCompareOverride(Str, "checkState", "<none>"),
         };
         ConditionOverride["dungeon_first_user_mission_score"] = new TriggerDefinitionOverride("dungeon_first_user_mission_score") {
             Names = BuildNameOverride(),

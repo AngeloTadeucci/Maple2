@@ -9,9 +9,11 @@ message ChatRequest {
   }
   message Party {
     int32 party_id = 1;
+    repeated int64 member_ids = 2;
   }
   message Guild {
     int64 guild_id = 1;
+    repeated int64 member_ids = 2;
   }
   message World {
   }
@@ -42,6 +44,19 @@ message ChatRequest {
 }
 
 message ChatResponse {
+}
+
+message GameResetRequest {
+  message Daily {}
+  message Weekly {}
+
+  oneof reset {
+    Daily daily = 1;
+    Weekly weekly = 2;
+  }
+}
+message GameResetResponse {
+  int32 error = 1;
 }
 
 message BuddyRequest {

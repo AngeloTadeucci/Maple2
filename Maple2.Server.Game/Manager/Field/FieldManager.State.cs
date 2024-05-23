@@ -97,6 +97,7 @@ public partial class FieldManager {
             Position = spawnPosition,
             Rotation = rotation,
             Origin = owner?.Position ?? spawnPosition,
+            SpawnPointId = owner?.Value.Id ?? NextGlobalId(),
         };
 
         if (npc.Basic.Friendly > 0) {
@@ -223,7 +224,9 @@ public partial class FieldManager {
             Rotation = liftable.Rotation,
         };
 
-        fieldLiftables[entityId] = fieldLiftable;
+        if (!fieldLiftables.TryAdd(entityId, fieldLiftable)) {
+            return null;
+        }
         return fieldLiftable;
     }
 

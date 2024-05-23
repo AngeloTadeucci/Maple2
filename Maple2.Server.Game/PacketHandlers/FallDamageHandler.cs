@@ -22,6 +22,11 @@ public class FallDamageHandler : PacketHandler<GameSession> {
             session.Player.Field.Broadcast(StatsPacket.Update(session.Player, BasicAttribute.Health));
             session.Send(FallDamagePacket.FallDamage(session.Player.ObjectId, damage));
             session.ConditionUpdate(ConditionType.fall_damage, targetLong: damage);
+            if (!session.Player.IsDead) {
+                session.ConditionUpdate(ConditionType.fall_survive);
+            } else {
+                session.ConditionUpdate(ConditionType.fall_die);
+            }
         }
     }
 

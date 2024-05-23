@@ -167,6 +167,7 @@ public sealed class ExperienceManager {
             Level++;
         }
         if (Level > startLevel) {
+            session.Player.Flag |= PlayerObjectFlag.Level;
             session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
             session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: session.Player.Value.Character.Level);
             session.ConditionUpdate(ConditionType.level, codeLong: session.Player.Value.Character.Level);

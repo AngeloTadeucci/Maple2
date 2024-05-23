@@ -81,8 +81,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AiState AiState;
     private NpcRoutine CurrentRoutine { get; set; }
 
-    // Used for trigger spawn tracking.
-    public int SpawnPointId = -1;
+    public int SpawnPointId = 0;
 
     public override Stats Stats { get; }
     public int TargetId = 0;
@@ -179,7 +178,7 @@ public class FieldNpc : Actor<Npc> {
                 }
             }
 
-            if (currentWaypointIndex + 1 >= patrolData.WayPoints.Count && !patrolData.IsLoop) {
+            if (currentWaypointIndex + 1 > patrolData.WayPoints.Count && !patrolData.IsLoop) {
                 patrolData = null;
                 return new WaitRoutine(this, IdleSequence.Id, 1f);
             }
@@ -352,6 +351,21 @@ public class FieldNpc : Actor<Npc> {
 
     public void SetPatrolData(MS2PatrolData newPatrolData) {
         patrolData = newPatrolData;
+        currentWaypointIndex = 0;
+    }
+
+    public void CheckPatrolSequence() {
+        if (patrolData is null) {
+            return;
+        }
+
+        // make sure we're at the last checkpoint in the list
+        if (currentWaypointIndex + 1 < patrolData.WayPoints.Count) {
+            return;
+        }
+
+        // Clear patrol data
+        patrolData = null;
         currentWaypointIndex = 0;
     }
 }

@@ -1,33 +1,34 @@
 ﻿using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Server.Game.Trigger;
-using Maple2.Trigger;
 
 namespace Maple2.Server.Game.Model;
 
 public class FieldTrigger : FieldEntity<TriggerModel> {
-    private static readonly TriggerLoader TriggerLoader = new();
+    private static readonly TriggerScriptLoader TriggerLoader = new();
 
-    private readonly TriggerContext context;
+    public readonly TriggerContext Context;
 
     private long nextTick;
     private TriggerState? state;
     private TriggerState? nextState;
 
     public FieldTrigger(FieldManager field, int objectId, TriggerModel value) : base(field, objectId, value) {
-        if (!TriggerLoader.TryGetTrigger(Field.Metadata.XBlock, Value.Name.ToLower(), out Func<ITriggerContext, TriggerState>? initialState)) {
+        Context = TriggerLoader.CreateContext(this);
+
+        // We load the initial_state as nextState so on_enter() will be called.
+        if (!TriggerLoader.TryInitScript(Context, Field.Metadata.XBlock, Value.Name.ToLower(), out nextState)) {
             throw new ArgumentException($"Invalid trigger for {Field.Metadata.XBlock}, {Value.Name.ToLower()}");
         }
 
-        context = new TriggerContext(this);
-        nextState = initialState(context);
         nextTick = Environment.TickCount64;
     }
 
     public bool Skip() {
-        if (context.Skip != null) {
-            nextState = context.Skip;
+        if (Context.TryGetSkip(out TriggerState? skip)) {
+            nextState = skip;
             Field.Broadcast(CinematicPacket.StartSkip());
             return true;
         }
@@ -36,7 +37,7 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
     }
 
     public override void Update(long tickCount) {
-        context.Events.InvokeAll();
+        Context.Events.InvokeAll();
 
         if (tickCount < nextTick) {
             return;
@@ -45,21 +46,32 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         nextTick += Constant.NextStateTriggerDefaultTick;
 
         if (nextState != null) {
-            context.DebugLog("[OnExit] {State}", state?.GetType().ToString() ?? "null");
+            Context.DebugLog("[OnExit] {State}", state?.Name?.Value ?? "null");
             state?.OnExit();
             state = nextState;
-            context.StartTick = Environment.TickCount64;
-            context.DebugLog("[OnEnter] {State}", state.GetType());
-            state.OnEnter();
-            nextState = null;
+            Context.StartTick = Environment.TickCount64;
+            Context.DebugLog("[OnEnter] {State}", state.Name);
+            nextState = state.OnEnter();
+
+            // If OnEnter transitions to nextState, we skip OnTick.
+            if (nextState != null) {
+                return;
+            }
         }
 
-        nextState = state?.Execute();
+        nextState = state?.OnTick();
     }
+
     /// <summary>
     /// Should only be used for debugging
     /// </summary>
-    public void SetNextState(TriggerState state) {
-        nextState = state;
+    public bool SetNextState(string next) {
+        dynamic? stateClass = Context.Scope.GetVariable(next);
+        if (stateClass == null) {
+            return false;
+        }
+
+        nextState = Context.CreateState(stateClass);
+        return nextState != null;
     }
 }

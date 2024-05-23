@@ -91,7 +91,7 @@ public class PremiumClubHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() < premiumMetadata.StartDate || DateTimeOffset.UtcNow.ToUnixTimeSeconds() > premiumMetadata.EndDate) {
+        if ((premiumMetadata.StartDate > 0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds() < premiumMetadata.StartDate) || (premiumMetadata.EndDate > 0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds() > premiumMetadata.EndDate)) {
             return;
         }
 

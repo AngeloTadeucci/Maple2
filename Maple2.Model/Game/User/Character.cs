@@ -48,4 +48,5 @@ public class Character {
     public Dictionary<long, string> Clubs = []; // ClubId, ClubName
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
+    public long PremiumTime;
 }

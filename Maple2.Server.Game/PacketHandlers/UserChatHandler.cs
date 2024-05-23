@@ -110,6 +110,10 @@ public class UserChatHandler : PacketHandler<GameSession> {
     }
 
     private void HandleParty(GameSession session, string message) {
+        if (session.Party.Party == null) {
+            return;
+        }
+
         var request = new ChatRequest {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
@@ -126,12 +130,18 @@ public class UserChatHandler : PacketHandler<GameSession> {
     }
 
     private void HandleGuild(GameSession session, string message) {
+        if (session.Guild.Guild == null) {
+            return;
+        }
+
         var request = new ChatRequest {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Name = session.PlayerName,
             Message = message,
-            Guild = new ChatRequest.Types.Guild { GuildId = 0 },
+            Guild = new ChatRequest.Types.Guild {
+                GuildId = session.Guild.Id,
+            },
         };
 
         try {

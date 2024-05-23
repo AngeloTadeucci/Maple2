@@ -142,6 +142,42 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("Achievement");
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.BlackMarketListing", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CharacterId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Deposit")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("ExpiryTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("ItemUid")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Price")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("black-market-listing", (string)null);
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.Buddy", b =>
                 {
                     b.Property<long>("Id")
@@ -258,9 +294,11 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("CharacterId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("DeathPenalty")
-                        .IsRequired()
-                        .HasColumnType("json");
+                    b.Property<int>("DeathCount")
+                        .HasColumnType("int");
+
+                    b.Property<long>("DeathTick")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("FavoriteDesigners")
                         .HasColumnType("json");
@@ -269,6 +307,9 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("json");
 
                     b.Property<string>("GatheringCounts")
+                        .HasColumnType("json");
+
+                    b.Property<string>("GuideRecords")
                         .HasColumnType("json");
 
                     b.Property<string>("HotBars")
@@ -984,6 +1025,19 @@ namespace Maple2.Server.World.Migrations
                     b.HasKey("OwnerId", "Id");
 
                     b.ToTable("Quest");
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.ServerInfo", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("server-info", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShop", b =>

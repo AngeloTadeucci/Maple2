@@ -11,6 +11,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game;
@@ -152,6 +153,12 @@ public class GameServer : Server<GameSession> {
         }
 
         return premiumMarketCache.TryGetValue(id, out PremiumMarketItem? item) ? item.AdditionalQuantities.FirstOrDefault(subItem => subItem.Id == subId) : null;
+    }
+
+    public void DailyReset() {
+        foreach (GameSession session in sessions.Values) {
+            session.DailyReset();
+        }
     }
 
     public override Task StopAsync(CancellationToken cancellationToken) {

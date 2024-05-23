@@ -25,7 +25,7 @@ public partial class TriggerContext {
         ErrorLog("[DungeonFail]");
     }
 
-    public void DungeonMissionComplete(int missionId, string feature) {
+    public void DungeonMissionComplete(string feature, int missionId) {
         ErrorLog("[DungeonMissionComplete] missionId:{MissionId}, feature:{Feature}", missionId, feature);
     }
 
@@ -63,7 +63,7 @@ public partial class TriggerContext {
             target, boxId, spawnId, targetCount, targetEffect, additionalEffectId);
     }
 
-    public void SetDungeonVariable(int varId, bool value) {
+    public void SetDungeonVariable(int varId, int value) {
         ErrorLog("[SetDungeonVariable] varId:{VarId}, value:{Value}", varId, value);
     }
 
@@ -109,8 +109,8 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool DungeonTimeOut() {
-        ErrorLog("[DungeonTimeOut]");
+    public bool DungeonTimeout() {
+        ErrorLog("[DungeonTimeout]");
         return false;
     }
 

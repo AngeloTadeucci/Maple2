@@ -18,7 +18,6 @@ public class FieldLiftable : FieldEntity<Liftable> {
     public FieldLiftable(FieldManager field, int objectId, string entityId, Liftable value) : base(field, objectId, value) {
         EntityId = entityId;
         Count = Value.ItemStackCount;
-        FinishTick = Environment.TickCount64 + Value.FinishTime;
     }
 
     public LiftableCube? Pickup() {
@@ -27,14 +26,15 @@ public class FieldLiftable : FieldEntity<Liftable> {
         }
 
         Count--;
-        if (RespawnTick == 0) {
+        // Only respawn if we have a regen time
+        if (RespawnTick == 0 && Value.RegenCheckTime > 0) {
             RespawnTick = Environment.TickCount64 + Value.RegenCheckTime;
         }
 
         if (Count > 0) {
             Field.Broadcast(LiftablePacket.Update(this));
         } else {
-            State = LiftableState.Respawning;
+            State = Value.RegenCheckTime > 0 ? LiftableState.Respawning : LiftableState.Removed;
             Field.Broadcast(LiftablePacket.Remove(EntityId));
             Field.Broadcast(CubePacket.RemoveCube(ObjectId, Position));
         }
@@ -43,7 +43,8 @@ public class FieldLiftable : FieldEntity<Liftable> {
     }
 
     public override void Update(long tickCount) {
-        if (tickCount > FinishTick) {
+        // Handles despawning after being placed
+        if (FinishTick != 0 && tickCount > FinishTick) {
             Field.RemoveLiftable(EntityId);
             return;
         }
@@ -53,7 +54,8 @@ public class FieldLiftable : FieldEntity<Liftable> {
         }
 
         Count++;
-        if (Count < Value.ItemStackCount) {
+        // Only respawn if we have a regen time
+        if (Count < Value.ItemStackCount && Value.RegenCheckTime > 0) {
             RespawnTick = tickCount + Value.RegenCheckTime;
         } else {
             RespawnTick = 0;
@@ -62,7 +64,7 @@ public class FieldLiftable : FieldEntity<Liftable> {
         if (Count == 1) {
             State = LiftableState.Default;
             Field.Broadcast(LiftablePacket.Add(this));
-            //Field.Multicast(CubePacket.PlaceLiftable());
+            Field.Broadcast(CubePacket.PlaceLiftable(ObjectId, new LiftableCube(Value), Position, Rotation.Z));
         }
         Field.Broadcast(LiftablePacket.Update(this));
     }

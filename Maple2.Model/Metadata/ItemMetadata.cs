@@ -31,6 +31,7 @@ public record ItemMetadataProperty(
     int Type,
     int SubType,
     string Category,
+    string BlackMarketCategory,
     ItemTag Tag,
     int Group,
     int Collection,

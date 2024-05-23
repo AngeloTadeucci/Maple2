@@ -74,6 +74,8 @@ public partial class GameStorage {
                 character.Id == characterId && character.AccountId == accountId);
             if (character != null) {
                 character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                Account? accountFind = Context.Account.Find(accountId);
+                character.PremiumTime = accountFind?.PremiumTime ?? 0;
             }
             return character;
         }
@@ -92,14 +94,14 @@ public partial class GameStorage {
                           join outdoor in Context.UgcMap on
                               new { OwnerId = character.AccountId, Indoor = false } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
                           from outdoor in plot.DefaultIfEmpty()
-                          select new { character, indoor, outdoor })
+                          select new { character, indoor, outdoor, account.PremiumTime })
                 .FirstOrDefault();
             if (result == null) {
                 return null;
             }
 
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo);
+            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime);
         }
 
         public Home? GetHome(long ownerId) {
@@ -188,6 +190,7 @@ public partial class GameStorage {
             player.Character.Clubs = clubs.ToDictionary(club => club.Item1, club => club.Item2);
 
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+            player.Character.PremiumTime = account.PremiumTime;
 
             return player;
         }
@@ -232,10 +235,10 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, (long, int) DeathPenalty, IDictionary<BasicAttribute, int>?, IDictionary<int, int>? GatheringCounts, SkillBook?) LoadCharacterConfig(long characterId) {
+        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, IDictionary<BasicAttribute, int>?, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, (0, 0), null, null, null);
+                return (null, null, null, null, null, null, null, null, 0, 0, null, null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -259,9 +262,11 @@ public partial class GameStorage {
                 config.FavoriteDesigners?.Select(designer => designer).ToList(),
                 config.Lapenshards,
                 config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
-                config.DeathPenalty,
+                config.DeathTick,
+                config.DeathCount,
                 config.StatAllocation,
                 config.GatheringCounts,
+                config.GuideRecords,
                 skillBook
             );
         }
@@ -276,9 +281,11 @@ public partial class GameStorage {
                 IList<long> favoriteDesigners,
                 IDictionary<LapenshardSlot, int> lapenshards,
                 IList<SkillCooldown> skillCooldowns,
-                (long, int) deathPenalty,
+                long deathTick,
+                int deathCount,
                 StatAttributes.PointAllocation allocation,
                 IDictionary<int, int> gatheringCounts,
+                IDictionary<int, int> guideRecords,
                 SkillBook skillBook) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
@@ -297,11 +304,13 @@ public partial class GameStorage {
             config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64).
                 Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
                 .ToList();
-            config.DeathPenalty = deathPenalty;
+            config.DeathTick = deathTick;
+            config.DeathCount = deathCount;
             config.StatAllocation = allocation.Attributes.ToDictionary(
                 attribute => attribute,
                 attribute => allocation[attribute]);
             config.GatheringCounts = gatheringCounts;
+            config.GuideRecords = guideRecords;
             config.SkillBook = new Model.SkillBook {
                 MaxSkillTabs = skillBook.MaxSkillTabs,
                 ActiveSkillTabId = skillBook.ActiveSkillTabId,

@@ -23,6 +23,10 @@ service Channel {
 
   // Notify character about new mail.
   rpc MailNotification(maple2.MailNotificationRequest) returns (maple2.MailNotificationResponse);
+  // Daily/weekly resets
+  rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
+  // Black Market
+  rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
 }
 
 message GuildRequest {
@@ -135,5 +139,19 @@ message PartyRequest {
 }
 
 message PartyResponse {
+  int32 error = 1;
+}
+
+message BlackMarketRequest {
+  message PurchaseResponse {
+    int64 seller_id = 1;
+  }
+
+  oneof BlackMarket {
+    PurchaseResponse purchase_response = 1;
+  }
+}
+
+message BlackMarketResponse {
   int32 error = 1;
 }

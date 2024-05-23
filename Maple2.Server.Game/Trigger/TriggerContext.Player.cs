@@ -5,13 +5,16 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void EnableSpawnPointPc(int spawnPointId, bool enabled) {
         ErrorLog("[EnableSpawnPointPc] spawnPointId:{Type}, enabled:{Enabled}", spawnPointId, enabled);
+    }
+
+    public void GiveExp(int boxId, float expRate, bool arg3) {
+        ErrorLog("[GiveExp] boxId:{BoxId}, expRate:{ExpRate}", boxId, expRate);
     }
 
     public void GiveRewardContent(int rewardId) {
@@ -116,11 +119,11 @@ public partial class TriggerContext {
         }
     }
 
-    public void PatrolConditionUser(string patrolName, byte patrolIndex, int additionalEffectId) {
+    public void PatrolConditionUser(string patrolName, int patrolIndex, int additionalEffectId) {
         ErrorLog("[PatrolConditionUser] patrolName:{Name}, patrolIndex:{Index}, additionalEffectId:{EffectId}", patrolName, patrolIndex, additionalEffectId);
     }
 
-    public void SetAchievement(string type, string code, int triggerId) {
+    public void SetAchievement(int triggerId, string type, string code) {
         DebugLog("[SetAchievement] type:{Type}, code:{Code}, triggerId:{TriggerId}", type, code, triggerId);
 
         type = string.IsNullOrWhiteSpace(type) ? "trigger" : type;
@@ -167,7 +170,7 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetUserValue(string key, int value, int triggerId) {
+    public void SetUserValue(int triggerId, string key, int value) {
         WarnLog("[SetUserValue] key:{Key}, value:{Value}, triggerId:{TriggerId}", key, value, triggerId);
         Field.UserValues[key] = value;
     }
@@ -188,12 +191,12 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetState(byte arg1, string[] arg2, bool arg3) {
-        ErrorLog("[SetState] arg1:{Arg1}, arg2:{Arg2}, arg3:{Arg3}", arg1, string.Join(", ", arg2), arg3);
+    public void SetState(int triggerId, dynamic[] states, bool randomize) {
+        ErrorLog("[SetState] triggerId:{TriggerId}, states:{States}, randomize:{Randomize}", triggerId, string.Join(", ", states), randomize);
     }
 
     #region Conditions
-    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, short level) {
+    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level) {
         DebugLog("[CheckAnyUserAdditionalEffect] boxId:{BoxId}, additionalEffectId:{EffectId}, level:{Level}", boxId, additionalEffectId, level);
         foreach (FieldPlayer player in PlayersInBox(boxId)) {
             if (player.Buffs.Buffs.TryGetValue(additionalEffectId, out Buff? buff) && buff.Level == level) {
@@ -209,14 +212,14 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool QuestUserDetected(int[] boxIds, int[] questIds, byte[] questStates, byte jobCode) {
+    public bool QuestUserDetected(int[] boxIds, int[] questIds, int[] questStates, int jobCode) {
         DebugLog("[QuestUserDetected] boxIds:{BoxIds}, questIds:{QuestIds}, questStates:{QuestStates}, jobCode:{JobCode}",
             string.Join(", ", boxIds), string.Join(", ", questIds), string.Join(", ", questStates), (JobCode) jobCode);
 
         foreach (FieldPlayer player in PlayersInBox(boxIds)) {
             foreach (int questId in questIds) {
                 if (!player.Session.Quest.TryGetQuest(questId, out Quest? quest)) {
-                    return false;
+                    continue;
                 }
 
                 switch (questStates[0]) {
@@ -242,7 +245,7 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool UserDetected(int[] boxIds, byte jobCode) {
+    public bool UserDetected(int[] boxIds, int jobCode) {
         DebugLog("[UserDetected] boxIds:{BoxIds}, jobCode:{JobCode}", string.Join(", ", boxIds), (JobCode) jobCode);
         IEnumerable<TriggerBox> boxes = boxIds
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
@@ -254,6 +257,10 @@ public partial class TriggerContext {
         }
 
         return Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
+    }
+
+    public bool WaitSecondsUserValue(string key, string desc) {
+        return false;
     }
     #endregion
 

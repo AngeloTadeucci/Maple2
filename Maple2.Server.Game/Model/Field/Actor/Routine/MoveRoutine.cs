@@ -4,7 +4,7 @@ using Maple2.Tools.Extensions;
 namespace Maple2.Server.Game.Model.Routine;
 
 public class MoveRoutine : NpcRoutine {
-    private const float MIN_DISTANCE = 50f;
+    private const float MIN_DISTANCE = 25f;
 
     public static NpcRoutine Walk(FieldNpc npc, short sequenceId) {
         try {
@@ -77,5 +77,6 @@ public class MoveRoutine : NpcRoutine {
         segmentTime = TimeSpan.Zero;
         Npc.Velocity = default;
         Npc.Navigation?.UpdatePosition();
+        Npc.CheckPatrolSequence();
     }
 }

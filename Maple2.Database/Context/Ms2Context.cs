@@ -37,10 +37,12 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<PremiumMarketItem> PremiumMarketItem { get; set; } = null!;
     internal DbSet<UgcMarketItem> UgcMarketItem { get; set; } = null!;
     internal DbSet<SoldUgcMarketItem> SoldUgcMarketItem { get; set; } = null!;
+    internal DbSet<BlackMarketListing> BlackMarketListing { get; set; } = null!;
     internal DbSet<BeautyShop> BeautyShop { get; set; } = null!;
     internal DbSet<BeautyShopEntry> BeautyShopEntry { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
+    internal DbSet<ServerInfo> ServerInfo { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -78,8 +80,11 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<CharacterShopItemData>(Maple2.Database.Model.Shop.CharacterShopItemData.Configure);
         modelBuilder.Entity<BeautyShop>(Maple2.Database.Model.Shop.BeautyShop.Configure);
         modelBuilder.Entity<BeautyShopEntry>(Maple2.Database.Model.Shop.BeautyShopEntry.Configure);
+        modelBuilder.Entity<BlackMarketListing>(Maple2.Database.Model.BlackMarketListing.Configure);
 
         modelBuilder.Entity<GameEvent>(Maple2.Database.Model.Event.GameEvent.Configure);
         modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.Event.GameEventUserValue.Configure);
+
+        modelBuilder.Entity<ServerInfo>(Maple2.Database.Model.ServerInfo.Configure);
     }
 }
