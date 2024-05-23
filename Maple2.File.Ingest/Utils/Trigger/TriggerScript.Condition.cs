@@ -35,6 +35,10 @@ internal partial class TriggerScript {
                 LineComment = null;
             }
 
+            foreach ((string? argName, _) in overrides.Types.Where(o => o.Value.Default == "<required>")) {
+                Debug.Assert(Args.Any(arg => arg.Name == argName), $"Condition {overrides.Name} is missing required arg: {argName}");
+            }
+
             bool unconditional = overrides.Name is "true" or "always";
             if (unconditional) {
                 if (LineComment != null) {
