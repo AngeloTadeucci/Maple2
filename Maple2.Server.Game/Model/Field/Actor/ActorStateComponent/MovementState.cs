@@ -346,7 +346,7 @@ public partial class MovementState {
                 tickDistance -= (float) Math.Sqrt(distanceSquared);
             }
 
-            walkSegment = actor.Navigation.Advance(TimeSpan.FromSeconds(1), Speed, out walkSegmentSet);
+            walkSegment = actor.Navigation.Advance(TimeSpan.FromSeconds(0.25), Speed, out walkSegmentSet);
 
             offset = walkSegmentSet ? walkSegment.end - actor.Position : new Vector3(0, 0, 0);
             distanceSquared = offset.LengthSquared();

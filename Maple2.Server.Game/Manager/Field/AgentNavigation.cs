@@ -66,7 +66,7 @@ public sealed class AgentNavigation : IDisposable {
         Vector3 end = FromPosition(agent.getPosition());
 
         // TODO: Requires jump to reach next position.
-        if (Math.Abs(start.Z - end.Z) > 5) {
+        if (Math.Abs(start.Z - end.Z) > 75) {
             agent.moveTo(startPosition); // Revert agent position
             currentPath.Dispose();
             currentPath = null;
