@@ -106,7 +106,7 @@ public class AiState {
             return;
         }
 
-        bool isInBattle = actor.BattleState.TargetId != 0;
+        bool isInBattle = actor.BattleState.InBattle;
 
         if (!isInBattle) {
             if (currentTree == DecisionTreeType.Battle) {

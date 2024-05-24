@@ -210,9 +210,9 @@ public class FieldNpc : Actor<Npc> {
     }
 
     private void DoIdleBehavior(long tickCount) {
-        hasBeenBattling |= BattleState.TargetId != 0;
+        hasBeenBattling |= BattleState.InBattle;
 
-        if (BattleState.TargetId != 0) {
+        if (BattleState.InBattle) {
             idleTask?.Cancel();
             idleTask = null;
 

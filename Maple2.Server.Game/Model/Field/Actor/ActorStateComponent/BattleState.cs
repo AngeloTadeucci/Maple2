@@ -24,6 +24,9 @@ public class BattleState {
             changedTargetType = false;
         }
     }
+    public bool KeepBattle = false;
+    public bool CanBattle = true;
+    public bool InBattle { get => TargetId != 0 || KeepBattle; }
     public int TargetId { get; private set; }
     public IActor? Target { get; private set; }
     public IActor? GrabbedUser { get; set; }
@@ -70,7 +73,7 @@ public class BattleState {
             Target = null;
         }
 
-        if (TargetId == 0 && nextTargetSearchTick <= tickCount) {
+        if (CanBattle && TargetId == 0 && nextTargetSearchTick <= tickCount) {
             FindNewTarget();
 
             nextTargetSearchTick = tickCount + 500;

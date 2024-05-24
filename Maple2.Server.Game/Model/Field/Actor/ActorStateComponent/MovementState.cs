@@ -214,7 +214,7 @@ public partial class MovementState {
         bool setAttackIdle = false;
 
         if (sequence == string.Empty) {
-            setAttackIdle = actor.BattleState.TargetId != 0;
+            setAttackIdle = actor.BattleState.InBattle;
             sequence = setAttackIdle ? "Attack_Idle_A" : "Idle_A";
         }
 
