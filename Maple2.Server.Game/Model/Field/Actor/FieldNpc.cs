@@ -365,6 +365,7 @@ public class FieldNpc : Actor<Npc> {
         }
 
         if (uid == 0) {
+            // The client derives the player's skill cast skillSn/uid using this formula so I'm using it here for mob casts for parity.
             uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
         }
 

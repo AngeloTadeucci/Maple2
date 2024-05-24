@@ -172,10 +172,6 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public int RemoveMeNextLocalId() {
-        return NextLocalId();
-    }
-
     public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
             Position = position,

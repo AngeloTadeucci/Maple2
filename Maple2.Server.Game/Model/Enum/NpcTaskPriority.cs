@@ -12,6 +12,7 @@ public enum NpcTaskPriority {
     BattleStandby,
     BattleWalk, // trace/runaway/move
     BattleAction, // skill cast, jump
+    AutoLoot, // pet auto loot
     Stun,
     Interrupt, // push, pull, stagger
 

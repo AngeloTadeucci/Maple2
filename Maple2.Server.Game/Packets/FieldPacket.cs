@@ -213,8 +213,12 @@ public static class FieldPacket {
         return pWriter;
     }
 
+    #region debug
+    // This was used for rapid fire placement & repositioning of field items for debug visualization purposes without requiring allocating a whole new FieldItem
+    // It was used for debugging npc movement to display important parameters that weren't being replicated properly.
+    // Currently there is no easy to use system in place for that, though I do want to make one later
     public static ByteWriter DropDebugItem(FieldItem fieldItem, int objectId, Vector3 position, int unkInt, short unkShort, bool unkBool) {
-        Item item = fieldItem;
+    Item item = fieldItem;
 
         var pWriter = Packet.Of(SendOp.FieldAddItem);
         pWriter.WriteInt(objectId);
@@ -241,6 +245,7 @@ public static class FieldPacket {
 
         return pWriter;
     }
+    #endregion
 
     public static ByteWriter RemoveItem(int objectId) {
         var pWriter = Packet.Of(SendOp.FieldRemoveItem);

@@ -2,6 +2,8 @@
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
+using Serilog;
+using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static Maple2.Model.Metadata.AiMetadata;
@@ -10,6 +12,7 @@ using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
 namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 
 public class AiState {
+    protected readonly ILogger Logger = Log.ForContext<AiState>();
     private readonly FieldNpc actor;
     public AiMetadata? AiMetadata { get; private set; }
     private Node? battle;
@@ -200,6 +203,8 @@ public class AiState {
             actor.AppendDebugMessage($"{AiMetadata!.Name}\n");
             actor.AppendDebugMessage($"Invalid Skill Idx {idx}\n");
 
+            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'");
+
             return null;
         }
 
@@ -213,6 +218,8 @@ public class AiState {
             actor.AppendDebugMessage($"{actor.Value.Metadata.Name}[{actor.Value.Id}]\n");
             actor.AppendDebugMessage($"{AiMetadata!.Name}\n");
             actor.AppendDebugMessage($"Missing Skill Idx {idx}\n");
+
+            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'");
         }
 
         return skill;

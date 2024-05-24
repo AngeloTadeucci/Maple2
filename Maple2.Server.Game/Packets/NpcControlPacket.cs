@@ -36,7 +36,6 @@ public static class NpcControlPacket {
         buffer.Write<Vector3S>(npc.Position);
         buffer.WriteShort((short) (npc.Transform.RotationAnglesDegrees.Z * 10));
         buffer.Write<Vector3S>(npc.MovementState.Velocity);
-        //buffer.Write<Vector3S>(new Vector3(0, 0, 0));
         buffer.WriteShort((short) (npc.AnimationState.SequenceSpeed * 100));
 
         if (npc.Value.IsBoss) {

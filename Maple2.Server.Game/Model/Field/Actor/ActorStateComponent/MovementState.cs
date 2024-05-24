@@ -362,14 +362,14 @@ public partial class MovementState {
                 walkTask?.Cancel();
 
                 return;
-            } else {
-                float distance = (float) Math.Sqrt(distanceSquared);
-
-                walkDirection = (1 / distance) * offset;
-                tickDistance = Math.Min(tickDistance, distance);
-
-                actor.Transform.LookTo(walkDirection);
             }
+
+            float distance = (float) Math.Sqrt(distanceSquared);
+
+            walkDirection = (1 / distance) * offset;
+            tickDistance = Math.Min(tickDistance, distance);
+
+            actor.Transform.LookTo(walkDirection);
         }
 
         Velocity = Speed * walkDirection;
