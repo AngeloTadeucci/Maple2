@@ -40,9 +40,13 @@ public record NpcMetadataDistance(
     float CustomLastSightHeightDown);
 
 public record NpcMetadataSkill(
-    int[] Ids,
-    short[] Levels,
-    int Cooldown);
+    NpcMetadataSkill.Entry[] Entries,
+    int Cooldown) {
+
+    public record Entry(
+        int Id,
+        short Level);
+}
 
 public record NpcMetadataBasic(
     int Friendly,

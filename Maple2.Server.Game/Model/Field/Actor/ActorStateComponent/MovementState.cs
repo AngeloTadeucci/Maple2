@@ -211,12 +211,20 @@ public partial class MovementState {
     }
 
     private void Idle(string sequence = "") {
-        sequence = sequence == string.Empty ? "Idle_A" : sequence;
+        bool setAttackIdle = false;
+
+        if (sequence == string.Empty) {
+            setAttackIdle = actor.BattleState.TargetId != 0;
+            sequence = setAttackIdle ? "Attack_Idle_A" : "Idle_A";
+        }
 
         SetState(ActorState.Idle, ActorSubState.Idle_Idle);
 
         if (hasIdleA) {
             if (actor.AnimationState.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
+                stateSequence = actor.AnimationState.PlayingSequence;
+            }
+            else if (setAttackIdle && actor.AnimationState.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
                 stateSequence = actor.AnimationState.PlayingSequence;
             }
         }

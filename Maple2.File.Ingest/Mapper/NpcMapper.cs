@@ -38,8 +38,8 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                     CustomLastSightHeightDown: data.distance.customLastSightHeightDown
                 ),
                 Skill: new NpcMetadataSkill(
-                    Ids: data.skill.ids,
-                    Levels: data.skill.levels,
+                    Entries: data.skill.ids.Select((skillId, i) =>
+                        new NpcMetadataSkill.Entry(skillId, data.skill.levels[i])).ToArray(),
                     Cooldown: data.skill.coolDown
                 ),
                 Stat: new NpcMetadataStat(Stats: MapStats(data.stat),

@@ -89,6 +89,10 @@ public sealed class AgentNavigation : IDisposable {
             return npc.Position;
         }
 
+        if (npc.Value.Metadata.Action.MoveArea == 0) {
+            return FromPosition(origin);
+        }
+
         Position end = mesh.generateRandomPositionLocally(origin, npc.Value.Metadata.Action.MoveArea);
 
         return FromPosition(end);

@@ -127,10 +127,11 @@ public class FieldNpc : Actor<Npc> {
 
         AiState.SetAi(npc.Metadata.AiPath);
 
-        Skills = new SkillMetadata[Value.Metadata.Skill.Ids.Length];
+        Skills = new SkillMetadata[Value.Metadata.Skill.Entries.Length];
 
         for (int i = 0; i < Skills.Length; ++i) {
-            Field.SkillMetadata.TryGet(Value.Metadata.Skill.Ids[i], Value.Metadata.Skill.Levels[i], out Skills[i]);
+            var entry = Value.Metadata.Skill.Entries[i];
+            Field.SkillMetadata.TryGet(entry.Id, entry.Level, out Skills[i]);
         }
 
     }
@@ -223,6 +224,10 @@ public class FieldNpc : Actor<Npc> {
 
             idleTask = MovementState.TryMoveTo(spawnPoint, false);
             hasBeenBattling = false;
+        }
+
+        if (idleTask is MovementState.NpcStandbyTask && idleTaskLimitTick == 0) {
+            idleTaskLimitTick = tickCount + 1000;
         }
 
         bool hitLimit = idleTaskLimitTick != 0 && tickCount >= idleTaskLimitTick;
