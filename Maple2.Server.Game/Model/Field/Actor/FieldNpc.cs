@@ -231,6 +231,10 @@ public class FieldNpc : Actor<Npc> {
 
         bool hitLimit = idleTaskLimitTick != 0 && tickCount >= idleTaskLimitTick;
 
+        if (!hasBeenBattling && idleTask is MovementState.NpcMoveToTask && idleTask.IsDone) {
+            CheckPatrolSequence();
+        }
+
         if (!hasBeenBattling && (idleTask is null || idleTask.IsDone || hitLimit)) {
             idleTaskLimitTick = 0;
 
@@ -255,7 +259,7 @@ public class FieldNpc : Actor<Npc> {
             if (currentWaypointIndex + 1 > patrolData.WayPoints.Count && !patrolData.IsLoop) {
                 patrolData = null;
 
-                return MovementState.TryStandby(null);
+                return MovementState.TryStandby(null, true);
             }
 
             currentWaypointIndex++;
@@ -281,7 +285,7 @@ public class FieldNpc : Actor<Npc> {
             if ((approachTask?.Status ?? NpcTaskStatus.Cancelled) == NpcTaskStatus.Cancelled) {
                 Log.Logger.Warning("Failed to path to waypoint index({WaypointIndex}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypointIndex, waypoint.Position, Value.Metadata.Name, patrolData.Uuid);
 
-                return MovementState.TryStandby(null);
+                return MovementState.TryStandby(null, true);
             }
 
             return approachTask;
@@ -292,12 +296,12 @@ public class FieldNpc : Actor<Npc> {
         if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? sequence)) {
             Logger.Error("Invalid routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
 
-            return MovementState.TryStandby(null);
+            return MovementState.TryStandby(null, true);
         }
 
         switch (routineName) {
             case { } when routineName.Contains("Idle_"):
-                return MovementState.TryStandby(null, sequence.Name);
+                return MovementState.TryStandby(null, true, sequence.Name);
             case { } when routineName.Contains("Bore_"):
                 return MovementState.TryEmote(sequence.Name, true);
             case { } when routineName.StartsWith("Walk_"): {
@@ -314,7 +318,7 @@ public class FieldNpc : Actor<Npc> {
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
 
-        return MovementState.TryStandby(null);
+        return MovementState.TryStandby(null, true);
     }
 
     protected override void OnDeath() {

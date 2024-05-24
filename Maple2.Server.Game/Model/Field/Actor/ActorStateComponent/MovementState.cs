@@ -172,12 +172,14 @@ public partial class MovementState {
         };
     }
 
-    public NpcTask TryStandby(IActor? target, string sequence = "") {
-        return new NpcStandbyTask(actor.TaskState, this, sequence);
+    public NpcTask TryStandby(IActor? target, bool isIdle, string sequence = "") {
+        NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+        return new NpcStandbyTask(actor.TaskState, this, sequence, priority, isIdle);
     }
 
     public NpcTask TryEmote(string sequenceName, bool isIdle) {
-        return new NpcEmoteTask(actor.TaskState, this, sequenceName, isIdle);
+        NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+        return new NpcEmoteTask(actor.TaskState, this, sequenceName, priority, isIdle);
     }
 
     //public bool TryJumpTo(Vector3 position, float height) {

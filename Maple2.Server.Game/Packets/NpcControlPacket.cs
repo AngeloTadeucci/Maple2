@@ -42,7 +42,6 @@ public static class NpcControlPacket {
             buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
-        //buffer.Write<ActorState>(npc.State.State);
         buffer.Write<ActorState>(npc.MovementState.State);
         buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? -1);
         buffer.WriteShort(npc.SequenceCounter);
@@ -51,7 +50,6 @@ public static class NpcControlPacket {
         bool isJumpSequence = (npc.AnimationState.PlayingSequence?.Id ?? -1) is ANI_JUMP_A or ANI_JUMP_B;
 
         if (isJumpSequence) {
-            //if (npc.MovementState.State is ActorState.Jump or ActorState.JumpTo) {
             bool isAbsolute = false;
             buffer.WriteBool(isAbsolute);
 
@@ -65,7 +63,6 @@ public static class NpcControlPacket {
             }
 
             buffer.Write<ActorState>(npc.MovementState.State);
-            //buffer.WriteClass<StateJumpNpc>(jump);
         }
 
         switch (npc.MovementState.State) {
@@ -74,11 +71,9 @@ public static class NpcControlPacket {
                 buffer.WriteFloat(0); //UnknownF2;
                 buffer.WriteFloat(0); //UnknownF3;
                 buffer.WriteByte(0); //UnknownB;
-                //buffer.WriteClass<StateHitNpc>(hit);
                 break;
             case ActorState.Spawn:
                 buffer.WriteInt(0);
-                //buffer.WriteClass<StateSpawn>(spawn);
                 break;
         }
 

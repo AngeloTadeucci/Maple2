@@ -303,7 +303,7 @@ public class AiState {
     }
 
     private void ProcessNode(StandbyNode node) {
-        NpcTask task = actor.MovementState.TryStandby(null);
+        NpcTask task = actor.MovementState.TryStandby(null, false);
 
         SetNodeTask(task, node.Limit);
     }

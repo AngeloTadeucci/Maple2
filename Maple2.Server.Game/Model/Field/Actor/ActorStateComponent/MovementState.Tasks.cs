@@ -186,18 +186,19 @@ public partial class MovementState {
         private MovementState movement;
         public IActor? Target { get; init; }
         public string Sequence { get; init; } = string.Empty;
+        public bool IsIdle { get; init; }
         override public bool CancelOnInterrupt { get => true; }
 
-        public NpcStandbyTask(TaskState taskState, MovementState movement, string sequence) : base(taskState, NpcTaskPriority.BattleStandby) {
+        public NpcStandbyTask(TaskState taskState, MovementState movement, string sequence, NpcTaskPriority priority, bool isIdle) : base(taskState, priority) {
             this.movement = movement;
         }
 
         override protected void TaskResumed() {
-            movement.Standby(this, Target, Sequence);
+            movement.Standby(this, Target, IsIdle, Sequence);
         }
     }
 
-    private void Standby(NpcTask task, IActor? target, string sequence = "") {
+    private void Standby(NpcTask task, IActor? target, bool isIdle, string sequence) {
         Idle(sequence);
 
         if (target is null) {
@@ -213,7 +214,7 @@ public partial class MovementState {
         public bool IsIdle { get; init; }
         override public bool CancelOnInterrupt { get => true; }
 
-        public NpcEmoteTask(TaskState taskState, MovementState movement, string sequence, bool isIdle) : base(taskState, NpcTaskPriority.BattleStandby) {
+        public NpcEmoteTask(TaskState taskState, MovementState movement, string sequence, NpcTaskPriority priority, bool isIdle) : base(taskState, priority) {
             this.movement = movement;
             Sequence = sequence;
             IsIdle = isIdle;
