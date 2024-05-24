@@ -560,7 +560,7 @@ public class AiState {
             return false;
         }
 
-        Maple2.Model.Enum.ActorState state = Maple2.Model.Enum.ActorState.None;
+        ActorState state = ActorState.None;
 
         if (actor.BattleState.Target is FieldPlayer player) {
             state = player.State;
@@ -571,8 +571,8 @@ public class AiState {
         }
 
         return node.TargetState switch {
-            AiConditionTargetState.GrabTarget => state == Maple2.Model.Enum.ActorState.GrabTarget,
-            AiConditionTargetState.HoldMe => state == Maple2.Model.Enum.ActorState.Hold,
+            AiConditionTargetState.GrabTarget => state == ActorState.GrabTarget,
+            AiConditionTargetState.HoldMe => state == ActorState.Hold,
             _ => false
         };
     }
