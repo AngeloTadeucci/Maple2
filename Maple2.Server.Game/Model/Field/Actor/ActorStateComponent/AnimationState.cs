@@ -90,17 +90,17 @@ public class AnimationState {
             return false;
         }
 
-        bool found = RigMetadata.Sequences.TryGetValue(name, out AnimationSequence? sequence);
+        bool animationSequenceExists = RigMetadata.Sequences.TryGetValue(name, out AnimationSequence? sequence);
 
         if (reportingKeyframeEvent) {
             queuedSequence = sequence;
             queuedSequenceSpeed = speed;
             queuedSequenceType = type;
 
-            return found;
+            return animationSequenceExists;
         }
 
-        if (!found) {
+        if (!animationSequenceExists) {
             DebugPrint($"Attempt to play nonexistent sequence '{name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{SequenceSpeed}");
 
             if (reportingKeyframeEvent) {
