@@ -99,8 +99,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     private static void ConfigureNpcMetadata(EntityTypeBuilder<NpcMetadata> builder) {
         builder.ToTable("npc");
         builder.HasKey(npc => npc.Id);
+        builder.Property(npc => npc.Model).HasJsonConversion();
         builder.Property(npc => npc.Stat).HasJsonConversion();
         builder.Property(npc => npc.Basic).HasJsonConversion();
+        builder.Property(npc => npc.Distance).HasJsonConversion();
+        builder.Property(npc => npc.Skill).HasJsonConversion();
         builder.Property(npc => npc.Property).HasJsonConversion();
         builder.Property(npc => npc.DropInfo).HasJsonConversion();
         builder.Property(npc => npc.Action).HasJsonConversion();

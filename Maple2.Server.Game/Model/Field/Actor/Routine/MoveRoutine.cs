@@ -53,7 +53,7 @@ public class MoveRoutine : NpcRoutine {
         }
 
         // Compute the next segment for movement (time = 1s)
-        (Vector3 start, Vector3 end) = Npc.Navigation.Advance(TimeSpan.FromSeconds(1), speed);
+        (Vector3 start, Vector3 end) = Npc.Navigation.Advance(TimeSpan.FromSeconds(1), speed, out bool followSegment);
 
         // If target is close enough, no movement is necessary.
         float distance = Vector2.Distance(new Vector2(start.X, start.Y), new Vector2(end.X, end.Y));

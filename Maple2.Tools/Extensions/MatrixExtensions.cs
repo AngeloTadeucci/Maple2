@@ -87,10 +87,12 @@ public static class MatrixExtensions {
     // Sets the right facing axis of the object represented by the transform.
     // Be careful using this as it might make the matrix no longer orthogonal, resulting in stretched and skewed dimensions when operating on it.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SetRightAxis(this Matrix4x4 matrix, Vector3 value) {
+    public static Matrix4x4 SetRightAxis(this Matrix4x4 matrix, Vector3 value) {
         matrix.M11 = value.X;
         matrix.M12 = value.Y;
         matrix.M13 = value.Z;
+
+        return matrix;
     }
 
     // Gets the up facing axis of the object represented by the transform.
@@ -102,10 +104,12 @@ public static class MatrixExtensions {
     // Sets the up facing axis of the object represented by the transform.
     // Be careful using this as it might make the matrix no longer orthogonal, resulting in stretched and skewed dimensions when operating on it.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SetUpAxis(this Matrix4x4 matrix, Vector3 value) {
+    public static Matrix4x4 SetUpAxis(this Matrix4x4 matrix, Vector3 value) {
         matrix.M31 = value.X;
         matrix.M32 = value.Y;
         matrix.M33 = value.Z;
+
+        return matrix;
     }
 
     // Gets the front facing axis of the object represented by the transform.
@@ -117,9 +121,11 @@ public static class MatrixExtensions {
     // Sets the front facing axis of the object represented by the transform.
     // Be careful using this as it might make the matrix no longer orthogonal, resulting in stretched and skewed dimensions when operating on it.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SetFrontAxis(this Matrix4x4 matrix, Vector3 value) {
+    public static Matrix4x4 SetFrontAxis(this Matrix4x4 matrix, Vector3 value) {
         matrix.M21 = value.X;
         matrix.M22 = value.Y;
         matrix.M23 = value.Z;
+
+        return matrix;
     }
 }

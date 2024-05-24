@@ -2,7 +2,7 @@
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model.Enum;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorState;
+namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 
 public class AnimationState {
     private readonly IActor actor;
@@ -36,10 +36,15 @@ public class AnimationState {
 
     public AnimationMetadata? RigMetadata { get; init; }
     public AnimationSequence? PlayingSequence { get; private set; }
+    private AnimationSequence? queuedSequence;
+    private float queuedSequenceSpeed;
+    private AnimationType queuedSequenceType;
+    private bool queuedResetSequence = false;
+    private bool reportingKeyframeEvent;
     private bool IsPlayerAnimation { get; set; }
     public float MoveSpeed { get; set; }
     public float AttackSpeed { get; set; }
-    private float sequenceSpeed { get; set; }
+    public float SequenceSpeed { get; private set; }
     private float lastSequenceTime { get; set; }
     private float sequenceEnd { get; set; }
     private LoopData sequenceLoop { get; set; }
@@ -71,7 +76,7 @@ public class AnimationState {
 
     private void ResetSequence() {
         PlayingSequence = null;
-        sequenceSpeed = 1;
+        SequenceSpeed = 1;
         lastSequenceTime = 0;
         sequenceLoop = new LoopData(0, 0);
         lastTick = 0;
@@ -87,31 +92,62 @@ public class AnimationState {
 
         bool found = RigMetadata.Sequences.TryGetValue(name, out AnimationSequence? sequence);
 
-        ResetSequence();
+        if (reportingKeyframeEvent) {
+            queuedSequence = sequence;
+            queuedSequenceSpeed = speed;
+            queuedSequenceType = type;
+
+            return found;
+        }
 
         if (!found) {
-            DebugPrint($"Attempt to play nonexistent sequence '{name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{sequenceSpeed}");
+            DebugPrint($"Attempt to play nonexistent sequence '{name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{SequenceSpeed}");
+
+            if (reportingKeyframeEvent) {
+                queuedResetSequence = true;
+            }
+            else {
+                ResetSequence();
+            }
 
             return false;
         }
 
-        DebugPrint($"Playing sequence '{sequence!.Name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{sequenceSpeed}");
-
-        PlayingSequence = sequence;
-        sequenceSpeed = speed;
-        sequenceType = type;
-
-        lastTick = actor.Field.FieldTick;
+        PlaySequence(sequence!, speed, type);
 
         return true;
     }
 
-    public void CancelSequence() {
-        if (PlayingSequence is not null) {
-            DebugPrint($"Canceled playing sequence: '{PlayingSequence.Name}' x{sequenceSpeed}");
+    private void PlaySequence(AnimationSequence sequence, float speed, AnimationType type) {
+        if (PlayingSequence != sequence && actor is FieldNpc npc) {
+            npc.SendControl = true;
         }
 
         ResetSequence();
+
+        DebugPrint($"Playing sequence '{sequence!.Name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{SequenceSpeed}");
+
+        PlayingSequence = sequence;
+        SequenceSpeed = speed;
+        sequenceType = type;
+
+        lastTick = actor.Field.FieldTick;
+    }
+
+    public void CancelSequence() {
+        if (PlayingSequence is not null) {
+            DebugPrint($"Canceled playing sequence: '{PlayingSequence.Name}' x{SequenceSpeed}");
+        }
+
+        if (reportingKeyframeEvent) {
+            queuedResetSequence = true;
+        } else {
+            if (PlayingSequence != null && actor is FieldNpc npc) {
+                npc.SendControl = true;
+            }
+
+            ResetSequence();
+        }
     }
 
     public void Update(long tickCount) {
@@ -133,7 +169,7 @@ public class AnimationState {
         };
 
         long lastServerTick = lastTick == 0 ? tickCount : lastTick;
-        float speed = sequenceSpeed * sequenceSpeedModifier / 1000;
+        float speed = SequenceSpeed * sequenceSpeedModifier / 1000;
         float delta = (float) (tickCount - lastServerTick) * speed;
         float sequenceTime = lastSequenceTime + delta;
 
@@ -186,6 +222,8 @@ public class AnimationState {
     }
 
     private void HitKeyframe(float sequenceTime, AnimationKey key, float speed) {
+        reportingKeyframeEvent = true;
+
         DebugPrint($"Sequence '{PlayingSequence!.Name}' keyframe event '{key.Name}'");
 
         actor.KeyframeEvent(key.Name);
@@ -206,6 +244,22 @@ public class AnimationState {
             default:
                 break;
         }
+
+        reportingKeyframeEvent = false;
+
+        if (queuedResetSequence) {
+            if (PlayingSequence != null && actor is FieldNpc npc) {
+                npc.SendControl = true;
+            }
+
+            ResetSequence();
+        }
+        else if (queuedSequence is not null) {
+            PlaySequence(queuedSequence, queuedSequenceSpeed, queuedSequenceType);
+        }
+
+        queuedResetSequence = false;
+        queuedSequence = null;
     }
 
     private void DebugPrint(string message) {

@@ -142,7 +142,7 @@ public static class FieldPacket {
         // If NPC is not valid, the packet seems to stop here
 
         if (npc.Value.IsBoss) {
-            pWriter.WriteString(npc.Value.Metadata.Model);
+            pWriter.WriteString(npc.Value.Metadata.Model.Name);
         }
 
         pWriter.WriteNpcStats(npc.Stats);
@@ -205,6 +205,35 @@ public static class FieldPacket {
         pWriter.WriteShort();
         pWriter.WriteBool(fieldItem.FixedPosition);
         pWriter.WriteBool(false);
+
+        if (!item.IsMeso()) {
+            pWriter.WriteClass<Item>(item);
+        }
+
+        return pWriter;
+    }
+
+    public static ByteWriter DropDebugItem(FieldItem fieldItem, int objectId, Vector3 position, int unkInt, short unkShort, bool unkBool) {
+        Item item = fieldItem;
+
+        var pWriter = Packet.Of(SendOp.FieldAddItem);
+        pWriter.WriteInt(objectId);
+        pWriter.WriteInt(item.Id);
+        pWriter.WriteInt(item.Amount);
+
+        pWriter.WriteBool(fieldItem.ReceiverId >= 0);
+        if (fieldItem.ReceiverId >= 0) {
+            pWriter.WriteLong(fieldItem.ReceiverId);
+        }
+
+        pWriter.Write<Vector3>(position);
+        pWriter.WriteInt(fieldItem.Owner?.ObjectId ?? 0);
+        pWriter.WriteInt(unkInt);
+        pWriter.Write<DropType>(fieldItem.Type);
+        pWriter.WriteInt(item.Rarity);
+        pWriter.WriteShort(unkShort);
+        pWriter.WriteBool(fieldItem.FixedPosition);
+        pWriter.WriteBool(unkBool);
 
         if (!item.IsMeso()) {
             pWriter.WriteClass<Item>(item);

@@ -6,6 +6,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.State;
 using Maple2.Tools.Extensions;
+using System.Numerics;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -33,29 +34,53 @@ public static class NpcControlPacket {
         buffer.WriteByte(2);
 
         buffer.Write<Vector3S>(npc.Position);
-        buffer.WriteShort((short) (npc.Rotation.Z * 10));
-        buffer.Write<Vector3S>(npc.Velocity.Rotate(npc.Rotation));
-        buffer.WriteShort((short) (sequenceSpeed * 100));
+        buffer.WriteShort((short) (npc.Transform.RotationAnglesDegrees.Z * 10));
+        buffer.Write<Vector3S>(npc.MovementState.Velocity);
+        //buffer.Write<Vector3S>(new Vector3(0, 0, 0));
+        buffer.WriteShort((short) (npc.AnimationState.SequenceSpeed * 100));
 
         if (npc.Value.IsBoss) {
-            buffer.WriteInt(npc.TargetId); // ObjectId of Player being targeted?
+            buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
-        buffer.Write<ActorState>(npc.State.State);
-        buffer.WriteShort(npc.SequenceId);
+        //buffer.Write<ActorState>(npc.State.State);
+        buffer.Write<ActorState>(npc.MovementState.State);
+        buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? -1);
         buffer.WriteShort(npc.SequenceCounter);
 
         // Animation (-2 = Jump_A, -3 = Jump_B)
-        if (npc.SequenceId is ANI_JUMP_A or ANI_JUMP_B && npc.State is StateJumpNpc jump) {
-            buffer.WriteClass<StateJumpNpc>(jump);
+        bool isJumpSequence = (npc.AnimationState.PlayingSequence?.Id ?? -1) is ANI_JUMP_A or ANI_JUMP_B;
+
+        if (isJumpSequence) {
+        //if (npc.MovementState.State is ActorState.Jump or ActorState.JumpTo) {
+            bool isAbsolute = false;
+            buffer.WriteBool(isAbsolute);
+
+            if (isAbsolute) {
+                buffer.Write<Vector3>(new Vector3(0, 0, 0)); // start pos
+                buffer.Write<Vector3>(new Vector3(0, 0, 0)); // end pos
+                buffer.WriteFloat(0); // angle
+                buffer.WriteFloat(0); // scale
+            }
+            else {
+                buffer.Write<Vector3>(new Vector3(0, 0, 0)); // end offset
+            }
+
+            buffer.Write<ActorState>(npc.MovementState.State);
+            //buffer.WriteClass<StateJumpNpc>(jump);
         }
 
-        switch (npc.State) {
-            case StateHitNpc hit:
-                buffer.WriteClass<StateHitNpc>(hit);
+        switch (npc.MovementState.State) {
+            case ActorState.Hit:
+                buffer.WriteFloat(0); //UnknownF1;
+                buffer.WriteFloat(0); //UnknownF2;
+                buffer.WriteFloat(0); //UnknownF3;
+                buffer.WriteByte(0); //UnknownB;
+                //buffer.WriteClass<StateHitNpc>(hit);
                 break;
-            case StateSpawn spawn:
-                buffer.WriteClass<StateSpawn>(spawn);
+            case ActorState.Spawn:
+                buffer.WriteInt(0);
+                //buffer.WriteClass<StateSpawn>(spawn);
                 break;
         }
 

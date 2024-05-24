@@ -2,7 +2,7 @@
 using Maple2.Database.Storage;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Config;
-using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Tools.Collision;
 

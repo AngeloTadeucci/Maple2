@@ -244,10 +244,6 @@ public class FieldPlayer : Actor<Player> {
         Flag |= PlayerObjectFlag.Dead; // TODO: Need to also send this flag upon revival
     }
 
-    public override void KeyframeEvent(long tickCount, long keyTick, string keyName) {
-
-    }
-
     /// <summary>
     /// Adds health to player, and sends update packet.
     /// </summary>
@@ -364,5 +360,9 @@ public class FieldPlayer : Actor<Player> {
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }
+	}
+	
+    public override void KeyframeEvent(string keyName) {
+        
     }
 }

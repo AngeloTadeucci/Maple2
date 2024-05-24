@@ -96,22 +96,47 @@ public class Transform {
     // Right facing axis of the object represented by the transform.
     public Vector3 RightAxis {
         get { return -Transformation.GetRightAxis(); }
-        set { Transformation.SetRightAxis(-value); }
+        set {
+            Transformation.M11 = value.X;
+            Transformation.M12 = value.Y;
+            Transformation.M13 = value.Z;
+        }
     }
 
     // Up facing axis of the object represented by the transform.
     public Vector3 UpAxis {
         get { return Transformation.GetUpAxis(); }
-        set { Transformation.SetUpAxis(value); }
+        set {
+            Transformation.M31 = value.X;
+            Transformation.M32 = value.Y;
+            Transformation.M33 = value.Z;
+        }
     }
 
     // Front facing axis of the object represented by the transform.
     public Vector3 FrontAxis {
         get { return -Transformation.GetFrontAxis(); }
-        set { Transformation.SetFrontAxis(-value); }
+        set {
+            Transformation.M21 = -value.X;
+            Transformation.M22 = -value.Y;
+            Transformation.M23 = -value.Z;
+        }
     }
 
     public Transform() { }
+
+    public void LookTo(Vector3 direction) {
+        LookTo(direction, new Vector3(0, 0, 1));
+    }
+
+    public void LookTo(Vector3 direction, Vector3 up) {
+        Vector3 right = Vector3.Cross(up, direction);
+        float scale = Scale;
+
+        RightAxis = scale * right;
+        UpAxis = scale * up;
+        FrontAxis = scale * direction;
+    }
 
     // Rotations happen in Z (yaw) -> Y (roll) -> X (pitch) order, which is MS2's Euler angles format.
     public static Matrix4x4 NewRotationAngles(Vector3 angles) {
