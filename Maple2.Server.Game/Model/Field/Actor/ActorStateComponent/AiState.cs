@@ -113,14 +113,12 @@ public class AiState {
                 aiStack.Clear();
 
                 currentTree = battleEnd is not null ? DecisionTreeType.BattleEnd : DecisionTreeType.None;
-            }
-            else if (currentTree == DecisionTreeType.BattleEnd && aiStack.Count == 0) {
+            } else if (currentTree == DecisionTreeType.BattleEnd && aiStack.Count == 0) {
                 currentTree = DecisionTreeType.None;
             }
 
             return;
-        }
-        else if (currentTree == DecisionTreeType.BattleEnd) {
+        } else if (currentTree == DecisionTreeType.BattleEnd) {
             aiStack.Clear();
 
             currentTree = DecisionTreeType.None;
@@ -139,8 +137,7 @@ public class AiState {
         if (aiStack.Count == 0) {
             if (currentTree == DecisionTreeType.Battle) {
                 Push(battle!);
-            }
-            else if (currentTree == DecisionTreeType.BattleEnd) {
+            } else if (currentTree == DecisionTreeType.BattleEnd) {
                 Push(battleEnd!);
             }
         }
@@ -420,7 +417,7 @@ public class AiState {
     }
 
     private void ProcessNode(MinimumHpNode node) {
-        
+
     }
 
     private void ProcessNode(BuffNode node) {
@@ -505,7 +502,7 @@ public class AiState {
 
         float targetDistance = (actor.BattleState.Target.Position - actor.Position).LengthSquared();
 
-        return node.Value * node.Value > (int)targetDistance;
+        return node.Value * node.Value > (int) targetDistance;
     }
 
     private bool ProcessCondition(CombatTimeCondition node) {
@@ -519,7 +516,7 @@ public class AiState {
 
         float targetDistance = (actor.BattleState.Target.Position - actor.Position).LengthSquared();
 
-        return node.Value * node.Value < (int)targetDistance;
+        return node.Value * node.Value < (int) targetDistance;
     }
 
     private bool ProcessCondition(SkillRangeCondition node) {

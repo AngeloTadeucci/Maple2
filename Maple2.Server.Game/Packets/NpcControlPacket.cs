@@ -52,7 +52,7 @@ public static class NpcControlPacket {
         bool isJumpSequence = (npc.AnimationState.PlayingSequence?.Id ?? -1) is ANI_JUMP_A or ANI_JUMP_B;
 
         if (isJumpSequence) {
-        //if (npc.MovementState.State is ActorState.Jump or ActorState.JumpTo) {
+            //if (npc.MovementState.State is ActorState.Jump or ActorState.JumpTo) {
             bool isAbsolute = false;
             buffer.WriteBool(isAbsolute);
 
@@ -61,8 +61,7 @@ public static class NpcControlPacket {
                 buffer.Write<Vector3>(new Vector3(0, 0, 0)); // end pos
                 buffer.WriteFloat(0); // angle
                 buffer.WriteFloat(0); // scale
-            }
-            else {
+            } else {
                 buffer.Write<Vector3>(new Vector3(0, 0, 0)); // end offset
             }
 

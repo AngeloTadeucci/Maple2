@@ -32,8 +32,7 @@ public class TaskState {
 
             if (cancelLowerPriority || cancelEqualPriority) {
                 currentTask.Cancel();
-            }
-            else if (currentTask.PriorityValue < task.PriorityValue) {
+            } else if (currentTask.PriorityValue < task.PriorityValue) {
                 currentTask.Pause();
             }
         }
@@ -80,7 +79,7 @@ public class TaskState {
     }
 
     public abstract class NpcTask {
-        protected  TaskState queue { get; private set; }
+        protected TaskState queue { get; private set; }
 
         public NpcTaskPriority Priority { get; private init; }
         public int PriorityValue { get => (int) Priority; }
@@ -110,7 +109,7 @@ public class TaskState {
         protected virtual void TaskResumed() { }
 
         public virtual bool ShouldOverride(NpcTask task) {
-            return (int)Priority >= (int)task.Priority;
+            return (int) Priority >= (int) task.Priority;
         }
 
         public void Pause() {

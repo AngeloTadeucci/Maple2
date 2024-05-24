@@ -12,7 +12,7 @@ namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 public partial class MovementState {
     private readonly FieldNpc actor;
 
-    public ActorState State {  get; private set; }
+    public ActorState State { get; private set; }
     public ActorSubState SubState { get; private set; }
     public float Speed { get; private set; }
     public Vector3 Velocity { get; private set; }
@@ -119,8 +119,7 @@ public partial class MovementState {
             walkTask = task;
 
             SetState(ActorState.Walk, isWalking ? ActorSubState.Walk_Walking : ActorSubState.Walk_Running);
-        }
-        else {
+        } else {
             task.Cancel();
 
             Idle();
@@ -223,8 +222,7 @@ public partial class MovementState {
         if (hasIdleA) {
             if (actor.AnimationState.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
                 stateSequence = actor.AnimationState.PlayingSequence;
-            }
-            else if (setAttackIdle && actor.AnimationState.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
+            } else if (setAttackIdle && actor.AnimationState.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
                 stateSequence = actor.AnimationState.PlayingSequence;
             }
         }
@@ -345,7 +343,7 @@ public partial class MovementState {
             if (walkSegmentSet) {
                 actor.Position = walkSegment.end;
 
-                tickDistance -= (float)Math.Sqrt(distanceSquared);
+                tickDistance -= (float) Math.Sqrt(distanceSquared);
             }
 
             walkSegment = actor.Navigation.Advance(TimeSpan.FromSeconds(1), Speed, out walkSegmentSet);
@@ -364,8 +362,7 @@ public partial class MovementState {
                 walkTask?.Cancel();
 
                 return;
-            }
-            else {
+            } else {
                 float distance = (float) Math.Sqrt(distanceSquared);
 
                 walkDirection = (1 / distance) * offset;
@@ -390,11 +387,9 @@ public partial class MovementState {
 
         if (walkType == WalkType.MoveTo) {
             reached = targetDistance < travelDistance * travelDistance;
-        }
-        else if (walkType == WalkType.ToTarget) {
+        } else if (walkType == WalkType.ToTarget) {
             reached = targetDistance < walkTargetDistance * walkTargetDistance;
-        }
-        else {
+        } else {
             reached = targetDistance >= walkTargetDistance * walkTargetDistance;
         }
 
@@ -426,7 +421,7 @@ public partial class MovementState {
         RemoveDebugMarker(debugTarget, tickCount);
         RemoveDebugMarker(debugAgent, tickCount);
 
-        switch(State) {
+        switch (State) {
             case ActorState.Walk:
                 StateWalkUpdate(tickCount, tickDelta);
                 break;
@@ -436,8 +431,7 @@ public partial class MovementState {
 
                     stateSequence = actor.AnimationState.PlayingSequence;
 
-                }
-                else {
+                } else {
                     Idle();
                 }
                 break;
@@ -475,7 +469,7 @@ public partial class MovementState {
     }
 
     private bool CanTransitionToState(ActorState state) {
-        switch(State) {
+        switch (State) {
             case ActorState.Idle:
                 return state switch {
                     ActorState.Walk => true,

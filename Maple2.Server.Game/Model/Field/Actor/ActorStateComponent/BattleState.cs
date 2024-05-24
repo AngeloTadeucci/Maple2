@@ -195,8 +195,7 @@ public class BattleState {
 
         if (actor.Field.Players.TryGetValue(TargetId, out FieldPlayer? targetPlayer)) {
             target = targetPlayer;
-        }
-        else if (actor.Field.Npcs.TryGetValue(TargetId, out FieldNpc? targetNpc)) {
+        } else if (actor.Field.Npcs.TryGetValue(TargetId, out FieldNpc? targetNpc)) {
             target = targetNpc;
         }
 
@@ -276,8 +275,7 @@ public class BattleState {
         if (TargetType == NodeTargetType.RandAssociated) {
             if (candidates!.Count == 0) {
                 nextTarget = null;
-            }
-            else {
+            } else {
                 nextTarget = candidates[Random.Shared.Next(0, candidates.Count)].Item2;
             }
         }

@@ -200,8 +200,7 @@ public class FieldNpc : Actor<Npc> {
             SendControl = false;
 
             AppendDebugMessage("Casting skill\n");
-        }
-        else if (SendControl && !IsDead) {
+        } else if (SendControl && !IsDead) {
             SequenceCounter++;
             Field.Broadcast(NpcControlPacket.Control(this));
             SendControl = false;
@@ -272,11 +271,9 @@ public class FieldNpc : Actor<Npc> {
             if (Navigation.PathTo(waypoint.Position)) {
                 if (Value.Animations.TryGetValue(waypoint.ApproachAnimation, out AnimationSequence? patrolSequence)) {
                     approachTask = MovementState.TryMoveTo(waypoint.Position, false, waypoint.ApproachAnimation);
-                }
-                else if (WalkSequence is not null) {
+                } else if (WalkSequence is not null) {
                     approachTask = MovementState.TryMoveTo(waypoint.Position, false, WalkSequence.Name);
-                }
-                else {
+                } else {
                     Log.Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, patrolData.Uuid);
                 }
             }
@@ -368,7 +365,7 @@ public class FieldNpc : Actor<Npc> {
         }
 
         if (uid == 0) {
-            uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long)1e14;
+            uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
         }
 
         var cast = new SkillRecord(metadata, uid, this);
@@ -438,8 +435,7 @@ public class FieldNpc : Actor<Npc> {
 
         if (debugMessages.Last().Last() != '\n') {
             Field.BroadcastAiMessage(NoticePacket.Message($"{ObjectId}: {message}"));
-        }
-        else {
+        } else {
             string trimmedMessage = message.Substring(0, Math.Max(0, message.Length - 1));
 
             Field.BroadcastAiMessage(NoticePacket.Message($"{ObjectId}: {trimmedMessage}"));

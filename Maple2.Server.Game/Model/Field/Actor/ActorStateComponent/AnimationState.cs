@@ -105,8 +105,7 @@ public class AnimationState {
 
             if (reportingKeyframeEvent) {
                 queuedResetSequence = true;
-            }
-            else {
+            } else {
                 ResetSequence();
             }
 
@@ -253,8 +252,7 @@ public class AnimationState {
             }
 
             ResetSequence();
-        }
-        else if (queuedSequence is not null) {
+        } else if (queuedSequence is not null) {
             PlaySequence(queuedSequence, queuedSequenceSpeed, queuedSequenceType);
         }
 

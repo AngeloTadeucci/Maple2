@@ -360,9 +360,9 @@ public class FieldPlayer : Actor<Player> {
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }
-	}
-	
+    }
+
     public override void KeyframeEvent(string keyName) {
-        
+
     }
 }
