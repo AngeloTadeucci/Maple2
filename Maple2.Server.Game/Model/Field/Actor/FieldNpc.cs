@@ -255,7 +255,6 @@ public class FieldNpc : Actor<Npc> {
 
             if (currentWaypointIndex + 1 > patrolData.WayPoints.Count && !patrolData.IsLoop) {
                 patrolData = null;
-                idleTaskLimitTick = tickCount + 1000;
 
                 return MovementState.TryStandby(null);
             }
@@ -283,8 +282,6 @@ public class FieldNpc : Actor<Npc> {
             }
 
             if ((approachTask?.Status ?? NpcTaskStatus.Cancelled) == NpcTaskStatus.Cancelled) {
-                idleTaskLimitTick = tickCount + 1000;
-
                 Log.Logger.Warning("Failed to path to waypoint index({WaypointIndex}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypointIndex, waypoint.Position, Value.Metadata.Name, patrolData.Uuid);
 
                 return MovementState.TryStandby(null);
@@ -297,7 +294,6 @@ public class FieldNpc : Actor<Npc> {
         string routineName = defaultRoutines.Get();
         if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? sequence)) {
             Logger.Error("Invalid routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
-            idleTaskLimitTick = tickCount + 1000;
 
             return MovementState.TryStandby(null);
         }
@@ -320,7 +316,6 @@ public class FieldNpc : Actor<Npc> {
         }
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
-        idleTaskLimitTick = tickCount + 1000;
 
         return MovementState.TryStandby(null);
     }
