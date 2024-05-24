@@ -113,7 +113,7 @@ public partial class MovementState {
         private MovementState movement;
         public IActor Target { get; init; }
         public float Distance { get; init; }
-        public string Sequence { get; init; } = "";
+        public string Sequence { get; init; } = string.Empty;
         public float Speed { get; init; }
         override public bool CancelOnInterrupt { get => Priority == NpcTaskPriority.IdleAction; }
 
@@ -185,7 +185,7 @@ public partial class MovementState {
     public class NpcStandbyTask : NpcTask {
         private MovementState movement;
         public IActor? Target { get; init; }
-        public string Sequence { get; init; }
+        public string Sequence { get; init; } = string.Empty;
         override public bool CancelOnInterrupt { get => true; }
 
         public NpcStandbyTask(TaskState taskState, MovementState movement, string sequence) : base(taskState, NpcTaskPriority.BattleStandby) {
@@ -209,7 +209,7 @@ public partial class MovementState {
 
     public class NpcEmoteTask : NpcTask {
         private MovementState movement;
-        public string Sequence { get; init; }
+        public string Sequence { get; init; } = string.Empty;
         public bool IsIdle { get; init; }
         override public bool CancelOnInterrupt { get => true; }
 
