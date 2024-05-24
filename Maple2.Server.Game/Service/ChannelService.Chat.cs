@@ -1,5 +1,7 @@
 ﻿using Grpc.Core;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -7,21 +9,30 @@ namespace Maple2.Server.Game.Service;
 
 public partial class ChannelService {
     public override Task<ChatResponse> Chat(ChatRequest request, ServerCallContext context) {
+        using GameStorage.Request db = gameStorage.Context();
+
+        List<Item> items = [];
+        foreach (long itemUid in request.ItemUids) {
+            Item? item = db.GetItem(itemUid);
+            if (item != null) {
+                items.Add(item);
+            }
+        }
         switch (request.ChatCase) {
             case ChatRequest.ChatOneofCase.Whisper:
-                WhisperChat(request);
+                WhisperChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Party:
-                PartyChat(request);
+                PartyChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Guild:
-                GuildChat(request);
+                GuildChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.World:
-                WorldChat(request);
+                WorldChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Super:
-                SuperChat(request);
+                SuperChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Club:
                 return Task.FromResult(new ChatResponse());
@@ -33,39 +44,56 @@ public partial class ChannelService {
         }
     }
 
-    private void WhisperChat(ChatRequest request) {
+    private void WhisperChat(ChatRequest request, List<Item> items) {
         if (!server.GetSession(request.Whisper.RecipientId, out GameSession? session)) {
             throw new RpcException(new Status(StatusCode.NotFound, $"Unable to whisper: {request.Whisper.RecipientName}"));
+        }
+
+        if (items.Count > 0) {
+            session.Send(MessengerBrowserPacket.Link(items.ToArray()));
         }
 
         session.Send(ChatPacket.Whisper(request.AccountId, request.CharacterId, request.Name, request.Message, request.Name));
     }
 
-    private void PartyChat(ChatRequest request) {
+    private void PartyChat(ChatRequest request, List<Item> items) {
         foreach (long characterId in request.Party.MemberIds) {
             if (!server.GetSession(characterId, out GameSession? session)) {
                 continue;
             }
 
+            if (items.Count > 0) {
+                session.Send(MessengerBrowserPacket.Link(items.ToArray()));
+            }
             session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Party, request.Message));
         }
     }
 
-    private void GuildChat(ChatRequest request) {
+    private void GuildChat(ChatRequest request, List<Item> items) {
         foreach (long characterId in request.Guild.MemberIds) {
             if (!server.GetSession(characterId, out GameSession? session)) {
                 continue;
+            }
+
+            if (items.Count > 0) {
+                session.Send(MessengerBrowserPacket.Link(items.ToArray()));
             }
 
             session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Guild, request.Message));
         }
     }
 
-    private void WorldChat(ChatRequest request) {
+    private void WorldChat(ChatRequest request, List<Item> items) {
+        if (items.Count > 0) {
+            server.Broadcast(MessengerBrowserPacket.Link(items.ToArray()));
+        }
         server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.World, request.Message));
     }
 
-    private void SuperChat(ChatRequest request) {
+    private void SuperChat(ChatRequest request, List<Item> items) {
+        if (items.Count > 0) {
+            server.Broadcast(MessengerBrowserPacket.Link(items.ToArray()));
+        }
         server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Super, request.Message, request.Super.ItemId));
     }
 }
