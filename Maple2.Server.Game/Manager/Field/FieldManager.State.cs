@@ -40,6 +40,9 @@ public partial class FieldManager {
 
     public RoomTimer? RoomTimer { get; private set; }
 
+    #region Helpers
+    public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
+    #endregion
 
     #region Spawn
     public FieldPlayer SpawnPlayer(GameSession session, Player player, int portalId = -1, in Vector3 position = default, in Vector3 rotation = default) {

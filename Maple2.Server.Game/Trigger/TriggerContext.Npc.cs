@@ -10,9 +10,9 @@ namespace Maple2.Server.Game.Trigger;
 public partial class TriggerContext {
     public void ChangeMonster(int removeSpawnId, int addSpawnId) {
         DebugLog("[ChangeMonster] removeSpawnId:{RemoveId}, addSpawnId:{AddId}", removeSpawnId, addSpawnId);
-        foreach (FieldNpc fieldMob in Field.Mobs.Values) {
-            if (fieldMob.SpawnPointId == removeSpawnId) {
-                Field.RemoveNpc(fieldMob.ObjectId);
+        foreach (FieldNpc fieldNpc in Field.EnumerateNpcs()) {
+            if (fieldNpc.SpawnPointId == removeSpawnId) {
+                Field.RemoveNpc(fieldNpc.ObjectId);
             }
         }
 
@@ -40,15 +40,10 @@ public partial class TriggerContext {
         }
 
         foreach (int spawnPointId in spawnIds) {
-            FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnPointId);
-            if (fieldNpc != null) {
-                Field.RemoveNpc(fieldNpc.ObjectId);
-                continue;
-            }
-
-            FieldNpc? fieldMob = Field.Mobs.Values.FirstOrDefault(mob => mob.SpawnPointId == spawnPointId);
-            if (fieldMob != null) {
-                Field.RemoveNpc(fieldMob.ObjectId);
+            foreach (FieldNpc fieldNpc in Field.EnumerateNpcs()) {
+                if (fieldNpc.SpawnPointId == spawnPointId) {
+                    Field.RemoveNpc(fieldNpc.ObjectId);
+                }
             }
         }
     }
@@ -68,8 +63,9 @@ public partial class TriggerContext {
 
     public void MoveNpc(int spawnId, string patrolName) {
         DebugLog("[MoveNpc] spawnId:{SpawnId} patrolName:{PatrolName}", spawnId, patrolName);
-        var fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
-        if (fieldNpc == null) {
+
+        var fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId);
+        if (fieldNpcs.Count() == 0) {
             return;
         }
 
@@ -79,12 +75,14 @@ public partial class TriggerContext {
             return;
         }
 
-        fieldNpc.SetPatrolData(patrolData);
+        foreach (FieldNpc fieldNpc in fieldNpcs) {
+            fieldNpc.SetPatrolData(patrolData);
+        }
     }
 
     public void MoveNpcToPos(int spawnId, Vector3 position, Vector3 rotation) {
         WarnLog("[MoveNpcToPos] spawnId:{SpawnId}", spawnId);
-        foreach (FieldNpc npc in Field.Npcs.Values) {
+        foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
                 npc.Position = position;
                 npc.Rotation = rotation;
@@ -94,7 +92,7 @@ public partial class TriggerContext {
 
     public void NpcRemoveAdditionalEffect(int spawnId, int additionalEffectId) {
         WarnLog("[NpcRemoveAdditionalEffect] spawnId:{SpawnId}", spawnId);
-        foreach (FieldNpc npc in Field.Npcs.Values) {
+        foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
                 npc.Buffs.Remove(additionalEffectId);
             }
@@ -123,7 +121,7 @@ public partial class TriggerContext {
         }
 
         if (type == 1) {
-            var npc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+            var npc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
             if (npc == null) {
                 return;
             }
@@ -142,20 +140,20 @@ public partial class TriggerContext {
     public void SetNpcEmotionLoop(int spawnId, string sequenceName, float duration) {
         WarnLog("[SetNpcEmotionLoop] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, duration);
 
-        FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        FieldNpc? fieldNpc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
         fieldNpc?.Animate(sequenceName, duration);
     }
 
     public void SetNpcEmotionSequence(int spawnId, string sequenceName, int durationTick) {
         WarnLog("[SetNpcEmotionSequence] spawnId:{SpawnId}, sequenceName:{SequenceName}, durationTick:{Duration}", spawnId, sequenceName, durationTick);
 
-        FieldNpc? fieldNpc = Field.Npcs.Values.FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        FieldNpc? fieldNpc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
         fieldNpc?.Animate(sequenceName);
     }
 
     public void SetNpcRotation(int spawnId, float rotation) {
         WarnLog("[SetNpcRotation] spawnId:{SpawnId}, rotation:{Rotation}", spawnId, rotation);
-        foreach (FieldNpc npc in Field.Npcs.Values) {
+        foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
                 npc.Rotation = npc.Rotation with { Z = rotation };
             }
@@ -248,7 +246,7 @@ public partial class TriggerContext {
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
             .Where(box => box != null)!;
 
-        return Field.Npcs.Values.Where(mob => boxes.Any(box => box.Contains(mob.Position)));
+        return Field.EnumerateNpcs().Where(mob => boxes.Any(box => box.Contains(mob.Position)));
     }
 
     private void SpawnNpc(int spawnId) {
