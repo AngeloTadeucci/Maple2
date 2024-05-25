@@ -72,7 +72,8 @@ public class FieldInteract : FieldEntity<InteractObjectMetadata> {
             return;
         }
 
-        if (State == InteractState.Normal) {
+        // Checks if we should reset (resetTime > 0)
+        if (State == InteractState.Normal && Value.Time.Reset > 0) {
             SetState(reactLimit > 0 ? InteractState.Reactable : InteractState.Hidden);
         }
 
