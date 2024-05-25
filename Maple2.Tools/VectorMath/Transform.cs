@@ -138,7 +138,7 @@ public class Transform {
     }
 
     public void LookTo(Vector3 direction, Vector3 up) {
-        Vector3 right = Vector3.Cross(up, direction);
+        Vector3 right = Vector3.Cross(direction, up);
         float scale = Scale;
 
         RightAxis = scale * right;
