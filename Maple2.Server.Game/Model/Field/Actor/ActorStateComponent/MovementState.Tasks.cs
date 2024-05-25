@@ -294,6 +294,8 @@ public partial class MovementState {
             return;
         }
 
+        Velocity = new Vector3(0, 0, 0);
+
         SkillRecord? cast = actor.CastSkill(id, level, uid);
 
         if (cast is null) {

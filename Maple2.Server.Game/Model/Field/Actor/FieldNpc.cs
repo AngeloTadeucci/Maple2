@@ -25,7 +25,6 @@ namespace Maple2.Server.Game.Model;
 public class FieldNpc : Actor<Npc> {
     #region Control
     public bool SendControl;
-    private SkillRecord? sendSkillCast;
     private long lastUpdate;
 
     private Vector3 velocity;
@@ -190,17 +189,7 @@ public class FieldNpc : Actor<Npc> {
 
         playersListeningToDebug = playersListeningToDebugNow;
 
-        if (sendSkillCast is not null && !IsDead) {
-            SequenceCounter++;
-            Field.Broadcast(NpcControlPacket.Control(this));
-            Field.Broadcast(SkillPacket.Use(sendSkillCast));
-            Field.Broadcast(SkillPacket.Sync(sendSkillCast));
-
-            sendSkillCast = null;
-            SendControl = false;
-
-            AppendDebugMessage("Casting skill\n");
-        } else if (SendControl && !IsDead) {
+        if (SendControl && !IsDead) {
             SequenceCounter++;
             Field.Broadcast(NpcControlPacket.Control(this));
             SendControl = false;
@@ -373,13 +362,9 @@ public class FieldNpc : Actor<Npc> {
             uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
         }
 
-        var cast = new SkillRecord(metadata, uid, this);
-        cast.Position = Position;
-        cast.Rotation = Rotation;
-        cast.Rotate2Z = 2 * Rotation.Z;
-        cast.ServerTick = (int) Field.FieldTick;
+        Field.Broadcast(NpcControlPacket.Control(this));
 
-        sendSkillCast = cast;
+        var cast = base.CastSkill(id, level, uid);
 
         return cast;
     }
