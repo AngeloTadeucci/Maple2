@@ -36,7 +36,15 @@ public class Transform {
         get {
             Quaternion quaternion = Transformation.GetQuaternion();
 
-            Vector3 axis = Vector3.Normalize(new Vector3(quaternion.X, quaternion.Y, quaternion.Z));
+            Vector3 axis = new Vector3(quaternion.X, quaternion.Y, quaternion.Z);
+            float squareLength = axis.LengthSquared();
+
+            if (squareLength < 1e-5f) {
+                axis = new Vector3(0, 0, 1);
+            }
+
+            axis = Vector3.Normalize(axis);
+
             float angle = (float) Math.Acos(quaternion.W) * 2;
 
             return (axis, angle);
@@ -97,9 +105,9 @@ public class Transform {
     public Vector3 RightAxis {
         get { return -Transformation.GetRightAxis(); }
         set {
-            Transformation.M11 = value.X;
-            Transformation.M12 = value.Y;
-            Transformation.M13 = value.Z;
+            Transformation.M11 = -value.X;
+            Transformation.M12 = -value.Y;
+            Transformation.M13 = -value.Z;
         }
     }
 
