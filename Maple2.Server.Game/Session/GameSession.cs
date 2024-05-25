@@ -71,7 +71,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ConfigManager Config { get; set; } = null!;
     public MailManager Mail { get; set; } = null!;
     public GuildManager Guild { get; set; } = null!;
-    public BuddyManager Buddy { get; set; }
+    public BuddyManager Buddy { get; set; } = null!;
     public ItemManager Item { get; set; } = null!;
     public HousingManager Housing { get; set; } = null!;
     public CurrencyManager Currency { get; set; } = null!;
@@ -89,7 +89,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public BlackMarketManager BlackMarket { get; set; } = null!;
     public FieldManager Field { get; set; } = null!;
     public FieldPlayer Player { get; private set; } = null!;
-    public PartyManager Party { get; set; }
+    public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
 
 
