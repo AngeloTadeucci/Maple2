@@ -140,13 +140,15 @@ public class AnimationState {
 
         if (reportingKeyframeEvent) {
             queuedResetSequence = true;
-        } else {
-            if (PlayingSequence != null && actor is FieldNpc npc) {
-                npc.SendControl = true;
-            }
 
-            ResetSequence();
+            return;
         }
+
+        if (PlayingSequence != null && actor is FieldNpc npc) {
+            npc.SendControl = true;
+        }
+
+        ResetSequence();
     }
 
     public void Update(long tickCount) {
