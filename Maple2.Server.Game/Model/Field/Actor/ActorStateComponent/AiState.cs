@@ -203,7 +203,7 @@ public class AiState {
             actor.AppendDebugMessage($"{AiMetadata!.Name}\n");
             actor.AppendDebugMessage($"Invalid Skill Idx {idx}\n");
 
-            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'");
+            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'. Xml.m2d/m2h might be out of date. Check the MS2 Hub resources!");
 
             return null;
         }
@@ -219,7 +219,7 @@ public class AiState {
             actor.AppendDebugMessage($"{AiMetadata!.Name}\n");
             actor.AppendDebugMessage($"Missing Skill Idx {idx}\n");
 
-            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'");
+            Logger.Warning($"Missing skillIdx {idx} in {actor.Value.Metadata.Name}[{actor.Value.Id}] script '{AiMetadata!.Name}'. Xml.m2d/m2h might be out of date. Check the MS2 Hub resources!");
         }
 
         return skill;
