@@ -81,7 +81,7 @@ public partial class TriggerContext : ITriggerContext {
             return;
         }
 
-        logAction(messageTemplate, args);
+        logAction($"{owner.Value.Name} {messageTemplate}", args);
         lastDebugKey = key;
     }
 
@@ -192,17 +192,21 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     public bool RandomCondition(float rate, string description) {
+        if (rate < 0f || rate > 100f) {
+            LogOnce(logger.Error, "[RandomCondition] Invalid rate: {Rate}", rate);
+            return false;
+        }
+
         if (currentRandom >= 100f) {
             currentRandom = Random.Shared.NextSingle() * 100;
         }
 
         currentRandom -= rate;
-        if (rate > 0) {
+        if (currentRandom > rate) {
             return false;
         }
 
-        // Reset |currentRandom|
-        currentRandom = float.MaxValue;
+        currentRandom = float.MaxValue; // Reset
         return true;
     }
 
