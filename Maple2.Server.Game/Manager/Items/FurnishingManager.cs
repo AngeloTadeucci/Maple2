@@ -144,7 +144,7 @@ public class FurnishingManager {
 
     private long AddStorage(int itemId) {
         const int amount = 1;
-        Item? item = session.Item.CreateItem(itemId);
+        Item? item = session.Field.ItemDrop.CreateItem(itemId);
         if (item == null) {
             return 0;
         }

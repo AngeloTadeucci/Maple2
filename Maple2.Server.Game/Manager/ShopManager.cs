@@ -189,7 +189,7 @@ public sealed class ShopManager {
         }
 
         foreach (ShopItem shopItem in itemList) {
-            Item? item = session.Item.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
+            Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
             if (item == null) {
                 continue;
             }

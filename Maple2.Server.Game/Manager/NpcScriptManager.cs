@@ -652,7 +652,7 @@ public sealed class NpcScriptManager {
 
         IList<Item> items = new List<Item>();
         foreach (ItemComponent item in scriptFunction.PresentItems) {
-            Item? newItem = session.Item.CreateItem(item.ItemId, item.Rarity, item.Amount);
+            Item? newItem = session.Field.ItemDrop.CreateItem(item.ItemId, item.Rarity, item.Amount);
             if (newItem == null) {
                 continue;
             }

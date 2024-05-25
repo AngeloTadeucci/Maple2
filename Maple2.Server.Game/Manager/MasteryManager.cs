@@ -130,7 +130,7 @@ public class MasteryManager {
         }
 
         foreach (ItemComponent itemReward in recipeMetadata.RewardItems) {
-            Item? item = session.Item.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
+            Item? item = session.Field.ItemDrop.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
             if (item == null) {
                 continue;
             }

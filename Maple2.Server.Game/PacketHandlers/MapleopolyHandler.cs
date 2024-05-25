@@ -111,7 +111,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
         switch (tile.Type) {
             case BlueMarbleTileType.Item:
             case BlueMarbleTileType.TreasureTrove:
-                Item? item = session.Item.CreateItem(tile.Item.ItemId, tile.Item.ItemRarity, tile.Item.ItemAmount);
+                Item? item = session.Field.ItemDrop.CreateItem(tile.Item.ItemId, tile.Item.ItemRarity, tile.Item.ItemAmount);
                 if (item == null) {
                     // TODO: Error packet?
                     break;
@@ -159,7 +159,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
             // Check if there's any item to give for every 1 trip
             BlueMarbleEntry entry1 = blueMarble.Entries.FirstOrDefault(entry => entry.TripAmount == 0);
             if (entry1 != default) {
-                Item? trip0Item = session.Item.CreateItem(entry1.Item.ItemId);
+                Item? trip0Item = session.Field.ItemDrop.CreateItem(entry1.Item.ItemId);
                 if (trip0Item != null && !session.Item.Inventory.Add(trip0Item, true)) {
                     session.Item.MailItem(trip0Item);
                 }
@@ -168,7 +168,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
             // Check if there's any other item to give for hitting a specific number of trips
             BlueMarbleEntry entry2 = blueMarble.Entries.FirstOrDefault(entry => entry.TripAmount == trips);
             if (entry2 != default) {
-                Item? tripItem = session.Item.CreateItem(entry2.Item.ItemId);
+                Item? tripItem = session.Field.ItemDrop.CreateItem(entry2.Item.ItemId);
                 if (tripItem != null && !session.Item.Inventory.Add(tripItem, true)) {
                     session.Item.MailItem(tripItem);
                 }
