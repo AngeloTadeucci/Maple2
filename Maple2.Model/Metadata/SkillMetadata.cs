@@ -38,12 +38,14 @@ public record SkillMetadataProperty(
     int SkillGroup,
     short MaxLevel);
 
-public record SkillMetadataState;
+public record SkillMetadataState(
+    int SuperArmor); // 0, 1, 3
 
 public record SkillMetadataLevel(
     BeginCondition Condition,
     SkillMetadataChange? Change,
     SkillMetadataConsume Consume,
+    SkillMetadataDetect Detect,
     SkillMetadataRecovery Recovery,
     SkillEffectMetadata[] Skills,
     SkillMetadataMotion[] Motions);
@@ -64,6 +66,10 @@ public record SkillMetadataConsume(
     float HpRate,
     Dictionary<BasicAttribute, long> Stat);
 
+public record SkillMetadataDetect(
+    bool IncludeCaster, // range & arrow can use 2, but detect & sensor only use 0 & 1
+    float Distance);
+
 public record SkillMetadataRecovery(
     long SpValue,
     float SpRate);
@@ -82,6 +88,8 @@ public record SkillMetadataAttack(
     int TargetCount,
     long MagicPathId,
     long CubeMagicPathId,
+    int HitImmuneBreak, // 0, 1, 2, 5, 99
+    int BrokenOffence, // 0 - 99
     CompulsionType[] CompulsionTypes,
     SkillMetadataPet? Pet,
     SkillMetadataRange Range,
@@ -127,10 +135,18 @@ public record SkillMetadataDamage(
     bool IsConstDamage, // Use 'Value' to determine damage
     long Value,
     float DamageByTargetMaxHp,
+    bool SuperArmorBreak,
     SkillMetadataPush? Push);
 
 public record SkillMetadataPush(
-    int Type,
+    int Type, // 0, 1, 2, 3, 4, 5, -1
+    int EaseType, // 0, 1, 2
+    int ApplyField, // 0, 1, 2
     float Distance,
+    float UpDistance,
+    int Down,
+    bool Fall,
     float Duration,
-    float Probability);
+    float Probability,
+    int Priority, // 0-99
+    int PriorityHitImmune); // 1-1600

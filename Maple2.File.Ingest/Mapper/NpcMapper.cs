@@ -22,8 +22,26 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
 
             yield return new NpcMetadata(Id: id,
                 Name: name,
-                Model: data.model.kfm,
                 AiPath: data.aiInfo.path,
+                Model: new NpcMetadataModel(
+                    Name: data.model.kfm,
+                    Scale: data.model.scale,
+                    AniSpeed: data.model.anispeed
+                ),
+                Distance: new NpcMetadataDistance(
+                    Avoid: data.distance.avoid,
+                    Sight: data.distance.sight,
+                    SightHeightUp: data.distance.sightHeightUP,
+                    SightHeightDown: data.distance.sightHeightDown,
+                    CustomLastSightRadius: data.distance.customLastSightRadius,
+                    CustomLastSightHeightUp: data.distance.customLastSightHeightUp,
+                    CustomLastSightHeightDown: data.distance.customLastSightHeightDown
+                ),
+                Skill: new NpcMetadataSkill(
+                    Entries: data.skill.ids.Select((skillId, i) =>
+                        new NpcMetadataSkill.Entry(skillId, data.skill.levels[i])).ToArray(),
+                    Cooldown: data.skill.coolDown
+                ),
                 Stat: new NpcMetadataStat(Stats: MapStats(data.stat),
                     ScaleStatRate: [
                         data.stat.scaleStatRate_1,
@@ -67,8 +85,6 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                     Difficulty: data.basic.difficulty,
                     CustomExp: data.exp.customExp),
                 Property: new NpcMetadataProperty(
-                    Skills: data.skill.ids.Select((skillId, i) =>
-                        new NpcMetadataSkill(skillId, data.skill.levels[i], data.skill.priorities[i], data.skill.probs[i])).ToArray(),
                     Buffs: data.additionalEffect.codes.Select((buffId, i) => new NpcMetadataBuff(buffId, data.additionalEffect.levels[i])).ToArray(),
                     Capsule: new NpcMetadataCapsule(data.capsule.radius, data.capsule.height),
                     Collision: data.collision.shape == "box" ? new NpcMetadataCollision(

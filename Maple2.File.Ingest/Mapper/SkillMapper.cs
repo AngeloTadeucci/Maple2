@@ -30,6 +30,9 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                         UseItem: level.consume.useItem,
                         HpRate: level.consume.hpRate,
                         Stat: level.consume.stat.ToDictionary()),
+                    Detect: new SkillMetadataDetect(
+                        IncludeCaster: level.detectProperty?.includeCaster == 1,
+                        Distance: level.detectProperty?.distance ?? 0),
                     Recovery: new SkillMetadataRecovery(
                         SpValue: level.recoveryProperty.spValue,
                         SpRate: level.recoveryProperty.spRate),
@@ -45,6 +48,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                             TargetCount: attack.targetCount,
                             MagicPathId: attack.magicPathID,
                             CubeMagicPathId: attack.cubeMagicPathID == int.MaxValue ? 9000073111 : attack.cubeMagicPathID,
+                            HitImmuneBreak: attack.hitImmuneBreak,
+                            BrokenOffence: attack.brokenOffence,
                             CompulsionTypes: attack.compulsionType.Select(type => (CompulsionType) type).ToArray(),
                             Pet: attack.petTamingProperty != null ? new SkillMetadataPet(
                                 TamingGroup: attack.petTamingProperty.tamingGroup,
@@ -71,11 +76,19 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                 IsConstDamage: attack.damageProperty.isConstDamageValue != 0,
                                 Value: attack.damageProperty.value,
                                 DamageByTargetMaxHp: attack.damageProperty.damageByTargetMaxHP,
+                                SuperArmorBreak: attack.damageProperty.superArmorBreak,
                                 Push: attack.damageProperty.push > 0 ? new SkillMetadataPush(
                                     Type: attack.damageProperty.push,
+                                    EaseType: attack.damageProperty.pushEaseType,
+                                    ApplyField: attack.damageProperty.pushApplyField,
                                     Distance: attack.damageProperty.pushdistance,
+                                    UpDistance: attack.damageProperty.pushUpDistance,
+                                    Down: attack.damageProperty.pushDown,
+                                    Fall: attack.damageProperty.pushFall,
                                     Duration: attack.damageProperty.pushduration,
-                                    Probability: attack.damageProperty.pushprob
+                                    Probability: attack.damageProperty.pushprob,
+                                    Priority: attack.damageProperty.pushPriority,
+                                    PriorityHitImmune: attack.damageProperty.pushPriorityHitImmune
                                 ) : null
                             ),
                             Skills: attack.conditionSkill.Select(skill => skill.Convert()).ToArray()
@@ -100,7 +113,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     ReleaseObjectWeapon: data.basic.kinds.releaseObjectWeapon,
                     SkillGroup: data.basic.kinds.groupIDs.FirstOrDefault(),
                     MaxLevel: levels.Keys.Max()),
-                State: new SkillMetadataState(),
+                State: new SkillMetadataState(
+                    SuperArmor: data.basic.stateAttr.superArmor),
                 Levels: levels
             );
         }

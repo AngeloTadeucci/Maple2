@@ -87,7 +87,7 @@ public partial class FieldManager {
     public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
         Agent? agent = Navigation.AddAgent(npc, position);
 
-        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
+        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = position;
         if (agent is not null) {
             spawnPosition = Navigation.FromPosition(agent.getPosition());
@@ -125,7 +125,7 @@ public partial class FieldManager {
 
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
-        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
+        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
         var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, player) {
             Owner = owner,
@@ -618,6 +618,12 @@ public partial class FieldManager {
         }
         foreach (FieldPet fieldPet in Pets.Values) {
             added.Session.Send(ProxyObjectPacket.AddPet(fieldPet));
+        }
+        foreach (FieldNpc fieldNpc in Npcs.Values.Concat(Mobs.Values)) {
+            added.Session.Send(NpcControlPacket.Control(fieldNpc));
+        }
+        foreach (FieldPet fieldPet in Pets.Values) {
+            added.Session.Send(NpcControlPacket.Control(fieldPet));
         }
         foreach (FieldSkill skillSource in fieldSkills.Values) {
             added.Session.Send(RegionSkillPacket.Add(skillSource));

@@ -198,7 +198,7 @@ public partial class TriggerContext {
                 continue;
             }
 
-            if (mob.TargetId != 0) {
+            if (mob.BattleState.InBattle) {
                 return true;
             }
         }

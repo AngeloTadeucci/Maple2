@@ -839,6 +839,10 @@ public static class Constant {
     public const int NextStateTriggerDefaultTick = 100;
     public const int UserRevivalPaneltyTick = 3600000;
     public const int UserRevivalPaneltyMinLevel = 10;
+
+    public const float NpcLastSightRadius = 1800;
+    public const float NpcLastSightHeightUp = 525;
+    public const float NpcLastSightHeightDown = 225;
     #endregion
 }
 

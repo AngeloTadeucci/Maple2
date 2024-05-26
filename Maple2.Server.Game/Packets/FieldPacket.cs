@@ -142,7 +142,7 @@ public static class FieldPacket {
         // If NPC is not valid, the packet seems to stop here
 
         if (npc.Value.IsBoss) {
-            pWriter.WriteString(npc.Value.Metadata.Model);
+            pWriter.WriteString(npc.Value.Metadata.Model.Name);
         }
 
         pWriter.WriteNpcStats(npc.Stats);
@@ -212,6 +212,40 @@ public static class FieldPacket {
 
         return pWriter;
     }
+
+    #region debug
+    // This was used for rapid fire placement & repositioning of field items for debug visualization purposes without requiring allocating a whole new FieldItem
+    // It was used for debugging npc movement to display important parameters that weren't being replicated properly.
+    // Currently there is no easy to use system in place for that, though I do want to make one later
+    public static ByteWriter DropDebugItem(FieldItem fieldItem, int objectId, Vector3 position, int unkInt, short unkShort, bool unkBool) {
+        Item item = fieldItem;
+
+        var pWriter = Packet.Of(SendOp.FieldAddItem);
+        pWriter.WriteInt(objectId);
+        pWriter.WriteInt(item.Id);
+        pWriter.WriteInt(item.Amount);
+
+        pWriter.WriteBool(fieldItem.ReceiverId >= 0);
+        if (fieldItem.ReceiverId >= 0) {
+            pWriter.WriteLong(fieldItem.ReceiverId);
+        }
+
+        pWriter.Write<Vector3>(position);
+        pWriter.WriteInt(fieldItem.Owner?.ObjectId ?? 0);
+        pWriter.WriteInt(unkInt);
+        pWriter.Write<DropType>(fieldItem.Type);
+        pWriter.WriteInt(item.Rarity);
+        pWriter.WriteShort(unkShort);
+        pWriter.WriteBool(fieldItem.FixedPosition);
+        pWriter.WriteBool(unkBool);
+
+        if (!item.IsMeso()) {
+            pWriter.WriteClass<Item>(item);
+        }
+
+        return pWriter;
+    }
+    #endregion
 
     public static ByteWriter RemoveItem(int objectId) {
         var pWriter = Packet.Of(SendOp.FieldRemoveItem);

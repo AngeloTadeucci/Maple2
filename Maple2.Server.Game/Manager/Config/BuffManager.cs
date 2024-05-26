@@ -153,6 +153,20 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    public bool HasBuff(int effectId, short effectLevel, int overlapCount) {
+        Buff? buff = null;
+
+        if (!Buffs.TryGetValue(effectId, out buff)) {
+            return false;
+        }
+
+        if (overlapCount != 0 && buff.Stacks < overlapCount) {
+            return false;
+        }
+
+        return effectLevel == 0 || buff.Level >= effectLevel;
+    }
+
     private void SetReflect(Buff buff) {
         if (buff.Metadata.Reflect.EffectId == 0 || !actor.Field.SkillMetadata.TryGetEffect(buff.Metadata.Reflect.EffectId, buff.Metadata.Reflect.EffectLevel,
                 out AdditionalEffectMetadata? _)) {

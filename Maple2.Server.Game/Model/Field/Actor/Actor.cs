@@ -12,7 +12,7 @@ using Maple2.Tools.VectorMath;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
-using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Database.Storage;
 
 namespace Maple2.Server.Game.Model;
@@ -35,7 +35,10 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public int ObjectId { get; }
     public virtual Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
-    public virtual Vector3 Rotation { get => Transform.RotationAnglesDegrees; set => Transform.RotationAnglesDegrees = value; }
+    public virtual Vector3 Rotation {
+        get => Transform.RotationAnglesDegrees;
+        set => Transform.RotationAnglesDegrees = value;
+    }
     public Transform Transform { get; init; }
     public AnimationState AnimationState { get; init; }
 
@@ -167,7 +170,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Buffs.Update(tickCount);
     }
 
-    public virtual void KeyframeEvent(long tickCount, long keyTick, string keyName) { }
+    public virtual void KeyframeEvent(string keyName) { }
 
     public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
