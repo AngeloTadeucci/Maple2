@@ -66,7 +66,7 @@ public class BattleState {
             return;
         }
 
-        if (TargetId != 0 && (!ShouldKeepTarget() || !CanBattle)) {
+        if (TargetId != 0 && (!ShouldKeepTarget() || !CanBattle) && !KeepBattle) {
             actor.AppendDebugMessage($"Lost target '{GetTargetName()}'\n");
 
             TargetId = 0;

@@ -29,12 +29,8 @@ public partial class TriggerContext {
     public void DestroyMonster(int[] spawnIds, bool arg2) {
         WarnLog("[DestroyMonster] spawnIds:{SpawnIds}, Arg2:{Arg2}", string.Join(", ", spawnIds), arg2);
         if (spawnIds.Contains(-1)) {
-            foreach (int objectId in Field.Mobs.Keys) {
-                Field.RemoveNpc(objectId);
-            }
-
-            foreach (int objectId in Field.Npcs.Keys) {
-                Field.RemoveNpc(objectId);
+            foreach (FieldNpc fieldNpc in Field.EnumerateNpcs()) {
+                Field.RemoveNpc(fieldNpc.ObjectId);
             }
             return;
         }
@@ -104,7 +100,18 @@ public partial class TriggerContext {
     }
 
     public void SetAiExtraData(string key, int value, bool isModify, int boxId) {
-        ErrorLog("[SetAiExtraData] key:{Key}, value:{Value}, isModify:{IsModify}, boxId:{BoxId}", key, value, isModify, boxId);
+        WarnLog("[SetAiExtraData] key:{Key}, value:{Value}, isModify:{IsModify}, boxId:{BoxId}", key, value, isModify, boxId);
+        var npcs = boxId != 0 ? NpcsInBox(boxId) : Field.EnumerateNpcs();
+        foreach (FieldNpc npc in npcs) {
+            // Assumed that we increment the current by the value if isModify is true
+            if (isModify) {
+                if (npc.AiExtraData.TryGetValue(key, out int oldValue)) {
+                    npc.AiExtraData[key] = oldValue + value;
+                    continue;
+                }
+            }
+            npc.AiExtraData[key] = value;
+        }
     }
 
     public void SetDialogue(int type, int spawnId, string script, int delay, int arg5, Align align) {

@@ -97,6 +97,8 @@ public class FieldNpc : Actor<Npc> {
     private NpcTask? idleTask = null;
     private long idleTaskLimitTick = 0;
 
+    public readonly Dictionary<string, int> AiExtraData = new();
+
     public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
