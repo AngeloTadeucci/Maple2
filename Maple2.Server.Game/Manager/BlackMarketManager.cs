@@ -199,10 +199,11 @@ public sealed class BlackMarketManager {
             item.Amount = quantity;
 
             item = db.CreateItem(receivingMail.Id, item);
-            if (item == null) {
+            if (item is null) {
                 session.Send(BlackMarketPacket.Error(BlackMarketError.s_blackmarket_error_close));
                 session.Currency.Meso += listing.Price * quantity;
                 logger.Error("Failed to create item for black market purchase mail for {CharacterId}", session.CharacterId);
+                return;
             }
             receivingMail.Items.Add(item);
             db.SaveBlackMarketListing(listing);
