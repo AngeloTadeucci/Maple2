@@ -39,7 +39,7 @@ public class ItemCommand : Command {
     private void Handle(InvocationContext ctx, int itemId, int amount, int rarity, bool drop) {
         try {
             rarity = Math.Clamp(rarity, 1, MAX_RARITY);
-            Item? item = session.Item.CreateItem(itemId, rarity);
+            Item? item = session.Field.ItemDrop.CreateItem(itemId, rarity);
             if (item == null) {
                 ctx.Console.Error.WriteLine($"Invalid Item: {itemId}");
                 return;

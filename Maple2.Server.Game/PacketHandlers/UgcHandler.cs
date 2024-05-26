@@ -129,7 +129,7 @@ public class UgcHandler : PacketHandler<GameSession> {
             }
         }
 
-        Item? item = session.Item.CreateItem(itemId, ugcMetadata.ItemRarity);
+        Item? item = session.Field.ItemDrop.CreateItem(itemId, ugcMetadata.ItemRarity);
         if (item == null) {
             Logger.Fatal("Failed to create UGC item {ItemId}", itemId);
             throw new InvalidOperationException($"Fatal: Creating UGC item: {itemId}");

@@ -228,7 +228,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? selfBadge = session.Item.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? selfBadge = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (selfBadge == null) {
             session.Send(NoticePacket.MessageBox(StringCode.s_couple_effect_error_openbox_unknown));
             Logger.Error("Failed to create buddy badge box item: {Parameters}", buddyBadgeBoxParams[0]);
@@ -264,7 +264,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             throw new InvalidOperationException($"Failed to create buddy badge mail for receiver character id: {receiverInfo.CharacterId}");
         }
 
-        Item? receiverItem = session.Item.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? receiverItem = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (receiverItem == null) {
             throw new InvalidOperationException($"Failed to create buddy badge item: {buddyBadgeBoxParams[0]}");
         }

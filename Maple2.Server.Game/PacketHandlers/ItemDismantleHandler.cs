@@ -143,7 +143,7 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                 result[id] = total;
                 while (total > 0) {
 
-                    Item? item = session.Item.CreateItem(id, amount: total);
+                    Item? item = session.Field.ItemDrop.CreateItem(id, amount: total);
                     if (item == null) {
                         continue;
                     }

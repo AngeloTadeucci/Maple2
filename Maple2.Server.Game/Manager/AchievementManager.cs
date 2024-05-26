@@ -165,7 +165,7 @@ public sealed class AchievementManager {
                 if (!manualClaim) {
                     return;
                 }
-                Item? item = session.Item.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
+                Item? item = session.Field.ItemDrop.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
                 if (item == null) {
                     return;
                 }

@@ -39,7 +39,7 @@ public class TutorialItemHandler : PacketHandler<GameSession> {
                 continue;
             }
 
-            Item? tutorialItem = session.Item.CreateItem(tutorialItemGroup.Key);
+            Item? tutorialItem = session.Field.ItemDrop.CreateItem(tutorialItemGroup.Key);
             if (tutorialItem == null) {
                 continue;
             }

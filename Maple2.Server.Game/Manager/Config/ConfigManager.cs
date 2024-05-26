@@ -449,7 +449,7 @@ public class ConfigManager {
             return true; // Nothing to unequip
         }
 
-        Item? lapenshard = session.Item.CreateItem(lapenshardId, Constant.LapenshardGrade);
+        Item? lapenshard = session.Field.ItemDrop.CreateItem(lapenshardId, Constant.LapenshardGrade);
         if (lapenshard == null) {
             return false;
         }

@@ -83,7 +83,7 @@ public class BonusGameHandler : PacketHandler<GameSession> {
         IList<KeyValuePair<Item, int>> rewardedItems = new List<KeyValuePair<Item, int>>(); // Item, Index on wheel
         for (int spin = 0; spin < spins; spin++) {
             (BonusGameTable.Drop.Item DropItem, int Index) result = dropItems.Get();
-            Item? createdItem = session.Item.CreateItem(result.DropItem.ItemComponent.ItemId, result.DropItem.ItemComponent.Rarity, result.DropItem.ItemComponent.Amount);
+            Item? createdItem = session.Field.ItemDrop.CreateItem(result.DropItem.ItemComponent.ItemId, result.DropItem.ItemComponent.Rarity, result.DropItem.ItemComponent.Amount);
             if (createdItem == null) {
                 break;
             }
