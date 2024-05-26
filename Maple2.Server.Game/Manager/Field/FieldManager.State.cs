@@ -14,7 +14,6 @@ using Maple2.Server.Game.Util;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
 using Maple2.Tools.Extensions;
-using Microsoft.Scripting.Metadata;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
