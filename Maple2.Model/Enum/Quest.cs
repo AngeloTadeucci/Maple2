@@ -13,3 +13,24 @@ public enum QuestType {
     AllianceQuest = 9,
     WeddingMission = 10,
 }
+
+public enum QuestState {
+    None = 0,
+    Started = 1,
+    Completed = 2,
+}
+
+public enum QuestRemoteType {
+    None = 0,
+    Cinematic = 1,
+    Popup = 2,
+    System = 3,
+}
+
+public enum QuestDispatchType {
+    None,
+    MonologueAccept,
+    MonologueComplete,
+    DirectAccept,
+    DirectComplete,
+}

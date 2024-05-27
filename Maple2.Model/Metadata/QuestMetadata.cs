@@ -10,8 +10,11 @@ public record QuestMetadata(
     QuestMetadataRequire Require,
     QuestMetadataReward AcceptReward,
     QuestMetadataReward CompleteReward,
+    QuestRemoteAccept RemoteAccept,
+    QuestRemoteComplete RemoteComplete,
     QuestMetadataGoToNpc GoToNpc,
     QuestMetadataGoToDungeon GoToDungeon,
+    QuestDispatch? Dispatch,
     ConditionMetadata[] Conditions) : ISearchResult;
 
 public record QuestMetadataBasic(
@@ -66,4 +69,18 @@ public record QuestMetadataGoToDungeon(
     int MapId,
     int InstanceId);
 
+public record QuestRemoteAccept(
+    QuestRemoteType Type,
+    int MapId);
+
+public record QuestRemoteComplete(
+    QuestRemoteType Type,
+    int MapId,
+    bool RequireDungeonClear);
+
+public record QuestDispatch(
+    QuestDispatchType Type,
+    int MapId,
+    int PortalId,
+    int Script);
 

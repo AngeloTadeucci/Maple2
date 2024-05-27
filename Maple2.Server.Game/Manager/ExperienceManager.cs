@@ -96,12 +96,13 @@ public sealed class ExperienceManager {
         return addedRestExp;
     }
 
-    public void AddExp(ExpMessageCode message, long expGained) {
+    public void AddExp(long expGained, ExpMessageCode message = ExpMessageCode.s_msg_take_exp) {
         if (expGained <= 0) {
             return;
         }
         expGained += GetRestExp(expGained);
         LevelUp();
+        AddPrestigeExp(message.Type());
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
     }
 
@@ -139,21 +140,7 @@ public sealed class ExperienceManager {
                 return;
         }
 
-        ExpMessageCode message = expType switch {
-            ExpType.mapCommon or ExpType.mapHidden => ExpMessageCode.s_msg_take_map_exp,
-            ExpType.taxi => ExpMessageCode.s_msg_take_taxi_exp,
-            ExpType.telescope => ExpMessageCode.s_msg_take_telescope_exp,
-            ExpType.rareChestFirst => ExpMessageCode.s_msg_take_normal_rare_first_exp,
-            ExpType.rareChest => ExpMessageCode.s_msg_take_normal_rare_exp,
-            ExpType.normalChest => ExpMessageCode.s_msg_take_normal_chest_exp,
-            ExpType.musicMastery1 or ExpType.musicMastery2 or ExpType.musicMastery3 or ExpType.musicMastery4 => ExpMessageCode.s_msg_take_play_instrument_exp,
-            ExpType.arcade => ExpMessageCode.s_msg_take_arcade_exp,
-            ExpType.fishing => ExpMessageCode.s_msg_take_fishing_exp,
-            _ => ExpMessageCode.s_msg_take_exp,
-        };
-
-        AddExp(message, (long) ((expValue * modifier) * entry.Factor) + additionalExp);
-        AddPrestigeExp(expType);
+        AddExp((long) ((expValue * modifier) * entry.Factor) + additionalExp, expType.Message());
     }
 
     public bool LevelUp() {

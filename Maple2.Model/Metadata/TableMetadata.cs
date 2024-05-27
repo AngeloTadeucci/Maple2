@@ -70,4 +70,5 @@ public class TableMetadata {
 [JsonDerivedType(typeof(PrestigeLevelRewardTable), typeDiscriminator: "adventurelevelreward")]
 [JsonDerivedType(typeof(PrestigeMissionTable), typeDiscriminator: "adventurelevelmission")]
 [JsonDerivedType(typeof(BlackMarketTable), typeDiscriminator: "blackmarkettable")]
+[JsonDerivedType(typeof(ChangeJobTable), typeDiscriminator: "changejob")]
 public abstract record Table;

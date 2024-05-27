@@ -150,8 +150,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(quest => quest.AcceptReward).HasJsonConversion();
         builder.Property(quest => quest.CompleteReward).HasJsonConversion();
         builder.Property(quest => quest.Conditions).HasJsonConversion();
+        builder.Property(quest => quest.RemoteAccept).HasJsonConversion();
+        builder.Property(quest => quest.RemoteComplete).HasJsonConversion();
         builder.Property(quest => quest.GoToNpc).HasJsonConversion();
         builder.Property(quest => quest.GoToDungeon).HasJsonConversion();
+        builder.Property(quest => quest.Dispatch).HasJsonConversion();
     }
 
     private static void ConfigureRideMetadata(EntityTypeBuilder<RideMetadata> builder) {
