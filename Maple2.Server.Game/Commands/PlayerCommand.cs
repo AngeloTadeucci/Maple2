@@ -21,7 +21,6 @@ public class PlayerCommand : Command {
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
-        AddCommand(new PositionCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -194,34 +193,6 @@ public class PlayerCommand : Command {
             ctx.Console.Out.WriteLine($"Player: {session.Player.ObjectId} ({session.PlayerName})");
             ctx.Console.Out.WriteLine($"  Position: {session.Player.Position}");
             ctx.Console.Out.WriteLine($"  Rotation: {session.Player.Rotation}");
-        }
-    }
-
-    private class PositionCommand : Command {
-        private readonly GameSession session;
-
-        public PositionCommand(GameSession session) : base("position", "Set player position.") {
-            this.session = session;
-
-            var x = new Argument<float>("x", "X position.");
-            var y = new Argument<float>("y", "Y position.");
-            var z = new Argument<float>("z", "Z position.");
-
-            AddArgument(x);
-            AddArgument(y);
-            AddArgument(z);
-            this.SetHandler<InvocationContext, float, float, float>(Handle, x, y, z);
-        }
-
-        private void Handle(InvocationContext ctx, float x, float y, float z) {
-            try {
-                var pos = new Vector3(x, y, z);
-                session.Field.Broadcast(PortalPacket.MoveByPortal(session.Player, pos, session.Player.Rotation));
-                ctx.ExitCode = 0;
-            } catch (SystemException ex) {
-                ctx.Console.Error.WriteLine(ex.Message);
-                ctx.ExitCode = 1;
-            }
         }
     }
 }
