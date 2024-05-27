@@ -64,6 +64,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
         yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
         yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
+        yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -1320,5 +1321,18 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 ParseBlackMarketTab(subTab, results);
             }
         }
+    }
+
+    private ChangeJobTable ParseChangeJobTable() {
+        var results = new Dictionary<Job, ChangeJobMetadata>();
+        foreach ((int jobId, ChangeJob job) in parser.ParseChangeJob()) {
+            results.Add((Job) jobId, new ChangeJobMetadata(
+                Job: (Job) job.subJobCode,
+                ChangeJob: (Job) job.changeSubJobCode,
+                StartQuestId: job.startquestid,
+                EndQuestId: job.endquestid
+            ));
+        }
+        return new ChangeJobTable(results);
     }
 }
