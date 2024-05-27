@@ -63,6 +63,9 @@ public class QuestHandler : PacketHandler<GameSession> {
             case Command.MapleGuide:
                 HandleMapleGuide(session, packet);
                 break;
+            case Command.Dispatch:
+                HandleDispatch(session, packet);
+                break;
             case Command.RemoteComplete:
                 HandleRemoteComplete(session, packet);
                 return;
@@ -77,8 +80,17 @@ public class QuestHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (metadata.RemoteAccept.Type != QuestRemoteType.None) {
+            if (metadata.RemoteAccept.MapId != 0 && metadata.RemoteAccept.MapId != session.Player.Value.Character.MapId) {
+                return;
+            }
+
+            session.Quest.Start(questId);
+            return;
+        }
+
         bool isPostbox = npcObjectId == 0 && metadata.Basic.UsePostbox;
-        bool fieldNpcExists = session.Field != null && session.Field.Npcs.TryGetValue(npcObjectId, out FieldNpc? _);
+        bool fieldNpcExists = session.Field.Npcs.TryGetValue(npcObjectId, out FieldNpc? _);
 
         if (!isPostbox && !fieldNpcExists) {
             return;
@@ -168,6 +180,23 @@ public class QuestHandler : PacketHandler<GameSession> {
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 
+    private void HandleDispatch(GameSession session, IByteReader packet) {
+        int questId = packet.ReadInt();
+        short unknown = packet.ReadShort(); // 3?
+
+        if (!session.Quest.TryGetQuest(questId, out Quest? quest) || quest.State == QuestState.Completed) {
+            return;
+        }
+
+        if (quest.Metadata.Dispatch == null) {
+            return;
+        }
+
+        session.Send(session.PrepareField(quest.Metadata.Dispatch.MapId, portalId: quest.Metadata.Dispatch.PortalId == 0 ? -1 : quest.Metadata.Dispatch.PortalId)
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+    }
+
     private static void HandleRemoteComplete(GameSession session, IByteReader packet) {
         int questId = packet.ReadInt();
 
@@ -183,11 +212,8 @@ public class QuestHandler : PacketHandler<GameSession> {
             return;
         }
 
-        bool canUseField = session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
-            Constant.FameContentsSkyFortressGotoPortalID,
-            session.CharacterId);
-
-        session.Send(canUseField
+        session.Send(session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
+            Constant.FameContentsSkyFortressGotoPortalID)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }

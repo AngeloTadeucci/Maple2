@@ -21,6 +21,8 @@ public sealed class QuestManager {
     private readonly IDictionary<int, Quest> accountValues;
     private readonly IDictionary<int, Quest> characterValues;
 
+    private ChangeJobMetadata? changeJobMetadata;
+
     private readonly ILogger logger = Log.Logger.ForContext<QuestManager>();
 
     public QuestManager(GameSession session) {
@@ -272,17 +274,7 @@ public sealed class QuestManager {
 
         QuestMetadataReward reward = quest.Metadata.CompleteReward;
         if (reward.Exp > 0) {
-            /*if (reward.RelativeExp != ExpType.none && session.TableMetadata.CommonExpTable.Entries.TryGetValue(reward.RelativeExp, out CommonExpTable.Entry? entry)) {
-                entry.
-            }
-            long exp = reward.Exp;*/
-            ExpType expType = quest.Metadata.Basic.Type switch {
-                QuestType.EpicQuest => ExpType.epicQuest,
-                QuestType.FieldMission => ExpType.mission,
-                QuestType.AllianceQuest => ExpType.questSkyFortress,
-                _ => ExpType.quest,
-            };
-            session.Exp.AddExp(expType, reward.Exp);
+            session.Exp.AddExp(reward.Exp);
         }
 
         if (reward.Meso > 0) {
@@ -317,6 +309,8 @@ public sealed class QuestManager {
                 session.Item.Inventory.Add(item, true);
             }
         }
+
+        TryJobAdvance(quest.Id);
 
         // TODO: Guild rewards, mission points?
 
@@ -391,6 +385,24 @@ public sealed class QuestManager {
 
     public bool TryGetQuest(int questId, [NotNullWhen(true)] out Quest? quest) {
         return characterValues.TryGetValue(questId, out quest) || accountValues.TryGetValue(questId, out quest);
+    }
+
+    public void TryJobAdvance(int questId) {
+        if (changeJobMetadata == null) {
+            if (!session.TableMetadata.ChangeJobTable.Entries.TryGetValue(session.Player.Value.Character.Job, out ChangeJobMetadata? metadata)) {
+                return;
+            }
+            changeJobMetadata = metadata;
+        }
+
+        if (changeJobMetadata.EndQuestId != questId) {
+            return;
+        }
+
+        session.Player.Value.Character.Job = changeJobMetadata.ChangeJob;
+        session.Config.Skill.SkillInfo.SetJob(changeJobMetadata.ChangeJob);
+        session.Stats.Refresh();
+        session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
     }
 
     public void Save(GameStorage.Request db) {
