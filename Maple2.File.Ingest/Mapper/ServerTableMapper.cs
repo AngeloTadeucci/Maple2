@@ -510,14 +510,27 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 foreach (IndividualItemDrop.Group.Item item in group.v) {
                     int minCount = item.minCount <= 0 ? 1 : item.minCount;
                     int maxCount = item.maxCount < item.minCount ? item.minCount : item.maxCount;
+                    List<IndividualDropItemTable.Item.Rarity> rarities = item.gradeProbability
+                        .Select((probability, i) => new IndividualDropItemTable.Item.Rarity(probability, item.grade[i]))
+                        .ToList();
+
+                    if (rarities.Count == 0) {
+                        if (item.grade.Length > 0) {
+                            foreach (short grade in item.grade) {
+                                rarities.Add(new IndividualDropItemTable.Item.Rarity(100, grade));
+                            }
+                        } else if (item.uiItemRank != 0) {
+                            rarities.Add(new IndividualDropItemTable.Item.Rarity(100, item.uiItemRank));
+                        }
+                    }
                     items.Add(new IndividualDropItemTable.Item(
-                        Ids: new[] { item.itemID, item.itemID2 },
+                        Ids: [item.itemID, item.itemID2],
                         Announce: item.isAnnounce,
                         ProperJobWeight: item.properJobWeight,
                         ImproperJobWeight: item.imProperJobWeight,
                         Weight: item.weight,
                         DropCount: new IndividualDropItemTable.Range<int>(minCount, maxCount),
-                        Rarities: item.gradeProbability.Select((probability, i) => new IndividualDropItemTable.Item.Rarity(probability, item.grade[i])).ToList(),
+                        Rarities: rarities,
                         EnchantLevel: item.enchantLevel,
                         SocketDataId: item.socketDataID,
                         DeductTradeCount: item.tradableCountDeduction,

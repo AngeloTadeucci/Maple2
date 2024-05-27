@@ -308,7 +308,8 @@ public sealed class QuestManager {
             if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
                 continue;
             }
-            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
+            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None)
+                && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
                 continue;
             }
             Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);

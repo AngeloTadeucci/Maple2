@@ -164,6 +164,17 @@ public class ItemDropManager {
                 items = items.Concat(GetSelectedIndividualDropBoxItem(session, itemEntries, index)).ToList();
                 continue;
             }
+
+            // some boxes have a smart drop rate, but the items dont have a weight. If that's the case, just get the item for the job. if it doesn't exist, skip.
+            if (group.SmartDropRate > 0 && itemEntries.All(x => x.Weight == 0)) {
+                IndividualDropItemTable.Item? jobRecommendedItems = itemEntries.FirstOrDefault(x => x.Ids.Length > 0 && IsItemJobRecommended(x.Ids.FirstOrDefault(), session.Player.Value.Character.Job.Code()));
+                if (jobRecommendedItems is not null) {
+                    items = items.Concat(CreateIndividualDropBoxItems(jobRecommendedItems, session.Player.Value.Character)).ToList();
+                    continue;
+                }
+                continue;
+            }
+
             var weightedItems = new WeightedSet<IndividualDropItemTable.Item>();
             foreach (IndividualDropItemTable.Item itemEntry in itemEntries.OrderBy(_ => Random.Shared.Next())) {
                 if (itemEntry.QuestId > 0) {
@@ -176,7 +187,12 @@ public class ItemDropManager {
                     continue;
                 }
 
-                int weight = group.SmartDropRate > 0 ? GetWeightByJob(itemEntry.Ids.FirstOrDefault(), session.Player.Value.Character.Job.Code(), itemEntry.Weight, itemEntry.ProperJobWeight, itemEntry.ImproperJobWeight) : itemEntry.Weight;
+                int weight;
+                if (group.SmartDropRate > 0) {
+                    weight = GetWeightByJob(itemEntry.Ids.FirstOrDefault(), session.Player.Value.Character.Job.Code(), itemEntry.Weight, itemEntry.ProperJobWeight, itemEntry.ImproperJobWeight);
+                } else {
+                    weight = itemEntry.Weight;
+                }
 
                 weightedItems.Add(itemEntry, weight);
             }
@@ -260,6 +276,18 @@ public class ItemDropManager {
         }
 
         return jobWeight;
+    }
+
+    private bool IsItemJobRecommended(int itemId, JobCode job) {
+        if (!field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
+            return false;
+        }
+
+        if (itemMetadata.Limit.JobRecommends.Length == 0) {
+            return true;
+        }
+
+        return itemMetadata.Limit.JobRecommends.Contains(job) || itemMetadata.Limit.JobRecommends.Contains(JobCode.None);
     }
 
     public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
