@@ -41,6 +41,7 @@ public interface ITriggerStorage : IReadOnlyDictionary<int, Trigger> {
     public ImmutableArray<Ms2TriggerRope> Ropes { get; }
     public ImmutableArray<Ms2TriggerSkill> Skills { get; }
     public ImmutableArray<Ms2TriggerSound> Sounds { get; }
+    public ImmutableArray<Ms2TriggerAgent> Agents { get; }
 
     public bool TryGet<T>(int key, [NotNullWhen(true)] out T? trigger) where T : Trigger;
 }

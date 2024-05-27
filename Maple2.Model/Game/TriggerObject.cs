@@ -89,6 +89,8 @@ public class TriggerObjectCube(Ms2TriggerCube metadata) : TriggerObject<Ms2Trigg
 
 public class TriggerObjectCamera(Ms2TriggerCamera metadata) : TriggerObject<Ms2TriggerCamera>(metadata);
 
+public class TriggerObjectAgent(Ms2TriggerAgent metadata) : TriggerObject<Ms2TriggerAgent>(metadata);
+
 public class TriggerBox {
     // Some extra height to compensate for entity height
     private const float EXTRA_HEIGHT = 10f;

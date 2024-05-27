@@ -25,6 +25,9 @@ public class AiState {
     private AiMetadata? lastEvaluated;
     private DecisionTreeType currentTree;
 
+    private Dictionary<string, long> coolTimes = new();
+    private List<Node> reservedNodes = new List<Node>();
+
     private enum DecisionTreeType {
         None,
         Battle,
@@ -66,6 +69,10 @@ public class AiState {
 
         if (AiMetadata.BattleEnd.Length != 0) {
             battleEnd = new Node("battle", AiMetadata.BattleEnd);
+        }
+
+        if (AiMetadata.Reserved.Length != 0) {
+            reservedNodes = AiMetadata.Reserved.Cast<Node>().ToList();
         }
 
         return true;
@@ -136,6 +143,14 @@ public class AiState {
         }
 
         lastEvaluated = AiMetadata;
+
+        foreach (var node in reservedNodes.ToList()) {
+            if (ProcessCondition((dynamic) node)) {
+                aiStack.Clear();
+                reservedNodes.Remove(node);
+                Push(node);
+            }
+        }
 
         if (aiStack.Count == 0) {
             if (currentTree == DecisionTreeType.Battle) {
@@ -234,20 +249,70 @@ public class AiState {
             return true;
         }
 
-        // TODO: check cooltime
+        bool hasTicked = coolTimes.TryGetValue(GetNodeKey(entry), out long lastTick);
 
-        return true;
+        Type parent = entry.GetType();
+        long? initialCooltime = parent.GetProperty("InitialCooltime")?.GetValue(entry, null) as long?;
+        if (initialCooltime.HasValue && !hasTicked) {
+            if (initialCooltime.Value > 0) {
+                coolTimes[GetNodeKey(entry)] = actor.Field.FieldTick + initialCooltime.Value;
+                return false;
+            }
+        }
+
+        if (!hasTicked) {
+            coolTimes[GetNodeKey(entry)] = 0;
+            return true;
+        }
+
+
+        long? cooltime = parent.GetProperty("Cooltime")?.GetValue(entry, null) as long?;
+
+        if (cooltime.HasValue) {
+            return lastTick + cooltime.Value < actor.Field.FieldTick;
+        }
+
+        return lastTick < actor.Field.FieldTick;
+    }
+
+    private bool PerformOperation(AiConditionOp op, int value, int currentValue) {
+        switch (op) {
+            case AiConditionOp.Equal:
+                return value == currentValue;
+            case AiConditionOp.Greater:
+                return value < currentValue;
+            case AiConditionOp.Less:
+                return value > currentValue;
+            case AiConditionOp.GreaterEqual:
+                return value <= currentValue;
+            case AiConditionOp.LessEqual:
+                return value >= currentValue;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(op), op, null);
+        }
+    }
+    private string GetNodeKey(Entry entry) {
+        return $"{entry.Name}_{entry.GetHashCode()}";
     }
 
     private void Process(Entry entry) {
-        if (entry is Node) {
+        if (entry is Node node) {
             actor.AppendDebugMessage($"> Node: {entry.Name}\n");
 
             ProcessNode((dynamic) entry);
 
+            if (node.Entries.Length > 0 && aiStack.Last().Node is not SelectNode && aiStack.Last().Node != node && CanEvaluateNode(node.Entries[0])) {
+                Push(node);
+            }
+
+            coolTimes[GetNodeKey(entry)] = actor.Field.FieldTick;
             return;
         }
 
+        if (entry is AiPreset) {
+            actor.AppendDebugMessage($"> AiPreset: {entry.Name}\n");
+            Push(entry);
+        }
     }
 
     private void ProcessNode(TraceNode node) {
@@ -287,6 +352,10 @@ public class AiState {
 
         NpcTask task = actor.CastAiSkill(skill.Id, skill.Level);
 
+        if (node.IsKeepBattle) {
+            actor.BattleState.KeepBattle = true;
+        }
+
         SetNodeTask(task, node.Limit);
     }
 
@@ -305,11 +374,15 @@ public class AiState {
     private void ProcessNode(StandbyNode node) {
         NpcTask task = actor.MovementState.TryStandby(null, false);
 
+        if (node.IsKeepBattle) {
+            actor.BattleState.KeepBattle = true;
+        }
+
         SetNodeTask(task, node.Limit);
     }
 
     private void ProcessNode(SetDataNode node) {
-
+        actor.AiExtraData[node.Key] = node.Value;
     }
 
     private void ProcessNode(TargetNode node) {
@@ -323,7 +396,14 @@ public class AiState {
     }
 
     private void ProcessNode(SetValueNode node) {
-
+        // Assumed that we increment the current by the value if isModify is true
+        if (node.IsModify) {
+            if (actor.AiExtraData.TryGetValue(node.Key, out int oldValue)) {
+                actor.AiExtraData[node.Key] = oldValue + node.Value;
+                return;
+            }
+        }
+        actor.AiExtraData[node.Key] = node.Value;
     }
 
     private void ProcessNode(ConditionsNode node) {
@@ -386,7 +466,7 @@ public class AiState {
     }
 
     private void ProcessNode(TriggerSetUserValueNode node) {
-
+        actor.Field.UserValues[node.Key] = node.Value;
     }
 
     private void ProcessNode(RideNode node) {
@@ -424,7 +504,16 @@ public class AiState {
     }
 
     private void ProcessNode(MinimumHpNode node) {
+        Stat health = actor.Stats[BasicAttribute.Health];
+        float currentHpPercent = ((float) health.Current / (float) health.Total) * 100f;
 
+        if (currentHpPercent > node.HpPercent) {
+            return;
+        }
+
+        // Heal back to node.HpPercent
+        long newHp = (long) ((node.HpPercent / 100) * health.Total);
+        actor.Stats[BasicAttribute.Health].Current = Math.Clamp(newHp, 0, health.Total);
     }
 
     private void ProcessNode(BuffNode node) {
@@ -462,7 +551,38 @@ public class AiState {
     }
 
     private void ProcessNode(SetValueRangeTargetNode node) {
+        int range = node.Radius;
+        int height = node.Height;
 
+        if (range == 0) {
+            range = 10;
+        }
+
+        if (height == 0) {
+            height = 10;
+        }
+
+        foreach (FieldNpc npc in actor.Field.EnumerateNpcs()) {
+            if (Vector2.Distance(new Vector2(npc.Position.X, npc.Position.Y), new Vector2(actor.Position.X, actor.Position.Y)) > range) {
+                continue;
+            }
+
+            if (npc.Position.Z < actor.Position.Z - height) {
+                continue;
+            }
+
+            if (npc.Position.Z > actor.Position.Z + height) {
+                continue;
+            }
+
+            if (node.IsModify) {
+                if (npc.AiExtraData.TryGetValue(node.Key, out int oldValue)) {
+                    actor.AiExtraData[node.Key] = oldValue + node.Value;
+                    continue;
+                }
+            }
+            actor.AiExtraData[node.Key] = node.Value;
+        }
     }
 
     private void ProcessNode(AnnounceNode node) {
@@ -478,7 +598,7 @@ public class AiState {
     }
 
     private void ProcessNode(TriggerModifyUserValueNode node) {
-
+        actor.Field.UserValues[node.Key] = node.Value;
     }
 
     private void ProcessNode(RemoveSlavesNode node) {
@@ -494,11 +614,11 @@ public class AiState {
     }
 
     private void ProcessNode(RemoveMeNode node) {
-
+        actor.Field.RemoveNpc(actor.ObjectId);
     }
 
     private void ProcessNode(SuicideNode node) {
-
+        actor.Stats[BasicAttribute.Health].Current = 0;
     }
 
 
@@ -545,7 +665,8 @@ public class AiState {
     }
 
     private bool ProcessCondition(ExtraDataCondition node) {
-        return false;
+        bool complete = PerformOperation(node.Op, node.Value, actor.AiExtraData.GetValueOrDefault(node.Key, 0));
+        return complete;
     }
 
     private bool ProcessCondition(SlaveCountCondition node) {
@@ -559,7 +680,7 @@ public class AiState {
     private bool ProcessCondition(HpOverCondition node) {
         Stat health = actor.Stats[BasicAttribute.Health];
 
-        return node.Value > health.Current / health.Total;
+        return node.Value <= ((float) health.Current / (float) health.Total) * 100f;
     }
 
     private bool ProcessCondition(StateCondition node) {
@@ -598,7 +719,7 @@ public class AiState {
     private bool ProcessCondition(HpLessCondition node) {
         Stat health = actor.Stats[BasicAttribute.Health];
 
-        return node.Value < health.Current / health.Total;
+        return node.Value >= ((float) health.Current / (float) health.Total) * 100f;
     }
 
     private bool ProcessCondition(TrueCondition node) {

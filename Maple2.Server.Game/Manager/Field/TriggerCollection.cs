@@ -13,6 +13,7 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
     public readonly IReadOnlyDictionary<int, TriggerObjectMesh> Meshes;
     public readonly IReadOnlyDictionary<int, TriggerObjectRope> Ropes;
     public readonly IReadOnlyDictionary<int, TriggerObjectSound> Sounds;
+    public readonly IReadOnlyDictionary<int, TriggerObjectAgent> Agents;
 
     public readonly IReadOnlyDictionary<int, TriggerBox> Boxes;
 
@@ -29,6 +30,7 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
         Dictionary<int, TriggerObjectMesh> meshes = new();
         Dictionary<int, TriggerObjectRope> ropes = new();
         Dictionary<int, TriggerObjectSound> sounds = new();
+        Dictionary<int, TriggerObjectAgent> agents = new();
 
         foreach (Ms2TriggerActor actor in entities.Trigger.Actors) {
             actors[actor.TriggerId] = new TriggerObjectActor(actor);
@@ -55,6 +57,10 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
             sounds[camera.TriggerId] = new TriggerObjectSound(camera);
         }
 
+        foreach (Ms2TriggerAgent agent in entities.Trigger.Agents) {
+            agents[agent.TriggerId] = new TriggerObjectAgent(agent);
+        }
+
         Actors = actors;
         Cameras = cameras;
         Cubes = cubes;
@@ -63,6 +69,7 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
         Meshes = meshes;
         Ropes = ropes;
         Sounds = sounds;
+        Agents = agents;
 
         Dictionary<int, TriggerBox> boxes = new();
         foreach (Ms2TriggerBox box in entities.Trigger.Boxes) {
@@ -72,7 +79,7 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
         Boxes = boxes;
     }
 
-    public int Count => Actors.Count + Cameras.Count + Cubes.Count + Effects.Count + Ladders.Count + Meshes.Count + Ropes.Count + Sounds.Count;
+    public int Count => Actors.Count + Cameras.Count + Cubes.Count + Effects.Count + Ladders.Count + Meshes.Count + Ropes.Count + Sounds.Count + Agents.Count;
 
     public IEnumerator<ITriggerObject> GetEnumerator() {
         foreach (TriggerObjectActor actor in Actors.Values) yield return actor;
@@ -83,6 +90,7 @@ public sealed class TriggerCollection : IReadOnlyCollection<ITriggerObject> {
         foreach (TriggerObjectMesh mesh in Meshes.Values) yield return mesh;
         foreach (TriggerObjectRope rope in Ropes.Values) yield return rope;
         foreach (TriggerObjectSound sound in Sounds.Values) yield return sound;
+        foreach (TriggerObjectAgent agent in Agents.Values) yield return agent;
     }
 
     IEnumerator IEnumerable.GetEnumerator() {

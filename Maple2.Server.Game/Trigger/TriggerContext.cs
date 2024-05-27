@@ -148,8 +148,13 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     public int NpcExtraData(int spawnId, string extraDataKey) {
-        ErrorLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
-        return 0;
+        WarnLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
+        var npc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        if (npc is null) {
+            return 0;
+        }
+
+        return npc.AiExtraData.GetValueOrDefault(extraDataKey, 0);
     }
 
     public int DungeonPlayTime() {
