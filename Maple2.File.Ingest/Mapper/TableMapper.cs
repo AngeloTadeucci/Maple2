@@ -1326,7 +1326,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private ChangeJobTable ParseChangeJobTable() {
         var results = new Dictionary<Job, ChangeJobMetadata>();
         foreach ((int jobId, ChangeJob job) in parser.ParseChangeJob()) {
-            results.Add((Job) jobId, new ChangeJobMetadata (
+            results.Add((Job) jobId, new ChangeJobMetadata(
                 Job: (Job) job.subJobCode,
                 ChangeJob: (Job) job.changeSubJobCode,
                 StartQuestId: job.startquestid,
