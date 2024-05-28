@@ -203,7 +203,7 @@ public class PlayerCommand : Command {
             this.session = session;
 
             var points = new Argument<int>("points", "Skill points to add.");
-            var rank = new Option<short>(["--rank","-r"], () => 0, "Job rank to add points to. (0 for normal, 1 for awakening)");
+            var rank = new Option<short>(["--rank", "-r"], () => 0, "Job rank to add points to. (0 for normal, 1 for awakening)");
 
             AddArgument(points);
             AddOption(rank);
