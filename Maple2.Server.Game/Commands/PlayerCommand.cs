@@ -212,6 +212,7 @@ public class PlayerCommand : Command {
 
         private void Handle(InvocationContext ctx, int points, short rank) {
             try {
+                rank = (short) Math.Clamp((int) rank, 0, 1);
                 session.Config.AddSkillPoint(SkillPointSource.Unknown, points, rank);
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
