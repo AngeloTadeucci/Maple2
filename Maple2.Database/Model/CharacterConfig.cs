@@ -17,6 +17,7 @@ internal class CharacterConfig {
     public IList<SkillMacro>? SkillMacros { get; set; }
     public IList<Wardrobe>? Wardrobes { get; set; }
     public IDictionary<BasicAttribute, int>? StatAllocation { get; set; }
+    public IList<SkillPoint>? SkillPoint { get; set; }
     public SkillBook? SkillBook { get; set; }
     public IList<int>? FavoriteStickers { get; set; }
     public IList<long>? FavoriteDesigners { get; set; }
@@ -37,6 +38,7 @@ internal class CharacterConfig {
         builder.Property(config => config.KeyBinds).HasJsonConversion();
         builder.Property(config => config.HotBars).HasJsonConversion();
         builder.Property(config => config.SkillMacros).HasJsonConversion();
+        builder.Property(config => config.SkillPoint).HasJsonConversion();
         builder.Property(config => config.Wardrobes).HasJsonConversion();
         builder.Property(config => config.StatAllocation).HasJsonConversion();
 
@@ -153,4 +155,10 @@ internal class Wardrobe {
 internal class SkillBook {
     public int MaxSkillTabs { get; set; }
     public long ActiveSkillTabId { get; set; }
+}
+
+internal class SkillPoint {
+    public SkillPointSource Source { get; set; }
+    public short Rank { get; set; }
+    public int Points { get; set; }
 }

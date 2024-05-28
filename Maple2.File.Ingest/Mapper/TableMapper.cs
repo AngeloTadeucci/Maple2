@@ -65,6 +65,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
         yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
         yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
+        yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -1334,5 +1335,56 @@ public class TableMapper : TypeMapper<TableMetadata> {
             ));
         }
         return new ChangeJobTable(results);
+    }
+
+    private ChapterBookTable ParseChapterBookTable() {
+        var results = new Dictionary<int, ChapterBookTable.Entry>();
+        foreach ((int id, ChapterBook book) in parser.ParseChapterBook()) {
+            var items = new List<ItemComponent>();
+            var skillpoints = new List<ChapterBookTable.Entry.SkillPoint>();
+            switch (book.rewardType1) {
+                case ChapterBookRewardType.skillPoint:
+                    skillpoints.Add(ParseSkillPoint(book.rewardValue1));
+                    break;
+                case ChapterBookRewardType.item:
+                    items.Add(ParseItem(book.rewardValue1));
+                    break;
+                default:
+                    break;
+            }
+
+            switch (book.rewardType2) {
+                case ChapterBookRewardType.skillPoint:
+                    skillpoints.Add(ParseSkillPoint(book.rewardValue2));
+                    break;
+                case ChapterBookRewardType.item:
+                    items.Add(ParseItem(book.rewardValue2));
+                    break;
+                default:
+                    break;
+            }
+            results.Add(id, new ChapterBookTable.Entry(
+                Id: id,
+                BeginQuestId: book.prologue,
+                EndQuestId: book.epilogue,
+                SkillPoints: skillpoints.ToArray(),
+                Items: items.ToArray()));
+        }
+
+        return new ChapterBookTable(results);
+
+        ChapterBookTable.Entry.SkillPoint ParseSkillPoint(string[] rewardValue) {
+            return new ChapterBookTable.Entry.SkillPoint(
+                Amount: int.Parse(rewardValue[0]),
+                Rank: short.Parse(rewardValue[1]));
+        }
+
+        ItemComponent ParseItem(string[] rewardValue) {
+            return new ItemComponent(
+                ItemId: int.Parse(rewardValue[0]),
+                Amount: short.Parse(rewardValue[1]),
+                Rarity: int.Parse(rewardValue[2]),
+                Tag: ItemTag.None);
+        }
     }
 }
