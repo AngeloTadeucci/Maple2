@@ -35,7 +35,7 @@ public sealed class QuestManager {
     }
 
     public void Load() {
-        session.Send(QuestPacket.LoadExploration(0));
+        session.Send(QuestPacket.LoadExploration(session.Config.ExplorationProgress));
 
         foreach (ImmutableList<Quest> batch in accountValues.Values.Batch(BATCH_SIZE)) {
             session.Send(QuestPacket.LoadQuestStates(batch));
