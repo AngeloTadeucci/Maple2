@@ -57,10 +57,10 @@ public partial class MovementState {
                 return;
             }
 
-            distance = (float)Math.Sqrt(distance);
+            distance = (float) Math.Sqrt(distance);
             offset *= (1 / distance);
 
-            float degreeCosine = (float)Math.Cos(autoTargeting.MaxDegree / 2);
+            float degreeCosine = (float) Math.Cos(autoTargeting.MaxDegree / 2);
             float dot = Vector3.Dot(offset, actor.Transform.FrontAxis);
 
             shouldFaceTarget = autoTargeting.MaxDegree == 0 || dot >= degreeCosine;
@@ -68,8 +68,7 @@ public partial class MovementState {
             if (!shouldFaceTarget) {
                 return;
             }
-        }
-        else {
+        } else {
             distance = (float) Math.Sqrt(distance);
             offset *= (1 / distance);
         }
@@ -106,8 +105,7 @@ public partial class MovementState {
 
         if (task.FacePos != new Vector3(0, 0, 0)) {
             actor.Transform.LookTo(Vector3.Normalize(task.FacePos - actor.Position));
-        }
-        else if (actor.BattleState.Target is not null) {
+        } else if (actor.BattleState.Target is not null) {
             SkillCastFaceTarget(cast, actor.BattleState.Target, task.FaceTarget);
         }
 

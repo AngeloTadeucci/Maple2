@@ -42,7 +42,7 @@ public static class NpcControlPacket {
             buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
-        short defaultSequenceId = firstSend ? npc.AnimationState.IdleSequenceId : (short)0;
+        short defaultSequenceId = firstSend ? npc.AnimationState.IdleSequenceId : (short) 0;
 
         buffer.Write<ActorState>(npc.MovementState.State);
         buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);

@@ -25,7 +25,7 @@ public partial class MovementState {
 
         actor.AppendDebugMessage("Skill Keyframe: " + keyName);
 
-        if (actor.AnimationState.PlayingSequence is not null) { 
+        if (actor.AnimationState.PlayingSequence is not null) {
             actor.AppendDebugMessage(actor.AnimationState.PlayingSequence.Name);
         }
 
@@ -99,8 +99,7 @@ public partial class MovementState {
             Velocity = new Vector3(0, 0, 0);
 
             castMoveLastTick = -1;
-        }
-        else {
+        } else {
             castMoveTick = actor.AnimationState.GetSequenceSegmentTime(castMoveStartKeyframe, castMoveEndKeyframe);
 
             if (castMoveFinished) {
@@ -119,7 +118,7 @@ public partial class MovementState {
             castMoveLastTick = castMoveTick;
         }
 
-        int searchRadius = Math.Max((int)Math.Ceiling(offset.Length()), 0) + 10;
+        int searchRadius = Math.Max((int) Math.Ceiling(offset.Length()), 0) + 10;
 
         Vector3 lastPosition = actor.Position;
 

@@ -141,8 +141,7 @@ public class AnimationState {
 
         if (queuedSequence is not null) {
             sequence = queuedSequence;
-        }
-        else {
+        } else {
             sequence = PlayingSequence;
         }
 
