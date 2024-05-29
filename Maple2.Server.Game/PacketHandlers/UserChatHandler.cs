@@ -86,7 +86,6 @@ public class UserChatHandler : PacketHandler<GameSession> {
             }
         }
 
-        session.Config.AddStatPoint(AttributePointSource.Exploration, 1);
         session.Field?.Broadcast(ChatPacket.Message(session.Player.Value, ChatType.Normal, message));
     }
 
