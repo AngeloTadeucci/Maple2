@@ -1,4 +1,4 @@
-using Pastel;
+﻿using Pastel;
 
 namespace Maple2.Tools.Extensions;
 
