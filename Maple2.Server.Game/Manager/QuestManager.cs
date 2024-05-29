@@ -35,7 +35,7 @@ public sealed class QuestManager {
     }
 
     public void Load() {
-        session.Send(QuestPacket.StartLoad(0));
+        session.Send(QuestPacket.LoadExploration(0));
 
         foreach (ImmutableList<Quest> batch in accountValues.Values.Batch(BATCH_SIZE)) {
             session.Send(QuestPacket.LoadQuestStates(batch));
@@ -431,6 +431,39 @@ public sealed class QuestManager {
             foreach (ChapterBookTable.Entry.SkillPoint point in entry.SkillPoints) {
                 session.Config.AddSkillPoint(SkillPointSource.Chapter, point.Amount, point.Rank);
             }
+
+            if (entry.StatPoints > 0) {
+                session.Config.AddStatPoint(AttributePointSource.Quest, entry.StatPoints);
+            }
+        }
+    }
+
+    public void CompleteFieldMission(int mission) {
+        if (!session.TableMetadata.FieldMissionTable.Entries.TryGetValue(mission, out FieldMissionTable.Entry? metadata)) {
+            return;
+        }
+
+        int missionCompleteCount = characterValues.Values.Count(quest => quest.Metadata.Basic.Type == QuestType.FieldMission && quest.State == QuestState.Completed);
+        missionCompleteCount += accountValues.Values.Count(quest => quest.Metadata.Basic.Type == QuestType.FieldMission && quest.State == QuestState.Completed);
+
+        if (metadata.MissionCount > missionCompleteCount) {
+            return;
+        }
+
+        session.Config.ExplorationProgress = metadata.MissionCount;
+        session.Send(QuestPacket.UpdateExploration(session.Config.ExplorationProgress));
+
+        if (metadata.Item != null) {
+            Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
+            if (item != null) {
+                if (!session.Item.Inventory.Add(item, true)) {
+                    session.Item.MailItem(item);
+                }
+            }
+        }
+
+        if (metadata.StatPoints > 0) {
+            session.Config.AddStatPoint(AttributePointSource.Exploration, metadata.StatPoints);
         }
     }
 

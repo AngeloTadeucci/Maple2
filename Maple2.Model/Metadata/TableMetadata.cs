@@ -72,4 +72,5 @@ public class TableMetadata {
 [JsonDerivedType(typeof(BlackMarketTable), typeDiscriminator: "blackmarkettable")]
 [JsonDerivedType(typeof(ChangeJobTable), typeDiscriminator: "changejob")]
 [JsonDerivedType(typeof(ChapterBookTable), typeDiscriminator: "chapterbook")]
+[JsonDerivedType(typeof(FieldMissionTable), typeDiscriminator: "fieldmission")]
 public abstract record Table;

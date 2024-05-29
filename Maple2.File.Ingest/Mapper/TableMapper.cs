@@ -66,6 +66,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
         yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
         yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
+        yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -1342,23 +1343,30 @@ public class TableMapper : TypeMapper<TableMetadata> {
         foreach ((int id, ChapterBook book) in parser.ParseChapterBook()) {
             var items = new List<ItemComponent>();
             var skillpoints = new List<ChapterBookTable.Entry.SkillPoint>();
+            int statPoints = 0;
             switch (book.rewardType1) {
-                case ChapterBookRewardType.skillPoint:
+                case QuestRewardType.skillPoint:
                     skillpoints.Add(ParseSkillPoint(book.rewardValue1));
                     break;
-                case ChapterBookRewardType.item:
+                case QuestRewardType.item:
                     items.Add(ParseItem(book.rewardValue1));
+                    break;
+                case QuestRewardType.statPoint:
+                    statPoints += int.Parse(book.rewardValue1[0]);
                     break;
                 default:
                     break;
             }
 
             switch (book.rewardType2) {
-                case ChapterBookRewardType.skillPoint:
+                case QuestRewardType.skillPoint:
                     skillpoints.Add(ParseSkillPoint(book.rewardValue2));
                     break;
-                case ChapterBookRewardType.item:
+                case QuestRewardType.item:
                     items.Add(ParseItem(book.rewardValue2));
+                    break;
+                case QuestRewardType.statPoint:
+                    statPoints += int.Parse(book.rewardValue2[0]);
                     break;
                 default:
                     break;
@@ -1368,6 +1376,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 BeginQuestId: book.prologue,
                 EndQuestId: book.epilogue,
                 SkillPoints: skillpoints.ToArray(),
+                StatPoints: statPoints,
                 Items: items.ToArray()));
         }
 
@@ -1386,5 +1395,30 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 Rarity: int.Parse(rewardValue[2]),
                 Tag: ItemTag.None);
         }
+    }
+
+    private FieldMissionTable ParseFieldMissionTable() {
+        var results = new Dictionary<int, FieldMissionTable.Entry>();
+        foreach ((int id, FieldMission mission) in parser.ParseFieldMission()) {
+            switch (mission.type) {
+                case QuestRewardType.item:
+                    results.Add(id, new FieldMissionTable.Entry(
+                        MissionCount: mission.mission,
+                        StatPoints: 0,
+                        Item: new ItemComponent(
+                            ItemId: mission.value[0],
+                            Rarity: mission.value[1],
+                            Amount: mission.value[2],
+                            Tag: ItemTag.None)));
+                    continue;
+                case QuestRewardType.statPoint:
+                    results.Add(id, new FieldMissionTable.Entry(
+                        MissionCount: mission.mission,
+                        StatPoints: mission.value[0],
+                        Item: null));
+                    continue;
+            }
+        }
+        return new FieldMissionTable(results);
     }
 }
