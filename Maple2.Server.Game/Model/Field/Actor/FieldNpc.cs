@@ -163,7 +163,7 @@ public class FieldNpc : Actor<Npc> {
             }
         }
 
-        bool isSpawning = MovementState.State == ActorState.Spawn || MovementState.State == ActorState.Regen; ;
+        bool isSpawning = MovementState.State == ActorState.Spawn || MovementState.State == ActorState.Regen;
 
         if (!isSpawning) {
             BattleState.Update(tickCount);
@@ -193,7 +193,7 @@ public class FieldNpc : Actor<Npc> {
 
         if (SendControl && !IsDead) {
             SequenceCounter++;
-            Field.Broadcast(NpcControlPacket.Control(this));
+            Field.Broadcast(NpcControlPacket.Control(false, this));
             SendControl = false;
         }
         lastUpdate = tickCount;
@@ -353,9 +353,9 @@ public class FieldNpc : Actor<Npc> {
     }
 
 
-    public override SkillRecord? CastSkill(int id, short level, long uid = 0) {
-        if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
-            Logger.Error("Invalid skill use: {SkillId},{Level}", id, level);
+    public override SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
+        if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata) || metadata.Data.Motions.Length <= motionPoint) {
+            Logger.Error("Invalid skill use: {SkillId},{Level},{motionPoint}", id, level, motionPoint);
             return null;
         }
 
@@ -364,15 +364,15 @@ public class FieldNpc : Actor<Npc> {
             uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
         }
 
-        Field.Broadcast(NpcControlPacket.Control(this));
+        Field.Broadcast(NpcControlPacket.Control(false, this));
 
-        var cast = base.CastSkill(id, level, uid);
+        var cast = base.CastSkill(id, level, uid, motionPoint);
 
         return cast;
     }
 
-    public NpcTask CastAiSkill(int id, short level, long uid = 0) {
-        return MovementState.TryCastSkill(id, level, uid);
+    public NpcTask CastAiSkill(int id, short level, int faceTarget, Vector3 facePos, long uid = 0) {
+        return MovementState.TryCastSkill(id, level, faceTarget, facePos, uid);
     }
 
     // mob drops, exp, etc.

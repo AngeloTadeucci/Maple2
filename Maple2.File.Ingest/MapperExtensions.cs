@@ -274,6 +274,18 @@ public static class MapperExtensions {
             Splash: splash);
     }
 
+    public static IReadOnlyCollection<string> CollectAttackPoints(this SkillMotionData motion) {
+        var attackPoints = new HashSet<string>();
+
+        for (byte i = 0; i < motion.attack.Count; ++i) {
+            if (!attackPoints.Contains(motion.attack[i].point)) {
+                attackPoints.Add(motion.attack[i].point);
+            }
+        }
+
+        return attackPoints;
+    }
+
     public static SkillMetadataChange Convert(this ChangeSkill change) {
         return new SkillMetadataChange(
             Origin: new SkillMetadataChange.Skill(
@@ -290,6 +302,14 @@ public static class MapperExtensions {
                 .Zip(change.changeSkillLevel, (skillId, level) => new SkillMetadataChange.Skill(skillId, level))
                 .ToArray()
         );
+    }
+
+    public static SkillMetadataAutoTargeting Convert(this AutoTargeting autoTargeting) {
+        return new SkillMetadataAutoTargeting(
+            MaxDegree: autoTargeting.autoTargetingMaxDegree,
+            MaxDistance: autoTargeting.autoTargetingMaxDistance,
+            MaxHeight: autoTargeting.autoTargetingMaxHeight,
+            UseMove: autoTargeting.autoTargetUseMove);
     }
 
     public static BeginCondition Convert(this Maple2.File.Parser.Xml.Skill.BeginCondition beginCondition) {

@@ -23,6 +23,7 @@ public class FieldPlayer : Actor<Player> {
 
     private long battleTick;
     private bool inBattle;
+    public long BroadcastNpcControlTick = 0;
 
     // Key: Attribute, Value: RegenAttribute, RegenInterval
     private readonly Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>> regenStats;
@@ -103,6 +104,13 @@ public class FieldPlayer : Actor<Player> {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
             Flag = PlayerObjectFlag.None;
             flagTick = (long) (tickCount + TimeSpan.FromSeconds(2).TotalMilliseconds);
+        }
+
+        // do delayed NpcControl packet broadcast on field join
+        if (BroadcastNpcControlTick != 0 && tickCount >= BroadcastNpcControlTick) {
+            BroadcastNpcControlTick = 0;
+
+            Field.BroadcastNpcControl(this);
         }
 
         // Loops through each registered regen stat and applies regen

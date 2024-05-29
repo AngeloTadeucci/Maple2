@@ -28,14 +28,10 @@ public partial class MovementState {
     #endregion
     private bool hasIdleA;
     private long lastTick = 0;
+    private long lastControlTick = 0;
     private float speedOverride = 0;
     private float baseSpeed = 0;
     private readonly float aniSpeed = 1;
-
-    #region CastSkill
-    private SkillRecord? castSkill = null;
-    private NpcTask? castTask = null;
-    #endregion
 
     #region Emote
     private NpcTask? emoteActionTask = null;
@@ -116,11 +112,11 @@ public partial class MovementState {
     //}
 
 
-    public NpcTask TryCastSkill(int id, short level, long uid) {
+    public NpcTask TryCastSkill(int id, short level, int faceTarget, Vector3 facePos, long uid) {
         walkTask?.Cancel();
         emoteActionTask?.Cancel();
 
-        return new NpcSkillCastTask(actor.TaskState, this, id, level, uid);
+        return new NpcSkillCastTask(actor.TaskState, this, id, level, faceTarget, facePos, uid);
     }
 
     private void SetState(ActorState state, ActorSubState subState) {
@@ -162,19 +158,6 @@ public partial class MovementState {
     public void StateRegenEvent(string keyName) {
         switch (keyName) {
             case "end":
-                Idle();
-
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void StateSkillEvent(string keyName) {
-        switch (keyName) {
-            case "end":
-                castTask?.Completed();
-
                 Idle();
 
                 break;
@@ -247,6 +230,9 @@ public partial class MovementState {
                     Idle();
                 }
                 break;
+            case ActorState.PcSkill:
+                StateSkillCastUpdate(tickCount, tickDelta);
+                break;
             default:
                 break;
         }
@@ -261,6 +247,11 @@ public partial class MovementState {
             Velocity = new Vector3(0, 0, 0);
         }
 
+        if (lastControlTick < actor.Field.FieldTick) {
+            actor.SendControl = true;
+            lastControlTick = actor.Field.FieldTick + Constant.MaxNpcControlDelay;
+        }
+
         actor.SendControl |= Speed != lastSpeed;
         actor.SendControl |= Velocity != lastVelocity;
         actor.SendControl |= State != lastState;
@@ -268,8 +259,6 @@ public partial class MovementState {
         actor.SendControl |= actor.Position != lastPosition;
         actor.SendControl |= actor.Transform.FrontAxis != lastFacing;
         actor.SendControl |= castSkill != lastCastSkill;
-
-        actor.SendControl &= State != ActorState.PcSkill;
 
         lastSpeed = Speed;
         lastVelocity = Velocity;

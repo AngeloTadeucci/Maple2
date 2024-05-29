@@ -350,7 +350,7 @@ public class AiState {
             return;
         }
 
-        NpcTask task = actor.CastAiSkill(skill.Id, skill.Level);
+        NpcTask task = actor.CastAiSkill(skill.Id, skill.Level, node.FaceTarget, node.FacePos);
 
         if (node.IsKeepBattle) {
             actor.BattleState.KeepBattle = true;

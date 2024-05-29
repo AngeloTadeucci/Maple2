@@ -25,6 +25,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                 level => new SkillMetadataLevel(
                     Condition: level.beginCondition.Convert(),
                     Change: level.changeSkill?.Convert(),
+                    AutoTargeting: level.autoTargeting?.Convert(),
                     Consume: new SkillMetadataConsume(
                         Meso: level.consume.money,
                         UseItem: level.consume.useItem,
@@ -40,8 +41,9 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     Motions: level.motion.Select(motion => new SkillMetadataMotion(
                         new SkillMetadataMotionProperty(
                             SequenceName: motion.motionProperty.sequenceName,
-                            SequenceSpeed: motion.motionProperty.sequenceSpeed
-                        ),
+                            SequenceSpeed: motion.motionProperty.sequenceSpeed,
+                            MoveDistance: motion.motionProperty.movedistance,
+                            FaceTarget: motion.motionProperty.faceTarget),
                         Attacks: motion.attack.Select(attack => new SkillMetadataAttack(
                             Point: attack.point,
                             PointGroup: attack.pointGroupID,
@@ -92,7 +94,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                 ) : null
                             ),
                             Skills: attack.conditionSkill.Select(skill => skill.Convert()).ToArray()
-                        )).ToArray()
+                        )).ToArray(),
+                        AttackPoints: motion.CollectAttackPoints()
                     )).ToArray()
                 ));
 

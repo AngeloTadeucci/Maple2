@@ -15,6 +15,7 @@ public interface IActor : IFieldEntity {
 
     public Stats Stats { get; }
     public AnimationState AnimationState { get; init; }
+    public SkillState SkillState { get; init; }
 
     public bool IsDead { get; }
     public IPrism Shape { get; }
@@ -25,7 +26,7 @@ public interface IActor : IFieldEntity {
 
     public virtual void TargetAttack(SkillRecord record) { }
 
-    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) { return null; }
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) { return null; }
     public virtual void KeyframeEvent(string keyName) { }
 }
 
