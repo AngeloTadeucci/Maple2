@@ -191,9 +191,9 @@ public class FieldNpc : Actor<Npc> {
 
         playersListeningToDebug = playersListeningToDebugNow;
 
-        if (SendControl && !IsDead) {
+        if (SendControl) {
             SequenceCounter++;
-            Field.Broadcast(NpcControlPacket.Control(false, this));
+            Field.Broadcast(NpcControlPacket.Control(this));
             SendControl = false;
         }
         lastUpdate = tickCount;
@@ -364,7 +364,7 @@ public class FieldNpc : Actor<Npc> {
             uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
         }
 
-        Field.Broadcast(NpcControlPacket.Control(false, this));
+        Field.Broadcast(NpcControlPacket.Control(this));
 
         var cast = base.CastSkill(id, level, uid, motionPoint);
 

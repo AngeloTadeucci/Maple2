@@ -63,13 +63,15 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                             Arrow: new SkillMetadataArrow(
                                 Overlap: attack.arrowProperty.overlap,
                                 Explosion: attack.arrowProperty.explosion,
+                                RayPhysXTest: attack.arrowProperty.rayPhysxTest,
                                 NonTarget: (SkillEntity) attack.arrowProperty.nonTarget,
                                 BounceType: attack.arrowProperty.bounceType,
                                 BounceCount: attack.arrowProperty.bounceCount,
                                 BounceRadius: attack.arrowProperty.bounceRadius,
                                 BounceOverlap: attack.arrowProperty.bounceType > 0 && attack.arrowProperty.bounceOverlap,
                                 Collision: attack.arrowProperty.collision,
-                                CollisionAdd: attack.arrowProperty.collisionAdd),
+                                CollisionAdd: attack.arrowProperty.collisionAdd,
+                                RayType: attack.arrowProperty.rayType),
                             Damage: new SkillMetadataDamage(
                                 Count: attack.damageProperty.count,
                                 Rate: attack.damageProperty.rate,

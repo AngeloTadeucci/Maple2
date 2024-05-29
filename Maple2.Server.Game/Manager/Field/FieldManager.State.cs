@@ -574,15 +574,6 @@ public partial class FieldManager {
     }
     #endregion
 
-    public void BroadcastNpcControl(FieldPlayer player) {
-        foreach (FieldNpc fieldNpc in Npcs.Values.Concat(Mobs.Values)) {
-            player.Session.Send(NpcControlPacket.Control(true, fieldNpc));
-        }
-        foreach (FieldPet fieldPet in Pets.Values) {
-            player.Session.Send(NpcControlPacket.Control(true, fieldPet));
-        }
-    }
-
     #region Events
     public void OnAddPlayer(FieldPlayer added) {
         Players[added.ObjectId] = added;
@@ -641,8 +632,6 @@ public partial class FieldManager {
             added.Session.Send(FieldPropertyPacket.Background(background));
         }
         added.Session.Send(FieldPropertyPacket.Load(fieldProperties.Values));
-
-        added.BroadcastNpcControlTick = FieldTick + 1000; // schedule delayed NpcControl packet broadcast
     }
     #endregion Events
 }

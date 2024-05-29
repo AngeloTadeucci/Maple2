@@ -129,13 +129,15 @@ public record SkillMetadataRange(
 public record SkillMetadataArrow(
     bool Overlap,
     bool Explosion,
+    bool RayPhysXTest,
     SkillEntity NonTarget,
-    int BounceType,
+    int BounceType, // 2: chain, 3: pierce
     int BounceCount,
     float BounceRadius,
     bool BounceOverlap,
     Vector3 Collision,
-    Vector3 CollisionAdd);
+    Vector3 CollisionAdd,
+    int RayType);
 
 public record SkillMetadataDamage(
     int Count,

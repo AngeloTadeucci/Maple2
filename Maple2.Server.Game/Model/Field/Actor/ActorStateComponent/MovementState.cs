@@ -207,6 +207,8 @@ public partial class MovementState {
         Velocity = new Vector3(0, 0, 0);
 
         if (actor.Stats[BasicAttribute.Health].Current == 0) {
+            SetState(ActorState.Dead, ActorSubState.None);
+
             return;
         }
 

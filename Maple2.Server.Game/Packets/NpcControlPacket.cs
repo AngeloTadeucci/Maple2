@@ -14,13 +14,13 @@ public static class NpcControlPacket {
     public const short ANI_JUMP_A = -2;
     public const short ANI_JUMP_B = -3;
 
-    public static ByteWriter Control(bool firstSend, params FieldNpc[] npcs) {
+    public static ByteWriter Control(params FieldNpc[] npcs) {
         var pWriter = Packet.Of(SendOp.NpcControl);
         pWriter.WriteShort((short) npcs.Length);
 
         foreach (FieldNpc npc in npcs) {
             using var buffer = new PoolByteWriter();
-            buffer.NpcBuffer(npc, firstSend);
+            buffer.NpcBuffer(npc);
             pWriter.WriteShort((short) buffer.Length);
             pWriter.WriteBytes(buffer.ToArray());
         }
@@ -28,7 +28,7 @@ public static class NpcControlPacket {
         return pWriter;
     }
 
-    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc, bool firstSend = false) {
+    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc) {
         buffer.WriteInt(npc.ObjectId);
         // Flags bit-1 (AdditionalEffectRelated), bit-2 (UIHpBarRelated)
         buffer.WriteByte(2);
@@ -42,7 +42,7 @@ public static class NpcControlPacket {
             buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
-        short defaultSequenceId = firstSend ? npc.AnimationState.IdleSequenceId : (short) 0;
+        short defaultSequenceId = npc.AnimationState.IdleSequenceId;
 
         buffer.Write<ActorState>(npc.MovementState.State);
         buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);
