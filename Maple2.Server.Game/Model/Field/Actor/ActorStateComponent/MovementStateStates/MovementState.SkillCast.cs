@@ -29,20 +29,28 @@ public partial class MovementState {
             actor.AppendDebugMessage(actor.AnimationState.PlayingSequence.Name);
         }
 
-        if (castSkill.Motion.AttackPoints.Contains(keyName)) {
-            byte point = 0;
-            foreach (SkillMetadataAttack attack in castSkill.Motion.Attacks) {
-                if (attack.Point == keyName) {
-                    var targets = new List<IActor>();
+        if (castSkill.Motion.AttackPoints.ContainsKey(keyName)) {
+            var targets = new List<IActor>();
 
-                    // TODO: change BattleState to track a list of targets for multi projectile skills & use that instead
-                    if (actor.BattleState.Target is not null) {
-                        targets.Add(actor.BattleState.Target);
+            // TODO: change BattleState to track a list of targets for multi projectile skills & use that instead
+            if (actor.BattleState.Target is not null) {
+                targets.Add(actor.BattleState.Target);
+            }
+
+            byte point = castSkill.Motion.AttackPoints[keyName];
+
+            if (point != 0xFF) {
+                actor.SkillState.SkillCastAttack(castSkill, point, targets);
+            } else {
+                // motion has multiple attack points with the name
+                point = 0;
+                foreach (SkillMetadataAttack attack in castSkill.Motion.Attacks) {
+                    if (attack.Point == keyName) {
+
+                        actor.SkillState.SkillCastAttack(castSkill, point, targets);
                     }
-
-                    actor.SkillState.SkillCastAttack(castSkill, point, targets);
+                    ++point;
                 }
-                ++point;
             }
         }
 

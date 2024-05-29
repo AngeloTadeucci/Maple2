@@ -84,7 +84,7 @@ public record SkillMetadataRecovery(
 public record SkillMetadataMotion(
     SkillMetadataMotionProperty MotionProperty,
     SkillMetadataAttack[] Attacks,
-    IReadOnlyCollection<string> AttackPoints);
+    IReadOnlyDictionary<string, byte> AttackPoints);
 
 public record SkillMetadataMotionProperty(
     string SequenceName,

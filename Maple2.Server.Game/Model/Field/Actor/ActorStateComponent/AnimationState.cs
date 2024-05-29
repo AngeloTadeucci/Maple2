@@ -80,13 +80,7 @@ public class AnimationState {
             return;
         }
 
-        foreach ((string name, AnimationSequence sequence) in RigMetadata.Sequences) {
-            if (name == "Idle_A") {
-                IdleSequenceId = sequence.Id;
-
-                break;
-            }
-        }
+        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == "Idle_A").Value.Id;
     }
 
     private void ResetSequence() {

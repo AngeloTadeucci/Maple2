@@ -274,13 +274,17 @@ public static class MapperExtensions {
             Splash: splash);
     }
 
-    public static IReadOnlyCollection<string> CollectAttackPoints(this SkillMotionData motion) {
-        var attackPoints = new HashSet<string>();
+    public static IReadOnlyDictionary<string, byte> CollectAttackPoints(this SkillMotionData motion) {
+        var attackPoints = new Dictionary<string, byte>();
 
         for (byte i = 0; i < motion.attack.Count; ++i) {
-            if (!attackPoints.Contains(motion.attack[i].point)) {
-                attackPoints.Add(motion.attack[i].point);
+            if (!attackPoints.ContainsKey(motion.attack[i].point)) {
+                attackPoints.Add(motion.attack[i].point, i);
+
+                continue;
             }
+
+            attackPoints[motion.attack[i].point] = 0xFF; // multiple points have the name, cannot use look up table
         }
 
         return attackPoints;
