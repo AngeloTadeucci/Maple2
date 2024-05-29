@@ -82,7 +82,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
                 }
             }
             if (items.Count > 0) {
-                session.Send(MessengerBrowserPacket.Link(items.ToArray()));
+                session.Field?.Broadcast(MessengerBrowserPacket.Link(items.ToArray()));
             }
         }
 

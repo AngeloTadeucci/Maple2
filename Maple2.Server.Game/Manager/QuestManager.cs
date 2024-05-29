@@ -310,7 +310,6 @@ public sealed class QuestManager {
             }
         }
 
-        TryJobAdvance(quest.Id);
 
         // TODO: Guild rewards, mission points?
 
@@ -322,6 +321,8 @@ public sealed class QuestManager {
         quest.State = QuestState.Completed;
         quest.CompletionCount++;
         session.Send(QuestPacket.Complete(quest));
+        TryJobAdvance(quest.Id);
+        CompleteChapter(quest.Id);
         return true;
     }
 
@@ -387,7 +388,7 @@ public sealed class QuestManager {
         return characterValues.TryGetValue(questId, out quest) || accountValues.TryGetValue(questId, out quest);
     }
 
-    public void TryJobAdvance(int questId) {
+    private void TryJobAdvance(int questId) {
         if (changeJobMetadata == null) {
             if (!session.TableMetadata.ChangeJobTable.Entries.TryGetValue(session.Player.Value.Character.Job, out ChangeJobMetadata? metadata)) {
                 return;
@@ -403,6 +404,34 @@ public sealed class QuestManager {
         session.Config.Skill.SkillInfo.SetJob(changeJobMetadata.ChangeJob);
         session.Stats.Refresh();
         session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
+    }
+
+    private void CompleteChapter(int questId) {
+        IEnumerable<ChapterBookTable.Entry> entries = session.TableMetadata.ChapterBookTable.Entries.Values.Where(entry => entry.EndQuestId == questId).ToList();
+        if (!entries.Any()) {
+            return;
+        }
+
+        foreach (ChapterBookTable.Entry entry in entries) {
+            if (!TryGetQuest(entry.BeginQuestId, out Quest? quest) || quest.State != QuestState.Completed) {
+                continue;
+            }
+
+            foreach (ItemComponent itemComponent in entry.Items) {
+                Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
+                if (item == null) {
+                    continue;
+                }
+
+                if (!session.Item.Inventory.Add(item, true)) {
+                    session.Item.MailItem(item);
+                }
+            }
+
+            foreach (ChapterBookTable.Entry.SkillPoint point in entry.SkillPoints) {
+                session.Config.AddSkillPoint(SkillPointSource.Chapter, point.Amount, point.Rank);
+            }
+        }
     }
 
     public void Save(GameStorage.Request db) {

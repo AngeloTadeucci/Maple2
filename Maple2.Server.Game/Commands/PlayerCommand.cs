@@ -20,6 +20,7 @@ public class PlayerCommand : Command {
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
+        AddCommand(new SkillPointCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -192,6 +193,32 @@ public class PlayerCommand : Command {
             ctx.Console.Out.WriteLine($"Player: {session.Player.ObjectId} ({session.PlayerName})");
             ctx.Console.Out.WriteLine($"  Position: {session.Player.Position}");
             ctx.Console.Out.WriteLine($"  Rotation: {session.Player.Rotation}");
+        }
+    }
+
+    private class SkillPointCommand : Command {
+        private readonly GameSession session;
+
+        public SkillPointCommand(GameSession session) : base("skillpoint", "Add skill points to player.") {
+            this.session = session;
+
+            var points = new Argument<int>("points", "Skill points to add.");
+            var rank = new Option<short>(["--rank", "-r"], () => 0, "Job rank to add points to. (0 for normal, 1 for awakening)");
+
+            AddArgument(points);
+            AddOption(rank);
+            this.SetHandler<InvocationContext, int, short>(Handle, points, rank);
+        }
+
+        private void Handle(InvocationContext ctx, int points, short rank) {
+            try {
+                rank = (short) Math.Clamp((int) rank, 0, 1);
+                session.Config.AddSkillPoint(SkillPointSource.Unknown, points, rank);
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
         }
     }
 }

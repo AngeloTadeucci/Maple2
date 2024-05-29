@@ -190,6 +190,9 @@ public sealed class AchievementManager {
                 session.Player.Value.Unlock.Emotes.Add(grade.Reward.Code);
                 session.Send(EmotePacket.Learn(new Emote(grade.Reward.Code)));
                 break;
+            case AchievementRewardType.skillpoint:
+                session.Config.AddSkillPoint(SkillPointSource.Trophy, grade.Reward.Value, (short) (grade.Reward.Rank - 1));
+                break;
             case AchievementRewardType.beauty_hair:
             case AchievementRewardType.beauty_makeup:
             case AchievementRewardType.beauty_skin:

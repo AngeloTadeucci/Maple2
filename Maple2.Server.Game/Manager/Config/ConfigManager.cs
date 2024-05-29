@@ -28,6 +28,7 @@ public class ConfigManager {
     private long deathPenaltyTick;
     public int DeathCount;
     private readonly StatAttributes statAttributes;
+    private readonly SkillPoint skillPoints;
     public readonly IDictionary<int, int> GatheringCounts;
     public readonly IDictionary<int, int> GuideRecords;
 
@@ -53,6 +54,7 @@ public class ConfigManager {
             long deathPenaltyTick,
             int DeathCounter,
             IDictionary<BasicAttribute, int>? Allocation,
+            SkillPoint? SkillPoint,
             IDictionary<int, int>? GatheringCounts,
             IDictionary<int, int>? GuideRecords,
         SkillBook? SkillBook
@@ -79,6 +81,7 @@ public class ConfigManager {
         lapenshards = load.Lapenshards ?? new Dictionary<LapenshardSlot, int>();
         GatheringCounts = load.GatheringCounts ?? new Dictionary<int, int>();
         GuideRecords = load.GuideRecords ?? new Dictionary<int, int>();
+        skillPoints = load.SkillPoint ?? new SkillPoint();
         deathPenaltyTick = load.deathPenaltyTick;
         DeathCount = load.DeathCounter;
 
@@ -243,6 +246,15 @@ public class ConfigManager {
     public void LoadStatAttributes() {
         session.Send(AttributePointPacket.Sources(statAttributes));
         session.Send(AttributePointPacket.Allocation(statAttributes));
+    }
+
+    public void LoadSkillPoints() {
+        session.Send(SkillPointPacket.Sources(skillPoints));
+    }
+
+    public void AddSkillPoint(SkillPointSource source, int amount, short rank = 0) {
+        skillPoints[source][rank] += amount;
+        session.Send(SkillPointPacket.Sources(skillPoints));
     }
 
     public IList<long> GetFavoriteDesigners() {
@@ -483,6 +495,7 @@ public class ConfigManager {
             deathPenaltyTick,
             DeathCount,
             statAttributes.Allocation,
+            skillPoints,
             GatheringCounts,
             GuideRecords,
             Skill.SkillBook

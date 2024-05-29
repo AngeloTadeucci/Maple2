@@ -1,4 +1,5 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 
@@ -13,6 +14,7 @@ public static class UserEnvPacket {
         InteractedObjects = 4,
         GatheringCounts = 8,
         MasteryRewardsClaimed = 9,
+        Reputation = 10,
     }
 
     public static ByteWriter AddTitle(int titleId) {
@@ -84,6 +86,18 @@ public static class UserEnvPacket {
         foreach ((int rewardId, bool isClaimed) in claimedRewards) {
             pWriter.WriteInt(rewardId);
             pWriter.WriteBool(isClaimed);
+        };
+
+        return pWriter;
+    }
+
+    public static ByteWriter Reputation(IDictionary<ReputationType, int> reputations) {
+        var pWriter = Packet.Of(SendOp.UserEnv);
+        pWriter.Write<Command>(Command.Reputation);
+        pWriter.WriteInt(reputations.Count);
+        foreach ((ReputationType type, int amount) in reputations) {
+            pWriter.Write<ReputationType>(type);
+            pWriter.WriteInt(amount);
         };
 
         return pWriter;
