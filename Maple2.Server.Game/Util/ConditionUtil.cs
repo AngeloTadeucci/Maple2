@@ -82,6 +82,9 @@ public static class ConditionUtil {
             case ConditionType.job:
             case ConditionType.job_change:
             case ConditionType.item_move:
+            case ConditionType.install_item:
+            case ConditionType.rotate_cube:
+            case ConditionType.uninstall_item:
             case ConditionType.fall:
             case ConditionType.swim:
             case ConditionType.swimtime:
