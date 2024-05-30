@@ -219,10 +219,16 @@ public abstract class Session : IDisposable {
         }
     }
 
+
+    /*
+        * Send packet to client
+        * packet: packet to send
+        * length: length of packet that only includes data
+    */
     private void SendInternal(byte[] packet, int length) {
         if (disposed) return;
 #if DEBUG
-        LogSend(packet);
+        LogSend(packet, length);
 #endif
         lock (sendCipher) {
             using PoolByteWriter encryptedPacket = sendCipher.Encrypt(packet, 0, length);
@@ -246,7 +252,7 @@ public abstract class Session : IDisposable {
         client.Close();
     }
 
-    private void LogSend(byte[] packet) {
+    private void LogSend(byte[] packet, int length) {
         short op = (short) (packet[1] << 8 | packet[0]);
         SendOp opcode = (SendOp) op;
         switch (opcode) {
@@ -256,7 +262,7 @@ public abstract class Session : IDisposable {
             case SendOp.ResponseTimeSync:
                 break;
             default:
-                Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(packet.Length, ' '));
+                Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
                 break;
         }
     }
