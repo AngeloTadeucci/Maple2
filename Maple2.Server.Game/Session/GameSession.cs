@@ -246,7 +246,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // FieldEntrance
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
-        // HomeCommand
+        Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
         Config.LoadChatStickers();
@@ -345,6 +345,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+
         Config.LoadLapenshard();
         Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
         Send(RevivalPacket.Confirm(Player));
