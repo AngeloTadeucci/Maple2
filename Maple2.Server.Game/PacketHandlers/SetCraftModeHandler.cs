@@ -52,15 +52,12 @@ public class SetCraftModeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var cubeItem = packet.ReadClass<PlotCube>();
-        if (cubeItem.ItemId != Constant.ConstructionCubeItemId || cubeItem.Template != null) {
-            return;
-        }
+        var firstCubeItem = packet.ReadClass<PlotCube>();
 
         session.GuideObject = session.Field.SpawnGuideObject(session.Player, new ConstructionGuideObject());
-        session.HeldCube = cubeItem;
+        session.HeldCube = firstCubeItem;
 
         session.Field.Broadcast(GuideObjectPacket.Create(session.GuideObject));
-        session.Field.Broadcast(SetCraftModePacket.Plot(session.Player.ObjectId, cubeItem));
+        session.Field.Broadcast(SetCraftModePacket.Plot(session.Player.ObjectId, firstCubeItem));
     }
 }
