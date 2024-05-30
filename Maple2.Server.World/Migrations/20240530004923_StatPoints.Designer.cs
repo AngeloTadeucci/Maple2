@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240529200446_StatPoints")]
+    [Migration("20240530004923_StatPoints")]
     partial class StatPoints
     {
         /// <inheritdoc />
@@ -345,7 +345,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("json");
 
                     b.Property<string>("StatPoints")
-                        .IsRequired()
                         .HasColumnType("json");
 
                     b.Property<string>("Wardrobes")

@@ -17,7 +17,7 @@ internal class CharacterConfig {
     public IList<SkillMacro>? SkillMacros { get; set; }
     public IList<Wardrobe>? Wardrobes { get; set; }
     public IDictionary<BasicAttribute, int>? StatAllocation { get; set; }
-    public IDictionary<AttributePointSource, int> StatPoints { get; set; }
+    public IDictionary<AttributePointSource, int>? StatPoints { get; set; }
     public IList<SkillPoint>? SkillPoint { get; set; }
     public SkillBook? SkillBook { get; set; }
     public IList<int>? FavoriteStickers { get; set; }

@@ -21,7 +21,7 @@ namespace Maple2.Server.World.Migrations
                 name: "StatPoints",
                 table: "character-config",
                 type: "json",
-                nullable: false,
+                nullable: true,
                 defaultValue: "{}")
                 .Annotation("MySql:CharSet", "utf8mb4");
         }

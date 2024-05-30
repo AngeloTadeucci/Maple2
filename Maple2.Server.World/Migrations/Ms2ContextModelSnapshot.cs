@@ -342,7 +342,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("json");
 
                     b.Property<string>("StatPoints")
-                        .IsRequired()
                         .HasColumnType("json");
 
                     b.Property<string>("Wardrobes")
