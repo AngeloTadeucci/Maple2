@@ -221,5 +221,18 @@ public sealed class ExperienceManager {
 
         session.Send(PrestigePacket.LevelUp(session.Player.ObjectId, PrestigeLevel));
         session.Send(PrestigePacket.LoadMissions(session.Player.Value.Account));
+        CheckPrestigeReward();
+    }
+
+    private void CheckPrestigeReward() {
+        if (!session.TableMetadata.PrestigeLevelRewardTable.Entries.TryGetValue(PrestigeLevel, out PrestigeLevelRewardMetadata? metadata)) {
+            return;
+        }
+
+        if (metadata.Type != PrestigeAwardType.statPoint) {
+            return;
+        }
+
+        session.Config.AddStatPoint(AttributePointSource.Prestige, metadata.Value);
     }
 }

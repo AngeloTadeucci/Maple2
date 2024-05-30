@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -18,11 +19,6 @@ public class StatAttributes : IByteSerializable {
     public StatAttributes() {
         Sources = new PointSources();
         Allocation = new PointAllocation();
-
-        // TODO: this should be dynamic
-        Sources[AttributePointSource.Trophy] = 38;
-        Sources[AttributePointSource.Quest] = 12;
-        Sources[AttributePointSource.Prestige] = 50;
     }
 
     public void WriteTo(IByteWriter writer) {
@@ -43,6 +39,9 @@ public class StatAttributes : IByteSerializable {
 
         public PointSources() {
             Points = new Dictionary<AttributePointSource, int>();
+            foreach (AttributePointSource source in Enum.GetValues(typeof(AttributePointSource))) {
+                Points[source] = 0;
+            }
         }
 
         public void WriteTo(IByteWriter writer) {

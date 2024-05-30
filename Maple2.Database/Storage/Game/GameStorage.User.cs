@@ -228,10 +228,12 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, IDictionary<BasicAttribute, int>?, SkillPoint? SkillPoint, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
+        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners,
+            IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
+            IDictionary<BasicAttribute, int>?, SkillPoint? SkillPoint, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, 0, 0, null, null, null, null, null);
+                return (null, null, null, null, null, null, null, null, 0, 0, 0, null, null, null, null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -264,6 +266,8 @@ public partial class GameStorage {
                 config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
                 config.DeathTick,
                 config.DeathCount,
+                config.ExplorationProgress,
+                config.StatPoints,
                 config.StatAllocation,
                 skillPoint,
                 config.GatheringCounts,
@@ -284,7 +288,9 @@ public partial class GameStorage {
                 IList<SkillCooldown> skillCooldowns,
                 long deathTick,
                 int deathCount,
+                int explorationProgress,
                 StatAttributes.PointAllocation allocation,
+                StatAttributes.PointSources statSources,
                 SkillPoint skillPoint,
                 IDictionary<int, int> gatheringCounts,
                 IDictionary<int, int> guideRecords,
@@ -308,9 +314,11 @@ public partial class GameStorage {
                 .ToList();
             config.DeathTick = deathTick;
             config.DeathCount = deathCount;
+            config.ExplorationProgress = explorationProgress;
             config.StatAllocation = allocation.Attributes.ToDictionary(
                 attribute => attribute,
                 attribute => allocation[attribute]);
+            config.StatPoints = statSources.Points;
             config.SkillPoint = skillPoint.Points.SelectMany(
                     point => point.Value.Ranks.Select(
                         rankPoint => new Model.SkillPoint {

@@ -40,6 +40,7 @@ public class TableMetadataStorage {
     private readonly Lazy<BlackMarketTable> blackMarketTable;
     private readonly Lazy<ChangeJobTable> changeJobTable;
     private readonly Lazy<ChapterBookTable> chapterBookTable;
+    private readonly Lazy<FieldMissionTable> fieldMissionTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -92,6 +93,7 @@ public class TableMetadataStorage {
     public BlackMarketTable BlackMarketTable => blackMarketTable.Value;
     public ChangeJobTable ChangeJobTable => changeJobTable.Value;
     public ChapterBookTable ChapterBookTable => chapterBookTable.Value;
+    public FieldMissionTable FieldMissionTable => fieldMissionTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -145,6 +147,7 @@ public class TableMetadataStorage {
         blackMarketTable = Retrieve<BlackMarketTable>(context, "blackmarkettable.xml");
         changeJobTable = Retrieve<ChangeJobTable>(context, "changejob.xml");
         chapterBookTable = Retrieve<ChapterBookTable>(context, "chapterbook.xml");
+        fieldMissionTable = Retrieve<FieldMissionTable>(context, "fieldmission.xml");
         enchantScrollTable = Retrieve<EnchantScrollTable>(context, "enchantscroll.xml");
         itemRemakeScrollTable = Retrieve<ItemRemakeScrollTable>(context, "itemremakescroll.xml");
         itemRepackingScrollTable = Retrieve<ItemRepackingScrollTable>(context, "itemrepackingscroll.xml");

@@ -31,6 +31,7 @@ public class ConfigManager {
     private readonly SkillPoint skillPoints;
     public readonly IDictionary<int, int> GatheringCounts;
     public readonly IDictionary<int, int> GuideRecords;
+    public int ExplorationProgress;
 
     public readonly SkillManager Skill;
 
@@ -53,8 +54,10 @@ public class ConfigManager {
             IList<SkillCooldown>? SkillCooldowns,
             long deathPenaltyTick,
             int DeathCounter,
+            int ExplorationProgress,
+            IDictionary<AttributePointSource, int>? StatPoints,
             IDictionary<BasicAttribute, int>? Allocation,
-            SkillPoint? SkillPoint,
+        SkillPoint? SkillPoint,
             IDictionary<int, int>? GatheringCounts,
             IDictionary<int, int>? GuideRecords,
         SkillBook? SkillBook
@@ -84,6 +87,7 @@ public class ConfigManager {
         skillPoints = load.SkillPoint ?? new SkillPoint();
         deathPenaltyTick = load.deathPenaltyTick;
         DeathCount = load.DeathCounter;
+        ExplorationProgress = load.ExplorationProgress;
 
         if (load.SkillCooldowns != null) {
             foreach (SkillCooldown cooldown in load.SkillCooldowns) {
@@ -95,13 +99,31 @@ public class ConfigManager {
         }
 
         statAttributes = new StatAttributes();
-        if (load.Allocation != null) {
-            foreach ((BasicAttribute attribute, int amount) in load.Allocation) {
-                statAttributes.Allocation[attribute] = amount;
-                UpdateStatAttribute(attribute, amount, false);
+        if (load.StatPoints != null) {
+            foreach ((AttributePointSource source, int amount) in load.StatPoints) {
+                if (source == AttributePointSource.Prestige) {
+                    statAttributes.Sources[source] = RefreshPrestigeAttributePoints();
+                    continue;
+                }
+                statAttributes.Sources[source] = amount;
             }
         }
+        if (load.Allocation != null) {
+            // Reset points if total points exceed the limit.
+            if (load.Allocation.Values.Sum() > statAttributes.TotalPoints) {
+                load.Allocation.Clear();
+            } else {
+                foreach ((BasicAttribute attribute, int amount) in load.Allocation) {
+                    statAttributes.Allocation[attribute] = amount;
+                    UpdateStatAttribute(attribute, amount, false);
+                }
+            }
+        }
+    }
 
+    private int RefreshPrestigeAttributePoints() {
+        IEnumerable<PrestigeLevelRewardMetadata> entries = session.TableMetadata.PrestigeLevelRewardTable.Entries.Values.Where(entry => entry.Level <= session.Player.Value.Account.PrestigeLevel && entry.Type == PrestigeAwardType.statPoint);
+        return entries.Sum(entry => entry.Value);
     }
 
     public void UpdateHotbarSkills() {
@@ -246,6 +268,11 @@ public class ConfigManager {
     public void LoadStatAttributes() {
         session.Send(AttributePointPacket.Sources(statAttributes));
         session.Send(AttributePointPacket.Allocation(statAttributes));
+    }
+
+    public void AddStatPoint(AttributePointSource source, int amount) {
+        statAttributes.Sources[source] += amount;
+        session.Send(AttributePointPacket.Sources(statAttributes));
     }
 
     public void LoadSkillPoints() {
@@ -494,7 +521,9 @@ public class ConfigManager {
             skillCooldowns.Values.ToList(),
             deathPenaltyTick,
             DeathCount,
+            ExplorationProgress,
             statAttributes.Allocation,
+            statAttributes.Sources,
             skillPoints,
             GatheringCounts,
             GuideRecords,

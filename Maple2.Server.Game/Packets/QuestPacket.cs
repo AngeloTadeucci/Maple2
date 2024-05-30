@@ -22,7 +22,7 @@ public static class QuestPacket {
         Conditions = 7,
         SetTracking = 9,
         Unknown18 = 18,
-        StartLoad = 21,
+        ExplorationProgress = 21,
         LoadQuestStates = 22,
         LoadQuests = 23,
         Unknown25 = 25,
@@ -138,9 +138,9 @@ public static class QuestPacket {
         return pWriter;
     }
 
-    public static ByteWriter StartLoad(int starAmount) {
+    public static ByteWriter LoadExploration(int starAmount) {
         var pWriter = Packet.Of(SendOp.Quest);
-        pWriter.Write<Command>(Command.StartLoad);
+        pWriter.Write<Command>(Command.ExplorationProgress);
         pWriter.WriteInt(starAmount);
         pWriter.WriteInt();
 
@@ -178,7 +178,7 @@ public static class QuestPacket {
         return pWriter;
     }
 
-    public static ByteWriter ExplorationReward(int starAmount) {
+    public static ByteWriter UpdateExploration(int starAmount) {
         var pWriter = Packet.Of(SendOp.Quest);
         pWriter.Write<Command>(Command.ExplorationReward);
         pWriter.WriteInt(starAmount);

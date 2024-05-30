@@ -193,6 +193,9 @@ public sealed class AchievementManager {
             case AchievementRewardType.skillpoint:
                 session.Config.AddSkillPoint(SkillPointSource.Trophy, grade.Reward.Value, (short) (grade.Reward.Rank - 1));
                 break;
+            case AchievementRewardType.statpoint:
+                session.Config.AddStatPoint(AttributePointSource.Trophy, grade.Reward.Value);
+                break;
             case AchievementRewardType.beauty_hair:
             case AchievementRewardType.beauty_makeup:
             case AchievementRewardType.beauty_skin:
