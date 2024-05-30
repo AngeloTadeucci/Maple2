@@ -28,6 +28,7 @@ public class QuestHandler : PacketHandler<GameSession> {
         ResumeDungeon = 19,
         Dispatch = 20,
         RemoteComplete = 24, // Maybe? This is mainly used for Navigator
+        CompleteFieldMission = 26,
     }
 
     #region Autofac Autowired
@@ -69,6 +70,9 @@ public class QuestHandler : PacketHandler<GameSession> {
             case Command.RemoteComplete:
                 HandleRemoteComplete(session, packet);
                 return;
+            case Command.CompleteFieldMission:
+                HandleCompleteFieldMission(session, packet);
+                break;
         }
     }
 
@@ -205,6 +209,17 @@ public class QuestHandler : PacketHandler<GameSession> {
         }
 
         session.Quest.Complete(quest);
+    }
+
+    private static void HandleCompleteFieldMission(GameSession session, IByteReader packet) {
+        int mission = packet.ReadInt();
+
+        if (session.Config.ExplorationProgress >= mission) {
+            return;
+        }
+
+        //TODO: If a user completes a field mission and reaches the next goal, if the reward was a stat point, immediately give it. Confirm if same behavior in gms2?
+        session.Quest.CompleteFieldMission(mission);
     }
 
     private static void HandleSkyFortressTeleport(GameSession session) {

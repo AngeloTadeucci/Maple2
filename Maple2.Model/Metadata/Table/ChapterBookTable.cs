@@ -9,6 +9,7 @@ public record ChapterBookTable(IReadOnlyDictionary<int, ChapterBookTable.Entry> 
         int BeginQuestId,
         int EndQuestId,
         Entry.SkillPoint[] SkillPoints,
+        int StatPoints,
         ItemComponent[] Items) {
         public record SkillPoint(int Amount, short Rank);
     }
