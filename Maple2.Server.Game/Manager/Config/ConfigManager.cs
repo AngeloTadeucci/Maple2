@@ -122,7 +122,7 @@ public class ConfigManager {
     }
 
     private int RefreshPrestigeAttributePoints() {
-        IList<PrestigeLevelRewardMetadata> entries = session.TableMetadata.PrestigeLevelRewardTable.Entries.Values.Where(entry => entry.Level <= session.Player.Value.Account.PrestigeLevel && entry.Type == PrestigeAwardType.statPoint).ToList();
+        IEnumerable<PrestigeLevelRewardMetadata> entries = session.TableMetadata.PrestigeLevelRewardTable.Entries.Values.Where(entry => entry.Level <= session.Player.Value.Account.PrestigeLevel && entry.Type == PrestigeAwardType.statPoint);
         return entries.Sum(entry => entry.Value);
     }
 
