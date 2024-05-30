@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 
-namespace Maple2.Server.Game.Util.Helpers;
+namespace Maple2.Server.Core.Helpers;
 
 public static partial class ErrorParserHelper {
     private static readonly Regex InfoRegex = ErrorRegex();

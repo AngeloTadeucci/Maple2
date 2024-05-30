@@ -1,8 +1,8 @@
 ﻿using System.Text;
 using Maple2.PacketLib.Tools;
+using Maple2.Server.Core.Helpers;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
-using Maple2.Server.Core.Packets.Helper;
 
 namespace Maple2.Server.Core.PacketHandlers;
 
