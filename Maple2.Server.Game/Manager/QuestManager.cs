@@ -83,7 +83,8 @@ public sealed class QuestManager {
             if (characterValues.ContainsKey(metadata.Id) || accountValues.ContainsKey(metadata.Id)) {
                 continue;
             }
-            quest = db.CreateQuest(session.CharacterId, quest);
+            long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+            quest = db.CreateQuest(ownerId, quest);
             if (quest == null) {
                 continue;
             }
@@ -137,7 +138,8 @@ public sealed class QuestManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        quest = db.CreateQuest(session.CharacterId, quest);
+        long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+        quest = db.CreateQuest(ownerId, quest);
         if (quest == null) {
             logger.Error("Failed to create quest entry {questId}", metadata.Id);
             return;
