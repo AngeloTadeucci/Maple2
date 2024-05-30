@@ -36,6 +36,7 @@ public class AnimationState {
 
     public AnimationMetadata? RigMetadata { get; init; }
     public AnimationSequence? PlayingSequence { get; private set; }
+    public short IdleSequenceId { get; init; }
     private AnimationSequence? queuedSequence;
     private float queuedSequenceSpeed;
     private AnimationType queuedSequenceType;
@@ -72,6 +73,14 @@ public class AnimationState {
         MoveSpeed = 1;
         AttackSpeed = 1;
         IsPlayerAnimation = actor is FieldPlayer;
+
+        if (RigMetadata is null) {
+            IdleSequenceId = 0;
+
+            return;
+        }
+
+        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == "Idle_A").Value.Id;
     }
 
     private void ResetSequence() {
@@ -113,6 +122,22 @@ public class AnimationState {
         }
 
         PlaySequence(sequence!, speed, type);
+
+        return true;
+    }
+
+    public bool TryPlaySequence(string name, float speed, AnimationType type, out AnimationSequence? sequence) {
+        if (!TryPlaySequence(name, speed, type)) {
+            sequence = null;
+
+            return false;
+        }
+
+        if (queuedSequence is not null) {
+            sequence = queuedSequence;
+        } else {
+            sequence = PlayingSequence;
+        }
 
         return true;
     }
@@ -208,6 +233,20 @@ public class AnimationState {
 
         lastTick = tickCount;
         lastSequenceTime = sequenceTime;
+        reportingKeyframeEvent = false;
+
+        if (queuedResetSequence) {
+            if (PlayingSequence != null && actor is FieldNpc npc) {
+                npc.SendControl = true;
+            }
+
+            ResetSequence();
+        } else if (queuedSequence is not null) {
+            PlaySequence(queuedSequence, queuedSequenceSpeed, queuedSequenceType);
+        }
+
+        queuedResetSequence = false;
+        queuedSequence = null;
     }
 
     public void SetLoopSequence(bool shouldLoop, bool loopOnlyOnce) {
@@ -216,10 +255,48 @@ public class AnimationState {
     }
 
     private bool HasHitKeyframe(float sequenceTime, AnimationKey key) {
-        bool keyBeforeLoop = sequenceLoop.end == 0 || key.Time <= sequenceLoop.end + 0.001f;
+        bool keyBeforeLoop = !isLooping || sequenceLoop.end == 0 || key.Time <= sequenceLoop.end + 0.001f;
         bool hitKeySinceLastTick = key.Time > lastSequenceTime && key.Time <= sequenceTime;
 
         return keyBeforeLoop && hitKeySinceLastTick;
+    }
+
+    public float GetSequenceSegmentTime(string keyframe1, string keyframe2) {
+        if (PlayingSequence is null) {
+            return -1;
+        }
+
+        float keyframe1Time = -1;
+        float keyframe2Time = -1;
+
+        foreach (AnimationKey key in PlayingSequence.Keys) {
+            if (key.Name == keyframe1) {
+                keyframe1Time = key.Time;
+            }
+
+            if (key.Name == keyframe2) {
+                keyframe2Time = key.Time;
+
+                break;
+            }
+        }
+
+        // Segment doesn't exist or is malformed
+        if (keyframe1Time == -1 || keyframe2Time == -1 || keyframe1Time > keyframe2Time) {
+            return -1;
+        }
+
+        // Current time out of segment
+        if (lastSequenceTime < keyframe1Time || lastSequenceTime >= keyframe2Time) {
+            return -1;
+        }
+
+        if (keyframe1Time == keyframe2Time) {
+            // Can only be in the segment, and at the end, or not in the segment
+            return lastSequenceTime == keyframe1Time ? 1 : -1;
+        }
+
+        return (lastSequenceTime - keyframe1Time) / (keyframe2Time - keyframe1Time);
     }
 
     private void HitKeyframe(float sequenceTime, AnimationKey key, float speed) {
@@ -245,21 +322,6 @@ public class AnimationState {
             default:
                 break;
         }
-
-        reportingKeyframeEvent = false;
-
-        if (queuedResetSequence) {
-            if (PlayingSequence != null && actor is FieldNpc npc) {
-                npc.SendControl = true;
-            }
-
-            ResetSequence();
-        } else if (queuedSequence is not null) {
-            PlaySequence(queuedSequence, queuedSequenceSpeed, queuedSequenceType);
-        }
-
-        queuedResetSequence = false;
-        queuedSequence = null;
     }
 
     private void DebugPrint(string message) {

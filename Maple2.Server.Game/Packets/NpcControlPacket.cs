@@ -28,7 +28,7 @@ public static class NpcControlPacket {
         return pWriter;
     }
 
-    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc, float sequenceSpeed = 1f) {
+    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc) {
         buffer.WriteInt(npc.ObjectId);
         // Flags bit-1 (AdditionalEffectRelated), bit-2 (UIHpBarRelated)
         buffer.WriteByte(2);
@@ -42,8 +42,10 @@ public static class NpcControlPacket {
             buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
+        short defaultSequenceId = npc.AnimationState.IdleSequenceId;
+
         buffer.Write<ActorState>(npc.MovementState.State);
-        buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? -1);
+        buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);
         buffer.WriteShort(npc.SequenceCounter);
 
         // Animation (-2 = Jump_A, -3 = Jump_B)

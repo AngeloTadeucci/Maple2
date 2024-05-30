@@ -133,11 +133,19 @@ public class Transform {
 
     public Transform() { }
 
-    public void LookTo(Vector3 direction) {
-        LookTo(direction, new Vector3(0, 0, 1));
+    public void LookTo(Vector3 direction, bool snapToGroundPlane = true) {
+        LookTo(direction, new Vector3(0, 0, 1), snapToGroundPlane);
     }
 
-    public void LookTo(Vector3 direction, Vector3 up) {
+    public void LookTo(Vector3 direction, Vector3 up, bool snapToGroundPlane = true) {
+        if (snapToGroundPlane) {
+            direction = Vector3.Normalize(direction - Vector3.Dot(direction, up) * up); // plane projection formula
+
+            if (direction.IsNearlyEqual(new Vector3(0, 0, 0), 1e-3f)) {
+                direction = FrontAxis;
+            }
+        }
+
         Vector3 right = Vector3.Cross(direction, up);
         float scale = Scale;
 
