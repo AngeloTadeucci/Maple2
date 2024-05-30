@@ -25,6 +25,7 @@ internal sealed class FieldActor : IActor {
     public BuffManager Buffs { get; }
     public Stats Stats { get; }
     public AnimationState AnimationState { get; init; }
+    public SkillState SkillState { get; init; }
 
     public FieldActor(FieldManager field, NpcMetadataStorage npcMetadata) {
         Field = field;
@@ -33,6 +34,7 @@ internal sealed class FieldActor : IActor {
         Transform = new Transform();
         NpcMetadata = npcMetadata;
         AnimationState = new AnimationState(this, string.Empty); // not meant to have animations
+        SkillState = new SkillState(this);
     }
 
     public void Update(long tickCount) { }

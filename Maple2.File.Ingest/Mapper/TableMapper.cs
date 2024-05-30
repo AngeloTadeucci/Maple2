@@ -229,17 +229,31 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 AlignHeight: move.alignCubeHeight,
                 Rotate: move.rotation,
                 IgnoreAdjust: move.ignoreAdjustCubePosition,
+                ExplosionByDestroy: move.explosionByDestroy,
+                CatmullRom: move.catmullrom != 0,
+                IgnorePhysXTestInitPosition: move.ignorePhysxTestInitPosition,
+                IgnoreCancelAtSpawnTime: move.ignoreCancelAtSpawnTime,
                 Direction: move.direction != default ? Vector3.Normalize(move.direction) : default,
                 FireOffset: move.fireOffsetPosition,
                 FireFixed: move.fireFixedPosition,
+                ControlValue0: move.controlValue0,
+                ControlValue1: move.controlValue1,
+                ControlEndOffsetValue: move.controlEndOffsetValue,
                 TraceTargetOffset: move.traceTargetOffsetPos,
+                TraceTargetDuration: move.traceTargetDuration,
                 Velocity: move.vel,
                 Distance: move.distance,
                 RotateZDegree: move.dirRotZDegree,
                 LifeTime: move.lifeTime,
                 DelayTime: move.delayTime,
                 SpawnTime: move.spawnTime,
-                DestroyTime: move.destroyTime
+                DestroyTime: move.destroyTime,
+                ControlRate: move.controlRate,
+                LookAtType: move.lookAtType,
+                PiercingAttackInterval: move.piercingAttackInterval,
+                PiercingAttackMaxTargetCount: move.piercingAttackMaxTargetCount,
+                NonTargetMoveDistance: move.nonTargetMoveDistance,
+                MoveEndHoldDuration: move.moveEndHoldDuration
             )).ToList();
             results[id] = moves;
         }

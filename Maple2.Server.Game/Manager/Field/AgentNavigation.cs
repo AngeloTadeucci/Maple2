@@ -117,8 +117,27 @@ public sealed class AgentNavigation : IDisposable {
         return SetPathTo(end);
     }
 
+    public Vector3 FindClosestPoint(Vector3 point, int maxDistance, Vector3 fallback) {
+        var capsule = npc.Value.Metadata.Property.Capsule;
+        Shape shape = npc.Field.Navigation.GetShape((int) capsule.Radius, (int) capsule.Height);
+
+        Position position = ToPosition(point);
+
+        if (!mesh.positionIsValid(position)) {
+            return fallback;
+        }
+
+        Position closest = mesh.findClosestUnobstructedPosition(shape, context, position, maxDistance);
+
+        if (!TryFromPosition(closest, out Vector3 result)) {
+            return fallback;
+        }
+
+        return result;
+    }
+
     public Vector3 FindClosestPoint(Vector3 point, int maxDistance) {
-        return FromPosition(mesh.findClosestUnobstructedPosition(agent.getShape(), context, ToPosition(point), maxDistance));
+        return FindClosestPoint(point, maxDistance, FromPosition(agent.getPosition()));
     }
 
     public bool PathTo(Vector3 goal) {
@@ -170,6 +189,20 @@ public sealed class AgentNavigation : IDisposable {
     #region Conversion
     private Position ToPosition(Vector3 vector) {
         return mesh.positionNear3DPoint((int) vector.X, (int) vector.Y, (int) vector.Z, horizontalRange: 25, verticalRange: 5);
+    }
+
+    private bool TryFromPosition(Position position, out Vector3 result) {
+        if (!mesh.positionIsValid(position)) {
+            result = new Vector3(0, 0, 0);
+
+            return false;
+        }
+
+        float z = mesh.heightAtPositionF(position);
+
+        result = new Vector3(position.X, position.Y, z);
+
+        return true;
     }
 
     private Vector3 FromPosition(Position position) {

@@ -44,6 +44,7 @@ public record SkillMetadataState(
 public record SkillMetadataLevel(
     BeginCondition Condition,
     SkillMetadataChange? Change,
+    SkillMetadataAutoTargeting? AutoTargeting,
     SkillMetadataConsume Consume,
     SkillMetadataDetect Detect,
     SkillMetadataRecovery Recovery,
@@ -59,6 +60,12 @@ public record SkillMetadataChange(
 
     public record Effect(int Id, int Level, int OverlapCount);
 }
+
+public record SkillMetadataAutoTargeting(
+    float MaxDegree,
+    float MaxDistance,
+    float MaxHeight,
+    bool UseMove);
 
 public record SkillMetadataConsume(
     long Meso,
@@ -76,11 +83,14 @@ public record SkillMetadataRecovery(
 
 public record SkillMetadataMotion(
     SkillMetadataMotionProperty MotionProperty,
-    SkillMetadataAttack[] Attacks);
+    SkillMetadataAttack[] Attacks,
+    IReadOnlyDictionary<string, byte> AttackPoints);
 
 public record SkillMetadataMotionProperty(
     string SequenceName,
-    float SequenceSpeed);
+    float SequenceSpeed,
+    float MoveDistance,
+    bool FaceTarget);
 
 public record SkillMetadataAttack(
     string Point,
@@ -119,13 +129,15 @@ public record SkillMetadataRange(
 public record SkillMetadataArrow(
     bool Overlap,
     bool Explosion,
+    bool RayPhysXTest,
     SkillEntity NonTarget,
-    int BounceType,
+    int BounceType, // 2: chain, 3: pierce
     int BounceCount,
     float BounceRadius,
     bool BounceOverlap,
     Vector3 Collision,
-    Vector3 CollisionAdd);
+    Vector3 CollisionAdd,
+    int RayType);
 
 public record SkillMetadataDamage(
     int Count,

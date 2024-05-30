@@ -622,12 +622,6 @@ public partial class FieldManager {
         foreach (FieldPet fieldPet in Pets.Values) {
             added.Session.Send(ProxyObjectPacket.AddPet(fieldPet));
         }
-        foreach (FieldNpc fieldNpc in Npcs.Values.Concat(Mobs.Values)) {
-            added.Session.Send(NpcControlPacket.Control(fieldNpc));
-        }
-        foreach (FieldPet fieldPet in Pets.Values) {
-            added.Session.Send(NpcControlPacket.Control(fieldPet));
-        }
         foreach (FieldSkill skillSource in fieldSkills.Values) {
             added.Session.Send(RegionSkillPacket.Add(skillSource));
         }

@@ -41,6 +41,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     }
     public Transform Transform { get; init; }
     public AnimationState AnimationState { get; init; }
+    public SkillState SkillState { get; init; }
 
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
@@ -55,6 +56,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Transform = new Transform();
         NpcMetadata = npcMetadata;
         AnimationState = new AnimationState(this, modelName);
+        SkillState = new SkillState(this);
     }
 
     public void Dispose() {
@@ -172,7 +174,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual void KeyframeEvent(string keyName) { }
 
-    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) {
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
             Logger.Error("Invalid skill use: {SkillId},{Level}", id, level);
             return null;
@@ -182,6 +184,10 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         record.Position = Position;
         record.Rotation = Rotation;
         record.Rotate2Z = 2 * Rotation.Z;
+
+        if (!record.TrySetMotionPoint(motionPoint)) {
+            return null;
+        }
 
         Field.Broadcast(SkillPacket.Use(record));
 
