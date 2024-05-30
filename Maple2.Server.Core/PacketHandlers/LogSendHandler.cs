@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Maple2.PacketLib.Tools;
+using Maple2.Server.Core.Helpers;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 
@@ -29,7 +30,9 @@ public abstract class LogSendHandler<T> : PacketHandler<T> where T : Session {
                 if (message.Contains("exception")) {
                     // Read remaining string
                     string debug = packet.ReadUnicodeString();
-                    Logger.Error("[{Message}] {Debug}", message, debug);
+                    SockExceptionInfo exceptionInfo = ErrorParserHelper.Parse(debug);
+                    Logger.Error("[{message}] [SendOp: {sendOp}] [Offset: {offset}] [Hint: {hint}]",
+                                        message, exceptionInfo.SendOp, exceptionInfo.Offset, exceptionInfo.Hint);
 
                     session.OnError?.Invoke(session, debug);
                     return;

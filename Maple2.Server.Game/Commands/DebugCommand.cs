@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.CommandLine;
 using Maple2.Database.Storage;
 using System.CommandLine.IO;
+using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Commands;
 
@@ -18,6 +19,8 @@ public class DebugCommand : Command {
         AddCommand(new DebugNpcAiCommand(session, npcStorage));
         AddCommand(new DebugAnimationCommand(session));
         AddCommand(new DebugSkillsCommand(session));
+        AddCommand(new SendRawPacketCommand(session));
+        AddCommand(new ResolvePacketCommand(session));
     }
 
     public class DebugNpcAiCommand : Command {
@@ -88,6 +91,50 @@ public class DebugCommand : Command {
 
             string message = enabled ?? true ? "Enabled" : "Disabled";
             ctx.Console.Out.WriteLine($"{message} skill cast packet debug info printing");
+        }
+    }
+
+    private class SendRawPacketCommand : Command {
+        private readonly GameSession session;
+
+        public SendRawPacketCommand(GameSession session) : base("packet", "Sends a raw packet to the server.") {
+            this.session = session;
+
+            var packet = new Argument<string[]>("packet", "The raw packet to send.");
+
+            AddArgument(packet);
+
+            this.SetHandler<InvocationContext, string[]>(Handle, packet);
+        }
+
+        private void Handle(InvocationContext ctx, string[] packet) {
+            byte[] bytes = packet.Select(x => byte.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
+
+            session.Send(bytes);
+        }
+    }
+
+    private class ResolvePacketCommand : Command {
+        private readonly GameSession session;
+
+        public ResolvePacketCommand(GameSession session) : base("resolve", "Try to resolve packet") {
+            this.session = session;
+
+            var packet = new Argument<string>("opcode", "The packet opcode to try resolve.");
+
+            AddArgument(packet);
+
+            this.SetHandler<InvocationContext, string>(Handle, packet);
+        }
+
+        private void Handle(InvocationContext ctx, string packet) {
+            PacketStructureResolver? resolver = PacketStructureResolver.Parse(packet);
+            if (resolver == null) {
+                ctx.Console.Error.WriteLine("Failed to resolve packet. Possible ways to use the opcode: 81 0081 0x81 0x0081");
+                return;
+            }
+
+            resolver.Start(session);
         }
     }
 }

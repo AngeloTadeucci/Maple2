@@ -6,6 +6,7 @@
         <AssemblyName>Maple2.Server.Core</AssemblyName>
         <RootNamespace>Maple2.Server.Core</RootNamespace>
         <LangVersion>12</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
