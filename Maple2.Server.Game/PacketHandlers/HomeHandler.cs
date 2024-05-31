@@ -48,7 +48,8 @@ public class HomeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int homeMapId = session.Player.Value.Home.Indoor.MapId;
+        Maple2.Model.Game.Home home = session.Player.Value.Home;
+        int homeMapId = home.Indoor.MapId;
         if (session.Field.MapId == homeMapId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
@@ -56,7 +57,14 @@ public class HomeHandler : PacketHandler<GameSession> {
 
         int type = packet.ReadInt(); // -1 = none
 
-        long ownerId = session.Player.Value.Home.Indoor.OwnerId;
+        if (string.IsNullOrEmpty(home.Indoor.Name)) {
+            // new home
+            session.Player.Value.Home.InitNewHome(session.Player.Value.Character.Name, 0);
+            session.Housing.SaveHome();
+            session.Housing.SavePlots();
+        }
+
+        long ownerId = home.Indoor.OwnerId;
         session.Send(session.PrepareField(homeMapId, ownerId: ownerId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));

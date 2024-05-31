@@ -26,6 +26,11 @@ public class Home : IByteSerializable {
     public string? Passcode { get; set; }
     public readonly IDictionary<HomePermission, HomePermissionSetting> Permissions;
 
+    public long DecorationExp { get; set; }
+    public long DecorationLevel { get; set; }
+    public long DecorationRewardTimestamp { get; set; }
+    public List<int> InteriorRewardsClaimed { get; set; }
+
     private string message;
     public string Message {
         get => message;
@@ -36,19 +41,35 @@ public class Home : IByteSerializable {
         }
     }
 
-    public PlotInfo Indoor { get; set; }
+    public PlotInfo Indoor { get; set; } = null!; // Required, when getting a home, this should be set always. Setting to null! to please the compiler.
     public PlotInfo? Outdoor { get; set; }
 
     public string Name => Outdoor?.Name ?? Indoor.Name;
     public int PlotMapId => Outdoor?.MapId ?? 0;
     public int PlotNumber => Outdoor?.Number ?? 0;
     public int ApartmentNumber => Outdoor?.ApartmentNumber ?? 0;
-    public long PlotExpiryTime => Outdoor?.ExpiryTime ?? 0;
+    public long PlotExpiryTime => Outdoor?.ExpiryTime ?? Indoor.ExpiryTime;
     public PlotState State => Outdoor?.State ?? PlotState.Open;
 
     public Home() {
-        message = "Thanks for visiting. Come back soon!";
+        message = string.Empty;
         Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
+        InteriorRewardsClaimed = [];
+    }
+
+    public void InitNewHome(string characterName, int templateId) {
+        Indoor.Name = characterName;
+        Indoor.ExpiryTime = 32503561200; // Year 2999
+        message = "Thanks for visiting. Come back soon!";
+        DecorationLevel = 1;
+        Passcode = "*****";
+
+        if (templateId == 0) {
+            Height = 4;
+            Area = 10;
+        } else {
+            // get template settings
+        }
     }
 
     public bool SetArea(int area) {

@@ -141,6 +141,7 @@ public partial class GameStorage {
                 model.Number = plotInfo.Number;
                 model.ApartmentNumber = plotInfo.ApartmentNumber;
                 model.ExpiryTime = plotInfo.ExpiryTime.FromEpochSeconds();
+                model.Name = plotInfo.Name;
                 Context.UgcMap.Update(model);
             }
 
@@ -242,6 +243,7 @@ public partial class GameStorage {
                 OwnerId = ugcMap.OwnerId,
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
+                Name = ugcMap.Name,
                 ApartmentNumber = 0,
                 ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
             };

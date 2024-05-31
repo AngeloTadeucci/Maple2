@@ -347,7 +347,7 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter DesignRankReward() {
+    public static ByteWriter DesignRankReward(Home home) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.DesignRankReward);
 
