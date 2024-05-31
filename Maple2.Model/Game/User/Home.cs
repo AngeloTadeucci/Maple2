@@ -57,21 +57,6 @@ public class Home : IByteSerializable {
         InteriorRewardsClaimed = [];
     }
 
-    public void InitNewHome(string characterName, int templateId) {
-        Indoor.Name = characterName;
-        Indoor.ExpiryTime = 32503561200; // Year 2999
-        message = "Thanks for visiting. Come back soon!";
-        DecorationLevel = 1;
-        Passcode = "*****";
-
-        if (templateId == 0) {
-            Height = 4;
-            Area = 10;
-        } else {
-            // get template settings
-        }
-    }
-
     public bool SetArea(int area) {
         if (Area == area) return false;
         Area = (byte) Math.Clamp(area, Constant.MinHomeArea, Constant.MaxHomeArea);

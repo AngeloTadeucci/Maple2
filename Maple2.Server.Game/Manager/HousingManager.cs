@@ -1,5 +1,7 @@
-﻿using Maple2.Database.Extensions;
+﻿using System.Numerics;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -276,5 +278,37 @@ public class HousingManager {
         } else {
             db.SavePlotInfo(Home.Indoor);
         }
+    }
+
+    public void InitNewHome(string characterName, ExportedUgcMapMetadata? template) {
+        Home.Indoor.Name = characterName;
+        Home.Indoor.ExpiryTime = 32503561200; // Year 2999
+        Home.Message = "Thanks for visiting. Come back soon!";
+        Home.DecorationLevel = 1;
+        Home.Passcode = "*****";
+
+        if (template is null) {
+            Home.SetArea(10);
+            Home.SetHeight(4);
+            return;
+        }
+
+        Home.SetArea(template.IndoorSize[0]);
+        Home.SetHeight(template.IndoorSize[2]);
+
+        List<PlotCube> plotCubes = [];
+        foreach (ExportedUgcMapMetadata.Cube cube in template.Cubes) {
+            PlotCube plotCube = new(cube.ItemId, 0, null) {
+                Position = template.BaseCubePosition + cube.OffsetPosition,
+                Rotation = cube.Rotation
+            };
+
+            plotCubes.Add(plotCube);
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        db.SaveHome(Home);
+        db.SavePlotInfo(Home.Indoor);
+        db.SaveCubes(Home.Indoor, plotCubes);
     }
 }

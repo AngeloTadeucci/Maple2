@@ -1,5 +1,7 @@
-﻿using Maple2.Model.Enum;
+﻿using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -17,6 +19,12 @@ public class HomeHandler : PacketHandler<GameSession> {
         Invite = 1,
         Warp = 3,
     }
+
+    #region Autofac Autowired
+    // ReSharper disable MemberCanBePrivate.Global
+    public required MapMetadataStorage MapMetadataStorage { private get; init; }
+    // ReSharper restore All
+    #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
@@ -55,13 +63,19 @@ public class HomeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int type = packet.ReadInt(); // -1 = none
+        int templateId = packet.ReadInt(); // -1 = none
+
+        if (templateId < -1 && templateId > 2) {
+            return;
+        }
+
+        // Template ids in XML are 1-based, but the client uses 0-based
+        templateId++;
+
+        MapMetadataStorage.TryGetExportedUgc(templateId.ToString(), out ExportedUgcMapMetadata? exportedUgcMap);
 
         if (string.IsNullOrEmpty(home.Indoor.Name)) {
-            // new home
-            session.Player.Value.Home.InitNewHome(session.Player.Value.Character.Name, 0);
-            session.Housing.SaveHome();
-            session.Housing.SavePlots();
+            session.Housing.InitNewHome(session.Player.Value.Character.Name, exportedUgcMap);
         }
 
         long ownerId = home.Indoor.OwnerId;

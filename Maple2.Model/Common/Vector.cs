@@ -8,6 +8,8 @@ namespace Maple2.Model.Common;
 public readonly record struct Vector3B(sbyte X, sbyte Y, sbyte Z) {
     private const float BLOCK_SIZE = 150f;
 
+    public Vector3B(int X, int Y, int Z) : this((sbyte) X, (sbyte) Y, (sbyte) Z) { }
+
     public static implicit operator Vector3B(Vector3 vector) {
         return new Vector3B(
             (sbyte) MathF.Round(vector.X / BLOCK_SIZE),
@@ -23,6 +25,9 @@ public readonly record struct Vector3B(sbyte X, sbyte Y, sbyte Z) {
             vector.Z * BLOCK_SIZE
         );
     }
+
+    public static Vector3B operator +(in Vector3B a, in Vector3B b) =>
+        new((sbyte) (a.X + b.X), (sbyte) (a.Y + b.Y), (sbyte) (a.Z + b.Z));
 
     // We override GetHashCode because only 3/4 bytes are relevant.
     public override int GetHashCode() {
