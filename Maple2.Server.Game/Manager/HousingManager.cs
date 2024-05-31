@@ -287,9 +287,13 @@ public class HousingManager {
         Home.DecorationLevel = 1;
         Home.Passcode = "*****";
 
+        using GameStorage.Request db = session.GameStorage.Context();
         if (template is null) {
             Home.SetArea(10);
             Home.SetHeight(4);
+
+            db.SaveHome(Home);
+            db.SavePlotInfo(Home.Indoor);
             return;
         }
 
@@ -306,7 +310,6 @@ public class HousingManager {
             plotCubes.Add(plotCube);
         }
 
-        using GameStorage.Request db = session.GameStorage.Context();
         db.SaveHome(Home);
         db.SavePlotInfo(Home.Indoor);
         db.SaveCubes(Home.Indoor, plotCubes);
