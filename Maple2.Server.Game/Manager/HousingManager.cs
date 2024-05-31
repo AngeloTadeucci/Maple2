@@ -282,7 +282,7 @@ public class HousingManager {
 
     public void InitNewHome(string characterName, ExportedUgcMapMetadata? template) {
         Home.Indoor.Name = characterName;
-        Home.Indoor.ExpiryTime = 32503561200; // Year 2999
+        Home.Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
         Home.Message = "Thanks for visiting. Come back soon!";
         Home.DecorationLevel = 1;
         Home.Passcode = "*****";
