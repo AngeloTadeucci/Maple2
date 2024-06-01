@@ -131,6 +131,8 @@ public static class ConditionUtil {
             case ConditionType.buddy_request:
             case ConditionType.fall_survive:
             case ConditionType.fall_die:
+            case ConditionType.buy_house:
+            case ConditionType.extend_house:
                 return true;
         }
         return false;
@@ -243,6 +245,8 @@ public static class ConditionUtil {
             case ConditionType.install_item:
             case ConditionType.rotate_cube:
             case ConditionType.uninstall_item:
+            case ConditionType.buy_house:
+            case ConditionType.extend_house:
                 return true;
         }
         return false;

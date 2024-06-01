@@ -29,8 +29,18 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             return;
         }
 
+        List<PlotCube> plotCubes = [];
+        foreach (Plot plot in session.Field.Plots.Values) {
+            foreach (PlotCube cube in plot.Cubes.Values) {
+                cube.PlotId = plot.Number;
+                plotCubes.Add(cube);
+            }
+        }
+
         if (session.Field.MapId != Constant.DefaultHomeMapId || session.Field.OwnerId <= 0) {
-            session.Send(LoadUgcMapPacket.Load());
+            session.Send(LoadUgcMapPacket.Load(plotCubes.Count));
+
+            LoadPlots(session, plotCubes);
             return;
         }
 
@@ -40,19 +50,13 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Field.Plots.TryGetValue(home.Indoor.Number, out Plot? plot);
-        if (plot == null) {
-            Log.Error("Plot not found for home {HomeId}", home.Indoor.Number);
-            return;
-        }
-
         // TODO: Check if plot has entry points
 
         // plots start at 0,0 and are built towards negative x and y
         int x = -1 * (home.Area - 1);
 
         // find the blocks in most negative x,y direction, with the highest z value
-        int height = plot.Cubes.Where(cube => cube.Key.X == x && cube.Key.Y == x).Max(cube => cube.Key.Z);
+        int height = plotCubes.Where(cube => cube.Position.X == x && cube.Position.Y == x).Max(cube => cube.Position.Z);
 
         x *= VectorExtensions.BLOCK_SIZE;
 
@@ -62,25 +66,20 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
 
         // Technically this sends home details to all players who enter map (including passcode)
         // but you would already know passcode if you entered the map.
-        session.Send(LoadUgcMapPacket.LoadHome(home));
+        session.Send(LoadUgcMapPacket.LoadHome(plotCubes.Count, home));
 
-        // TODO: Rework this to support outdoor plots
-        session.Send(LoadCubesPacket.PlotOwners(session.Field.Plots.Values));
-        lock (session.Field.Plots) {
-            foreach (Plot fieldPlot in session.Field.Plots.Values) {
-                if (fieldPlot.Cubes.Count > 0) {
-                    session.Send(LoadCubesPacket.Load(fieldPlot));
-                }
-            }
-
-            Plot[] ownedPlots = session.Field.Plots.Values.Where(plot => plot.State != PlotState.Open).ToArray();
-            if (ownedPlots.Length > 0) {
-                session.Send(LoadCubesPacket.PlotState(ownedPlots));
-                session.Send(LoadCubesPacket.PlotExpiry(ownedPlots));
-            }
-        }
+        LoadPlots(session, plotCubes);
 
         // this is a workaround for the client to load the map before field add player - without this, player will fall and get tp'd back to 0,0
         Task.Delay(200).Wait();
+    }
+
+    private static void LoadPlots(GameSession session, List<PlotCube> plotCubes) {
+        lock (session.Field.Plots) {
+            session.Send(LoadCubesPacket.PlotOwners(session.Field.Plots.Values));
+            session.Send(LoadCubesPacket.Load(plotCubes));
+            session.Send(LoadCubesPacket.PlotState([.. session.Field.Plots.Values]));
+            session.Send(LoadCubesPacket.PlotExpiry([.. session.Field.Plots.Values]));
+        }
     }
 }

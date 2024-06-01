@@ -141,7 +141,7 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost contract = plot.Metadata.ContractCost;
-        if (!CheckCost(session, contract)) {
+        if (!CheckCost(session, contract, sendPacket: false)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_enough_money));
             return false;
         }
@@ -155,6 +155,7 @@ public class HousingManager {
         }
 
         CheckCost(session, contract, deduct: true); // Deduct cost
+        session.ConditionUpdate(ConditionType.buy_house);
         if (session.Field.UpdatePlotInfo(plotInfo) != true) {
             logger.Warning("Failed to update map plot in field: {PlotId}", plotInfo.Id);
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
@@ -220,7 +221,7 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost extension = Home.Outdoor.Metadata.ExtensionCost;
-        if (!CheckCost(session, extension)) {
+        if (!CheckCost(session, extension, sendPacket: false)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_need_extansion_pay));
             return;
         }
@@ -234,6 +235,7 @@ public class HousingManager {
         }
 
         CheckCost(session, extension, deduct: true); // Deduct cost
+        session.ConditionUpdate(ConditionType.extend_house);
         if (session.Field?.UpdatePlotInfo(plotInfo) != true) {
             logger.Warning("Failed to update map plot in field: {PlotId}", Home.Outdoor.Id);
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
@@ -244,11 +246,14 @@ public class HousingManager {
         SetPlot(plotInfo);
     }
 
-    private static bool CheckCost(GameSession session, UgcMapGroup.Cost cost, bool deduct = false) {
+    private static bool CheckCost(GameSession session, UgcMapGroup.Cost cost, bool deduct = false, bool sendPacket = true) {
         switch (cost.ItemId) {
             case >= 90000001 and <= 90000003:
                 if (session.Currency.Meso < cost.Amount) {
-                    session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_meso_balance));
+                    if (sendPacket) {
+                        session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_meso_balance));
+                    }
+
                     return false;
                 }
 
@@ -258,7 +263,9 @@ public class HousingManager {
                 return true;
             case 90000004 or 90000011 or 90000015 or 90000016:
                 if (session.Currency.Meret < cost.Amount) {
-                    session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_merat_balance));
+                    if (sendPacket) {
+                        session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_merat_balance));
+                    }
                     return false;
                 }
 

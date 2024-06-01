@@ -111,7 +111,8 @@ public partial class GameStorage {
             }
 
             model.OwnerId = 0;
-            model.ExpiryTime = DateTime.UtcNow;
+            model.Name = string.Empty;
+            model.ExpiryTime = DateTimeOffset.UtcNow;
             Context.UgcMapCube.Where(cube => cube.UgcMapId == model.Id).Delete();
             Context.UgcMap.Update(model);
 
@@ -217,7 +218,7 @@ public partial class GameStorage {
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
 
             if (ugcMap.Cubes != null) {
@@ -245,7 +246,7 @@ public partial class GameStorage {
                 Number = ugcMap.Number,
                 Name = ugcMap.Name,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
         }
     }

@@ -7,18 +7,18 @@ using Maple2.Tools.Extensions;
 namespace Maple2.Server.Game.Packets;
 
 public static class LoadUgcMapPacket {
-    public static ByteWriter Load() {
+    public static ByteWriter Load(int cubeCount) {
         var pWriter = Packet.Of(SendOp.LoadUgcMap);
-        pWriter.WriteInt();
+        pWriter.WriteInt(cubeCount);
         pWriter.WriteInt();
         pWriter.WriteBool(false);
 
         return pWriter;
     }
 
-    public static ByteWriter LoadHome(Home home) {
+    public static ByteWriter LoadHome(int cubeCount, Home home) {
         var pWriter = Packet.Of(SendOp.LoadUgcMap);
-        pWriter.WriteInt();
+        pWriter.WriteInt(cubeCount);
         pWriter.WriteInt();
         pWriter.WriteBool(true);
         pWriter.WriteClass<Home>(home);
