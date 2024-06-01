@@ -18,10 +18,10 @@ public class HealDamageRecord : IByteSerializable {
         Target = target;
         OwnerId = ownerId;
 
-        HpAmount = (int) (recovery.HpValue + recovery.HpRate * target.Stats[BasicAttribute.Health].Total
-                                           + recovery.RecoveryRate * caster.Stats[BasicAttribute.MagicalAtk].Current);
-        SpAmount = (int) (recovery.SpValue + recovery.SpRate * target.Stats[BasicAttribute.Spirit].Total);
-        EpAmount = (int) (recovery.EpValue + recovery.EpRate * target.Stats[BasicAttribute.Stamina].Total);
+        HpAmount = (int) (recovery.HpValue + recovery.HpRate * target.Stats.Values[BasicAttribute.Health].Total
+                                           + recovery.RecoveryRate * caster.Stats.Values[BasicAttribute.MagicalAtk].Current);
+        SpAmount = (int) (recovery.SpValue + recovery.SpRate * target.Stats.Values[BasicAttribute.Spirit].Total);
+        EpAmount = (int) (recovery.EpValue + recovery.EpRate * target.Stats.Values[BasicAttribute.Stamina].Total);
     }
 
     public void WriteTo(IByteWriter writer) {

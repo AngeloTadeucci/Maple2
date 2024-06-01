@@ -77,6 +77,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public CurrencyManager Currency { get; set; } = null!;
     public MasteryManager Mastery { get; set; } = null!;
     public StatsManager Stats { get; set; } = null!;
+    public BuffManager Buffs { get; set; } = null!;
     public ItemEnchantManager ItemEnchant { get; set; } = null!;
     public ItemBoxManager ItemBox { get; set; } = null!;
     public BeautyManager Beauty { get; set; } = null!;
@@ -129,10 +130,11 @@ public sealed partial class GameSession : Core.Network.Session {
         }
         db.Commit();
 
-        Player = new FieldPlayer(this, player, NpcMetadata);
+        Player = new FieldPlayer(this, player);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
-        Stats = new StatsManager(this);
+        Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
+        Buffs = new BuffManager(Player);
         Housing = new HousingManager(this);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
@@ -171,8 +173,8 @@ public sealed partial class GameSession : Core.Network.Session {
         };
         playerUpdate.SetFields(UpdateField.All, player);
         playerUpdate.Health = new HealthInfo {
-            CurrentHp = Player.Stats[BasicAttribute.Health].Current,
-            TotalHp = Player.Stats[BasicAttribute.Health].Total,
+            CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+            TotalHp = Stats.Values[BasicAttribute.Health].Total,
         };
         PlayerInfo.SendUpdate(playerUpdate);
 

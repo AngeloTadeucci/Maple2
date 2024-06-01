@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
-using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager;
+using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Collision;
@@ -14,7 +14,8 @@ public class FieldPlayer : Actor<Player> {
     public readonly GameSession Session;
     public Vector3 LastGroundPosition;
 
-    public override Stats Stats => Session.Stats.Values;
+    public override StatsManager Stats => Session.Stats;
+    public override BuffManager Buffs => Session.Buffs;
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
     public ActorState State { get; set; }
     public ActorSubState SubState { get; set; }
@@ -41,8 +42,9 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player, NpcMetadataStorage npcMetadata) : base(session.Field!, player.ObjectId, player, GetPlayerModel(player.Character.Gender), npcMetadata) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, GetPlayerModel(player.Character.Gender)) {
         Session = session;
+
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
         lastRegenTime = new Dictionary<BasicAttribute, long>();
@@ -107,9 +109,9 @@ public class FieldPlayer : Actor<Player> {
 
         // Loops through each registered regen stat and applies regen
         foreach (var attribute in regenStats.Keys) {
-            var stat = Stats[attribute];
-            var regen = Stats[regenStats[attribute].Item1];
-            var interval = Stats[regenStats[attribute].Item2];
+            var stat = Stats.Values[attribute];
+            var regen = Stats.Values[regenStats[attribute].Item1];
+            var interval = Stats.Values[regenStats[attribute].Item2];
 
             if (stat.Current >= stat.Total) {
                 // Removes stat from regen stats so it won't be listened for
@@ -121,7 +123,7 @@ public class FieldPlayer : Actor<Player> {
 
             if (tickCount - regenTime > interval.Total) {
                 lastRegenTime[attribute] = tickCount;
-                Stats[attribute].Add(regen.Total);
+                Stats.Values[attribute].Add(regen.Total);
                 Session.Send(StatsPacket.Update(this, attribute));
             }
         }
@@ -253,7 +255,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stat stat = Stats[BasicAttribute.Health];
+        Stat stat = Stats.Values[BasicAttribute.Health];
         if (stat.Current < stat.Total) {
             stat.Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
@@ -269,7 +271,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stat stat = Stats[BasicAttribute.Health];
+        Stat stat = Stats.Values[BasicAttribute.Health];
         stat.Add(-amount);
 
         if (!regenStats.ContainsKey(BasicAttribute.Health)) {
@@ -286,7 +288,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stat stat = Stats[BasicAttribute.Spirit];
+        Stat stat = Stats.Values[BasicAttribute.Spirit];
         if (stat.Current < stat.Total) {
             stat.Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Spirit));
@@ -302,7 +304,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stats[BasicAttribute.Spirit].Add(-amount);
+        Stats.Values[BasicAttribute.Spirit].Add(-amount);
 
         if (!regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
@@ -318,9 +320,9 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stat stat = Stats[BasicAttribute.Stamina];
+        Stat stat = Stats.Values[BasicAttribute.Stamina];
         if (stat.Total < stat.Base) {
-            Stats[BasicAttribute.Stamina].Add(amount);
+            Stats.Values[BasicAttribute.Stamina].Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Stamina));
         }
     }
@@ -335,7 +337,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        Stats[BasicAttribute.Stamina].Add(-amount);
+        Stats.Values[BasicAttribute.Stamina].Add(-amount);
 
         if (!regenStats.ContainsKey(BasicAttribute.Stamina) && !noRegen) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
@@ -344,19 +346,19 @@ public class FieldPlayer : Actor<Player> {
 
     public void CheckRegen() {
         // Health
-        var health = Stats[BasicAttribute.Health];
+        var health = Stats.Values[BasicAttribute.Health];
         if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
         }
 
         // Spirit
-        var spirit = Stats[BasicAttribute.Spirit];
+        var spirit = Stats.Values[BasicAttribute.Spirit];
         if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
         }
 
         // Stamina
-        var stamina = Stats[BasicAttribute.Stamina];
+        var stamina = Stats.Values[BasicAttribute.Stamina];
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }

@@ -20,11 +20,11 @@ public class DotDamageRecord {
 
         int hpAmount = dotDamage.HpValue;
         if (!dotDamage.IsConstDamage) {
-            hpAmount += (int) (dotDamage.Rate * Math.Max(Caster.Stats[BasicAttribute.PhysicalAtk].Current, Caster.Stats[BasicAttribute.MagicalAtk].Current));
-            hpAmount += (int) (dotDamage.DamageByTargetMaxHp * Target.Stats[BasicAttribute.Health].Total);
+            hpAmount += (int) (dotDamage.Rate * Math.Max(Caster.Stats.Values[BasicAttribute.PhysicalAtk].Current, Caster.Stats.Values[BasicAttribute.MagicalAtk].Current));
+            hpAmount += (int) (dotDamage.DamageByTargetMaxHp * Target.Stats.Values[BasicAttribute.Health].Total);
         }
         if (dotDamage.NotKill) {
-            hpAmount = Math.Min(hpAmount, (int) (Target.Stats[BasicAttribute.Health].Current - 1));
+            hpAmount = Math.Min(hpAmount, (int) (Target.Stats.Values[BasicAttribute.Health].Current - 1));
         }
 
         Type = DamageType.Normal;

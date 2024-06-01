@@ -62,18 +62,21 @@ public sealed class ItemSocket : IByteSerializable, IByteDeserializable {
 public class ItemGemstone : IByteSerializable, IByteDeserializable {
     public int ItemId;
     public ItemBinding? Binding;
+    public ItemStats? Stats;
     public bool IsLocked;
     public long UnlockTime;
 
-    public ItemGemstone(int itemId = 0, ItemBinding? binding = null, bool isLocked = false, long unlockTime = 0) {
+    public ItemGemstone(int itemId = 0, ItemBinding? binding = null, ItemStats? stats = null, bool isLocked = false, long unlockTime = 0) {
+        if (stats == null) throw new ArgumentNullException(nameof(stats));
         ItemId = itemId;
         Binding = binding;
         IsLocked = isLocked;
         UnlockTime = unlockTime;
+        Stats = stats;
     }
 
     public ItemGemstone Clone() {
-        return new ItemGemstone(ItemId, Binding?.Clone(), IsLocked, UnlockTime);
+        return new ItemGemstone(ItemId, Binding?.Clone(), Stats?.Clone(), IsLocked, UnlockTime);
     }
 
     public void WriteTo(IByteWriter writer) {

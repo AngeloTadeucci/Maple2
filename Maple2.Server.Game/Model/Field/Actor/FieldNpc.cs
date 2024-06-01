@@ -88,8 +88,6 @@ public class FieldNpc : Actor<Npc> {
 
     public int SpawnPointId = 0;
 
-    public override Stats Stats { get; }
-
     private MS2PatrolData? patrolData;
     private int currentWaypointIndex = 0;
 
@@ -116,12 +114,10 @@ public class FieldNpc : Actor<Npc> {
             }
         }
         CurrentRoutine = new WaitRoutine(this, -1, 1f);
-        Stats = new Stats(npc.Metadata.Stat);
         AiState = new AiState(this);
         MovementState = new MovementState(this);
         BattleState = new BattleState(this);
         TaskState = new TaskState(this);
-
         State = new NpcState();
         SequenceId = -1;
         SequenceCounter = 1;

@@ -1,9 +1,12 @@
 ﻿using System.Numerics;
 using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 
 namespace Maple2.Server.Game.Model.Skill;
 
 public class DamageRecord {
+    public readonly SkillMetadata SkillMetadata;
+    public readonly SkillMetadataAttack AttackMetadata;
     public long SkillUid { get; init; }
     public long TargetUid { get; init; } // For Non-Region skills
     public int CasterId { get; init; }
@@ -19,7 +22,9 @@ public class DamageRecord {
 
     public readonly List<DamageRecordTarget> Targets;
 
-    public DamageRecord() {
+    public DamageRecord(SkillMetadata skillMetadata, SkillMetadataAttack attackMetadata) {
+        SkillMetadata = skillMetadata;
+        AttackMetadata = attackMetadata;
         Targets = [];
     }
 }

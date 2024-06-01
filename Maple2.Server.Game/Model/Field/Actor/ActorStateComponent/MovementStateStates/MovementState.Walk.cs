@@ -27,7 +27,7 @@ public partial class MovementState {
     private NpcTask? walkTask = null;
 
     private void UpdateMoveSpeed(float speed) {
-        Stat moveSpeed = actor.Stats[BasicAttribute.MovementSpeed];
+        Stat moveSpeed = actor.Stats.Values[BasicAttribute.MovementSpeed];
 
         speedOverride = speed;
         Speed = speed == 0 ? (float) moveSpeed.Current / 100 : speed;

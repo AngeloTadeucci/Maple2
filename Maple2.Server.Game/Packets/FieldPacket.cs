@@ -26,7 +26,7 @@ public static class FieldPacket {
         pWriter.Write<Vector3>(session.Player.Position);
         pWriter.Write<Vector3>(session.Player.Rotation);
         pWriter.WriteByte();
-        pWriter.WritePlayerStats(session.Player.Stats);
+        pWriter.WritePlayerStats(session.Player.Stats.Values);
         pWriter.WriteBool(session.Player.InBattle);
 
         #region Unknown Cube Section
@@ -145,7 +145,7 @@ public static class FieldPacket {
             pWriter.WriteString(npc.Value.Metadata.Model.Name);
         }
 
-        pWriter.WriteNpcStats(npc.Stats);
+        pWriter.WriteNpcStats(npc.Stats.Values);
         pWriter.WriteBool(npc.IsDead);
 
         pWriter.WriteShort((short) npc.Buffs.Buffs.Count);
@@ -263,7 +263,7 @@ public static class FieldPacket {
         pWriter.Write<Vector3>(pet.Rotation);
         pWriter.WriteFloat(pet.Scale);
         pWriter.WriteInt(pet.OwnerId);
-        pWriter.WriteNpcStats(pet.Stats);
+        pWriter.WriteNpcStats(pet.Stats.Values);
         pWriter.WriteLong(pet.Pet.Uid);
         pWriter.WriteByte();
         pWriter.WriteShort(pet.Value.Metadata.Basic.Level);
