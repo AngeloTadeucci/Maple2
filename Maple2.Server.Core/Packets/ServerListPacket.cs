@@ -20,6 +20,7 @@ public static class ServerListPacket {
 
     public static ByteWriter Load(string serverName, IList<IPEndPoint> serverIps, ICollection<int> channels) {
         var pWriter = Packet.Of(SendOp.ServerList);
+        pWriter.WriteString("dev"); // env (Live, Staging, qa, dev)
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteInt(1); // Unknown
         pWriter.WriteUnicodeString(serverName);

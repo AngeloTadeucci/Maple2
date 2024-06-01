@@ -13,7 +13,7 @@ public abstract class ResponseVersionHandler<T> : PacketHandler<T> where T : Ses
         packet.ReadShort(); // 47
         var locale = packet.Read<Locale>();
 
-        if (version != Session.VERSION || locale != Locale.NA) {
+        if (version != Session.VERSION /*|| locale != Locale.NA */) {
             session.Disconnect();
         }
     }
