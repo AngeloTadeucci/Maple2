@@ -119,6 +119,7 @@ public class StatsManager {
         AddEquips(player);
         AddBuffs(player);
         Values.Total();
+        StatConversion(player);
         Actor.Field.Broadcast(StatsPacket.Init(player));
         Actor.Field.Broadcast(StatsPacket.Update(player), player.Session);
     }
@@ -147,7 +148,7 @@ public class StatsManager {
     }
 
     private void AddBuffs(FieldPlayer player) {
-        foreach (Buff buff in player.Session.Player.Buffs.Buffs.Values) {
+        foreach (Buff buff in player.Buffs.Buffs.Values) {
             foreach ((BasicAttribute valueBasicAttribute, long value) in buff.Metadata.Status.Values) {
                 Values[valueBasicAttribute].AddTotal(value);
             }
@@ -159,6 +160,16 @@ public class StatsManager {
             }
             foreach ((SpecialAttribute rateSpecialAttribute, float rate) in buff.Metadata.Status.SpecialRates) {
                 Values[rateSpecialAttribute].AddRate(rate);
+            }
+        }
+    }
+
+    private void StatConversion(FieldPlayer player) {
+        foreach (Buff buff in player.Buffs.Buffs.Values) {
+            if (buff.Metadata.Status.Conversion != null) {
+                float sum = Values[buff.Metadata.Status.Conversion.BaseAttribute].Total;
+                sum *= buff.Metadata.Status.Conversion.Rate;
+                Values[buff.Metadata.Status.Conversion.ResultAttribute].AddTotal((long) sum);
             }
         }
     }

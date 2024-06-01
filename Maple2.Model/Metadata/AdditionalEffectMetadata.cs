@@ -73,10 +73,13 @@ public record AdditionalEffectMetadataStatus(
     IReadOnlyDictionary<BasicAttribute, float> Resistances,
     long DeathResistanceHp,
     AdditionalEffectMetadataStatus.CompulsionEvent? Compulsion,
+    AdditionalEffectMetadataStatus.StatConversion? Conversion,
     int ImmuneBreak,
     bool Invincible) {
 
     public record CompulsionEvent(CompulsionEventType Type, float Rate, int[] SkillIds);
+
+    public record StatConversion(BasicAttribute BaseAttribute, BasicAttribute ResultAttribute, float Rate);
 }
 
 public record AdditionalEffectMetadataRecovery(
