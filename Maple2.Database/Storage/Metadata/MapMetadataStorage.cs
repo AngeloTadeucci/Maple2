@@ -14,9 +14,15 @@ public class MapMetadataStorage : MetadataStorage<int, MapMetadata>, ISearchable
     private const int UGC_CACHE_SIZE = 200;
 
     protected readonly LRUCache<int, UgcMapMetadata> UgcCache;
+    protected readonly Dictionary<string, ExportedUgcMapMetadata> ExportedUgcCache; // only 17 entries
 
     public MapMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
         UgcCache = new LRUCache<int, UgcMapMetadata>(UGC_CACHE_SIZE, (int) (UGC_CACHE_SIZE * 0.05));
+        ExportedUgcCache = [];
+
+        foreach (ExportedUgcMapMetadata exportedUgcMap in context.ExportedUgcMapMetadata) {
+            ExportedUgcCache.Add(exportedUgcMap.Id, exportedUgcMap);
+        }
     }
 
     public bool TryGet(int id, [NotNullWhen(true)] out MapMetadata? map) {
@@ -81,5 +87,9 @@ public class MapMetadataStorage : MetadataStorage<int, MapMetadata>, ISearchable
                 .Where(map => EF.Functions.Like(map.Name!, $"%{name}%"))
                 .ToList();
         }
+    }
+
+    public bool TryGetExportedUgc(string id, [NotNullWhen(true)] out ExportedUgcMapMetadata? map) {
+        return ExportedUgcCache.TryGetValue(id, out map);
     }
 }

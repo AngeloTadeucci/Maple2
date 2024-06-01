@@ -21,6 +21,7 @@ public partial class FieldManager {
             plot.OwnerId = plotInfo.OwnerId;
             plot.Name = plotInfo.Name;
             plot.ExpiryTime = plotInfo.ExpiryTime;
+            plot.MapId = plotInfo.MapId;
         }
 
         Broadcast(CubePacket.UpdatePlot(plot));

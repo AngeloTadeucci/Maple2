@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
@@ -105,4 +107,18 @@ public record MapEntranceBuff(int Id, short Level);
 public record UgcMapMetadata(
     int Id,
     IReadOnlyDictionary<int, UgcMapGroup> Plots);
+
+public record ExportedUgcMapMetadata(
+    string Id,
+    Vector3B BaseCubePosition,
+    byte[] IndoorSize,
+    List<ExportedUgcMapMetadata.Cube> Cubes) {
+
+    public record Cube(
+        int ItemId,
+        Vector3B OffsetPosition,
+        int Rotation,
+        byte WallDirection
+    );
+}
 #endregion

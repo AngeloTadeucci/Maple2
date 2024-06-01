@@ -90,4 +90,15 @@ public static class UgcPacket {
 
         return pWriter;
     }
+
+    public static ByteWriter LoadBanners() {
+        var pWriter = Packet.Of(SendOp.Ugc);
+        pWriter.Write(Command.LoadBanner);
+
+        pWriter.WriteInt(); // count
+        pWriter.WriteInt(); // count
+        pWriter.WriteInt(); // count
+
+        return pWriter;
+    }
 }

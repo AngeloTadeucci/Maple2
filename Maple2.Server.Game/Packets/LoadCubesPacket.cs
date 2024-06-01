@@ -16,16 +16,16 @@ public static class LoadCubesPacket {
         PlotExpiry = 3,
     }
 
-    public static ByteWriter Load(Plot plot) {
+    public static ByteWriter Load(List<PlotCube> plotCubes) {
         var pWriter = Packet.Of(SendOp.LoadCubes);
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteBool(false);
-        pWriter.WriteInt(plot.Cubes.Count);
-        foreach (PlotCube cube in plot.Cubes.Values) {
+        pWriter.WriteInt(plotCubes.Count);
+        foreach (PlotCube cube in plotCubes) {
             pWriter.Write<Vector3B>(cube.Position);
             pWriter.WriteLong(cube.Id);
             pWriter.WriteClass<PlotCube>(cube);
-            pWriter.WriteInt(1);
+            pWriter.WriteInt(cube.PlotId);
             pWriter.WriteInt();
             pWriter.WriteBool(false);
             pWriter.WriteFloat(cube.Rotation);
