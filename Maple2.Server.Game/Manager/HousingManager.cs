@@ -141,7 +141,7 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost contract = plot.Metadata.ContractCost;
-        if (!CheckCost(session, contract, sendPacket: false)) {
+        if (!CheckAndRemoveCost(session, contract)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_enough_money));
             return false;
         }
@@ -154,7 +154,6 @@ public class HousingManager {
             return false;
         }
 
-        CheckCost(session, contract, deduct: true); // Deduct cost
         session.ConditionUpdate(ConditionType.buy_house);
         if (session.Field.UpdatePlotInfo(plotInfo) != true) {
             logger.Warning("Failed to update map plot in field: {PlotId}", plotInfo.Id);
@@ -221,7 +220,7 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost extension = Home.Outdoor.Metadata.ExtensionCost;
-        if (!CheckCost(session, extension, sendPacket: false)) {
+        if (!CheckAndRemoveCost(session, extension)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_need_extansion_pay));
             return;
         }
@@ -234,7 +233,6 @@ public class HousingManager {
             return;
         }
 
-        CheckCost(session, extension, deduct: true); // Deduct cost
         session.ConditionUpdate(ConditionType.extend_house);
         if (session.Field?.UpdatePlotInfo(plotInfo) != true) {
             logger.Warning("Failed to update map plot in field: {PlotId}", Home.Outdoor.Id);
@@ -246,32 +244,22 @@ public class HousingManager {
         SetPlot(plotInfo);
     }
 
-    private static bool CheckCost(GameSession session, UgcMapGroup.Cost cost, bool deduct = false, bool sendPacket = true) {
+    private static bool CheckAndRemoveCost(GameSession session, UgcMapGroup.Cost cost) {
         switch (cost.ItemId) {
             case >= 90000001 and <= 90000003:
                 if (session.Currency.Meso < cost.Amount) {
-                    if (sendPacket) {
-                        session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_meso_balance));
-                    }
-
                     return false;
                 }
 
-                if (deduct) {
-                    session.Currency.Meso -= cost.Amount;
-                }
+                session.Currency.Meso -= cost.Amount;
                 return true;
             case 90000004 or 90000011 or 90000015 or 90000016:
                 if (session.Currency.Meret < cost.Amount) {
-                    if (sendPacket) {
-                        session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_merat_balance));
-                    }
                     return false;
                 }
 
-                if (deduct) {
-                    session.Currency.Meret -= cost.Amount;
-                }
+
+                session.Currency.Meret -= cost.Amount;
                 return true;
         }
 
