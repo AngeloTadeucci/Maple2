@@ -162,7 +162,7 @@ public sealed class ItemStatsCalculator {
             return true;
         }
 
-        return false;
+        return true;
     }
 
     // Used to calculate the default static attributes for a given item.
