@@ -54,6 +54,9 @@ message MigrateOutRequest {
 
   // If channel is not specified, one will be determined by the world server.
   optional int32 channel = 5;
+
+  optional int32 map_id = 6;
+  optional int64 owner_id = 7;
 }
 
 message MigrateOutResponse {
@@ -68,11 +71,15 @@ message MigrateInRequest {
   fixed64 token = 3;
   string machine_id = 4;
   int32 channel = 5;
+  int32 map_id = 6;
+  int64 owner_id = 7;
 }
 
 message MigrateInResponse {
   int64 character_id = 1;
   int32 channel = 2;
+  int32 map_id = 3;
+  int64 owner_id = 4;
 }
 
 message ChannelsRequest {}

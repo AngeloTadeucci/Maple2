@@ -9,7 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Maple2.Server.World.Service;
 
 public partial class WorldService {
-    private readonly record struct TokenEntry(Server Server, long AccountId, long CharacterId, Guid MachineId, int Channel);
+    private readonly record struct TokenEntry(Server Server, long AccountId, long CharacterId, Guid MachineId, int Channel, int MapId, long OwnerId);
 
     // Duration for which a token remains valid.
     private static readonly TimeSpan AuthExpiry = TimeSpan.FromSeconds(30);
@@ -22,7 +22,7 @@ public partial class WorldService {
 
         switch (request.Server) {
             case Server.Login:
-                var longEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0);
+                var longEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0, 0, 0);
                 tokenCache.Set(token, longEntry, AuthExpiry);
                 return Task.FromResult(new MigrateOutResponse {
                     IpAddress = Target.LoginIp.ToString(),
@@ -39,7 +39,7 @@ public partial class WorldService {
                         throw new RpcException(new Status(StatusCode.InvalidArgument, $"Migrating to invalid game channel: {channel}"));
                     }
 
-                    var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel);
+                    var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.OwnerId);
                     tokenCache.Set(token, gameEntry, AuthExpiry);
                     return Task.FromResult(new MigrateOutResponse {
                         IpAddress = endpoint.Address.ToString(),
@@ -66,7 +66,7 @@ public partial class WorldService {
         }
 
         tokenCache.Remove(request.Token);
-        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId, Channel = data.Channel });
+        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId, Channel = data.Channel, MapId = data.MapId, OwnerId = data.OwnerId });
     }
 
     // Generates a 64-bit token that does not exist in cache.
