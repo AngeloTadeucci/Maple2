@@ -133,8 +133,8 @@ public class Stats {
             return specialValues[attribute];
         }
         set => specialValues[attribute] = value;
-        }
     }
+}
 
 public sealed class Stat {
     public const int TOTAL = 3;
