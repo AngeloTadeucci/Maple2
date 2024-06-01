@@ -9,7 +9,8 @@ namespace Maple2.Server.Game.Packets;
 
 public static class UserSkinColorPacket {
     public static ByteWriter Update(IActor<Player> player, SkinColor skinColor) {
-        var pWriter = Packet.Of(SendOp.UserSkinColor);
+        // var pWriter = Packet.Of(SendOp.UserSkinColor);
+        var pWriter = Packet.Of(0x0);
         pWriter.WriteInt(player.ObjectId);
         pWriter.Write<SkinColor>(skinColor);
 

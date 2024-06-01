@@ -46,11 +46,11 @@ public enum SendOp : ushort {
     FieldAddItem = 0x002B,
     FieldRemoveItem = 0x002C,
     FieldPickupItem = 0x002D,
+    FieldMutateItem = 0x002E,
     Stat = 0x002F,
-    // -1 Offset for KMS2
-    UserBattle = 0x002F,
-    UserSkinColor = 0x0030,
+    UserBattle = 0x0030,
     Beauty = 0x0031,
+    // -1 Offset for KMS2
     AdventurerBar = 0x0032,
     RevivalConfirm = 0x0033,
     Revival = 0x0034,
