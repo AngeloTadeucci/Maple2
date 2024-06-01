@@ -147,7 +147,7 @@ public class HousingManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        plotInfo = db.BuyPlot(session.AccountId, plot, TimeSpan.FromDays(contract.Days));
+        plotInfo = db.BuyPlot(session.PlayerName, session.AccountId, plot, TimeSpan.FromDays(contract.Days));
         if (plotInfo == null) {
             logger.Warning("Failed to buy plot: {PlotId}, {OwnerId}", plot.Id, plot.OwnerId);
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));

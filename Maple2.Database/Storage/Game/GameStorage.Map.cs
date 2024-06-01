@@ -57,7 +57,7 @@ public partial class GameStorage {
             return Context.TrySaveChanges() ? model : null;
         }
 
-        public PlotInfo? BuyPlot(long ownerId, PlotInfo plot, TimeSpan days) {
+        public PlotInfo? BuyPlot(string characterName, long ownerId, PlotInfo plot, TimeSpan days) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             UgcMap? ugcMap = Context.UgcMap.FirstOrDefault(map => map.Id == plot.Id && !map.Indoor);
@@ -72,6 +72,7 @@ public partial class GameStorage {
 
             ugcMap.OwnerId = ownerId;
             ugcMap.ExpiryTime = DateTime.UtcNow + days;
+            ugcMap.Name = characterName;
             Context.UgcMap.Update(ugcMap);
             Context.UgcMapCube.Where(cube => cube.UgcMapId == ugcMap.Id).Delete();
 
