@@ -23,8 +23,8 @@ public class BonusAttack {
             2 => 0.27,
             3 => 0.2883,
             4 => 0.5,
-            5 => 1,
-            _ => 0, // This intentionally includes 6
+            5 or 6 => 1,
+            _ => 0,
         };
     }
 
