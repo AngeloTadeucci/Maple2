@@ -28,7 +28,7 @@ public class UgcHandler : PacketHandler<GameSession> {
         Upload = 1,
         Confirmation = 3,
         ProfilePicture = 11,
-        LoadCubes = 18,
+        LoadBanners = 18,
         ReserveBanner = 19,
     }
 
@@ -44,8 +44,8 @@ public class UgcHandler : PacketHandler<GameSession> {
             case Command.ProfilePicture:
                 HandleProfilePicture(session, packet);
                 return;
-            case Command.LoadCubes:
-                HandleLoadCubes(session, packet);
+            case Command.LoadBanners:
+                HandleLoadBanners(session, packet);
                 return;
             case Command.ReserveBanner:
                 HandleReserveBanner(session, packet);
@@ -200,26 +200,8 @@ public class UgcHandler : PacketHandler<GameSession> {
         session.Field?.Broadcast(UgcPacket.ProfilePicture(session.Player));
     }
 
-    private void HandleLoadCubes(GameSession session, IByteReader packet) {
-        int mapId = packet.ReadInt();
-        if (mapId != session.Field?.MapId) {
-            return;
-        }
-
-        lock (session.Field.Plots) {
-            session.Send(LoadCubesPacket.PlotOwners(session.Field.Plots.Values));
-            foreach (Plot plot in session.Field.Plots.Values) {
-                if (plot.Cubes.Count > 0) {
-                    session.Send(LoadCubesPacket.Load(plot));
-                }
-            }
-
-            Plot[] ownedPlots = session.Field.Plots.Values.Where(plot => plot.State != PlotState.Open).ToArray();
-            if (ownedPlots.Length > 0) {
-                session.Send(LoadCubesPacket.PlotState(ownedPlots));
-                session.Send(LoadCubesPacket.PlotExpiry(ownedPlots));
-            }
-        }
+    private void HandleLoadBanners(GameSession session, IByteReader packet) {
+        session.Send(UgcPacket.LoadBanners());
     }
 
     private void HandleReserveBanner(GameSession session, IByteReader packet) {

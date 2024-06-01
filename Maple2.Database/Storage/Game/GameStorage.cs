@@ -52,7 +52,7 @@ public partial class GameStorage {
                 PlotNumber = outdoor.Number,
                 PremiumTime = premiumTime,
                 ApartmentNumber = outdoor.ApartmentNumber,
-                PlotExpiryTime = outdoor.ExpiryTime.ToEpochSeconds(),
+                PlotExpiryTime = outdoor.ExpiryTime.ToUnixTimeSeconds(),
             };
         }
     }
