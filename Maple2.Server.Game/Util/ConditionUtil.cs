@@ -167,6 +167,7 @@ public static class ConditionUtil {
             case ConditionType.level:
             case ConditionType.enchant_result:
             case ConditionType.install_billboard:
+            case ConditionType.item_move:
                 if (target.Integers != null && target.Integers.Any(value => longValue >= value)) {
                     return true;
                 }
@@ -237,9 +238,11 @@ public static class ConditionUtil {
             case ConditionType.skill:
             case ConditionType.job:
             case ConditionType.job_change:
-            case ConditionType.item_move:
             case ConditionType.fall_survive:
             case ConditionType.fall_die:
+            case ConditionType.install_item:
+            case ConditionType.rotate_cube:
+            case ConditionType.uninstall_item:
                 return true;
         }
         return false;
