@@ -108,10 +108,10 @@ public class FieldPlayer : Actor<Player> {
         }
 
         // Loops through each registered regen stat and applies regen
-        foreach (var attribute in regenStats.Keys) {
-            var stat = Stats.Values[attribute];
-            var regen = Stats.Values[regenStats[attribute].Item1];
-            var interval = Stats.Values[regenStats[attribute].Item2];
+        foreach (BasicAttribute attribute in regenStats.Keys) {
+            Stat stat = Stats.Values[attribute];
+            Stat regen = Stats.Values[regenStats[attribute].Item1];
+            Stat interval = Stats.Values[regenStats[attribute].Item2];
 
             if (stat.Current >= stat.Total) {
                 // Removes stat from regen stats so it won't be listened for
