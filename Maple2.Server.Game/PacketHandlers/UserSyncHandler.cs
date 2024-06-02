@@ -25,28 +25,28 @@ public class UserSyncHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var stateSyncs = new StateSync[segments];
-        for (int i = 0; i < segments; i++) {
-            var playerState = packet.Peek<ActorState>();
-            StateSync stateSync = playerState switch {
-                ActorState.MicroGameRps => new StateSyncRps(),
-                ActorState.MicroGameCoupleDance => new StateSyncCoupleDance(),
-                ActorState.WeddingEmotion => new StateSyncWeddingEmotion(),
-                _ => new StateSync()
-            };
+        //var stateSyncs = new StateSync[segments];
+        //for (int i = 0; i < segments; i++) {
+        //    var playerState = packet.Peek<ActorState>();
+        //    StateSync stateSync = playerState switch {
+        //        ActorState.MicroGameRps => new StateSyncRps(),
+        //        ActorState.MicroGameCoupleDance => new StateSyncCoupleDance(),
+        //        ActorState.WeddingEmotion => new StateSyncWeddingEmotion(),
+        //        _ => new StateSync()
+        //    };
 
-            stateSync.ReadFrom(packet);
-            stateSyncs[i] = stateSync;
+        //    stateSync.ReadFrom(packet);
+        //    stateSyncs[i] = stateSync;
 
-            packet.ReadInt(); // ClientTicks
-            packet.ReadInt(); // ServerTicks
-        }
+        //    packet.ReadInt(); // ClientTicks
+        //    packet.ReadInt(); // ServerTicks
+        //}
 
-        using (var buffer = new PoolByteWriter()) {
-            buffer.Player(session.Player.ObjectId, stateSyncs);
-            session.Field?.Broadcast(buffer, sender: session);
-        }
+        //using (var buffer = new PoolByteWriter()) {
+        //    buffer.Player(session.Player.ObjectId, stateSyncs);
+        //    session.Field?.Broadcast(buffer, sender: session);
+        //}
 
-        session.Player.OnStateSync(stateSyncs[^1]);
+        //session.Player.OnStateSync(stateSyncs[^1]);
     }
 }

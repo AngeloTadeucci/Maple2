@@ -11,7 +11,7 @@ public static class EquipPacketHelper {
     public static void WriteEquip(this IByteWriter writer, Item equip) {
         writer.WriteInt(equip.Id);
         writer.WriteLong(equip.Uid);
-        writer.WriteUnicodeString(equip.EquipSlot().ToString());
+        writer.Write<EquipSlot>(equip.EquipSlot());
         writer.WriteInt(equip.Rarity);
         writer.WriteClass<Item>(equip);
     }
