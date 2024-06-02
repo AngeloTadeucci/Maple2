@@ -2,10 +2,6 @@
 using Maple2.Tools;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Data.Common;
 
 DotEnv.Load();
 
@@ -48,48 +44,58 @@ string[] seeds = [
     "premium-market-item",
 ];
 
+Console.WriteLine("Seeding options (1/2):");
+Console.WriteLine("1: Seed all tables, replacing existing data.");
+Console.WriteLine("2: Manually pick which tables to seed.");
+string? seedingInput = Console.ReadLine()?.Trim();
+
+if (seedingInput != "1" && seedingInput != "2") {
+    Console.WriteLine("Invalid input. Exiting seeding process.");
+    return;  
+}
+
 Console.WriteLine("Seeding...");
 
 foreach (string seed in seeds) {
-    Seed(seed);
+    Seed(seed, seedingInput);
 }
 
 Console.WriteLine("Seeding complete!");
 
-void Seed(string type) {
+void Seed(string type, string seedingInput) {
     Stopwatch stopwatch = new();
+    string fileLines = File.ReadAllText(Path.Combine(Paths.DB_SEEDS_DIR, $"{type}.sql"));
 
     Console.WriteLine($"Seeding {type}... ");
 
-    if (IsTableEmpty(type)) {
-        string fileLines = File.ReadAllText(Path.Combine(Paths.DB_SEEDS_DIR, $"{type}.sql"));
-        if (ExecuteSqlFile(fileLines)) {
-            Console.WriteLine($"{type} seeded in {stopwatch.ElapsedMilliseconds}ms");
-        } else {
-            Console.WriteLine($"Failed to seed {type}");
-        }
-        return;
-    }
-
-    Console.Write("Would you like to replace all data? (y/n): ");
-    string? input = Console.ReadLine()?.Trim().ToLower();
-
-    if (input == "y") {
-        // Replace existing data
-        var foreignKeys = GetForeignKeyConstraints(type);
-        if (DropForeignKeyConstraints(foreignKeys)) {
-            TruncateTable(type);
-            string fileLines = File.ReadAllText(Path.Combine(Paths.DB_SEEDS_DIR, $"{type}.sql"));
-            if (ExecuteSqlFile(fileLines)) {
-                Console.WriteLine($"{type} seeded in {stopwatch.ElapsedMilliseconds}ms");
+    switch (seedingInput) {
+        case "1":            // Replace existing data
+            if (IsTableEmpty(type)) {
+                ExecuteSqlFile(fileLines);
             } else {
-                Console.WriteLine($"Failed to seed {type}");
+                ReplaceAllData(type, fileLines, stopwatch);
             }
-            RestoreForeignKeyConstraints(foreignKeys);
-        }
-    } else {
-        // Skip seeding
-        Console.WriteLine($"Skipping seeding of {type}");
+            break;
+
+        case "2":            // Manually pick which tables to re-seed
+            if (IsTableEmpty(type)) {
+                if (ExecuteSqlFile(fileLines)) {
+                    Console.WriteLine($"{type} seeded in {stopwatch.ElapsedMilliseconds}ms");
+                } else {
+                    Console.WriteLine($"Failed to seed {type}");
+                }
+            } else {
+                Console.WriteLine($"Table {type} is not empty.");
+                Console.Write("Would you like to replace all data? (y/n): ");
+                string? input = Console.ReadLine()?.Trim().ToLower();
+
+                if (input == "y") {
+                    ReplaceAllData(type, fileLines, stopwatch);
+                } else {
+                    Console.WriteLine($"Skipping seeding of {type}");
+                }
+            }
+            break;
     }
 }
 
@@ -102,7 +108,6 @@ bool IsTableEmpty(string tableName) {
             var queryable = (IQueryable<object>?) genericMethod?.Invoke(ms2Context, null);
 
             bool isEmpty = !queryable?.Any() ?? true;
-            Console.WriteLine($"Table {tableName} is empty.");
             return isEmpty;
         } else {
             Console.WriteLine($"Entity type for table {tableName} not found.");
@@ -168,6 +173,23 @@ bool RestoreForeignKeyConstraints(List<ForeignKeyInfo> foreignKeys) {
     }
 }
 
+void ReplaceAllData(string type, string fileLines, Stopwatch stopwatch) {
+    var foreignKeys = GetForeignKeyConstraints(type);
+    if (!DropForeignKeyConstraints(foreignKeys)) {
+        return;
+    }
+
+    TruncateTable(type);
+
+    if (ExecuteSqlFile(fileLines)) {
+        Console.WriteLine($"{type} seeded in {stopwatch.ElapsedMilliseconds}ms");
+    } else {
+        Console.WriteLine($"Failed to seed {type}");
+    }
+
+    RestoreForeignKeyConstraints(foreignKeys);
+}
+
 List<ForeignKeyInfo> GetForeignKeyConstraints(string tableName) {
     var foreignKeys = new List<ForeignKeyInfo>();
     string query = $@"
@@ -182,28 +204,29 @@ List<ForeignKeyInfo> GetForeignKeyConstraints(string tableName) {
         WHERE
             REFERENCED_TABLE_NAME = '{tableName}' AND
             TABLE_SCHEMA = '{database}'";
-    using (var command = ms2Context.Database.GetDbConnection().CreateCommand()) {
-        command.CommandText = query;
-        ms2Context.Database.OpenConnection();
-        using (var reader = command.ExecuteReader()) {
-            while (reader.Read()) {
-                foreignKeys.Add(new ForeignKeyInfo {
-                    ConstraintName = reader.GetString(0),
-                    TableName = reader.GetString(1),
-                    ColumnName = reader.GetString(2),
-                    ReferencedTableName = reader.GetString(3),
-                    ReferencedColumnName = reader.GetString(4)
-                });
-            }
-        }
+
+    using var command = ms2Context.Database.GetDbConnection().CreateCommand();
+    command.CommandText = query;
+    ms2Context.Database.OpenConnection();
+    using var reader = command.ExecuteReader();
+
+    while (reader.Read()) {
+        foreignKeys.Add(new ForeignKeyInfo {
+            ConstraintName = reader.GetString(0),
+            TableName = reader.GetString(1),
+            ColumnName = reader.GetString(2),
+            ReferencedTableName = reader.GetString(3),
+            ReferencedColumnName = reader.GetString(4)
+        });
     }
+
     return foreignKeys;
 }
 
 class ForeignKeyInfo {
-    public string ConstraintName { get; set; }
-    public string TableName { get; set; }
-    public string ColumnName { get; set; }
-    public string ReferencedTableName { get; set; }
-    public string ReferencedColumnName { get; set; }
+    public required string ConstraintName { get; set; }
+    public required string TableName { get; set; }
+    public required string ColumnName { get; set; }
+    public required string ReferencedTableName { get; set; }
+    public required string ReferencedColumnName { get; set; }
 }
