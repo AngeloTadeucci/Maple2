@@ -97,7 +97,7 @@ bool IsTableEmpty(string tableName) {
     try {
         var entityType = GetEntityType(tableName);
         if (entityType != null) {
-            var method = typeof(DbContext).GetMethod(nameof(DbContext.Set), new Type[] { });
+            var method = typeof(DbContext).GetMethod(nameof(DbContext.Set), []);
             var genericMethod = method?.MakeGenericMethod(entityType);
             var queryable = (IQueryable<object>?) genericMethod?.Invoke(ms2Context, null);
 
