@@ -15,7 +15,7 @@ public static class EquipPacket {
         pWriter.WriteInt(player.ObjectId);
         pWriter.WriteInt(item.Id);
         pWriter.WriteLong(item.Uid);
-        pWriter.WriteUnicodeString(item.EquipSlot().ToString());
+        pWriter.Write<EquipSlot>(item.EquipSlot());
         pWriter.WriteInt(item.Rarity);
         pWriter.WriteByte(type); // 0, 1, 2 (rest invalid)
         pWriter.WriteClass<Item>(item);
