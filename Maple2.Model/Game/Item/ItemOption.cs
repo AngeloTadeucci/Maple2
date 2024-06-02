@@ -4,7 +4,7 @@ using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;
 
-[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 8)]
+[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
 public readonly record struct BasicOption(int Value, float Rate = 0) {
     public BasicOption(float percent) : this(0, percent) { }
 
@@ -17,7 +17,7 @@ public readonly record struct BasicOption(int Value, float Rate = 0) {
     }
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 8)]
+[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
 public readonly record struct SpecialOption(float Rate, float Value = 0) {
     public static SpecialOption operator +(SpecialOption self, SpecialOption other) {
         return new SpecialOption(self.Rate + other.Rate, self.Value + other.Value);
