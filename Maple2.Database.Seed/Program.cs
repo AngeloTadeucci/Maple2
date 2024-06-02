@@ -136,7 +136,7 @@ void TruncateTable(string tableName) {
     }
 }
 
-Type GetEntityType(string tableName) {
+Type? GetEntityType(string tableName) {
     var entityTypes = ms2Context.Model.GetEntityTypes();
     var entityType = entityTypes.FirstOrDefault(t => t.GetTableName() == tableName);
     return entityType?.ClrType;
