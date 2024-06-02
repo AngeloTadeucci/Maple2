@@ -334,6 +334,8 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(StatsPacket.Init(Player));
         Field.Broadcast(StatsPacket.Update(Player), Player.Session);
 
+        Send(AdminPacket.Enable());
+
         var pWriter = Packet.Of(SendOp.UserState);
         pWriter.WriteInt(Player.ObjectId);
         pWriter.Write<ActorState>(ActorState.Fall);
