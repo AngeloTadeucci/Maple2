@@ -31,12 +31,8 @@ public class ItemEquipHandler : PacketHandler<GameSession> {
 
     private void HandleEquip(GameSession session, IByteReader packet) {
         long itemUid = packet.ReadLong();
-        string equipSlotStr = packet.ReadUnicodeString();
+        var equipSlot = packet.Read<EquipSlot>();
         bool isSkin = packet.ReadBool();
-
-        if (!Enum.TryParse(equipSlotStr, out EquipSlot equipSlot)) {
-            return;
-        }
 
         // Disconnect if this fails to avoid bad state.
         session.Item.Equips.Equip(itemUid, equipSlot, isSkin);
@@ -55,6 +51,6 @@ public class ItemEquipHandler : PacketHandler<GameSession> {
     // This is probably for Skin2
     private void HandleEquip2(GameSession session, IByteReader packet) {
         long itemUid = packet.ReadLong();
-        string equipSlotStr = packet.ReadUnicodeString();
+        var equipSlot = packet.Read<EquipSlot>();
     }
 }
