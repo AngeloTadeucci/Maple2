@@ -14,14 +14,14 @@ public static class ItemInventoryPacket {
         Remove = 1,
         UpdateAmount = 2,
         Move = 3,
-        Load = 7,
-        NotifyNew = 8,
-        LoadTab = 10,
-        ExpandComplete = 12,
-        Reset = 13,
-        ExpandCount = 14,
-        Error = 15,
-        UpdateItem = 16,
+        Load = 6,
+        NotifyNew = 7,
+        LoadTab = 8,
+        ExpandComplete = 10,
+        Reset = 11,
+        ExpandCount = 12,
+        Error = 13,
+        UpdateItem = 14,
     }
 
     public static ByteWriter Add(Item item) {

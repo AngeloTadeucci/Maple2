@@ -174,8 +174,6 @@ public static class CharacterListPacket {
         #region Unknown
         writer.WriteUnicodeString();
         writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteLong();
         #endregion
         writer.WriteInt(); // Unknown Count
         writer.WriteByte();

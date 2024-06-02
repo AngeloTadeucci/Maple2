@@ -193,17 +193,16 @@ public class SkillInfo : IByteSerializable {
     }
 
     public void WriteTo(IByteWriter writer) {
-        writer.WriteInt((int) Job);
-        writer.WriteByte(1); // Count
-
+        writer.WriteInt(1);
         writer.WriteInt((int) Job.Code());
+        int count = 0;
         for (int i = 0; i < SKILL_TYPES; i++) {
-            int count = 0;
             for (int j = 0; j < SKILL_RANKS; j++) {
                 count += Skills[i, j].Count + SubSkills[i, j].Count;
             }
-            writer.WriteByte((byte) count);
-
+        }
+        writer.WriteByte((byte) count);
+        for (int i = 0; i < SKILL_TYPES; i++) {
             for (int j = 0; j < SKILL_RANKS; j++) {
                 foreach (Skill skill in Skills[i, j].Values) {
                     writer.WriteClass<Skill>(skill);
@@ -251,11 +250,11 @@ public class SkillInfo : IByteSerializable {
         }
 
         public void WriteTo(IByteWriter writer) {
-            writer.WriteBool(Notify);
-            writer.WriteBool(Level > 0);
             writer.WriteInt(Id);
             writer.WriteInt(Math.Max((int) Level, 1));
-            writer.WriteByte();
+            writer.WriteBool(false);
+            writer.WriteBool(Level > 0);
+            writer.WriteBool(Notify);
 
             Notify = false;
         }
