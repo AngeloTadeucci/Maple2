@@ -88,7 +88,7 @@ public static class Constant {
     public const long MaxNpcControlDelay = 500;
     public const float BlackMarketPremiumClubDiscount = 0.2f;
     public const double PetAttackMultiplier = 0.394;
-    public const double AttackDamageFactor = 4;
+    public const double AttackDamageFactor = 4; // Unconfirmed
     public const double CriticalConstant = 5.3;
     public const double CriticalPercentageConversion = 0.015;
     public const double MaxCriticalRate = 0.4;
