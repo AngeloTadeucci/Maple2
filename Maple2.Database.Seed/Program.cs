@@ -72,7 +72,7 @@ void Seed(string type) {
     }
 
     Console.Write("Would you like to replace all data? (y/n): ");
-    string input = Console.ReadLine()?.Trim().ToLower();
+    string? input = Console.ReadLine()?.Trim().ToLower();
 
     if (input == "y") {
         // Replace existing data
