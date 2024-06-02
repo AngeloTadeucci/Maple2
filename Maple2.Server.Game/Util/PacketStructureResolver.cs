@@ -75,7 +75,7 @@ public class PacketStructureResolver {
 
         string[] fileLines = File.ReadAllLines(filePath);
         foreach (string line in fileLines) {
-            if (string.IsNullOrEmpty(line) || line.StartsWith('#') || line.StartsWith("ByteWriter")) {
+            if (string.IsNullOrEmpty(line) || line.StartsWith('#') || line.StartsWith("ByteWritter")) {
                 continue;
             }
 
@@ -143,7 +143,7 @@ public class PacketStructureResolver {
         }
 
         new SockHintInfo(info.Hint, defaultValue).Update(packet);
-        string hint = info.Hint.GetCode() + "\r\n";
+        string hint = info.Hint.GetCode() + " - " + info.Offset + "\r\n";
 
         DirectoryInfo dir = Directory.CreateDirectory($"{Paths.SOLUTION_DIR}/PacketStructures");
         StreamWriter file = File.AppendText($"{dir.FullName}/{opCode:X4} - {packetName}.txt");
