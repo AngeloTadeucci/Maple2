@@ -126,7 +126,7 @@ public sealed class ItemStatsCalculator {
             int index = Random.Shared.Next(2, 18);
             if (table.SpecialValues.TryGetValue(attribute, out int[]? values)) {
                 int value = values.ElementAtOrDefault(index);
-                option.Special[attribute] = new SpecialOption(0f, value);
+                option.Special[attribute] = new SpecialOption(value);
             } else if (table.SpecialRates.TryGetValue(attribute, out float[]? rates)) {
                 float rate = rates.ElementAtOrDefault(index);
                 option.Special[attribute] = new SpecialOption(rate);
@@ -238,7 +238,7 @@ public sealed class ItemStatsCalculator {
             statResult.Add(attribute, new BasicOption(rate));
         }
         foreach ((SpecialAttribute attribute, int value) in option.SpecialValues) {
-            specialResult.Add(attribute, new SpecialOption(0f, value));
+            specialResult.Add(attribute, new SpecialOption(value));
         }
         foreach ((SpecialAttribute attribute, float rate) in option.SpecialRates) {
             specialResult.Add(attribute, new SpecialOption(rate));
@@ -302,7 +302,7 @@ public sealed class ItemStatsCalculator {
                 if (specialDict.ContainsKey(attribute)) return true; // Cannot add duplicate values, retry.
 
                 if (entry.Values != null) {
-                    specialDict.Add(attribute, new SpecialOption(0f, Random.Shared.Next(entry.Values.Value.Min, entry.Values.Value.Max + 1)));
+                    specialDict.Add(attribute, new SpecialOption(Random.Shared.Next(entry.Values.Value.Min, entry.Values.Value.Max + 1)));
                 } else if (entry.Rates != null) {
                     float delta = entry.Rates.Value.Max - entry.Rates.Value.Min;
                     specialDict.Add(attribute, new SpecialOption(Random.Shared.NextSingle() * delta + entry.Rates.Value.Min));
