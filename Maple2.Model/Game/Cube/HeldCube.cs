@@ -14,7 +14,7 @@ public class HeldCube : IByteSerializable, IByteDeserializable {
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(ItemId);
         writer.WriteLong(Id);
-        writer.WriteLong();
+        writer.WriteLong(); // expire timestamp for ugc item
 
         writer.WriteBool(Template != null);
         if (Template != null) {

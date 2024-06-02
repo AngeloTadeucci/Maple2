@@ -13,7 +13,7 @@ public class PlotInfo {
     public long OwnerId { get; set; }
     private string? name;
     public string Name {
-        get => name ?? "Unknown";
+        get => name ?? string.Empty;
         set {
             if (!string.IsNullOrWhiteSpace(value)) {
                 name = value;

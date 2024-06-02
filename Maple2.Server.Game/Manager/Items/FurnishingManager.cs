@@ -12,8 +12,8 @@ using Serilog;
 namespace Maple2.Server.Game.Manager.Items;
 
 public class FurnishingManager {
-    private static long cubeIdCounter = Constant.FurnishingBaseId;
-    private static long NextCubeId() => Interlocked.Increment(ref cubeIdCounter);
+    private static long _cubeIdCounter = Constant.FurnishingBaseId;
+    private static long NextCubeId() => Interlocked.Increment(ref _cubeIdCounter);
 
     private readonly GameSession session;
 

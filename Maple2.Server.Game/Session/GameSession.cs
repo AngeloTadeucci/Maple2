@@ -109,7 +109,7 @@ public sealed partial class GameSession : Core.Network.Session {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel) {
+    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel, int mapId, long ownerId) {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
@@ -160,7 +160,8 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (!PrepareField(player.Character.MapId)) {
+        int fieldId = mapId == 0 ? player.Character.MapId : mapId;
+        if (!PrepareField(fieldId, ownerId: ownerId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
@@ -246,7 +247,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // FieldEntrance
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
-        // HomeCommand
+        Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
         Config.LoadChatStickers();
@@ -345,6 +346,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+
         Config.LoadLapenshard();
         Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
         Send(RevivalPacket.Confirm(Player));

@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -7,6 +9,8 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.Extensions;
+using Serilog;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -25,17 +29,57 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Field.MapId == Constant.DefaultHomeMapId && session.Field.OwnerId > 0) {
-            using GameStorage.Request db = GameStorage.Context();
-            Home? home = db.GetHome(session.Field.OwnerId);
-            if (home != null) {
-                // Technically this sends home details to all players who enter map (including passcode)
-                // but you would already know passcode if you entered the map.
-                session.Send(LoadUgcMapPacket.LoadHome(home));
+        List<PlotCube> plotCubes = [];
+        foreach (Plot plot in session.Field.Plots.Values) {
+            foreach (PlotCube cube in plot.Cubes.Values) {
+                cube.PlotId = plot.Number;
+                plotCubes.Add(cube);
             }
+        }
+
+        if (session.Field.MapId != Constant.DefaultHomeMapId || session.Field.OwnerId <= 0) {
+            session.Send(LoadUgcMapPacket.Load(plotCubes.Count));
+
+            LoadPlots(session, plotCubes);
             return;
         }
 
-        session.Send(LoadUgcMapPacket.Load());
+        using GameStorage.Request db = GameStorage.Context();
+        Home? home = db.GetHome(session.Field.OwnerId);
+        if (home == null) {
+            return;
+        }
+
+        // TODO: Check if plot has entry points
+
+        // plots start at 0,0 and are built towards negative x and y
+        int x = -1 * (home.Area - 1);
+
+        // find the blocks in most negative x,y direction, with the highest z value
+        int height = plotCubes.Where(cube => cube.Position.X == x && cube.Position.Y == x).Max(cube => cube.Position.Z);
+
+        x *= VectorExtensions.BLOCK_SIZE;
+
+        height++; // add 1 to height to be on top of the block
+        height *= VectorExtensions.BLOCK_SIZE;
+        session.Player.Position = new Vector3(x, x, height + 1);
+
+        // Technically this sends home details to all players who enter map (including passcode)
+        // but you would already know passcode if you entered the map.
+        session.Send(LoadUgcMapPacket.LoadHome(plotCubes.Count, home));
+
+        LoadPlots(session, plotCubes);
+
+        // this is a workaround for the client to load the map before field add player - without this, player will fall and get tp'd back to 0,0
+        Task.Delay(200).Wait();
+    }
+
+    private static void LoadPlots(GameSession session, List<PlotCube> plotCubes) {
+        lock (session.Field.Plots) {
+            session.Send(LoadCubesPacket.PlotOwners(session.Field.Plots.Values));
+            session.Send(LoadCubesPacket.Load(plotCubes));
+            session.Send(LoadCubesPacket.PlotState([.. session.Field.Plots.Values]));
+            session.Send(LoadCubesPacket.PlotExpiry([.. session.Field.Plots.Values]));
+        }
     }
 }

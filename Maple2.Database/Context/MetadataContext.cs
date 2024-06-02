@@ -24,6 +24,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<TableMetadata> TableMetadata { get; set; } = null!;
     public DbSet<AchievementMetadata> AchievementMetadata { get; set; } = null!;
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
+    public DbSet<ExportedUgcMapMetadata> ExportedUgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -45,6 +46,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<TableMetadata>(ConfigureTableMetadata);
         modelBuilder.Entity<AchievementMetadata>(ConfigureAchievementMetadata);
         modelBuilder.Entity<UgcMapMetadata>(ConfigureUgcMapMetadata);
+        modelBuilder.Entity<ExportedUgcMapMetadata>(ConfigureExportedUgcMapMetadata);
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
     }
 
@@ -197,6 +199,14 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("ugcmap");
         builder.HasKey(map => map.Id);
         builder.Property(map => map.Plots).HasJsonConversion().IsRequired();
+    }
+
+    private static void ConfigureExportedUgcMapMetadata(EntityTypeBuilder<ExportedUgcMapMetadata> builder) {
+        builder.ToTable("exportedugcmap");
+        builder.HasKey(map => map.Id);
+        builder.Property(map => map.BaseCubePosition).HasJsonConversion().IsRequired();
+        builder.Property(map => map.IndoorSize).HasJsonConversion().IsRequired();
+        builder.Property(map => map.Cubes).HasJsonConversion().IsRequired();
     }
 
     private static void ConfigureServerTableMetadata(EntityTypeBuilder<ServerTableMetadata> builder) {
