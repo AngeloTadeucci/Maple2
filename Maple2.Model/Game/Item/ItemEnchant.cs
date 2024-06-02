@@ -35,6 +35,7 @@ public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
         writer.WriteInt(Enchants);
         writer.WriteInt(EnchantExp);
         writer.WriteByte(EnchantCharges);
+
         writer.WriteLong();
         writer.WriteInt();
         writer.WriteInt();

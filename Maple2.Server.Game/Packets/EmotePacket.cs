@@ -27,7 +27,10 @@ public static class EmotePacket {
     public static ByteWriter Learn(Emote emote) {
         var pWriter = Packet.Of(SendOp.Emote);
         pWriter.Write<Command>(Command.Learn);
-        pWriter.Write<Emote>(emote);
+        pWriter.WriteInt(emote.Id);
+        pWriter.WriteInt(emote.Level);
+        pWriter.WriteLong(emote.ExpiryTime);
+        pWriter.WriteLong();
 
         return pWriter;
     }
