@@ -51,7 +51,7 @@ string? seedingInput = Console.ReadLine()?.Trim();
 
 if (seedingInput != "1" && seedingInput != "2") {
     Console.WriteLine("Invalid input. Exiting seeding process.");
-    return;  
+    return;
 }
 
 Console.WriteLine("Seeding...");
