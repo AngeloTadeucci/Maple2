@@ -99,7 +99,7 @@ public record AdditionalEffectMetadataDot(
     AdditionalEffectMetadataDot.DotBuff? Buff
 ) {
     public record DotDamage(
-        int Type,
+        AttackType Type,
         Element Element,
         bool UseGrade,
         float Rate,

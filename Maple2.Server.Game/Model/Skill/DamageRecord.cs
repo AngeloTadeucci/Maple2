@@ -7,6 +7,7 @@ namespace Maple2.Server.Game.Model.Skill;
 public class DamageRecord {
     public readonly SkillMetadata SkillMetadata;
     public readonly SkillMetadataAttack AttackMetadata;
+    public readonly DamagePropertyRecord Properties;
     public long SkillUid { get; init; }
     public long TargetUid { get; init; } // For Non-Region skills
     public int CasterId { get; init; }
@@ -26,6 +27,15 @@ public class DamageRecord {
         SkillMetadata = skillMetadata;
         AttackMetadata = attackMetadata;
         Targets = [];
+        Properties = new DamagePropertyRecord {
+            Element = skillMetadata.Property.Element,
+            SkillId = skillMetadata.Id,
+            SkillGroup = skillMetadata.Property.SkillGroup,
+            RangeType = skillMetadata.Property.RangeType,
+            AttackType = skillMetadata.Property.AttackType,
+            CompulsionTypes = attackMetadata.CompulsionTypes,
+            Rate = attackMetadata.Damage.Rate,
+        };
     }
 }
 

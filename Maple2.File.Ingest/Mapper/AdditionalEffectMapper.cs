@@ -205,7 +205,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         }
 
         return new AdditionalEffectMetadataDot.DotDamage(
-            Type: dotDamage.type,
+            Type: (AttackType) dotDamage.type,
             Element: (Element) dotDamage.element,
             UseGrade: dotDamage.useGrade,
             Rate: dotDamage.rate,

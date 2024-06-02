@@ -102,9 +102,14 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         long damageAmount = 0;
         for (int i = 0; i < attack.Damage.Count; i++) {
             Reflect(caster);
-            (DamageType, double) damageHit = DamageCalculator.CalculateDamage(caster, this, damage);
-            targetRecord.AddDamage(damageHit.Item1, (long) damageHit.Item2);
-            damageAmount -= (long) damageHit.Item2;
+            if (attack.Damage.IsConstDamage) {
+                targetRecord.AddDamage(DamageType.Normal, attack.Damage.Value);
+                damageAmount -= attack.Damage.Value;
+            } else {
+                (DamageType damageTypeResult, double damageResult) = DamageCalculator.CalculateDamage(caster, this, damage.Properties);
+                targetRecord.AddDamage(damageTypeResult, (long) damageResult);
+                damageAmount -= (long) damageResult;
+            }
         }
 
         if (damageAmount != 0) {

@@ -8,14 +8,14 @@ using Maple2.Server.Game.Packets;
 namespace Maple2.Server.Game.Util;
 
 public static class DamageCalculator {
-    public static (DamageType, long) CalculateDamage(IActor caster, IActor target, DamageRecord? record = null, bool dotDamage = false) {
+    public static (DamageType, long) CalculateDamage(IActor caster, IActor target, DamagePropertyRecord property) {
         // Check block
-        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.BlockChance, record?.SkillId ?? 0))) {
+        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.BlockChance, property.SkillId))) {
             return (DamageType.Block, 0);
         }
 
         // Check evase
-        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.EvasionChanceOverride, record?.SkillId ?? 0))) {
+        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.EvasionChanceOverride, property.SkillId))) {
             return (DamageType.Miss, 0);
         }
 
@@ -37,7 +37,7 @@ public static class DamageCalculator {
 
         // Get elemental bonus
         double elementBonus = 0;
-        switch (record?.SkillMetadata.Property.Element) {
+        switch (property.Element) {
             case Element.Fire:
                 elementBonus = caster.Stats.Values[SpecialAttribute.FireDamage].Multiplier();
                 break;
@@ -60,7 +60,7 @@ public static class DamageCalculator {
         damageBonus += elementBonus;
 
         // Get range bonus
-        switch (record?.SkillMetadata.Property.RangeType) {
+        switch (property.RangeType) {
             case RangeType.None:
                 break;
             case RangeType.Melee:
@@ -74,21 +74,23 @@ public static class DamageCalculator {
         damageBonus += -target.Buffs.GetResistance(BasicAttribute.AttackSpeed) * caster.Stats.Values[BasicAttribute.AttackSpeed].Total;
 
         // Check for crit and get crit damage
-        if (!dotDamage && record != null && record.AttackMetadata.CompulsionTypes.Contains(CompulsionType.Critical)) {
-            damageType = DamageType.Critical;
-        }
+        if (property.CanCrit) {
+            if (property.CompulsionTypes.Contains(CompulsionType.Critical)) {
+                damageType = DamageType.Critical;
+            }
 
-        if (damageType != DamageType.Critical) {
-            damageType = caster.Stats.GetCriticalRate(target.Stats.Values[BasicAttribute.CriticalEvasion].Total, caster.Buffs.TotalCompulsionRate(CompulsionEventType.CritChanceOverride, record.SkillId));
+            if (damageType != DamageType.Critical) {
+                damageType = caster.Stats.GetCriticalRate(target.Stats.Values[BasicAttribute.CriticalEvasion].Total, caster.Buffs.TotalCompulsionRate(CompulsionEventType.CritChanceOverride, property.SkillId));
+            }
         }
 
         damageBonus *= damageType == DamageType.Critical ? caster.Stats.GetCriticalDamage(target.Buffs.GetResistance(BasicAttribute.CriticalDamage)) : 1;
 
         // Get invoked buff values
         // TODO: Need to make this flexible to get invoke values from skills or buffs. If buff -> InvokeEffectType.IncreaseDotDamage
-        (int invokeValue, float invokeRate) = caster.Buffs.GetInvokeValues(InvokeEffectType.IncreaseSkillDamage, record?.SkillId ?? 0, record?.SkillMetadata.Property.SkillGroup ?? 0);
+        (int invokeValue, float invokeRate) = caster.Buffs.GetInvokeValues(InvokeEffectType.IncreaseSkillDamage, property.SkillId, property.SkillGroup);
 
-        double damageMultiplier = damageBonus * (1 + invokeRate) * (record?.AttackMetadata.Damage.Rate ?? 0 + invokeValue);
+        double damageMultiplier = damageBonus * (1 + invokeRate) * (property.Rate + invokeValue);
 
         double defensePierce = 1 - Math.Min(0.3, (1 / (1 + target.Buffs.GetResistance(BasicAttribute.Piercing)) * (caster.Stats.Values[BasicAttribute.Piercing].Multiplier() - 1)));
         damageMultiplier *= 1 / (Math.Max(target.Stats.Values[BasicAttribute.Defense].Total, 1) * defensePierce);
@@ -97,7 +99,7 @@ public static class DamageCalculator {
         double attackTypeAmount = 0;
         double resistance = 0;
         double finalDamage = 0;
-        switch (record?.SkillMetadata.Property.AttackType) {
+        switch (property.AttackType) {
             case AttackType.Physical:
                 resistance = Damage.CalculateResistance(target.Stats.Values[BasicAttribute.PhysicalRes].Total, caster.Stats.Values[SpecialAttribute.PhysicalPiercing].Multiplier());
                 attackTypeAmount = caster.Stats.Values[BasicAttribute.PhysicalAtk].Total;
@@ -126,7 +128,7 @@ public static class DamageCalculator {
         }
 
         damageMultiplier *= attackTypeAmount * resistance * (finalDamage == 0 ? 1 : finalDamage);
-        attackDamage *= damageMultiplier * Constant.AttackDamageFactor + record?.AttackMetadata.Damage.Value ?? 0;
+        attackDamage *= damageMultiplier * Constant.AttackDamageFactor + property.Value;
 
         // Apply any shields
         foreach (Buff buff in target.Buffs.Buffs.Values.Where(buff => buff.Metadata.Shield != null)) {
