@@ -108,7 +108,6 @@ public class StatsManager {
             return;
         }
 
-        Console.WriteLine($"Refreshing stats");
         Character character = player.Value.Character;
         if (levelStats.TryGetValue(character.Level, out IReadOnlyDictionary<BasicAttribute, long>? metadata)) {
             Values.Reset(metadata, character.Job.Code());
