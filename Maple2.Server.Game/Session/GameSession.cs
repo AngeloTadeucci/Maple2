@@ -134,7 +134,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
-        Buffs = new BuffManager(Player);
+        Config = new ConfigManager(db, this);
         Housing = new HousingManager(this);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
@@ -146,9 +146,9 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest = new QuestManager(this);
         Shop = new ShopManager(this);
         Guild = new GuildManager(this);
-        Config = new ConfigManager(db, this);
         Buddy = new BuddyManager(db, this);
         Item = new ItemManager(db, this, ItemStatsCalc);
+        Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
         Party = new PartyManager(World, this);

@@ -40,30 +40,7 @@ public class BuffManager : IUpdatable {
         // Load buffs that are not broadcasted to the field
         if (Actor is FieldPlayer player) {
             player.Session.Config.Skill.UpdatePassiveBuffs(false);
-            foreach (Item item in player.Session.Item.Equips.Gear.Values) {
-                foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-                    AddBuff(Actor, Actor, buff.Id, buff.Level, false);
-                }
-
-                // Check for buffs on gemstones
-                if (item.Socket?.Sockets is not null && item.Socket.Sockets.Length > 0) {
-                    foreach (ItemGemstone? gemstone in item.Socket?.Sockets!) {
-                        if (gemstone == null || !player.Session.ItemMetadata.TryGet(gemstone.ItemId, out ItemMetadata? metadata)) {
-                            continue;
-                        }
-
-                        foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
-                            AddBuff(Actor, Actor, buff.Id, buff.Level, false);
-                        }
-                    }
-                }
-            }
-
-            foreach (Item item in player.Session.Item.Equips.Badge.Values) {
-                foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-                    AddBuff(Actor, Actor, buff.Id, buff.Level, false);
-                }
-            }
+            player.Stats.Refresh();
         }
     }
 
@@ -351,11 +328,31 @@ public class BuffManager : IUpdatable {
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
             AddBuff(Actor, Actor, buff.Id, buff.Level);
         }
+
+        if (item.Socket != null) {
+            foreach (ItemGemstone? gem in item.Socket.Sockets) {
+                if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
+                    foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
+                        AddBuff(Actor, Actor, buff.Id, buff.Level);
+                    }
+                }
+            }
+        }
     }
 
     public void RemoveItemBuffs(Item item) {
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
             Remove(buff.Id);
+        }
+
+        if (item.Socket != null) {
+            foreach (ItemGemstone? gem in item.Socket.Sockets) {
+                if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
+                    foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
+                        Remove(buff.Id);
+                    }
+                }
+            }
         }
     }
 

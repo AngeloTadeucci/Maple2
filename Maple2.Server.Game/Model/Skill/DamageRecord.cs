@@ -35,6 +35,7 @@ public class DamageRecord {
             AttackType = skillMetadata.Property.AttackType,
             CompulsionTypes = attackMetadata.CompulsionTypes,
             Rate = attackMetadata.Damage.Rate,
+            Value = attackMetadata.Damage.Value,
         };
     }
 }
