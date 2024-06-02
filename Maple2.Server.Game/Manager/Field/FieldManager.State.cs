@@ -51,10 +51,12 @@ public partial class FieldManager {
         player.Character.InstanceMapId = MapId;
         player.Character.InstanceId = InstanceId;
 
-        var fieldPlayer = new FieldPlayer(session, player, NpcMetadata) {
+        var fieldPlayer = new FieldPlayer(session, player) {
             Position = position,
             Rotation = rotation,
         };
+        session.Stats.ResetActor(fieldPlayer);
+        session.Buffs.ResetActor(fieldPlayer);
 
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {

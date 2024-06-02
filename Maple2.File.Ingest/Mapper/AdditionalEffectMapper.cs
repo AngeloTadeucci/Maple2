@@ -163,6 +163,11 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             Debug.Assert(status.compulsionEventRate.Length == 0 && status.compulsionEventSkillCodes.Length == 0);
         }
 
+        AdditionalEffectMetadataStatus.StatConversion? conversion = null;
+        if (status.statChangeRate != 0) {
+            conversion = new AdditionalEffectMetadataStatus.StatConversion((BasicAttribute) status.statChangeBase, (BasicAttribute) status.statChangeResult, status.statChangeRate);
+        }
+
         return new AdditionalEffectMetadataStatus(
             Values: values,
             Rates: rates,
@@ -171,6 +176,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             Resistances: resistances,
             DeathResistanceHp: status.deathResistanceHP,
             Compulsion: compulsionEvent,
+            Conversion: conversion,
             ImmuneBreak: offensive.hitImmuneBreak,
             Invincible: defensive.invincible != 0);
     }
@@ -199,7 +205,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         }
 
         return new AdditionalEffectMetadataDot.DotDamage(
-            Type: dotDamage.type,
+            Type: (AttackType) dotDamage.type,
             Element: (Element) dotDamage.element,
             UseGrade: dotDamage.useGrade,
             Rate: dotDamage.rate,

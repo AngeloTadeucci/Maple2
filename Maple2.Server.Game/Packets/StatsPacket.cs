@@ -13,13 +13,13 @@ public static class StatsPacket {
     }
 
     public static ByteWriter Init(Actor<Player> entity) {
-        Stats stats = entity.Stats;
+        Stats stats = entity.Stats.Values;
 
         var pWriter = Packet.Of(SendOp.Stat);
         pWriter.WriteInt(entity.ObjectId);
         pWriter.Write<Command>(Command.Update);
-        pWriter.WriteByte(Stats.TOTAL);
-        for (int i = 0; i < Stats.TOTAL; i++) {
+        pWriter.WriteByte(Stats.BASIC_TOTAL);
+        for (int i = 0; i < Stats.BASIC_TOTAL; i++) {
             var attribute = (BasicAttribute) i;
             pWriter.WriteAttribute(attribute, stats[attribute]);
         }
@@ -33,10 +33,10 @@ public static class StatsPacket {
         pWriter.Write<Command>(Command.Update);
         switch (entity.Value) {
             case Player:
-                pWriter.WritePlayerStats(entity.Stats);
+                pWriter.WritePlayerStats(entity.Stats.Values);
                 break;
             default:
-                pWriter.WriteNpcStats(entity.Stats);
+                pWriter.WriteNpcStats(entity.Stats.Values);
                 break;
         }
 
@@ -50,7 +50,7 @@ public static class StatsPacket {
         pWriter.WriteByte((byte) attributes.Length);
         foreach (BasicAttribute attribute in attributes) {
             pWriter.Write<BasicAttribute>(attribute);
-            pWriter.WriteAttribute(attribute, entity.Stats[attribute]);
+            pWriter.WriteAttribute(attribute, entity.Stats.Values[attribute]);
         }
 
         return pWriter;
@@ -63,14 +63,14 @@ public static class StatsPacket {
         pWriter.Write<Command>(Command.Update);
         pWriter.WriteByte(1);
         pWriter.Write<BasicAttribute>(attribute);
-        pWriter.WriteAttribute(attribute, entity.Stats[attribute]);
+        pWriter.WriteAttribute(attribute, entity.Stats.Values[attribute]);
 
         return pWriter;
     }
 
     #region Helpers
     public static void WritePlayerStats(this IByteWriter pWriter, Stats stats) {
-        pWriter.WriteByte(Stats.TOTAL);
+        pWriter.WriteByte(Stats.BASIC_TOTAL);
         for (int i = 0; i < Stat.TOTAL; i++) {
             pWriter.WriteLong(stats[BasicAttribute.Health][i]);
             pWriter.WriteInt((int) stats[BasicAttribute.AttackSpeed][i]);
@@ -81,7 +81,7 @@ public static class StatsPacket {
     }
 
     public static void WriteNpcStats(this IByteWriter pWriter, Stats stats) {
-        pWriter.WriteByte(Stats.TOTAL);
+        pWriter.WriteByte(Stats.BASIC_TOTAL);
         for (int i = 0; i < Stat.TOTAL; i++) {
             pWriter.WriteLong(stats[BasicAttribute.Health][i]);
             pWriter.WriteInt((int) stats[BasicAttribute.AttackSpeed][i]);

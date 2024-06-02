@@ -69,7 +69,7 @@ public class AnimationState {
     public AnimationState(IActor actor, string modelName) {
         this.actor = actor;
 
-        RigMetadata = actor.NpcMetadata.GetAnimation(modelName);
+        RigMetadata = actor.NpcMetadata?.GetAnimation(modelName);
         MoveSpeed = 1;
         AttackSpeed = 1;
         IsPlayerAnimation = actor is FieldPlayer;

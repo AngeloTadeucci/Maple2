@@ -14,6 +14,9 @@ using Maple2.Tools.Collision;
 using Serilog;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Database.Storage;
+using Maple2.Server.Core.Formulas;
+using Maple2.Server.Game.Manager;
+using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Model;
 
@@ -29,7 +32,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public FieldManager Field { get; }
     public T Value { get; }
 
-    public virtual Stats Stats { get; } = new(0, 0);
+    public virtual StatsManager Stats { get; }
 
     protected readonly ConcurrentDictionary<int, DamageRecordTarget> DamageDealers = new();
 
@@ -46,7 +49,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
 
-    public BuffManager Buffs { get; }
+    public virtual BuffManager Buffs { get; }
 
     protected Actor(FieldManager field, int objectId, T value, string modelName, NpcMetadataStorage npcMetadata) {
         Field = field;
@@ -55,6 +58,17 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Buffs = new BuffManager(this);
         Transform = new Transform();
         NpcMetadata = npcMetadata;
+        AnimationState = new AnimationState(this, modelName);
+        SkillState = new SkillState(this);
+        Stats = new StatsManager(this);
+    }
+
+    protected Actor(FieldManager field, int objectId, T value, string modelName) {
+        Field = field;
+        ObjectId = objectId;
+        Value = value;
+        Buffs = new BuffManager(this);
+        Transform = new Transform();
         AnimationState = new AnimationState(this, modelName);
         SkillState = new SkillState(this);
     }
@@ -88,8 +102,14 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         long damageAmount = 0;
         for (int i = 0; i < attack.Damage.Count; i++) {
             Reflect(caster);
-            targetRecord.AddDamage(DamageType.Normal, -50000);
-            damageAmount -= 50000;
+            if (attack.Damage.IsConstDamage) {
+                targetRecord.AddDamage(DamageType.Normal, attack.Damage.Value);
+                damageAmount -= attack.Damage.Value;
+            } else {
+                (DamageType damageTypeResult, double damageResult) = DamageCalculator.CalculateDamage(caster, this, damage.Properties);
+                targetRecord.AddDamage(damageTypeResult, (long) damageResult);
+                damageAmount -= (long) damageResult;
+            }
         }
 
         if (damageAmount != 0) {
@@ -99,7 +119,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
                 DamageDealers.TryAdd(caster.ObjectId, record);
             }
             record.AddDamage(DamageType.Normal, positiveDamage);
-            Stats[BasicAttribute.Health].Add(damageAmount);
+            Stats.Values[BasicAttribute.Health].Add(damageAmount);
             Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
         }
 
@@ -130,7 +150,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             return;
         }
 
-        var damage = new DamageRecord {
+        var damage = new DamageRecord(record.Metadata, record.Attack) {
             CasterId = record.Caster.ObjectId,
             TargetUid = record.TargetUid,
             OwnerId = record.Caster.ObjectId,
@@ -151,18 +171,39 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         foreach (SkillEffectMetadata effect in record.Attack.Skills) {
             if (effect.Condition != null) {
                 foreach (IActor actor in record.Targets) {
-                    actor.ApplyEffect(record.Caster, this, effect);
+                    IActor caster = GetTarget(effect.Condition.Target, record.Caster, actor);
+                    IActor owner = GetTarget(effect.Condition.Target, record.Caster, actor);
+                    if (effect.Condition.Condition.Check(caster, owner, actor)) {
+                        actor.ApplyEffect(caster, owner, effect);
+                    }
                 }
             } else if (effect.Splash != null) {
-                // Handled by SplashAttack?
+                Field.AddSkill(record.Caster, effect, [
+                    record.Caster.Position,
+                ], record.Caster.Rotation);
             }
         }
+    }
+
+    public virtual void ApplyEffect(IActor caster, IActor target, SkillEffectMetadata effect) {
+        foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
+            Buffs.AddBuff(caster, target, skill.Id, skill.Level);
+        }
+    }
+
+    private IActor GetTarget(SkillEntity entity, IActor caster, IActor target) {
+        return entity switch {
+            SkillEntity.Target => target,
+            SkillEntity.Owner => target,
+            SkillEntity.Caster => caster,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public virtual void Update(long tickCount) {
         if (IsDead) return;
 
-        if (Stats[BasicAttribute.Health].Current <= 0) {
+        if (Stats.Values[BasicAttribute.Health].Current <= 0) {
             IsDead = true;
             OnDeath();
             return;

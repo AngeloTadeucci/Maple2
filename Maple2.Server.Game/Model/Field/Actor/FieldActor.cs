@@ -6,6 +6,7 @@ using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Database.Storage;
+using Maple2.Server.Game.Manager;
 
 namespace Maple2.Server.Game.Model;
 
@@ -23,13 +24,13 @@ internal sealed class FieldActor : IActor {
     public Vector3 Rotation { get => Transform.RotationAnglesDegrees; set => Transform.RotationAnglesDegrees = value; }
     public Transform Transform { get; init; }
     public BuffManager Buffs { get; }
-    public Stats Stats { get; }
+    public StatsManager Stats { get; }
     public AnimationState AnimationState { get; init; }
     public SkillState SkillState { get; init; }
 
     public FieldActor(FieldManager field, NpcMetadataStorage npcMetadata) {
         Field = field;
-        Stats = new Stats(0, 0);
+        Stats = new StatsManager(this);
         Buffs = new BuffManager(this);
         Transform = new Transform();
         NpcMetadata = npcMetadata;

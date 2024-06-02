@@ -504,7 +504,7 @@ public class AiState {
     }
 
     private void ProcessNode(MinimumHpNode node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
         float currentHpPercent = ((float) health.Current / (float) health.Total) * 100f;
 
         if (currentHpPercent > node.HpPercent) {
@@ -513,7 +513,7 @@ public class AiState {
 
         // Heal back to node.HpPercent
         long newHp = (long) ((node.HpPercent / 100) * health.Total);
-        actor.Stats[BasicAttribute.Health].Current = Math.Clamp(newHp, 0, health.Total);
+        actor.Stats.Values[BasicAttribute.Health].Current = Math.Clamp(newHp, 0, health.Total);
     }
 
     private void ProcessNode(BuffNode node) {
@@ -618,7 +618,7 @@ public class AiState {
     }
 
     private void ProcessNode(SuicideNode node) {
-        actor.Stats[BasicAttribute.Health].Current = 0;
+        actor.Stats.Values[BasicAttribute.Health].Current = 0;
     }
 
 
@@ -678,7 +678,7 @@ public class AiState {
     }
 
     private bool ProcessCondition(HpOverCondition node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
 
         return node.Value <= ((float) health.Current / (float) health.Total) * 100f;
     }
@@ -717,7 +717,7 @@ public class AiState {
     }
 
     private bool ProcessCondition(HpLessCondition node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
 
         return node.Value >= ((float) health.Current / (float) health.Total) * 100f;
     }

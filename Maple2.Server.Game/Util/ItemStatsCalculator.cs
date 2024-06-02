@@ -24,7 +24,7 @@ public sealed class ItemStatsCalculator {
         }
 
         var stats = new ItemStats();
-        int job = (int) item.Metadata.Limit.JobLimits.FirstOrDefault(JobCode.Newbie);
+        int job = (int) item.Metadata.Limit.JobLimits.FirstOrDefault(JobCode.None);
 
         ItemOptionPickTable.Option? pick = TableMetadata.ItemOptionPickTable.Options.GetValueOrDefault(item.Metadata.Option.PickId, item.Rarity);
         if (GetConstantOption(item, job, pick, out ItemStats.Option? constantOption)) {
@@ -147,7 +147,7 @@ public sealed class ItemStatsCalculator {
             option = ConstantItemOption(itemOptionConstant);
         }
 
-        if (item.Metadata.Option.LevelFactor > 50 && pick != null) {
+        if (pick != null) {
             if (option == null) {
                 option = new ItemStats.Option();
             }
@@ -159,16 +159,15 @@ public sealed class ItemStatsCalculator {
                     option.Basic[attribute] = new BasicOption(value);
                 }
             }
-            return true;
-        }
 
-        return false;
+        }
+        return option != null;
     }
 
     // Used to calculate the default static attributes for a given item.
     private bool GetStaticOption(Item item, int job, ItemOptionPickTable.Option? pick, [NotNullWhen(true)] out ItemStats.Option? option) {
         option = null;
-        if (item.Metadata.Option == null || item.Metadata.Option.LevelFactor < 50) {
+        if (item.Metadata.Option == null) {
             return false;
         }
 

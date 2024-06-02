@@ -131,7 +131,7 @@ public class EquipManager {
             item.Slot = (short) slot;
             equips[slot] = item;
             session.Field?.Broadcast(EquipPacket.EquipItem(session.Player, item, 0));
-            session.Player.Buffs.AddItemBuffs(item);
+            session.Stats.Refresh();
             return true;
         }
     }
@@ -146,14 +146,20 @@ public class EquipManager {
             // Unequip from Gear.
             foreach ((EquipSlot slot, Item item) in Gear) {
                 if (itemUid == item.Uid) {
-                    return UnequipInternal(slot, false);
+                    if (UnequipInternal(slot, false)) {
+                        session.Stats.Refresh();
+                        return true;
+                    }
                 }
             }
 
             // Unequip from Outfit.
             foreach ((EquipSlot slot, Item item) in Outfit) {
                 if (itemUid == item.Uid) {
-                    return UnequipInternal(slot, true);
+                    if (UnequipInternal(slot, true)) {
+                        session.Stats.Refresh();
+                        return true;
+                    }
                 }
             }
 
@@ -191,6 +197,7 @@ public class EquipManager {
             badge.Slot = -1;
             Badge[badge.Badge.Type] = badge;
             session.Field?.Broadcast(EquipPacket.EquipBadge(session.Player, badge));
+            session.Stats.Refresh();
 
             if (badge.Badge.Type == BadgeType.PetSkin) {
                 session.Pet?.BadgeChanged(badge.Badge);
@@ -263,6 +270,7 @@ public class EquipManager {
             }
 
             session.Field?.Broadcast(EquipPacket.UnequipBadge(session.Player, unequipBadge.Badge.Type));
+            session.Stats.Refresh();
 
             if (unequipBadge.Badge.Type == BadgeType.PetSkin) {
                 session.Pet?.BadgeChanged(null);
@@ -297,7 +305,6 @@ public class EquipManager {
         }
 
         session.Field?.Broadcast(EquipPacket.UnequipItem(session.Player, unequipItem));
-        session.Player.Buffs.RemoveItemBuffs(unequipItem);
         return true;
     }
 
