@@ -27,7 +27,7 @@ public static class DamageCalculator {
 
         var damageType = DamageType.Normal;
         (double minBonusAtkDamage, double maxBonusAtkDamage) = caster.Stats.GetBonusAttack(target.Buffs.GetResistance(BasicAttribute.BonusAtk), target.Buffs.GetResistance(BasicAttribute.MaxWeaponAtk));
-        double attackDamage = minBonusAtkDamage + (maxBonusAtkDamage - minBonusAtkDamage) * Random.Shared.NextDouble();
+        double attackDamage = minBonusAtkDamage + (maxBonusAtkDamage - minBonusAtkDamage) * double.Lerp(Random.Shared.NextDouble(), Random.Shared.NextDouble(), Random.Shared.NextDouble());
 
         // change the NPCNormalDamage to be changed depending on target?
         double damageBonus = 1 + (caster.Stats.Values[SpecialAttribute.TotalDamage].Multiplier()) + (caster.Stats.Values[SpecialAttribute.NormalNpcDamage].Multiplier());
@@ -143,6 +143,6 @@ public static class DamageCalculator {
             target.Buffs.Remove(buff.Id);
         }
 
-        return (damageType, (long) attackDamage);
+        return (damageType, (long) Math.Max(1, attackDamage));
     }
 }
