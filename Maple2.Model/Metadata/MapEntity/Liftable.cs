@@ -15,3 +15,10 @@ public record Liftable(
     Vector3 Position,
     Vector3 Rotation)
 : MapBlock;
+
+public record LiftableTargetBox(
+    Vector3 Position,
+    Vector3 Rotation,
+    bool IsForceFinish,
+    int LiftableTarget)
+: MapBlock;
