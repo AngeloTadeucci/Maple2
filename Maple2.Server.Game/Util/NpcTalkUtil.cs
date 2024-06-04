@@ -86,7 +86,7 @@ public static class NpcTalkUtil {
         return null;
     }
 
-    public static bool MeetsJobCondition(GameSession session, JobConditionMetadata jobCondition) {
+    private static bool MeetsJobCondition(GameSession session, JobConditionMetadata jobCondition) {
         if (jobCondition.StartedQuestId > 0 &&
             (!session.Quest.TryGetQuest(jobCondition.StartedQuestId, out Quest? startedQuest) || startedQuest.State != QuestState.Started)) {
             return false;
