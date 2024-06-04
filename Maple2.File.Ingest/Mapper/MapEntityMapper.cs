@@ -166,6 +166,11 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         };
                     }
                     continue;
+                case IMS2LiftableTargetBox liftableTargetBox:
+                    yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                        Block = new LiftableTargetBox(liftableTargetBox.Position, liftableTargetBox.Rotation, liftableTargetBox.isForceFinish, liftableTargetBox.liftableTarget)
+                    };
+                    continue;
                 case IMS2MapProperties mapProperties:
                     switch (mapProperties) {
                         case IMS2PhysXProp physXProp:

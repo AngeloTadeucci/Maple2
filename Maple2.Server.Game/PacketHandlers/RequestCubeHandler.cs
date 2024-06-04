@@ -4,6 +4,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -218,6 +219,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 fieldLiftable.Rotation = new Vector3(0, 0, rotation);
                 fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.FinishTime + fieldLiftable.Value.ItemLifetime;
 
+                if (session.Field.Entities.LiftableTargetBoxes.TryGetValue(position, out LiftableTargetBox? liftableTarget)) {
+                    session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId, targetLong: liftableTarget.LiftableTarget);
+                }
+
                 session.Field.Broadcast(LiftablePacket.Add(fieldLiftable));
                 session.Field.Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
                 session.Field.Broadcast(SetCraftModePacket.Stop(session.Player.ObjectId));
@@ -225,7 +230,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 break;
         }
 
-        session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId);
         session.ConditionUpdate(ConditionType.install_item, codeLong: cubeItem.ItemId);
     }
 

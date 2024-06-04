@@ -21,6 +21,7 @@ public class MapEntity {
 [JsonDerivedType(typeof(Portal), 19716277)]
 [JsonDerivedType(typeof(TaxiStation), 87397383)]
 [JsonDerivedType(typeof(Liftable), 52914141)]
+[JsonDerivedType(typeof(LiftableTargetBox), 832184036)]
 [JsonDerivedType(typeof(Breakable), 1404063494)]
 [JsonDerivedType(typeof(Ms2RegionSpawn), 478295409)]
 [JsonDerivedType(typeof(ObjectWeapon), 1490986767)]
