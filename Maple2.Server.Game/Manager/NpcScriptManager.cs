@@ -1,11 +1,11 @@
-﻿using Maple2.Model;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Util;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -17,35 +17,47 @@ public sealed class NpcScriptManager {
     public readonly FieldNpc Npc;
     private readonly ScriptMetadata? metadata;
     private readonly Dictionary<int, ScriptConditionMetadata>? scriptConditions;
-    public JobConditionMetadata? JobCondition;
     public SortedDictionary<int, QuestMetadata> Quests = new();
+    public JobConditionMetadata? JobCondition;
 
     public NpcTalkType TalkType;
     public NpcTalkButton Button;
 
     public ScriptState? State { get; set; }
     public int Index { get; private set; } = 0;
-    public int QuestId { get; private set; } = 0;
     private readonly ILogger logger = Log.Logger.ForContext<NpcScriptManager>();
 
-    public NpcScriptManager(GameSession session, FieldNpc npc, ScriptMetadata? metadata) {
+    public NpcScriptManager(GameSession session, FieldNpc npc, ScriptMetadata? metadata, ScriptState? state, NpcTalkType talkType) {
         this.session = session;
         Npc = npc;
         this.metadata = metadata;
+        TalkType = talkType;
+        State = state;
         if (session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditionMetadata)) {
             scriptConditions = scriptConditionMetadata;
         }
-        if (this.metadata?.Type == ScriptType.Quest) {
-            TalkType = NpcTalkType.Quest;
-            State = GetQuestScriptState(this.metadata);
+        if (talkType.HasFlag(NpcTalkType.Quest)) {
+            Quests = session.Quest.GetAvailableQuests(Npc.Value.Id);
+        }
+
+        if (state?.Type == ScriptStateType.Job) {
+            JobCondition = session.ServerTableMetadata.JobConditionTable.Entries.GetValueOrDefault(Npc.Value.Id);
         }
     }
 
     public bool BeginNpcTalk() {
-        if (!SetInitialScript()) {
+        if (State == null) {
+            session.Send(NpcTalkPacket.Close());
             return false;
         }
-        NpcRespond();
+        var dialogue = new NpcDialogue(State.Id, 0, GetButton());
+
+        if (TalkType.HasFlag(NpcTalkType.Quest)) {
+            session.Send(QuestPacket.Talk(Npc, Quests.Values));
+        }
+
+        session.Send(NpcTalkPacket.Respond(Npc, TalkType, dialogue));
+        ProcessScriptFunction();
 
         return true;
     }
@@ -81,134 +93,20 @@ public sealed class NpcScriptManager {
     }
 
     public void EnterTalk() {
-        ScriptState? scriptState = GetFirstScriptState();
+        ScriptState? scriptState = NpcTalkUtil.GetInitialScriptType(session, ScriptStateType.Script, metadata, Npc.Value.Id);
         if (scriptState == null) {
             return;
         }
+        if (scriptState.Type == ScriptStateType.Job) {
+            JobCondition = session.ServerTableMetadata.JobConditionTable.Entries.GetValueOrDefault(Npc.Value.Id);
+        } else {
+            JobCondition = null;
+        }
+
         TalkType = scriptState.Type == ScriptStateType.Script ? NpcTalkType.Talk : NpcTalkType.Dialog;
 
         State = scriptState;
         Button = GetButton();
-    }
-
-    private bool SetInitialScript() {
-        if (metadata?.Type == ScriptType.Quest) {
-            TalkType = NpcTalkType.Quest;
-            return true;
-        }
-
-        Quests = session.Quest.GetAvailableQuests(Npc.Value.Id);
-        ScriptState? scriptState = GetFirstScriptState();
-        ScriptState? selectState = GetSelectScriptState();
-        ScriptState? questState = GetFirstQuestScriptState();
-
-        int options = 0;
-        if (Npc.Value.Metadata.Basic.ShopId > 0) {
-            TalkType |= NpcTalkType.Dialog;
-            options++;
-        }
-
-        if (Quests.Count > 0) {
-            TalkType |= NpcTalkType.Quest;
-            options++;
-        }
-
-
-        if (scriptState?.Type == ScriptStateType.Job) {
-            // Job script only counts as an additional option if quests are present.
-            if (TalkType.HasFlag(NpcTalkType.Quest)) {
-                options++;
-            }
-            TalkType |= NpcTalkType.Dialog;
-        } else if (scriptState != null) {
-            TalkType |= NpcTalkType.Talk;
-            options++;
-        }
-
-        if (options > 1 && selectState != null) {
-            TalkType |= NpcTalkType.Select;
-        }
-
-        switch (Npc.Value.Metadata.Basic.Kind) {
-            case >= 30 and < 40: // Beauty
-            case 2: // Storage
-            case 86: // TODO: BlackMarket
-            case 88: // TODO: Birthday
-            case 501:
-                TalkType |= NpcTalkType.Dialog;
-                break;
-            case >= 100 and <= 104: // Sky Fortress
-            case >= 105 and <= 107: // Kritias
-            case 108: // Humanitas
-                TalkType = NpcTalkType.Dialog;
-                State = selectState;
-                return true;
-        }
-
-        // Determine which script to use.
-        if (TalkType.HasFlag(NpcTalkType.Select)) {
-            State = selectState;
-            return true;
-        }
-
-        if (TalkType.HasFlag(NpcTalkType.Quest)) {
-            if (questState == null) {
-                return false;
-            }
-            State = questState;
-            TalkType = NpcTalkType.Quest;
-            return true;
-        }
-
-        if (scriptState == null && selectState == null) {
-            return false;
-        }
-        State = scriptState ?? selectState;
-        return true;
-    }
-
-    private ScriptState? GetFirstScriptState() {
-        if (metadata == null) {
-            return null;
-        }
-        // Check if player meets the requirements for the job script.
-        ScriptState? jobScriptState = metadata.States.Values.FirstOrDefault(state => state.Type == ScriptStateType.Job);
-        if (jobScriptState != null) {
-            if (!session.ServerTableMetadata.JobConditionTable.Entries.TryGetValue(Npc.Value.Id, out JobConditionMetadata? jobCondition)) {
-                return jobScriptState;
-            }
-            this.JobCondition = jobCondition;
-            if (MeetsJobCondition()) {
-                return jobScriptState;
-            }
-        }
-
-
-        IList<ScriptState> scriptStates = new List<ScriptState>();
-        // Check if player meets the requirements for each pick script.
-        foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Pick)) {
-            if (scriptConditions == null) {
-                scriptStates.Add(scriptState);
-                continue;
-            }
-
-            if (scriptState.JobCondition != null &&
-                scriptState.JobCondition != JobCode.None &&
-                scriptState.JobCondition != session.Player.Value.Character.Job.Code()) {
-                continue;
-            }
-
-            if (!scriptConditions.TryGetValue(scriptState.Id, out ScriptConditionMetadata? scriptCondition)) {
-                scriptStates.Add(scriptState);
-                continue;
-            }
-
-            if (MeetsScriptCondition(scriptCondition)) {
-                scriptStates.Add(scriptState);
-            }
-        }
-
-        return scriptStates.Count == 0 ? null : scriptStates[Random.Shared.Next(scriptStates.Count)];
     }
 
     public bool Continue(int pick) {
@@ -225,7 +123,7 @@ public sealed class NpcScriptManager {
         if (metadata!.Type == ScriptType.Quest) {
             questId = metadata.Id;
         }
-        if ((nextState != State && !metadata.States.ContainsKey(nextState.Id))) {
+        if (nextState != State && !metadata.States.ContainsKey(nextState.Id)) {
             session.Send(NpcTalkPacket.Close());
             return false;
         }
@@ -272,7 +170,7 @@ public sealed class NpcScriptManager {
                     continue;
                 }
 
-                if (MeetsScriptCondition(scriptConditionMetadata)) {
+                if (scriptConditionMetadata.ConditionCheck(session)) {
                     goToScripts.Add(goToScript);
                 }
             }
@@ -292,7 +190,7 @@ public sealed class NpcScriptManager {
                     continue;
                 }
 
-                if (MeetsScriptCondition(scriptConditionMetadata)) {
+                if (scriptConditionMetadata.ConditionCheck(session)) {
                     goToFailScripts.Add(goToFailScript);
                 }
             }
@@ -307,57 +205,6 @@ public sealed class NpcScriptManager {
         }
 
         return State;
-    }
-
-    private bool MeetsJobCondition() {
-        if (JobCondition == null) {
-            return false;
-        }
-        if (JobCondition.StartedQuestId > 0 &&
-            (!session.Quest.TryGetQuest(JobCondition.StartedQuestId, out Quest? startedQuest) || startedQuest.State != QuestState.Started)) {
-            return false;
-        }
-
-        if (JobCondition.CompletedQuestId > 0 &&
-            (!session.Quest.TryGetQuest(JobCondition.CompletedQuestId, out Quest? completedQuest) || completedQuest.State != QuestState.Completed)) {
-            return false;
-        }
-
-        if (JobCondition.JobCode != JobCode.None && session.Player.Value.Character.Job.Code() != JobCondition.JobCode) {
-            return false;
-        }
-
-        // TODO: Maid checks
-
-        if (JobCondition.BuffId > 0 && !session.Player.Buffs.Buffs.ContainsKey(JobCondition.BuffId)) {
-            return false;
-        }
-
-        if (JobCondition.Mesos > 0 && session.Currency.Meso < JobCondition.Mesos) {
-            return false;
-        }
-
-        if (JobCondition.Level > 0 && session.Player.Value.Character.Level < JobCondition.Level) {
-            return false;
-        }
-
-        // TODO: Check if player is in home
-
-        if (JobCondition.Guild && session.Player.Value.Character.GuildId == 0) {
-            return false;
-        }
-
-        if (JobCondition.CompletedAchievement > 0 && !session.Achievement.HasAchievement(JobCondition.CompletedAchievement)) {
-            return false;
-        }
-
-        // TODO: Check if it's the player's birthday
-
-        if (JobCondition.MapId > 0 && session.Field?.MapId != JobCondition.MapId) {
-            return false;
-        }
-
-        return true;
     }
 
     private void PerformJobScript() {
@@ -382,124 +229,6 @@ public sealed class NpcScriptManager {
                 ? FieldEnterPacket.Request(session.Player)
                 : FieldEnterPacket.Error(MigrationError.s_move_err_default));
         }
-    }
-
-    private bool MeetsScriptCondition(ScriptConditionMetadata scriptCondition) {
-        if (scriptCondition.JobCode.Count > 0 && !scriptCondition.JobCode.Contains(session.Player.Value.Character.Job.Code())) {
-            return false;
-        }
-
-        foreach ((int questId, bool started) in scriptCondition.QuestStarted) {
-            session.Quest.TryGetQuest(questId, out Quest? quest);
-            if (started && (quest == null || quest.State != QuestState.Started)) {
-                return false;
-            }
-
-            if (!started && quest != null && quest.State == QuestState.Started) {
-                return false;
-            }
-        }
-
-        foreach ((int questId, bool completed) in scriptCondition.QuestCompleted) {
-            session.Quest.TryGetQuest(questId, out Quest? quest);
-            if (completed && (quest == null || quest.State != QuestState.Completed)) {
-                return false;
-            }
-
-            if (!completed && quest != null && quest.State == QuestState.Completed) {
-                return false;
-            }
-        }
-
-        foreach ((ItemComponent itemComponent, bool has) in scriptCondition.Items) {
-            IEnumerable<Item> items = session.Item.Inventory.Find(itemComponent.ItemId, itemComponent.Rarity);
-            int itemSum = items.Sum(item => item.Amount);
-            if (has && itemSum < itemComponent.Amount) {
-                return false;
-            }
-
-            if (!has && itemSum >= itemComponent.Amount) {
-                return false;
-            }
-        }
-
-        if (scriptCondition.Buff.Key > 0) {
-            if (scriptCondition.Buff.Value && !session.Player.Buffs.Buffs.ContainsKey(scriptCondition.Buff.Key)) {
-                return false;
-            }
-        }
-
-        if (scriptCondition.Meso.Key > 0) {
-            if (scriptCondition.Meso.Value && session.Currency.Meso < scriptCondition.Meso.Key) {
-                return false;
-            }
-
-            if (!scriptCondition.Meso.Value && session.Currency.Meso >= scriptCondition.Meso.Key) {
-                return false;
-            }
-        }
-
-        if (scriptCondition.Level.Key > 0) {
-            if (scriptCondition.Level.Value && session.Player.Value.Character.Level < scriptCondition.Level.Key) {
-                return false;
-            }
-
-            if (!scriptCondition.Level.Value && session.Player.Value.Character.Level >= scriptCondition.Level.Key) {
-                return false;
-            }
-        }
-
-        if (scriptCondition.AchieveCompleted.Key > 0) {
-            if (scriptCondition.AchieveCompleted.Value && !session.Achievement.HasAchievement(scriptCondition.AchieveCompleted.Key)) {
-                return false;
-            }
-
-            if (!scriptCondition.AchieveCompleted.Value && session.Achievement.HasAchievement(scriptCondition.AchieveCompleted.Key)) {
-                return false;
-            }
-        }
-
-        if (scriptCondition.InGuild && session.Player.Value.Character.GuildId == 0) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private ScriptState? GetSelectScriptState() {
-        if (metadata == null) {
-            return null;
-        }
-        IList<ScriptState> scriptStates = new List<ScriptState>();
-        foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Type == ScriptStateType.Select)) {
-            if (scriptConditions == null) {
-                scriptStates.Add(scriptState);
-                continue;
-            }
-
-            if (!scriptConditions.TryGetValue(scriptState.Id, out ScriptConditionMetadata? scriptCondition)) {
-                scriptStates.Add(scriptState);
-                continue;
-            }
-
-            if (MeetsScriptCondition(scriptCondition)) {
-                scriptStates.Add(scriptState);
-            }
-        }
-        return scriptStates.Count == 0 ? null : scriptStates[Random.Shared.Next(scriptStates.Count)];
-    }
-
-    private ScriptState? GetFirstQuestScriptState() {
-        if (Quests.Count == 0) {
-            return null;
-        }
-
-        if (!session.ScriptMetadata.TryGet(Quests.Keys.Min(), out ScriptMetadata? questMetadata)) {
-            return null;
-        }
-
-        QuestId = questMetadata.Id;
-        return GetQuestScriptState(questMetadata);
     }
 
     private ScriptState? GetQuestScriptState(ScriptMetadata? scriptMetadata) {
@@ -529,21 +258,6 @@ public sealed class NpcScriptManager {
             IEnumerable<int> statesInRange = questStates.Where(id => id >= lowerBound && id < upperBound);
             return statesInRange.Min();
         }
-    }
-
-    private void NpcRespond() {
-        if (State == null) {
-            session.Send(NpcTalkPacket.Close());
-            return;
-        }
-        var dialogue = new NpcDialogue(State.Id, 0, GetButton());
-
-        if (TalkType.HasFlag(NpcTalkType.Quest)) {
-            session.Send(QuestPacket.Talk(Npc, Quests!.Values));
-        }
-
-        session.Send(NpcTalkPacket.Respond(Npc, TalkType, dialogue));
-        ProcessScriptFunction();
     }
 
     private NpcTalkButton GetButton() {
@@ -617,7 +331,7 @@ public sealed class NpcScriptManager {
             return;
         }
 
-        if (!session.ServerTableMetadata.ScriptFunctionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>? scriptFunctions) ||
+        if (!session.ServerTableMetadata.ScriptFunctionTable.Entries.TryGetValue(metadata!.Id, out Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>? scriptFunctions) ||
             !scriptFunctions.TryGetValue(State.Id, out Dictionary<int, ScriptFunctionMetadata>? functions) ||
             !functions.TryGetValue(State.Contents.ElementAt(Index).FunctionId, out ScriptFunctionMetadata? scriptFunction)) {
             return;
