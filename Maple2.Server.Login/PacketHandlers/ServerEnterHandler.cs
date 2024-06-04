@@ -13,8 +13,5 @@ public class ServerEnterHandler : PacketHandler<LoginSession> {
 
     public override void Handle(LoginSession session, IByteReader packet) {
         packet.Read<Language>();
-
-        session.ListServers();
-        session.ListCharacters();
     }
 }

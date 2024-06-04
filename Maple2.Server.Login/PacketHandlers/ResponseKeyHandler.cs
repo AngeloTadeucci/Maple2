@@ -37,6 +37,10 @@ public class ResponseKeyHandler : PacketHandler<LoginSession> {
             MigrateInResponse response = World.MigrateIn(request);
             session.Init(accountId, machineId);
             session.Send(MigrationPacket.MoveResult(ok));
+
+            // KMS never sends ServerEnter so this needs to be included
+            session.ListServers();
+            session.ListCharacters();
         } catch (Exception ex) when (ex is RpcException or InvalidOperationException) {
             session.Send(MigrationPacket.MoveResult(s_move_err_default));
             session.Disconnect();
