@@ -71,12 +71,13 @@ public sealed partial class GameSession : Core.Network.Session {
     public ConfigManager Config { get; set; } = null!;
     public MailManager Mail { get; set; } = null!;
     public GuildManager Guild { get; set; } = null!;
-    public BuddyManager Buddy { get; set; }
+    public BuddyManager Buddy { get; set; } = null!;
     public ItemManager Item { get; set; } = null!;
     public HousingManager Housing { get; set; } = null!;
     public CurrencyManager Currency { get; set; } = null!;
     public MasteryManager Mastery { get; set; } = null!;
     public StatsManager Stats { get; set; } = null!;
+    public BuffManager Buffs { get; set; } = null!;
     public ItemEnchantManager ItemEnchant { get; set; } = null!;
     public ItemBoxManager ItemBox { get; set; } = null!;
     public BeautyManager Beauty { get; set; } = null!;
@@ -89,7 +90,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public BlackMarketManager BlackMarket { get; set; } = null!;
     public FieldManager Field { get; set; } = null!;
     public FieldPlayer Player { get; private set; } = null!;
-    public PartyManager Party { get; set; }
+    public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
     public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
 
@@ -111,7 +112,7 @@ public sealed partial class GameSession : Core.Network.Session {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel) {
+    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel, int mapId, long ownerId) {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
@@ -131,10 +132,11 @@ public sealed partial class GameSession : Core.Network.Session {
         }
         db.Commit();
 
-        Player = new FieldPlayer(this, player, NpcMetadata);
+        Player = new FieldPlayer(this, player);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
-        Stats = new StatsManager(this);
+        Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
+        Config = new ConfigManager(db, this);
         Housing = new HousingManager(this);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
@@ -146,9 +148,9 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest = new QuestManager(this);
         Shop = new ShopManager(this);
         Guild = new GuildManager(this);
-        Config = new ConfigManager(db, this);
         Buddy = new BuddyManager(db, this);
         Item = new ItemManager(db, this, ItemStatsCalc);
+        Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
 
@@ -161,7 +163,8 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (!PrepareField(player.Character.MapId)) {
+        int fieldId = mapId == 0 ? player.Character.MapId : mapId;
+        if (!PrepareField(fieldId, ownerId: ownerId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
@@ -172,8 +175,8 @@ public sealed partial class GameSession : Core.Network.Session {
         };
         playerUpdate.SetFields(UpdateField.All, player);
         playerUpdate.Health = new HealthInfo {
-            CurrentHp = Player.Stats[BasicAttribute.Health].Current,
-            TotalHp = Player.Stats[BasicAttribute.Health].Total,
+            CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+            TotalHp = Stats.Values[BasicAttribute.Health].Total,
         };
         PlayerInfo.SendUpdate(playerUpdate);
 
@@ -257,7 +260,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // FieldEntrance
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
-        // HomeCommand
+        Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
         Config.LoadChatStickers();
@@ -356,10 +359,12 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+
         Config.LoadLapenshard();
         Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
         Send(RevivalPacket.Confirm(Player));
         Config.LoadStatAttributes();
+        Config.LoadSkillPoints();
         Player.Buffs.LoadFieldBuffs();
         Send(PremiumCubPacket.Activate(Player.ObjectId, Player.Value.Account.PremiumTime));
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));

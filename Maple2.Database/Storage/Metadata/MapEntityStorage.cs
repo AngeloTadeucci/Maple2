@@ -32,6 +32,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
 
             var breakables = new Dictionary<Guid, Breakable>();
             var liftables = new Dictionary<Guid, Liftable>();
+            var liftableTargetBoxes = new Dictionary<Vector3B, LiftableTargetBox>();
             var objectWeapons = new Dictionary<Vector3B, ObjectWeapon>();
             var portals = new Dictionary<int, Portal>();
             var playerSpawns = new Dictionary<int, SpawnPointPC>();
@@ -57,6 +58,9 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                         break;
                     case Liftable liftable:
                         liftables[entity.Guid] = liftable;
+                        break;
+                    case LiftableTargetBox liftableTargetBox:
+                        liftableTargetBoxes[liftableTargetBox.Position] = liftableTargetBox;
                         break;
                     case ObjectWeapon objectWeapon:
                         objectWeapons[objectWeapon.Position] = objectWeapon;
@@ -115,6 +119,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
             mapEntity = new MapEntityMetadata {
                 Breakables = breakables,
                 Liftables = liftables,
+                LiftableTargetBoxes = liftableTargetBoxes,
                 ObjectWeapons = objectWeapons,
                 Portals = portals,
                 PlayerSpawns = playerSpawns,

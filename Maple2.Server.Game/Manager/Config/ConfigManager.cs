@@ -28,8 +28,10 @@ public class ConfigManager {
     private long deathPenaltyTick;
     public int DeathCount;
     private readonly StatAttributes statAttributes;
+    private readonly SkillPoint skillPoints;
     public readonly IDictionary<int, int> GatheringCounts;
     public readonly IDictionary<int, int> GuideRecords;
+    public int ExplorationProgress;
 
     public readonly SkillManager Skill;
 
@@ -52,7 +54,10 @@ public class ConfigManager {
             IList<SkillCooldown>? SkillCooldowns,
             long deathPenaltyTick,
             int DeathCounter,
+            int ExplorationProgress,
+            IDictionary<AttributePointSource, int>? StatPoints,
             IDictionary<BasicAttribute, int>? Allocation,
+        SkillPoint? SkillPoint,
             IDictionary<int, int>? GatheringCounts,
             IDictionary<int, int>? GuideRecords,
         SkillBook? SkillBook
@@ -79,8 +84,10 @@ public class ConfigManager {
         lapenshards = load.Lapenshards ?? new Dictionary<LapenshardSlot, int>();
         GatheringCounts = load.GatheringCounts ?? new Dictionary<int, int>();
         GuideRecords = load.GuideRecords ?? new Dictionary<int, int>();
+        skillPoints = load.SkillPoint ?? new SkillPoint();
         deathPenaltyTick = load.deathPenaltyTick;
         DeathCount = load.DeathCounter;
+        ExplorationProgress = load.ExplorationProgress;
 
         if (load.SkillCooldowns != null) {
             foreach (SkillCooldown cooldown in load.SkillCooldowns) {
@@ -92,13 +99,31 @@ public class ConfigManager {
         }
 
         statAttributes = new StatAttributes();
-        if (load.Allocation != null) {
-            foreach ((BasicAttribute attribute, int amount) in load.Allocation) {
-                statAttributes.Allocation[attribute] = amount;
-                UpdateStatAttribute(attribute, amount, false);
+        if (load.StatPoints != null) {
+            foreach ((AttributePointSource source, int amount) in load.StatPoints) {
+                if (source == AttributePointSource.Prestige) {
+                    statAttributes.Sources[source] = RefreshPrestigeAttributePoints();
+                    continue;
+                }
+                statAttributes.Sources[source] = amount;
             }
         }
+        if (load.Allocation != null) {
+            // Reset points if total points exceed the limit.
+            if (load.Allocation.Values.Sum() > statAttributes.TotalPoints) {
+                load.Allocation.Clear();
+            } else {
+                foreach ((BasicAttribute attribute, int amount) in load.Allocation) {
+                    statAttributes.Allocation[attribute] = amount;
+                    UpdateStatAttribute(attribute, amount, false);
+                }
+            }
+        }
+    }
 
+    private int RefreshPrestigeAttributePoints() {
+        IEnumerable<PrestigeLevelRewardMetadata> entries = session.TableMetadata.PrestigeLevelRewardTable.Entries.Values.Where(entry => entry.Level <= session.Player.Value.Account.PrestigeLevel && entry.Type == PrestigeAwardType.statPoint);
+        return entries.Sum(entry => entry.Value);
     }
 
     public void UpdateHotbarSkills() {
@@ -245,6 +270,20 @@ public class ConfigManager {
         session.Send(AttributePointPacket.Allocation(statAttributes));
     }
 
+    public void AddStatPoint(AttributePointSource source, int amount) {
+        statAttributes.Sources[source] += amount;
+        session.Send(AttributePointPacket.Sources(statAttributes));
+    }
+
+    public void LoadSkillPoints() {
+        session.Send(SkillPointPacket.Sources(skillPoints));
+    }
+
+    public void AddSkillPoint(SkillPointSource source, int amount, short rank = 0) {
+        skillPoints[source][rank] += amount;
+        session.Send(SkillPointPacket.Sources(skillPoints));
+    }
+
     public IList<long> GetFavoriteDesigners() {
         return favoriteDesigners;
     }
@@ -360,13 +399,13 @@ public class ConfigManager {
             case BasicAttribute.Dexterity:
             case BasicAttribute.Intelligence:
             case BasicAttribute.Luck:
-                session.Player.Stats[type].AddTotal(1 * points);
+                session.Player.Stats.Values[type].AddTotal(1 * points);
                 break;
             case BasicAttribute.Health:
-                session.Player.Stats[BasicAttribute.Health].AddTotal(10 * points);
+                session.Player.Stats.Values[BasicAttribute.Health].AddTotal(10 * points);
                 break;
             case BasicAttribute.CriticalRate:
-                session.Player.Stats[BasicAttribute.CriticalRate].AddTotal(3 * points);
+                session.Player.Stats.Values[BasicAttribute.CriticalRate].AddTotal(3 * points);
                 break;
         }
 
@@ -449,7 +488,7 @@ public class ConfigManager {
             return true; // Nothing to unequip
         }
 
-        Item? lapenshard = session.Item.CreateItem(lapenshardId, Constant.LapenshardGrade);
+        Item? lapenshard = session.Field.ItemDrop.CreateItem(lapenshardId, Constant.LapenshardGrade);
         if (lapenshard == null) {
             return false;
         }
@@ -482,7 +521,10 @@ public class ConfigManager {
             skillCooldowns.Values.ToList(),
             deathPenaltyTick,
             DeathCount,
+            ExplorationProgress,
             statAttributes.Allocation,
+            statAttributes.Sources,
+            skillPoints,
             GatheringCounts,
             GuideRecords,
             Skill.SkillBook

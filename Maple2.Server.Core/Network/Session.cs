@@ -9,6 +9,7 @@ using Maple2.Model.Enum;
 using Maple2.PacketLib.Crypto;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
+using Maple2.Tools.Extensions;
 using Serilog;
 
 namespace Maple2.Server.Core.Network;
@@ -198,7 +199,7 @@ public abstract class Session : IDisposable {
                 while ((bytesRead = recvCipher.TryDecrypt(buffer, out PoolByteReader packet)) > 0) {
                     try {
 #if DEBUG
-                        LogRecv(packet);
+                        LogRecv(packet.Buffer);
 #endif
                         OnPacket?.Invoke(this, packet); // handle packet
                     } finally {
@@ -218,6 +219,12 @@ public abstract class Session : IDisposable {
         }
     }
 
+
+    /*
+        * Send packet to client
+        * packet: packet to send
+        * length: length of packet that only includes data
+    */
     private void SendInternal(byte[] packet, int length) {
         if (disposed) return;
 #if DEBUG
@@ -246,18 +253,31 @@ public abstract class Session : IDisposable {
     }
 
     private void LogSend(byte[] packet, int length) {
-        // Filtering sync from logs
-        short opcode = (short) (packet[1] << 8 | packet[0]);
-        if (opcode != 0x1C && opcode != 0x59 && opcode != 0x80 && opcode != 0x11) {
-            Logger.Verbose("SEND ({Length}): {Packet}", length, packet.ToHexString(length, ' '));
+        short op = (short) (packet[1] << 8 | packet[0]);
+        SendOp opcode = (SendOp) op;
+        switch (opcode) {
+            case SendOp.UserSync:
+            case SendOp.NpcControl:
+            case SendOp.ProxyGameObj:
+            case SendOp.ResponseTimeSync:
+                break;
+            default:
+                Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
+                break;
         }
     }
 
-    private void LogRecv(ByteReader packet) {
-        short opcode = (short) (packet.Buffer[1] << 8 | packet.Buffer[0]);
-        if (opcode != 0x12 && opcode != 0x0B && opcode != 0x35) {
-            // Filtering sync from logs
-            Logger.Verbose("RECV ({Length}): {Packet}", packet.Length, packet);
+    private void LogRecv(byte[] packet) {
+        short op = (short) (packet[1] << 8 | packet[0]);
+        RecvOp opcode = (RecvOp) op;
+        switch (opcode) {
+            case RecvOp.UserSync:
+            case RecvOp.RequestTimeSync:
+            case RecvOp.GuideObjectSync:
+                break;
+            default:
+                Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "RECV".ColorGreen(), opcode, $"0x{op:X4}", packet.ToHexString(packet.Length, ' '));
+                break;
         }
     }
 }

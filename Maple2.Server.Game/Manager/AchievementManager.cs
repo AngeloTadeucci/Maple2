@@ -165,7 +165,7 @@ public sealed class AchievementManager {
                 if (!manualClaim) {
                     return;
                 }
-                Item? item = session.Item.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
+                Item? item = session.Field.ItemDrop.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
                 if (item == null) {
                     return;
                 }
@@ -189,6 +189,12 @@ public sealed class AchievementManager {
                 }
                 session.Player.Value.Unlock.Emotes.Add(grade.Reward.Code);
                 session.Send(EmotePacket.Learn(new Emote(grade.Reward.Code)));
+                break;
+            case AchievementRewardType.skillpoint:
+                session.Config.AddSkillPoint(SkillPointSource.Trophy, grade.Reward.Value, (short) (grade.Reward.Rank - 1));
+                break;
+            case AchievementRewardType.statpoint:
+                session.Config.AddStatPoint(AttributePointSource.Trophy, grade.Reward.Value);
                 break;
             case AchievementRewardType.beauty_hair:
             case AchievementRewardType.beauty_makeup:

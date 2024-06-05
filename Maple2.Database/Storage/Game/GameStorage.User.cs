@@ -15,6 +15,7 @@ using SkillMacro = Maple2.Model.Game.SkillMacro;
 using SkillBook = Maple2.Model.Game.SkillBook;
 using SkillCooldown = Maple2.Model.Game.SkillCooldown;
 using SkillTab = Maple2.Model.Game.SkillTab;
+using SkillPoint = Maple2.Model.Game.SkillPoint;
 using Wardrobe = Maple2.Model.Game.Wardrobe;
 using GameEventUserValue = Maple2.Model.Game.GameEventUserValue;
 using Home = Maple2.Model.Game.Home;
@@ -235,10 +236,12 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners, IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, IDictionary<BasicAttribute, int>?, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
+        public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners,
+            IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
+            IDictionary<BasicAttribute, int>?, SkillPoint? SkillPoint, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, 0, 0, null, null, null, null);
+                return (null, null, null, null, null, null, null, null, 0, 0, 0, null, null, null, null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -253,6 +256,13 @@ public partial class GameStorage {
                 .Select<Model.Event.GameEventUserValue, GameEventUserValue>(value => value)
                 .ToDictionary(value => value.Type, value => value);
 
+            var skillPoint = new SkillPoint();
+            if (config.SkillPoint != null) {
+                foreach (Model.SkillPoint point in config.SkillPoint) {
+                    skillPoint[point.Source][point.Rank] = point.Points;
+                }
+            }
+
             return (
                 config.KeyBinds,
                 config.HotBars,
@@ -264,7 +274,10 @@ public partial class GameStorage {
                 config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
                 config.DeathTick,
                 config.DeathCount,
+                config.ExplorationProgress,
+                config.StatPoints,
                 config.StatAllocation,
+                skillPoint,
                 config.GatheringCounts,
                 config.GuideRecords,
                 skillBook
@@ -283,7 +296,10 @@ public partial class GameStorage {
                 IList<SkillCooldown> skillCooldowns,
                 long deathTick,
                 int deathCount,
+                int explorationProgress,
                 StatAttributes.PointAllocation allocation,
+                StatAttributes.PointSources statSources,
+                SkillPoint skillPoint,
                 IDictionary<int, int> gatheringCounts,
                 IDictionary<int, int> guideRecords,
                 SkillBook skillBook) {
@@ -306,9 +322,19 @@ public partial class GameStorage {
                 .ToList();
             config.DeathTick = deathTick;
             config.DeathCount = deathCount;
+            config.ExplorationProgress = explorationProgress;
             config.StatAllocation = allocation.Attributes.ToDictionary(
                 attribute => attribute,
                 attribute => allocation[attribute]);
+            config.StatPoints = statSources.Points;
+            config.SkillPoint = skillPoint.Points.SelectMany(
+                    point => point.Value.Ranks.Select(
+                        rankPoint => new Model.SkillPoint {
+                            Source = point.Key,
+                            Rank = rankPoint.Key,
+                            Points = rankPoint.Value,
+                        }))
+                .ToList();
             config.GatheringCounts = gatheringCounts;
             config.GuideRecords = guideRecords;
             config.SkillBook = new Model.SkillBook {

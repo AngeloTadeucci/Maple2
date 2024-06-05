@@ -79,6 +79,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()
         .SingleInstance();
+    autofac.RegisterType<WorldMapGraphStorage>()
+        .SingleInstance();
 
     // Database
     autofac.RegisterModule<GameDbModule>();

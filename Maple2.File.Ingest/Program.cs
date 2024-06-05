@@ -7,6 +7,7 @@ using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
 using Maple2.File.Parser.Tools;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 const string locale = "NA";
@@ -65,9 +66,14 @@ using var serverReader = new M2dReader(serverPath);
 DbContextOptions options = new DbContextOptionsBuilder()
     .UseMySql(dataDbConnection, ServerVersion.AutoDetect(dataDbConnection)).Options;
 
+Console.WriteLine("Connecting to database...");
 using var metadataContext = new MetadataContext(options);
+
+Console.WriteLine("Ensuring database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB
+
+Console.WriteLine("Starting data ingestion...");
 
 // Filter Xml results based on feature settings.
 Filter.Load(xmlReader, locale, env);
@@ -81,6 +87,7 @@ UpdateDatabase(metadataContext, new NpcMapper(xmlReader));
 UpdateDatabase(metadataContext, new PetMapper(xmlReader));
 UpdateDatabase(metadataContext, new MapMapper(xmlReader));
 UpdateDatabase(metadataContext, new UgcMapMapper(xmlReader));
+UpdateDatabase(metadataContext, new ExportedUgcMapMapper(xmlReader));
 UpdateDatabase(metadataContext, new QuestMapper(xmlReader));
 UpdateDatabase(metadataContext, new RideMapper(xmlReader));
 UpdateDatabase(metadataContext, new ScriptMapper(xmlReader));
@@ -104,27 +111,31 @@ UpdateDatabase(metadataContext, new AiMapper(serverReader));
 // new AdditionalEffectParser(xmlReader).Parse().ToList();
 // new QuestParser(xmlReader).Parse().ToList();
 
-Console.WriteLine("Done!");
+Console.WriteLine("Done!".ColorGreen());
 
 void UpdateDatabase<T>(DbContext context, TypeMapper<T> mapper) where T : class {
     string? tableName = context.GetTableName<T>();
     Debug.Assert(!string.IsNullOrEmpty(tableName), $"Invalid table name: {tableName}");
 
+    Console.Write($"Processing {tableName}... ");
     uint crc32C = mapper.Process();
+    Console.Write($"Finished in {mapper.ElapsedMilliseconds}ms");
+    Console.WriteLine();
 
     var checksum = context.Find<TableChecksum>(tableName);
     if (checksum != null) {
         if (checksum.Crc32C == crc32C) {
-            Console.WriteLine($"Table '{tableName}' is up-to-date");
+            Console.WriteLine($"Table {tableName} is up-to-date".ColorGreen());
             return;
         }
 
         checksum.Crc32C = crc32C;
-        Console.WriteLine($"Table '{tableName}' outdated");
+        Console.WriteLine($"Table {tableName} outdated".ColorRed());
         int result = context.Database.ExecuteSqlRaw(@$"DELETE FROM `{tableName}`");
-        Console.WriteLine($"Removed Table '{tableName}' rows: {result}");
+        Console.WriteLine($"Removed table {tableName} rows: {result}");
     }
 
+    Stopwatch stopwatch = Stopwatch.StartNew();
     // Write entries to table
     foreach (T result in mapper.Results) {
         context.Add(result);
@@ -141,4 +152,7 @@ void UpdateDatabase<T>(DbContext context, TypeMapper<T> mapper) where T : class 
     }
 
     context.SaveChanges();
+
+    stopwatch.Stop();
+    Console.WriteLine($"Wrote {mapper.Results.Count} entries to {tableName} in {stopwatch.ElapsedMilliseconds}ms");
 }

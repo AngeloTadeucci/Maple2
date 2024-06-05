@@ -64,6 +64,11 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
         yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
         yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
+        yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
+        yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
+        yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
+        yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
+
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -226,17 +231,31 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 AlignHeight: move.alignCubeHeight,
                 Rotate: move.rotation,
                 IgnoreAdjust: move.ignoreAdjustCubePosition,
+                ExplosionByDestroy: move.explosionByDestroy,
+                CatmullRom: move.catmullrom != 0,
+                IgnorePhysXTestInitPosition: move.ignorePhysxTestInitPosition,
+                IgnoreCancelAtSpawnTime: move.ignoreCancelAtSpawnTime,
                 Direction: move.direction != default ? Vector3.Normalize(move.direction) : default,
                 FireOffset: move.fireOffsetPosition,
                 FireFixed: move.fireFixedPosition,
+                ControlValue0: move.controlValue0,
+                ControlValue1: move.controlValue1,
+                ControlEndOffsetValue: move.controlEndOffsetValue,
                 TraceTargetOffset: move.traceTargetOffsetPos,
+                TraceTargetDuration: move.traceTargetDuration,
                 Velocity: move.vel,
                 Distance: move.distance,
                 RotateZDegree: move.dirRotZDegree,
                 LifeTime: move.lifeTime,
                 DelayTime: move.delayTime,
                 SpawnTime: move.spawnTime,
-                DestroyTime: move.destroyTime
+                DestroyTime: move.destroyTime,
+                ControlRate: move.controlRate,
+                LookAtType: move.lookAtType,
+                PiercingAttackInterval: move.piercingAttackInterval,
+                PiercingAttackMaxTargetCount: move.piercingAttackMaxTargetCount,
+                NonTargetMoveDistance: move.nonTargetMoveDistance,
+                MoveEndHoldDuration: move.moveEndHoldDuration
             )).ToList();
             results[id] = moves;
         }
@@ -1320,5 +1339,123 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 ParseBlackMarketTab(subTab, results);
             }
         }
+    }
+
+    private ChangeJobTable ParseChangeJobTable() {
+        var results = new Dictionary<Job, ChangeJobMetadata>();
+        foreach ((int jobId, ChangeJob job) in parser.ParseChangeJob()) {
+            results.Add((Job) jobId, new ChangeJobMetadata(
+                Job: (Job) job.subJobCode,
+                ChangeJob: (Job) job.changeSubJobCode,
+                StartQuestId: job.startquestid,
+                EndQuestId: job.endquestid
+            ));
+        }
+        return new ChangeJobTable(results);
+    }
+
+    private ChapterBookTable ParseChapterBookTable() {
+        var results = new Dictionary<int, ChapterBookTable.Entry>();
+        foreach ((int id, ChapterBook book) in parser.ParseChapterBook()) {
+            var items = new List<ItemComponent>();
+            var skillpoints = new List<ChapterBookTable.Entry.SkillPoint>();
+            int statPoints = 0;
+            switch (book.rewardType1) {
+                case QuestRewardType.skillPoint:
+                    skillpoints.Add(ParseSkillPoint(book.rewardValue1));
+                    break;
+                case QuestRewardType.item:
+                    items.Add(ParseItem(book.rewardValue1));
+                    break;
+                case QuestRewardType.statPoint:
+                    statPoints += int.Parse(book.rewardValue1[0]);
+                    break;
+                default:
+                    break;
+            }
+
+            switch (book.rewardType2) {
+                case QuestRewardType.skillPoint:
+                    skillpoints.Add(ParseSkillPoint(book.rewardValue2));
+                    break;
+                case QuestRewardType.item:
+                    items.Add(ParseItem(book.rewardValue2));
+                    break;
+                case QuestRewardType.statPoint:
+                    statPoints += int.Parse(book.rewardValue2[0]);
+                    break;
+                default:
+                    break;
+            }
+            results.Add(id, new ChapterBookTable.Entry(
+                Id: id,
+                BeginQuestId: book.prologue,
+                EndQuestId: book.epilogue,
+                SkillPoints: skillpoints.ToArray(),
+                StatPoints: statPoints,
+                Items: items.ToArray()));
+        }
+
+        return new ChapterBookTable(results);
+
+        ChapterBookTable.Entry.SkillPoint ParseSkillPoint(string[] rewardValue) {
+            return new ChapterBookTable.Entry.SkillPoint(
+                Amount: int.Parse(rewardValue[0]),
+                Rank: short.Parse(rewardValue[1]));
+        }
+
+        ItemComponent ParseItem(string[] rewardValue) {
+            return new ItemComponent(
+                ItemId: int.Parse(rewardValue[0]),
+                Amount: short.Parse(rewardValue[1]),
+                Rarity: int.Parse(rewardValue[2]),
+                Tag: ItemTag.None);
+        }
+    }
+
+    private FieldMissionTable ParseFieldMissionTable() {
+        var results = new Dictionary<int, FieldMissionTable.Entry>();
+        foreach ((int id, FieldMission mission) in parser.ParseFieldMission()) {
+            switch (mission.type) {
+                case QuestRewardType.item:
+                    results.Add(id, new FieldMissionTable.Entry(
+                        MissionCount: mission.mission,
+                        StatPoints: 0,
+                        Item: new ItemComponent(
+                            ItemId: mission.value[0],
+                            Rarity: mission.value[1],
+                            Amount: mission.value[2],
+                            Tag: ItemTag.None)));
+                    continue;
+                case QuestRewardType.statPoint:
+                    results.Add(id, new FieldMissionTable.Entry(
+                        MissionCount: mission.mission,
+                        StatPoints: mission.value[0],
+                        Item: null));
+                    continue;
+            }
+        }
+        return new FieldMissionTable(results);
+    }
+
+    private WorldMapTable ParseWorldMapTable() {
+        var mapList = new List<WorldMapTable.Map>();
+        foreach ((string feature, var maps) in parser.ParseWorldMap()) {
+            if (feature != "Kritias_2018_12") {
+                continue;
+            }
+            foreach (var map in maps) {
+                if (!map.@public) {
+                    continue;
+                }
+
+                mapList.Add(new WorldMapTable.Map(map.code, map.x, map.y, map.z, map.size));
+            }
+        }
+
+        if (mapList.Count == 0) {
+            throw new InvalidOperationException("No maps ingested for WorldMapTable");
+        }
+        return new WorldMapTable(mapList);
     }
 }

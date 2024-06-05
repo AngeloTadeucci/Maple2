@@ -300,6 +300,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("DeathTick")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("ExplorationProgress")
+                        .HasColumnType("int");
+
                     b.Property<string>("FavoriteDesigners")
                         .HasColumnType("json");
 
@@ -332,7 +335,13 @@ namespace Maple2.Server.World.Migrations
                     b.Property<string>("SkillMacros")
                         .HasColumnType("json");
 
+                    b.Property<string>("SkillPoint")
+                        .HasColumnType("json");
+
                     b.Property<string>("StatAllocation")
+                        .HasColumnType("json");
+
+                    b.Property<string>("StatPoints")
                         .HasColumnType("json");
 
                     b.Property<string>("Wardrobes")

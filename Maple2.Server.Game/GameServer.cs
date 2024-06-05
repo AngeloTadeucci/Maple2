@@ -102,7 +102,7 @@ public class GameServer : Server<GameSession> {
                     shopItemCache[shopId] = shopItems;
                 }
                 foreach ((int shopItemId, ShopItem shopItem) in shopItems) {
-                    Item? item = session.Item.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
+                    Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
                     if (item == null) {
                         continue;
                     }
@@ -116,7 +116,7 @@ public class GameServer : Server<GameSession> {
 
         if (shop.Items.Count == 0 && shopItemCache.TryGetValue(shop.Id, out Dictionary<int, ShopItem>? items)) {
             foreach ((int shopItemId, ShopItem shopItem) in items) {
-                Item? item = session.Item.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
+                Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
                 if (item == null) {
                     continue;
                 }

@@ -373,3 +373,5 @@ FodyWeavers.xsd
 # Environments
 .env
 
+/PacketStructures
+/Maple2.File.Ingest/Resources

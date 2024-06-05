@@ -81,7 +81,7 @@ public partial class TriggerContext : ITriggerContext {
             return;
         }
 
-        logAction(messageTemplate, args);
+        logAction($"{owner.Value.Name} {messageTemplate}", args);
         lastDebugKey = key;
     }
 
@@ -148,8 +148,13 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     public int NpcExtraData(int spawnId, string extraDataKey) {
-        ErrorLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
-        return 0;
+        WarnLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
+        var npc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
+        if (npc is null) {
+            return 0;
+        }
+
+        return npc.AiExtraData.GetValueOrDefault(extraDataKey, 0);
     }
 
     public int DungeonPlayTime() {
@@ -192,17 +197,21 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     public bool RandomCondition(float rate, string description) {
+        if (rate < 0f || rate > 100f) {
+            LogOnce(logger.Error, "[RandomCondition] Invalid rate: {Rate}", rate);
+            return false;
+        }
+
         if (currentRandom >= 100f) {
             currentRandom = Random.Shared.NextSingle() * 100;
         }
 
         currentRandom -= rate;
-        if (rate > 0) {
+        if (currentRandom > rate) {
             return false;
         }
 
-        // Reset |currentRandom|
-        currentRandom = float.MaxValue;
+        currentRandom = float.MaxValue; // Reset
         return true;
     }
 

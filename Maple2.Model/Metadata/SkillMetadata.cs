@@ -38,12 +38,15 @@ public record SkillMetadataProperty(
     int SkillGroup,
     short MaxLevel);
 
-public record SkillMetadataState;
+public record SkillMetadataState(
+    int SuperArmor); // 0, 1, 3
 
 public record SkillMetadataLevel(
     BeginCondition Condition,
     SkillMetadataChange? Change,
+    SkillMetadataAutoTargeting? AutoTargeting,
     SkillMetadataConsume Consume,
+    SkillMetadataDetect Detect,
     SkillMetadataRecovery Recovery,
     SkillEffectMetadata[] Skills,
     SkillMetadataMotion[] Motions);
@@ -58,11 +61,21 @@ public record SkillMetadataChange(
     public record Effect(int Id, int Level, int OverlapCount);
 }
 
+public record SkillMetadataAutoTargeting(
+    float MaxDegree,
+    float MaxDistance,
+    float MaxHeight,
+    bool UseMove);
+
 public record SkillMetadataConsume(
     long Meso,
     bool UseItem,
     float HpRate,
     Dictionary<BasicAttribute, long> Stat);
+
+public record SkillMetadataDetect(
+    bool IncludeCaster, // range & arrow can use 2, but detect & sensor only use 0 & 1
+    float Distance);
 
 public record SkillMetadataRecovery(
     long SpValue,
@@ -70,11 +83,14 @@ public record SkillMetadataRecovery(
 
 public record SkillMetadataMotion(
     SkillMetadataMotionProperty MotionProperty,
-    SkillMetadataAttack[] Attacks);
+    SkillMetadataAttack[] Attacks,
+    IReadOnlyDictionary<string, byte> AttackPoints);
 
 public record SkillMetadataMotionProperty(
     string SequenceName,
-    float SequenceSpeed);
+    float SequenceSpeed,
+    float MoveDistance,
+    bool FaceTarget);
 
 public record SkillMetadataAttack(
     string Point,
@@ -82,6 +98,8 @@ public record SkillMetadataAttack(
     int TargetCount,
     long MagicPathId,
     long CubeMagicPathId,
+    int HitImmuneBreak, // 0, 1, 2, 5, 99
+    int BrokenOffence, // 0 - 99
     CompulsionType[] CompulsionTypes,
     SkillMetadataPet? Pet,
     SkillMetadataRange Range,
@@ -111,13 +129,15 @@ public record SkillMetadataRange(
 public record SkillMetadataArrow(
     bool Overlap,
     bool Explosion,
+    bool RayPhysXTest,
     SkillEntity NonTarget,
-    int BounceType,
+    int BounceType, // 2: chain, 3: pierce
     int BounceCount,
     float BounceRadius,
     bool BounceOverlap,
     Vector3 Collision,
-    Vector3 CollisionAdd);
+    Vector3 CollisionAdd,
+    int RayType);
 
 public record SkillMetadataDamage(
     int Count,
@@ -127,10 +147,18 @@ public record SkillMetadataDamage(
     bool IsConstDamage, // Use 'Value' to determine damage
     long Value,
     float DamageByTargetMaxHp,
+    bool SuperArmorBreak,
     SkillMetadataPush? Push);
 
 public record SkillMetadataPush(
-    int Type,
+    int Type, // 0, 1, 2, 3, 4, 5, -1
+    int EaseType, // 0, 1, 2
+    int ApplyField, // 0, 1, 2
     float Distance,
+    float UpDistance,
+    int Down,
+    bool Fall,
     float Duration,
-    float Probability);
+    float Probability,
+    int Priority, // 0-99
+    int PriorityHitImmune); // 1-1600

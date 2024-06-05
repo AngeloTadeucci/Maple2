@@ -21,6 +21,8 @@ public sealed class QuestManager {
     private readonly IDictionary<int, Quest> accountValues;
     private readonly IDictionary<int, Quest> characterValues;
 
+    private ChangeJobMetadata? changeJobMetadata;
+
     private readonly ILogger logger = Log.Logger.ForContext<QuestManager>();
 
     public QuestManager(GameSession session) {
@@ -33,7 +35,7 @@ public sealed class QuestManager {
     }
 
     public void Load() {
-        session.Send(QuestPacket.StartLoad(0));
+        session.Send(QuestPacket.LoadExploration(session.Config.ExplorationProgress));
 
         foreach (ImmutableList<Quest> batch in accountValues.Values.Batch(BATCH_SIZE)) {
             session.Send(QuestPacket.LoadQuestStates(batch));
@@ -81,7 +83,8 @@ public sealed class QuestManager {
             if (characterValues.ContainsKey(metadata.Id) || accountValues.ContainsKey(metadata.Id)) {
                 continue;
             }
-            quest = db.CreateQuest(session.CharacterId, quest);
+            long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+            quest = db.CreateQuest(ownerId, quest);
             if (quest == null) {
                 continue;
             }
@@ -135,7 +138,8 @@ public sealed class QuestManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        quest = db.CreateQuest(session.CharacterId, quest);
+        long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+        quest = db.CreateQuest(ownerId, quest);
         if (quest == null) {
             logger.Error("Failed to create quest entry {questId}", metadata.Id);
             return;
@@ -272,17 +276,7 @@ public sealed class QuestManager {
 
         QuestMetadataReward reward = quest.Metadata.CompleteReward;
         if (reward.Exp > 0) {
-            /*if (reward.RelativeExp != ExpType.none && session.TableMetadata.CommonExpTable.Entries.TryGetValue(reward.RelativeExp, out CommonExpTable.Entry? entry)) {
-                entry.
-            }
-            long exp = reward.Exp;*/
-            ExpType expType = quest.Metadata.Basic.Type switch {
-                QuestType.EpicQuest => ExpType.epicQuest,
-                QuestType.FieldMission => ExpType.mission,
-                QuestType.AllianceQuest => ExpType.questSkyFortress,
-                _ => ExpType.quest,
-            };
-            session.Exp.AddExp(expType, reward.Exp);
+            session.Exp.AddExp(reward.Exp);
         }
 
         if (reward.Meso > 0) {
@@ -308,7 +302,8 @@ public sealed class QuestManager {
             if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
                 continue;
             }
-            if (metadata.Limit.JobLimits.Length > 0 && !metadata.Limit.JobLimits.Contains(session.Player.Value.Character.Job.Code())) {
+            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None)
+                && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
                 continue;
             }
             Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
@@ -316,6 +311,7 @@ public sealed class QuestManager {
                 session.Item.Inventory.Add(item, true);
             }
         }
+
 
         // TODO: Guild rewards, mission points?
 
@@ -327,6 +323,8 @@ public sealed class QuestManager {
         quest.State = QuestState.Completed;
         quest.CompletionCount++;
         session.Send(QuestPacket.Complete(quest));
+        TryJobAdvance(quest.Id);
+        CompleteChapter(quest.Id);
         return true;
     }
 
@@ -390,6 +388,85 @@ public sealed class QuestManager {
 
     public bool TryGetQuest(int questId, [NotNullWhen(true)] out Quest? quest) {
         return characterValues.TryGetValue(questId, out quest) || accountValues.TryGetValue(questId, out quest);
+    }
+
+    private void TryJobAdvance(int questId) {
+        if (changeJobMetadata == null) {
+            if (!session.TableMetadata.ChangeJobTable.Entries.TryGetValue(session.Player.Value.Character.Job, out ChangeJobMetadata? metadata)) {
+                return;
+            }
+            changeJobMetadata = metadata;
+        }
+
+        if (changeJobMetadata.EndQuestId != questId) {
+            return;
+        }
+
+        session.Player.Value.Character.Job = changeJobMetadata.ChangeJob;
+        session.Config.Skill.SkillInfo.SetJob(changeJobMetadata.ChangeJob);
+        session.Stats.Refresh();
+        session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
+    }
+
+    private void CompleteChapter(int questId) {
+        IEnumerable<ChapterBookTable.Entry> entries = session.TableMetadata.ChapterBookTable.Entries.Values.Where(entry => entry.EndQuestId == questId).ToList();
+        if (!entries.Any()) {
+            return;
+        }
+
+        foreach (ChapterBookTable.Entry entry in entries) {
+            if (!TryGetQuest(entry.BeginQuestId, out Quest? quest) || quest.State != QuestState.Completed) {
+                continue;
+            }
+
+            foreach (ItemComponent itemComponent in entry.Items) {
+                Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
+                if (item == null) {
+                    continue;
+                }
+
+                if (!session.Item.Inventory.Add(item, true)) {
+                    session.Item.MailItem(item);
+                }
+            }
+
+            foreach (ChapterBookTable.Entry.SkillPoint point in entry.SkillPoints) {
+                session.Config.AddSkillPoint(SkillPointSource.Chapter, point.Amount, point.Rank);
+            }
+
+            if (entry.StatPoints > 0) {
+                session.Config.AddStatPoint(AttributePointSource.Quest, entry.StatPoints);
+            }
+        }
+    }
+
+    public void CompleteFieldMission(int mission) {
+        if (!session.TableMetadata.FieldMissionTable.Entries.TryGetValue(mission, out FieldMissionTable.Entry? metadata)) {
+            return;
+        }
+
+        int missionCompleteCount = characterValues.Values.Count(quest => quest.Metadata.Basic.Type == QuestType.FieldMission && quest.State == QuestState.Completed);
+        missionCompleteCount += accountValues.Values.Count(quest => quest.Metadata.Basic.Type == QuestType.FieldMission && quest.State == QuestState.Completed);
+
+        if (metadata.MissionCount > missionCompleteCount) {
+            return;
+        }
+
+        session.Config.ExplorationProgress = metadata.MissionCount;
+        session.Send(QuestPacket.UpdateExploration(session.Config.ExplorationProgress));
+
+        if (metadata.Item != null) {
+            Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
+            if (item != null) {
+                if (!session.Item.Inventory.Add(item, true)) {
+                    session.Item.MailItem(item);
+                }
+            }
+        }
+
+        if (metadata.StatPoints > 0) {
+            session.Config.AddStatPoint(AttributePointSource.Exploration, metadata.StatPoints);
+        }
     }
 
     public void Save(GameStorage.Request db) {

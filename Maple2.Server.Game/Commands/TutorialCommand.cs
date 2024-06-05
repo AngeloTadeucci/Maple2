@@ -56,7 +56,7 @@ public class TutorialCommand : Command {
                     case Type.Item: {
                             using GameStorage.Request db = session.GameStorage.Context();
                             foreach (JobTable.Item rewardItem in tutorial.StartItem.Concat(tutorial.Reward)) {
-                                Item? item = session.Item.CreateItem(rewardItem.Id, rewardItem.Rarity, rewardItem.Count);
+                                Item? item = session.Field.ItemDrop.CreateItem(rewardItem.Id, rewardItem.Rarity, rewardItem.Count);
                                 if (item == null) {
                                     return;
                                 }

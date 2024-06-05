@@ -9,7 +9,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Enum;
-using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -134,14 +134,14 @@ public class SkillHandler : PacketHandler<GameSession> {
         spiritCost = Math.Max(0, (int) (-invokeStat.Value + (1 - invokeStat.Rate) * spiritCost));
         */
         if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
-            if (session.Player.Stats[BasicAttribute.Spirit].Current < spiritCost) {
+            if (session.Player.Stats.Values[BasicAttribute.Spirit].Current < spiritCost) {
                 Logger.Error("Not enough spirit to cast skill: {SkillId},{Level}", skillId, level);
                 return;
             }
         }
 
         if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
-            if (session.Player.Stats[BasicAttribute.Stamina].Current < staminaCost) {
+            if (session.Player.Stats.Values[BasicAttribute.Stamina].Current < staminaCost) {
                 Logger.Error("Not enough stamina to cast skill: {SkillId},{Level}", skillId, level);
                 return;
             }

@@ -84,7 +84,7 @@ public sealed class Navigation : IDisposable {
         return new Vector3(position.X, position.Y, z);
     }
 
-    private Shape GetShape(int width, int height) {
+    public Shape GetShape(int width, int height) {
         if (shapeCache.TryGetValue((width, height), out Shape? shape)) {
             return shape;
         }

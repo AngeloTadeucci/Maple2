@@ -7,14 +7,21 @@ namespace Maple2.Model.Metadata;
 public record NpcMetadata(
     int Id,
     string? Name,
-    string Model,
     string AiPath,
+    NpcMetadataModel Model,
     NpcMetadataStat Stat,
     NpcMetadataBasic Basic,
+    NpcMetadataDistance Distance,
+    NpcMetadataSkill Skill,
     NpcMetadataProperty Property,
     NpcMetadataDropInfo DropInfo,
     NpcMetadataAction Action,
     NpcMetadataDead Dead) : ISearchResult;
+
+public record NpcMetadataModel(
+    string Name,
+    float Scale,
+    float AniSpeed);
 
 public record NpcMetadataStat(
     IReadOnlyDictionary<BasicAttribute, long> Stats,
@@ -22,6 +29,24 @@ public record NpcMetadataStat(
     long[] ScaleBaseTap,
     long[] ScaleBaseDef,
     float[] ScaleBaseSpaRate);
+
+public record NpcMetadataDistance(
+    float Avoid,
+    float Sight,
+    float SightHeightUp,
+    float SightHeightDown,
+    float CustomLastSightRadius,
+    float CustomLastSightHeightUp,
+    float CustomLastSightHeightDown);
+
+public record NpcMetadataSkill(
+    NpcMetadataSkill.Entry[] Entries,
+    int Cooldown) {
+
+    public record Entry(
+        int Id,
+        short Level);
+}
 
 public record NpcMetadataBasic(
     int Friendly,
@@ -43,12 +68,10 @@ public record NpcMetadataBasic(
     long CustomExp);
 
 public record NpcMetadataProperty(
-    NpcMetadataSkill[] Skills,
     NpcMetadataBuff[] Buffs,
     NpcMetadataCapsule Capsule,
     NpcMetadataCollision? Collision);
 
-public record NpcMetadataSkill(int Id, int Level, int Priority, int Probability);
 
 public record NpcMetadataBuff(int Id, int Level);
 

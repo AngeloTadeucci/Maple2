@@ -28,6 +28,7 @@ public class QuestHandler : PacketHandler<GameSession> {
         ResumeDungeon = 19,
         Dispatch = 20,
         RemoteComplete = 24, // Maybe? This is mainly used for Navigator
+        CompleteFieldMission = 26,
     }
 
     #region Autofac Autowired
@@ -63,9 +64,15 @@ public class QuestHandler : PacketHandler<GameSession> {
             case Command.MapleGuide:
                 HandleMapleGuide(session, packet);
                 break;
+            case Command.Dispatch:
+                HandleDispatch(session, packet);
+                break;
             case Command.RemoteComplete:
                 HandleRemoteComplete(session, packet);
                 return;
+            case Command.CompleteFieldMission:
+                HandleCompleteFieldMission(session, packet);
+                break;
         }
     }
 
@@ -77,8 +84,17 @@ public class QuestHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (metadata.RemoteAccept.Type != QuestRemoteType.None) {
+            if (metadata.RemoteAccept.MapId != 0 && metadata.RemoteAccept.MapId != session.Player.Value.Character.MapId) {
+                return;
+            }
+
+            session.Quest.Start(questId);
+            return;
+        }
+
         bool isPostbox = npcObjectId == 0 && metadata.Basic.UsePostbox;
-        bool fieldNpcExists = session.Field != null && session.Field.Npcs.TryGetValue(npcObjectId, out FieldNpc? _);
+        bool fieldNpcExists = session.Field.Npcs.TryGetValue(npcObjectId, out FieldNpc? _);
 
         if (!isPostbox && !fieldNpcExists) {
             return;
@@ -168,6 +184,23 @@ public class QuestHandler : PacketHandler<GameSession> {
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 
+    private void HandleDispatch(GameSession session, IByteReader packet) {
+        int questId = packet.ReadInt();
+        short unknown = packet.ReadShort(); // 3?
+
+        if (!session.Quest.TryGetQuest(questId, out Quest? quest) || quest.State == QuestState.Completed) {
+            return;
+        }
+
+        if (quest.Metadata.Dispatch == null) {
+            return;
+        }
+
+        session.Send(session.PrepareField(quest.Metadata.Dispatch.MapId, portalId: quest.Metadata.Dispatch.PortalId == 0 ? -1 : quest.Metadata.Dispatch.PortalId)
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+    }
+
     private static void HandleRemoteComplete(GameSession session, IByteReader packet) {
         int questId = packet.ReadInt();
 
@@ -178,16 +211,24 @@ public class QuestHandler : PacketHandler<GameSession> {
         session.Quest.Complete(quest);
     }
 
+    private static void HandleCompleteFieldMission(GameSession session, IByteReader packet) {
+        int mission = packet.ReadInt();
+
+        if (session.Config.ExplorationProgress >= mission) {
+            return;
+        }
+
+        //TODO: If a user completes a field mission and reaches the next goal, if the reward was a stat point, immediately give it. Confirm if same behavior in gms2?
+        session.Quest.CompleteFieldMission(mission);
+    }
+
     private static void HandleSkyFortressTeleport(GameSession session) {
         if (!session.Quest.TryGetQuest(Constant.FameContentsRequireQuestID, out Quest? quest) || quest.State != QuestState.Completed) {
             return;
         }
 
-        bool canUseField = session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
-            Constant.FameContentsSkyFortressGotoPortalID,
-            session.CharacterId);
-
-        session.Send(canUseField
+        session.Send(session.PrepareField(Constant.FameContentsSkyFortressGotoMapID,
+            Constant.FameContentsSkyFortressGotoPortalID)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }

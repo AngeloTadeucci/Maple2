@@ -270,7 +270,7 @@ public class FishingHandler : PacketHandler<GameSession> {
             .Take(Constant.FishingRewardsMaxCount)
             .ToArray();
         foreach (FishingRewardTable.Entry entry in items) {
-            Item? item = session.Item.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item == null) {
                 return;
             }

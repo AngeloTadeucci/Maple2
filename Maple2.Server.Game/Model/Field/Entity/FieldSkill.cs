@@ -100,7 +100,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             for (byte j = 0; record.TrySetAttackPoint(j); j++) {
                 SkillMetadataAttack attack = record.Attack;
                 record.TargetUid++;
-                var damage = new DamageRecord {
+                var damage = new DamageRecord(record.Metadata, attack) {
                     CasterId = Caster.ObjectId,
                     OwnerId = ObjectId,
                     SkillId = Value.Id,
@@ -212,7 +212,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             switch (effect.Condition.Target) {
                 case SkillEntity.Owner:
                     foreach (IActor target in targets) {
-                        target.ApplyEffect(Caster, Caster, effect);
+                        target.ApplyEffect(Caster, target, effect);
                     }
                     break;
                 case SkillEntity.Target:

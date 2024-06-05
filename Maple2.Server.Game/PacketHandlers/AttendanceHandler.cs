@@ -91,7 +91,7 @@ public class AttendanceHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? item = session.Item.CreateItem(reward.ItemId, reward.Rarity, reward.Amount);
+        Item? item = session.Field.ItemDrop.CreateItem(reward.ItemId, reward.Rarity, reward.Amount);
         if (item == null) {
             return;
         }

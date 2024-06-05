@@ -1,8 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using Maple2.Database.Storage;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
-using Maple2.Server.Game.Model.Field.Actor.ActorState;
+using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Tools.Collision;
 
@@ -10,11 +11,12 @@ namespace Maple2.Server.Game.Model;
 
 public interface IActor : IFieldEntity {
     protected static readonly ConcurrentDictionary<int, Buff> NoBuffs = new();
-    public NpcMetadataStorage NpcMetadata { get; init; }
+    public NpcMetadataStorage? NpcMetadata { get; init; }
     public BuffManager Buffs { get; }
 
-    public Stats Stats { get; }
+    public StatsManager Stats { get; }
     public AnimationState AnimationState { get; init; }
+    public SkillState SkillState { get; init; }
 
     public bool IsDead { get; }
     public IPrism Shape { get; }
@@ -25,7 +27,7 @@ public interface IActor : IFieldEntity {
 
     public virtual void TargetAttack(SkillRecord record) { }
 
-    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0) { return null; }
+    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) { return null; }
     public virtual void KeyframeEvent(string keyName) { }
 }
 

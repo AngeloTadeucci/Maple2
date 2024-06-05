@@ -33,6 +33,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         Create = 1,
         Delete = 2,
         CancelDelete = 3,
+        ConfirmDelete = 4,
     }
 
     #region Autofac Autowired
@@ -58,6 +59,9 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
                 break;
             case Command.CancelDelete:
                 HandleCancelDelete(session, packet);
+                break;
+            case Command.ConfirmDelete:
+                HandleDelete(session, packet);
                 break;
             default:
                 throw new ArgumentException($"Invalid CHARACTER_MANAGEMENT type {command}");

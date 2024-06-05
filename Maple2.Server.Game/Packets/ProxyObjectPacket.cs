@@ -6,6 +6,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Microsoft.Scripting.Metadata;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -42,7 +43,7 @@ public static class ProxyObjectPacket {
         pWriter.WriteInt(player.Home.PlotNumber);
         pWriter.WriteInt(player.Home.ApartmentNumber);
         pWriter.WriteUnicodeString(player.Home.Indoor.Name);
-        pWriter.WriteInt(fieldPlayer.Stats.GearScore);
+        pWriter.WriteInt(fieldPlayer.Stats.Values.GearScore);
         pWriter.WriteShort((short) fieldPlayer.State);
         pWriter.Write<AchievementInfo>(player.Character.AchievementInfo);
 
@@ -80,7 +81,7 @@ public static class ProxyObjectPacket {
             pWriter.WriteUnicodeString(fieldPlayer.Value.Character.Motto);
         }
         if (flag.HasFlag(PlayerObjectFlag.GearScore)) {
-            pWriter.WriteInt(fieldPlayer.Stats.GearScore);
+            pWriter.WriteInt(fieldPlayer.Stats.Values.GearScore);
         }
         if (flag.HasFlag(PlayerObjectFlag.State)) {
             pWriter.WriteShort((short) fieldPlayer.State);

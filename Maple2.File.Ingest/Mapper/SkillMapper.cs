@@ -25,11 +25,15 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                 level => new SkillMetadataLevel(
                     Condition: level.beginCondition.Convert(),
                     Change: level.changeSkill?.Convert(),
+                    AutoTargeting: level.autoTargeting?.Convert(),
                     Consume: new SkillMetadataConsume(
                         Meso: level.consume.money,
                         UseItem: level.consume.useItem,
                         HpRate: level.consume.hpRate,
                         Stat: level.consume.stat.ToDictionary()),
+                    Detect: new SkillMetadataDetect(
+                        IncludeCaster: level.detectProperty?.includeCaster == 1,
+                        Distance: level.detectProperty?.distance ?? 0),
                     Recovery: new SkillMetadataRecovery(
                         SpValue: level.recoveryProperty.spValue,
                         SpRate: level.recoveryProperty.spRate),
@@ -37,14 +41,17 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     Motions: level.motion.Select(motion => new SkillMetadataMotion(
                         new SkillMetadataMotionProperty(
                             SequenceName: motion.motionProperty.sequenceName,
-                            SequenceSpeed: motion.motionProperty.sequenceSpeed
-                        ),
+                            SequenceSpeed: motion.motionProperty.sequenceSpeed,
+                            MoveDistance: motion.motionProperty.movedistance,
+                            FaceTarget: motion.motionProperty.faceTarget),
                         Attacks: motion.attack.Select(attack => new SkillMetadataAttack(
                             Point: attack.point,
                             PointGroup: attack.pointGroupID,
                             TargetCount: attack.targetCount,
                             MagicPathId: attack.magicPathID,
                             CubeMagicPathId: attack.cubeMagicPathID == int.MaxValue ? 9000073111 : attack.cubeMagicPathID,
+                            HitImmuneBreak: attack.hitImmuneBreak,
+                            BrokenOffence: attack.brokenOffence,
                             CompulsionTypes: attack.compulsionType.Select(type => (CompulsionType) type).ToArray(),
                             Pet: attack.petTamingProperty != null ? new SkillMetadataPet(
                                 TamingGroup: attack.petTamingProperty.tamingGroup,
@@ -56,13 +63,15 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                             Arrow: new SkillMetadataArrow(
                                 Overlap: attack.arrowProperty.overlap,
                                 Explosion: attack.arrowProperty.explosion,
+                                RayPhysXTest: attack.arrowProperty.rayPhysxTest,
                                 NonTarget: (SkillEntity) attack.arrowProperty.nonTarget,
                                 BounceType: attack.arrowProperty.bounceType,
                                 BounceCount: attack.arrowProperty.bounceCount,
                                 BounceRadius: attack.arrowProperty.bounceRadius,
                                 BounceOverlap: attack.arrowProperty.bounceType > 0 && attack.arrowProperty.bounceOverlap,
                                 Collision: attack.arrowProperty.collision,
-                                CollisionAdd: attack.arrowProperty.collisionAdd),
+                                CollisionAdd: attack.arrowProperty.collisionAdd,
+                                RayType: attack.arrowProperty.rayType),
                             Damage: new SkillMetadataDamage(
                                 Count: attack.damageProperty.count,
                                 Rate: attack.damageProperty.rate,
@@ -71,15 +80,24 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                 IsConstDamage: attack.damageProperty.isConstDamageValue != 0,
                                 Value: attack.damageProperty.value,
                                 DamageByTargetMaxHp: attack.damageProperty.damageByTargetMaxHP,
+                                SuperArmorBreak: attack.damageProperty.superArmorBreak,
                                 Push: attack.damageProperty.push > 0 ? new SkillMetadataPush(
                                     Type: attack.damageProperty.push,
+                                    EaseType: attack.damageProperty.pushEaseType,
+                                    ApplyField: attack.damageProperty.pushApplyField,
                                     Distance: attack.damageProperty.pushdistance,
+                                    UpDistance: attack.damageProperty.pushUpDistance,
+                                    Down: attack.damageProperty.pushDown,
+                                    Fall: attack.damageProperty.pushFall,
                                     Duration: attack.damageProperty.pushduration,
-                                    Probability: attack.damageProperty.pushprob
+                                    Probability: attack.damageProperty.pushprob,
+                                    Priority: attack.damageProperty.pushPriority,
+                                    PriorityHitImmune: attack.damageProperty.pushPriorityHitImmune
                                 ) : null
                             ),
                             Skills: attack.conditionSkill.Select(skill => skill.Convert()).ToArray()
-                        )).ToArray()
+                        )).ToArray(),
+                        AttackPoints: motion.CollectAttackPoints()
                     )).ToArray()
                 ));
 
@@ -100,7 +118,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     ReleaseObjectWeapon: data.basic.kinds.releaseObjectWeapon,
                     SkillGroup: data.basic.kinds.groupIDs.FirstOrDefault(),
                     MaxLevel: levels.Keys.Max()),
-                State: new SkillMetadataState(),
+                State: new SkillMetadataState(
+                    SuperArmor: data.basic.stateAttr.superArmor),
                 Levels: levels
             );
         }

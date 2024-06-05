@@ -223,6 +223,13 @@ public class InventoryManager {
                         return false;
                     }
 
+                    if (add.Metadata.Property.SlotMax == 1 && add.Amount > 1) {
+                        add.Amount--;
+                        if (!Add(add, notifyNew, commit)) {
+                            return false;
+                        }
+                    }
+
                     using GameStorage.Request db = session.GameStorage.Context();
                     Item? newAdd = db.CreateItem(session.CharacterId, add);
                     if (newAdd == null) {

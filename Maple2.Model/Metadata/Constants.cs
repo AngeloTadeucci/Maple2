@@ -85,7 +85,13 @@ public static class Constant {
     public const int GroupChatMaxCapacity = 20;
     public const int GroupChatMaxCount = 3;
     public const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
+    public const long MaxNpcControlDelay = 500;
     public const float BlackMarketPremiumClubDiscount = 0.2f;
+    public const double PetAttackMultiplier = 0.394;
+    public const double AttackDamageFactor = 4; // Unconfirmed
+    public const double CriticalConstant = 5.3;
+    public const double CriticalPercentageConversion = 0.015;
+    public const double MaxCriticalRate = 0.4;
 
 
     public const long FurnishingBaseId = 2870000000000000000;
@@ -840,6 +846,10 @@ public static class Constant {
     public const int NextStateTriggerDefaultTick = 100;
     public const int UserRevivalPaneltyTick = 3600000;
     public const int UserRevivalPaneltyMinLevel = 10;
+
+    public const float NpcLastSightRadius = 1800;
+    public const float NpcLastSightHeightUp = 525;
+    public const float NpcLastSightHeightDown = 225;
     #endregion
 }
 

@@ -24,6 +24,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<TableMetadata> TableMetadata { get; set; } = null!;
     public DbSet<AchievementMetadata> AchievementMetadata { get; set; } = null!;
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
+    public DbSet<ExportedUgcMapMetadata> ExportedUgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -45,6 +46,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<TableMetadata>(ConfigureTableMetadata);
         modelBuilder.Entity<AchievementMetadata>(ConfigureAchievementMetadata);
         modelBuilder.Entity<UgcMapMetadata>(ConfigureUgcMapMetadata);
+        modelBuilder.Entity<ExportedUgcMapMetadata>(ConfigureExportedUgcMapMetadata);
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
     }
 
@@ -99,8 +101,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     private static void ConfigureNpcMetadata(EntityTypeBuilder<NpcMetadata> builder) {
         builder.ToTable("npc");
         builder.HasKey(npc => npc.Id);
+        builder.Property(npc => npc.Model).HasJsonConversion();
         builder.Property(npc => npc.Stat).HasJsonConversion();
         builder.Property(npc => npc.Basic).HasJsonConversion();
+        builder.Property(npc => npc.Distance).HasJsonConversion();
+        builder.Property(npc => npc.Skill).HasJsonConversion();
         builder.Property(npc => npc.Property).HasJsonConversion();
         builder.Property(npc => npc.DropInfo).HasJsonConversion();
         builder.Property(npc => npc.Action).HasJsonConversion();
@@ -147,8 +152,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(quest => quest.AcceptReward).HasJsonConversion();
         builder.Property(quest => quest.CompleteReward).HasJsonConversion();
         builder.Property(quest => quest.Conditions).HasJsonConversion();
+        builder.Property(quest => quest.RemoteAccept).HasJsonConversion();
+        builder.Property(quest => quest.RemoteComplete).HasJsonConversion();
         builder.Property(quest => quest.GoToNpc).HasJsonConversion();
         builder.Property(quest => quest.GoToDungeon).HasJsonConversion();
+        builder.Property(quest => quest.Dispatch).HasJsonConversion();
     }
 
     private static void ConfigureRideMetadata(EntityTypeBuilder<RideMetadata> builder) {
@@ -191,6 +199,14 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("ugcmap");
         builder.HasKey(map => map.Id);
         builder.Property(map => map.Plots).HasJsonConversion().IsRequired();
+    }
+
+    private static void ConfigureExportedUgcMapMetadata(EntityTypeBuilder<ExportedUgcMapMetadata> builder) {
+        builder.ToTable("exportedugcmap");
+        builder.HasKey(map => map.Id);
+        builder.Property(map => map.BaseCubePosition).HasJsonConversion().IsRequired();
+        builder.Property(map => map.IndoorSize).HasJsonConversion().IsRequired();
+        builder.Property(map => map.Cubes).HasJsonConversion().IsRequired();
     }
 
     private static void ConfigureServerTableMetadata(EntityTypeBuilder<ServerTableMetadata> builder) {

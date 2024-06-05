@@ -18,10 +18,10 @@ internal class UgcMap {
     public int ApartmentNumber { get; set; }
 
     // Referenced by UgcMapCube
-    public ICollection<UgcMapCube>? Cubes;
+    public ICollection<UgcMapCube>? Cubes = [];
 
-    public DateTime ExpiryTime { get; set; }
-    public DateTime LastModified { get; set; }
+    public DateTimeOffset ExpiryTime { get; set; }
+    public DateTimeOffset LastModified { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator UgcMap?(Maple2.Model.Game.PlotInfo? other) {

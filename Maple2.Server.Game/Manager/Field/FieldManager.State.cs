@@ -40,6 +40,9 @@ public partial class FieldManager {
 
     public RoomTimer? RoomTimer { get; private set; }
 
+    #region Helpers
+    public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
+    #endregion
 
     #region Spawn
     public FieldPlayer SpawnPlayer(GameSession session, Player player, int portalId = -1, in Vector3 position = default, in Vector3 rotation = default) {
@@ -48,10 +51,12 @@ public partial class FieldManager {
         player.Character.InstanceMapId = MapId;
         player.Character.InstanceId = InstanceId;
 
-        var fieldPlayer = new FieldPlayer(session, player, NpcMetadata) {
+        var fieldPlayer = new FieldPlayer(session, player) {
             Position = position,
             Rotation = rotation,
         };
+        session.Stats.ResetActor(fieldPlayer);
+        session.Buffs.ResetActor(fieldPlayer);
 
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {
@@ -87,7 +92,7 @@ public partial class FieldManager {
     public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
         Agent? agent = Navigation.AddAgent(npc, position);
 
-        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
+        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = position;
         if (agent is not null) {
             spawnPosition = Navigation.FromPosition(agent.getPosition());
@@ -125,7 +130,7 @@ public partial class FieldManager {
 
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
-        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model);
+        AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
         var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, player) {
             Owner = owner,

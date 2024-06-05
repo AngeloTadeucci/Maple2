@@ -89,9 +89,14 @@ public class TriggerObjectCube(Ms2TriggerCube metadata) : TriggerObject<Ms2Trigg
 
 public class TriggerObjectCamera(Ms2TriggerCamera metadata) : TriggerObject<Ms2TriggerCamera>(metadata);
 
+public class TriggerObjectAgent(Ms2TriggerAgent metadata) : TriggerObject<Ms2TriggerAgent>(metadata);
+
 public class TriggerBox {
     // Some extra height to compensate for entity height
     private const float EXTRA_HEIGHT = 10f;
+
+    // Extra to check for entity size
+    private const float EXTRA_WIDTH = 10f;
 
     public readonly Ms2TriggerBox Metadata;
 
@@ -102,8 +107,8 @@ public class TriggerBox {
     public TriggerBox(Ms2TriggerBox metadata) {
         Metadata = metadata;
 
-        var min = new Vector2(metadata.Position.X - metadata.Dimensions.X / 2, metadata.Position.Y - metadata.Dimensions.Y / 2);
-        var max = new Vector2(metadata.Position.X + metadata.Dimensions.X / 2, metadata.Position.Y + metadata.Dimensions.Y / 2);
+        var min = new Vector2(metadata.Position.X - metadata.Dimensions.X / 2 - EXTRA_WIDTH, metadata.Position.Y - metadata.Dimensions.Y / 2 - EXTRA_WIDTH);
+        var max = new Vector2(metadata.Position.X + metadata.Dimensions.X / 2 + EXTRA_WIDTH, metadata.Position.Y + metadata.Dimensions.Y / 2 + EXTRA_WIDTH);
         box = new Prism(new BoundingBox(min, max), metadata.Position.Z - metadata.Dimensions.Z / 2 - EXTRA_HEIGHT, metadata.Dimensions.Z + EXTRA_HEIGHT);
     }
 

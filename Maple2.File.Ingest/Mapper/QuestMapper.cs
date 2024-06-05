@@ -57,6 +57,15 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                 ),
                 AcceptReward: Convert(data.acceptReward),
                 CompleteReward: Convert(data.completeReward),
+                RemoteAccept: new QuestRemoteAccept(
+                    Type: (QuestRemoteType) data.remoteAccept.useRemote,
+                    MapId: data.remoteAccept.requireField
+                ),
+                RemoteComplete: new QuestRemoteComplete(
+                    Type: (QuestRemoteType) data.remoteComplete.useRemote,
+                    MapId: data.remoteComplete.requireField,
+                    RequireDungeonClear: data.remoteComplete.requireDungeonClear > 0
+                ),
                 GoToNpc: new QuestMetadataGoToNpc(
                     Enabled: data.gotoNpc.enable,
                     MapId: data.gotoNpc.gotoField,
@@ -65,6 +74,12 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                     State: (QuestState) data.gotoDungeon.state,
                     MapId: data.gotoDungeon.gotoDungeon,
                     InstanceId: data.gotoDungeon.gotoInstanceID),
+                Dispatch: data.dispatch == null ? null : new QuestDispatch(
+                    Type: Enum.TryParse(data.dispatch.type, true, out QuestDispatchType dispatchType) ? dispatchType : QuestDispatchType.None,
+                    MapId: data.dispatch.field,
+                    PortalId: data.dispatch.portal,
+                    Script: data.dispatch.script
+                ),
                 Conditions: data.condition.Select(condition => new ConditionMetadata(
                     Type: (ConditionType) condition.type,
                     Value: condition.value,

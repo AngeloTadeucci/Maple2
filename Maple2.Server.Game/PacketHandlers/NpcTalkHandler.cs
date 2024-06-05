@@ -9,6 +9,7 @@ using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -76,17 +77,84 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         }
 
         int objectId = packet.ReadInt();
-        if (session.Field == null || !session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
+        if (!session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
             return; // Invalid Npc
         }
 
+        int options = 0;
+        var talkType = NpcTalkType.None;
         if (npc.Value.Metadata.Basic.ShopId > 0) {
             session.Shop.Load(npc.Value.Metadata.Basic.ShopId, npc.Value.Id);
+            talkType |= NpcTalkType.Dialog;
+            options++;
         }
 
         ScriptMetadata.TryGet(npc.Value.Id, out ScriptMetadata? metadata);
+        ScriptState? scriptState = NpcTalkUtil.GetInitialScriptType(session, ScriptStateType.Script, metadata, npc.Value.Id);
+        ScriptState? selectState = NpcTalkUtil.GetInitialScriptType(session, ScriptStateType.Select, metadata, npc.Value.Id);
+        ScriptState? questState = NpcTalkUtil.GetInitialScriptType(session, ScriptStateType.Quest, metadata, npc.Value.Id);
 
-        session.NpcScript = new NpcScriptManager(session, npc, metadata);
+        if (questState != null) {
+            talkType |= NpcTalkType.Quest;
+            options++;
+        }
+
+        if (scriptState?.Type == ScriptStateType.Job) {
+            // Job script only counts as an additional option if quests are present.
+            if (talkType.HasFlag(NpcTalkType.Quest)) {
+                options++;
+            }
+            talkType |= NpcTalkType.Dialog;
+        } else if (scriptState != null) {
+            talkType |= NpcTalkType.Talk;
+            options++;
+        }
+
+        if (options > 1 && selectState != null) {
+            talkType |= NpcTalkType.Select;
+        }
+
+        switch (npc.Value.Metadata.Basic.Kind) {
+            case >= 30 and < 40: // Beauty
+            case 2: // Storage
+            case 86: // TODO: BlackMarket
+            case 88: // TODO: Birthday
+            case 501:
+                talkType |= NpcTalkType.Dialog;
+                break;
+            case >= 100 and <= 104: // Sky Fortress
+            case >= 105 and <= 107: // Kritias
+            case 108: // Humanitas
+                talkType = NpcTalkType.Dialog;
+                break;
+        }
+
+        // Determine which script to use.
+        ScriptState? selectedState = null;
+        if (npc.Value.Metadata.Basic.Kind is >= 100 and <= 108) {
+            selectedState = selectState;
+        } else if (talkType.HasFlag(NpcTalkType.Select)) {
+            selectedState = selectState;
+        } else if (talkType.HasFlag(NpcTalkType.Quest)) {
+            if (questState == null) {
+                session.Send(NpcTalkPacket.Close());
+                return;
+            }
+            selectedState = questState;
+            talkType = NpcTalkType.Quest;
+            // now that quest is selected, change the metadata to the quest's metadata
+            if (!ScriptMetadata.TryGet(session.Quest.GetAvailableQuests(npc.Value.Id).Keys.Min(), out metadata)) {
+                session.Send(NpcTalkPacket.Close());
+                return;
+            }
+        } else if (scriptState == null && selectState == null) {
+            session.Send(NpcTalkPacket.Close());
+            return;
+        } else {
+            selectedState = scriptState ?? selectState;
+        }
+
+        session.NpcScript = new NpcScriptManager(session, npc, metadata, selectedState, talkType);
         if (!session.NpcScript.BeginNpcTalk()) {
             session.NpcScript = null;
             return;
@@ -94,15 +162,6 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
 
         session.ConditionUpdate(ConditionType.dialogue, codeLong: npc.Value.Id);
         session.ConditionUpdate(ConditionType.talk_in, codeLong: npc.Value.Id);
-
-        // if the first script happens to be a quest, we should change NpcScript
-        if (session.NpcScript?.State != null && session.NpcScript.State.Type == ScriptStateType.Quest) {
-            if (!ScriptMetadata.TryGet(session.NpcScript.QuestId, out ScriptMetadata? questMetadata)) {
-                return;
-            }
-
-            session.NpcScript = new NpcScriptManager(session, npc, questMetadata);
-        }
     }
 
     private void HandleContinue(GameSession session, IByteReader packet) {
@@ -129,7 +188,8 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                         session.NpcScript = null;
                         return;
                     }
-                    session.NpcScript = new NpcScriptManager(session, npc, metadata);
+                    ScriptState? state = NpcTalkUtil.GetQuestScriptState(session, metadata, npc.Value.Id);
+                    session.NpcScript = new NpcScriptManager(session, npc, metadata, state, NpcTalkType.Quest);
                     if (!session.NpcScript.BeginQuest()) {
                         session.NpcScript = null;
                     }
@@ -176,7 +236,8 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.NpcScript = new NpcScriptManager(session, npc, metadata);
+        ScriptState? state = NpcTalkUtil.GetQuestScriptState(session, metadata, npc.Value.Id);
+        session.NpcScript = new NpcScriptManager(session, npc, metadata, state, NpcTalkType.Quest);
 
         if (!session.NpcScript.BeginQuest()) {
             session.NpcScript = null;

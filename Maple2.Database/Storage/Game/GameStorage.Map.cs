@@ -57,7 +57,7 @@ public partial class GameStorage {
             return Context.TrySaveChanges() ? model : null;
         }
 
-        public PlotInfo? BuyPlot(long ownerId, PlotInfo plot, TimeSpan days) {
+        public PlotInfo? BuyPlot(string characterName, long ownerId, PlotInfo plot, TimeSpan days) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             UgcMap? ugcMap = Context.UgcMap.FirstOrDefault(map => map.Id == plot.Id && !map.Indoor);
@@ -72,6 +72,7 @@ public partial class GameStorage {
 
             ugcMap.OwnerId = ownerId;
             ugcMap.ExpiryTime = DateTime.UtcNow + days;
+            ugcMap.Name = characterName;
             Context.UgcMap.Update(ugcMap);
             Context.UgcMapCube.Where(cube => cube.UgcMapId == ugcMap.Id).Delete();
 
@@ -111,7 +112,8 @@ public partial class GameStorage {
             }
 
             model.OwnerId = 0;
-            model.ExpiryTime = DateTime.UtcNow;
+            model.Name = string.Empty;
+            model.ExpiryTime = DateTimeOffset.UtcNow;
             Context.UgcMapCube.Where(cube => cube.UgcMapId == model.Id).Delete();
             Context.UgcMap.Update(model);
 
@@ -141,6 +143,7 @@ public partial class GameStorage {
                 model.Number = plotInfo.Number;
                 model.ApartmentNumber = plotInfo.ApartmentNumber;
                 model.ExpiryTime = plotInfo.ExpiryTime.FromEpochSeconds();
+                model.Name = plotInfo.Name;
                 Context.UgcMap.Update(model);
             }
 
@@ -216,7 +219,7 @@ public partial class GameStorage {
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
 
             if (ugcMap.Cubes != null) {
@@ -242,8 +245,9 @@ public partial class GameStorage {
                 OwnerId = ugcMap.OwnerId,
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
+                Name = ugcMap.Name,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
         }
     }

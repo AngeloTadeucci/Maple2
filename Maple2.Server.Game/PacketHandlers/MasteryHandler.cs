@@ -58,7 +58,7 @@ public class MasteryHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? rewardItem = session.Item.CreateItem(entry.ItemId, entry.ItemRarity, entry.ItemAmount);
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(entry.ItemId, entry.ItemRarity, entry.ItemAmount);
         if (rewardItem == null) {
             return;
         }
@@ -109,7 +109,7 @@ public class MasteryHandler : PacketHandler<GameSession> {
         }
 
         foreach (ItemComponent rewardItem in entry.RewardItems) {
-            Item? item = session.Item.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }

@@ -1043,7 +1043,7 @@ internal class TriggerDefinitionOverride {
         };
         ConditionOverride["object_interacted"] = new TriggerDefinitionOverride("object_interacted") {
             Names = BuildNameOverride(("arg1", "interactIds"), ("arg2", "state"), ("ar2", "state")),
-            Types = BuildTypeOverride(("interactIds", IntList, Required), ("state", Int, Required)),
+            Types = BuildTypeOverride(("interactIds", IntList, Required), ("state", Int, "0")),
         };
         ConditionOverride["pvp_zone_ended"] = new TriggerDefinitionOverride("pvp_zone_ended") {
             Names = BuildNameOverride(("arg1", "boxId")),

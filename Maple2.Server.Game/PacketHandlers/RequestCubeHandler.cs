@@ -4,6 +4,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -218,6 +219,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 fieldLiftable.Rotation = new Vector3(0, 0, rotation);
                 fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.FinishTime + fieldLiftable.Value.ItemLifetime;
 
+                if (session.Field.Entities.LiftableTargetBoxes.TryGetValue(position, out LiftableTargetBox? liftableTarget)) {
+                    session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId, targetLong: liftableTarget.LiftableTarget);
+                }
+
                 session.Field.Broadcast(LiftablePacket.Add(fieldLiftable));
                 session.Field.Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
                 session.Field.Broadcast(SetCraftModePacket.Stop(session.Player.ObjectId));
@@ -225,7 +230,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 break;
         }
 
-        session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId);
+        session.ConditionUpdate(ConditionType.install_item, codeLong: cubeItem.ItemId);
     }
 
     private void HandleRemoveCube(GameSession session, IByteReader packet) {
@@ -236,8 +241,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (TryRemoveCube(session, plot, position)) {
+        if (TryRemoveCube(session, plot, position, out PlotCube? cube)) {
             session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
+            session.ConditionUpdate(ConditionType.uninstall_item, codeLong: cube.ItemId);
         }
     }
 
@@ -261,6 +267,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field?.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
+        session.ConditionUpdate(ConditionType.rotate_cube, codeLong: cube.ItemId);
     }
 
     private void HandleReplaceCube(GameSession session, IByteReader packet) {
@@ -443,6 +450,16 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return false;
         }
 
+        //TODO: check outside plot - coords belongs to plot
+
+        // TODO: check outside plot bounds
+
+        if (IsCoordOutsideArea(position, session.Player.Value.Home.Area)) {
+            result = null;
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
+            return false;
+        }
+
         if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
             long itemUid = session.Item.Furnishing.PurchaseCube(cube.ItemId);
             if (itemUid == 0) {
@@ -464,8 +481,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         return true;
     }
 
-    private static bool TryRemoveCube(GameSession session, Plot plot, in Vector3B position) {
-        if (!plot.Cubes.Remove(position, out PlotCube? cube)) {
+    private static bool TryRemoveCube(GameSession session, Plot plot, in Vector3B position, [NotNullWhen(true)] out PlotCube? cube) {
+        if (!plot.Cubes.Remove(position, out cube)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_no_cube_to_remove));
             return false;
         }
@@ -475,6 +492,19 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         return true;
+    }
+
+    private static bool IsCoordOutsideArea(Vector3B position, int area) {
+        if (position.X > 0 || position.Y > 0 || position.Z < 0 || position.Z >= area) {
+            return true;
+        }
+
+        area *= -1;
+        if (position.X <= area || position.Y <= area) {
+            return true;
+        }
+
+        return false;
     }
     #endregion
 }
