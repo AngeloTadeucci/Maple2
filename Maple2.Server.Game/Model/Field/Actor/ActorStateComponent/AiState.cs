@@ -36,8 +36,11 @@ public class AiState {
 
     public AiState(FieldNpc actor, string aiPath) {
         this.actor = actor;
+        if (string.IsNullOrEmpty(aiPath)) {
+            return;
+        }
 
-        if (string.IsNullOrEmpty(aiPath) || aiPath == "AI_DefaultNew.xml") {
+        if (aiPath == "AI_DefaultNew.xml") {
             aiPath = Constant.DefaultAiPath;
         }
 
