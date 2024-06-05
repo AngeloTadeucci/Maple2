@@ -33,9 +33,9 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                     Sight: data.distance.sight,
                     SightHeightUp: data.distance.sightHeightUP,
                     SightHeightDown: data.distance.sightHeightDown,
-                    CustomLastSightRadius: data.distance.customLastSightRadius,
-                    CustomLastSightHeightUp: data.distance.customLastSightHeightUp,
-                    CustomLastSightHeightDown: data.distance.customLastSightHeightDown
+                    LastSightRadius: data.distance.customLastSightRadius == 0 ? Constant.NpcLastSightRadius : data.distance.customLastSightRadius,
+                    LastSightHeightUp: data.distance.customLastSightHeightUp == 0 ? Constant.NpcLastSightHeightUp : data.distance.customLastSightHeightUp,
+                    LastSightHeightDown: data.distance.customLastSightHeightDown == 0 ? Constant.NpcLastSightHeightDown : data.distance.customLastSightHeightDown
                 ),
                 Skill: new NpcMetadataSkill(
                     Entries: data.skill.ids.Select((skillId, i) =>

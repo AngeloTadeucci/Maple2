@@ -151,9 +151,9 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Player.ConsumeStamina((int) staminaCost);
         session.Field.Broadcast(StatsPacket.Update(session.Player, [BasicAttribute.Spirit, BasicAttribute.Stamina]));
 
-        session.ConditionUpdate(ConditionType.skill, 1, codeLong: skillId);
+        session.ConditionUpdate(ConditionType.skill, codeLong: skillId, targetLong: session.Field.MapId);
 
-        session.Player.InBattle = itemUid <= 0;
+        session.Player.InBattle = metadata.State.InBattle;
         session.ActiveSkills.Add(record);
         session.Field?.Broadcast(SkillPacket.Use(record));
 
@@ -283,7 +283,6 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         session.Player.TargetAttack(record);
-        session.Player.InBattle = true;
     }
 
     private void HandleSplash(GameSession session, IByteReader packet) {
@@ -318,7 +317,6 @@ public class SkillHandler : PacketHandler<GameSession> {
         record.Rotation = packet.Read<Vector3>();
 
         session.Field?.AddSkill(record);
-        session.Player.InBattle = true;
     }
 
     private void HandleSync(GameSession session, IByteReader packet) {

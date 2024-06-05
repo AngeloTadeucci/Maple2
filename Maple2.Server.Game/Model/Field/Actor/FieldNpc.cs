@@ -97,7 +97,7 @@ public class FieldNpc : Actor<Npc> {
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
-    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
+    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
@@ -114,15 +114,14 @@ public class FieldNpc : Actor<Npc> {
             }
         }
         CurrentRoutine = new WaitRoutine(this, -1, 1f);
-        AiState = new AiState(this);
         MovementState = new MovementState(this);
         BattleState = new BattleState(this);
         TaskState = new TaskState(this);
         State = new NpcState();
         SequenceId = -1;
         SequenceCounter = 1;
+        AiState = new AiState(this, aiPath);
 
-        AiState.SetAi(npc.Metadata.AiPath);
 
         Skills = new SkillMetadata[Value.Metadata.Skill.Entries.Length];
 
@@ -388,7 +387,7 @@ public class FieldNpc : Actor<Npc> {
             }
 
             DropLoot(firstPlayer);
-            player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id);
+            player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id, targetLong: Field.MapId);
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
             }

@@ -119,6 +119,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     SkillGroup: data.basic.kinds.groupIDs.FirstOrDefault(),
                     MaxLevel: levels.Keys.Max()),
                 State: new SkillMetadataState(
+                    InBattle:data.basic.stateAttr.battle == 1,
                     SuperArmor: data.basic.stateAttr.superArmor),
                 Levels: levels
             );

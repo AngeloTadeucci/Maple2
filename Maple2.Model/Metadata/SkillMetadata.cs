@@ -39,6 +39,7 @@ public record SkillMetadataProperty(
     short MaxLevel);
 
 public record SkillMetadataState(
+    bool InBattle,
     int SuperArmor); // 0, 1, 3
 
 public record SkillMetadataLevel(
