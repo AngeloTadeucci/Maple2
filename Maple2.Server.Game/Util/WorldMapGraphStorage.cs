@@ -1,4 +1,4 @@
-using DijkstraAlgorithm.Graphing;
+﻿using DijkstraAlgorithm.Graphing;
 using DijkstraAlgorithm.Pathing;
 using IronPython.Runtime;
 using Maple2.Database.Storage;

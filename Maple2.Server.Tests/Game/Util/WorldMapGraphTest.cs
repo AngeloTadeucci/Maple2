@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using Maple2.Database.Context;
 using Maple2.Database.Storage;
