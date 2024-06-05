@@ -3,6 +3,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PathEngine;
+using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
@@ -12,6 +13,7 @@ namespace Maple2.Server.Game.Model;
 public sealed class FieldPet : FieldNpc {
     private readonly FieldPlayer? owner;
     public readonly Item Pet;
+    public readonly PetMetadata Metadata;
 
     public int OwnerId => owner?.ObjectId ?? 0;
     public int SkinId { get; private set; }
@@ -19,11 +21,17 @@ public sealed class FieldPet : FieldNpc {
     public readonly float Scale = 1f;
 
     public short TamingRank; // (0-70=green, 70-95=yellow, 95-100=red)
-    public int TamingPoint = 1000;
+    public int TamingPoint;
+    private long tamingTick;
 
-    public FieldPet(FieldManager field, int objectId, Agent agent, Npc npc, Item pet, FieldPlayer? owner = null) : base(field, objectId, agent, npc) {
+    public FieldPet(FieldManager field, int objectId, Agent agent, Npc npc, Item pet, string aiPath, FieldPlayer? owner = null) : base(field, objectId, agent, npc, aiPath) {
         this.owner = owner;
         Pet = pet;
+
+        if (!field.ItemMetadata.TryGetPet(pet.Metadata.Property.PetId, out PetMetadata? petMetadata)) {
+            throw new KeyNotFoundException($"Pet metadata not found for pet id {pet.Id}");
+        }
+        Metadata = petMetadata;
 
         // Wild pets need a TamingRank.
         if (owner == null) {
@@ -38,8 +46,23 @@ public sealed class FieldPet : FieldNpc {
         }
     }
 
+    public override void Update(long tickCount) {
+        base.Update(tickCount);
+
+        if (TamingPoint > 0 && tamingTick < tickCount) {
+            tamingTick = tickCount + (long) TimeSpan.FromSeconds(1).TotalMilliseconds;
+            TamingPoint = Math.Max(0, TamingPoint - 100);
+            Field.Broadcast(PetPacket.SyncTaming(BattleState.TargetId, this));
+        }
+    }
+
     public override void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) {
         if (attack.Pet == null) {
+            return;
+        }
+
+        if (BattleState.TargetId != 0 && BattleState.TargetId != caster.ObjectId && caster is FieldPlayer player) {
+            player.Session.Send(NoticePacket.Notice(NoticePacket.Flags.Message | NoticePacket.Flags.Alert, new InterfaceText("s_err_taming_attack_other_user"))); // No string code for this?
             return;
         }
 
@@ -49,9 +72,6 @@ public sealed class FieldPet : FieldNpc {
         int damageAmount = TamingPoint - Math.Min(TamingPoint + attack.Pet.TamingPoint, Constant.TamingPetMaxPoint);
         TamingPoint -= damageAmount;
         targetRecord.AddDamage(damageAmount == 0 ? DamageType.Miss : DamageType.Normal, damageAmount);
-        if (damageAmount != 0) {
-            Field.Broadcast(PetPacket.SyncTaming(caster.ObjectId, this));
-        }
 
         if (attack.Pet.TrapLevel > 0) {
             if (attack.Pet.ForcedTaming) {

@@ -4,6 +4,7 @@ public record PetMetadata(
     int Id,
     string? Name,
     int Type,
+    string[] AiPresets,
     int NpcId,
     int ItemSlots,
     bool EnableExtraction,

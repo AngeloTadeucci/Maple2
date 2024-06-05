@@ -35,9 +35,9 @@ public record NpcMetadataDistance(
     float Sight,
     float SightHeightUp,
     float SightHeightDown,
-    float CustomLastSightRadius,
-    float CustomLastSightHeightUp,
-    float CustomLastSightHeightDown);
+    float LastSightRadius,
+    float LastSightHeightUp,
+    float LastSightHeightDown);
 
 public record NpcMetadataSkill(
     NpcMetadataSkill.Entry[] Entries,

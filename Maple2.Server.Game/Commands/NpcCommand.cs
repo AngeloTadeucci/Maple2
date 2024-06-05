@@ -21,7 +21,7 @@ public class NpcCommand : Command {
         this.session = session;
         this.npcStorage = npcStorage;
 
-        Argument<int> id = new Argument<int>("id", "Id of npc to spawn.");
+        var id = new Argument<int>("id", "Id of npc to spawn.");
 
         AddArgument(id);
         this.SetHandler<InvocationContext, int>(Handle, id);
@@ -64,8 +64,8 @@ public class AnimateNpcCommand : Command {
         this.session = session;
         this.npcStorage = npcStorage;
 
-        Argument<int?> id = new Argument<int?>("id", () => null, "Id of npc to spawn.");
-        Argument<string?> animation = new Argument<string?>("animation", () => null, "Animation to play.");
+        var id = new Argument<int?>("id", () => null, "Id of npc to spawn.");
+        var animation = new Argument<string?>("animation", () => null, "Animation to play.");
 
         AddArgument(id);
         AddArgument(animation);
@@ -110,8 +110,6 @@ public class AnimateNpcCommand : Command {
             ctx.Console.Error.WriteLine($"Available Animations: {string.Join(", ", fieldNpc.Value.Animations.Keys)}");
             return;
         }
-
-        AnimationSequence? animationSequence = fieldNpc.Value.Animations[animationKey];
 
         fieldNpc.Animate(animationKey);
     }
