@@ -75,14 +75,14 @@ public class ClubLookup : IDisposable {
     private void SetMembers(GameStorage.Request db, Club club) {
         List<ClubMember> members = db.GetClubMembers(playerLookup, club.Id);
         club.Leader = members.First(member => member.Info.CharacterId == club.LeaderId);
-        // members.Remove(club.Leader);
-        club.Members = members;
+        foreach (ClubMember member in members) {
+            club.Members.TryAdd(member.Info.CharacterId, member);
+        }
     }
 
     public ClubError Create(string name, long leaderId, out long clubId) {
         clubId = 0;
         using GameStorage.Request db = gameStorage.Context();
-        System.Console.WriteLine($"Checking if club exists with name {name}");
         if (db.ClubExists(clubName: name)) {
             return ClubError.s_club_err_name_exist;
         }
@@ -103,6 +103,24 @@ public class ClubLookup : IDisposable {
             GameStorage = gameStorage,
             ChannelClients = channelClients,
         });
+
+        return ClubError.none;
+    }
+
+    public ClubError Disband(long clubId) {
+        if (!TryGet(clubId, out ClubManager? manager)) {
+            return ClubError.s_club_err_null_club;
+        }
+
+        if (!clubs.TryRemove(clubId, out manager)) {
+            return ClubError.s_club_err_unknown;
+        }
+
+        manager.Dispose();
+        using GameStorage.Request db = gameStorage.Context();
+        if (!db.DeleteClub(clubId)) {
+            return ClubError.s_club_err_unknown;
+        }
 
         return ClubError.none;
     }

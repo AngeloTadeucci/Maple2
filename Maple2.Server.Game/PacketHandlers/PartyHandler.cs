@@ -99,7 +99,9 @@ public class PartyHandler : PacketHandler<GameSession> {
                 return;
             }
 
-            session.Party.SetParty(response.Party);
+            if (session.Party.SetParty(response.Party)) {
+                session.Send(PartyPacket.Load(session.Party.Party!));
+            }
         } else if (session.Party.Party.LeaderCharacterId != session.CharacterId) {
             session.Send(PartyPacket.Error(PartyError.s_party_err_not_chief));
             return;
@@ -156,7 +158,9 @@ public class PartyHandler : PacketHandler<GameSession> {
         }
 
         if (response == PartyInviteResponse.Accept) {
-            session.Party.SetParty(partyResponse.Party);
+            if (session.Party.SetParty(partyResponse.Party)) {
+                session.Send(PartyPacket.Load(session.Party.Party!, true));
+            }
         }
     }
 
@@ -231,7 +235,9 @@ public class PartyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Party.SetParty(response.Party);
+        if (session.Party.SetParty(response.Party)) {
+            session.Send(PartyPacket.Load(session.Party.Party!, true));
+        }
     }
 
     private void HandleSummonParty(GameSession session) {

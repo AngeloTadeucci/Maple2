@@ -27,6 +27,9 @@ service Channel {
   rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
   // Black Market
   rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
+  // Manage Club.
+  rpc Club(ClubRequest) returns (ClubResponse);
+  rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
 }
 
 message GuildRequest {
@@ -153,5 +156,36 @@ message BlackMarketRequest {
 }
 
 message BlackMarketResponse {
+  int32 error = 1;
+}
+
+message ClubRequest {
+  message Create {
+    ClubInfo info = 1;
+  }
+
+  message StagedClubInviteReply {
+    int32 reply = 1;
+    string name = 2;
+    int64 character_id = 3;
+  }
+
+  message StagedClubFail {
+    int32 reply = 1;
+  }
+
+  message Establish { }
+
+  int64 club_id = 1;
+  repeated int64 receiver_ids = 2;
+  oneof Club {
+    Create create = 3;
+    StagedClubInviteReply staged_club_invite_reply = 4;
+    StagedClubFail staged_club_fail = 5;
+    Establish establish = 6;
+  }
+}
+
+message ClubResponse {
   int32 error = 1;
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -8,16 +9,19 @@ using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
-public class Club {
-    public DateTime LastModified { get; init; }
+public class Club : IByteSerializable {
 
     public long Id { get; init; }
     public required string Name;
     public required long LeaderId;
     public ClubMember Leader;
     public long CreationTime;
+    public ClubState State = ClubState.Staged;
+    public int BuffId;
+    public long NameChangedTime;
+    public long LastModified { get; init; }
 
-    public List<ClubMember> Members;
+    public ConcurrentDictionary<long, ClubMember> Members;
 
     [SetsRequiredMembers]
     public Club(long id, string name, long leaderId) {
@@ -25,7 +29,7 @@ public class Club {
         Name = name;
         LeaderId = leaderId;
 
-        Members = new List<ClubMember>();
+        Members = new ConcurrentDictionary<long, ClubMember>();
         Leader = null!;
     }
 
@@ -34,24 +38,30 @@ public class Club {
         Leader = leader;
     }
 
-    public void WriteClubData(IByteWriter writer, bool isCreate) {
+    public void WriteTo(IByteWriter writer) {
         writer.WriteLong(Id);
         writer.WriteUnicodeString(Name);
         writer.WriteLong(Leader.Info.AccountId);
         writer.WriteLong(Leader.Info.CharacterId);
         writer.WriteUnicodeString(Leader.Info.Name);
         writer.WriteLong(CreationTime);
-        writer.WriteByte((byte) (isCreate ? 1 : 2));
+        writer.Write<ClubState>(State);
         writer.WriteInt();
         writer.WriteInt();
-        writer.WriteLong();
+        writer.WriteLong(NameChangedTime);
     }
 }
 
 public class ClubMember : IByteSerializable, IDisposable {
+    public const byte TYPE = 2;
+
+    public long ClubId { get; init; }
     public required PlayerInfo Info;
+    public long AccountId => Info.AccountId;
+    public long CharacterId => Info.CharacterId;
+    public string Name => Info.Name;
     public long JoinTime;
-    public long LastLoginTime;
+    public long LoginTime;
 
     public CancellationTokenSource? TokenSource;
 
@@ -63,22 +73,21 @@ public class ClubMember : IByteSerializable, IDisposable {
     }
 
     public void WriteTo(IByteWriter writer) {
-        WriteInfo(writer, Info);
+        writer.WriteByte(TYPE);
+        writer.WriteLong(ClubId);
 
-        writer.WriteLong(JoinTime);
-        writer.WriteLong(LastLoginTime);
-        writer.WriteBool(!Info.Online);
+        WriteInfo(writer, this);
     }
 
-    public static void WriteInfo(IByteWriter writer, PlayerInfo info) {
+    public static void WriteInfo(IByteWriter writer, ClubMember member) {
+        PlayerInfo info = member.Info;
         writer.WriteLong(info.AccountId);
         writer.WriteLong(info.CharacterId);
         writer.WriteUnicodeString(info.Name);
-        writer.Write(info.Gender);
+        writer.Write<Gender>(info.Gender);
         writer.WriteInt((int) info.Job.Code());
-        writer.Write(info.Job);
+        writer.Write<Job>(info.Job);
         writer.WriteShort(info.Level);
-        writer.WriteInt(info.GearScore);
         writer.WriteInt(info.MapId);
         writer.WriteShort(info.Channel);
         writer.WriteUnicodeString(info.Picture);
@@ -87,6 +96,9 @@ public class ClubMember : IByteSerializable, IDisposable {
         writer.WriteInt(info.ApartmentNumber);
         writer.WriteLong(info.PlotExpiryTime);
         writer.Write(info.AchievementInfo);
+        writer.WriteLong(member.JoinTime);
+        writer.WriteLong(member.LoginTime);
+        writer.WriteBool(!info.Online);
     }
 }
 

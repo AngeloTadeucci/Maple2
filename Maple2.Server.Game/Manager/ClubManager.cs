@@ -1,5 +1,9 @@
+using Maple2.Database.Storage;
+using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Core.Sync;
+using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
@@ -22,7 +26,11 @@ public class ClubManager : IDisposable {
         this.session = session;
         tokenSource = new CancellationTokenSource();
 
-        SetClub(clubInfo);
+        if (!SetClub(clubInfo)) {
+            logger.Error("Failed to set club for {Session}", session);
+            return;
+        }
+        session.Send(ClubPacket.Update(Club!));
     }
 
     public void Dispose() {
@@ -30,14 +38,18 @@ public class ClubManager : IDisposable {
         tokenSource.Dispose();
 
         if (Club != null) {
-            foreach (ClubMember member in Club.Members) {
+            foreach (ClubMember member in Club.Members.Values) {
                 member.Dispose();
+                if (member.CharacterId == session.CharacterId) {
+                    using GameStorage.Request db = session.GameStorage.Context();
+                    db.SaveClubMember(member);
+                }
             }
         }
     }
 
     public void Load() {
-        if (Club == null) {
+        if (Club == null || Club.State == ClubState.Staged) {
             return;
         }
 
@@ -49,35 +61,63 @@ public class ClubManager : IDisposable {
             return false;
         }
 
-        var clubMembers = info.Members.Select(member => {
+        List<ClubMember> clubMembers = info.Members.Select(member => {
             if (!session.PlayerInfo.GetOrFetch(member.CharacterId, out PlayerInfo? playerInfo)) {
                 logger.Error("Failed to get player info for character {CharacterId}", member.CharacterId);
                 return null;
             }
 
             return new ClubMember {
-                Info = playerInfo,
+                Info = playerInfo.Clone(),
+                LoginTime = member.LoginTime,
+                JoinTime = member.JoinTime,
+                ClubId = info.Id,
             };
         }).WhereNotNull().ToList();
 
-        if (!session.PlayerInfo.GetOrFetch(info.LeaderId, out PlayerInfo? leaderInfo)) {
-            logger.Error("Failed to get player info for character {CharacterId}", info.LeaderId);
+        ClubMember? leader = clubMembers.SingleOrDefault(member => member.CharacterId == info.LeaderId);
+        if (leader == null) {
+            logger.Error("Club {ClubId} does not have a valid leader", info.Id);
+            session.Send(ClubPacket.Error(ClubError.s_club_err_unknown));
             return false;
         }
 
-        ClubMember leader = new ClubMember {
-            Info = leaderInfo,
-        };
-
         Club = new Club(info.Id, info.Name, leader) {
             CreationTime = info.CreationTime,
+            State = (ClubState) info.State,
         };
 
         foreach (ClubMember member in clubMembers) {
-            Club.Members.Add(member);
-            BeginListen(member);
+            if (Club.Members.TryAdd(member.Info.CharacterId, member)) {
+                BeginListen(member);
+            }
         }
 
+        return true;
+    }
+
+    public void RemoveClub() {
+        if (Club == null) {
+            return;
+        }
+
+        foreach (ClubMember member in Club.Members.Values) {
+            EndListen(member);
+        }
+
+        Club = null;
+    }
+
+    public bool AddMember(string requestorName, ClubMember member) {
+        if (Club == null) {
+            return false;
+        }
+        if (!Club.Members.TryAdd(member.CharacterId, member)) {
+            return false;
+        }
+
+        BeginListen(member);
+        //session.Send(GuildPacket.Joined(requestorName, member));
         return true;
     }
 
@@ -102,31 +142,30 @@ public class ClubManager : IDisposable {
     }
 
     private bool SyncUpdate(CancellationToken cancel, long id, UpdateField type, IPlayerInfo info) {
-        var member = Club?.Members.FirstOrDefault(member => member.Info.CharacterId == id);
-        if (cancel.IsCancellationRequested || Club == null || member == null) {
+        if (cancel.IsCancellationRequested || Club == null || !Club.Members.TryGetValue(id, out ClubMember? member)) {
             return true;
         }
 
         bool wasOnline = member.Info.Online;
         string name = member.Info.Name;
         member.Info.Update(type, info);
-        // member.LoginTime = info.UpdateTime;
 
-        // if (name != member.Info.Name) {
-        //     session.Send(GuildPacket.UpdateMemberName(name, member.Name));
-        // }
+        if (name != member.Info.Name) {
+            session.Send(ClubPacket.UpdateMemberName(name, member.Name));
+        }
 
-        // if (type == UpdateField.Map) {
-        //     session.Send(GuildPacket.UpdateMemberMap(member.Name, member.Info.MapId));
-        // } else {
-        //     session.Send(GuildPacket.UpdateMember(member.Info));
-        // }
+        if (type == UpdateField.Map) {
+            session.Send(ClubPacket.UpdateMemberMap(Id, member.Name, member.Info.MapId));
+        } else {
+            session.Send(ClubPacket.UpdateMember(member));
+        }
 
-        // if (member.Info.Online != wasOnline) {
-        //     session.Send(member.Info.Online
-        //         ? GuildPacket.NotifyLogin(member.Name)
-        //         : GuildPacket.NotifyLogout(member.Name, member.LoginTime));
-        // }
+        if (session.CharacterId != member.CharacterId && member.Info.Online != wasOnline) {
+            Console.WriteLine($"Member {member.Info.Name} is now {(member.Info.Online ? "online" : "offline")}");
+            session.Send(member.Info.Online
+                ? ClubPacket.NotifyLogin(Id, member.Name)
+                : ClubPacket.NotifyLogout(Id, member.Name, member.LoginTime));
+        }
         return false;
     }
     #endregion

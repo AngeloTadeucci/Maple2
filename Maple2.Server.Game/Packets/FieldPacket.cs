@@ -285,7 +285,7 @@ public static class FieldPacket {
         writer.WriteClass<Mastery>(character.Mastery);
         #region Unknown
         writer.WriteUnicodeString(); // Login username
-        writer.WriteLong();
+        writer.WriteLong(); // Session Id
         writer.WriteLong();
         writer.WriteLong();
         #endregion

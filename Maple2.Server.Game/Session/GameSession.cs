@@ -151,24 +151,14 @@ public sealed partial class GameSession : Core.Network.Session {
         Item = new ItemManager(db, this, ItemStatsCalc);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
-        Party = new PartyManager(World, this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
         });
 
         foreach (GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
-            GroupChatManager manager = new GroupChatManager(groupChatInfo, this);
+            var manager = new GroupChatManager(groupChatInfo, this);
             GroupChats.TryAdd(groupChatInfo.Id, manager);
-        }
-
-        ClubInfoResponse clubInfoResponse = World.ClubInfo(new ClubInfoRequest {
-            CharacterId = CharacterId,
-        });
-
-        foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
-            ClubManager manager = new ClubManager(clubInfo, this);
-            Clubs.TryAdd(clubInfo.Id, manager);
         }
 
         if (!PrepareField(player.Character.MapId)) {
@@ -198,12 +188,19 @@ public sealed partial class GameSession : Core.Network.Session {
         foreach ((int id, GroupChatManager groupChat) in GroupChats) {
             groupChat.Load();
         }
-        foreach ((long id, ClubManager club) in Clubs) {
-            club.Load();
+
+        ClubInfoResponse clubInfoResponse = World.ClubInfo(new ClubInfoRequest {
+            CharacterId = CharacterId,
+        });
+
+        foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
+            var manager = new ClubManager(clubInfo, this);
+            Clubs.TryAdd(clubInfo.Id, manager);
         }
 
         Buddy.Load();
-        Party.Load();
+        // We load Party after partyInfo update to properly set the player's online status.
+        Party = new PartyManager(World, this);
 
         Send(SurvivalPacket.UpdateStats(player.Account));
 
@@ -485,6 +482,10 @@ public sealed partial class GameSession : Core.Network.Session {
             Party.Dispose();
             foreach ((int groupChatId, GroupChatManager groupChat) in GroupChats) {
                 groupChat.CheckDisband();
+            }
+
+            foreach ((long clubId, ClubManager club) in Clubs) {
+                club.Dispose();
             }
 
             using (GameStorage.Request db = GameStorage.Context()) {

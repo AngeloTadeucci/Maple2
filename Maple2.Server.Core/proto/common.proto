@@ -56,6 +56,7 @@ message GameResetRequest {
     Weekly weekly = 2;
   }
 }
+
 message GameResetResponse {
   int32 error = 1;
 }
@@ -214,4 +215,29 @@ message PartySearchResponse {
 
   int32 error = 3;
   int32 error_category = 4;
+}
+
+message ClubInfo {
+  message Member {
+    int64 character_id = 1;
+    string character_name = 2;
+    int64 login_time = 3;
+    int64 join_time = 4;
+  }
+
+  int64 id = 1;
+  string name = 2;
+  int64 leader_id = 3;
+  string leader_name = 4;
+  int64 creation_time = 5;
+  repeated Member members = 6;
+  int32 state = 7;
+}
+
+message ClubInfoRequest {
+  int64 character_id = 1;
+}
+
+message ClubInfoResponse {
+  repeated ClubInfo clubs = 1;
 }

@@ -75,14 +75,6 @@ public class PartyManager : IDisposable {
         }
     }
 
-    public void Load() {
-        if (Party == null) {
-            return;
-        }
-
-        session.Send(PartyPacket.Load(Party));
-    }
-
     public bool SetParty(PartyInfo info) {
         if (Party != null) {
             return false;
@@ -113,13 +105,17 @@ public class PartyManager : IDisposable {
             CreationTime = info.CreationTime,
             DungeonId = info.DungeonId,
         };
+        Party = party;
         foreach (PartyMember member in members) {
-            if (party.Members.TryAdd(member.CharacterId, member)) {
-                BeginListen(member);
-            }
+            party.Members.TryAdd(member.CharacterId, member);
         }
 
-        Party = party;
+        session.Send(PartyPacket.Load(Party));
+
+        // Listening happens after loading the party
+        foreach (PartyMember member in party.Members.Values) {
+            BeginListen(member);
+        }
 
         session.Player.Value.Character.PartyId = Party.Id;
 
@@ -135,7 +131,6 @@ public class PartyManager : IDisposable {
             };
         }
 
-        session.Send(PartyPacket.Load(Party));
         return true;
     }
 
@@ -362,7 +357,7 @@ public class PartyManager : IDisposable {
             session.Send(PartyPacket.Update(member));
         }
 
-        if (member.Info.Online != wasOnline) {
+        if (session.CharacterId != member.CharacterId && member.Info.Online != wasOnline) {
             session.Send(member.Info.Online
                 ? PartyPacket.NotifyLogin(member)
                 : PartyPacket.NotifyLogout(member.CharacterId));

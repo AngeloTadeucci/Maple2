@@ -180,6 +180,16 @@ public partial class GameStorage {
             return SaveChanges();
         }
 
+        public bool SaveGuildMember(GuildMember member) {
+            Model.GuildMember? model = Context.GuildMember.Find(member.GuildId, member.CharacterId);
+            if (model == null) {
+                return false;
+            }
+
+            Context.GuildMember.Update(member);
+            return SaveChanges();
+        }
+
         // Note: GuildMembers must be loaded separately.
         private Guild? LoadGuild(long guildId, string guildName) {
             IQueryable<Model.Guild> query = guildId > 0

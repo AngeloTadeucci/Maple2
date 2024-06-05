@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
+using Maple2.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,8 +12,11 @@ namespace Maple2.Database.Model;
 internal class Club {
     public long Id { get; set; }
     public required string Name { get; set; }
+    public ClubState State { get; set; }
+    public int BuffId { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
+    public DateTime NameChangedTime { get; set; }
 
     public long LeaderId { get; set; }
     public List<ClubMember>? Members { get; set; }
@@ -21,18 +25,24 @@ internal class Club {
     public static implicit operator Club?(Maple2.Model.Game.Club? other) {
         return other == null ? null : new Club {
             // CreationTime set by DB
-            LastModified = other.LastModified,
+            LastModified = other.LastModified.FromEpochSeconds(),
+            NameChangedTime = other.NameChangedTime.FromEpochSeconds(),
             Id = other.Id,
             Name = other.Name,
             LeaderId = other.Leader.Info.CharacterId,
+            BuffId = other.BuffId,
+            State = other.State,
         };
     }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.Club?(Club? other) {
         return other == null ? null : new Maple2.Model.Game.Club(other.Id, other.Name, other.LeaderId) {
-            LastModified = other.LastModified,
+            LastModified = other.LastModified.ToEpochSeconds(),
+            NameChangedTime = other.NameChangedTime.ToEpochSeconds(),
             CreationTime = other.CreationTime.ToEpochSeconds(),
+            BuffId = other.BuffId,
+            State = other.State,
             // Leader and Members set separately
         };
     }
@@ -55,18 +65,19 @@ internal class Club {
 }
 
 internal class ClubMember {
-    public DateTime CreationTime { get; set; }
-
     public long ClubId { get; set; }
     public long CharacterId { get; set; }
     public Character? Character { get; set; }
+    public DateTime CreationTime { get; set; }
+    public DateTime LoginTime { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ClubMember?(Maple2.Model.Game.ClubMember? other) {
         return other == null ? null : new ClubMember {
             // CreationTime set by DB
-            // ClubId set by Club auto_increment
             CharacterId = other.Info.CharacterId,
+            ClubId = other.ClubId,
+            LoginTime = (other.Info.UpdateTime > 0 ? other.Info.UpdateTime : other.LoginTime).FromEpochSeconds(),
         };
     }
 

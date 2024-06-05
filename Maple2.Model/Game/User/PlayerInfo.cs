@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -19,7 +20,6 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public AchievementInfo AchievementInfo { get; set; }
     // Premium
     public long PremiumTime { get; set; }
-
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo) {
@@ -47,8 +47,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteUnicodeString(Name);
         writer.Write<Gender>(Gender);
         writer.WriteByte(1);
-        writer.WriteLong();
-        writer.WriteInt();
+        writer.WriteLong(AccountId);
+        writer.WriteInt(1);
         writer.WriteInt(MapId);
         writer.WriteInt(MapId);
         writer.WriteInt(PlotMapId);
@@ -60,30 +60,30 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteInt((int) TotalHp);
         writer.WriteShort();
         writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteInt();
-        writer.Write<Vector3>(default);
+        writer.WriteLong(); // Home Storage Access Time
+        writer.WriteLong(); // Home Doctor Access Time
+        writer.WriteInt(); // Outside Map Id
+        writer.Write<Vector3>(default); // Outside Position
         writer.WriteInt(GearScore);
         writer.Write<SkinColor>(default);
         writer.WriteLong();
         writer.Write<AchievementInfo>(default);
-        writer.WriteLong();
-        writer.WriteUnicodeString();
+        writer.WriteLong(); // Guild Id
+        writer.WriteUnicodeString(); // Guild Name
         writer.WriteUnicodeString(Motto);
         writer.WriteUnicodeString(Picture);
-        writer.WriteByte();
+        writer.WriteByte(); // Club Count
         writer.WriteByte();
         writer.WriteClass<Mastery>(new Mastery());
-        writer.WriteUnicodeString();
-        writer.WriteLong();
+        writer.WriteUnicodeString(); // Login username
+        writer.WriteLong(); // Session Id
         writer.WriteLong();
         writer.WriteLong();
         writer.WriteInt();
         writer.WriteByte();
         writer.WriteBool(false);
-        writer.WriteLong();
-        writer.WriteInt();
+        writer.WriteLong(); // Birthday
+        writer.WriteInt(); // SuperChatId
         writer.WriteInt();
         writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         writer.WriteInt();
