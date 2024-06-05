@@ -8,6 +8,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Util;
 using Maple2.Tools.Extensions;
 using static Maple2.Model.Error.MigrationError;
 
@@ -28,6 +29,8 @@ public class TaxiHandler : PacketHandler<GameSession> {
     // ReSharper disable MemberCanBePrivate.Global
     public required MapMetadataStorage MapMetadata { private get; init; }
     public required MapEntityStorage EntityMetadata { private get; init; }
+    public required WorldMapGraphStorage WorldMapGraph { private get; init; }
+    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -55,40 +58,87 @@ public class TaxiHandler : PacketHandler<GameSession> {
 
     private void HandleTaxi(GameSession session, IByteReader packet) {
         int mapId = packet.ReadInt();
+
+        if (!CheckMapCashCall(session, mapId, MapMetadata)) {
+            return;
+        }
+
         if (!session.Player.Value.Unlock.Taxis.Contains(mapId)) {
             return;
         }
+
         if (!MapMetadata.TryGet(mapId, out MapMetadata? map)) {
             return;
         }
+
         MapEntityMetadata? entities = EntityMetadata.Get(map.XBlock);
         if (entities?.Taxi == null) {
             return;
         }
 
-        Vector3 position = entities.Taxi.Position.Offset(VectorExtensions.BLOCK_SIZE, entities.Taxi.Rotation);
+        if (!WorldMapGraph.CanPathFind(session.Player.Value.Character.MapId, mapId, out int mapCount)) {
+            return;
+        }
+
+        int cost = Lua.CalcTaxiCharge(mapCount, (ushort) session.Player.Value.Character.Level);
+
+        if (session.Currency.Meso < cost) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
+            return;
+        }
+        session.Currency.Meso -= cost;
+
+        Vector3 position = entities.Taxi.Position.Offset(-VectorExtensions.BLOCK_SIZE, entities.Taxi.Rotation);
         Vector3 rotation = entities.Taxi.Rotation;
         session.Send(session.PrepareField(mapId, position: position, rotation: rotation)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(s_move_err_default));
     }
 
-    private static void HandleRotorsAirTaxi(GameSession session, IByteReader packet) {
+    private void HandleRotorsAirTaxi(GameSession session, IByteReader packet) {
         int mapId = packet.ReadInt();
+        if (!CheckMapCashCall(session, mapId, MapMetadata)) {
+            return;
+        }
+
         session.Send(session.PrepareField(mapId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(s_move_err_default));
     }
 
-    private static void HandleMesoAirTaxi(GameSession session, IByteReader packet) {
+    private void HandleMesoAirTaxi(GameSession session, IByteReader packet) {
         int mapId = packet.ReadInt();
+        if (!CheckMapCashCall(session, mapId, MapMetadata)) {
+            return;
+        }
+
+        int cost = Lua.CalcAirTaxiCharge((ushort) session.Player.Value.Character.Level);
+
+        if (session.Currency.Meso < cost) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
+            return;
+        }
+
+        session.Currency.Meso -= cost;
+
         session.Send(session.PrepareField(mapId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(s_move_err_default));
     }
 
-    private static void HandleMeretAirTaxi(GameSession session, IByteReader packet) {
+    private void HandleMeretAirTaxi(GameSession session, IByteReader packet) {
         int mapId = packet.ReadInt();
+        if (!CheckMapCashCall(session, mapId, MapMetadata)) {
+            return;
+        }
+
+        if (session.Currency.Meret < Constant.MeretAirTaxiPrice) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
+            return;
+        }
+
+        session.Currency.Meret -= Constant.MeretAirTaxiPrice;
+
         session.Send(session.PrepareField(mapId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(s_move_err_default));
@@ -97,19 +147,27 @@ public class TaxiHandler : PacketHandler<GameSession> {
     private static void HandleDiscoverTaxi(GameSession session) {
         int mapId = session.Player.Value.Character.MapId;
         session.Player.Value.Unlock.Taxis.Add(mapId);
-        session.Send(RevealTaxi(mapId));
+        session.Send(TaxiPacket.RevealTaxi(mapId));
         session.ConditionUpdate(ConditionType.taxifind);
         session.Exp.AddExp(ExpType.taxi);
     }
 
-    private static ByteWriter RevealTaxi(params int[] taxis) {
-        var pWriter = Packet.Of(SendOp.Taxi);
-        pWriter.WriteInt(taxis.Length);
-        foreach (int taxi in taxis) {
-            pWriter.WriteInt(taxi);
+    private static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
+        MapMetadataCashCall currentCashCall = session.Field.Metadata.CashCall;
+        if (!currentCashCall.TaxiDeparture) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_departure));
+            return false;
         }
-        pWriter.WriteBool(true); // s_reveal_taxi_station
 
-        return pWriter;
+        if (!mapMetadataStorage.TryGet(mapId, out MapMetadata? map)) {
+            return false;
+        }
+
+        if (!map.CashCall.TaxiDestination) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_destination));
+            return false;
+        }
+
+        return true;
     }
 }
