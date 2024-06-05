@@ -132,14 +132,13 @@ public class TaxiHandler : PacketHandler<GameSession> {
             return;
         }
 
-        const int meretTaxiPrice = 15;
 
-        if (session.Currency.Meret < meretTaxiPrice) {
+        if (session.Currency.Meret < Constant.MeretAirTaxiPrice) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
             return;
         }
 
-        session.Currency.Meret -= meretTaxiPrice;
+        session.Currency.Meret -= Constant.MeretAirTaxiPrice;
 
         session.Send(session.PrepareField(mapId)
             ? FieldEnterPacket.Request(session.Player)
