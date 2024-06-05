@@ -132,7 +132,6 @@ public class TaxiHandler : PacketHandler<GameSession> {
             return;
         }
 
-
         if (session.Currency.Meret < Constant.MeretAirTaxiPrice) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
             return;
