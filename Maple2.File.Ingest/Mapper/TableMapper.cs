@@ -67,6 +67,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
         yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
         yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
+        yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
+
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -1434,5 +1436,26 @@ public class TableMapper : TypeMapper<TableMetadata> {
             }
         }
         return new FieldMissionTable(results);
+    }
+
+    private WorldMapTable ParseWorldMapTable() {
+        var mapList = new List<WorldMapTable.Map>();
+        foreach ((string feature, var maps) in parser.ParseWorldMap()) {
+            if (feature != "Kritias_2018_12") {
+                continue;
+            }
+            foreach (var map in maps) {
+                if (!map.@public) {
+                    continue;
+                }
+
+                mapList.Add(new WorldMapTable.Map(map.code, map.x, map.y, map.z, map.size));
+            }
+        }
+
+        if (mapList.Count == 0) {
+            throw new InvalidOperationException("No maps ingested for WorldMapTable");
+        }
+        return new WorldMapTable(mapList);
     }
 }
