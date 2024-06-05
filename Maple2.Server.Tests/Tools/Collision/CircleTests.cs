@@ -1,81 +1,79 @@
 ﻿using System;
 using System.Numerics;
 using Maple2.Tools.Collision;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Maple2.Server.Tests.Tools.Collision;
 
-[TestClass]
 public class CircleTests {
-    [TestMethod]
+    [Test]
     public void ContainsTest() {
         var origin = new Vector2(1, 1);
         const float radius = 3;
         var circle = new Circle(origin, radius);
 
         var insidePoint = new Vector2(1.5f, 1.5f);
-        Assert.IsTrue(circle.Contains(insidePoint));
+        Assert.That(circle.Contains(insidePoint), Is.True);
         var edgePoint = new Vector2(1, 4);
-        Assert.IsTrue(circle.Contains(edgePoint));
+        Assert.That(circle.Contains(edgePoint), Is.True);
         var outsidePoint = new Vector2(4.5f, 1.5f);
-        Assert.IsFalse(circle.Contains(outsidePoint));
+        Assert.That(circle.Contains(outsidePoint), Is.False);
     }
 
-    [TestMethod]
+    [Test]
     public void RectangleIntersectsTest() {
         var circle = new Circle(new Vector2(1, 1), 3);
         {
             var rectangle = new Rectangle(new Vector2(1, 2), 4, 6, 0);
-            Assert.IsTrue(circle.Intersects(rectangle));
+            Assert.That(circle.Intersects(rectangle), Is.True);
         }
         {
             var rectangle = new Rectangle(new Vector2(4, 4), 2, 2, 0);
             Console.WriteLine(string.Join(",", rectangle.Points));
-            Assert.IsFalse(circle.Intersects(rectangle));
+            Assert.That(circle.Intersects(rectangle), Is.False);
         }
     }
 
-    [TestMethod]
+    [Test]
     public void TrapezoidIntersectsTest() {
         var circle = new Circle(new Vector2(1, 1), 3);
         {
             var trapezoid = new Trapezoid(new Vector2(1, 2), 4, 6, 3, 0);
-            Assert.IsTrue(circle.Intersects(trapezoid));
+            Assert.That(circle.Intersects(trapezoid), Is.True);
         }
         {
             var trapezoid = new Trapezoid(new Vector2(4, 4), 4, 6, 3, 0);
-            Assert.IsFalse(circle.Intersects(trapezoid));
+            Assert.That(circle.Intersects(trapezoid), Is.False);
         }
     }
 
-    [TestMethod]
+    [Test]
     public void CircleIntersectsTest() {
         var circle = new Circle(new Vector2(1, 1), 3);
         {
             var other = new Circle(new Vector2(3, 3), 3);
-            Assert.IsTrue(circle.Intersects(other));
+            Assert.That(circle.Intersects(other), Is.True);
         }
         {
             var other = new Circle(new Vector2(7, 7), 3);
-            Assert.IsFalse(circle.Intersects(other));
+            Assert.That(circle.Intersects(other), Is.False);
         }
     }
 
-    [TestMethod]
+    [Test]
     public void HoleCircleIntersectsTest() {
         var circle = new Circle(new Vector2(1, 1), 2);
         {
             var holeCircle = new HoleCircle(new Vector2(1, 2), 2, 4);
-            Assert.IsTrue(circle.Intersects(holeCircle));
+            Assert.That(circle.Intersects(holeCircle), Is.True);
         }
         {
             var holeCircle = new HoleCircle(new Vector2(7, 7), 2, 4);
-            Assert.IsFalse(circle.Intersects(holeCircle));
+            Assert.That(circle.Intersects(holeCircle), Is.False);
         }
         {
             // Circle contained within hole.
             var holeCircle = new HoleCircle(new Vector2(1, 1), 3, 5);
-            Assert.IsFalse(circle.Intersects(holeCircle));
+            Assert.That(circle.Intersects(holeCircle), Is.False);
         }
     }
 }
