@@ -172,13 +172,13 @@ public sealed class ExperienceManager {
         if (Level > startLevel) {
             session.Player.Flag |= PlayerObjectFlag.Level;
             session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
-            session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: session.Player.Value.Character.Level);
-            session.ConditionUpdate(ConditionType.level, codeLong: session.Player.Value.Character.Level);
+            session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: Level);
+            session.ConditionUpdate(ConditionType.level, codeLong: Level);
 
             session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = session.AccountId,
                 CharacterId = session.CharacterId,
-                Level = session.Player.Value.Character.Level,
+                Level = Level,
                 Async = true,
             });
         }
