@@ -314,10 +314,8 @@ public sealed partial class GameSession : Core.Network.Session {
             return false;
         }
 
-        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId)) {
-            ExpType expType = Field.Metadata.Property.IndoorType > 0 ?
-                ExpType.mapHidden :
-                ExpType.mapCommon;
+        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId) && Field.Metadata.Property.ExploreType > 0) {
+            ExpType expType = Field.Metadata.Property.ExploreType == 1 ? ExpType.mapCommon : ExpType.mapHidden;
             Exp.AddExp(expType);
         }
 

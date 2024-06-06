@@ -387,11 +387,28 @@ public class FieldNpc : Actor<Npc> {
             }
 
             DropLoot(firstPlayer);
+            GiveExp(player);
+
             player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id, targetLong: Field.MapId);
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
             }
         }
+    }
+
+    private void GiveExp(FieldPlayer player) {
+        // 0 means no exp
+        if (Value.Metadata.Basic.CustomExp == 0) {
+            return;
+        }
+
+        if (Value.Metadata.Basic.CustomExp == -1) {
+            // TODO: this is temporary. We need to know how to split exp between players.
+            player.Session.Exp.AddMobExp(Value.Metadata.Basic.Level);
+            return;
+        }
+
+        player.Session.Exp.AddExp(Value.Metadata.Basic.CustomExp);
     }
 
     public void SendDebugAiInfo(GameSession requester) {
