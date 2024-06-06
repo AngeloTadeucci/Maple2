@@ -113,9 +113,6 @@ public sealed class ExperienceManager {
         }
 
         long expValue;
-        short charLevel = session.Player.Value.Character.Level;
-        int fieldLevel = session.Field.Metadata.Drop.Level;
-        int correctedLevel = fieldLevel > charLevel ? charLevel : fieldLevel;
         switch (expType) {
             case ExpType.fishing:
             case ExpType.musicMastery1:
@@ -126,7 +123,7 @@ public sealed class ExperienceManager {
             case ExpType.gathering:
             case ExpType.arcade:
             case ExpType.expDrop:
-                if (!expBase.TryGetValue(charLevel, out expValue)) {
+                if (!expBase.TryGetValue(Level, out expValue)) {
                     return;
                 }
                 break;
@@ -135,6 +132,8 @@ public sealed class ExperienceManager {
             case ExpType.mapHidden:
             case ExpType.telescope:
             case ExpType.rareChestFirst:
+                int fieldLevel = session.Field.Metadata.Drop.Level;
+                int correctedLevel = fieldLevel > Level ? Level : fieldLevel;
                 if (!expBase.TryGetValue(correctedLevel, out expValue)) {
                     return;
                 }
