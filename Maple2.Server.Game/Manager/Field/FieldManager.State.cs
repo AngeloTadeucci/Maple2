@@ -97,7 +97,7 @@ public partial class FieldManager {
         if (agent is not null) {
             spawnPosition = Navigation.FromPosition(agent.getPosition());
         }
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, spawnPointNpc?.PatrolData) {
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,

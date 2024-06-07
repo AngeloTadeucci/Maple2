@@ -94,9 +94,9 @@ public partial class MovementState {
         return new NpcStandbyTask(actor.TaskState, this, sequence, priority, isIdle);
     }
 
-    public NpcTask TryEmote(string sequenceName, bool isIdle) {
+    public NpcTask TryEmote(string sequenceName, bool isIdle, float duration = -1f) {
         NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
-        return new NpcEmoteTask(actor.TaskState, this, sequenceName, priority, isIdle);
+        return new NpcEmoteTask(actor.TaskState, this, sequenceName, priority, isIdle, duration);
     }
 
     //public bool TryJumpTo(Vector3 position, float height) {
@@ -117,6 +117,10 @@ public partial class MovementState {
         emoteActionTask?.Cancel();
 
         return new NpcSkillCastTask(actor.TaskState, this, id, level, faceTarget, facePos, uid);
+    }
+
+    public NpcTask CleanupPatrolData() {
+        return new NpcCleanupPatrolDataTask(actor.TaskState, this);
     }
 
     private void SetState(ActorState state, ActorSubState subState) {
@@ -166,18 +170,7 @@ public partial class MovementState {
         }
     }
 
-    public void StateEmoteEvent(string keyName) {
-        switch (keyName) {
-            case "end":
-                emoteActionTask?.Completed();
 
-                Idle();
-
-                break;
-            default:
-                break;
-        }
-    }
 
     public void KeyframeEvent(string keyName) {
         switch (State) {
@@ -234,6 +227,10 @@ public partial class MovementState {
                 break;
             case ActorState.PcSkill:
                 StateSkillCastUpdate(tickCount, tickDelta);
+                break;
+            case ActorState.Emotion:
+            case ActorState.EmotionIdle:
+                EmoteStateUpdate(tickCount, tickDelta);
                 break;
             default:
                 break;

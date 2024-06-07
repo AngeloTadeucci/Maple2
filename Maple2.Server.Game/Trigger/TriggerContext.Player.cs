@@ -3,6 +3,7 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 
@@ -98,7 +99,9 @@ public partial class TriggerContext {
     }
 
     public void MoveUserPath(string path) {
-        ErrorLog("[MoveUserPath] path:{Path}", path);
+        DebugLog("[MoveUserPath] path:{Path}", path);
+
+        Field.MovePlayerAlongPath(path);
     }
 
     public void MoveUserToBox(int boxId, int portalId) {
