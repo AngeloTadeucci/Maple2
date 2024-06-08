@@ -57,7 +57,7 @@ public class GuildManager : IDisposable {
         }
         GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
         if (rank == null || rank.Permission.HasFlag(GuildPermission.InviteMembers)) {
-            //return GuildError.s_guild_err_no_authority;
+            return GuildError.s_guild_err_no_authority;
         }
         if (Guild.Members.Count >= Guild.Capacity) {
             return GuildError.s_guild_err_full_member;
