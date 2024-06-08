@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;
@@ -15,6 +16,7 @@ public interface IPlayerInfo {
     public short Level { get; set; }
     public int GearScore { get; set; }
     public long PremiumTime { get; set; }
+    public List<long> ClubsIds { get; set; }
     // Health
     public long CurrentHp { get; set; }
     public long TotalHp { get; set; }

@@ -86,6 +86,13 @@ public class PartyHandler : PacketHandler<GameSession> {
     }
 
     private void HandleInvite(GameSession session, IByteReader packet) {
+        string playerName = packet.ReadUnicodeString();
+
+        if (playerName == session.PlayerName.ToLower()) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_myself));
+            return;
+        }
+
         if (session.Party.Party == null) {
             // Create new party
             PartyResponse response = World.Party(new PartyRequest {
@@ -107,7 +114,6 @@ public class PartyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        string playerName = packet.ReadUnicodeString();
         using GameStorage.Request db = session.GameStorage.Context();
         long characterId = db.GetCharacterId(playerName);
         if (characterId == 0) {

@@ -2,11 +2,11 @@ using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Club;
 using Maple2.Server.Core.Sync;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util.Sync;
-using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -30,7 +30,6 @@ public class ClubManager : IDisposable {
             logger.Error("Failed to set club for {Session}", session);
             return;
         }
-        session.Send(ClubPacket.Update(Club!));
     }
 
     public void Dispose() {
@@ -93,10 +92,48 @@ public class ClubManager : IDisposable {
             }
         }
 
+        session.Player.Value.Character.ClubIds.Add(Id);
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            Async = true,
+            Clubs = new ClubsInfo {
+                Id = {
+                    session.Player.Value.Character.ClubIds
+                },
+            },
+        });
         return true;
     }
 
-    public void RemoveClub() {
+    public void UpdateLeader(long characterId) {
+        if (Club == null) {
+            return;
+        }
+
+        string oldLeader = Club.Leader.Name;
+        if (!Club.Members.TryGetValue(characterId, out ClubMember? newLeader)) {
+            logger.Error("Failed to find new leader for club {ClubId}", Club.Id);
+            session.Send(ClubPacket.Error(ClubError.s_club_err_unknown));
+            return;
+        }
+
+        Club.Leader = newLeader;
+        Club.LeaderId = newLeader.CharacterId;
+        session.Send(ClubPacket.UpdateLeader(Id, oldLeader, newLeader.Name));
+    }
+
+    public void Rename(string newName, long changedTime) {
+        if (Club == null) {
+            return;
+        }
+
+        Club.Name = newName;
+        Club.NameChangeCooldown = changedTime;
+        session.Send(ClubPacket.Rename(Id, newName, changedTime));
+    }
+
+    public void Disband() {
         if (Club == null) {
             return;
         }
@@ -105,6 +142,28 @@ public class ClubManager : IDisposable {
             EndListen(member);
         }
 
+        session.Send(ClubPacket.Disband(Club.Id, Club.Leader.Name));
+
+        RemoveClub();
+    }
+
+    public void RemoveClub() {
+        if (Club == null) {
+            return;
+        }
+
+        session.Clubs.TryRemove(Id, out _);
+        session.Player.Value.Character.ClubIds.Remove(Id);
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            Async = true,
+            Clubs = new ClubsInfo {
+                Id = {
+                    session.Player.Value.Character.ClubIds
+                },
+            },
+        });
         Club = null;
     }
 
@@ -117,7 +176,27 @@ public class ClubManager : IDisposable {
         }
 
         BeginListen(member);
-        //session.Send(GuildPacket.Joined(requestorName, member));
+        session.Send(ClubPacket.NotifyAcceptInvite(member, requestorName));
+        return true;
+    }
+
+    public bool RemoveMember(long characterId) {
+        if (Club == null) {
+            return false;
+        }
+
+        if (!Club.Members.TryRemove(characterId, out ClubMember? member)) {
+            return false;
+        }
+
+        EndListen(member);
+
+        if (session.CharacterId == characterId) {
+            session.Send(ClubPacket.Leave(Id, member.Name));
+            RemoveClub();
+        } else {
+            session.Send(ClubPacket.LeaveNotice(Id, member.Name));
+        }
         return true;
     }
 
@@ -161,7 +240,6 @@ public class ClubManager : IDisposable {
         }
 
         if (session.CharacterId != member.CharacterId && member.Info.Online != wasOnline) {
-            Console.WriteLine($"Member {member.Info.Name} is now {(member.Info.Online ? "online" : "offline")}");
             session.Send(member.Info.Online
                 ? ClubPacket.NotifyLogin(Id, member.Name)
                 : ClubPacket.NotifyLogout(Id, member.Name, member.LoginTime));

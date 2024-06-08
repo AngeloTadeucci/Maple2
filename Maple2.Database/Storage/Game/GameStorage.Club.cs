@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
 using Maple2.Tools.Extensions;
-using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
-using Club = Maple2.Model.Game.Club;
-using ClubMember = Maple2.Model.Game.ClubMember;
+using Club = Maple2.Model.Game.Club.Club;
+using ClubMember = Maple2.Model.Game.Club.ClubMember;
 
 namespace Maple2.Database.Storage;
 
@@ -23,11 +19,10 @@ public partial class GameStorage {
             return Context.Club.Any(club => club.Id == clubId || club.Name == clubName);
         }
 
-        public IList<Tuple<long, string>> ListClubs(long characterId) {
+        public IList<long> ListClubs(long characterId) {
             return Context.ClubMember.Where(member => member.CharacterId == characterId)
-                .Join(Context.Club, member => member.ClubId, club => club.Id,
-                    (member, club) => new Tuple<long, string>(club.Id, club.Name)
-                ).ToList();
+                .Select(member => member.ClubId)
+                .ToList();
         }
 
         public Club? CreateClub(string name, long leaderId, List<PartyMember> partyMembers) {
@@ -36,7 +31,6 @@ public partial class GameStorage {
                 Name = name,
                 LeaderId = leaderId,
                 CreationTime = DateTime.UtcNow,
-                LastModified = DateTime.UtcNow,
                 State = ClubState.Staged,
             };
             Context.Club.Add(club);
@@ -83,6 +77,11 @@ public partial class GameStorage {
             return Commit();
         }
 
+        public bool DeleteClubMember(long clubId, long characterId) {
+            int count = Context.ClubMember.Where(member => member.ClubId == clubId && member.CharacterId == characterId).Delete();
+            return SaveChanges() && count > 0;
+        }
+
         public List<ClubMember> GetClubMembers(IPlayerInfoProvider provider, long clubId) {
             return Context.ClubMember.Where(member => member.ClubId == clubId)
                 .AsEnumerable()
@@ -98,12 +97,12 @@ public partial class GameStorage {
         }
 
         public bool SaveClub(Club club) {
-            BeginTransaction();
-
+            if (!Context.Club.Any(model => model.Id == club.Id)) {
+                return false;
+            }
             Context.Club.Update(club);
             SaveClubMembers(club.Id, club.Members.Values);
-
-            return Commit();
+            return SaveChanges();
         }
 
         public bool SaveClubMembers(long clubId, ICollection<ClubMember> members) {

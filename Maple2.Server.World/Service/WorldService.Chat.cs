@@ -1,7 +1,6 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Club;
 using Maple2.Model.Game.Party;
 using Maple2.Server.World.Containers;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
@@ -22,7 +21,7 @@ public partial class WorldService {
             case ChatRequest.ChatOneofCase.Super:
                 return SuperChat(request);
             case ChatRequest.ChatOneofCase.Club:
-                return Task.FromResult(new ChatResponse());
+                return ClubChat(request);
             case ChatRequest.ChatOneofCase.Wedding:
                 return Task.FromResult(new ChatResponse());
             default:
@@ -119,6 +118,28 @@ public partial class WorldService {
         foreach ((int channel, ChannelClient client) in channelClients) {
             client.Chat(request);
         }
+        return Task.FromResult(new ChatResponse());
+    }
+
+    private Task<ChatResponse> ClubChat(ChatRequest request) {
+        if (!clubLookup.TryGet(request.Club.ClubId, out ClubManager? info)) {
+            logger.Information("Club {ClubClubId} not found...", request.Club.ClubId);
+            return Task.FromResult(new ChatResponse());
+        }
+
+        foreach (IGrouping<short, ClubMember> group in info.Club.Members.Values.GroupBy(member => member.Info.Channel)) {
+            if (!channelClients.TryGetClient(group.Key, out ChannelClient? client)) {
+                continue;
+            }
+
+            request.Club.MemberIds.Clear();
+            request.Club.MemberIds.AddRange(group.Select(member => member.Info.CharacterId));
+
+            try {
+                client.Chat(request);
+            } catch { /* ignored */ }
+        }
+
         return Task.FromResult(new ChatResponse());
     }
 }

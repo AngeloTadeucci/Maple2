@@ -203,7 +203,7 @@ public partial class WorldService {
         }
 
         if (!manager.Party.Search.NoApproval) {
-            return new PartyResponse { Error = (int) PartyError.s_party_err_myself };
+            return new PartyResponse { Error = (int) PartyError.s_party_err_wrong_recruit };
         }
 
         if (manager.Party.Search.Id != joinByPartySearch.PartySearchId) {

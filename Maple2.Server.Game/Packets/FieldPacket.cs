@@ -314,7 +314,15 @@ public static class FieldPacket {
         writer.WriteUnicodeString(character.GuildName);
         writer.WriteUnicodeString(character.Motto);
         writer.WriteUnicodeString(character.Picture);
-        writer.WriteByte(); // Club Count
+        writer.WriteByte((byte) character.ClubIds.Count);
+        foreach (long clubId in character.ClubIds) {
+            bool unk = true;
+            writer.WriteBool(unk);
+            if (unk) {
+                writer.WriteLong(clubId);
+                writer.WriteUnicodeString(); // Club Name
+            }
+        }
         writer.WriteByte(); // PCBang related?
         writer.WriteClass<Mastery>(character.Mastery);
         #region Unknown

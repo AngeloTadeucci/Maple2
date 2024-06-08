@@ -5,8 +5,9 @@ public enum ClubState : byte {
     Established = 2,
 }
 
-public enum ClubInviteReply {
+public enum ClubResponse {
     Accept = 0,
     Reject = 76,
     Fail = 77,
+    Disband = 207,
 }

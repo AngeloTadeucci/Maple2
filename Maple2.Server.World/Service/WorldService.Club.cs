@@ -1,10 +1,15 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Club;
+using Maple2.Model.Metadata;
 using Maple2.Server.World.Containers;
+using ChannelClubRequest = Maple2.Server.Channel.Service.ClubRequest;
+
 
 namespace Maple2.Server.World.Service;
 
@@ -13,9 +18,7 @@ public partial class WorldService {
         List<ClubManager> clubManagers = clubLookup.TryGetByCharacterId(request.CharacterId);
 
         return Task.FromResult(new ClubInfoResponse {
-            Clubs = {
-                clubManagers.Select(manager => ToClubInfo(manager.Club))
-            }
+            Clubs = { clubManagers.Select(manager => ToClubInfo(manager.Club)) },
         });
     }
 
@@ -25,30 +28,48 @@ public partial class WorldService {
                 return Task.FromResult(CreateClub(request.RequestorId, request.Create));
             case ClubRequest.ClubOneofCase.NewClubInvite:
                 return Task.FromResult(NewClubInvite(request.NewClubInvite));
-            // case ClubRequest.ClubOneofCase.Disband:
-            //     return Task.FromResult(DisbandClub(request.RequestorId, request.Disband));
-            // case ClubRequest.ClubOneofCase.Invite:
-            //     return Task.FromResult(InviteClub(request.RequestorId, request.Invite));
-            // case ClubRequest.ClubOneofCase.RespondInvite:
-            //     return Task.FromResult(RespondInviteClub(request.RequestorId, request.RespondInvite));
-            // case ClubRequest.ClubOneofCase.Leave:
-            //     return Task.FromResult(LeaveClub(request.RequestorId, request.Leave));
-            // case ClubRequest.ClubOneofCase.Expel:
-            //     return Task.FromResult(ExpelClub(request.RequestorId, request.Expel));
-            // case ClubRequest.ClubOneofCase.UpdateMember:
-            //     return Task.FromResult(UpdateMember(request.RequestorId, request.UpdateMember));
+            case ClubRequest.ClubOneofCase.Invite:
+                return Task.FromResult(InviteClub(request.RequestorId, request.Invite));
+            case ClubRequest.ClubOneofCase.RespondInvite:
+                return Task.FromResult(RespondInviteClub(request.RequestorId, request.RespondInvite));
+            case ClubRequest.ClubOneofCase.Leave:
+                 return Task.FromResult(LeaveClub(request.RequestorId, request.Leave));
+            case ClubRequest.ClubOneofCase.Rename:
+                return Task.FromResult(Rename(request.RequestorId, request.Rename));
             default:
-                return Task.FromResult(new ClubResponse {
-                    Error = (int) ClubError.s_club_err_unknown
-                });
+                return Task.FromResult(new ClubResponse { Error = (int) ClubError.s_club_err_unknown });
         }
     }
 
     private ClubResponse CreateClub(long requestorId, ClubRequest.Types.Create create) {
+        if (!partyLookup.TryGetByCharacter(requestorId, out PartyManager? partyManager)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_unknown,
+            };
+        }
+
+        if (partyManager.Party.Members.Any(member => !member.Value.Info.Online)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_notparty_alllogin,
+            };
+        }
+
+        if (partyManager.Party.Members.Any(member => member.Value.Info.ClubsIds.Count >= Constant.ClubMaxCount)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_full_club_member,
+            };
+        }
+
+        if (create.ClubName.Contains(' ')) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_clubname_has_blank,
+            };
+        }
+
         ClubError error = clubLookup.Create(create.ClubName, requestorId, out long clubId);
         if (error != ClubError.none) {
             return new ClubResponse {
-                Error = (int) error
+                Error = (int) error,
             };
         }
 
@@ -58,8 +79,8 @@ public partial class WorldService {
             };
         }
 
-        manager.Broadcast(new Channel.Service.ClubRequest {
-            Create = new Channel.Service.ClubRequest.Types.Create {
+        manager.Broadcast(new ChannelClubRequest {
+            Create = new ChannelClubRequest.Types.Create {
                 Info = ToClubInfo(manager.Club),
             },
             ClubId = manager.Club.Id,
@@ -75,7 +96,7 @@ public partial class WorldService {
             };
         }
 
-        var reply = (ClubInviteReply) invite.Reply;
+        var reply = (Model.Enum.ClubResponse) invite.Reply;
         ClubError error = manager.NewClubInvite(invite.ReceiverId, reply);
         if (error != ClubError.none) {
             return new ClubResponse {
@@ -83,7 +104,7 @@ public partial class WorldService {
             };
         }
 
-        if (reply == ClubInviteReply.Reject) {
+        if (reply == Model.Enum.ClubResponse.Reject) {
             error = clubLookup.Disband(invite.ClubId);
             if (error != ClubError.none) {
                 return new ClubResponse {
@@ -91,6 +112,117 @@ public partial class WorldService {
                 };
             }
         }
+        return new ClubResponse();
+    }
+
+    private ClubResponse InviteClub(long requestorId, ClubRequest.Types.Invite invite) {
+        if (!clubLookup.TryGet(invite.ClubId, out ClubManager? manager)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_club,
+            };
+        }
+
+        if (!playerLookup.TryGet(invite.ReceiverId, out PlayerInfo? info)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_user,
+            };
+        }
+
+        ClubError error = manager.Invite(requestorId, info);
+        if (error != ClubError.none) {
+            return new ClubResponse {
+                Error = (int) error,
+            };
+        }
+
+        return new ClubResponse();
+    }
+
+    private ClubResponse RespondInviteClub(long characterId, ClubRequest.Types.RespondInvite respond) {
+        if (!clubLookup.TryGet(respond.ClubId, out ClubManager? manager)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_club,
+            };
+        }
+
+        string requestorName = manager.ConsumeInvite(characterId);
+        if (string.IsNullOrEmpty(requestorName)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_unknown,
+            };
+        }
+
+        if (!playerLookup.TryGet(characterId, out PlayerInfo? info)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_user,
+            };
+        }
+
+        manager.Broadcast(new ChannelClubRequest {
+            InviteReply = new ChannelClubRequest.Types.InviteReply {
+                RequestorName = requestorName,
+                Accept = respond.Accept,
+            },
+            ClubId = manager.Club.Id,
+        });
+
+        if (respond.Accept) {
+            ClubError error = manager.Join(requestorName, info);
+            if (error != ClubError.none) {
+                return new ClubResponse {
+                    Error = (int) error,
+                };
+            }
+
+            return new ClubResponse {
+                Club = ToClubInfo(manager.Club),
+            };
+        }
+
+        return new ClubResponse();
+    }
+
+    private ClubResponse LeaveClub(long requesterId, ClubRequest.Types.Leave leave) {
+        if (!clubLookup.TryGet(leave.ClubId, out ClubManager? manager)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_club,
+            };
+        }
+
+        if (manager.Club.Members.Count <= 2) {
+            clubLookup.Disband(manager.Club.Id);
+            return new ClubResponse();
+        }
+        ClubError error = manager.Leave(requesterId);
+        if (error != ClubError.none) {
+            return new ClubResponse {
+                Error = (int) error,
+            };
+        }
+
+        return new ClubResponse();
+    }
+
+    private ClubResponse Rename(long requesterId, ClubRequest.Types.Rename rename) {
+        if (!clubLookup.TryGet(rename.ClubId, out ClubManager? manager)) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_null_club,
+            };
+        }
+
+        if (manager.Club.LeaderId != requesterId) {
+            return new ClubResponse {
+                Error = (int) ClubError.s_club_err_no_master,
+            };
+        }
+
+        ClubError error = manager.Rename(rename.Name);
+        if (error != ClubError.none) {
+            return new ClubResponse {
+                Error = (int) error,
+            };
+        }
+
         return new ClubResponse();
     }
 

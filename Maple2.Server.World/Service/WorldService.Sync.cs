@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -49,6 +48,9 @@ public partial class WorldService {
                 Combat = info.AchievementInfo.Combat,
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
+            },
+            Clubs = new ClubsInfo {
+                Id = { info.ClubsIds },
             },
         });
     }

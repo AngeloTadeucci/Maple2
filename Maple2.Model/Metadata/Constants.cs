@@ -92,6 +92,7 @@ public static class Constant {
     public const double CriticalConstant = 5.3;
     public const double CriticalPercentageConversion = 0.015;
     public const double MaxCriticalRate = 0.4;
+    public const int MaxClubMembers = 10;
 
 
     public const long FurnishingBaseId = 2870000000000000000;

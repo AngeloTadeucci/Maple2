@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Concurrent;
 using Google.Protobuf.WellKnownTypes;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -56,6 +56,9 @@ public static class PlayerInfoUpdateExtensions {
                 Lifestyle = update.Request.Trophy.Lifestyle,
             };
         }
+        if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
+            info.ClubsIds = new List<long>(update.Request.Clubs.Id);
+        }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
@@ -87,7 +90,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Home)) {
             self.HomeName = other.HomeName;
-            self.MapId = other.PlotMapId;
+            self.PlotMapId = other.PlotMapId;
             self.PlotNumber = other.PlotNumber;
             self.ApartmentNumber = other.ApartmentNumber;
             self.PlotExpiryTime = other.PlotExpiryTime;
@@ -97,6 +100,9 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.PremiumTime)) {
             self.PremiumTime = other.PremiumTime;
+        }
+        if (type.HasFlag(UpdateField.Clubs)) {
+            self.ClubsIds = other.ClubsIds;
         }
 
         self.UpdateTime = other.UpdateTime;
@@ -147,6 +153,11 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.PremiumTime)) {
             request.PremiumTime = info.PremiumTime;
+        }
+        if (type.HasFlag(UpdateField.Clubs)) {
+            request.Clubs = new ClubsInfo {
+                Id = { info.ClubsIds },
+            };
         }
     }
 }

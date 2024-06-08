@@ -312,10 +312,33 @@ message ClubRequest {
     int32 reply = 3;
   }
 
-  int64 requestor_id = 4;
+  message Leave {
+    int64 club_id = 1;
+  }
+
+  message Invite {
+    int64 club_id = 1;
+    int64 receiver_id = 2;
+  }
+
+  message RespondInvite {
+    int64 club_id = 1;
+    bool accept = 2;
+  }
+
+  message Rename {
+    int64 club_id = 1;
+    string name = 2;
+  }
+
+  int64 requestor_id = 1;
   oneof club {
-    Create create = 1;
-    NewClubInvite new_club_invite = 2;
+    Create create = 2;
+    NewClubInvite new_club_invite = 3;
+    Leave leave = 4;
+    Invite invite = 5;
+    RespondInvite respond_invite = 6;
+    Rename rename = 7;
   }
 }
 

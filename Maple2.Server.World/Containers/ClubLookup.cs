@@ -1,13 +1,12 @@
-﻿
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Server.World.Containers;
+using Maple2.Model.Game.Club;
+
+namespace Maple2.Server.World.Containers;
 
 public class ClubLookup : IDisposable {
     private readonly GameStorage gameStorage;
@@ -45,9 +44,14 @@ public class ClubLookup : IDisposable {
     public List<ClubManager> TryGetByCharacterId(long characterId) {
         List<ClubManager> clubManagers = [];
         using GameStorage.Request db = gameStorage.Context();
-        IList<Tuple<long, string>> clubMembers = db.ListClubs(characterId);
-        foreach (Tuple<long, string> clubMember in clubMembers) {
-            if (TryGet(clubMember.Item1, out ClubManager? club)) {
+        IList<long> clubIds = db.ListClubs(characterId);
+        foreach (long clubId in clubIds) {
+            if (TryGet(clubId, out ClubManager? club)) {
+                // If the club is staged, we can dispose it.
+                if (club.Club.State == ClubState.Staged) {
+                    club.Dispose();
+                    continue;
+                }
                 clubManagers.Add(club);
             }
         }
@@ -116,7 +120,8 @@ public class ClubLookup : IDisposable {
             return ClubError.s_club_err_unknown;
         }
 
-        manager.Dispose();
+        manager.Disband();
+
         using GameStorage.Request db = gameStorage.Context();
         if (!db.DeleteClub(clubId)) {
             return ClubError.s_club_err_unknown;

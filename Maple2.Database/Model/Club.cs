@@ -15,31 +15,28 @@ internal class Club {
     public ClubState State { get; set; }
     public int BuffId { get; set; }
     public DateTime CreationTime { get; set; }
-    public DateTime LastModified { get; set; }
-    public DateTime NameChangedTime { get; set; }
+    public DateTime NameChangeCooldown { get; set; }
 
     public long LeaderId { get; set; }
     public List<ClubMember>? Members { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator Club?(Maple2.Model.Game.Club? other) {
+    public static implicit operator Club?(Maple2.Model.Game.Club.Club? other) {
         return other == null ? null : new Club {
             // CreationTime set by DB
-            LastModified = other.LastModified.FromEpochSeconds(),
-            NameChangedTime = other.NameChangedTime.FromEpochSeconds(),
             Id = other.Id,
             Name = other.Name,
             LeaderId = other.Leader.Info.CharacterId,
             BuffId = other.BuffId,
             State = other.State,
+            NameChangeCooldown = other.NameChangeCooldown.FromEpochSeconds(),
         };
     }
 
     [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator Maple2.Model.Game.Club?(Club? other) {
-        return other == null ? null : new Maple2.Model.Game.Club(other.Id, other.Name, other.LeaderId) {
-            LastModified = other.LastModified.ToEpochSeconds(),
-            NameChangedTime = other.NameChangedTime.ToEpochSeconds(),
+    public static implicit operator Maple2.Model.Game.Club.Club?(Club? other) {
+        return other == null ? null : new Maple2.Model.Game.Club.Club(other.Id, other.Name, other.LeaderId) {
+            NameChangeCooldown = other.NameChangeCooldown.ToEpochSeconds(),
             CreationTime = other.CreationTime.ToEpochSeconds(),
             BuffId = other.BuffId,
             State = other.State,
@@ -57,7 +54,6 @@ internal class Club {
             .IsRequired();
         builder.HasMany<ClubMember>(club => club.Members);
 
-        builder.Property(club => club.LastModified).IsRowVersion();
         IMutableProperty creationTime = builder.Property(club => club.CreationTime)
             .ValueGeneratedOnAdd().Metadata;
         creationTime.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
@@ -72,7 +68,7 @@ internal class ClubMember {
     public DateTime LoginTime { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator ClubMember?(Maple2.Model.Game.ClubMember? other) {
+    public static implicit operator ClubMember?(Maple2.Model.Game.Club.ClubMember? other) {
         return other == null ? null : new ClubMember {
             // CreationTime set by DB
             CharacterId = other.Info.CharacterId,

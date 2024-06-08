@@ -17,12 +17,13 @@ public enum UpdateField {
     Home = 128,
     Trophy = 256,
     PremiumTime = 512,
+    Clubs = 1024,
 
     // Presets
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
-    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy,
-    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home,
+    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs,
     GroupChat = Profile | Job | Level | Map,
     All = int.MaxValue,
 }
@@ -95,6 +96,12 @@ public class PlayerInfoUpdateEvent {
         if (request.HasPremiumTime && player.PremiumTime != request.PremiumTime) {
             if (player.PremiumTime != request.PremiumTime) {
                 Type |= UpdateField.PremiumTime;
+            }
+        }
+
+        if (request.Clubs != null) {
+            if (player.ClubsIds != request.Clubs.Id.ToList()) {
+                Type |= UpdateField.Clubs;
             }
         }
     }

@@ -22,6 +22,7 @@ message ChatRequest {
   }
   message Club {
     int64 club_id = 1;
+    repeated int64 member_ids = 2;
   }
   message Wedding {
     int32 item_id = 1;

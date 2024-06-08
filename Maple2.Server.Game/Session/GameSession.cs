@@ -198,7 +198,9 @@ public sealed partial class GameSession : Core.Network.Session {
 
         foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
             var manager = new ClubManager(clubInfo, this);
-            Clubs.TryAdd(clubInfo.Id, manager);
+            if (Clubs.TryAdd(clubInfo.Id, manager)) {
+                manager.Load();
+            }
         }
 
         Buddy.Load();

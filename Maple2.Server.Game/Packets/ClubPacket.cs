@@ -1,6 +1,6 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Error;
-using Maple2.Model.Game;
+using Maple2.Model.Game.Club;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -12,21 +12,21 @@ public static class ClubPacket {
     private enum Mode : byte {
         UpdateClub = 0,
         Establish = 1,
-        Load = 2,
+        Create = 2,
         DeleteStagedClub = 5,
-        InviteSentReceipt = 6,
+        Invited = 6,
         Invite = 7,
-        InviteResponse = 8,
-        LeaderInviteReply = 9,
-        LeaveClub = 10,
-        ChangeBuffReceipt = 13,
+        AcceptInvite = 8,
+        InviteNotification = 9,
+        Leave = 10,
+        ChangeBuffNotification = 13,
         StagedClubInviteReply = 15,
         Disband = 16,
-        ConfirmInvite = 17,
+        NotifyAcceptInvite = 17,
         LeaveNotice = 18,
         NotifyLogin = 19,
         NotifyLogout = 20,
-        AssignNewLeader = 21,
+        UpdateLeader = 21,
         ChangeBuff = 22,
         UpdateMemberMap = 23,
         UpdateMember = 24,
@@ -57,9 +57,9 @@ public static class ClubPacket {
         return pWriter;
     }
 
-    public static ByteWriter Load(Club club) {
+    public static ByteWriter Create(Club club) {
         var pWriter = Packet.Of(SendOp.Club);
-        pWriter.Write(Mode.Load);
+        pWriter.Write(Mode.Create);
         pWriter.WriteClass<Club>(club);
         pWriter.WriteByte((byte) club.Members.Count);
         foreach (ClubMember member in club.Members.Values) {
@@ -69,11 +69,48 @@ public static class ClubPacket {
         return pWriter;
     }
 
-    public static ByteWriter DeleteStagedClub(long clubId, ClubInviteReply reply) {
+    public static ByteWriter DeleteStagedClub(long clubId, ClubResponse reply) {
         var pWriter = Packet.Of(SendOp.Club);
         pWriter.Write(Mode.DeleteStagedClub);
         pWriter.WriteLong(clubId);
-        pWriter.Write<ClubInviteReply>(reply);
+        pWriter.Write<ClubResponse>(reply);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Invited(long clubId, string playerName) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.Invited);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(playerName);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Invite(ClubInvite invite) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.Invite);
+        pWriter.WriteClass<ClubInvite>(invite);
+
+        return pWriter;
+    }
+
+    public static ByteWriter AcceptInvite(ClubInvite invite) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.AcceptInvite);
+        pWriter.WriteClass<ClubInvite>(invite);
+        pWriter.WriteInt();
+
+        return pWriter;
+    }
+
+    public static ByteWriter InviteNotification(long clubId, string invitee, bool accept) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.InviteNotification);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(invitee);
+        pWriter.WriteBool(accept);
+        pWriter.WriteByte();
 
         return pWriter;
     }
@@ -88,12 +125,60 @@ public static class ClubPacket {
         return pWriter;
     }
 
-    public static ByteWriter StagedClubInviteReply(long clubId, ClubInviteReply reply, string name) {
+    public static ByteWriter Rename(long clubId, string clubName, long timestamp) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.Rename);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(clubName);
+        pWriter.WriteLong(timestamp);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Leave(long clubId, string playerName) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.Leave);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(playerName);
+
+        return pWriter;
+    }
+
+    public static ByteWriter StagedClubInviteReply(long clubId, ClubResponse reply, string name) {
         var pWriter = Packet.Of(SendOp.Club);
         pWriter.Write(Mode.StagedClubInviteReply);
         pWriter.WriteLong(clubId);
-        pWriter.Write<ClubInviteReply>(reply);
+        pWriter.Write<ClubResponse>(reply);
         pWriter.WriteUnicodeString(name);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Disband(long clubId, string leaderName) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.Disband);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(leaderName);
+        pWriter.Write<ClubResponse>(ClubResponse.Disband);
+
+        return pWriter;
+    }
+
+    public static ByteWriter NotifyAcceptInvite(ClubMember member, string leaderName) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.NotifyAcceptInvite);
+        pWriter.WriteLong(member.ClubId);
+        pWriter.WriteUnicodeString(leaderName);
+        pWriter.WriteClass<ClubMember>(member);
+
+        return pWriter;
+    }
+
+    public static ByteWriter LeaveNotice(long clubId, string playerName) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.LeaveNotice);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(playerName);
 
         return pWriter;
     }
@@ -113,6 +198,17 @@ public static class ClubPacket {
         pWriter.WriteLong(clubId);
         pWriter.WriteUnicodeString(memberName);
         pWriter.WriteLong(lastLoginTime);
+
+        return pWriter;
+    }
+
+    public static ByteWriter UpdateLeader(long clubId, string oldLeader, string newLeader) {
+        var pWriter = Packet.Of(SendOp.Club);
+        pWriter.Write(Mode.UpdateLeader);
+        pWriter.WriteLong(clubId);
+        pWriter.WriteUnicodeString(oldLeader);
+        pWriter.WriteUnicodeString(newLeader);
+        pWriter.WriteBool(true); // s_club_notify_change_master
 
         return pWriter;
     }

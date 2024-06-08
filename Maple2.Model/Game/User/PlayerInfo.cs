@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 using Maple2.Model.Common;
@@ -20,9 +21,10 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public AchievementInfo AchievementInfo { get; set; }
     // Premium
     public long PremiumTime { get; set; }
+    public List<long> ClubsIds { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
-        return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo) {
+        return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {
             PlotMapId = player.Home.PlotMapId,
             PlotNumber = player.Home.PlotNumber,
             ApartmentNumber = player.Home.ApartmentNumber,
@@ -32,9 +34,10 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         };
     }
 
-    public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo) : base(character) {
+    public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo, IList<long> clubsIds) : base(character) {
         HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
         AchievementInfo = achievementInfo;
+        ClubsIds = new List<long>(clubsIds);
     }
 
     public PlayerInfo Clone() {
@@ -72,7 +75,15 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteUnicodeString(); // Guild Name
         writer.WriteUnicodeString(Motto);
         writer.WriteUnicodeString(Picture);
-        writer.WriteByte(); // Club Count
+        writer.WriteByte((byte) ClubsIds.Count);
+        foreach (long clubId in ClubsIds) {
+            bool unk = true;
+            writer.WriteBool(unk);
+            if (unk) {
+                writer.WriteLong(clubId);
+                writer.WriteUnicodeString(); // club name
+            }
+        }
         writer.WriteByte();
         writer.WriteClass<Mastery>(new Mastery());
         writer.WriteUnicodeString(); // Login username

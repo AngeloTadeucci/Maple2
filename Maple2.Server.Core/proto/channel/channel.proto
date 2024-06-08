@@ -164,6 +164,12 @@ message ClubRequest {
     ClubInfo info = 1;
   }
 
+  message RemoveMember {
+    int64 character_id = 1;
+  }
+
+  message Disband { }
+
   message StagedClubInviteReply {
     int32 reply = 1;
     string name = 2;
@@ -176,6 +182,33 @@ message ClubRequest {
 
   message Establish { }
 
+  message Invite {
+    int64 sender_id = 1;
+    string sender_name = 2;
+    string club_name = 3;
+  }
+
+  message AddMember {
+    int64 character_id = 1;
+    string requestor_name = 2;
+    int64 join_time = 3;
+    int64 login_time = 4;
+  }
+
+  message InviteReply {
+    string requestor_name = 1;
+    bool accept = 2;
+  }
+
+  message UpdateLeader {
+    int64 character_id = 1;
+  }
+
+  message Rename {
+    string name = 1;
+    int64 changed_time = 2;
+  }
+
   int64 club_id = 1;
   repeated int64 receiver_ids = 2;
   oneof Club {
@@ -183,6 +216,13 @@ message ClubRequest {
     StagedClubInviteReply staged_club_invite_reply = 4;
     StagedClubFail staged_club_fail = 5;
     Establish establish = 6;
+    RemoveMember remove_member = 7;
+    Disband disband = 8;
+    Invite invite = 9;
+    AddMember add_member = 10;
+    InviteReply invite_reply = 11;
+    UpdateLeader update_leader = 12;
+    Rename rename = 13;
   }
 }
 
