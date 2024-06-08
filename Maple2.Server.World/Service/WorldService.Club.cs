@@ -1,8 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Maple2.Database.Storage;
-using Maple2.Model.Enum;
+﻿using Grpc.Core;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Club;
@@ -33,7 +29,7 @@ public partial class WorldService {
             case ClubRequest.ClubOneofCase.RespondInvite:
                 return Task.FromResult(RespondInviteClub(request.RequestorId, request.RespondInvite));
             case ClubRequest.ClubOneofCase.Leave:
-                 return Task.FromResult(LeaveClub(request.RequestorId, request.Leave));
+                return Task.FromResult(LeaveClub(request.RequestorId, request.Leave));
             case ClubRequest.ClubOneofCase.Rename:
                 return Task.FromResult(Rename(request.RequestorId, request.Rename));
             default:
