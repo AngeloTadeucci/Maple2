@@ -72,7 +72,7 @@ public partial class TriggerContext {
         }
 
         foreach (FieldNpc fieldNpc in fieldNpcs) {
-            fieldNpc.SetPatrolData(patrolData);
+            fieldNpc.patrolData = patrolData;
         }
     }
 

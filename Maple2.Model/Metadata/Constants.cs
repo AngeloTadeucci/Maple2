@@ -840,6 +840,8 @@ public static class Constant {
     public const int PaybackMailPeriodDay = 90;
     public const int PaybackMaxRewardMeret = 10000;
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
+    public const int DummyNpcMale = 2040998;
+    public const int DummyNpcFemale = 2040999;
 
     #endregion
 

@@ -375,6 +375,32 @@ public sealed partial class FieldManager : IDisposable {
         return true;
     }
 
+    public void MovePlayerAlongPath(string pathName) {
+        MS2PatrolData? patrolData = Entities.Patrols.FirstOrDefault(p => p.Name == pathName);
+        if (patrolData is null) {
+            return;
+        }
+
+        foreach (FieldPlayer player in Players.Values) {
+            int dummyNpcId = player.Value.Character.Gender is Gender.Male ? Constant.DummyNpcMale : Constant.DummyNpcFemale;
+
+            if (!NpcMetadata.TryGet(dummyNpcId, out NpcMetadata? npcMetadata)) {
+                continue;
+            }
+
+            FieldNpc? dummyNpc = SpawnNpc(npcMetadata, player.Position, player.Rotation);
+            if (dummyNpc is null) {
+                continue;
+            }
+            Broadcast(FieldPacket.AddNpc(dummyNpc));
+            Broadcast(ProxyObjectPacket.AddNpc(dummyNpc));
+
+            dummyNpc.patrolData = patrolData;
+            dummyNpc.MovementState.CleanupPatrolData();
+            player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
+        }
+    }
+
     #region DebugUtils
     public void BroadcastAiMessage(ByteWriter packet) {
         foreach ((int objectId, FieldPlayer player) in Players) {

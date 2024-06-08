@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Maple2.Server.Game.Model.Enum;
+﻿namespace Maple2.Server.Game.Model.Enum;
 
 public enum NpcTaskPriority {
     None,
+    Cleanup,
     IdleAction, // wander, patrol, bore emote
     BattleStandby,
     BattleWalk, // trace/runaway/move

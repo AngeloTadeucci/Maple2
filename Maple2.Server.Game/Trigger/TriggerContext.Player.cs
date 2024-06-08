@@ -98,7 +98,9 @@ public partial class TriggerContext {
     }
 
     public void MoveUserPath(string path) {
-        ErrorLog("[MoveUserPath] path:{Path}", path);
+        DebugLog("[MoveUserPath] path:{Path}", path);
+
+        Field.MovePlayerAlongPath(path);
     }
 
     public void MoveUserToBox(int boxId, int portalId) {
