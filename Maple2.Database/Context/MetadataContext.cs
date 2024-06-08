@@ -138,6 +138,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("pet");
         builder.HasKey(pet => pet.Id);
         builder.HasIndex(pet => pet.NpcId);
+        builder.Property(pet => pet.AiPresets).HasJsonConversion();
         builder.Property(pet => pet.Skill).HasJsonConversion();
         builder.Property(pet => pet.Effect).HasJsonConversion();
         builder.Property(pet => pet.Distance).HasJsonConversion();

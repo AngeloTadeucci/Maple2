@@ -13,7 +13,7 @@ public class TaskState {
     public TaskState(FieldNpc actor) {
         Actor = actor;
 
-        var comparer = Comparer<NpcTaskPriority>.Create((NpcTaskPriority item1, NpcTaskPriority item2) => 1 - item1.CompareTo(item2));
+        var comparer = Comparer<NpcTaskPriority>.Create((NpcTaskPriority item1, NpcTaskPriority item2) => item2.CompareTo(item1));
 
         taskQueue = new PriorityQueue<NpcTask, NpcTaskPriority>(comparer);
         runningTasks = new NpcTask?[(int) NpcTaskPriority.Count];

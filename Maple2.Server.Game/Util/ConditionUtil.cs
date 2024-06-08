@@ -170,6 +170,7 @@ public static class ConditionUtil {
             case ConditionType.enchant_result:
             case ConditionType.install_billboard:
             case ConditionType.item_move:
+            case ConditionType.npc:
                 if (target.Integers != null && target.Integers.Any(value => longValue >= value)) {
                     return true;
                 }
@@ -185,6 +186,7 @@ public static class ConditionUtil {
             case ConditionType.laddertime:
             case ConditionType.holdtime:
             case ConditionType.riding:
+            case ConditionType.skill:
                 if (target.Range != null && target.Range.Value.Min >= longValue &&
                     target.Range.Value.Max <= longValue) {
                     return true;
@@ -232,12 +234,10 @@ public static class ConditionUtil {
             case ConditionType.quest_clear_by_chapter:
             case ConditionType.quest_clear:
             case ConditionType.buff:
-            case ConditionType.npc:
             case ConditionType.dialogue:
             case ConditionType.talk_in:
             case ConditionType.change_profile:
             case ConditionType.buddy_request:
-            case ConditionType.skill:
             case ConditionType.job:
             case ConditionType.job_change:
             case ConditionType.fall_survive:

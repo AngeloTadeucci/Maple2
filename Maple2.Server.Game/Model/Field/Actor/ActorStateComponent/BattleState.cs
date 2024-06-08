@@ -1,7 +1,7 @@
-﻿using Maple2.Model.Metadata;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using static Maple2.Model.Metadata.AiMetadata;
 using System.Numerics;
+using Maple2.Server.Game.Packets;
 
 namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 
@@ -27,7 +27,7 @@ public class BattleState {
     public bool KeepBattle = false;
     public bool CanBattle = true;
     public bool InBattle { get => TargetId != 0 || KeepBattle; }
-    public int TargetId { get; private set; }
+    public int TargetId => Target?.ObjectId ?? 0;
     public IActor? Target { get; private set; }
     public IActor? GrabbedUser { get; set; }
     private long nextTargetSearchTick = 0;
@@ -56,7 +56,6 @@ public class BattleState {
 
     public void Update(long tickCount) {
         if (actor.IsDead) {
-            TargetId = 0;
             Target = null;
 
             return;
@@ -69,11 +68,16 @@ public class BattleState {
         if (TargetId != 0 && (!ShouldKeepTarget() || !CanBattle) && !KeepBattle) {
             actor.AppendDebugMessage($"Lost target '{GetTargetName()}'\n");
 
-            TargetId = 0;
             Target = null;
+            if (actor is FieldPet pet && pet.OwnerId == 0) {
+                actor.Field.Broadcast(PetPacket.SyncTaming(0, pet));
+            }
         }
 
         if (CanBattle && TargetId == 0 && nextTargetSearchTick <= tickCount) {
+            if (actor is FieldPet pet && pet.OwnerId == 0 && pet.TamingPoint <= 0) {
+                return;
+            }
             FindNewTarget();
 
             nextTargetSearchTick = tickCount + 500;
@@ -188,8 +192,9 @@ public class BattleState {
     }
 
     private bool ShouldKeepTarget() {
-        if (changedTargetType) return true;
-        if (TargetId == 0) return true;
+        if (changedTargetType || TargetId == 0) {
+            return true;
+        }
 
         IActor? target = null;
 
@@ -199,27 +204,12 @@ public class BattleState {
             target = targetNpc;
         }
 
+
         if (target is null) {
             return false;
         }
 
-        float lastSightRadius = actor.Value.Metadata.Distance.CustomLastSightRadius;
-        float lastSightHeightUp = actor.Value.Metadata.Distance.CustomLastSightHeightUp;
-        float lastSightHeightDown = actor.Value.Metadata.Distance.CustomLastSightHeightDown;
-
-        if (lastSightRadius == 0) {
-            lastSightRadius = Constant.NpcLastSightRadius;
-        }
-
-        if (lastSightHeightUp == 0) {
-            lastSightHeightUp = Constant.NpcLastSightHeightUp;
-        }
-
-        if (lastSightHeightDown == 0) {
-            lastSightHeightDown = Constant.NpcLastSightHeightDown;
-        }
-
-        return ShouldTargetActor(target, lastSightRadius * lastSightRadius, lastSightHeightUp, lastSightHeightDown);
+        return ShouldTargetActor(target, actor.Value.Metadata.Distance.LastSightRadius * actor.Value.Metadata.Distance.LastSightRadius, actor.Value.Metadata.Distance.SightHeightUp, actor.Value.Metadata.Distance.SightHeightDown);
     }
 
     private int GetTargetType() {
@@ -290,9 +280,6 @@ public class BattleState {
             }
         }
 
-        TargetId = nextTarget?.ObjectId ?? 0;
         Target = nextTarget;
-
-        return;
     }
 }

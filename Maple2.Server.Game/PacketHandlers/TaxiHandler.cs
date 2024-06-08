@@ -146,10 +146,14 @@ public class TaxiHandler : PacketHandler<GameSession> {
 
     private static void HandleDiscoverTaxi(GameSession session) {
         int mapId = session.Player.Value.Character.MapId;
+        if (session.Player.Value.Unlock.Taxis.Contains(mapId)) {
+            return;
+        }
+
         session.Player.Value.Unlock.Taxis.Add(mapId);
+        session.Exp.AddExp(ExpType.taxi);
         session.Send(TaxiPacket.RevealTaxi(mapId));
         session.ConditionUpdate(ConditionType.taxifind);
-        session.Exp.AddExp(ExpType.taxi);
     }
 
     private static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {

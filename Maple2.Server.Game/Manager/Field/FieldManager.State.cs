@@ -97,7 +97,7 @@ public partial class FieldManager {
         if (agent is not null) {
             spawnPosition = Navigation.FromPosition(agent.getPosition());
         }
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), spawnPointNpc?.PatrolData) {
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,
@@ -132,7 +132,7 @@ public partial class FieldManager {
         int objectId = player != null ? NextGlobalId() : NextLocalId();
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
-        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, player) {
+        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, Constant.PetFieldAiPath, player) {
             Owner = owner,
             Position = Navigation.FromPosition(agent.getPosition()),
             Rotation = rotation,

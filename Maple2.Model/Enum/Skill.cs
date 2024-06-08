@@ -57,6 +57,12 @@ public enum Element : byte {
     Physical = 7,
 }
 
+public enum SkillGroupType : byte {
+    None = 0,
+    Default = 1,
+    Lapenshard = 2,
+}
+
 public enum SkillRank : byte {
     Basic = 0,
     Awakening = 1,

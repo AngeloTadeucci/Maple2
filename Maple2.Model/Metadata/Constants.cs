@@ -93,6 +93,8 @@ public static class Constant {
     public const double CriticalPercentageConversion = 0.015;
     public const double MaxCriticalRate = 0.4;
     public const int MaxClubMembers = 10;
+    public const string PetFieldAiPath = "Pet/AI_DefaultPetTaming.xml";
+    public const string DefaultAiPath = "AI_Default.xml";
 
 
     public const long FurnishingBaseId = 2870000000000000000;
@@ -840,6 +842,8 @@ public static class Constant {
     public const int PaybackMailPeriodDay = 90;
     public const int PaybackMaxRewardMeret = 10000;
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
+    public const int DummyNpcMale = 2040998;
+    public const int DummyNpcFemale = 2040999;
 
     #endregion
 
