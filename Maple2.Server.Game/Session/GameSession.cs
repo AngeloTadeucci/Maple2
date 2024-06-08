@@ -197,7 +197,11 @@ public sealed partial class GameSession : Core.Network.Session {
         });
 
         foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
-            var manager = new ClubManager(clubInfo, this);
+            var manager = ClubManager.Create(clubInfo, this);
+            if (manager == null) {
+                Logger.Error("Failed to create club manager for club {ClubId}", clubInfo.Id);
+                continue;
+            }
             if (Clubs.TryAdd(clubInfo.Id, manager)) {
                 manager.Load();
             }

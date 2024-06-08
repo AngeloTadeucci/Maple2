@@ -49,7 +49,7 @@ public class ClubMember : IByteSerializable, IDisposable {
         writer.WriteInt(info.PlotNumber);
         writer.WriteInt(info.ApartmentNumber);
         writer.WriteLong(info.PlotExpiryTime);
-        writer.Write(info.AchievementInfo);
+        writer.Write<AchievementInfo>(info.AchievementInfo);
         writer.WriteLong(member.JoinTime);
         writer.WriteLong(member.LoginTime);
         writer.WriteBool(!info.Online);

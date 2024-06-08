@@ -48,8 +48,8 @@ public partial class ChannelService {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_member };
             }
 
-            var clubManager = new ClubManager(create.Info, session);
-            if (clubManager.Club == null) {
+            var clubManager = ClubManager.Create(create.Info, session);
+            if (clubManager == null) {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_club };
             }
             if (session.Clubs.TryAdd(clubId, clubManager)) {
@@ -93,7 +93,7 @@ public partial class ChannelService {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_member };
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_club };
             }
 
@@ -115,12 +115,11 @@ public partial class ChannelService {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_member };
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_club };
             }
 
             manager.Disband();
-
         }
         return new ClubResponse();
     }
@@ -131,7 +130,7 @@ public partial class ChannelService {
                 continue;
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 continue;
             }
 
@@ -187,7 +186,7 @@ public partial class ChannelService {
                 continue;
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 continue;
             }
 
@@ -209,7 +208,7 @@ public partial class ChannelService {
                 continue;
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 continue;
             }
 
@@ -225,7 +224,7 @@ public partial class ChannelService {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_member };
             }
 
-            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager) || manager.Club == null) {
+            if (!session.Clubs.TryGetValue(clubId, out ClubManager? manager)) {
                 return new ClubResponse { Error = (int) ClubError.s_club_err_null_club };
             }
 

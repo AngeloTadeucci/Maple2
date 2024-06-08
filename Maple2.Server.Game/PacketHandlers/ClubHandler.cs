@@ -168,8 +168,8 @@ public class ClubHandler : PacketHandler<GameSession> {
         }
 
         if (accept) {
-            var club = new ClubManager(response.Club, session);
-            if (club.Club == null) {
+            var club = ClubManager.Create(response.Club, session);
+            if (club == null) {
                 Logger.Error("Failed to join club: {Name}", clubName);
                 return;
             }

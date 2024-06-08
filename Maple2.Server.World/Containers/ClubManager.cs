@@ -227,7 +227,7 @@ public class ClubManager : IDisposable {
         }
 
         using GameStorage.Request db = GameStorage.Context();
-        if (db.ClubExists(clubName: newName)) {
+        if (db.ClubExists(newName)) {
             return ClubError.s_club_err_name_exist;
         }
 

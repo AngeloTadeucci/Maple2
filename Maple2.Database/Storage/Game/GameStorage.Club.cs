@@ -15,8 +15,12 @@ public partial class GameStorage {
             return Context.Club.Find(clubId);
         }
 
-        public bool ClubExists(long clubId = 0, string clubName = "") {
-            return Context.Club.Any(club => club.Id == clubId || club.Name == clubName);
+        public bool ClubExists(string clubName = "") {
+            return Context.Club.Any(club => club.Name == clubName);
+        }
+
+        public bool ClubExists(long clubId = 0) {
+            return Context.Club.Any(club => club.Id == clubId);
         }
 
         public IList<long> ListClubs(long characterId) {
@@ -97,12 +101,16 @@ public partial class GameStorage {
         }
 
         public bool SaveClub(Club club) {
+            BeginTransaction();
             if (!Context.Club.Any(model => model.Id == club.Id)) {
                 return false;
             }
             Context.Club.Update(club);
             SaveClubMembers(club.Id, club.Members.Values);
-            return SaveChanges();
+            if (!SaveChanges()) {
+                return false;
+            }
+            return Commit();
         }
 
         public bool SaveClubMembers(long clubId, ICollection<ClubMember> members) {

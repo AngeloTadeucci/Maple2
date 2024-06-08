@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Storage;
+﻿using System.Diagnostics.CodeAnalysis;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -15,54 +16,69 @@ namespace Maple2.Server.Game.Manager;
 public class ClubManager : IDisposable {
     private readonly GameSession session;
 
-    public Club? Club { get; private set; }
-    public long Id => Club?.Id ?? 0;
+    public Club Club { get; init; }
+    public long Id => Club.Id;
 
     private readonly CancellationTokenSource tokenSource;
 
     private readonly ILogger logger = Log.Logger.ForContext<ClubManager>();
 
-    public ClubManager(ClubInfo clubInfo, GameSession session) {
+    private ClubManager(GameSession session, Club club) {
         this.session = session;
         tokenSource = new CancellationTokenSource();
+        Club = club;
+    }
 
-        if (!SetClub(clubInfo)) {
-            logger.Error("Failed to set club for {Session}", session);
-            return;
+    public static ClubManager? Create(ClubInfo clubInfo, GameSession session) {
+        Club? club = SetClub(session, clubInfo);
+        if (club == null) {
+            Log.Error("Failed to set club for {Session}", session);
+            return null;
         }
+
+        return new ClubManager(session, club);
     }
 
     public void Dispose() {
         session.Dispose();
         tokenSource.Dispose();
 
-        if (Club != null) {
-            foreach (ClubMember member in Club.Members.Values) {
-                member.Dispose();
-                if (member.CharacterId == session.CharacterId) {
-                    using GameStorage.Request db = session.GameStorage.Context();
-                    db.SaveClubMember(member);
-                }
+        foreach (ClubMember member in Club.Members.Values) {
+            member.Dispose();
+            if (member.CharacterId == session.CharacterId) {
+                using GameStorage.Request db = session.GameStorage.Context();
+                db.SaveClubMember(member);
             }
         }
     }
 
     public void Load() {
-        if (Club == null || Club.State == ClubState.Staged) {
+        if (Club.State == ClubState.Staged) {
             return;
         }
 
+        foreach (ClubMember member in Club.Members.Values) {
+            BeginListen(member);
+        }
+
+        session.Player.Value.Character.ClubIds.Add(Id);
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            Async = true,
+            Clubs = new ClubsInfo {
+                Id = {
+                    session.Player.Value.Character.ClubIds,
+                },
+            },
+        });
         session.Send(ClubPacket.Update(Club));
     }
 
-    public bool SetClub(ClubInfo info) {
-        if (Club != null) {
-            return false;
-        }
-
+    private static Club? SetClub(GameSession session, ClubInfo info) {
         List<ClubMember> clubMembers = info.Members.Select(member => {
             if (!session.PlayerInfo.GetOrFetch(member.CharacterId, out PlayerInfo? playerInfo)) {
-                logger.Error("Failed to get player info for character {CharacterId}", member.CharacterId);
+                Log.Error("Failed to get player info for character {CharacterId}", member.CharacterId);
                 return null;
             }
 
@@ -76,41 +92,24 @@ public class ClubManager : IDisposable {
 
         ClubMember? leader = clubMembers.SingleOrDefault(member => member.CharacterId == info.LeaderId);
         if (leader == null) {
-            logger.Error("Club {ClubId} does not have a valid leader", info.Id);
+            Log.Error("Club {ClubId} does not have a valid leader", info.Id);
             session.Send(ClubPacket.Error(ClubError.s_club_err_unknown));
-            return false;
+            return null;
         }
 
-        Club = new Club(info.Id, info.Name, leader) {
+        var club = new Club(info.Id, info.Name, leader) {
             CreationTime = info.CreationTime,
             State = (ClubState) info.State,
         };
 
         foreach (ClubMember member in clubMembers) {
-            if (Club.Members.TryAdd(member.Info.CharacterId, member)) {
-                BeginListen(member);
-            }
+            club.Members.TryAdd(member.Info.CharacterId, member);
         }
 
-        session.Player.Value.Character.ClubIds.Add(Id);
-        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
-            AccountId = session.AccountId,
-            CharacterId = session.CharacterId,
-            Async = true,
-            Clubs = new ClubsInfo {
-                Id = {
-                    session.Player.Value.Character.ClubIds
-                },
-            },
-        });
-        return true;
+        return club;
     }
 
     public void UpdateLeader(long characterId) {
-        if (Club == null) {
-            return;
-        }
-
         string oldLeader = Club.Leader.Name;
         if (!Club.Members.TryGetValue(characterId, out ClubMember? newLeader)) {
             logger.Error("Failed to find new leader for club {ClubId}", Club.Id);
@@ -124,20 +123,12 @@ public class ClubManager : IDisposable {
     }
 
     public void Rename(string newName, long changedTime) {
-        if (Club == null) {
-            return;
-        }
-
         Club.Name = newName;
         Club.NameChangeCooldown = changedTime;
         session.Send(ClubPacket.Rename(Id, newName, changedTime));
     }
 
     public void Disband() {
-        if (Club == null) {
-            return;
-        }
-
         foreach (ClubMember member in Club.Members.Values) {
             EndListen(member);
         }
@@ -148,10 +139,6 @@ public class ClubManager : IDisposable {
     }
 
     public void RemoveClub() {
-        if (Club == null) {
-            return;
-        }
-
         session.Clubs.TryRemove(Id, out _);
         session.Player.Value.Character.ClubIds.Remove(Id);
         session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
@@ -164,13 +151,9 @@ public class ClubManager : IDisposable {
                 },
             },
         });
-        Club = null;
     }
 
     public bool AddMember(string requestorName, ClubMember member) {
-        if (Club == null) {
-            return false;
-        }
         if (!Club.Members.TryAdd(member.CharacterId, member)) {
             return false;
         }
@@ -181,10 +164,6 @@ public class ClubManager : IDisposable {
     }
 
     public bool RemoveMember(long characterId) {
-        if (Club == null) {
-            return false;
-        }
-
         if (!Club.Members.TryRemove(characterId, out ClubMember? member)) {
             return false;
         }
@@ -221,7 +200,7 @@ public class ClubManager : IDisposable {
     }
 
     private bool SyncUpdate(CancellationToken cancel, long id, UpdateField type, IPlayerInfo info) {
-        if (cancel.IsCancellationRequested || Club == null || !Club.Members.TryGetValue(id, out ClubMember? member)) {
+        if (cancel.IsCancellationRequested || !Club.Members.TryGetValue(id, out ClubMember? member)) {
             return true;
         }
 

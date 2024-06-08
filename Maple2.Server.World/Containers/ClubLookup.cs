@@ -58,7 +58,7 @@ public class ClubLookup : IDisposable {
         return clubManagers;
     }
 
-    public ClubManager? FetchClub(long clubId) {
+    private ClubManager? FetchClub(long clubId) {
         using GameStorage.Request db = gameStorage.Context();
         Club? club = db.GetClub(clubId);
         if (club == null) {
@@ -67,13 +67,12 @@ public class ClubLookup : IDisposable {
 
         SetMembers(db, club);
 
-        ClubManager manager = new ClubManager(club) {
+        var manager = new ClubManager(club) {
             GameStorage = gameStorage,
             ChannelClients = channelClients,
         };
 
         return clubs.TryAdd(clubId, manager) ? manager : null;
-
     }
 
     private void SetMembers(GameStorage.Request db, Club club) {
@@ -87,7 +86,7 @@ public class ClubLookup : IDisposable {
     public ClubError Create(string name, long leaderId, out long clubId) {
         clubId = 0;
         using GameStorage.Request db = gameStorage.Context();
-        if (db.ClubExists(clubName: name)) {
+        if (db.ClubExists(name)) {
             return ClubError.s_club_err_name_exist;
         }
 

@@ -45,7 +45,7 @@ public class Character {
     public string GuildName = string.Empty;
     public long GuildId;
     public int PartyId;
-    public List<long> ClubIds = []; // ClubId, ClubName
+    public List<long> ClubIds = [];
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
     public long PremiumTime;
