@@ -147,7 +147,7 @@ public static class PartyPacket {
 
     public static ByteWriter Update(PartyMember member) {
         var pWriter = Packet.Of(SendOp.Party);
-        pWriter.Write<Command>(Command.UpdateMember2);
+        pWriter.Write<Command>(Command.UpdateMember);
 
         pWriter.WriteLong(member.CharacterId);
         pWriter.WriteClass<PartyMember>(member);
