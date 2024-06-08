@@ -26,7 +26,7 @@ namespace Maple2.Server.World.Migrations
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<DateTime>(
-                name: "NameChangedTime",
+                name: "NameChangeCooldown",
                 table: "Club",
                 type: "datetime(6)",
                 nullable: false,
@@ -52,7 +52,7 @@ namespace Maple2.Server.World.Migrations
                 table: "Club");
 
             migrationBuilder.DropColumn(
-                name: "NameChangedTime",
+                name: "NameChangeCooldown",
                 table: "Club");
 
             migrationBuilder.DropColumn(

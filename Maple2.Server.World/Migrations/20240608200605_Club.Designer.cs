@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240525092746_Club")]
+    [Migration("20240608200605_Club")]
     partial class Club
     {
         /// <inheritdoc />
@@ -303,6 +303,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("DeathTick")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("ExplorationProgress")
+                        .HasColumnType("int");
+
                     b.Property<string>("FavoriteDesigners")
                         .HasColumnType("json");
 
@@ -335,7 +338,13 @@ namespace Maple2.Server.World.Migrations
                     b.Property<string>("SkillMacros")
                         .HasColumnType("json");
 
+                    b.Property<string>("SkillPoint")
+                        .HasColumnType("json");
+
                     b.Property<string>("StatAllocation")
+                        .HasColumnType("json");
+
+                    b.Property<string>("StatPoints")
                         .HasColumnType("json");
 
                     b.Property<string>("Wardrobes")
@@ -421,11 +430,6 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("LastModified")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("datetime(6)");
-
                     b.Property<long>("LeaderId")
                         .HasColumnType("bigint");
 
@@ -433,7 +437,7 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("NameChangedTime")
+                    b.Property<DateTime>("NameChangeCooldown")
                         .HasColumnType("datetime(6)");
 
                     b.Property<byte>("State")
@@ -1453,13 +1457,13 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("ApartmentNumber")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ExpiryTime")
+                    b.Property<DateTimeOffset>("ExpiryTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("Indoor")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("LastModified")
+                    b.Property<DateTimeOffset>("LastModified")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)");
