@@ -191,7 +191,7 @@ public sealed class Stat {
         }
     }
 
-    public double Multiplier() => Total / 1000;
+    public double Multiplier() => Total / 1000.0;
 
     public override string ToString() => $"<{Total}|{Base}|{Current}>";
 }

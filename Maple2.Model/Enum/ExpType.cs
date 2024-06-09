@@ -1,4 +1,6 @@
-﻿namespace Maple2.Model.Enum;
+﻿// ReSharper disable InconsistentNaming
+
+namespace Maple2.Model.Enum;
 
 public enum ExpType {
     none,

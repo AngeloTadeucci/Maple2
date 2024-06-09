@@ -24,7 +24,7 @@ public static class UgcPacket {
 
     public static ByteWriter Upload(UgcResource ugc) {
         var pWriter = Packet.Of(SendOp.Ugc);
-        pWriter.Write(Command.Upload);
+        pWriter.Write<Command>(Command.Upload);
         pWriter.Write<UgcType>(ugc.Type);
         pWriter.WriteLong(ugc.Id);
         pWriter.WriteUnicodeString(ugc.Id.ToString());
@@ -34,7 +34,7 @@ public static class UgcPacket {
 
     public static ByteWriter UpdatePath(UgcResource ugc) {
         var pWriter = Packet.Of(SendOp.Ugc);
-        pWriter.Write(Command.UpdatePath);
+        pWriter.Write<Command>(Command.UpdatePath);
         pWriter.Write<UgcType>(ugc.Type);
         pWriter.WriteLong(ugc.Id);
         pWriter.WriteUnicodeString(ugc.Path);
@@ -44,7 +44,7 @@ public static class UgcPacket {
 
     public static ByteWriter SetEndpoint(Uri uri, Locale locale = Locale.NA) {
         var pWriter = Packet.Of(SendOp.Ugc);
-        pWriter.Write(Command.SetEndpoint);
+        pWriter.Write<Command>(Command.SetEndpoint);
         pWriter.WriteUnicodeString($"{uri.Scheme}://{uri.Authority}/ws.asmx?wsdl");
         pWriter.WriteUnicodeString($"{uri.Scheme}://{uri.Authority}");
         pWriter.WriteUnicodeString(locale.ToString().ToLower());
@@ -93,7 +93,7 @@ public static class UgcPacket {
 
     public static ByteWriter LoadBanners() {
         var pWriter = Packet.Of(SendOp.Ugc);
-        pWriter.Write(Command.LoadBanner);
+        pWriter.Write<Command>(Command.LoadBanner);
 
         pWriter.WriteInt(); // count
         pWriter.WriteInt(); // count

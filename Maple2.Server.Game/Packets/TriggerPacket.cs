@@ -110,7 +110,7 @@ public static class TriggerPacket {
     public static ByteWriter SidePopupTalk(int duration, string illustration, string voice, string script, string sound = "") {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.SidePopup);
-        pWriter.Write(1); // Talk
+        pWriter.WriteInt(1); // Talk
         pWriter.WriteInt(duration);
         pWriter.WriteString();
         pWriter.WriteString(illustration);

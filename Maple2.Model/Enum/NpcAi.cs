@@ -59,7 +59,7 @@ public enum NodeBuffType {
     Remove,
 }
 
-public enum NodePopupType {
+public enum NodePopupType : byte {
     Talk,
     CutIn,
 }

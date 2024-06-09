@@ -159,7 +159,7 @@ public static class PartyPacket {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.UpdateDungeonInfo);
 
-        pWriter.Write(member.CharacterId);
+        pWriter.WriteLong(member.CharacterId);
         member.WriteDungeonEligibility(pWriter);
 
         return pWriter;

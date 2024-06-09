@@ -17,7 +17,7 @@ public static class WorldMapPacket {
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteWorldBosses(bossGroups);
 
-        pWriter.Write(otherBossGroups != null);
+        pWriter.WriteBool(otherBossGroups != null);
         if (otherBossGroups != null) {
             pWriter.WriteWorldBosses(otherBossGroups);
         }
