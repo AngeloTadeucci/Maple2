@@ -18,14 +18,13 @@ public enum UpdateField {
     Trophy = 256,
     PremiumTime = 512,
     Clubs = 1024,
-    LastOnlineTime = 2048,
 
     // Presets
-    Buddy = Profile | Job | Level | Map | Channel | Home | Trophy | LastOnlineTime,
-    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs | LastOnlineTime,
-    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs | LastOnlineTime,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs | LastOnlineTime,
-    GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs | LastOnlineTime,
+    Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
+    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs,
+    GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs,
     All = int.MaxValue,
 }
 
@@ -61,7 +60,8 @@ public class PlayerInfoUpdateEvent {
         if (request.HasMapId && player.MapId != request.MapId) {
             Type |= UpdateField.Map;
         }
-        if (request.HasChannel && player.Channel != request.Channel) {
+        if ((request.HasChannel && player.Channel != request.Channel) ||
+            (request.HasLastOnlineTime && player.LastOnlineTime != request.LastOnlineTime)) {
             Type |= UpdateField.Channel;
         }
         if (request.Health != null) {
@@ -104,10 +104,6 @@ public class PlayerInfoUpdateEvent {
             if (player.ClubIds != request.Clubs.Select(club => club.Id).ToList()) {
                 Type |= UpdateField.Clubs;
             }
-        }
-
-        if (request.HasLastOnlineTime && player.LastOnlineTime != request.LastOnlineTime) {
-            Type |= UpdateField.LastOnlineTime;
         }
     }
 }

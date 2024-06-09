@@ -36,6 +36,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (update.Type.HasFlag(UpdateField.Channel) && update.Request.HasChannel) {
             info.Channel = (short) update.Request.Channel;
+            info.LastOnlineTime = update.Request.LastOnlineTime;
         }
         if (update.Type.HasFlag(UpdateField.Health) && update.Request.Health != null) {
             info.CurrentHp = update.Request.Health.CurrentHp;
@@ -57,9 +58,6 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
             info.ClubIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
-        }
-        if (update.Type.HasFlag(UpdateField.LastOnlineTime) && update.Request.HasLastOnlineTime) {
-            info.LastOnlineTime = update.Request.LastOnlineTime;
         }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -85,6 +83,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Channel)) {
             self.Channel = other.Channel;
+            self.LastOnlineTime = other.LastOnlineTime;
         }
         if (type.HasFlag(UpdateField.Health)) {
             self.CurrentHp = other.CurrentHp;
@@ -105,9 +104,6 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Clubs)) {
             self.ClubIds = other.ClubIds;
-        }
-        if (type.HasFlag(UpdateField.LastOnlineTime)) {
-            self.LastOnlineTime = other.LastOnlineTime;
         }
 
         self.UpdateTime = other.UpdateTime;
@@ -134,6 +130,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Channel)) {
             request.Channel = info.Channel;
+            request.LastOnlineTime = info.LastOnlineTime;
         }
         if (type.HasFlag(UpdateField.Health)) {
             request.Health = new HealthUpdate {
@@ -162,9 +159,6 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Clubs)) {
             request.Clubs.AddRange(info.ClubIds.Select(id => new ClubUpdate { Id = id }));
-        }
-        if (type.HasFlag(UpdateField.LastOnlineTime)) {
-            request.LastOnlineTime = info.LastOnlineTime;
         }
     }
 }
