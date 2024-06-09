@@ -57,7 +57,7 @@ public static class PlayerInfoUpdateExtensions {
             };
         }
         if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
-            info.ClubsIds = new List<long>(update.Request.Clubs.Id);
+            info.ClubsIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
         }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -155,9 +155,7 @@ public static class PlayerInfoUpdateExtensions {
             request.PremiumTime = info.PremiumTime;
         }
         if (type.HasFlag(UpdateField.Clubs)) {
-            request.Clubs = new ClubsInfo {
-                Id = { info.ClubsIds },
-            };
+            request.Clubs.AddRange(info.ClubsIds.Select(id => new ClubsInfo { Id = id }));
         }
     }
 }

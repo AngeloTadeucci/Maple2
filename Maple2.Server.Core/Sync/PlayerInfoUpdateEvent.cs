@@ -100,7 +100,7 @@ public class PlayerInfoUpdateEvent {
         }
 
         if (request.Clubs != null) {
-            if (player.ClubsIds != request.Clubs.Id.ToList()) {
+            if (player.ClubsIds != request.Clubs.Select(club => club.Id).ToList()) {
                 Type |= UpdateField.Clubs;
             }
         }

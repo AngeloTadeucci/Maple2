@@ -24,7 +24,7 @@ message TrophyInfo {
 }
 
 message ClubsInfo {
-  repeated int64 id = 1;
+  int64 id = 1;
 }
 
 // Requests
@@ -54,7 +54,7 @@ message PlayerUpdateRequest {
   optional HealthInfo health = 14;
   optional HomeInfo home = 15;
   optional TrophyInfo trophy = 16;
-  optional ClubsInfo clubs = 17;
+  repeated ClubsInfo clubs = 17;
 
   // Batch updates in a queue rather than immediately forwarding.
   bool async = 20;
@@ -85,5 +85,5 @@ message PlayerInfoResponse {
   HealthInfo health = 14;
   HomeInfo home = 15;
   TrophyInfo trophy = 16;
-  ClubsInfo clubs = 17;
+  repeated ClubsInfo clubs = 17;
 }

@@ -50,7 +50,7 @@ public class PlayerInfoStorage {
                 Lifestyle = response.Trophy.Lifestyle,
             };
 
-            info = new PlayerInfo(characterInfo, response.Home.Name, trophy, response.Clubs.Id.ToList()) {
+            info = new PlayerInfo(characterInfo, response.Home.Name, trophy, response.Clubs.Select(club => club.Id).ToList()) {
                 PlotMapId = response.Home.MapId,
                 PlotNumber = response.Home.PlotNumber,
                 ApartmentNumber = response.Home.ApartmentNumber,

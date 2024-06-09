@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Google.Protobuf.Collections;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -66,11 +67,7 @@ public class ClubManager : IDisposable {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Async = true,
-            Clubs = new ClubsInfo {
-                Id = {
-                    session.Player.Value.Character.ClubIds,
-                },
-            },
+            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubsInfo { Id = id }) }
         });
         session.Send(ClubPacket.Update(Club));
     }
@@ -145,11 +142,7 @@ public class ClubManager : IDisposable {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Async = true,
-            Clubs = new ClubsInfo {
-                Id = {
-                    session.Player.Value.Character.ClubIds
-                },
-            },
+            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubsInfo { Id = id }) },
         });
     }
 

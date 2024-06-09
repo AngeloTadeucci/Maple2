@@ -49,9 +49,7 @@ public partial class WorldService {
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
             },
-            Clubs = new ClubsInfo {
-                Id = { info.ClubsIds },
-            },
+            Clubs = { info.ClubsIds.Select(id => new ClubsInfo { Id = id }) },
         });
     }
 
