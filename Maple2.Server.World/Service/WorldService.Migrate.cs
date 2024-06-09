@@ -29,25 +29,24 @@ public partial class WorldService {
                     Port = Target.LoginPort,
                     Token = token,
                 });
-            case Server.Game: {
-                    if (channelClients.Count == 0) {
-                        throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
-                    }
-
-                    int channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
-                    if (!channelClients.TryGetActiveEndpoint(channel, out IPEndPoint? endpoint)) {
-                        throw new RpcException(new Status(StatusCode.InvalidArgument, $"Migrating to invalid game channel: {channel}"));
-                    }
-
-                    var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.OwnerId);
-                    tokenCache.Set(token, gameEntry, AuthExpiry);
-                    return Task.FromResult(new MigrateOutResponse {
-                        IpAddress = endpoint.Address.ToString(),
-                        Port = endpoint.Port,
-                        Token = token,
-                        Channel = channel,
-                    });
+            case Server.Game:
+                if (channelClients.Count == 0) {
+                    throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
+
+                int channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                if (!channelClients.TryGetActiveEndpoint(channel, out IPEndPoint? endpoint)) {
+                    throw new RpcException(new Status(StatusCode.InvalidArgument, $"Migrating to invalid game channel: {channel}"));
+                }
+
+                var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.OwnerId);
+                tokenCache.Set(token, gameEntry, AuthExpiry);
+                return Task.FromResult(new MigrateOutResponse {
+                    IpAddress = endpoint.Address.ToString(),
+                    Port = endpoint.Port,
+                    Token = token,
+                    Channel = channel,
+                });
             default:
                 throw new RpcException(new Status(StatusCode.InvalidArgument, $"Invalid server: {request.Server}"));
         }

@@ -12,7 +12,7 @@ public static class HomeCommandPacket {
 
     public static ByteWriter LoadHome(long accountId) {
         var pWriter = Packet.Of(SendOp.HomeCommand);
-        pWriter.Write(Command.Load);
+        pWriter.Write<Command>(Command.Load);
         pWriter.WriteLong(accountId);
         pWriter.WriteLong(); // last time player nominated home
 
@@ -21,7 +21,7 @@ public static class HomeCommandPacket {
 
     public static ByteWriter UpdateArchitectScore(int ownerObjectId, int architectScoreCurrent, int architectScoreTotal) {
         var pWriter = Packet.Of(SendOp.HomeCommand);
-        pWriter.Write(Command.UpdateArchitectScore);
+        pWriter.Write<Command>(Command.UpdateArchitectScore);
         pWriter.WriteInt(ownerObjectId);
         pWriter.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         pWriter.WriteInt(architectScoreCurrent);

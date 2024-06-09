@@ -53,16 +53,20 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
         // TODO: Check if plot has entry points
 
         // plots start at 0,0 and are built towards negative x and y
-        int x = -1 * (home.Area - 1);
+        int dimension = -1 * (home.Area - 1);
 
         // find the blocks in most negative x,y direction, with the highest z value
-        int height = plotCubes.Where(cube => cube.Position.X == x && cube.Position.Y == x).Max(cube => cube.Position.Z);
+        int height = 0;
+        if (plotCubes.Count > 0) {
+            height = plotCubes.Where(cube => cube.Position.X == dimension && cube.Position.Y == dimension)
+                .Max(cube => cube.Position.Z);
+        }
 
-        x *= VectorExtensions.BLOCK_SIZE;
+        dimension *= VectorExtensions.BLOCK_SIZE;
 
         height++; // add 1 to height to be on top of the block
         height *= VectorExtensions.BLOCK_SIZE;
-        session.Player.Position = new Vector3(x, x, height + 1);
+        session.Player.Position = new Vector3(dimension, dimension, height + 1);
 
         // Technically this sends home details to all players who enter map (including passcode)
         // but you would already know passcode if you entered the map.
