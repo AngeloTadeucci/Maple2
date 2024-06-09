@@ -238,7 +238,6 @@ public partial class WorldService {
                 party.Members.Values.Select(member => new PartyInfo.Types.Member {
                     CharacterId = member.CharacterId,
                     JoinTime = member.JoinTime,
-                    LoginTime = member.LoginTime,
                 }),
             },
         };

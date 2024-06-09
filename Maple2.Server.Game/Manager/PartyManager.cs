@@ -89,7 +89,6 @@ public class PartyManager : IDisposable {
                 PartyId = info.Id,
                 Info = playerInfo.Clone(),
                 JoinTime = member.JoinTime,
-                LoginTime = member.LoginTime,
             };
             return result;
         }).WhereNotNull().ToArray();
@@ -349,7 +348,6 @@ public class PartyManager : IDisposable {
 
         bool wasOnline = member.Info.Online;
         member.Info.Update(type, info);
-        member.LoginTime = info.UpdateTime;
 
         if (type == UpdateField.Health || type == UpdateField.Level) {
             session.Send(PartyPacket.UpdateStats(member));
