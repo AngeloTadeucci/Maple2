@@ -54,8 +54,8 @@ public class ClubHandler : PacketHandler<GameSession> {
                 HandleLeave(session, packet);
                 break;
             case Command.Buff:
-                 HandleBuff(session, packet);
-                 break;
+                HandleBuff(session, packet);
+                break;
             case Command.Rename:
                 HandleRename(session, packet);
                 break;

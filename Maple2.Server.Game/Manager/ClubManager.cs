@@ -209,7 +209,7 @@ public class ClubManager : IDisposable {
         if (session.CharacterId != member.CharacterId && member.Info.Online != wasOnline) {
             session.Send(member.Info.Online
                 ? ClubPacket.NotifyLogin(Id, member.Name)
-                : ClubPacket.NotifyLogout(Id, member.Name, member.LoginTime));
+                : ClubPacket.NotifyLogout(Id, member.Name, member.Info.LastOnlineTime));
         }
         return false;
     }

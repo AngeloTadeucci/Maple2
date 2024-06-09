@@ -98,6 +98,7 @@ public partial class ChannelService {
             }
 
             manager.Club.State = ClubState.Established;
+            manager.Load();
 
             if (receiverId == manager.Club.Leader.CharacterId) {
                 session.Send(ClubPacket.Join(manager.Club.Leader, manager.Club.Name));

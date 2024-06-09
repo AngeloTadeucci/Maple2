@@ -51,7 +51,7 @@ message PlayerUpdateRequest {
   optional int32 map_id = 11;
   optional int32 channel = 12;
   optional int64 premium_time = 13;
-  optional int64 login_time = 14;
+  optional int64 last_online_time = 14;
   optional HealthUpdate health = 15;
   optional HomeUpdate home = 16;
   optional TrophyUpdate trophy = 17;
@@ -81,7 +81,7 @@ message PlayerInfoResponse {
   int32 level = 9;
   int32 gear_score = 10;
   int64 premium_time = 11;
-  int64 login_time = 12;
+  int64 last_online_time = 12;
   int32 map_id = 13;
   int32 channel = 14;
   HealthUpdate health = 15;

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240609064701_Club")]
+    [Migration("20240609073700_Club")]
     partial class Club
     {
         /// <inheritdoc />
@@ -259,9 +259,6 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
                         .HasDefaultValue((short)1);
-
-                    b.Property<DateTimeOffset>("LoginTime")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("MapId")
                         .HasColumnType("int");

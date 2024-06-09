@@ -257,9 +257,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("smallint")
                         .HasDefaultValue((short)1);
 
-                    b.Property<DateTimeOffset>("LoginTime")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<int>("MapId")
                         .HasColumnType("int");
 

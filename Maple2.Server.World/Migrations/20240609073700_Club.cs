@@ -11,10 +11,6 @@ namespace Maple2.Server.World.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "LoginTime",
-                table: "guild-member");
-
             migrationBuilder.AddColumn<int>(
                 name: "BuffId",
                 table: "Club",
@@ -35,13 +31,6 @@ namespace Maple2.Server.World.Migrations
                 type: "tinyint unsigned",
                 nullable: false,
                 defaultValue: (byte)0);
-
-            migrationBuilder.AddColumn<DateTimeOffset>(
-                name: "LoginTime",
-                table: "Character",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
         }
 
         /// <inheritdoc />
@@ -58,17 +47,6 @@ namespace Maple2.Server.World.Migrations
             migrationBuilder.DropColumn(
                 name: "State",
                 table: "Club");
-
-            migrationBuilder.DropColumn(
-                name: "LoginTime",
-                table: "Character");
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "LoginTime",
-                table: "guild-member",
-                type: "datetime(6)",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
         }
     }
 }

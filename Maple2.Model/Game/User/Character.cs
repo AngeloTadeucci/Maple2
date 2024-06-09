@@ -16,7 +16,7 @@ public class Character {
     #endregion
 
     public long DeleteTime;
-    public long LoginTime;
+    public long LastOnlineTime;
 
     public required string Name;
     public Gender Gender;

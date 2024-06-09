@@ -34,5 +34,5 @@ public interface IPlayerInfo {
 
     // Timestamp
     public long UpdateTime { get; set; }
-    public long LoginTime { get; set; }
+    public long LastOnlineTime { get; set; }
 }

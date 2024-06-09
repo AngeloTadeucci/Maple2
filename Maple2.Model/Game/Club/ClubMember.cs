@@ -15,7 +15,6 @@ public class ClubMember : IByteSerializable, IDisposable {
     public long CharacterId => Info.CharacterId;
     public string Name => Info.Name;
     public long JoinTime;
-    public long LoginTime => Info.LoginTime;
 
     public CancellationTokenSource? TokenSource;
 
@@ -51,7 +50,7 @@ public class ClubMember : IByteSerializable, IDisposable {
         writer.WriteLong(info.PlotExpiryTime);
         writer.Write<AchievementInfo>(info.AchievementInfo);
         writer.WriteLong(member.JoinTime);
-        writer.WriteLong(member.LoginTime);
+        writer.WriteLong(info.LastOnlineTime);
         writer.WriteBool(!info.Online);
     }
 }

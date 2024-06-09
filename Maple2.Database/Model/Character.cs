@@ -28,14 +28,12 @@ internal class Character {
     public required Mastery Mastery { get; set; }
     public DateTime DeleteTime { get; set; }
     public DateTime CreationTime { get; set; }
-    public DateTimeOffset LoginTime { get; set; }
     public DateTime LastModified { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Character?(Maple2.Model.Game.Character? other) {
         return other == null ? null : new Character {
             LastModified = other.LastModified,
-            LoginTime = other.LoginTime.FromEpochSeconds(),
             AccountId = other.AccountId,
             Id = other.Id,
             Name = other.Name,
@@ -82,7 +80,7 @@ internal class Character {
     public static implicit operator Maple2.Model.Game.Character?(Character? other) {
         return other == null ? null : new Maple2.Model.Game.Character {
             LastModified = other.LastModified,
-            LoginTime = other.LoginTime.ToUnixTimeSeconds(),
+            LastOnlineTime = other.LastModified.ToEpochSeconds(),
             AccountId = other.AccountId,
             Id = other.Id,
             Name = other.Name,

@@ -174,7 +174,7 @@ public sealed partial class GameSession : Core.Network.Session {
         var playerUpdate = new PlayerUpdateRequest {
             AccountId = accountId,
             CharacterId = characterId,
-            LoginTime = Player.Value.Character.LoginTime,
+            LastOnlineTime = Player.Value.Character.LastOnlineTime,
         };
         playerUpdate.SetFields(UpdateField.All, player);
         playerUpdate.Health = new HealthUpdate {
@@ -465,12 +465,11 @@ public sealed partial class GameSession : Core.Network.Session {
         if (disposed) return;
         disposed = true;
 
-        long logoutTime = DateTimeOffset.Now.ToUnixTimeSeconds();
         if (State == SessionState.Connected) {
             PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = AccountId,
                 CharacterId = CharacterId,
-                LoginTime = logoutTime,
+                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
                 Channel = 0,
                 Async = true,
@@ -483,7 +482,6 @@ public sealed partial class GameSession : Core.Network.Session {
             LeaveField();
             Player.Value.Character.Channel = 0;
             Player.Value.Account.Online = false;
-            Player.Value.Character.LoginTime = logoutTime;
             State = SessionState.Disconnected;
             Complete();
         } finally {

@@ -11,7 +11,7 @@ namespace Maple2.Database.Storage;
 public partial class GameStorage {
     public partial class Request {
         public Club? GetClub(IPlayerInfoProvider provider, long clubId) {
-            Club? club =  Context.Club.Find(clubId);
+            Club? club = Context.Club.Find(clubId);
             if (club == null) {
                 return null;
             }

@@ -29,7 +29,7 @@ public partial class WorldService {
             Level = info.Level,
             GearScore = info.GearScore,
             PremiumTime = info.PremiumTime,
-            LoginTime = info.LoginTime,
+            LastOnlineTime = info.LastOnlineTime,
             MapId = info.MapId,
             Channel = info.Channel,
             Health = new HealthUpdate {

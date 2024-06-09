@@ -31,7 +31,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             PlotExpiryTime = player.Home.PlotExpiryTime,
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
-            LoginTime = player.Character.LoginTime,
+            LastOnlineTime = player.Character.LastOnlineTime,
         };
     }
 
@@ -124,7 +124,7 @@ public class CharacterInfo {
     // Location
     public int MapId { get; set; }
     public short Channel { get; set; }
-    public long LoginTime { get; set; }
+    public long LastOnlineTime { get; set; }
 
     public long UpdateTime { get; set; }
     public bool Online => Channel != 0;
@@ -151,7 +151,7 @@ public class CharacterInfo {
         Level = other.Level;
         MapId = other.MapId;
         Channel = other.Channel;
-        LoginTime = other.LoginTime;
+        LastOnlineTime = other.LastOnlineTime;
     }
 
     public static implicit operator CharacterInfo(Player player) {
