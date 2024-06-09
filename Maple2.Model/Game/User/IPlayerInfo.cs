@@ -16,7 +16,7 @@ public interface IPlayerInfo {
     public short Level { get; set; }
     public int GearScore { get; set; }
     public long PremiumTime { get; set; }
-    public List<long> ClubsIds { get; set; }
+    public List<long> ClubIds { get; set; }
     // Health
     public long CurrentHp { get; set; }
     public long TotalHp { get; set; }
@@ -34,4 +34,5 @@ public interface IPlayerInfo {
 
     // Timestamp
     public long UpdateTime { get; set; }
+    public long LoginTime { get; set; }
 }

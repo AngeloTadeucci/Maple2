@@ -34,7 +34,6 @@ public partial class GameStorage {
                         TotalContribution = member.TotalContribution,
                         DailyDonationCount = member.DailyDonationCount,
                         JoinTime = member.CreationTime.ToEpochSeconds(),
-                        LoginTime = member.LoginTime.ToEpochSeconds(),
                         CheckinTime = member.CheckinTime.ToEpochSeconds(),
                         DonationTime = member.DonationTime.ToEpochSeconds(),
                     };
@@ -82,7 +81,6 @@ public partial class GameStorage {
                 GuildId = guild.Id,
                 CharacterId = leaderId,
                 Rank = 0,
-                LoginTime = DateTime.Now,
             };
             Context.GuildMember.Add(guildLeader);
             if (!SaveChanges()) {
@@ -97,7 +95,6 @@ public partial class GameStorage {
                 GuildId = guildId,
                 CharacterId = info.CharacterId,
                 Rank = 5,
-                LoginTime = DateTime.Now,
             };
             Context.GuildMember.Add(member);
             if (!SaveChanges()) {
@@ -109,7 +106,6 @@ public partial class GameStorage {
                 Info = info,
                 Rank = member.Rank,
                 JoinTime = member.CreationTime.ToEpochSeconds(),
-                LoginTime = member.LoginTime.ToEpochSeconds(),
             };
         }
 

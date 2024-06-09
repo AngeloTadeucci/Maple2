@@ -93,7 +93,7 @@ public class ClubManager : IDisposable {
             return ClubError.s_club_err_already_exist;
         }
 
-        if (info.ClubsIds.Count >= Constant.ClubMaxCount) {
+        if (info.ClubIds.Count >= Constant.ClubMaxCount) {
             return ClubError.s_club_err_full_club_member;
         }
 

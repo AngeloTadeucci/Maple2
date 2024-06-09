@@ -1,7 +1,6 @@
 ﻿using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Party;
 using Maple2.Tools.Extensions;
 using Z.EntityFramework.Plus;
 using Club = Maple2.Model.Game.Club.Club;
@@ -11,15 +10,25 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public Club? GetClub(long clubId) {
-            return Context.Club.Find(clubId);
+        public Club? GetClub(IPlayerInfoProvider provider, long clubId) {
+            Club? club =  Context.Club.Find(clubId);
+            if (club == null) {
+                return null;
+            }
+
+            List<ClubMember> members = GetClubMembers(provider, clubId);
+            club.Leader = members.First(member => member.Info.CharacterId == club.LeaderId);
+            foreach (ClubMember member in members) {
+                club.Members.TryAdd(member.Info.CharacterId, member);
+            }
+            return club;
         }
 
-        public bool ClubExists(string clubName = "") {
+        public bool ClubExists(string clubName) {
             return Context.Club.Any(club => club.Name == clubName);
         }
 
-        public bool ClubExists(long clubId = 0) {
+        public bool ClubExists(long clubId) {
             return Context.Club.Any(club => club.Id == clubId);
         }
 
@@ -29,7 +38,7 @@ public partial class GameStorage {
                 .ToList();
         }
 
-        public Club? CreateClub(string name, long leaderId, List<PartyMember> partyMembers) {
+        public Club? CreateClub(IPlayerInfoProvider provider, string name, long leaderId, List<PlayerInfo> members) {
             BeginTransaction();
             var club = new Model.Club {
                 Name = name,
@@ -42,18 +51,17 @@ public partial class GameStorage {
                 return null;
             }
 
-            foreach (PartyMember partyMember in partyMembers) {
-                CreateClubMember(club.Id, partyMember.Info);
+            foreach (PlayerInfo info in members) {
+                CreateClubMember(club.Id, info);
             }
 
-            return Commit() ? GetClub(club.Id) : null;
+            return Commit() ? GetClub(provider, club.Id) : null;
         }
 
         public ClubMember? CreateClubMember(long clubId, PlayerInfo info) {
             var member = new Model.ClubMember {
                 ClubId = clubId,
                 CharacterId = info.CharacterId,
-                LoginTime = DateTime.Now,
             };
             Context.ClubMember.Add(member);
             if (!SaveChanges()) {
@@ -64,7 +72,6 @@ public partial class GameStorage {
                 ClubId = member.ClubId,
                 Info = info,
                 JoinTime = member.CreationTime.ToEpochSeconds(),
-                LoginTime = member.LoginTime.ToEpochSeconds(),
             };
         }
 
@@ -86,7 +93,7 @@ public partial class GameStorage {
             return SaveChanges() && count > 0;
         }
 
-        public List<ClubMember> GetClubMembers(IPlayerInfoProvider provider, long clubId) {
+        private List<ClubMember> GetClubMembers(IPlayerInfoProvider provider, long clubId) {
             return Context.ClubMember.Where(member => member.ClubId == clubId)
                 .AsEnumerable()
                 .Select(member => {
@@ -95,7 +102,6 @@ public partial class GameStorage {
                         Info = info,
                         JoinTime = member.CreationTime.ToEpochSeconds(),
                         ClubId = member.ClubId,
-                        LoginTime = member.LoginTime.ToEpochSeconds(),
                     };
                 }).WhereNotNull().ToList();
         }
@@ -106,18 +112,12 @@ public partial class GameStorage {
                 return false;
             }
             Context.Club.Update(club);
-            SaveClubMembers(club.Id, club.Members.Values);
-            if (!SaveChanges()) {
-                return false;
-            }
-            return Commit();
-        }
 
-        public bool SaveClubMembers(long clubId, ICollection<ClubMember> members) {
-            Dictionary<long, ClubMember> saveMembers = members
+            // Update club members
+            Dictionary<long, ClubMember> saveMembers = club.Members.Values
                 .ToDictionary(member => member.Info.CharacterId, member => member);
             IEnumerable<Model.ClubMember> existingMembers = Context.ClubMember
-                .Where(member => member.ClubId == clubId)
+                .Where(member => member.ClubId == club.Id)
                 .Select(member => new Model.ClubMember {
                     CharacterId = member.CharacterId,
                 });
@@ -132,17 +132,10 @@ public partial class GameStorage {
             }
             Context.ClubMember.AddRange(saveMembers.Values.Select<ClubMember, Model.ClubMember>(member => member));
 
-            return true;
-        }
-
-        public bool SaveClubMember(ClubMember member) {
-            Model.ClubMember? model = Context.ClubMember.Find(member.ClubId, member.Info.CharacterId);
-            if (model == null) {
+            if (!SaveChanges()) {
                 return false;
             }
-
-            Context.ClubMember.Update(member);
-            return SaveChanges();
+            return Commit();
         }
     }
 }

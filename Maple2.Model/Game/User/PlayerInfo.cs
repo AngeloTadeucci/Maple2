@@ -21,7 +21,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public AchievementInfo AchievementInfo { get; set; }
     // Premium
     public long PremiumTime { get; set; }
-    public List<long> ClubsIds { get; set; }
+    public List<long> ClubIds { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {
@@ -31,13 +31,14 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             PlotExpiryTime = player.Home.PlotExpiryTime,
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
+            LoginTime = player.Character.LoginTime,
         };
     }
 
     public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo, IList<long> clubsIds) : base(character) {
         HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
         AchievementInfo = achievementInfo;
-        ClubsIds = new List<long>(clubsIds);
+        ClubIds = new List<long>(clubsIds);
     }
 
     public PlayerInfo Clone() {
@@ -75,8 +76,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteUnicodeString(); // Guild Name
         writer.WriteUnicodeString(Motto);
         writer.WriteUnicodeString(Picture);
-        writer.WriteByte((byte) ClubsIds.Count);
-        foreach (long clubId in ClubsIds) {
+        writer.WriteByte((byte) ClubIds.Count);
+        foreach (long clubId in ClubIds) {
             bool unk = true;
             writer.WriteBool(unk);
             if (unk) {
@@ -123,6 +124,7 @@ public class CharacterInfo {
     // Location
     public int MapId { get; set; }
     public short Channel { get; set; }
+    public long LoginTime { get; set; }
 
     public long UpdateTime { get; set; }
     public bool Online => Channel != 0;
@@ -149,6 +151,7 @@ public class CharacterInfo {
         Level = other.Level;
         MapId = other.MapId;
         Channel = other.Channel;
+        LoginTime = other.LoginTime;
     }
 
     public static implicit operator CharacterInfo(Player player) {

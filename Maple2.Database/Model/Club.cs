@@ -65,7 +65,6 @@ internal class ClubMember {
     public long CharacterId { get; set; }
     public Character? Character { get; set; }
     public DateTime CreationTime { get; set; }
-    public DateTime LoginTime { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ClubMember?(Maple2.Model.Game.Club.ClubMember? other) {
@@ -73,7 +72,6 @@ internal class ClubMember {
             // CreationTime set by DB
             CharacterId = other.Info.CharacterId,
             ClubId = other.ClubId,
-            LoginTime = (other.Info.UpdateTime > 0 ? other.Info.UpdateTime : other.LoginTime).FromEpochSeconds(),
         };
     }
 

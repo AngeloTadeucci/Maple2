@@ -53,9 +53,9 @@ public class ClubHandler : PacketHandler<GameSession> {
             case Command.Leave:
                 HandleLeave(session, packet);
                 break;
-            // case Command.Buff:
-            //     Buff(session, packet);
-            //     break;
+            case Command.Buff:
+                 HandleBuff(session, packet);
+                 break;
             case Command.Rename:
                 HandleRename(session, packet);
                 break;
@@ -65,6 +65,7 @@ public class ClubHandler : PacketHandler<GameSession> {
     private void HandleCreate(GameSession session, IByteReader packet) {
         string clubName = packet.ReadUnicodeString();
 
+        // Grabbing party. Clubs can only be created by party leaders.
         Party? party = session.Party.Party;
         if (party is null || party.LeaderCharacterId != session.Player.Value.Character.Id) {
             return;
@@ -205,6 +206,12 @@ public class ClubHandler : PacketHandler<GameSession> {
         if (response.Error != 0) {
             session.Send(ClubPacket.Error((ClubError) response.Error));
         }
+    }
+
+    private void HandleBuff(GameSession session, IByteReader packet) {
+        long clubId = packet.ReadLong();
+        int buffId = packet.ReadInt();
+        int buffLevel = packet.ReadInt();
     }
 
     private void HandleRename(GameSession session, IByteReader packet) {

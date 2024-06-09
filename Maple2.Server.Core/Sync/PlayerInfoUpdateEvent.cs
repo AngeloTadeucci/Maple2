@@ -18,13 +18,14 @@ public enum UpdateField {
     Trophy = 256,
     PremiumTime = 512,
     Clubs = 1024,
+    LoginTime = 2048,
 
     // Presets
-    Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
-    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
-    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs,
-    GroupChat = Profile | Job | Level | Map,
+    Buddy = Profile | Job | Level | Map | Channel | Home | Trophy | LoginTime,
+    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs | LoginTime,
+    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs | LoginTime,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs | LoginTime,
+    GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs | LoginTime,
     All = int.MaxValue,
 }
 
@@ -100,9 +101,13 @@ public class PlayerInfoUpdateEvent {
         }
 
         if (request.Clubs != null) {
-            if (player.ClubsIds != request.Clubs.Select(club => club.Id).ToList()) {
+            if (player.ClubIds != request.Clubs.Select(club => club.Id).ToList()) {
                 Type |= UpdateField.Clubs;
             }
+        }
+
+        if (request.HasLoginTime && player.LoginTime != request.LoginTime) {
+            Type |= UpdateField.LoginTime;
         }
     }
 }

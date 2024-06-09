@@ -49,7 +49,4 @@ public enum ClubError : int {
     s_club_err_same_club_name = 73,
     [Description("You cannot use spaces in club names.")]
     s_club_err_clubname_has_blank = 74
-
-
-
 }

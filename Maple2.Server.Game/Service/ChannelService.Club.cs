@@ -194,7 +194,6 @@ public partial class ChannelService {
                 ClubId = clubId,
                 Info = info.Clone(),
                 JoinTime = add.JoinTime,
-                LoginTime = add.LoginTime,
             };
             manager.AddMember(add.RequestorName, member);
         }

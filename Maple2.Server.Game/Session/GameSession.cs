@@ -3,7 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using System.Numerics;
 using Autofac;
+using Community.CsharpSqlite;
 using Grpc.Core;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
@@ -172,9 +174,10 @@ public sealed partial class GameSession : Core.Network.Session {
         var playerUpdate = new PlayerUpdateRequest {
             AccountId = accountId,
             CharacterId = characterId,
+            LoginTime = Player.Value.Character.LoginTime,
         };
         playerUpdate.SetFields(UpdateField.All, player);
-        playerUpdate.Health = new HealthInfo {
+        playerUpdate.Health = new HealthUpdate {
             CurrentHp = Stats.Values[BasicAttribute.Health].Current,
             TotalHp = Stats.Values[BasicAttribute.Health].Total,
         };
@@ -462,10 +465,12 @@ public sealed partial class GameSession : Core.Network.Session {
         if (disposed) return;
         disposed = true;
 
+        long logoutTime = DateTimeOffset.Now.ToUnixTimeSeconds();
         if (State == SessionState.Connected) {
             PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = AccountId,
                 CharacterId = CharacterId,
+                LoginTime = logoutTime,
                 MapId = 0,
                 Channel = 0,
                 Async = true,
@@ -478,6 +483,7 @@ public sealed partial class GameSession : Core.Network.Session {
             LeaveField();
             Player.Value.Character.Channel = 0;
             Player.Value.Account.Online = false;
+            Player.Value.Character.LoginTime = logoutTime;
             State = SessionState.Disconnected;
             Complete();
         } finally {

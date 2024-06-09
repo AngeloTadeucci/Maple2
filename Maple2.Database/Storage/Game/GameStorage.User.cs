@@ -144,6 +144,7 @@ public partial class GameStorage {
 
             account.Online = true;
             character.Channel = channel;
+            character.LoginTime = DateTimeOffset.UtcNow;
 
             Context.Account.Update(account);
             Context.Character.Update(character);

@@ -257,6 +257,9 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("smallint")
                         .HasDefaultValue((short)1);
 
+                    b.Property<DateTimeOffset>("LoginTime")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("MapId")
                         .HasColumnType("int");
 
@@ -462,9 +465,6 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("LoginTime")
-                        .HasColumnType("datetime(6)");
-
                     b.HasKey("ClubId", "CharacterId");
 
                     b.HasIndex("CharacterId");
@@ -628,9 +628,6 @@ namespace Maple2.Server.World.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("DonationTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("LoginTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Message")

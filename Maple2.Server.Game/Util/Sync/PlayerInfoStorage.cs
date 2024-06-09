@@ -56,6 +56,7 @@ public class PlayerInfoStorage {
                 ApartmentNumber = response.Home.ApartmentNumber,
                 PlotExpiryTime = response.Home.ExpiryTime.Seconds,
                 PremiumTime = response.PremiumTime,
+                LoginTime = response.LoginTime,
             };
 
             cache[characterId] = info;

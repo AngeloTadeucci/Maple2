@@ -50,7 +50,7 @@ public partial class WorldService {
             };
         }
 
-        if (partyManager.Party.Members.Any(member => member.Value.Info.ClubsIds.Count >= Constant.ClubMaxCount)) {
+        if (partyManager.Party.Members.Any(member => member.Value.Info.ClubIds.Count >= Constant.ClubMaxCount)) {
             return new ClubResponse {
                 Error = (int) ClubError.s_club_err_full_club_member,
             };
@@ -234,7 +234,6 @@ public partial class WorldService {
                 club.Members.Select(member => new ClubInfo.Types.Member {
                     CharacterId = member.Value.Info.CharacterId,
                     CharacterName = member.Value.Info.Name,
-                    LoginTime = member.Value.LoginTime,
                     JoinTime = member.Value.JoinTime,
                 }),
             },

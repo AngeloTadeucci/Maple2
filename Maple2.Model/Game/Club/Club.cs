@@ -47,6 +47,3 @@ public class Club : IByteSerializable {
         writer.WriteLong(NameChangeCooldown);
     }
 }
-
-
-

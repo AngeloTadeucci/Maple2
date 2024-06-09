@@ -29,13 +29,14 @@ public partial class WorldService {
             Level = info.Level,
             GearScore = info.GearScore,
             PremiumTime = info.PremiumTime,
+            LoginTime = info.LoginTime,
             MapId = info.MapId,
             Channel = info.Channel,
-            Health = new HealthInfo {
+            Health = new HealthUpdate {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             },
-            Home = new HomeInfo {
+            Home = new HomeUpdate {
                 Name = info.HomeName,
                 MapId = info.PlotMapId,
                 PlotNumber = info.PlotNumber,
@@ -44,12 +45,12 @@ public partial class WorldService {
                     Seconds = info.PlotExpiryTime,
                 },
             },
-            Trophy = new TrophyInfo {
+            Trophy = new TrophyUpdate {
                 Combat = info.AchievementInfo.Combat,
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
             },
-            Clubs = { info.ClubsIds.Select(id => new ClubsInfo { Id = id }) },
+            Clubs = { info.ClubIds.Select(id => new ClubUpdate { Id = id }) },
         });
     }
 

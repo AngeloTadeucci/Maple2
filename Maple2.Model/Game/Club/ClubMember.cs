@@ -15,7 +15,7 @@ public class ClubMember : IByteSerializable, IDisposable {
     public long CharacterId => Info.CharacterId;
     public string Name => Info.Name;
     public long JoinTime;
-    public long LoginTime;
+    public long LoginTime => Info.LoginTime;
 
     public CancellationTokenSource? TokenSource;
 

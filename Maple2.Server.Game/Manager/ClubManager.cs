@@ -46,10 +46,6 @@ public class ClubManager : IDisposable {
 
         foreach (ClubMember member in Club.Members.Values) {
             member.Dispose();
-            if (member.CharacterId == session.CharacterId) {
-                using GameStorage.Request db = session.GameStorage.Context();
-                db.SaveClubMember(member);
-            }
         }
     }
 
@@ -67,7 +63,7 @@ public class ClubManager : IDisposable {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Async = true,
-            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubsInfo { Id = id }) }
+            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubUpdate { Id = id }) }
         });
         session.Send(ClubPacket.Update(Club));
     }
@@ -81,7 +77,6 @@ public class ClubManager : IDisposable {
 
             return new ClubMember {
                 Info = playerInfo.Clone(),
-                LoginTime = member.LoginTime,
                 JoinTime = member.JoinTime,
                 ClubId = info.Id,
             };
@@ -142,7 +137,7 @@ public class ClubManager : IDisposable {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Async = true,
-            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubsInfo { Id = id }) },
+            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubUpdate { Id = id }) },
         });
     }
 

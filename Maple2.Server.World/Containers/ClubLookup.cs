@@ -60,12 +60,10 @@ public class ClubLookup : IDisposable {
 
     private ClubManager? FetchClub(long clubId) {
         using GameStorage.Request db = gameStorage.Context();
-        Club? club = db.GetClub(clubId);
+        Club? club = db.GetClub(playerLookup, clubId);
         if (club == null) {
             return null;
         }
-
-        SetMembers(db, club);
 
         var manager = new ClubManager(club) {
             GameStorage = gameStorage,
@@ -73,14 +71,6 @@ public class ClubLookup : IDisposable {
         };
 
         return clubs.TryAdd(clubId, manager) ? manager : null;
-    }
-
-    private void SetMembers(GameStorage.Request db, Club club) {
-        List<ClubMember> members = db.GetClubMembers(playerLookup, club.Id);
-        club.Leader = members.First(member => member.Info.CharacterId == club.LeaderId);
-        foreach (ClubMember member in members) {
-            club.Members.TryAdd(member.Info.CharacterId, member);
-        }
     }
 
     public ClubError Create(string name, long leaderId, out long clubId) {
@@ -94,12 +84,10 @@ public class ClubLookup : IDisposable {
             return ClubError.s_club_err_unknown;
         }
 
-        Club? club = db.CreateClub(name, leaderId, party.Party.Members.Values.ToList());
+        Club? club = db.CreateClub(playerLookup, name, leaderId, party.Party.Members.Values.Select(member => member.Info).ToList());
         if (club == null) {
             return ClubError.s_club_err_unknown;
         }
-
-        SetMembers(db, club);
 
         clubId = club.Id;
         clubs.TryAdd(clubId, new ClubManager(club) {

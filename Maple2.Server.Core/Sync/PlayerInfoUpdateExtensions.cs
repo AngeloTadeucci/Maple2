@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 
@@ -57,7 +56,10 @@ public static class PlayerInfoUpdateExtensions {
             };
         }
         if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
-            info.ClubsIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
+            info.ClubIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
+        }
+        if (update.Type.HasFlag(UpdateField.LoginTime) && update.Request.HasLoginTime) {
+            info.LoginTime = update.Request.LoginTime;
         }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -102,7 +104,10 @@ public static class PlayerInfoUpdateExtensions {
             self.PremiumTime = other.PremiumTime;
         }
         if (type.HasFlag(UpdateField.Clubs)) {
-            self.ClubsIds = other.ClubsIds;
+            self.ClubIds = other.ClubIds;
+        }
+        if (type.HasFlag(UpdateField.LoginTime)) {
+            self.LoginTime = other.LoginTime;
         }
 
         self.UpdateTime = other.UpdateTime;
@@ -113,6 +118,7 @@ public static class PlayerInfoUpdateExtensions {
             request.Name = info.Name;
             request.Motto = info.Motto;
             request.Picture = info.Picture;
+            request.LoginTime = info.LoginTime;
         }
         if (type.HasFlag(UpdateField.Job)) {
             request.Job = (int) info.Job;
@@ -130,13 +136,13 @@ public static class PlayerInfoUpdateExtensions {
             request.Channel = info.Channel;
         }
         if (type.HasFlag(UpdateField.Health)) {
-            request.Health = new HealthInfo {
+            request.Health = new HealthUpdate {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             };
         }
         if (type.HasFlag(UpdateField.Home)) {
-            request.Home = new HomeInfo {
+            request.Home = new HomeUpdate {
                 Name = info.HomeName,
                 MapId = info.PlotMapId,
                 PlotNumber = info.PlotNumber,
@@ -145,7 +151,7 @@ public static class PlayerInfoUpdateExtensions {
             };
         }
         if (type.HasFlag(UpdateField.Trophy)) {
-            request.Trophy = new TrophyInfo {
+            request.Trophy = new TrophyUpdate {
                 Combat = info.AchievementInfo.Combat,
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
@@ -155,7 +161,10 @@ public static class PlayerInfoUpdateExtensions {
             request.PremiumTime = info.PremiumTime;
         }
         if (type.HasFlag(UpdateField.Clubs)) {
-            request.Clubs.AddRange(info.ClubsIds.Select(id => new ClubsInfo { Id = id }));
+            request.Clubs.AddRange(info.ClubIds.Select(id => new ClubUpdate { Id = id }));
+        }
+        if (type.HasFlag(UpdateField.LoginTime)) {
+            request.LoginTime = info.LoginTime;
         }
     }
 }

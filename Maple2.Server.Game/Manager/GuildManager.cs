@@ -49,10 +49,6 @@ public class GuildManager : IDisposable {
         if (Guild != null) {
             foreach (GuildMember member in Guild.Members.Values) {
                 member.Dispose();
-                if (member.CharacterId == session.CharacterId) {
-                    using GameStorage.Request db = session.GameStorage.Context();
-                    db.SaveGuildMember(member);
-                }
             }
         }
     }

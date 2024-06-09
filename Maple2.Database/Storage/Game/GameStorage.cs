@@ -44,6 +44,7 @@ public partial class GameStorage {
             if (outdoor == null) {
                 return new PlayerInfo(character, indoor.Name, achievementInfo, clubs) {
                     PremiumTime = premiumTime,
+                    LoginTime = character.LoginTime.ToUnixTimeSeconds(),
                 };
             }
 
@@ -53,6 +54,7 @@ public partial class GameStorage {
                 PremiumTime = premiumTime,
                 ApartmentNumber = outdoor.ApartmentNumber,
                 PlotExpiryTime = outdoor.ExpiryTime.ToUnixTimeSeconds(),
+                LoginTime = character.LoginTime.ToUnixTimeSeconds(),
             };
         }
     }
