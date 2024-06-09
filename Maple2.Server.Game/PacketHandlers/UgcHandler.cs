@@ -74,6 +74,9 @@ public class UgcHandler : PacketHandler<GameSession> {
                     var reservation = packet.Read<UgcBannerReservation>();
                 }
                 return;
+            case UgcType.GuildEmblem:
+                long guildId = packet.ReadLong();
+                return;
             default:
                 Logger.Information("Unimplemented Ugc Type: {type}", info.Type);
                 return;

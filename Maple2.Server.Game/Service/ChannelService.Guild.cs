@@ -20,6 +20,14 @@ public partial class ChannelService {
                 return Task.FromResult(RemoveGuildMember(request.ReceiverIds, request.RemoveMember));
             case GuildRequest.GuildOneofCase.UpdateMember:
                 return Task.FromResult(UpdateGuildMember(request.ReceiverIds, request.UpdateMember));
+            case GuildRequest.GuildOneofCase.UpdateContribution:
+                return Task.FromResult(UpdateGuildContribution(request.ReceiverIds, request.UpdateContribution));
+            case GuildRequest.GuildOneofCase.UpdateLeader:
+                return Task.FromResult(UpdateGuildLeader(request.ReceiverIds, request.UpdateLeader));
+            case GuildRequest.GuildOneofCase.UpdateNotice:
+                return Task.FromResult(UpdateGuildNotice(request.ReceiverIds, request.UpdateNotice));
+            case GuildRequest.GuildOneofCase.UpdateEmblem:
+                return Task.FromResult(UpdateGuildEmblem(request.ReceiverIds, request.UpdateEmblem));
             default:
                 return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
@@ -78,7 +86,6 @@ public partial class ChannelService {
                 Info = info.Clone(),
                 Rank = (byte) add.Rank,
                 JoinTime = add.JoinTime,
-                LoginTime = add.LoginTime,
             });
         }
 
@@ -114,6 +121,57 @@ public partial class ChannelService {
             if (update.HasMessage) {
                 session.Guild.UpdateMemberMessage(update.CharacterId, update.Message);
             }
+            if (update.HasContribution || update.HasCheckInTime) {
+                session.Guild.UpdateMemberContribution(update.CharacterId, update.CheckInTime, update.Contribution);
+            }
+        }
+
+        return new GuildResponse();
+    }
+
+    private GuildResponse UpdateGuildContribution(IEnumerable<long> receiverIds, GuildRequest.Types.UpdateContribution guild) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Guild.UpdateGuildExpFunds(guild.ContributorId, guild.GuildExp, guild.GuildFund);
+        }
+
+        return new GuildResponse();
+    }
+
+    private GuildResponse UpdateGuildLeader(IEnumerable<long> receiverIds, GuildRequest.Types.UpdateLeader update) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Guild.UpdateLeader(update.OldLeaderId, update.NewLeaderId);
+        }
+
+        return new GuildResponse();
+    }
+
+    private GuildResponse UpdateGuildNotice(IEnumerable<long> receiverIds, GuildRequest.Types.UpdateNotice update) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Guild.UpdateNotice(update.RequestorName, update.Message);
+        }
+
+        return new GuildResponse();
+    }
+
+    private GuildResponse UpdateGuildEmblem(IEnumerable<long> receiverIds, GuildRequest.Types.UpdateEmblem update) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Guild.UpdateEmblem(update.RequestorName, update.Emblem);
         }
 
         return new GuildResponse();

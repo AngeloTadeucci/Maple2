@@ -35,24 +35,27 @@ public partial class TriggerScriptLoader {
             return false;
         }
 
-        foreach (ScriptSource sharedScript in scripts) {
-            sharedScript.Execute(context.Scope);
-        }
+        // Script compilation needs to be synchronized.
+        lock (engine) {
+            foreach (ScriptSource sharedScript in scripts) {
+                sharedScript.Execute(context.Scope);
+            }
 
-        dynamic? initialStateClass = context.Scope.GetVariable("initial_state");
-        if (initialStateClass == null) {
-            state = null;
-            return false;
-        }
+            dynamic? initialStateClass = context.Scope.GetVariable("initial_state");
+            if (initialStateClass == null) {
+                state = null;
+                return false;
+            }
 
-        dynamic? initialState = engine.Operations.CreateInstance(initialStateClass, context);
-        if (initialState == null) {
-            state = null;
-            return false;
-        }
+            dynamic? initialState = engine.Operations.CreateInstance(initialStateClass, context);
+            if (initialState == null) {
+                state = null;
+                return false;
+            }
 
-        state = new TriggerState(initialState);
-        return true;
+            state = new TriggerState(initialState);
+            return true;
+        }
     }
 
     /// <summary>

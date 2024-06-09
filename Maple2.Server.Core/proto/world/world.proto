@@ -174,6 +174,21 @@ message GuildRequest {
     optional int32 rank = 3;
     optional string message = 4;
   }
+  message CheckIn {
+    int64 guild_id = 1;
+  }
+  message UpdateLeader {
+    int64 guild_id = 1;
+    int64 leader_id = 2;
+  }
+  message UpdateNotice {
+    int64 guild_id = 1;
+    string message = 2;
+  }
+  message UpdateEmblem {
+    int64 guild_id = 1;
+    string emblem = 2;
+  }
 
   int64 requestor_id = 4;
   oneof guild {
@@ -184,6 +199,10 @@ message GuildRequest {
     Leave leave = 7;
     Expel expel = 8;
     UpdateMember update_member = 9;
+    CheckIn check_in = 10;
+    UpdateLeader update_leader = 11;
+    UpdateNotice update_notice = 12;
+    UpdateEmblem update_emblem = 13;
   }
 }
 
@@ -193,7 +212,7 @@ message GuildResponse {
     GuildInfo guild = 2;
   }
 
-  int32 error = 3;
+  int32 error = 4;
 }
 
 message GroupChatInfoRequest {

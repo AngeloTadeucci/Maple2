@@ -396,8 +396,7 @@ public class GuildHandler : PacketHandler<GameSession> {
         string playerName = packet.ReadUnicodeString();
         byte rankId = packet.ReadByte();
 
-        // Only leader is allowed to change ranks
-        if (session.CharacterId != session.Guild.Guild.LeaderCharacterId) {
+        if (!session.Guild.HasPermission(session.CharacterId, GuildPermission.EditRank)) {
             session.Send(GuildPacket.Error(GuildError.s_guild_err_no_authority));
             return;
         }
@@ -457,20 +456,131 @@ public class GuildHandler : PacketHandler<GameSession> {
     }
 
     private void HandleCheckIn(GameSession session) {
+        if (session.Guild.Guild == null) {
+            return; // Not in a guild.
+        }
 
+        GuildMember? self = session.Guild.GetMember(session.CharacterId);
+        if (self == null) {
+            return;
+        }
+
+        // Check that player has not already checked in today.
+        DateTimeOffset today = DateTimeOffset.UtcNow.Date;
+        if (self.CheckinTime >= today.ToUnixTimeSeconds()) {
+            return;
+        }
+
+        try {
+            var request = new GuildRequest {
+                RequestorId = session.CharacterId,
+                CheckIn = new GuildRequest.Types.CheckIn {
+                    GuildId = session.Guild.Id,
+                },
+            };
+
+            GuildResponse response = World.Guild(request);
+            var error = (GuildError) response.Error;
+            if (error != GuildError.none) {
+                session.Send(GuildPacket.Error(error));
+                return;
+            }
+
+            session.Send(GuildPacket.CheckedIn());
+            // TODO: Send EXP
+            // TODO: Guild coins
+            // TODO: Achievement 22400001, 22400002
+        } catch (RpcException) { /* ignored */ }
     }
 
     private void HandleUpdateLeader(GameSession session, IByteReader packet) {
         string leaderName = packet.ReadUnicodeString();
+        // Only leader is allowed to change leader
+        if (session.CharacterId != session.Guild.LeaderId) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_no_master));
+            return;
+        }
+
+        GuildMember? newLeader = session.Guild.GetMember(leaderName);
+        if (newLeader == null) {
+            return;
+        }
+
+        try {
+            var request = new GuildRequest {
+                RequestorId = session.CharacterId,
+                UpdateLeader = new GuildRequest.Types.UpdateLeader {
+                    GuildId = session.Guild.Id,
+                    LeaderId = newLeader.CharacterId,
+                },
+            };
+
+            GuildResponse response = World.Guild(request);
+            var error = (GuildError) response.Error;
+            if (error != GuildError.none) {
+                session.Send(GuildPacket.Error(error));
+                return;
+            }
+
+            session.Send(GuildPacket.UpdateLeader(leaderName));
+        } catch (RpcException) { /* ignored */ }
     }
 
     private void HandleUpdateNotice(GameSession session, IByteReader packet) {
         packet.ReadBool();
         string notice = packet.ReadUnicodeString();
+
+        if (!session.Guild.HasPermission(session.CharacterId, GuildPermission.EditNotice)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_no_authority));
+            return;
+        }
+
+        try {
+            var request = new GuildRequest {
+                RequestorId = session.CharacterId,
+                UpdateNotice = new GuildRequest.Types.UpdateNotice {
+                    GuildId = session.Guild.Id,
+                    Message = notice,
+                },
+            };
+
+            GuildResponse response = World.Guild(request);
+            var error = (GuildError) response.Error;
+            if (error != GuildError.none) {
+                session.Send(GuildPacket.Error(error));
+                return;
+            }
+
+            session.Send(GuildPacket.UpdateNotice(notice));
+        } catch (RpcException) { /* ignored */ }
     }
 
     private void HandleUpdateEmblem(GameSession session, IByteReader packet) {
         string emblem = packet.ReadUnicodeString();
+
+        if (!session.Guild.HasPermission(session.CharacterId, GuildPermission.EditEmblem)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_no_authority));
+            return;
+        }
+
+        try {
+            var request = new GuildRequest {
+                RequestorId = session.CharacterId,
+                UpdateEmblem = new GuildRequest.Types.UpdateEmblem {
+                    GuildId = session.Guild.Id,
+                    Emblem = emblem,
+                },
+            };
+
+            GuildResponse response = World.Guild(request);
+            var error = (GuildError) response.Error;
+            if (error != GuildError.none) {
+                session.Send(GuildPacket.Error(error));
+                return;
+            }
+
+            session.Send(GuildPacket.UpdateEmblem(emblem));
+        } catch (RpcException) { /* ignored */ }
     }
 
     private void HandleIncreaseCapacity(GameSession session) {

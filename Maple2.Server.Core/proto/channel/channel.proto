@@ -47,7 +47,6 @@ message GuildRequest {
     string requestor_name = 2;
     int32 rank = 3;
     int64 join_time = 4;
-    int64 login_time = 5;
   }
   message RemoveMember {
     int64 character_id = 1;
@@ -58,6 +57,25 @@ message GuildRequest {
     int64 character_id = 2;
     optional int32 rank = 3;
     optional string message = 4;
+    optional int32 contribution = 5;
+    optional int64 check_in_time = 6;
+  }
+  message UpdateContribution {
+    int64 contributorId = 1;
+    int32 guild_exp = 2;
+    int32 guild_fund = 3;
+  }
+  message UpdateLeader {
+    int64 old_leader_id = 1;
+    int64 new_leader_id = 2;
+  }
+  message UpdateNotice {
+    string requestor_name = 1;
+    string message = 2;
+  }
+  message UpdateEmblem {
+    string requestor_name = 1;
+    string emblem = 2;
   }
 
   int64 guild_id = 1;
@@ -68,6 +86,10 @@ message GuildRequest {
     AddMember add_member = 5;
     RemoveMember remove_member = 6;
     UpdateMember update_member = 7;
+    UpdateContribution update_contribution = 8;
+    UpdateLeader update_leader = 9;
+    UpdateNotice update_notice = 10;
+    UpdateEmblem update_emblem = 11;
   }
 }
 
@@ -87,7 +109,6 @@ message PartyRequest {
   message AddMember {
     int64 character_id = 1;
     int64 join_time = 2;
-    int64 login_time = 3;
   }
   message RemoveMember {
     int64 character_id = 1;
@@ -192,7 +213,6 @@ message ClubRequest {
     int64 character_id = 1;
     string requestor_name = 2;
     int64 join_time = 3;
-    int64 login_time = 4;
   }
 
   message InviteReply {

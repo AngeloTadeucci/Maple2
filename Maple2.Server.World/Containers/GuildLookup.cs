@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Storage;
 using Maple2.Model.Error;
@@ -9,13 +8,18 @@ namespace Maple2.Server.World.Containers;
 
 public class GuildLookup : IDisposable {
     private readonly GameStorage gameStorage;
+    private readonly TableMetadataStorage tableMetadata;
     private readonly ChannelClientLookup channelClients;
     private readonly PlayerInfoLookup playerLookup;
 
     private readonly ConcurrentDictionary<long, GuildManager> guilds;
 
-    public GuildLookup(GameStorage gameStorage, ChannelClientLookup channelClients, PlayerInfoLookup playerLookup) {
+    public GuildLookup(GameStorage gameStorage,
+                       TableMetadataStorage tableMetadata,
+                       ChannelClientLookup channelClients,
+                       PlayerInfoLookup playerLookup) {
         this.gameStorage = gameStorage;
+        this.tableMetadata = tableMetadata;
         this.channelClients = channelClients;
         this.playerLookup = playerLookup;
 
@@ -57,6 +61,7 @@ public class GuildLookup : IDisposable {
         guilds.TryAdd(guildId, new GuildManager(guild) {
             GameStorage = gameStorage,
             ChannelClients = channelClients,
+            TableMetadata = tableMetadata,
         });
 
         return GuildError.none;
@@ -101,6 +106,7 @@ public class GuildLookup : IDisposable {
         var manager = new GuildManager(guild) {
             GameStorage = gameStorage,
             ChannelClients = channelClients,
+            TableMetadata = tableMetadata,
         };
         return guilds.TryAdd(guild.Id, manager) ? manager : null;
     }
