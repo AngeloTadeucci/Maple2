@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Tools.Extensions;
@@ -37,7 +34,6 @@ public partial class GameStorage {
                         TotalContribution = member.TotalContribution,
                         DailyDonationCount = member.DailyDonationCount,
                         JoinTime = member.CreationTime.ToEpochSeconds(),
-                        LoginTime = member.LoginTime.ToEpochSeconds(),
                         CheckinTime = member.CheckinTime.ToEpochSeconds(),
                         DonationTime = member.DonationTime.ToEpochSeconds(),
                     };
@@ -85,7 +81,6 @@ public partial class GameStorage {
                 GuildId = guild.Id,
                 CharacterId = leaderId,
                 Rank = 0,
-                LoginTime = DateTime.Now,
             };
             Context.GuildMember.Add(guildLeader);
             if (!SaveChanges()) {
@@ -100,7 +95,6 @@ public partial class GameStorage {
                 GuildId = guildId,
                 CharacterId = info.CharacterId,
                 Rank = 5,
-                LoginTime = DateTime.Now,
             };
             Context.GuildMember.Add(member);
             if (!SaveChanges()) {
@@ -112,7 +106,6 @@ public partial class GameStorage {
                 Info = info,
                 Rank = member.Rank,
                 JoinTime = member.CreationTime.ToEpochSeconds(),
-                LoginTime = member.LoginTime.ToEpochSeconds(),
             };
         }
 
@@ -177,6 +170,16 @@ public partial class GameStorage {
             }
             Context.GuildMember.AddRange(saveMembers.Values.Select<GuildMember, Model.GuildMember>(member => member));
 
+            return SaveChanges();
+        }
+
+        public bool SaveGuildMember(GuildMember member) {
+            Model.GuildMember? model = Context.GuildMember.Find(member.GuildId, member.CharacterId);
+            if (model == null) {
+                return false;
+            }
+
+            Context.GuildMember.Update(member);
             return SaveChanges();
         }
 

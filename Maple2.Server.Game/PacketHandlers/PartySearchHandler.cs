@@ -55,7 +55,9 @@ public class PartySearchHandler : PacketHandler<GameSession> {
                 return;
             }
 
-            session.Party.SetParty(partyResponse.Party);
+            if (session.Party.SetParty(partyResponse.Party)) {
+                session.Send(PartyPacket.Load(session.Party.Party!));
+            }
         }
 
         string listingName = packet.ReadUnicodeString();

@@ -10,7 +10,6 @@ public class PartyMember : IByteSerializable, IDisposable {
     public long PartyId { get; init; }
     public required PlayerInfo Info;
     public long JoinTime;
-    public long LoginTime;
     public long AccountId => Info.AccountId;
     public long CharacterId => Info.CharacterId;
     public string Name => Info.Name;

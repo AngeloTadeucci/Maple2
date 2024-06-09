@@ -102,7 +102,8 @@ public partial class GameStorage {
             }
 
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime);
+            IList<long> clubs = ListClubs(result.character.Id);
+            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime, clubs);
         }
 
         public Home? GetHome(long ownerId) {
@@ -154,6 +155,12 @@ public partial class GameStorage {
                     (member, guild) => new Tuple<long, string>(guild.Id, guild.Name))
                 .FirstOrDefault() ?? new Tuple<long, string>(0, string.Empty);
 
+            List<Tuple<long, string>> clubs = Context.ClubMember
+                .Where(member => member.CharacterId == characterId)
+                .Join(Context.Club, member => member.ClubId, club => club.Id,
+                    (member, club) => new Tuple<long, string>(club.Id, club.Name))
+                .ToList();
+
             Home? home = GetHome(accountId);
             if (home == null) {
                 return null;
@@ -181,6 +188,8 @@ public partial class GameStorage {
 
             player.Character.GuildId = guild.Item1;
             player.Character.GuildName = guild.Item2;
+
+            player.Character.ClubIds = clubs.Select(club => club.Item1).ToList();
 
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
             player.Character.PremiumTime = account.PremiumTime;

@@ -49,12 +49,14 @@ public class PlayerInfoStorage {
                 Combat = response.Trophy.Combat,
                 Lifestyle = response.Trophy.Lifestyle,
             };
-            info = new PlayerInfo(characterInfo, response.Home.Name, trophy) {
+
+            info = new PlayerInfo(characterInfo, response.Home.Name, trophy, response.Clubs.Select(club => club.Id).ToList()) {
                 PlotMapId = response.Home.MapId,
                 PlotNumber = response.Home.PlotNumber,
                 ApartmentNumber = response.Home.ApartmentNumber,
                 PlotExpiryTime = response.Home.ExpiryTime.Seconds,
                 PremiumTime = response.PremiumTime,
+                LastOnlineTime = response.LastOnlineTime,
             };
 
             cache[characterId] = info;

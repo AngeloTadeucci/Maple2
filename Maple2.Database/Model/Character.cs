@@ -80,6 +80,7 @@ internal class Character {
     public static implicit operator Maple2.Model.Game.Character?(Character? other) {
         return other == null ? null : new Maple2.Model.Game.Character {
             LastModified = other.LastModified,
+            LastOnlineTime = other.LastModified.ToEpochSeconds(),
             AccountId = other.AccountId,
             Id = other.Id,
             Name = other.Name,

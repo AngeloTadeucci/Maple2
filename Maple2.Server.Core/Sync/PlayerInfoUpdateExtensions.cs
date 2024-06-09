@@ -1,5 +1,4 @@
-﻿using System;
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 
@@ -37,6 +36,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (update.Type.HasFlag(UpdateField.Channel) && update.Request.HasChannel) {
             info.Channel = (short) update.Request.Channel;
+            info.LastOnlineTime = update.Request.LastOnlineTime;
         }
         if (update.Type.HasFlag(UpdateField.Health) && update.Request.Health != null) {
             info.CurrentHp = update.Request.Health.CurrentHp;
@@ -55,6 +55,9 @@ public static class PlayerInfoUpdateExtensions {
                 Adventure = update.Request.Trophy.Adventure,
                 Lifestyle = update.Request.Trophy.Lifestyle,
             };
+        }
+        if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
+            info.ClubIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
         }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -80,6 +83,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Channel)) {
             self.Channel = other.Channel;
+            self.LastOnlineTime = other.LastOnlineTime;
         }
         if (type.HasFlag(UpdateField.Health)) {
             self.CurrentHp = other.CurrentHp;
@@ -87,7 +91,7 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Home)) {
             self.HomeName = other.HomeName;
-            self.MapId = other.PlotMapId;
+            self.PlotMapId = other.PlotMapId;
             self.PlotNumber = other.PlotNumber;
             self.ApartmentNumber = other.ApartmentNumber;
             self.PlotExpiryTime = other.PlotExpiryTime;
@@ -98,6 +102,9 @@ public static class PlayerInfoUpdateExtensions {
         if (type.HasFlag(UpdateField.PremiumTime)) {
             self.PremiumTime = other.PremiumTime;
         }
+        if (type.HasFlag(UpdateField.Clubs)) {
+            self.ClubIds = other.ClubIds;
+        }
 
         self.UpdateTime = other.UpdateTime;
     }
@@ -107,6 +114,7 @@ public static class PlayerInfoUpdateExtensions {
             request.Name = info.Name;
             request.Motto = info.Motto;
             request.Picture = info.Picture;
+            request.LastOnlineTime = info.LastOnlineTime;
         }
         if (type.HasFlag(UpdateField.Job)) {
             request.Job = (int) info.Job;
@@ -122,15 +130,16 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Channel)) {
             request.Channel = info.Channel;
+            request.LastOnlineTime = info.LastOnlineTime;
         }
         if (type.HasFlag(UpdateField.Health)) {
-            request.Health = new HealthInfo {
+            request.Health = new HealthUpdate {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             };
         }
         if (type.HasFlag(UpdateField.Home)) {
-            request.Home = new HomeInfo {
+            request.Home = new HomeUpdate {
                 Name = info.HomeName,
                 MapId = info.PlotMapId,
                 PlotNumber = info.PlotNumber,
@@ -139,7 +148,7 @@ public static class PlayerInfoUpdateExtensions {
             };
         }
         if (type.HasFlag(UpdateField.Trophy)) {
-            request.Trophy = new TrophyInfo {
+            request.Trophy = new TrophyUpdate {
                 Combat = info.AchievementInfo.Combat,
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
@@ -147,6 +156,9 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.PremiumTime)) {
             request.PremiumTime = info.PremiumTime;
+        }
+        if (type.HasFlag(UpdateField.Clubs)) {
+            request.Clubs.AddRange(info.ClubIds.Select(id => new ClubUpdate { Id = id }));
         }
     }
 }

@@ -3,7 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using System.Numerics;
 using Autofac;
+using Community.CsharpSqlite;
 using Grpc.Core;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
@@ -92,6 +94,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
+    public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -104,6 +107,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
+        Clubs = new ConcurrentDictionary<long, ClubManager>();
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
@@ -151,14 +155,13 @@ public sealed partial class GameSession : Core.Network.Session {
         Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
-        Party = new PartyManager(World, this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
         });
 
         foreach (GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
-            GroupChatManager manager = new GroupChatManager(groupChatInfo, this);
+            var manager = new GroupChatManager(groupChatInfo, this);
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
@@ -171,9 +174,10 @@ public sealed partial class GameSession : Core.Network.Session {
         var playerUpdate = new PlayerUpdateRequest {
             AccountId = accountId,
             CharacterId = characterId,
+            LastOnlineTime = Player.Value.Character.LastOnlineTime,
         };
         playerUpdate.SetFields(UpdateField.All, player);
-        playerUpdate.Health = new HealthInfo {
+        playerUpdate.Health = new HealthUpdate {
             CurrentHp = Stats.Values[BasicAttribute.Health].Current,
             TotalHp = Stats.Values[BasicAttribute.Health].Total,
         };
@@ -190,9 +194,25 @@ public sealed partial class GameSession : Core.Network.Session {
         foreach ((int id, GroupChatManager groupChat) in GroupChats) {
             groupChat.Load();
         }
-        // Club
+
+        ClubInfoResponse clubInfoResponse = World.ClubInfo(new ClubInfoRequest {
+            CharacterId = CharacterId,
+        });
+
+        foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
+            var manager = ClubManager.Create(clubInfo, this);
+            if (manager == null) {
+                Logger.Error("Failed to create club manager for club {ClubId}", clubInfo.Id);
+                continue;
+            }
+            if (Clubs.TryAdd(clubInfo.Id, manager)) {
+                manager.Load();
+            }
+        }
+
         Buddy.Load();
-        Party.Load();
+        // We load Party after partyInfo update to properly set the player's online status.
+        Party = new PartyManager(World, this);
 
         Send(SurvivalPacket.UpdateStats(player.Account));
 
@@ -449,6 +469,7 @@ public sealed partial class GameSession : Core.Network.Session {
             PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = AccountId,
                 CharacterId = CharacterId,
+                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
                 Channel = 0,
                 Async = true,
@@ -474,6 +495,10 @@ public sealed partial class GameSession : Core.Network.Session {
             Party.Dispose();
             foreach ((int groupChatId, GroupChatManager groupChat) in GroupChats) {
                 groupChat.CheckDisband();
+            }
+
+            foreach ((long clubId, ClubManager club) in Clubs) {
+                club.Dispose();
             }
 
             using (GameStorage.Request db = GameStorage.Context()) {

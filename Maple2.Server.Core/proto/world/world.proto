@@ -26,6 +26,9 @@ service World {
   rpc Party(PartyRequest) returns (PartyResponse);
   rpc PartySearchInfo(PartySearchInfoRequest) returns (PartySearchInfoResponse);
   rpc PartySearch(PartySearchRequest) returns (PartySearchResponse);
+  // Manage club.
+  rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
+  rpc Club(ClubRequest) returns (ClubResponse);
   // Manage group chat.
   rpc GroupChatInfo(GroupChatInfoRequest) returns (GroupChatInfoResponse);
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
@@ -206,7 +209,6 @@ message PartyInfo {
   message Member {
     int64 character_id = 1;
     int64 join_time = 2;
-    int64 login_time = 3;
   }
 
   int32 id = 1;
@@ -293,6 +295,56 @@ message PartyResponse {
   oneof Info {
     int32 party_id = 1;
     PartyInfo party = 2;
+  }
+
+  int32 error = 3;
+}
+
+message ClubRequest {
+  message Create {
+    string club_name = 1;
+  }
+
+  message NewClubInvite {
+    int64 club_id = 1;
+    int64 receiver_id = 2;
+    int32 reply = 3;
+  }
+
+  message Leave {
+    int64 club_id = 1;
+  }
+
+  message Invite {
+    int64 club_id = 1;
+    int64 receiver_id = 2;
+  }
+
+  message RespondInvite {
+    int64 club_id = 1;
+    bool accept = 2;
+  }
+
+  message Rename {
+    int64 club_id = 1;
+    string name = 2;
+  }
+
+  int64 requestor_id = 1;
+  oneof club {
+    Create create = 2;
+    NewClubInvite new_club_invite = 3;
+    Leave leave = 4;
+    Invite invite = 5;
+    RespondInvite respond_invite = 6;
+    Rename rename = 7;
+  }
+}
+
+message ClubResponse {
+  oneof Info {
+    int64 club_id = 1;
+    ClubInfo club = 2;
   }
 
   int32 error = 3;

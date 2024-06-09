@@ -27,6 +27,9 @@ service Channel {
   rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
   // Black Market
   rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
+  // Manage Club.
+  rpc Club(ClubRequest) returns (ClubResponse);
+  rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
 }
 
 message GuildRequest {
@@ -153,5 +156,76 @@ message BlackMarketRequest {
 }
 
 message BlackMarketResponse {
+  int32 error = 1;
+}
+
+message ClubRequest {
+  message Create {
+    ClubInfo info = 1;
+  }
+
+  message RemoveMember {
+    int64 character_id = 1;
+  }
+
+  message Disband { }
+
+  message StagedClubInviteReply {
+    int32 reply = 1;
+    string name = 2;
+    int64 character_id = 3;
+  }
+
+  message StagedClubFail {
+    int32 reply = 1;
+  }
+
+  message Establish { }
+
+  message Invite {
+    int64 sender_id = 1;
+    string sender_name = 2;
+    string club_name = 3;
+  }
+
+  message AddMember {
+    int64 character_id = 1;
+    string requestor_name = 2;
+    int64 join_time = 3;
+    int64 login_time = 4;
+  }
+
+  message InviteReply {
+    string requestor_name = 1;
+    bool accept = 2;
+  }
+
+  message UpdateLeader {
+    int64 character_id = 1;
+  }
+
+  message Rename {
+    string name = 1;
+    int64 changed_time = 2;
+  }
+
+  int64 club_id = 1;
+  repeated int64 receiver_ids = 2;
+  oneof Club {
+    Create create = 3;
+    StagedClubInviteReply staged_club_invite_reply = 4;
+    StagedClubFail staged_club_fail = 5;
+    Establish establish = 6;
+    RemoveMember remove_member = 7;
+    Disband disband = 8;
+    Invite invite = 9;
+    AddMember add_member = 10;
+    InviteReply invite_reply = 11;
+    UpdateLeader update_leader = 12;
+    Rename rename = 13;
+  }
+}
+
+message ClubResponse {
   int32 error = 1;
 }

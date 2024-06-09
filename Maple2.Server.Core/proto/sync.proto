@@ -4,12 +4,12 @@ package maple2;
 
 import "google/protobuf/timestamp.proto";
 
-message HealthInfo {
+message HealthUpdate {
   int64 current_hp = 1;
   int64 total_hp = 2;
 }
 
-message HomeInfo {
+message HomeUpdate {
   string name = 1;
   int32 map_id = 2;
   int32 plot_number = 3;
@@ -17,10 +17,14 @@ message HomeInfo {
   google.protobuf.Timestamp expiry_time = 5;
 }
 
-message TrophyInfo {
+message TrophyUpdate {
   int32 combat = 1;
   int32 adventure = 2;
   int32 lifestyle = 3;
+}
+
+message ClubUpdate {
+  int64 id = 1;
 }
 
 // Requests
@@ -47,9 +51,11 @@ message PlayerUpdateRequest {
   optional int32 map_id = 11;
   optional int32 channel = 12;
   optional int64 premium_time = 13;
-  optional HealthInfo health = 14;
-  optional HomeInfo home = 15;
-  optional TrophyInfo trophy = 16;
+  optional int64 last_online_time = 14;
+  optional HealthUpdate health = 15;
+  optional HomeUpdate home = 16;
+  optional TrophyUpdate trophy = 17;
+  repeated ClubUpdate clubs = 18;
 
   // Batch updates in a queue rather than immediately forwarding.
   bool async = 20;
@@ -75,9 +81,11 @@ message PlayerInfoResponse {
   int32 level = 9;
   int32 gear_score = 10;
   int64 premium_time = 11;
-  int32 map_id = 12;
-  int32 channel = 13;
-  HealthInfo health = 14;
-  HomeInfo home = 15;
-  TrophyInfo trophy = 16;
+  int64 last_online_time = 12;
+  int32 map_id = 13;
+  int32 channel = 14;
+  HealthUpdate health = 15;
+  HomeUpdate home = 16;
+  TrophyUpdate trophy = 17;
+  repeated ClubUpdate clubs = 18;
 }

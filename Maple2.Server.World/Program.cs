@@ -68,6 +68,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<PartySearchLookup>()
         .SingleInstance();
+    autofac.RegisterType<ClubLookup>()
+        .SingleInstance();
     autofac.RegisterType<BlackMarketLookup>()
         .SingleInstance();
 });

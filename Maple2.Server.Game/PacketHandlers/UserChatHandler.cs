@@ -264,6 +264,11 @@ public class UserChatHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClub(GameSession session, string message, long clubId, ICollection<long> itemUids) {
+        if (!session.Clubs.ContainsKey(clubId)) {
+            session.Send(ChatPacket.Alert(StringCode.s_err_cannot_find_club));
+            return;
+        }
+
         var request = new ChatRequest {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,

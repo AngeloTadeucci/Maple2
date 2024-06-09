@@ -40,19 +40,21 @@ public partial class GameStorage {
             this.game = game;
         }
 
-        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long premiumTime) {
+        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long premiumTime, IList<long> clubs) {
             if (outdoor == null) {
-                return new PlayerInfo(character, indoor.Name, achievementInfo) {
+                return new PlayerInfo(character, indoor.Name, achievementInfo, clubs) {
                     PremiumTime = premiumTime,
+                    LastOnlineTime = character.LastModified.ToEpochSeconds(),
                 };
             }
 
-            return new PlayerInfo(character, outdoor.Name, achievementInfo) {
+            return new PlayerInfo(character, outdoor.Name, achievementInfo, clubs) {
                 PlotMapId = outdoor.MapId,
                 PlotNumber = outdoor.Number,
                 PremiumTime = premiumTime,
                 ApartmentNumber = outdoor.ApartmentNumber,
                 PlotExpiryTime = outdoor.ExpiryTime.ToUnixTimeSeconds(),
+                LastOnlineTime = character.LastModified.ToEpochSeconds(),
             };
         }
     }
