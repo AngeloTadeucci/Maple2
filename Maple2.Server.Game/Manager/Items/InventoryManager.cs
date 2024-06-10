@@ -207,6 +207,12 @@ public class InventoryManager {
                 return true;
             }
 
+            if (add.Type.IsMedal) {
+                session.Survival.AddMedal(add);
+                session.Item.Inventory.Discard(add);
+                return true;
+            }
+
 
             if (!tabs.TryGetValue(add.Inventory, out ItemCollection? items)) {
                 session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));

@@ -95,6 +95,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
     public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
+    public SurvivalManager Survival { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -155,6 +156,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
+        Survival = new SurvivalManager(this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -186,7 +188,7 @@ public sealed partial class GameSession : Core.Network.Session {
         //session.Send(Packet.Of(SendOp.REQUEST_SYSTEM_INFO));
         Send(MigrationPacket.MoveResult(MigrationError.ok));
 
-        // Survival
+        Survival.Load();
         // MeretMarket
         // UserConditionEvent
         // PCBangBonus
@@ -508,6 +510,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 Config.Save(db);
                 Shop.Save(db);
                 Item.Save(db);
+                Survival.Save(db);
                 Housing.Save(db);
                 GameEventUserValue.Save(db);
                 Achievement.Save(db);

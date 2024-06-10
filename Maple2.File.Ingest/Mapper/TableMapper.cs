@@ -68,6 +68,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
         yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
         yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
+        yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
 
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
@@ -1457,5 +1458,20 @@ public class TableMapper : TypeMapper<TableMetadata> {
             throw new InvalidOperationException("No maps ingested for WorldMapTable");
         }
         return new WorldMapTable(mapList);
+    }
+
+    private SurvivalSkinInfoTable ParseSurvivalSkinTable() {
+        var results = new Dictionary<int, MedalType>();
+        foreach ((int id, MapleSurvivalSkinInfo skin) in parser.ParseMapleSurvivalSkinInfo()) {
+            MedalType type = skin.type switch {
+                SurvivalSkinType.gliding => MedalType.Gliding,
+                SurvivalSkinType.riding => MedalType.Riding,
+                SurvivalSkinType.effectTail => MedalType.Tail,
+                _ => throw new InvalidOperationException("Unknown SurvivalSkinType"),
+            };
+            results.Add(id, type);
+        }
+
+        return new SurvivalSkinInfoTable(results);
     }
 }
