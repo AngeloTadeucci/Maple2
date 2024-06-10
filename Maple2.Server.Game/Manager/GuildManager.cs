@@ -303,10 +303,9 @@ public class GuildManager : IDisposable {
     [MemberNotNull(nameof(Properties))]
     private void UpdateProperties() {
         int experience = Guild?.Experience ?? 0;
-        KeyValuePair<short, GuildTable.Property> result = session.TableMetadata.GuildTable.Properties
+        Properties = session.TableMetadata.GuildTable.Properties
             .OrderBy(entry => entry.Value.Experience)
-            .MinBy(entry => entry.Value.Experience > experience);
-        Properties = result.Value;
+            .MinBy(entry => entry.Value.Experience > experience).Value;
 
         if (Guild != null) {
             Guild.Capacity = Properties.Capacity;

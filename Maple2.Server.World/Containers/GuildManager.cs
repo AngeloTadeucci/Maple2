@@ -336,9 +336,8 @@ public class GuildManager : IDisposable {
     }
 
     private GuildTable.Property GuildProperty() {
-        return TableMetadata.GuildTable.Properties.Values
-                   .OrderBy(entry => entry.Experience)
-                   .MinBy(entry => entry.Experience > Guild.Experience)
-               ?? TableMetadata.GuildTable.Properties.Values.First();
+        return TableMetadata.GuildTable.Properties
+            .OrderBy(entry => entry.Value.Experience)
+            .MinBy(entry => entry.Value.Experience > Guild.Experience).Value;
     }
 }
