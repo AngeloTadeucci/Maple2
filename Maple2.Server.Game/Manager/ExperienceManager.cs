@@ -103,6 +103,7 @@ public sealed class ExperienceManager {
         expGained += GetRestExp(expGained);
         LevelUp();
         AddPrestigeExp(message.Type());
+        // TODO: Achievement 22400001, 22400002
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
     }
 
