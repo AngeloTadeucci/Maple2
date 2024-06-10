@@ -18,7 +18,6 @@ public partial class GameStorage {
         public Medal? CreateMedal(long ownerId, Medal medal) {
             Model.Medal model = medal;
             model.OwnerId = ownerId;
-            model.Id = 0;
             Context.Medal.Add(model);
 
             return Context.TrySaveChanges() ? ToMedal(model) : null;
@@ -27,10 +26,6 @@ public partial class GameStorage {
         public bool SaveMedals(long ownerId, params Medal[] medals) {
             var models = new Model.Medal[medals.Length];
             for (int i = 0; i < medals.Length; i++) {
-                if (medals[i].Uid == 0) {
-                    continue;
-                }
-
                 models[i] = medals[i];
                 models[i].OwnerId = ownerId;
                 Context.Medal.Update(models[i]);
@@ -39,13 +34,13 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        // Converts model to item if possible, otherwise returns null.
+        // Converts model to medal if possible, otherwise returns null.
         private Medal? ToMedal(Model.Medal? model) {
             if (model == null) {
                 return null;
             }
 
-            return game.tableMetadata.SurvivalSkinInfoTable.Entries.TryGetValue(model.MedalId, out MedalType medalType) ? model.Convert(medalType) : null;
+            return game.tableMetadata.SurvivalSkinInfoTable.Entries.TryGetValue(model.Id, out MedalType medalType) ? model.Convert(medalType) : null;
         }
     }
 }

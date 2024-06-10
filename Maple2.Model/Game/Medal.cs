@@ -6,7 +6,6 @@ using Maple2.Tools;
 namespace Maple2.Model.Game;
 
 public class Medal : IByteSerializable {
-    public long Uid { get; init; }
     public readonly int Id;
     public readonly MedalType Type;
     public short Slot = -1;

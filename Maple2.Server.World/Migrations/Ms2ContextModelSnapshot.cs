@@ -856,23 +856,19 @@ namespace Maple2.Server.World.Migrations
 
             modelBuilder.Entity("Maple2.Database.Model.Medal", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiryTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("MedalId")
-                        .HasColumnType("int");
-
                     b.Property<long>("OwnerId")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExpiryTime")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<short>("Slot")
                         .HasColumnType("smallint");
 
-                    b.HasKey("Id");
+                    b.HasKey("OwnerId", "Id");
 
                     b.ToTable("medal", (string)null);
                 });

@@ -17,7 +17,6 @@ public sealed class SurvivalManager {
     private readonly ConcurrentDictionary<MedalType, Dictionary<int, Medal>> inventory;
     private readonly ConcurrentDictionary<MedalType, Medal> equip;
 
-
     private int SurvivalLevel {
         get => session.Player.Value.Account.SurvivalLevel;
         set => session.Player.Value.Account.SurvivalLevel = value;
@@ -126,7 +125,6 @@ public sealed class SurvivalManager {
         Medal medal = equip[type];
         equip[type] = new Medal(0, type);
         medal.Slot = -1;
-        return;
     }
 
     private Medal? CreateMedal(Item item) {
