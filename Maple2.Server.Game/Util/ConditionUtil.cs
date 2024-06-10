@@ -133,6 +133,7 @@ public static class ConditionUtil {
             case ConditionType.fall_die:
             case ConditionType.buy_house:
             case ConditionType.extend_house:
+            case ConditionType.exp:
                 return true;
         }
         return false;
@@ -247,6 +248,7 @@ public static class ConditionUtil {
             case ConditionType.uninstall_item:
             case ConditionType.buy_house:
             case ConditionType.extend_house:
+            case ConditionType.exp:
                 return true;
         }
         return false;
