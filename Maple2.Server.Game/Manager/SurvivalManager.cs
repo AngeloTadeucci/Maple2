@@ -68,7 +68,41 @@ public sealed class SurvivalManager {
     }
 
     public void AddMedal(Item item) {
-        Medal? medal = CreateMedal(item);
+        Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!parameters.TryGetValue("id", out string? idStr) || !int.TryParse(idStr, out int id)) {
+            logger.Warning("Failed to add medal: missing or invalid ID parameter");
+            return;
+        }
+
+        if (!parameters.TryGetValue("type", out string? typeStr)) {
+            logger.Warning("Failed to add medal: missing or invalid type parameter");
+            return;
+        }
+
+        MedalType type = typeStr switch {
+            "effectTail" => MedalType.Tail,
+            "gliding" => MedalType.Gliding,
+            "riding" => MedalType.Riding,
+            _ => throw new InvalidOperationException($"Invalid medal type: {typeStr}"),
+        };
+
+        long expiryTime = DateTime.MaxValue.ToEpochSeconds() - 1;
+        // Get expiration
+        if (parameters.TryGetValue("durationSec", out string? durationStr) && int.TryParse(durationStr, out int durationSec)) {
+            expiryTime = (long) (DateTime.Now.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds + durationSec;
+        } else if (parameters.TryGetValue("endDate", out string? endDateStr) && DateTime.TryParseExact(endDateStr, "yyyy-MM-dd-HH-mm-ss", null, System.Globalization.DateTimeStyles.None, out DateTime endDate)) {
+            //2018-10-02-00-00-00
+            expiryTime = endDate.ToEpochSeconds();
+        }
+
+        // Check if medal already exists
+        if (inventory[type].TryGetValue(id, out Medal? existing)) {
+            existing.ExpiryTime = Math.Min(existing.ExpiryTime + expiryTime, DateTime.MaxValue.ToEpochSeconds() - 1);
+            session.Send(SurvivalPacket.LoadMedals(inventory, equip));
+            return;
+        }
+
+        Medal? medal = CreateMedal(id, type, expiryTime);
         if (medal == null) {
             return;
         }
@@ -78,12 +112,7 @@ public sealed class SurvivalManager {
             inventory[medal.Type] = dict;
         }
 
-        if (dict.TryGetValue(medal.Id, out Medal? existing)) {
-            existing.ExpiryTime = Math.Min(existing.ExpiryTime + medal.ExpiryTime, DateTime.MaxValue.ToEpochSeconds() - 1);
-        } else {
-            dict[medal.Id] = medal;
-        }
-
+        dict[medal.Id] = medal;
 
         session.Send(SurvivalPacket.LoadMedals(inventory, equip));
     }
@@ -127,34 +156,7 @@ public sealed class SurvivalManager {
         medal.Slot = -1;
     }
 
-    private Medal? CreateMedal(Item item) {
-        Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
-        if (!parameters.TryGetValue("id", out string? idStr) || !int.TryParse(idStr, out int id)) {
-            logger.Warning("Failed to add medal: missing or invalid ID parameter");
-            return null;
-        }
-
-        if (!parameters.TryGetValue("type", out string? typeStr)) {
-            logger.Warning("Failed to add medal: missing or invalid type parameter");
-            return null;
-        }
-
-        MedalType type = typeStr switch {
-            "effectTail" => MedalType.Tail,
-            "gliding" => MedalType.Gliding,
-            "riding" => MedalType.Riding,
-            _ => throw new InvalidOperationException($"Invalid medal type: {typeStr}"),
-        };
-
-        long expiryTime = DateTime.MaxValue.ToEpochSeconds() - 1;
-        // Get expiration
-        if (parameters.TryGetValue("durationSec", out string? durationStr) && int.TryParse(durationStr, out int durationSec)) {
-            expiryTime = (long) (DateTime.Now.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds + durationSec;
-        } else if (parameters.TryGetValue("endDate", out string? endDateStr) && DateTime.TryParseExact(endDateStr, "yyyy-MM-dd-HH-mm-ss", null, System.Globalization.DateTimeStyles.None, out DateTime endDate)) {
-            //2018-10-02-00-00-00
-            expiryTime = endDate.ToEpochSeconds();
-        }
-
+    private Medal? CreateMedal(int id, MedalType type, long expiryTime) {
         var medal = new Medal(id, type) {
             ExpiryTime = expiryTime,
         };
