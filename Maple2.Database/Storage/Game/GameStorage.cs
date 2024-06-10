@@ -12,17 +12,19 @@ public partial class GameStorage {
     private readonly MapMetadataStorage mapMetadata;
     private readonly AchievementMetadataStorage achievementMetadata;
     private readonly QuestMetadataStorage questMetadata;
+    private readonly TableMetadataStorage tableMetadata;
     private readonly ILogger logger;
     private readonly DbContextOptions options;
 
     public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
-                       QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
+                       QuestMetadataStorage questMetadata, TableMetadataStorage tableMetadata, ILogger<GameStorage> logger) {
         this.options = options;
         this.itemMetadata = itemMetadata;
         this.mapMetadata = mapMetadata;
         this.achievementMetadata = achievementMetadata;
         this.questMetadata = questMetadata;
         this.logger = logger;
+        this.tableMetadata = tableMetadata;
     }
 
     public Request Context() {

@@ -55,7 +55,7 @@ public readonly record struct ItemType(byte Group, byte Type) {
     public bool IsAdBalloon => Group is 2 && Type is 6;
     public bool IsBuddyBadgeChest => Group is 2 && Type is 7;
     public bool IsSuperChatTheme => Group is 2 && Type is 8;
-    public bool IsTail => Group is 2 && Type is 9;
+    public bool IsMedal => Group is 2 && Type is 9;
     public bool IsStickerPack => Group is 2 && Type is 11;
     public bool IsOutfitCapsule => Group is 2 && Type is 20;
     public bool IsOutfitCoin => Group is 2 && Type is 22;
