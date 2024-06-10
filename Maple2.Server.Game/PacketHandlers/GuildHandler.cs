@@ -487,7 +487,7 @@ public class GuildHandler : PacketHandler<GameSession> {
             }
 
             session.Send(GuildPacket.CheckedIn());
-            // TODO: Send EXP
+            session.Exp.AddExp(session.Guild.Properties.Experience);
             // TODO: Guild coins
             // TODO: Achievement 22400001, 22400002
         } catch (RpcException) { /* ignored */ }

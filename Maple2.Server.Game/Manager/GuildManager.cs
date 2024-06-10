@@ -21,7 +21,7 @@ public class GuildManager : IDisposable {
     public long Id => Guild?.Id ?? 0;
     public long LeaderId => Guild?.LeaderCharacterId ?? 0;
 
-    private GuildTable.Property properties;
+    public GuildTable.Property Properties { get; private set; }
     private readonly CancellationTokenSource tokenSource;
 
     private readonly ILogger logger = Log.Logger.ForContext<GuildManager>();
@@ -300,16 +300,16 @@ public class GuildManager : IDisposable {
         return null;
     }
 
-    [MemberNotNull(nameof(properties))]
+    [MemberNotNull(nameof(Properties))]
     private void UpdateProperties() {
         int experience = Guild?.Experience ?? 0;
         KeyValuePair<short, GuildTable.Property> result = session.TableMetadata.GuildTable.Properties
             .OrderBy(entry => entry.Value.Experience)
             .MinBy(entry => entry.Value.Experience > experience);
-        properties = result.Value;
+        Properties = result.Value;
 
         if (Guild != null) {
-            Guild.Capacity = properties.Capacity;
+            Guild.Capacity = Properties.Capacity;
         }
     }
 
