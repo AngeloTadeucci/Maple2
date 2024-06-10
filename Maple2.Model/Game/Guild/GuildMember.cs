@@ -16,7 +16,6 @@ public class GuildMember : IByteSerializable, IDisposable {
     public string Message = string.Empty;
     public byte Rank;
     public long JoinTime;
-    public long LoginTime;
     public long CheckinTime;
     public long DonationTime;
     public int WeeklyContribution;
@@ -38,7 +37,7 @@ public class GuildMember : IByteSerializable, IDisposable {
 
         writer.WriteUnicodeString(Message);
         writer.WriteLong(JoinTime);
-        writer.WriteLong(LoginTime);
+        writer.WriteLong(Info.LastOnlineTime);
         writer.WriteLong(CheckinTime);
         writer.WriteInt();
         writer.WriteInt();

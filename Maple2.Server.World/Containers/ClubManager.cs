@@ -161,7 +161,6 @@ public class ClubManager : IDisposable {
                 CharacterId = member.CharacterId,
                 RequestorName = requestorName,
                 JoinTime = member.JoinTime,
-                LoginTime = member.Info.LastOnlineTime,
             },
         });
         Club.Members.TryAdd(member.CharacterId, member);

@@ -95,6 +95,8 @@ public static class Constant {
     public const int MaxClubMembers = 10;
     public const string PetFieldAiPath = "Pet/AI_DefaultPetTaming.xml";
     public const string DefaultAiPath = "AI_Default.xml";
+    public const int GuildCoinId = 30000861;
+    public const int GuildCoinRarity = 4;
 
 
     public const long FurnishingBaseId = 2870000000000000000;

@@ -19,8 +19,9 @@ public class GuildManager : IDisposable {
 
     public Guild? Guild { get; private set; }
     public long Id => Guild?.Id ?? 0;
+    public long LeaderId => Guild?.LeaderCharacterId ?? 0;
 
-    private GuildTable.Property properties;
+    public GuildTable.Property Properties { get; private set; }
     private readonly CancellationTokenSource tokenSource;
 
     private readonly ILogger logger = Log.Logger.ForContext<GuildManager>();
@@ -77,7 +78,6 @@ public class GuildManager : IDisposable {
                 Message = member.Message,
                 Rank = (byte) member.Rank,
                 JoinTime = member.JoinTime,
-                LoginTime = member.LoginTime,
                 CheckinTime = member.CheckinTime,
                 DonationTime = member.DonationTime,
                 WeeklyContribution = member.WeeklyContribution,
@@ -199,6 +199,87 @@ public class GuildManager : IDisposable {
         return true;
     }
 
+    public bool UpdateMemberContribution(long characterId, long checkInTime, int contribution) {
+        GuildMember? member = GetMember(characterId);
+        if (member == null) {
+            return false;
+        }
+
+        member.WeeklyContribution += contribution;
+        member.TotalContribution += contribution;
+
+        session.Send(GuildPacket.GuildContribution(member, contribution));
+        session.Send(GuildPacket.CheckInTime(member.Name, checkInTime));
+        return true;
+    }
+
+    public bool UpdateGuildExpFunds(long contributorId, int exp, int funds) {
+        if (Guild == null) {
+            return false;
+        }
+
+        int addExp = exp - Guild.Experience;
+        int addFunds = funds - Guild.Funds;
+        Guild.Experience = exp;
+        Guild.Funds = funds;
+
+        session.Send(GuildPacket.GuildExperience(Guild.Experience));
+        session.Send(GuildPacket.GuildFunds(Guild.Funds));
+        if (session.CharacterId == contributorId) {
+            session.Send(GuildPacket.AddContribution(addExp, addFunds));
+        }
+        return true;
+    }
+
+    public bool UpdateLeader(long oldLeaderId, long newLeaderId) {
+        if (Guild == null) {
+            return false;
+        }
+
+        GuildMember? oldLeader = GetMember(oldLeaderId);
+        if (oldLeader == null) {
+            return false;
+        }
+        GuildMember? newLeader = GetMember(newLeaderId);
+        if (newLeader == null) {
+            return false;
+        }
+
+        oldLeader.Rank = 1; // Jr. Master
+        newLeader.Rank = 0; // Master
+        Guild.LeaderAccountId = newLeader.AccountId;
+        Guild.LeaderCharacterId = newLeader.CharacterId;
+        Guild.LeaderName = newLeader.Name;
+
+        session.Send(GuildPacket.NotifyUpdateLeader(oldLeader.Name, newLeader.Name));
+        return true;
+    }
+
+    public bool UpdateNotice(string requestorName, string message) {
+        if (Guild == null) {
+            return false;
+        }
+
+        Guild.Notice = message;
+        session.Send(GuildPacket.NotifyUpdateNotice(requestorName, 1, message));
+        return true;
+    }
+
+    public bool UpdateEmblem(string requestorName, string emblem) {
+        if (Guild == null) {
+            return false;
+        }
+
+        Guild.Emblem = emblem;
+        session.Send(GuildPacket.NotifyUpdateEmblem(requestorName, emblem));
+        return true;
+    }
+
+    public bool HasPermission(long characterId, GuildPermission permission) {
+        GuildRank? rank = GetRank(characterId);
+        return rank != null && rank.Permission.HasFlag(permission);
+    }
+
     public GuildRank? GetRank(long characterId) {
         if (Guild == null || !Guild.Members.TryGetValue(characterId, out GuildMember? member)) {
             return null;
@@ -219,16 +300,15 @@ public class GuildManager : IDisposable {
         return null;
     }
 
-    [MemberNotNull(nameof(properties))]
+    [MemberNotNull(nameof(Properties))]
     private void UpdateProperties() {
         int experience = Guild?.Experience ?? 0;
-        KeyValuePair<short, GuildTable.Property> result = session.TableMetadata.GuildTable.Properties
+        Properties = session.TableMetadata.GuildTable.Properties
             .OrderBy(entry => entry.Value.Experience)
-            .MinBy(entry => entry.Value.Experience > experience);
-        properties = result.Value;
+            .MinBy(entry => entry.Value.Experience > experience).Value;
 
         if (Guild != null) {
-            Guild.Capacity = properties.Capacity;
+            Guild.Capacity = Properties.Capacity;
         }
     }
 
@@ -260,7 +340,6 @@ public class GuildManager : IDisposable {
         bool wasOnline = member.Info.Online;
         string name = member.Info.Name;
         member.Info.Update(type, info);
-        member.LoginTime = info.UpdateTime;
 
         if (name != member.Info.Name) {
             session.Send(GuildPacket.UpdateMemberName(name, member.Name));
@@ -275,7 +354,7 @@ public class GuildManager : IDisposable {
         if (member.Info.Online != wasOnline) {
             session.Send(member.Info.Online
                 ? GuildPacket.NotifyLogin(member.Name)
-                : GuildPacket.NotifyLogout(member.Name, member.LoginTime));
+                : GuildPacket.NotifyLogout(member.Name, member.Info.LastOnlineTime));
         }
         return false;
     }

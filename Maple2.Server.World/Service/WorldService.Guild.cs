@@ -32,7 +32,15 @@ public partial class WorldService {
             case GuildRequest.GuildOneofCase.Expel:
                 return Task.FromResult(ExpelGuild(request.RequestorId, request.Expel));
             case GuildRequest.GuildOneofCase.UpdateMember:
-                return Task.FromResult(UpdateMember(request.RequestorId, request.UpdateMember));
+                return Task.FromResult(UpdateGuildMember(request.RequestorId, request.UpdateMember));
+            case GuildRequest.GuildOneofCase.CheckIn:
+                return Task.FromResult(CheckInGuild(request.RequestorId, request.CheckIn));
+            case GuildRequest.GuildOneofCase.UpdateLeader:
+                return Task.FromResult(UpdateGuildLeader(request.RequestorId, request.UpdateLeader));
+            case GuildRequest.GuildOneofCase.UpdateNotice:
+                return Task.FromResult(UpdateGuildNotice(request.RequestorId, request.UpdateNotice));
+            case GuildRequest.GuildOneofCase.UpdateEmblem:
+                return Task.FromResult(UpdateGuildEmblem(request.RequestorId, request.UpdateEmblem));
             default:
                 return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
@@ -140,7 +148,7 @@ public partial class WorldService {
         return new GuildResponse { GuildId = expel.GuildId };
     }
 
-    private GuildResponse UpdateMember(long requestorId, GuildRequest.Types.UpdateMember update) {
+    private GuildResponse UpdateGuildMember(long requestorId, GuildRequest.Types.UpdateMember update) {
         if (!guildLookup.TryGet(update.GuildId, out GuildManager? manager)) {
             return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
         }
@@ -153,6 +161,58 @@ public partial class WorldService {
         }
 
         return new GuildResponse { GuildId = update.GuildId };
+    }
+
+    private GuildResponse CheckInGuild(long requestorId, GuildRequest.Types.CheckIn checkIn) {
+        if (!guildLookup.TryGet(checkIn.GuildId, out GuildManager? manager)) {
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
+        }
+
+        GuildError error = manager.CheckIn(requestorId);
+        if (error != GuildError.none) {
+            return new GuildResponse { Error = (int) error };
+        }
+
+        return new GuildResponse { GuildId = checkIn.GuildId };
+    }
+
+    private GuildResponse UpdateGuildLeader(long requestorId, GuildRequest.Types.UpdateLeader leader) {
+        if (!guildLookup.TryGet(leader.GuildId, out GuildManager? manager)) {
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
+        }
+
+        GuildError error = manager.UpdateLeader(requestorId, leader.LeaderId);
+        if (error != GuildError.none) {
+            return new GuildResponse { Error = (int) error };
+        }
+
+        return new GuildResponse { GuildId = leader.GuildId };
+    }
+
+    private GuildResponse UpdateGuildNotice(long requestorId, GuildRequest.Types.UpdateNotice notice) {
+        if (!guildLookup.TryGet(notice.GuildId, out GuildManager? manager)) {
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
+        }
+
+        GuildError error = manager.UpdateNotice(requestorId, notice.Message);
+        if (error != GuildError.none) {
+            return new GuildResponse { Error = (int) error };
+        }
+
+        return new GuildResponse { GuildId = notice.GuildId };
+    }
+
+    private GuildResponse UpdateGuildEmblem(long requestorId, GuildRequest.Types.UpdateEmblem emblem) {
+        if (!guildLookup.TryGet(emblem.GuildId, out GuildManager? manager)) {
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
+        }
+
+        GuildError error = manager.UpdateEmblem(requestorId, emblem.Emblem);
+        if (error != GuildError.none) {
+            return new GuildResponse { Error = (int) error };
+        }
+
+        return new GuildResponse { GuildId = emblem.GuildId };
     }
 
     private static GuildInfo ToGuildInfo(Guild guild) {
@@ -173,7 +233,6 @@ public partial class WorldService {
                     Message = member.Message,
                     Rank = member.Rank,
                     JoinTime = member.JoinTime,
-                    LoginTime = member.LoginTime,
                     CheckinTime = member.CheckinTime,
                     DonationTime = member.DonationTime,
                     WeeklyContribution = member.WeeklyContribution,

@@ -35,8 +35,11 @@ public partial class TriggerScriptLoader {
             return false;
         }
 
-        foreach (ScriptSource sharedScript in scripts) {
-            sharedScript.Execute(context.Scope);
+        // Script "compilation" needs to be synchronized.
+        lock (engine) {
+            foreach (ScriptSource script in scripts) {
+                script.Execute(context.Scope);
+            }
         }
 
         dynamic? initialStateClass = context.Scope.GetVariable("initial_state");

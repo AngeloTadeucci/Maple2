@@ -104,6 +104,7 @@ public sealed class ExperienceManager {
         LevelUp();
         AddPrestigeExp(message.Type());
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
+        session.ConditionUpdate(ConditionType.exp, counter: expGained);
     }
 
     public void AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {

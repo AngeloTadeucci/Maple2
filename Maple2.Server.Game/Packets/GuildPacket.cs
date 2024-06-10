@@ -79,7 +79,7 @@ public static class GuildPacket {
         ListGuilds = 85,
         UseBuff = 88,
         UsePersonalBuff = 89,
-        UpdateExpFunds = 95,
+        AddContribution = 95,
         // 96, 104, 107, 109
         Donated = 110,
         // 114, 115, 116, 119, 120
@@ -327,10 +327,10 @@ public static class GuildPacket {
 
     // s_guild_notify_change_mark
     // - {0} has changed the guild emblem.
-    public static ByteWriter NotifyUpdateEmblem(InterfaceText text, string emblem) {
+    public static ByteWriter NotifyUpdateEmblem(string requestorName, string emblem) {
         var pWriter = Packet.Of(SendOp.Guild);
         pWriter.Write<Command>(Command.NotifyUpdateEmblem);
-        pWriter.WriteClass<InterfaceText>(text);
+        pWriter.WriteClass<InterfaceText>(new InterfaceText(StringCode.s_guild_notify_change_mark, requestorName));
         pWriter.WriteUnicodeString(emblem);
 
         return pWriter;
@@ -754,11 +754,11 @@ public static class GuildPacket {
         return pWriter;
     }
 
-    public static ByteWriter UpdateExpFunds(int exp, int funds) {
+    public static ByteWriter AddContribution(int addExp, int addFunds) {
         var pWriter = Packet.Of(SendOp.Guild);
-        pWriter.Write<Command>(Command.UpdateExpFunds);
-        pWriter.WriteInt(exp);
-        pWriter.WriteInt(funds);
+        pWriter.Write<Command>(Command.AddContribution);
+        pWriter.WriteInt(addExp);
+        pWriter.WriteInt(addFunds);
 
         return pWriter;
     }
