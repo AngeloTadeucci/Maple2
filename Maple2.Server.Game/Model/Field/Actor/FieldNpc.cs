@@ -87,7 +87,7 @@ public class FieldNpc : Actor<Npc> {
 
     public int SpawnPointId = 0;
 
-    public MS2PatrolData? patrolData;
+    public MS2PatrolData? Patrol { get; private set; }
     private int currentWaypointIndex;
 
     private bool hasBeenBattling = false;
@@ -109,7 +109,7 @@ public class FieldNpc : Actor<Npc> {
             Navigation = Field.Navigation.ForAgent(this, agent);
 
             if (patrolDataUUID is not null) {
-                patrolData = field.Entities.Patrols.FirstOrDefault(x => x.Uuid == patrolDataUUID);
+                Patrol = field.Entities.Patrols.FirstOrDefault(x => x.Uuid == patrolDataUUID);
             }
         }
         MovementState = new MovementState(this);
@@ -149,7 +149,7 @@ public class FieldNpc : Actor<Npc> {
         bool playersListeningToDebugNow = false;
 
         foreach ((int objectId, FieldPlayer player) in Field.Players) {
-            if (player.DebugAi || true) {
+            if (player.DebugAi) {
                 playersListeningToDebugNow = true;
 
                 break;
@@ -227,8 +227,8 @@ public class FieldNpc : Actor<Npc> {
     }
 
     private NpcTask? NextRoutine(long tickCount) {
-        if (patrolData?.WayPoints.Count > 0 && Navigation is not null) {
-            MS2WayPoint currentWaypoint = patrolData.WayPoints[currentWaypointIndex];
+        if (Patrol?.WayPoints.Count > 0 && Navigation is not null) {
+            MS2WayPoint currentWaypoint = Patrol.WayPoints[currentWaypointIndex];
 
             if (!string.IsNullOrEmpty(currentWaypoint.ArriveAnimation) && idleTask is not MovementState.NpcEmoteTask) {
                 if (Value.Animations.TryGetValue(currentWaypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
@@ -244,23 +244,23 @@ public class FieldNpc : Actor<Npc> {
                 } else if (WalkSequence is not null) {
                     approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, WalkSequence.Name);
                 } else {
-                    Log.Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, patrolData.Uuid);
+                    Log.Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, Patrol.Uuid);
                 }
             }
 
-            MS2WayPoint lastWaypoint = patrolData.WayPoints.Last();
+            MS2WayPoint lastWaypoint = Patrol.WayPoints.Last();
 
             // if we're at the last waypoint and we're not looping, we're done
-            if (currentWaypoint.Id == lastWaypoint.Id && !patrolData.IsLoop) {
-                patrolData = null;
+            if (currentWaypoint.Id == lastWaypoint.Id && !Patrol.IsLoop) {
+                Patrol = null;
 
                 return approachTask;
             }
 
-            currentWaypointIndex = (currentWaypointIndex + 1) % patrolData.WayPoints.Count;
+            currentWaypointIndex = (currentWaypointIndex + 1) % Patrol.WayPoints.Count;
 
             if ((approachTask?.Status ?? NpcTaskStatus.Cancelled) == NpcTaskStatus.Cancelled) {
-                Log.Logger.Warning("Failed to path to waypoint id({Id}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypoint.Id, currentWaypoint.Position, Value.Metadata.Name, patrolData.Uuid);
+                Log.Logger.Warning("Failed to path to waypoint id({Id}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypoint.Id, currentWaypoint.Position, Value.Metadata.Name, Patrol.Uuid);
 
                 return MovementState.TryStandby(null, true);
             }
@@ -437,19 +437,25 @@ public class FieldNpc : Actor<Npc> {
         }
     }
 
-    public void CheckPatrolSequence() {
-        if (patrolData is null) {
+    public void SetPatrolData(MS2PatrolData newPatrolData) {
+        Patrol = newPatrolData;
+        currentWaypointIndex = 0;
+    }
+
+    public void ClearPatrolData() {
+        if (Patrol is null) {
             return;
         }
 
-        var currentWaypoint = patrolData.WayPoints[currentWaypointIndex];
+        MS2WayPoint currentWaypoint = Patrol.WayPoints[currentWaypointIndex];
 
         // make sure we're at the last checkpoint in the list
-        if (currentWaypoint.Id != patrolData.WayPoints.Last().Id) {
+        if (currentWaypoint.Id != Patrol.WayPoints.Last().Id) {
             return;
         }
 
         // Clear patrol data
-        patrolData = null;
+        Patrol = null;
+        currentWaypointIndex = 0;
     }
 }

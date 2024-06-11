@@ -77,6 +77,6 @@ public class MoveRoutine : NpcRoutine {
         segmentTime = TimeSpan.Zero;
         Npc.Velocity = default;
         Npc.Navigation?.UpdatePosition();
-        Npc.CheckPatrolSequence();
+        Npc.ClearPatrolData();
     }
 }

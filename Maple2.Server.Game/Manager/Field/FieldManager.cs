@@ -395,7 +395,7 @@ public sealed partial class FieldManager : IDisposable {
             Broadcast(FieldPacket.AddNpc(dummyNpc));
             Broadcast(ProxyObjectPacket.AddNpc(dummyNpc));
 
-            dummyNpc.patrolData = patrolData;
+            dummyNpc.SetPatrolData(patrolData);
             dummyNpc.MovementState.CleanupPatrolData();
             player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
         }

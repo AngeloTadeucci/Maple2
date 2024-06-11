@@ -23,7 +23,7 @@ public class AchievementMapper : TypeMapper<AchievementMetadata> {
                     Grade: grade.value,
                     Condition: new ConditionMetadata(
                         Type: (ConditionType) grade.condition.type,
-                        Value: grade.condition.value,
+                        Value: grade.condition.value == 0 ? 1 : grade.condition.value,
                         Codes: grade.condition.code.ConvertCodes(),
                         Target: grade.condition.target.ConvertCodes()),
                     Reward: grade.reward.type == AchieveRewardType.unknown ? null : new AchievementMetadataReward(
