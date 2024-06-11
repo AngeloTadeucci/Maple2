@@ -179,9 +179,7 @@ public sealed class QuestManager {
             /*if (quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
                 continue;
             }*/
-            if (quest.Id == 20002319) {
-                Console.WriteLine($"Zerk quest");
-            }
+
             foreach (Quest.Condition condition in quest.Conditions.Values.Where(condition => condition.Metadata.Type == type)) {
                 // Already meets the requirement and does not need to be updated
                 if (condition.Counter >= condition.Metadata.Value) {
