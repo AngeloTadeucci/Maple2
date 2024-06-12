@@ -179,6 +179,7 @@ public sealed class QuestManager {
             /*if (quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
                 continue;
             }*/
+
             foreach (Quest.Condition condition in quest.Conditions.Values.Where(condition => condition.Metadata.Type == type)) {
                 // Already meets the requirement and does not need to be updated
                 if (condition.Counter >= condition.Metadata.Value) {

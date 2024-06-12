@@ -82,7 +82,7 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                 ),
                 Conditions: data.condition.Select(condition => new ConditionMetadata(
                     Type: (ConditionType) condition.type,
-                    Value: condition.value,
+                    Value: condition.value == 0 ? 1 : condition.value,
                     Codes: condition.code.ConvertCodes(),
                     Target: condition.target.ConvertCodes(),
                     PartyCount: condition.partyCount,

@@ -13,7 +13,7 @@ public partial class MovementState {
         }
 
         protected override void TaskResumed() {
-            if (movement.actor.patrolData is null) {
+            if (movement.actor.Patrol is null) {
                 movement.actor.Field.RemoveNpc(movement.actor.ObjectId);
             }
         }
