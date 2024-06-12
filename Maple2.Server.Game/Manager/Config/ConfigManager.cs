@@ -137,7 +137,7 @@ public class ConfigManager {
             }
         }
 
-        foreach ((int skillId, SkillInfo.Skill skill) in skills) {
+        foreach ((int skillId, SkillInfo.Skill skill) in skills.Where(skill => skill.Value.Id > 10000000)) {
             if (hotBars[activeHotBar].FindQuickSlotIndex(skillId) == -1) {
                 hotBars[activeHotBar].MoveQuickSlot(-1, new QuickSlot(skillId), false);
             }
