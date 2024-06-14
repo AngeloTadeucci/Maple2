@@ -171,6 +171,34 @@ public class FurnishingManager {
         return stored.Uid;
     }
 
+    public long AddStorage(Item? item) {
+        const int amount = 1;
+        if (item == null) {
+            return 0;
+        }
+
+        Item? stored = storage.FirstOrDefault(existing => existing.Id == item.Id);
+        if (stored == null) {
+            item.Group = ItemGroup.Furnishing;
+            using GameStorage.Request db = session.GameStorage.Context();
+            item = db.CreateItem(session.AccountId, item);
+            if (item == null || storage.Add(item).Count <= 0) {
+                return 0;
+            }
+
+            session.Send(FurnishingStoragePacket.Add(item));
+            return item.Uid;
+        }
+
+        if (stored.Amount + amount > item.Metadata.Property.SlotMax) {
+            return 0;
+        }
+
+        stored.Amount += amount;
+        session.Send(FurnishingStoragePacket.Update(stored.Uid, stored.Amount));
+        return stored.Uid;
+    }
+
     private bool AddInventory(PlotCube cube) {
         if (!inventory.TryAdd(cube.Id, cube)) {
             return false;
