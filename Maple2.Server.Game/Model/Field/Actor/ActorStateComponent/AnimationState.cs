@@ -80,12 +80,13 @@ public class AnimationState {
             return;
         }
 
+        string idleName = "Idle_A";
         if (actor is FieldNpc npc) {
-            NpcAction? idleAction = npc.Value.Metadata.Action.Actions.FirstOrDefault();
-            IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == idleAction?.Name).Value.Id;
+            idleName = npc.Value.Metadata.Action.Actions.FirstOrDefault()?.Name ?? idleName;
+            IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key.Contains(idleName)).Value.Id;
             return;
         }
-        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == "Idle_A").Value.Id;
+        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == idleName).Value.Id;
     }
 
     private void ResetSequence() {
