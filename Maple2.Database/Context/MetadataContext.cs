@@ -54,10 +54,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NXSMeshMetadata>(ConfigureNXSMeshMetadata);
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-        optionsBuilder.EnableSensitiveDataLogging();
-    }
-
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
         builder.ToTable("additional-effect");
         builder.HasKey(effect => new { effect.Id, effect.Level });
