@@ -26,6 +26,8 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
     public DbSet<ExportedUgcMapMetadata> ExportedUgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
+    public DbSet<NifMetadata> NifMetadata { get; set; } = null!;
+    public DbSet<NXSMeshMetadata> NXSMeshMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -48,6 +50,12 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<UgcMapMetadata>(ConfigureUgcMapMetadata);
         modelBuilder.Entity<ExportedUgcMapMetadata>(ConfigureExportedUgcMapMetadata);
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
+        modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
+        modelBuilder.Entity<NXSMeshMetadata>(ConfigureNXSMeshMetadata);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        optionsBuilder.EnableSensitiveDataLogging();
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -214,5 +222,17 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("server-table");
         builder.HasKey(table => table.Name);
         builder.Property(table => table.Table).HasJsonConversion().IsRequired();
+    }
+
+    private static void ConfigureNifMetadata(EntityTypeBuilder<NifMetadata> builder) {
+        builder.ToTable("nif");
+        builder.HasKey(nif => nif.Llid);
+        builder.Property(nif => nif.Blocks).HasJsonConversion();
+    }
+
+    private static void ConfigureNXSMeshMetadata(EntityTypeBuilder<NXSMeshMetadata> builder) {
+        builder.ToTable("nxs-mesh");
+        builder.Property(mesh => mesh.Index).ValueGeneratedNever();
+        builder.HasKey(mesh => mesh.Index);
     }
 }
