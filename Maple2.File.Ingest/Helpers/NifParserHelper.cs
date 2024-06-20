@@ -1,4 +1,4 @@
-using Maple2.File.IO.Nif;
+﻿using Maple2.File.IO.Nif;
 using Maple2.File.Parser;
 using Maple2.Model.Metadata;
 
