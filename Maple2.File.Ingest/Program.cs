@@ -3,6 +3,7 @@ using System.Globalization;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
+using Maple2.File.Ingest.Helpers;
 using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
 using Maple2.File.IO.Nif;
@@ -109,10 +110,10 @@ UpdateDatabase(metadataContext, new SkillMapper(xmlReader));
 UpdateDatabase(metadataContext, new TableMapper(xmlReader));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 
-NifMapper nifMapper = new NifMapper(modelReaders);
-UpdateDatabase(metadataContext, nifMapper);
+NifParserHelper.ParseNif(modelReaders);
 
-UpdateDatabase(metadataContext, new NXSMeshMapper(nifMapper.nxsMeshes));
+UpdateDatabase(metadataContext, new NifMapper());
+UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
 UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));

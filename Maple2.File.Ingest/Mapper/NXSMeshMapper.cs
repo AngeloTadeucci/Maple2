@@ -1,12 +1,11 @@
-﻿using Maple2.Model.Metadata;
+﻿using Maple2.File.Ingest.Helpers;
+using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
 
-public class NXSMeshMapper(List<NXSMeshMetadata> nxsMeshes) : TypeMapper<NXSMeshMetadata> {
-    private readonly List<NXSMeshMetadata> nxsMeshes = nxsMeshes;
-
-    protected override IEnumerable<NXSMeshMetadata> Map() {
-        foreach (NXSMeshMetadata mesh in nxsMeshes) {
+public class NxsMeshMapper : TypeMapper<NxsMeshMetadata> {
+    protected override IEnumerable<NxsMeshMetadata> Map() {
+        foreach (NxsMeshMetadata mesh in NifParserHelper.nxsMeshes) {
             yield return mesh;
         }
     }

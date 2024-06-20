@@ -27,7 +27,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<ExportedUgcMapMetadata> ExportedUgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
     public DbSet<NifMetadata> NifMetadata { get; set; } = null!;
-    public DbSet<NXSMeshMetadata> NXSMeshMetadata { get; set; } = null!;
+    public DbSet<NxsMeshMetadata> NXSMeshMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -51,7 +51,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<ExportedUgcMapMetadata>(ConfigureExportedUgcMapMetadata);
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
         modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
-        modelBuilder.Entity<NXSMeshMetadata>(ConfigureNXSMeshMetadata);
+        modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -226,7 +226,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(nif => nif.Blocks).HasJsonConversion();
     }
 
-    private static void ConfigureNXSMeshMetadata(EntityTypeBuilder<NXSMeshMetadata> builder) {
+    private static void ConfigureNXSMeshMetadata(EntityTypeBuilder<NxsMeshMetadata> builder) {
         builder.ToTable("nxs-mesh");
         builder.Property(mesh => mesh.Index).ValueGeneratedNever();
         builder.HasKey(mesh => mesh.Index);

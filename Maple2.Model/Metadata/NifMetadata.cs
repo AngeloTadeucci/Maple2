@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text.Json.Serialization;
+using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
 
@@ -59,20 +60,7 @@ public record NifMetadata(
  ) : NifBlockMetadata(Index, Name);
 }
 
-public record NXSMeshMetadata(
+public record NxsMeshMetadata(
     int Index,
     byte[] Data
 );
-
-public enum NxShapeType : uint {
-    Plane,
-    Sphere,
-    Box,
-    Capsule,
-    Wheel,
-    Convex,
-    Mesh,
-    HeightField,
-    RawMesh,
-    Compound
-}
