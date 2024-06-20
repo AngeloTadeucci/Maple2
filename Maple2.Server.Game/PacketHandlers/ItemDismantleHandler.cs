@@ -7,7 +7,6 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using System.Diagnostics;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -182,14 +181,14 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                 if (item.IsLocked) {
                     continue;
                 }
-
-                switch (item.Inventory.ToString()) {
-                    case "Gear" or "Gemstone":
+                
+                switch (type) {
+                    case InventoryType.Gear or InventoryType.Gemstone:
                         if (!item.Metadata.Limit.EnableBreak) {
                             continue;
                         }
                         break;
-                    case "Outfit":
+                    case InventoryType.Outfit:
                         if (item.GachaDismantleId == 0) {
                             continue;
                         }
