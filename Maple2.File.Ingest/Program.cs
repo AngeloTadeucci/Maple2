@@ -3,8 +3,10 @@ using System.Globalization;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
+using Maple2.File.Ingest.Helpers;
 using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
+using Maple2.File.IO.Nif;
 using Maple2.File.Parser.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
@@ -80,6 +82,19 @@ Filter.Load(xmlReader, locale, env);
 
 // new TriggerGenerator(xmlReader).Generate();
 
+var modelReaders = new List<PrefixedM2dReader> {
+    new("/library/", Path.Combine(ms2Root, "Resource/Library.m2d")),
+    new("/model/map/", Path.Combine(ms2Root, "Resource/Model/Map.m2d")),
+    new("/model/effect/", Path.Combine(ms2Root, "Resource/Model/Effect.m2d")),
+    new("/model/camera/", Path.Combine(ms2Root, "Resource/Model/Camera.m2d")),
+    new("/model/tool/", Path.Combine(ms2Root, "Resource/Model/Tool.m2d")),
+    new("/model/item/", Path.Combine(ms2Root, "Resource/Model/Item.m2d")),
+    new("/model/npc/", Path.Combine(ms2Root, "Resource/Model/Npc.m2d")),
+    new("/model/path/", Path.Combine(ms2Root, "Resource/Model/Path.m2d")),
+    new("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
+    new("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
+};
+
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
 UpdateDatabase(metadataContext, new ItemMapper(xmlReader));
@@ -94,6 +109,11 @@ UpdateDatabase(metadataContext, new ScriptMapper(xmlReader));
 UpdateDatabase(metadataContext, new SkillMapper(xmlReader));
 UpdateDatabase(metadataContext, new TableMapper(xmlReader));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
+
+NifParserHelper.ParseNif(modelReaders);
+
+UpdateDatabase(metadataContext, new NifMapper());
+UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
 UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));
