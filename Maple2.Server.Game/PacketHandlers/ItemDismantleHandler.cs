@@ -7,6 +7,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using System.Diagnostics;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -173,12 +174,26 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
 
             while (i < items.Count) {
                 Item item = items[i++];
+                                
                 if (session.DismantleStaging.Any(existing => existing.Uid == item.Uid)) {
                     continue;
                 }
 
-                if (item.GachaDismantleId == 0 || item.IsLocked) {
+                if (item.IsLocked) {
                     continue;
+                }
+
+                switch (item.Inventory.ToString()) {
+                    case "Gear" or "Gemstone":
+                        if (!item.Metadata.Limit.EnableBreak) {
+                            continue;
+                        }
+                        break;
+                    case "Outfit":
+                        if (item.GachaDismantleId == 0) {
+                            continue;
+                        }
+                        break;
                 }
 
                 session.DismantleStaging[slot] = (item.Uid, item.Amount);
