@@ -173,7 +173,6 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
 
             while (i < items.Count) {
                 Item item = items[i++];
-                                
                 if (session.DismantleStaging.Any(existing => existing.Uid == item.Uid)) {
                     continue;
                 }
@@ -181,7 +180,7 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                 if (item.IsLocked) {
                     continue;
                 }
-                
+
                 switch (type) {
                     case InventoryType.Gear or InventoryType.Gemstone:
                         if (!item.Metadata.Limit.EnableBreak) {
