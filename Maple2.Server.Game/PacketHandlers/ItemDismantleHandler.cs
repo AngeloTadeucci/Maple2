@@ -177,6 +177,10 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                     continue;
                 }
 
+                if (item.GachaDismantleId == 0 || item.IsLocked) {
+                    continue;
+                }
+
                 session.DismantleStaging[slot] = (item.Uid, item.Amount);
                 session.Send(ItemDismantlePacket.Stage(item.Uid, slot, item.Amount));
                 break;
