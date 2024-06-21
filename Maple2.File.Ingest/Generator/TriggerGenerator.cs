@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
+using M2dXmlGenerator;
 using Maple2.File.Ingest.Utils;
 using Maple2.File.Ingest.Utils.Trigger;
 using Maple2.File.IO;
@@ -88,6 +89,9 @@ public class TriggerGenerator {
                 // Copy node list so that we can remove duplicate states
                 List<XmlNode> stateNodes = stateNodeList.Cast<XmlNode>().ToList();
                 foreach (XmlNode stateNode in stateNodes.ToList()) {
+                    if (stateNode.Attributes["feature"] != null && !FeatureLocaleFilter.FeatureEnabled(stateNode.Attributes["feature"].Value)) {
+                        continue;
+                    }
                     string name = stateNode.Attributes["name"].Value;
                     if (name == "DungeonStart") continue; // Special case
 
@@ -101,6 +105,9 @@ public class TriggerGenerator {
                 }
 
                 foreach (XmlNode stateNode in stateNodes) {
+                    if (stateNode.Attributes["feature"] != null && !FeatureLocaleFilter.FeatureEnabled(stateNode.Attributes["feature"].Value)) {
+                        continue;
+                    }
                     TriggerScript.State scriptState = ParseState(stateNode, stateIndex, entry.Name);
 
                     IList<string> comments = SiblingComments(stateNode);
