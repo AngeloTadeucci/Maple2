@@ -117,7 +117,7 @@ public partial class MovementState {
         //    actor.Transform.LookTo(Vector3.Normalize(actor.BattleState.Target.Position - actor.Position));
         //}
 
-        SetState(ActorState.PcSkill, ActorSubState.Skill_Default);
+        SetState(ActorState.PcSkill);
 
         stateSequence = sequence;
 

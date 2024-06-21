@@ -45,20 +45,9 @@ public partial class MovementState {
             emoteLimitTick = actor.Field.FieldTick + (long) duration;
         }
 
-        ActorSubState subState = ActorSubState.EmotionIdle_Idle;
-
-        if (isIdle) {
-            subState = sequence switch {
-                "Bore_A" => ActorSubState.EmotionIdle_Bore_A,
-                "Bore_B" => ActorSubState.EmotionIdle_Bore_B,
-                "Bore_C" => ActorSubState.EmotionIdle_Bore_C,
-                _ => ActorSubState.EmotionIdle_Idle
-            };
-        }
-
         emoteActionTask = task;
         stateSequence = actor.AnimationState.PlayingSequence;
 
-        SetState(isIdle ? ActorState.Emotion : ActorState.EmotionIdle, subState);
+        SetState(isIdle ? ActorState.Emotion : ActorState.EmotionIdle);
     }
 }

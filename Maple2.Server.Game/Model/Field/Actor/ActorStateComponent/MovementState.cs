@@ -13,7 +13,6 @@ public partial class MovementState {
     private readonly FieldNpc actor;
 
     public ActorState State { get; private set; }
-    public ActorSubState SubState { get; private set; }
     public float Speed { get; private set; }
     public Vector3 Velocity { get; private set; }
     private AnimationSequence? stateSequence;
@@ -21,7 +20,6 @@ public partial class MovementState {
     private float lastSpeed;
     private Vector3 lastVelocity;
     private ActorState lastState;
-    private ActorSubState lastSubstate;
     private Vector3 lastPosition;
     private Vector3 lastFacing;
     private SkillRecord? lastCastSkill = null;
@@ -41,11 +39,10 @@ public partial class MovementState {
         this.actor = actor;
 
         State = ActorState.None;
-        SubState = ActorSubState.None;
         hasIdleA = actor.AnimationState.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
         aniSpeed = actor.Value.Metadata.Model.AniSpeed;
 
-        SetState(ActorState.Spawn, ActorSubState.Idle_Idle);
+        SetState(ActorState.Spawn);
 
         debugNpc = InitDebugMarker(30000071, 2);
         debugTarget = InitDebugMarker(50300014, 6);
@@ -123,13 +120,12 @@ public partial class MovementState {
         return new NpcCleanupPatrolDataTask(actor.TaskState, this);
     }
 
-    private void SetState(ActorState state, ActorSubState subState) {
-        if (State == ActorState.Dead) {
+    private void SetState(ActorState state) {
+        if (actor.IsDead) {
             return;
         }
 
         State = state;
-        SubState = subState;
     }
 
     private void Idle(string sequence = "") {
@@ -140,7 +136,7 @@ public partial class MovementState {
             sequence = setAttackIdle ? "Attack_Idle_A" : "Idle_A";
         }
 
-        SetState(ActorState.Idle, ActorSubState.Idle_Idle);
+        SetState(ActorState.Idle);
 
         if (hasIdleA) {
             if (actor.AnimationState.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
@@ -152,7 +148,7 @@ public partial class MovementState {
     }
 
     public void Died() {
-        SetState(ActorState.Dead, ActorSubState.None);
+        SetState(ActorState.Dead);
 
         UpdateControl();
 
@@ -200,7 +196,7 @@ public partial class MovementState {
         Velocity = new Vector3(0, 0, 0);
 
         if (actor.Stats.Values[BasicAttribute.Health].Current == 0) {
-            SetState(ActorState.Dead, ActorSubState.None);
+            SetState(ActorState.Dead);
 
             return;
         }
@@ -217,7 +213,7 @@ public partial class MovementState {
                 break;
             case ActorState.Spawn:
                 if (actor.AnimationState.TryPlaySequence("Regen_A", aniSpeed, AnimationType.Misc)) {
-                    SetState(ActorState.Regen, ActorSubState.Idle_Idle);
+                    SetState(ActorState.Regen);
 
                     stateSequence = actor.AnimationState.PlayingSequence;
 
@@ -254,7 +250,6 @@ public partial class MovementState {
         actor.SendControl |= Speed != lastSpeed;
         actor.SendControl |= Velocity != lastVelocity;
         actor.SendControl |= State != lastState;
-        actor.SendControl |= SubState != lastSubstate;
         actor.SendControl |= actor.Position != lastPosition;
         actor.SendControl |= actor.Transform.FrontAxis != lastFacing;
         actor.SendControl |= castSkill != lastCastSkill;
@@ -262,7 +257,6 @@ public partial class MovementState {
         lastSpeed = Speed;
         lastVelocity = Velocity;
         lastState = State;
-        lastSubstate = SubState;
         lastPosition = actor.Position;
         lastFacing = actor.Transform.FrontAxis;
         lastCastSkill = castSkill;
