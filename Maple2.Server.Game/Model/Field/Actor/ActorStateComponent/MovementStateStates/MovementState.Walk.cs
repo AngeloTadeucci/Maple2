@@ -50,7 +50,7 @@ public partial class MovementState {
             walkSequence = stateSequence;
             walkTask = task;
 
-            SetState(ActorState.Walk, isWalking ? ActorSubState.Walk_Walking : ActorSubState.Walk_Running);
+            SetState(ActorState.Walk);
         } else {
             task.Cancel();
 
