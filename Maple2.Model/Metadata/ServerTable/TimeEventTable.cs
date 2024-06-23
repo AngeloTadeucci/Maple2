@@ -3,9 +3,7 @@ using System.Collections.Generic;
 
 namespace Maple2.Model.Metadata;
 
-public record TimeEventTable(IReadOnlyDictionary<int, GlobalPortalMetadata> GlobalPortal) : ServerTable {
-
-}
+public record TimeEventTable(IReadOnlyDictionary<int, GlobalPortalMetadata> GlobalPortal) : ServerTable;
 
 public record GlobalPortalMetadata(
     int Id,
