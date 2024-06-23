@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Reflection;
 using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;
@@ -10,6 +11,7 @@ using Maple2.Model.Metadata;
 using ExpType = Maple2.Model.Enum.ExpType;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
+using TimeEventType = Maple2.File.Parser.Enum.TimeEventType;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -30,6 +32,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
+        yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
 
     }
 
@@ -647,6 +650,54 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             AdventureExpType.Exp_KillMonsterElite => ExpType.monsterElite,
             _ => ExpType.none,
         };
+    }
+
+    private TimeEventTable ParseTimeEventTable() {
+        var results = new Dictionary<int, GlobalPortalMetadata>();
+        foreach ((int id, TimeEventData data) in parser.ParseTimeEventData()) {
+            // TODO: Handle other event types
+            if (data.type == TimeEventType.GlobalEvent) {
+                var entries = new GlobalPortalMetadata.Field[3]; // UI only supports 3 fields
+                entries[0] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName1,
+                    MapId: data.eventField1.Length == 0 ? 0 : data.eventField1[0],
+                    PortalId: data.eventField1.Length == 0 ? 0 : data.eventField1[1]);
+                entries[1] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName2,
+                    MapId: data.eventField2.Length == 0 ? 0 : data.eventField2[0],
+                    PortalId: data.eventField2.Length == 0 ? 0 : data.eventField2[1]);
+                entries[2] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName3,
+                    MapId: data.eventField3.Length == 0 ? 0 : data.eventField3[0],
+                    PortalId: data.eventField3.Length == 0 ? 0 : data.eventField3[1]);
+                int[] startTimeArray = ParseTimeToArray(data.startTime);
+                int[] endTimeArray = ParseTimeToArray(data.endTime);
+                int[] cycleArray = ParseTimeToArray(data.cycleTime);
+                int[] randomArray = ParseTimeToArray(data.randomTime);
+                int[] lifeArray = ParseTimeToArray(data.lifeTime);
+                results.Add(id, new GlobalPortalMetadata(
+                    Id: id,
+                    Probability:data.prob,
+                    StartTime: new DateTime(startTimeArray[0], startTimeArray[1], startTimeArray[2], startTimeArray[3], startTimeArray[4], startTimeArray[5]),
+                    EndTime: new DateTime(endTimeArray[0], endTimeArray[1], endTimeArray[2], endTimeArray[3], endTimeArray[4], endTimeArray[5]),
+                    CycleTime: new TimeSpan(cycleArray[2], cycleArray[3], cycleArray[4], cycleArray[5]),
+                    RandomTime: new TimeSpan(randomArray[2], randomArray[3], randomArray[4], randomArray[5]),
+                    LifeTime: new TimeSpan(lifeArray[2], lifeArray[3], lifeArray[4], lifeArray[5]),
+                    PopupMessage: data.popupMessage,
+                    SoundId: data.soundID,
+                    Entries: entries));
+            }
+        }
+        return new TimeEventTable(results);
+
+        int[] ParseTimeToArray(string time) {
+            string[] timeArray = time.Split('-');
+            int[] timeInt = new int[timeArray.Length];
+            for (int i = 0; i < timeArray.Length; i++) {
+                timeInt[i] = int.Parse(timeArray[i]);
+            }
+            return timeInt;
+        }
     }
 }
 

@@ -13,6 +13,7 @@ public record Portal(
     Vector3 Rotation,
     Vector3 Dimension,
     float FrontOffset,
+    int RandomRadius,
     bool Visible,
     bool MinimapVisible,
     bool Enable

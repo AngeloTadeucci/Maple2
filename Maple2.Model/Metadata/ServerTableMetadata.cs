@@ -34,5 +34,6 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(UserStatTable), typeDiscriminator: "userStat*")]
 [JsonDerivedType(typeof(IndividualDropItemTable), typeDiscriminator: "individualItemDrop")]
 [JsonDerivedType(typeof(PrestigeExpTable), typeDiscriminator: "adventureExpTable")]
+[JsonDerivedType(typeof(TimeEventTable), typeDiscriminator: "timeEvent")]
 
 public abstract record ServerTable;

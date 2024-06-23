@@ -30,6 +30,8 @@ service Channel {
   // Manage Club.
   rpc Club(ClubRequest) returns (ClubResponse);
   rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
+  // Time Events
+  rpc TimeEvent(TimeEventRequest) returns (TimeEventResponse);
 }
 
 message GuildRequest {
@@ -248,4 +250,40 @@ message ClubRequest {
 
 message ClubResponse {
   int32 error = 1;
+}
+
+message TimeEventRequest {
+  message AnnounceGlobalPortal {
+    int32 event_id = 1;
+    int32 metadata_id = 2;
+  }
+
+  message CloseGlobalPortal {
+    int32 event_id = 1;
+  }
+
+  message GetField {
+    int32 map_id = 1;
+    int32 instance_id = 2;
+  }
+
+  oneof TimeEvent {
+    AnnounceGlobalPortal announce_global_portal = 1;
+    CloseGlobalPortal close_global_portal = 2;
+    GetField get_field = 3;
+  }
+}
+
+message TimeEventResponse {
+  int32 error = 1;
+  oneof Info {
+    FieldInfo field = 2;
+  }
+}
+
+message FieldInfo {
+  int32 map_id = 1;
+  int32 instance_id = 2;
+  int64 owner_id = 3;
+  repeated int64 player_ids = 4;
 }
