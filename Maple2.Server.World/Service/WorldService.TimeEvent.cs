@@ -29,12 +29,14 @@ public partial class WorldService {
 
         manager.Join(fieldMetadata.MapId, portal.Index);
         int instanceId = manager.InstanceIds[portal.Index];
-        return new TimeEventResponse { GlobalPortalInfo = new GlobalPortalInfo {
-            Channel = manager.Channel,
-            InstanceId = instanceId,
-            MapId = fieldMetadata.MapId,
-            PortalId = fieldMetadata.PortalId,
-        }};
+        return new TimeEventResponse {
+            GlobalPortalInfo = new GlobalPortalInfo {
+                Channel = manager.Channel,
+                InstanceId = instanceId,
+                MapId = fieldMetadata.MapId,
+                PortalId = fieldMetadata.PortalId,
+            }
+        };
     }
 
     private TimeEventResponse GetGlobalPortal(TimeEventRequest.Types.GetGlobalPortal portal) {
@@ -42,9 +44,11 @@ public partial class WorldService {
             return new TimeEventResponse();
         }
 
-        return new TimeEventResponse { GlobalPortalInfo = new GlobalPortalInfo {
-            MetadataId = manager.Portal.MetadataId,
-            EventId = manager.Portal.Id,
-        }};
+        return new TimeEventResponse {
+            GlobalPortalInfo = new GlobalPortalInfo {
+                MetadataId = manager.Portal.MetadataId,
+                EventId = manager.Portal.Id,
+            }
+        };
     }
 }

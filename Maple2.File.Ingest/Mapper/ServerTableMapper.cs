@@ -677,7 +677,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 int[] lifeArray = ParseTimeToArray(data.lifeTime);
                 results.Add(id, new GlobalPortalMetadata(
                     Id: id,
-                    Probability:data.prob,
+                    Probability: data.prob,
                     StartTime: new DateTime(startTimeArray[0], startTimeArray[1], startTimeArray[2], startTimeArray[3], startTimeArray[4], startTimeArray[5]),
                     EndTime: new DateTime(endTimeArray[0], endTimeArray[1], endTimeArray[2], endTimeArray[3], endTimeArray[4], endTimeArray[5]),
                     CycleTime: new TimeSpan(cycleArray[2], cycleArray[3], cycleArray[4], cycleArray[5]),

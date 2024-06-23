@@ -64,7 +64,7 @@ public partial class WorldService {
         }
 
         tokenCache.Remove(request.Token);
-        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId, Channel = data.Channel, MapId = data.MapId, PortalId = data.PortalId, OwnerId = data.OwnerId, InstanceId = data.InstanceId});
+        return Task.FromResult(new MigrateInResponse { CharacterId = data.CharacterId, Channel = data.Channel, MapId = data.MapId, PortalId = data.PortalId, OwnerId = data.OwnerId, InstanceId = data.InstanceId });
     }
 
     // Generates a 64-bit token that does not exist in cache.
