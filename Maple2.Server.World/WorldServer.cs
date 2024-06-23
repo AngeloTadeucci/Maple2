@@ -36,7 +36,7 @@ public class WorldServer {
     private void Loop() {
         while (true) {
             scheduler.InvokeAll();
-            Thread.Sleep(15);
+            Thread.Sleep(TimeSpan.FromMinutes(1));
         }
     }
 

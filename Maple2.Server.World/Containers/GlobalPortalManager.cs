@@ -42,7 +42,6 @@ public class GlobalPortalManager : IDisposable {
             if (response.Field == null) {
                 continue;
             }
-            Console.WriteLine($"Created field {response.Field.MapId} {response.Field.InstanceId} for global portal {Portal.Id}");
             InstanceIds[i] = response.Field.InstanceId;
         }
 

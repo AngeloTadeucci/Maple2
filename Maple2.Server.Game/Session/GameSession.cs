@@ -168,7 +168,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, portalId, ownerId, instanceId)) {
+        if (!PrepareField(fieldId, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
