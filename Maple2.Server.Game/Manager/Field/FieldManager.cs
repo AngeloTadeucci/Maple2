@@ -191,7 +191,7 @@ public sealed partial class FieldManager : IDisposable {
     private void Update() {
         while (!cancel.IsCancellationRequested) {
             if (Players.IsEmpty) {
-                Thread.Sleep(1000);
+                Thread.Sleep(15);
                 continue;
             }
 
