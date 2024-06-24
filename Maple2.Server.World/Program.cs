@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.IO;
 using System.Net;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -48,10 +47,9 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<WorldServer>();
 
+
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
-    autofac.RegisterType<WorldServer>()
-        .SingleInstance();
     // Database
     autofac.RegisterModule<GameDbModule>();
     autofac.RegisterModule<DataDbModule>();
@@ -71,6 +69,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<ClubLookup>()
         .SingleInstance();
     autofac.RegisterType<BlackMarketLookup>()
+        .SingleInstance();
+    autofac.RegisterType<GlobalPortalLookup>()
         .SingleInstance();
 });
 

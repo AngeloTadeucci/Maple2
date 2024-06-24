@@ -14,6 +14,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<UserStatTable> userStatTable;
     private readonly Lazy<IndividualDropItemTable> individualDropItemTable;
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
+    private readonly Lazy<TimeEventTable> timeEventTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -24,6 +25,7 @@ public class ServerTableMetadataStorage {
     public UserStatTable UserStatTable => userStatTable.Value;
     public IndividualDropItemTable IndividualDropItemTable => individualDropItemTable.Value;
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
+    public TimeEventTable TimeEventTable => timeEventTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -35,6 +37,7 @@ public class ServerTableMetadataStorage {
         userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
         individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
+        timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {

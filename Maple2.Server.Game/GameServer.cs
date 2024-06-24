@@ -11,7 +11,6 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game;
@@ -65,6 +64,12 @@ public class GameServer : Server<GameSession> {
         }
     }
 
+    public IEnumerable<GameSession> GetSessions() {
+        lock (mutex) {
+            return sessions.Values;
+        }
+    }
+
     protected override void AddSession(GameSession session) {
         lock (mutex) {
             connectingSessions.Add(session);
@@ -72,6 +77,10 @@ public class GameServer : Server<GameSession> {
 
         Logger.Information("Game client connecting: {Session}", session);
         session.Start();
+    }
+
+    public FieldManager? GetField(int mapId, int instanceId = 0) {
+        return fieldFactory.Get(mapId, instanceId);
     }
 
     public GameEvent? FindEvent<T>() where T : GameEventInfo {

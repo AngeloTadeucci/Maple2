@@ -61,6 +61,9 @@ public partial class FieldManager {
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {
             fieldPlayer.Position = portal.Position.Offset(portal.FrontOffset, portal.Rotation);
+            if (portal.RandomRadius > 0) {
+                fieldPlayer.Position += new Vector3(Random.Shared.Next(-portal.RandomRadius, portal.RandomRadius), Random.Shared.Next(-portal.RandomRadius, portal.RandomRadius), 0);
+            }
             fieldPlayer.Rotation = portal.Rotation;
         }
 
@@ -432,7 +435,7 @@ public partial class FieldManager {
         }
         bonusMap.SetRoomTimer(RoomTimerType.Clock, 90000);
         var portal = new Portal(NextLocalId(), bonusMapMetadata.Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
-            new Vector3(200, 200, 250), 0, true, false, true);
+            new Vector3(200, 200, 250), 0, 0, true, false, true);
         FieldPortal fieldPortal = SpawnPortal(portal, bonusMap.InstanceId);
         fieldPortal.Model = Metadata.Property.Continent switch {
             Continent.VictoriaIsland => "Eff_event_portal_A01",
@@ -476,7 +479,7 @@ public partial class FieldManager {
     }
 
     public FieldPortal SpawnEventPortal(FieldPlayer player, int fieldId, int portalDurationTick, string password) {
-        var portal = new Portal(NextLocalId(), fieldId, -1, PortalType.Event, PortalActionType.Interact, player.Position, player.Rotation, new Vector3(200, 200, 250), 0, true, false, true);
+        var portal = new Portal(NextLocalId(), fieldId, -1, PortalType.Event, PortalActionType.Interact, player.Position, player.Rotation, new Vector3(200, 200, 250), 0, 0, true, false, true);
         FieldPortal fieldPortal = SpawnPortal(portal);
         fieldPortal.Model = "Eff_Com_Portal_E";
         fieldPortal.Password = password;

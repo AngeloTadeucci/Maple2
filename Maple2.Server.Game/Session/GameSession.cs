@@ -115,7 +115,7 @@ public sealed partial class GameSession : Core.Network.Session {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel, int mapId, long ownerId) {
+    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel, int mapId, int portalId, long ownerId, int instanceId) {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
@@ -168,7 +168,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, ownerId: ownerId)) {
+        if (!PrepareField(fieldId, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
@@ -306,7 +306,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
         // If entering home without instanceKey set, default to own home.
         if (mapId == Player.Value.Home.Indoor.MapId && ownerId == 0) {
             ownerId = AccountId;
@@ -314,7 +314,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         FieldManager? newField = mapId == Constant.DefaultHomeMapId ?
             FieldFactory.Get(Constant.DefaultHomeMapId, ownerId) :
-            FieldFactory.Get(mapId);
+            FieldFactory.Get(mapId, instanceId);
         if (newField == null) {
             return false;
         }
@@ -375,6 +375,17 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadStatAttributes();
         Config.LoadSkillPoints();
         Player.Buffs.LoadFieldBuffs();
+
+        TimeEventResponse globalEventResponse = World.TimeEvent(new TimeEventRequest {
+            GetGlobalPortal = new TimeEventRequest.Types.GetGlobalPortal(),
+        });
+
+        if (globalEventResponse.Error != 0 && globalEventResponse.GlobalPortalInfo != null) {
+            if (ServerTableMetadata.TimeEventTable.GlobalPortal.TryGetValue(globalEventResponse.GlobalPortalInfo.MetadataId, out GlobalPortalMetadata? portal)) {
+                Send(GlobalPortalPacket.Announce(portal, globalEventResponse.GlobalPortalInfo.EventId));
+            }
+        }
+
         Send(PremiumCubPacket.Activate(Player.ObjectId, Player.Value.Account.PremiumTime));
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
         ConditionUpdate(ConditionType.map, codeLong: Player.Value.Character.MapId);

@@ -70,7 +70,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 case IPortal portal:
                     if (!FeatureEnabled(portal.feature) || !HasLocale(portal.locale)) continue;
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable)
+                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.RandomDestRadius, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable)
                     };
                     continue;
                 case ISpawnPoint spawn:

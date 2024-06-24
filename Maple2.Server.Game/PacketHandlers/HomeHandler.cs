@@ -64,7 +64,7 @@ public class HomeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Maple2.Model.Game.Home home = session.Player.Value.Home;
+        Home home = session.Player.Value.Home;
         int homeMapId = home.Indoor.MapId;
         if (session.Field.MapId == homeMapId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
