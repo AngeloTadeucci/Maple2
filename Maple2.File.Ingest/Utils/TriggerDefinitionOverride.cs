@@ -589,9 +589,42 @@ internal class TriggerDefinitionOverride {
             Names = BuildNameOverride(("arg1", "triggerIds"), ("arg2", "visible"), ("arg3", "startDelay"), ("arg4", "interval")),
             Types = BuildTypeOverride(("triggerIds", IntList, Required), ("visible", Bool, null), ("startDelay", Int, null), ("interval", Int, null)),
         };
-        ActionOverride["set_event_ui"] = new TriggerDefinitionOverride("set_event_ui") {
-            Names = BuildNameOverride(("arg1", "type")), //), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
-            Types = BuildTypeOverride(("type", Int, Required)), //, ("duration", Int, null), ("boxIds", Str, null)) // Note: boxIds has formats: {1,2,3|1-3,!1}
+        ActionOverride["set_event_ui"] = new TriggerDefinitionOverride(string.Empty) {
+            FunctionSplitter = "arg1",
+            FunctionLookup = new Dictionary<string, TriggerDefinitionOverride> {
+                ["0"] = new ("set_event_ui_round", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg2", "rounds"), ("arg4", "vOffset")),
+                    Types = BuildTypeOverride(("rounds", IntList, Required), ("arg3", Int, null), ("vOffset", Int, null)),
+                },
+                ["1"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+                ["2"] = new ("set_event_ui_countdown", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg2", "script"), ("arg3", "roundCountdown"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("script", Str, null), ("roundCountdown", IntList, Required), ("boxIds", StrList, null)),
+                },
+                ["3"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+                ["4"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+                ["5"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+                ["6"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+                ["7"] = new ("set_event_ui_script", splitter: "arg1") {
+                    Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
+                    Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
+                },
+            },
         };
         ActionOverride["set_gravity"] = new TriggerDefinitionOverride("set_gravity") {
             Names = BuildNameOverride(),
@@ -642,8 +675,8 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("id", Int, null), ("enable", Bool, null)),
         };
         ActionOverride["set_pc_emotion_loop"] = new TriggerDefinitionOverride("set_pc_emotion_loop") {
-            Names = BuildNameOverride(("arg1", "sequenceName"), ("arg2", "duration")),
-            Types = BuildTypeOverride(("sequenceName", Str, Required), ("duration", Float, null), ("arg3", Bool, null)),
+            Names = BuildNameOverride(("arg1", "sequenceName"), ("arg2", "duration"), ("arg3", "loop")),
+            Types = BuildTypeOverride(("sequenceName", Str, Required), ("duration", Float, null), ("loop", Bool, null)),
         };
         ActionOverride["set_pc_emotion_sequence"] = new TriggerDefinitionOverride("set_pc_emotion_sequence") {
             Names = BuildNameOverride(("arg1", "sequenceNames")),
@@ -699,15 +732,15 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["set_state"] = new TriggerDefinitionOverride("set_state") {
             Names = BuildNameOverride(("arg1", "id"), ("arg2", "states"), ("arg3", "randomize")),
-            Types = BuildTypeOverride(("id", Int, Required), ("states", StateList, null), ("randomize", Bool, null)),
+            Types = BuildTypeOverride(("id", Int, Required), ("states", StrList, Required), ("randomize", Bool, null)),
         };
         ActionOverride["set_time_scale"] = new TriggerDefinitionOverride("set_time_scale") {
             Names = BuildNameOverride(),
             Types = BuildTypeOverride(("enable", Bool, null), ("startScale", Float, null), ("endScale", Float, null), ("duration", Float, null), ("interpolator", Int, null)),
         };
         ActionOverride["set_timer"] = new TriggerDefinitionOverride("set_timer") {
-            Names = BuildNameOverride(("arg1", "timerId"), ("arg2", "seconds"), ("arg3", "startDelay"), ("ara3", "startDelay"), ("arg4", "interval"), ("arg5", "vOffset"), ("arg6", "type")),
-            Types = BuildTypeOverride(("seconds", Int, null), ("startDelay", Int, null), ("interval", Int, null), ("vOffset", Int, null)),
+            Names = BuildNameOverride(("arg1", "timerId"), ("arg2", "seconds"), ("arg3", "autoRemove"), ("ara3", "autoRemove"), ("arg4", "display"), ("arg5", "vOffset"), ("arg6", "type")),
+            Types = BuildTypeOverride(("seconds", Int, null), ("autoRemove", Bool, null), ("display", Bool, null), ("vOffset", Int, null)),
         };
         ActionOverride["set_user_value"] = new TriggerDefinitionOverride("set_user_value") {
             Names = BuildNameOverride(("triggerID", "triggerId")),

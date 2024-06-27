@@ -138,9 +138,9 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetPcEmotionLoop(string sequenceName, float duration, bool arg3) {
-        DebugLog("[SetPcEmotionLoop] sequenceName:{SequenceName}, duration:{Duration}, arg3:{Arg3}", sequenceName, duration, arg3);
-        Broadcast(TriggerPacket.UiEmotionLoop(sequenceName, (int) duration, arg3));
+    public void SetPcEmotionLoop(string sequenceName, float duration, bool loop) {
+        DebugLog("[SetPcEmotionLoop] sequenceName:{SequenceName}, duration:{Duration}, arg3:{Arg3}", sequenceName, duration, loop);
+        Broadcast(TriggerPacket.UiEmotionLoop(sequenceName, (int) duration, loop));
     }
 
     public void SetPcEmotionSequence(string[] sequenceNames) {
@@ -193,8 +193,13 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetState(int triggerId, dynamic[] states, bool randomize) {
+    public void SetState(int triggerId, string[] states, bool randomize) {
         ErrorLog("[SetState] triggerId:{TriggerId}, states:{States}, randomize:{Randomize}", triggerId, string.Join(", ", states), randomize);
+        if (randomize) {
+            Random.Shared.Shuffle(states);
+        }
+
+        Field.States[triggerId] = new List<string>(states);
     }
 
     #region Conditions

@@ -13,6 +13,7 @@ public partial class FieldManager {
     public readonly Dictionary<string, TickTimer> Timers = new();
     public readonly Dictionary<string, int> UserValues = new();
     public readonly Dictionary<string, Widget> Widgets = new();
+    public readonly Dictionary<int, List<string>> States = new();
 
     public FieldTrigger? AddTrigger(TriggerModel trigger) {
         try {
