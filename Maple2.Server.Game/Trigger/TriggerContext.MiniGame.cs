@@ -19,11 +19,7 @@ public partial class TriggerContext {
 
     public void StartMiniGame(int boxId, int round, string type, bool isShowResultUi) { }
 
-    public void StartMiniGameRound(int boxId, int round) {
-        foreach (FieldPlayer player in PlayersInBox(boxId)) {
-
-        }
-    }
+    public void StartMiniGameRound(int boxId, int round) { }
 
     public void UnsetMiniGameAreaForHack() { }
 
@@ -51,7 +47,6 @@ public partial class TriggerContext {
 
         // They only have OnEnter() method
         triggerState?.OnEnter();
-        Console.WriteLine("UseState: " + state);
     }
 
     #region CathyMart

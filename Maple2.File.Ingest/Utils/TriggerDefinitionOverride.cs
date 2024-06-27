@@ -592,35 +592,35 @@ internal class TriggerDefinitionOverride {
         ActionOverride["set_event_ui"] = new TriggerDefinitionOverride(string.Empty) {
             FunctionSplitter = "arg1",
             FunctionLookup = new Dictionary<string, TriggerDefinitionOverride> {
-                ["0"] = new ("set_event_ui_round", splitter: "arg1") {
+                ["0"] = new("set_event_ui_round", splitter: "arg1") {
                     Names = BuildNameOverride(("arg2", "rounds"), ("arg4", "vOffset")),
                     Types = BuildTypeOverride(("rounds", IntList, Required), ("arg3", Int, null), ("vOffset", Int, null)),
                 },
-                ["1"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["1"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
-                ["2"] = new ("set_event_ui_countdown", splitter: "arg1") {
+                ["2"] = new("set_event_ui_countdown", splitter: "arg1") {
                     Names = BuildNameOverride(("arg2", "script"), ("arg3", "roundCountdown"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("script", Str, null), ("roundCountdown", IntList, Required), ("boxIds", StrList, null)),
                 },
-                ["3"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["3"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
-                ["4"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["4"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
-                ["5"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["5"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
-                ["6"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["6"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
-                ["7"] = new ("set_event_ui_script", splitter: "arg1") {
+                ["7"] = new("set_event_ui_script", splitter: "arg1") {
                     Names = BuildNameOverride(("arg1", "type"), ("arg2", "script"), ("arg3", "duration"), ("arg4", "boxIds")),
                     Types = BuildTypeOverride(("type", EnumBannerType, Required), ("script", Str, null), ("duration", Int, Required), ("boxIds", StrList, null)),
                 },
