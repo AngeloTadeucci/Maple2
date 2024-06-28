@@ -5,6 +5,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -193,13 +194,13 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetState(int triggerId, string[] states, bool randomize) {
+    public void SetState(int triggerId, object[] states, bool randomize) {
         ErrorLog("[SetState] triggerId:{TriggerId}, states:{States}, randomize:{Randomize}", triggerId, string.Join(", ", states), randomize);
         if (randomize) {
             Random.Shared.Shuffle(states);
         }
 
-        Field.States[triggerId] = new List<string>(states);
+        Field.States[triggerId] = new List<object>(states);
     }
 
     #region Conditions

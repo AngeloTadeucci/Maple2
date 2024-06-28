@@ -233,10 +233,10 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, int fade, string desc) {
+    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, float fade, string desc) {
         DebugLog("[SetMesh] triggerIds:{Ids}, visible:{Visible}, delay:{Delay}, interval:{Interval}, scale:{Scale}",
             string.Join(", ", triggerIds), visible, delay, interval, fade);
-        UpdateMesh(triggerIds, visible, delay, interval, fade);
+        UpdateMesh(triggerIds, visible, delay, interval, (int) fade);
     }
 
     // examples: arg3=200, arg4=3

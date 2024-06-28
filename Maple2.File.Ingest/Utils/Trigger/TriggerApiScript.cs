@@ -13,7 +13,7 @@ internal class TriggerApiScript {
         writer.WriteLine("clr.AddReference(\"Maple2.Server.Game\")");
         writer.WriteBlankLine();
         writer.WriteLine("from typing import List");
-        writer.WriteLine("from System import Array, Int32, String");
+        writer.WriteLine("from System import Array, Int32, String, Object");
         writer.WriteLine("from System.Numerics import Vector3");
         writer.WriteLine("from Maple2.Server.Game.Scripting.Trigger import Align, FieldGame, Locale, Weather, BannerType");
         writer.WriteBlankLine();
@@ -240,7 +240,7 @@ internal class TriggerApiScript {
                 return p.Type switch {
                     ScriptType.IntList => $"Array[Int32]({p.Name})",
                     ScriptType.StrList => $"Array[String]({p.Name})",
-                    ScriptType.StateList => $"Array[...]({p.Name})",
+                    ScriptType.StateList => $"Array[Object]({p.Name})",
                     _ => p.Name,
                 };
             }));
