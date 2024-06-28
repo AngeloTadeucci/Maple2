@@ -140,7 +140,7 @@ public interface ITriggerContext {
     public void SetInteractObject(int[] triggerIds, int state, bool arg4, bool arg3);
     public void SetLadder(int[] triggerIds, bool visible, bool enable, int fade);
     public void SetLocalCamera(int cameraId, bool enable);
-    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, int fade, string desc);
+    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, float fade, string desc);
     public void SetMeshAnimation(int[] triggerIds, bool visible, int startDelay, int interval);
     public void SetMiniGameAreaForHack(int boxId);
     public void SetNpcDuelHpBar(bool isOpen, int spawnId, int durationTick, int npcHpStep);
@@ -162,7 +162,7 @@ public interface ITriggerContext {
     public void SetSkill(int[] triggerIds, bool enable);
     public void SetSkip(dynamic state);
     public void SetSound(int triggerId, bool enable);
-    public void SetState(int id, string[] states, bool randomize);
+    public void SetState(int id, object[] states, bool randomize);
     public void SetTimeScale(bool enable, float startScale, float endScale, float duration, int interpolator);
     public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc);
     public void SetUserValue(int triggerId, string key, int value);

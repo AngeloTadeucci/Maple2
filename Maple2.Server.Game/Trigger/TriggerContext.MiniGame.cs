@@ -24,7 +24,7 @@ public partial class TriggerContext {
     public void UnsetMiniGameAreaForHack() { }
 
     public void UseState(int id, bool randomize) {
-        if (!Field.States.TryGetValue(id, out List<string>? states)) {
+        if (!Field.States.TryGetValue(id, out List<object>? states)) {
             return;
         }
 
@@ -34,16 +34,11 @@ public partial class TriggerContext {
         }
 
         // get first state and remove from list
-        string state = states.First();
+        object state = states.First();
         states.RemoveAt(0);
         Field.States[id] = states;
 
-        dynamic? stateClass = Scope.GetVariable(state);
-        if (stateClass == null) {
-            return;
-        }
-
-        TriggerState? triggerState = CreateState(stateClass);
+        TriggerState? triggerState = CreateState(state);
 
         // They only have OnEnter() method
         triggerState?.OnEnter();

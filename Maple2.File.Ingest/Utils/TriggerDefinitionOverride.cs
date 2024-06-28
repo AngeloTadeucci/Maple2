@@ -732,7 +732,7 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["set_state"] = new TriggerDefinitionOverride("set_state") {
             Names = BuildNameOverride(("arg1", "id"), ("arg2", "states"), ("arg3", "randomize")),
-            Types = BuildTypeOverride(("id", Int, Required), ("states", StrList, Required), ("randomize", Bool, null)),
+            Types = BuildTypeOverride(("id", Int, Required), ("states", StateList, Required), ("randomize", Bool, null)),
         };
         ActionOverride["set_time_scale"] = new TriggerDefinitionOverride("set_time_scale") {
             Names = BuildNameOverride(),
