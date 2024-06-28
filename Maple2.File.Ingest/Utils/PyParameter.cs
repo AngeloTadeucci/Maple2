@@ -5,7 +5,7 @@ namespace Maple2.File.Ingest.Utils;
 
 internal enum ScriptType {
     None = 0, Str, Int, Float, IntList, StrList, StateList, Vector3, Bool, State,
-    EnumAlign, EnumFieldGame, EnumLocale, EnumWeather,
+    EnumAlign, EnumFieldGame, EnumLocale, EnumWeather, EnumBannerType
 }
 
 internal record PyParameter(ScriptType Type, string Name) {
@@ -22,6 +22,7 @@ internal record PyParameter(ScriptType Type, string Name) {
             ScriptType.EnumFieldGame => "FieldGame",
             ScriptType.EnumLocale => "Locale",
             ScriptType.EnumWeather => "Weather",
+            ScriptType.EnumBannerType => "BannerType",
             _ => null,
         };
     }
@@ -64,6 +65,7 @@ internal record PyParameter(ScriptType Type, string Name) {
             ScriptType.EnumFieldGame => "FieldGame",
             ScriptType.EnumLocale => "Locale",
             ScriptType.EnumWeather => "Weather",
+            ScriptType.EnumBannerType => "BannerType",
             _ => throw new ArgumentException($"Invalid parameter type: {type}"),
         };
     }
@@ -83,6 +85,7 @@ internal record PyParameter(ScriptType Type, string Name) {
             ScriptType.EnumAlign => "Align.Top",
             ScriptType.EnumLocale => "Locale.ALL",
             ScriptType.EnumWeather => "Weather.Clear",
+            ScriptType.EnumBannerType => "BannerType.Lose",
             _ => throw new ArgumentException($"Invalid parameter type: {Type}"),
         };
     }
@@ -134,6 +137,18 @@ internal record PyParameter(ScriptType Type, string Name) {
                 "None" => "Weather.Clear",
                 _ => $"Weather.{TriggerTranslate.ToPascalCase(value)}",
             },
+            ScriptType.EnumBannerType => string.IsNullOrWhiteSpace(value) ? null : value switch {
+                // The type values intentionally do not match the BannerType enum values.
+                //"0" => "",
+                "1" => "BannerType.Text",
+                //"2" => "",
+                "3" => "BannerType.Winner",
+                "4" => "BannerType.Lose",
+                "5" => "BannerType.Fail",
+                "6" => "BannerType.Bonus",
+                "7" => "BannerType.Success",
+                _ => throw new ArgumentException($"Unexpected BannerType: {value}"),
+            },
             _ => throw new ArgumentException($"Unexpected Type: {type} for {value}"),
         };
     }
@@ -148,7 +163,9 @@ internal record PyParameter(ScriptType Type, string Name) {
                 Debug.Assert(Value != null, $"Invalid: {this}");
                 return;
             case ScriptType.Int:
-                Debug.Assert(long.TryParse(Value, out _), $"Invalid: {this}");
+                if (!long.TryParse(Value, out _)) {
+                    Value = "-1";
+                }
                 return;
             case ScriptType.Float:
                 Debug.Assert(double.TryParse(Value, out _), $"Invalid: {this}");
@@ -203,6 +220,12 @@ internal record PyParameter(ScriptType Type, string Name) {
             case ScriptType.EnumWeather:
                 string weatherValue = Value.ToLower();
                 Debug.Assert(weatherValue is "none" or "snow" or "heavysnow" or "rain" or "heavyrain" or "sandstorm" or "cherryblossom" or "leaffall", $"Invalid: {this}");
+                return;
+            case ScriptType.EnumBannerType:
+                if (!byte.TryParse(Value, out byte bannerTypeValue)) {
+                    bannerTypeValue = byte.MaxValue;
+                }
+                Debug.Assert(bannerTypeValue is >= 0 and < 9, $"Invalid: {this}");
                 return;
             default:
                 throw new ArgumentException($"Unexpected Type: {Type} for {Name}");

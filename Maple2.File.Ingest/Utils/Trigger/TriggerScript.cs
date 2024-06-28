@@ -18,7 +18,7 @@ internal partial class TriggerScript {
                 case "Vector3":
                     writer.WriteLine("from System.Numerics import Vector3");
                     break;
-                case "Align" or "FieldGame" or "Weather" or "Locale":
+                case "Align" or "FieldGame" or "Weather" or "Locale" or "BannerType":
                     enumImports.Add(import);
                     break;
                 default:
