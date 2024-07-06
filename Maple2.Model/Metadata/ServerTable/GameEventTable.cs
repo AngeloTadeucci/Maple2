@@ -8,7 +8,7 @@ namespace Maple2.Model.Metadata;
 
 public record GameEventTable(IReadOnlyDictionary<int, GameEventMetadata> Entries) : ServerTable;
 
-public record GameEventMetadata (
+public record GameEventMetadata(
     int Id,
     GameEventType Type,
     DateTimeOffset StartTime,
