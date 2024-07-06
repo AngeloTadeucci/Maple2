@@ -983,12 +983,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     ActionsHtml: value2);
             case GameEventType.LoginNotice:
                 return new LoginNotice();
-            case GameEventType.Festival:
-                return new Festival(
-                    Enable: value1 == "1");
             case GameEventType.FieldEffect:
                 return new FieldEffect(
-                    MapId: int.TryParse(value1, out int mapId) ? mapId : 0,
+                    MapIds: value4.Split(',').Select(int.Parse).ToArray(),
                     Effect: value2);
             default:
                 return null;
