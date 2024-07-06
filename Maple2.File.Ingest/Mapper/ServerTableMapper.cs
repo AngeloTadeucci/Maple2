@@ -887,7 +887,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
                 value2Xml = new XmlDocument();
                 value2Xml.LoadXml(value2);
-                if (value2Xml.FirstChild is not {Name: "ms2"}) {
+                if (value2Xml.FirstChild is not { Name: "ms2" }) {
                     return null;
                 }
 
@@ -930,7 +930,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             case GameEventType.RPS:
                 value1Xml = new XmlDocument();
                 value1Xml.LoadXml(value1);
-                if (value1Xml.FirstChild is not {Name: "ms2"}) {
+                if (value1Xml.FirstChild is not { Name: "ms2"} ) {
                     return null;
                 }
 
