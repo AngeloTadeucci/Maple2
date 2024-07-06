@@ -25,21 +25,6 @@ public static class GameEventPacket {
         return pWriter;
     }
 
-    public static ByteWriter Test() {
-        var pWriter = Packet.Of(SendOp.GameEvent);
-        pWriter.Write<Command>(Command.Load);
-        pWriter.WriteInt(1);
-        pWriter.WriteUnicodeString("ReturnUser");
-        pWriter.WriteInt(40);
-        pWriter.WriteInt(94000265);
-        pWriter.WriteLong(1696040439);
-        pWriter.WriteLong(1759198839);
-        pWriter.WriteInt(1);
-        pWriter.WriteInt(74000001);
-
-        return pWriter;
-    }
-
     public static ByteWriter Add(IList<GameEvent> gameEvents) {
         var pWriter = Packet.Of(SendOp.GameEvent);
         pWriter.Write<Command>(Command.Add);
