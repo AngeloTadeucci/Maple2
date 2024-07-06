@@ -2,6 +2,7 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game.Event;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -21,8 +22,8 @@ public class EnterEventFieldHandler : PacketHandler<GameSession> {
 
     public override void Handle(GameSession session, IByteReader packet) {
         using GameStorage.Request db = GameStorage.Context();
-        GameEvent? gameEvent = db.FindEvent(nameof(EventFieldPopup));
-        if (gameEvent?.EventInfo is not EventFieldPopup fieldPopup) {
+        GameEvent? gameEvent = session.FindEvent(GameEventType.EventFieldPopup);
+        if (gameEvent?.Metadata.Data is not EventFieldPopup fieldPopup) {
             session.Send(ChatPacket.Alert(StringCode.s_err_timeevent_move_field));
             return;
         }

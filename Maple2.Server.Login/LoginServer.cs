@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Event;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
@@ -17,16 +19,22 @@ public class LoginServer : Server<LoginSession> {
     private readonly HashSet<LoginSession> connectingSessions;
     private readonly Dictionary<long, LoginSession> sessions;
     private readonly IList<SystemBanner> bannerCache;
+    private readonly Dictionary<int, GameEvent> eventCache;
     private readonly GameStorage gameStorage;
+    private readonly ServerTableMetadataStorage serverTableMetadataStorage;
 
-    public LoginServer(PacketRouter<LoginSession> router, IComponentContext context, GameStorage gameStorage)
+
+    public LoginServer(PacketRouter<LoginSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage)
             : base(Target.LoginPort, router, context) {
         connectingSessions = [];
         sessions = new Dictionary<long, LoginSession>();
 
         this.gameStorage = gameStorage;
+        this.serverTableMetadataStorage = serverTableMetadataStorage;
         using GameStorage.Request db = this.gameStorage.Context();
         bannerCache = db.GetBanners();
+        IEnumerable<GameEvent> gameEvents = this.serverTableMetadataStorage.GetGameEvents();
+        eventCache = gameEvents.ToDictionary(gameEvent => gameEvent.Id);
     }
 
     public override void OnConnected(LoginSession session) {
@@ -59,6 +67,8 @@ public class LoginServer : Server<LoginSession> {
     }
 
     public IList<SystemBanner> GetSystemBanners() => bannerCache;
+
+    public IEnumerable<GameEvent> GetEvents() => eventCache.Values.Where(gameEvent => gameEvent.IsActive());
 
     public override Task StopAsync(CancellationToken cancellationToken) {
         lock (mutex) {

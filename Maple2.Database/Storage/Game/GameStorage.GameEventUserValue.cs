@@ -30,7 +30,7 @@ public partial class GameStorage {
                 .ToDictionary(model => model.Type, model => model);
 
             foreach (GameEventUserValue value in values) {
-                if (existing.TryGetValue(value.Type, out Model.Event.GameEventUserValue? model)) {
+                if (existing.TryGetValue(value.Type, out Model.GameEventUserValue? model)) {
                     model.Value = value.Value;
                     Context.GameEventUserValue.Update(model);
                 } else {

@@ -3,7 +3,7 @@ using Maple2.Model.Enum;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Maple2.Database.Model.Event;
+namespace Maple2.Database.Model;
 
 internal class GameEventUserValue {
     public long CharacterId { get; set; }

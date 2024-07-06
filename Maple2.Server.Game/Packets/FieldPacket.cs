@@ -332,7 +332,7 @@ public static class FieldPacket {
         writer.WriteLong();
         #endregion
         writer.WriteInt(); // Unknown Count
-        writer.WriteByte();
+        writer.WriteByte(); // Mentor User Type
         writer.WriteBool(false);
         writer.WriteLong(); // Birthday
         writer.WriteInt(session.SuperChatId);
@@ -340,7 +340,8 @@ public static class FieldPacket {
         writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         writer.WriteInt(account.PrestigeLevel); // PrestigeLevel
         writer.WriteLong(character.LastModified.ToEpochSeconds());
-        writer.WriteInt(); // Unknown Count
+        writer.WriteInt(1); // Unknown Count
+        writer.WriteLong(session.CharacterId);
         writer.WriteInt(); // Unknown Count
         writer.WriteShort(); // Survival related?
         writer.WriteLong();

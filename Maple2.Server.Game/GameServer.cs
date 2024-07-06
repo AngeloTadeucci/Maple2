@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
@@ -20,21 +21,23 @@ public class GameServer : Server<GameSession> {
     private readonly FieldManager.Factory fieldFactory;
     private readonly HashSet<GameSession> connectingSessions;
     private readonly Dictionary<long, GameSession> sessions;
-    private readonly Dictionary<string, GameEvent> eventCache = new();
+    private readonly Dictionary<int, GameEvent> eventCache;
     private readonly ImmutableList<SystemBanner> bannerCache;
     private readonly ConcurrentDictionary<int, PremiumMarketItem> premiumMarketCache;
     private Dictionary<int, Shop> shopCache;
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
+    private readonly ServerTableMetadataStorage serverTableMetadataStorage;
 
     public int Channel => Target.GameChannel;
 
-    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage)
+    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage)
             : base(Target.GamePort, router, context) {
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
+        this.serverTableMetadataStorage = serverTableMetadataStorage;
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
@@ -42,6 +45,9 @@ public class GameServer : Server<GameSession> {
         shopItemCache = db.GetShopItems();
         premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
             db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
+
+        IEnumerable<GameEvent> gameEvents = this.serverTableMetadataStorage.GetGameEvents();
+        eventCache = gameEvents.ToDictionary(gameEvent => gameEvent.Id);
     }
 
     public override void OnConnected(GameSession session) {
@@ -83,20 +89,15 @@ public class GameServer : Server<GameSession> {
         return fieldFactory.Get(mapId, instanceId);
     }
 
-    public GameEvent? FindEvent<T>() where T : GameEventInfo {
-        if (eventCache.TryGetValue(typeof(T).Name, out GameEvent? gameEvent)) {
-            return gameEvent;
-        }
-
-        using GameStorage.Request db = gameStorage.Context();
-        gameEvent = db.FindEvent(typeof(T).Name);
-        if (gameEvent != null) {
-            gameEvent.EventInfo.Id = gameEvent.Id;
-            eventCache[typeof(T).Name] = gameEvent;
-        }
-
-        return gameEvent;
+    public GameEvent? FindEvent(GameEventType type) {
+        return eventCache.Values.FirstOrDefault(gameEvent => gameEvent.Metadata.Type == type && gameEvent.IsActive());
     }
+
+    public GameEvent? FindEvent(int eventId) {
+        return eventCache.TryGetValue(eventId, out GameEvent? gameEvent) && gameEvent.IsActive() ? gameEvent : null;
+    }
+
+    public IEnumerable<GameEvent> GetEvents() => eventCache.Values.Where(gameEvent => gameEvent.IsActive());
 
     public Shop? FindShop(GameSession session, int shopId) {
         using GameStorage.Request db = gameStorage.Context();

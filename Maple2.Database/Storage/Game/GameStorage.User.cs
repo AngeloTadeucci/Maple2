@@ -254,7 +254,7 @@ public partial class GameStorage {
             };
 
             Dictionary<GameEventUserValueType, GameEventUserValue> eventValues = Context.GameEventUserValue.Where(value => value.CharacterId == characterId)
-                .Select<Model.Event.GameEventUserValue, GameEventUserValue>(value => value)
+                .Select<Model.GameEventUserValue, GameEventUserValue>(value => value)
                 .ToDictionary(value => value.Type, value => value);
 
             var skillPoint = new SkillPoint();

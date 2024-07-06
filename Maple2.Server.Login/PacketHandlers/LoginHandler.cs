@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Grpc.Core;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -64,6 +65,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     session.Send(UgcPacket.SetEndpoint(Target.WebUri));
 
                     session.ListCharacters();
+                    session.Send(GameEventPacket.Load(session.Server.GetEvents().ToList()));
                     return;
                 default:
                     Logger.Error("Invalid type: {Type}", command);

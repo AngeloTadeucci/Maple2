@@ -14,6 +14,8 @@ public class SystemShopHandler : PacketHandler<GameSession> {
     private enum Command : byte {
         Arena = 3,
         Fishing = 4,
+        Mentee = 6,
+        Mentor = 7,
         Item = 10,
     }
 

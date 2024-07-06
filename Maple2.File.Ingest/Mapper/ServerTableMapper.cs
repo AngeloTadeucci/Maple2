@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Xml;
 using Maple2.Database.Extensions;
 using Maple2.File.IO;
 using Maple2.File.Parser;
@@ -7,6 +8,7 @@ using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using DayOfWeek = System.DayOfWeek;
 using ExpType = Maple2.Model.Enum.ExpType;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
@@ -32,6 +34,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
+        yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
 
     }
 
@@ -696,6 +699,299 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 timeInt[i] = int.Parse(timeArray[i]);
             }
             return timeInt;
+        }
+    }
+
+    private GameEventTable ParseGameEventTable() {
+        var results = new Dictionary<int, GameEventMetadata>();
+        foreach ((int id, GameEvent data) in parser.ParseGameEvent()) {
+            if (!Enum.TryParse(data.eventType, out GameEventType eventType)) {
+                Console.WriteLine($"Unknown GameEventType: {data.eventType}");
+            }
+
+            GameEventData? eventData = ParseGameEventData(eventType, data.value1, data.value2, data.value3, data.value4);
+            if (eventData == null) {
+                continue;
+            }
+
+            DateTime startTime = DateTime.TryParseExact(data.eventStart, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out startTime) ? startTime : DateTime.MinValue;
+            DateTime endTime = DateTime.TryParseExact(data.eventEnd, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out endTime) ? endTime : DateTime.MinValue;
+            (TimeSpan partTimeStart, TimeSpan partTimeEnd) = ParsePartTime(data.partTime);
+            results.Add(id, new GameEventMetadata(
+                Id: id,
+                Type: eventType,
+                StartTime: startTime,
+                EndTime: endTime,
+                StartPartTime: partTimeStart,
+                EndPartTime: partTimeEnd,
+                ActiveDays: data.dayOfWeek.Length == 0 ? Array.Empty<DayOfWeek>() : data.dayOfWeek.Select(ParseDayOfWeek).ToArray(),
+                Data: eventData));
+        }
+        return new GameEventTable(results);
+
+        DayOfWeek ParseDayOfWeek(Maple2.File.Parser.Enum.DayOfWeek dayofWeek) {
+            return dayofWeek switch {
+                Maple2.File.Parser.Enum.DayOfWeek.sun => DayOfWeek.Sunday,
+                Maple2.File.Parser.Enum.DayOfWeek.mon => DayOfWeek.Monday,
+                Maple2.File.Parser.Enum.DayOfWeek.tue => DayOfWeek.Tuesday,
+                Maple2.File.Parser.Enum.DayOfWeek.wed => DayOfWeek.Wednesday,
+                Maple2.File.Parser.Enum.DayOfWeek.thu => DayOfWeek.Thursday,
+                Maple2.File.Parser.Enum.DayOfWeek.fri => DayOfWeek.Friday,
+                Maple2.File.Parser.Enum.DayOfWeek.sat => DayOfWeek.Saturday,
+                _ => DayOfWeek.Sunday,
+            };
+        }
+
+        (TimeSpan, TimeSpan) ParsePartTime(string partTimeString) {
+            string[] partTimeStringArray = partTimeString.Split("-").ToArray();
+            if (partTimeStringArray.Length != 2) {
+                return (TimeSpan.Zero, TimeSpan.Zero);
+            }
+            TimeSpan startTime = TimeSpan.Parse(partTimeStringArray[0]);
+            TimeSpan endTime = TimeSpan.Parse(partTimeStringArray[1]);
+            return (startTime, endTime);
+        }
+    }
+
+    private GameEventData? ParseGameEventData(GameEventType type, string value1, string value2, string value3, string value4) {
+        switch (type) {
+            case GameEventType.BlueMarble:
+                var value1Xml = new XmlDocument();
+                if (!string.IsNullOrEmpty(value1)) {
+                    value1Xml.LoadXml(value1);
+                }
+
+                var value2Xml = new XmlDocument();
+                value2Xml.LoadXml(value2);
+                var rounds = new List<BlueMarble.Round>();
+                var requiredItem = new ItemComponent(0, 0, 0, ItemTag.None);
+
+                XmlNode? roundNode = value1Xml.FirstChild;
+                if (roundNode != null) {
+                    if (roundNode.Attributes?["consumeItemID"] != null) {
+                        if (!int.TryParse(roundNode.Attributes?["consumeItemID"]?.Value, out int itemId)) {
+                            itemId = 0;
+                        }
+                        if (!int.TryParse(roundNode.Attributes?["consumeItemCount"]?.Value, out int itemCount)) {
+                            itemCount = 1;
+                        }
+                        requiredItem = new ItemComponent(itemId, -1, itemCount, ItemTag.None);
+                    }
+
+                    foreach (XmlNode vNode in roundNode.ChildNodes) {
+                        if (!int.TryParse(vNode.Attributes?["round"]?.Value, out int round)) {
+                            round = 0;
+                        }
+
+                        if (!int.TryParse(vNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                            itemId = 0;
+                        }
+
+                        if (!int.TryParse(vNode.Attributes?["itemCount"]?.Value, out int itemCount)) {
+                            itemCount = 1;
+                        }
+
+                        rounds.Add(new BlueMarble.Round(
+                            RoundCount: round,
+                            Item: new ItemComponent(
+                                ItemId: itemId,
+                                Rarity: -1,
+                                Amount: itemCount,
+                                Tag: ItemTag.None)));
+                    }
+                }
+
+                XmlNode? slotsNode = value2Xml.FirstChild;
+                if (slotsNode == null) {
+                    return null;
+                }
+
+                var slots = new List<BlueMarble.Slot>();
+                foreach (XmlNode vNode in slotsNode.ChildNodes) {
+                    if (!Enum.TryParse(vNode.Attributes?["type"]?.Value, true, out BlueMarbleSlotType slotType)) {
+                        slotType = BlueMarbleSlotType.Item;
+                    }
+
+                    if (!int.TryParse(vNode.Attributes?["arg1"]?.Value, out int arg1)) {
+                        arg1 = 0;
+                    }
+
+                    if (!int.TryParse(vNode.Attributes?["arg2"]?.Value, out int arg2)) {
+                        arg2 = 0;
+                    }
+
+                    int moveAmount = 0;
+                    if (slotType is BlueMarbleSlotType.Backward or BlueMarbleSlotType.Forward) {
+                        moveAmount = arg1;
+                    }
+
+                    var blueMarbleSlotItem = new ItemComponent(0, 0, 0, ItemTag.None);
+                    if (slotType is BlueMarbleSlotType.Item or BlueMarbleSlotType.Paradise) {
+                        // TODO: Get rarity from item xmls
+                        blueMarbleSlotItem = new ItemComponent(arg1, -1, arg2, ItemTag.None);
+                    }
+
+                    slots.Add(new BlueMarble.Slot(
+                        Type: slotType,
+                        MoveAmount: moveAmount,
+                        Item: blueMarbleSlotItem));
+                }
+                return new BlueMarble(
+                    RequiredItem: requiredItem,
+                    Rounds: rounds.ToArray(),
+                    Slots: slots.ToArray());
+            case GameEventType.StringBoard:
+                return new StringBoard(
+                    Text: value4,
+                    StringId: int.TryParse(value1, out int stringId) ? stringId : 0);
+            case GameEventType.StringBoardLink:
+                return new StringBoardLink(
+                    Link: value1);
+            case GameEventType.TrafficOptimizer:
+                // values are hardcoded seeing as these are not shown in the table.
+                return new TrafficOptimizer(
+                    RideSyncInterval: 100,
+                    UserSyncInterval: 100,
+                    LinearMovementInterval: 100,
+                    GuideObjectSyncInterval: 100);
+            case GameEventType.LobbyMap:
+                return new LobbyMap(
+                    MapId: int.TryParse(value1, out int lobbyMapId) ? lobbyMapId : 0);
+            case GameEventType.EventFieldPopup:
+                return new EventFieldPopup(
+                    MapId: int.TryParse(value1, out int fieldPopupMapId) ? fieldPopupMapId : 0);
+            case GameEventType.SaleChat:
+                return new SaleChat(
+                    WorldChatDiscount: int.TryParse(value1, out int worldChatDiscount) ? worldChatDiscount : 0,
+                    ChannelChatDiscount: int.TryParse(value2, out int channelChatDiscount) ? channelChatDiscount : 0);
+            case GameEventType.AttendGift:
+                value1Xml = new XmlDocument();
+                value1Xml.LoadXml(value1);
+
+                var rewards = new List<RewardItem>();
+                if (value1Xml.FirstChild == null) {
+                    return null;
+                }
+                foreach (XmlNode node in value1Xml.FirstChild.ChildNodes) {
+                    if (!int.TryParse(node.Attributes?["itemID"]?.Value, out int itemId)) {
+                        itemId = 0;
+                    }
+                    if (!int.TryParse(node.Attributes?["count"]?.Value, out int itemCount)) {
+                        itemCount = 1;
+                    }
+                    if (!short.TryParse(node.Attributes?["grade"]?.Value, out short grade)) {
+                        grade = -1;
+                    }
+                    rewards.Add(new RewardItem(itemId, grade, itemCount));
+                }
+
+                value2Xml = new XmlDocument();
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not {Name: "ms2"}) {
+                    return null;
+                }
+
+                XmlNode? stringNode = value2Xml.FirstChild.SelectSingleNode("string");
+                XmlNode? configNode = value2Xml.FirstChild.SelectSingleNode("Config");
+                if (stringNode == null || configNode == null) {
+                    return null;
+                }
+
+                string name = stringNode.Attributes?["name"]?.Value ?? string.Empty;
+                string mailTitle = stringNode.Attributes?["mailTitle"]?.Value ?? string.Empty;
+                string mailContent = stringNode.Attributes?["mailContents"]?.Value ?? string.Empty;
+                string link = stringNode.Attributes?["detailUrl"]?.Value ?? string.Empty;
+
+                if (!int.TryParse(configNode.Attributes?["requirePlaySeconds"]?.Value, out int requiredPlaySeconds)) {
+                    requiredPlaySeconds = 0;
+                }
+
+                //TODO: value3 - requirements
+
+                return new AttendGift(
+                    Items: rewards.ToArray(),
+                    Name: name,
+                    MailTitle: mailTitle,
+                    MailContent: mailContent,
+                    Link: link,
+                    RequiredPlaySeconds: requiredPlaySeconds);
+            case GameEventType.ReturnUser:
+                var requiredTime = DateTimeOffset.MinValue;
+                if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime requiredDateTime)) {
+                    requiredTime = new DateTimeOffset(requiredDateTime);
+                }
+
+                return new ReturnUser(
+                    Season: int.TryParse(value3, out int season) ? season : 0,
+                    RequiredTime: requiredTime,
+                    QuestIds: string.IsNullOrEmpty(value4) ? Array.Empty<int>() : value4.Split(',').Select(int.Parse).ToArray(),
+                    RequiredLevel: int.TryParse(value1, out int levelRequirement) ? levelRequirement : 0,
+                    RequiredUserValue: int.TryParse(value2, out int userValue) ? userValue : 0);
+            case GameEventType.RPS:
+                value1Xml = new XmlDocument();
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not {Name: "ms2"}) {
+                    return null;
+                }
+
+                XmlNode? rpseventNode = value1Xml.FirstChild.SelectSingleNode("rps_event");
+                if (rpseventNode == null) {
+                    return null;
+                }
+
+                int ticketId = 0;
+                var rpsRewards = new List<Rps.RewardData>();
+                foreach (XmlNode childNode in rpseventNode) {
+                    if (childNode.Name == "gameTicket" && int.TryParse(childNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                        ticketId = itemId;
+                    }
+
+                    if (childNode.Name == "rewardData") {
+                        if (!int.TryParse(childNode.Attributes?["condPlayCount"]?.Value, out int playCount)) {
+                            playCount = 1;
+                        }
+
+                        // items
+                        var rpsItems = new List<RewardItem>();
+                        foreach (XmlNode itemNode in childNode.ChildNodes) {
+                            foreach (XmlNode valueNode in itemNode.ChildNodes) {
+                                if (!int.TryParse(valueNode.Attributes?["itemID"]?.Value, out int rpsRewardItemId)) {
+                                    rpsRewardItemId = 0;
+                                }
+
+                                if (!short.TryParse(valueNode.Attributes?["grade"]?.Value, out short rpsRewardGrade)) {
+                                    rpsRewardGrade = 1;
+                                }
+
+                                if (!int.TryParse(valueNode.Attributes?["count"]?.Value, out int rpsRewardCount)) {
+                                    rpsRewardCount = 1;
+                                }
+
+                                rpsItems.Add(new RewardItem(rpsRewardItemId, rpsRewardGrade, rpsRewardCount));
+                            }
+                        }
+
+                        rpsRewards.Add(new Rps.RewardData(
+                            PlayCount: playCount,
+                            Rewards: rpsItems.ToArray()));
+                    }
+                }
+
+                return new Rps(
+                    GameTicketId: ticketId,
+                    Rewards: rpsRewards.ToArray(),
+                    ActionsHtml: value2);
+            case GameEventType.LoginNotice:
+                return new LoginNotice();
+            case GameEventType.Festival:
+                return new Festival(
+                    Enable: value1 == "1");
+            case GameEventType.FieldEffect:
+                return new FieldEffect(
+                    MapId: int.TryParse(value1, out int mapId) ? mapId : 0,
+                    Effect: value2);
+            default:
+                return null;
         }
     }
 }
