@@ -19,22 +19,16 @@ public class LoginServer : Server<LoginSession> {
     private readonly HashSet<LoginSession> connectingSessions;
     private readonly Dictionary<long, LoginSession> sessions;
     private readonly IList<SystemBanner> bannerCache;
-    private readonly Dictionary<int, GameEvent> eventCache;
     private readonly GameStorage gameStorage;
-    private readonly ServerTableMetadataStorage serverTableMetadataStorage;
-
 
     public LoginServer(PacketRouter<LoginSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage)
-            : base(Target.LoginPort, router, context) {
+            : base(Target.LoginPort, router, context, serverTableMetadataStorage) {
         connectingSessions = [];
         sessions = new Dictionary<long, LoginSession>();
 
         this.gameStorage = gameStorage;
-        this.serverTableMetadataStorage = serverTableMetadataStorage;
         using GameStorage.Request db = this.gameStorage.Context();
         bannerCache = db.GetBanners();
-        IEnumerable<GameEvent> gameEvents = this.serverTableMetadataStorage.GetGameEvents();
-        eventCache = gameEvents.ToDictionary(gameEvent => gameEvent.Id);
     }
 
     public override void OnConnected(LoginSession session) {

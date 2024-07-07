@@ -19,23 +19,24 @@ public class GameEvent : IByteSerializable {
     }
 
     public bool IsActive() {
-        if (Metadata.StartTime > DateTimeOffset.UtcNow) {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (Metadata.StartTime > now) {
             return false;
         }
 
-        if (Metadata.EndTime < DateTimeOffset.UtcNow) {
+        if (Metadata.EndTime < now) {
             return false;
         }
 
-        if (Metadata.ActiveDays.Length > 0 && !Metadata.ActiveDays.Contains(DateTimeOffset.UtcNow.DayOfWeek)) {
+        if (Metadata.ActiveDays.Length > 0 && !Metadata.ActiveDays.Contains(now.DayOfWeek)) {
             return false;
         }
 
-        if (Metadata.StartPartTime != TimeSpan.Zero && Metadata.StartPartTime > DateTimeOffset.UtcNow.TimeOfDay) {
+        if (Metadata.StartPartTime != TimeSpan.Zero && Metadata.StartPartTime > now.TimeOfDay) {
             return false;
         }
 
-        if (Metadata.EndPartTime != TimeSpan.Zero && Metadata.EndPartTime < DateTimeOffset.UtcNow.TimeOfDay) {
+        if (Metadata.EndPartTime != TimeSpan.Zero && Metadata.EndPartTime < now.TimeOfDay) {
             return false;
         }
 

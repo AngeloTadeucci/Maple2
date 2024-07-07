@@ -27,17 +27,15 @@ public class GameServer : Server<GameSession> {
     private Dictionary<int, Shop> shopCache;
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
-    private readonly ServerTableMetadataStorage serverTableMetadataStorage;
 
     public int Channel => Target.GameChannel;
 
     public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage)
-            : base(Target.GamePort, router, context) {
+            : base(Target.GamePort, router, context, serverTableMetadataStorage) {
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
-        this.serverTableMetadataStorage = serverTableMetadataStorage;
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
@@ -45,9 +43,6 @@ public class GameServer : Server<GameSession> {
         shopItemCache = db.GetShopItems();
         premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
             db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
-
-        IEnumerable<GameEvent> gameEvents = this.serverTableMetadataStorage.GetGameEvents();
-        eventCache = gameEvents.ToDictionary(gameEvent => gameEvent.Id);
     }
 
     public override void OnConnected(GameSession session) {
