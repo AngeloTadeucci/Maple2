@@ -11,7 +11,7 @@ public enum GameEventUserValueType {
     AttendanceAccumulatedTime = 106,
 
     // Blue Marble / Mapleopoly
-    MapleopolyTotalTileCount = 800,
+    MapleopolyTotalSlotCount = 800,
     MapleopolyFreeRollAmount = 801,
     MapleopolyTotalTrips = 802, // unsure
 

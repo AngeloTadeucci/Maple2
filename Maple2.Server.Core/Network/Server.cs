@@ -4,6 +4,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Maple2.Database.Storage;
+using Maple2.Model.Game.Event;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -26,10 +28,16 @@ public abstract class Server<T> : BackgroundService, IHealthCheck where T : Sess
 
     public ushort Port { get; private set; }
 
-    protected Server(ushort port, PacketRouter<T> router, IComponentContext context) {
+    private readonly ServerTableMetadataStorage serverTableMetadataStorage;
+    protected readonly Dictionary<int, GameEvent> eventCache;
+
+    protected Server(ushort port, PacketRouter<T> router, IComponentContext context, ServerTableMetadataStorage serverTableMetadataStorage) {
         Port = port;
         this.router = router;
         this.context = context ?? throw new ArgumentException("null context provided");
+        this.serverTableMetadataStorage = serverTableMetadataStorage;
+        IEnumerable<GameEvent> gameEvents = this.serverTableMetadataStorage.GetGameEvents();
+        eventCache = gameEvents.ToDictionary(gameEvent => gameEvent.Id);
     }
 
     public abstract void OnConnected(T session);

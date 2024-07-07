@@ -1,5 +1,6 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Error;
+using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -17,17 +18,21 @@ public static class MapleopolyPacket {
         Error = 6,
     }
 
-    public static ByteWriter Load(IList<BlueMarbleTile> tiles, int totalTileCount, int freeRollAmount, int playerTicketAmount) {
+    public static ByteWriter Load(IList<BlueMarble.Slot> tiles, int ticketId, int totalTileCount, int freeRollAmount, int playerTicketAmount) {
         var pWriter = Packet.Of(SendOp.Mapleopoly);
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteInt(totalTileCount);
         pWriter.WriteInt(freeRollAmount);
-        pWriter.WriteInt(Constant.MapleopolyTicketItemId);
+        pWriter.WriteInt(ticketId);
         pWriter.WriteInt(playerTicketAmount);
         pWriter.WriteInt(tiles.Count);
 
-        foreach (BlueMarbleTile tile in tiles) {
-            pWriter.WriteClass<BlueMarbleTile>(tile);
+        foreach (BlueMarble.Slot tile in tiles) {
+            pWriter.Write<BlueMarbleSlotType>(tile.Type);
+            pWriter.WriteInt(tile.MoveAmount);
+            pWriter.WriteInt(tile.Item.ItemId);
+            pWriter.WriteByte((byte) tile.Item.Rarity);
+            pWriter.WriteInt(tile.Item.Amount);
         }
 
         return pWriter;
@@ -45,14 +50,16 @@ public static class MapleopolyPacket {
         return pWriter;
     }
 
-    public static ByteWriter Result(BlueMarbleTile tile, int totalTileCount, int freeRollAmount) {
+    public static ByteWriter Result(BlueMarble.Slot slot, int totalTileCount, int freeRollAmount) {
         var pWriter = Packet.Of(SendOp.Mapleopoly);
         pWriter.Write<Command>(Command.Result);
-        pWriter.Write<BlueMarbleTileType>(tile.Type);
-        pWriter.WriteInt(tile.MoveAmount);
+        pWriter.Write<BlueMarbleSlotType>(slot.Type);
+        pWriter.WriteInt(slot.MoveAmount);
         pWriter.WriteInt(totalTileCount);
         pWriter.WriteInt(freeRollAmount);
-        pWriter.Write<BlueMarbleItem>(tile.Item);
+        pWriter.WriteInt(slot.Item.ItemId);
+        pWriter.WriteByte((byte) slot.Item.Rarity);
+        pWriter.WriteInt(slot.Item.Amount);
 
         return pWriter;
     }

@@ -1,5 +1,7 @@
 ﻿using System;
 using Maple2.Database.Context;
+using Maple2.Model.Enum;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
@@ -15,6 +17,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<IndividualDropItemTable> individualDropItemTable;
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
     private readonly Lazy<TimeEventTable> timeEventTable;
+    private readonly Lazy<GameEventTable> gameEventTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -26,6 +29,7 @@ public class ServerTableMetadataStorage {
     public IndividualDropItemTable IndividualDropItemTable => individualDropItemTable.Value;
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
     public TimeEventTable TimeEventTable => timeEventTable.Value;
+    public GameEventTable GameEventTable => gameEventTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -38,6 +42,17 @@ public class ServerTableMetadataStorage {
         individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
+        gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
+    }
+
+    public IEnumerable<GameEvent> GetGameEvents() {
+        foreach ((int id, GameEventMetadata gameEvent) in GameEventTable.Entries) {
+            if (gameEvent.EndTime < DateTimeOffset.Now) {
+                continue;
+            }
+
+            yield return new GameEvent(gameEvent);
+        }
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {

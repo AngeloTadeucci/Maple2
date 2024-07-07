@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Model;
-using Maple2.Database.Model.Event;
 using Maple2.Database.Model.Shop;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +30,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<ShopItem> ShopItem { get; set; } = null!;
     internal DbSet<CharacterShopData> CharacterShopData { get; set; } = null!;
     internal DbSet<CharacterShopItemData> CharacterShopItemData { get; set; } = null!;
-    internal DbSet<GameEvent> GameEvent { get; set; } = null!;
     internal DbSet<GameEventUserValue> GameEventUserValue { get; set; } = null!;
     internal DbSet<SystemBanner> SystemBanner { get; set; } = null!;
     internal DbSet<PremiumMarketItem> PremiumMarketItem { get; set; } = null!;
@@ -84,8 +82,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<BeautyShopEntry>(Maple2.Database.Model.Shop.BeautyShopEntry.Configure);
         modelBuilder.Entity<BlackMarketListing>(Maple2.Database.Model.BlackMarketListing.Configure);
 
-        modelBuilder.Entity<GameEvent>(Maple2.Database.Model.Event.GameEvent.Configure);
-        modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.Event.GameEventUserValue.Configure);
+        modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.GameEventUserValue.Configure);
 
         modelBuilder.Entity<ServerInfo>(Maple2.Database.Model.ServerInfo.Configure);
     }

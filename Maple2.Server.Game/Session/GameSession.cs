@@ -265,7 +265,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
         GameEventUserValue.Load();
-        Send(GameEventPacket.Load(db.GetEvents()));
+        Send(GameEventPacket.Load(server.GetEvents().ToList()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         // RoomDungeon
         // FieldEntrance
@@ -426,7 +426,8 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest.Update(conditionType, counter, targetString, targetLong, codeString, codeLong);
     }
 
-    public GameEvent? FindEvent<T>() where T : GameEventInfo => server.FindEvent<T>();
+    public GameEvent? FindEvent(GameEventType type) => server.FindEvent(type);
+    public GameEvent? FindEvent(int id) => server.FindEvent(id);
 
     public IEnumerable<PremiumMarketItem> GetPremiumMarketItems(params int[] tabIds) => server.GetPremiumMarketItems(tabIds);
 
