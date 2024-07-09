@@ -202,7 +202,6 @@ public partial class TriggerContext {
             if (triggerIds == null) {
                 continue;
             }
-
             if (effect.Visible == visible) {
                 continue;
             }
