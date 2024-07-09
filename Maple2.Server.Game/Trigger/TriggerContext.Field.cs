@@ -199,6 +199,10 @@ public partial class TriggerContext {
             if (!Objects.Effects.TryGetValue(triggerId, out TriggerObjectEffect? effect)) {
                 continue;
             }
+            if (triggerIds == null) {
+                continue;
+            }
+
             if (effect.Visible == visible) {
                 continue;
             }
