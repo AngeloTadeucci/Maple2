@@ -11,8 +11,8 @@ public class GameEvent : IByteSerializable {
     public GameEventMetadata Metadata { get; init; }
     public int Id => Metadata.Id;
     public string Name => Metadata.Type.ToString();
-    public long StartTime => Metadata.StartTime.ToUnixTimeSeconds();
-    public long EndTime => Metadata.EndTime.ToUnixTimeSeconds();
+    public long StartTime => (long) (Metadata.StartTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
+    public long EndTime => (long) (Metadata.EndTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
 
     public GameEvent(GameEventMetadata metadata) {
         Metadata = metadata;

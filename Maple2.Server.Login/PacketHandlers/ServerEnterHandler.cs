@@ -18,6 +18,6 @@ public class ServerEnterHandler : PacketHandler<LoginSession> {
 
         session.ListServers();
         session.ListCharacters();
-        session.Send(GameEventPacket.Load(session.Server.GetEvents().ToList()));
+        session.Send(GameEventPacket.Load(session.Server.GetEvents().ToArray()));
     }
 }

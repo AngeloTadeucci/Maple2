@@ -265,7 +265,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
         GameEventUserValue.Load();
-        Send(GameEventPacket.Load(server.GetEvents().ToList()));
+        Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         // RoomDungeon
         // FieldEntrance

@@ -144,13 +144,11 @@ public class WorldServer {
         // Add Events
         // Get only events that havent been started. Started events already get loaded on game/login servers on start up
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.StartTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            Console.WriteLine("Adding event Id:" + data.Id);
             scheduler.Schedule(() => AddGameEvent(data.Id), (int) (data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
         }
 
         // Remove Events
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.EndTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            Console.WriteLine("Scheudling to remove event Id:" + data.Id + "in " + (data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()) + " seconds");
             scheduler.Schedule(() => RemoveGameEvent(data.Id), (int) (data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
         }
     }

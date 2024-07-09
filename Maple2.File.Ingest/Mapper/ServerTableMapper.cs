@@ -909,8 +909,6 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     requiredPlaySeconds = 0;
                 }
 
-                Console.WriteLine(value3);
-
                 AttendGift.Require? giftRequirement = null;
                 if (!string.IsNullOrEmpty(value3)) {
                     value3Xml.LoadXml(value3);

@@ -11,8 +11,8 @@ public record GameEventTable(IReadOnlyDictionary<int, GameEventMetadata> Entries
 public record GameEventMetadata(
     int Id,
     GameEventType Type,
-    DateTimeOffset StartTime,
-    DateTimeOffset EndTime,
+    DateTime StartTime,
+    DateTime EndTime,
     TimeSpan StartPartTime,
     TimeSpan EndPartTime,
     DayOfWeek[] ActiveDays,
