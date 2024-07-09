@@ -587,7 +587,7 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["set_effect"] = new TriggerDefinitionOverride("set_effect") {
             Names = BuildNameOverride(("arg1", "triggerIds"), ("arg2", "visible"), ("arg3", "startDelay"), ("arg4", "interval")),
-            Types = BuildTypeOverride(("triggerIds", IntList, Required), ("visible", Bool, null), ("startDelay", Int, null), ("interval", Int, null)),
+            Types = BuildTypeOverride(("triggerIds", IntList, null), ("visible", Bool, null), ("startDelay", Int, null), ("interval", Int, null)),
         };
         ActionOverride["set_event_ui"] = new TriggerDefinitionOverride(string.Empty) {
             FunctionSplitter = "arg1",
