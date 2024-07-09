@@ -985,7 +985,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 return new LoginNotice();
             case GameEventType.FieldEffect:
                 return new FieldEffect(
-                    MapIds: value4.Split(',').Select(int.Parse).ToArray(),
+                    MapIds: value1.Split(',').Select(int.Parse).ToArray(),
                     Effect: value2);
             default:
                 return null;

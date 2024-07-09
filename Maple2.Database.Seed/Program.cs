@@ -39,7 +39,6 @@ string[] seeds = [
     "shop-item",
     "beauty-shop",
     "beauty-shop-entry",
-    "game-event",
     "system-banner",
     "premium-market-item",
 ];
