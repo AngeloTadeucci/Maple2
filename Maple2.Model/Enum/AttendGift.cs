@@ -5,3 +5,10 @@ public enum AttendGiftCurrencyType : byte {
     Meso = 1,
     Meret = 2,
 }
+
+public enum AttendGiftRequirement {
+    None,
+    NotUserValue,
+    UserValue,
+    ItemId,
+}

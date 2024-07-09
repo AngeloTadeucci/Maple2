@@ -1,6 +1,8 @@
 ﻿using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
+using Maple2.Server.Channel.Service;
 using Maple2.Server.World.Containers;
 using Maple2.Tools.Scheduler;
 using Serilog;
@@ -29,6 +31,7 @@ public class WorldServer {
 
         StartDailyReset();
         StartWorldEvents();
+        ScheduleGameEvents();
         thread = new Thread(Loop);
         thread.Start();
     }
@@ -134,5 +137,39 @@ public class WorldServer {
         }
 
         scheduler.Schedule(() => GlobalPortal(data), (int) (nextRunTime - DateTime.Now).TotalMilliseconds);
+    }
+
+    private void ScheduleGameEvents() {
+        IEnumerable<GameEvent> events = serverTableMetadata.GetGameEvents().ToList();
+        // Add Events
+        // Get only events that havent been started. Started events already get loaded on game/login servers on start up
+        foreach (GameEvent data in events.Where(gameEvent => gameEvent.StartTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
+            scheduler.Schedule(() => AddGameEvent(data.Id), (int) (data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+        }
+
+        // Remove Events
+        foreach (GameEvent data in events.Where(gameEvent => gameEvent.EndTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
+            scheduler.Schedule(() => RemoveGameEvent(data.Id), (int) (data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+        }
+    }
+
+    private void AddGameEvent(int eventId) {
+        foreach ((int channelId, ChannelClient channelClient) in channelClients) {
+            channelClient.GameEvent(new GameEventRequest {
+                Add = new GameEventRequest.Types.Add {
+                    EventId = eventId,
+                },
+            });
+        }
+    }
+
+    private void RemoveGameEvent(int eventId) {
+        foreach ((int channelId, ChannelClient channelClient) in channelClients) {
+            channelClient.GameEvent(new GameEventRequest {
+                Remove = new GameEventRequest.Types.Remove {
+                    EventId = eventId,
+                },
+            });
+        }
     }
 }

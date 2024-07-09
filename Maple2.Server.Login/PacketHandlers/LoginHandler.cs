@@ -65,7 +65,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     session.Send(UgcPacket.SetEndpoint(Target.WebUri));
 
                     session.ListCharacters();
-                    session.Send(GameEventPacket.Load(session.Server.GetEvents().ToList()));
+                    session.Send(GameEventPacket.Load(session.Server.GetEvents().ToArray()));
                     return;
                 default:
                     Logger.Error("Invalid type: {Type}", command);

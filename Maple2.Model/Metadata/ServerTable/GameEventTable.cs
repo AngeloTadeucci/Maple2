@@ -11,8 +11,8 @@ public record GameEventTable(IReadOnlyDictionary<int, GameEventMetadata> Entries
 public record GameEventMetadata(
     int Id,
     GameEventType Type,
-    DateTimeOffset StartTime,
-    DateTimeOffset EndTime,
+    DateTime StartTime,
+    DateTime EndTime,
     TimeSpan StartPartTime,
     TimeSpan EndPartTime,
     DayOfWeek[] ActiveDays,
@@ -61,9 +61,13 @@ public record AttendGift(
     string MailTitle,
     string MailContent,
     string Link,
-    int RequiredPlaySeconds) : GameEventData {
+    int RequiredPlaySeconds,
+    AttendGift.Require? Requirement) : GameEventData {
 
-    public record Requirement();
+    public record Require(
+        AttendGiftRequirement Type,
+        int Value1,
+        int Value2); // Value2 is used for ItemID type. this is duration in days ?
 };
 
 public record BlueMarble(

@@ -32,6 +32,8 @@ service Channel {
   rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
   // Time Events
   rpc TimeEvent(TimeEventRequest) returns (TimeEventResponse);
+  // Game Events
+  rpc GameEvent(GameEventRequest) returns (GameEventResponse);
 }
 
 message GuildRequest {
@@ -286,4 +288,28 @@ message FieldInfo {
   int32 instance_id = 2;
   int64 owner_id = 3;
   repeated int64 player_ids = 4;
+}
+
+message GameEventRequest {
+  message Remove {
+    int32 event_id = 1;
+  }
+
+  message Update {
+    int32 event_id = 1;
+  }
+
+  message Add {
+    int32 event_id = 1;
+  }
+
+  oneof GameEvent {
+    Remove remove = 1;
+    Update update = 2;
+    Add add = 3;
+  }
+}
+
+message GameEventResponse {
+  int32 error = 1;
 }
