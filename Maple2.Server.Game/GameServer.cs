@@ -21,7 +21,6 @@ public class GameServer : Server<GameSession> {
     private readonly FieldManager.Factory fieldFactory;
     private readonly HashSet<GameSession> connectingSessions;
     private readonly Dictionary<long, GameSession> sessions;
-    private readonly Dictionary<int, GameEvent> eventCache;
     private readonly ImmutableList<SystemBanner> bannerCache;
     private readonly ConcurrentDictionary<int, PremiumMarketItem> premiumMarketCache;
     private Dictionary<int, Shop> shopCache;
@@ -90,6 +89,26 @@ public class GameServer : Server<GameSession> {
 
     public GameEvent? FindEvent(int eventId) {
         return eventCache.TryGetValue(eventId, out GameEvent? gameEvent) && gameEvent.IsActive() ? gameEvent : null;
+    }
+
+    public void AddEvent(GameEvent gameEvent) {
+        if (!eventCache.TryAdd(gameEvent.Id, gameEvent)) {
+            return;
+        }
+
+        foreach (GameSession session in sessions.Values) {
+            session.Send(GameEventPacket.Add(gameEvent));
+        }
+    }
+
+    public void RemoveEvent(int eventId) {
+        if (!eventCache.Remove(eventId, out GameEvent? gameEvent)) {
+            return;
+        }
+
+        foreach (GameSession session in sessions.Values) {
+            session.Send(GameEventPacket.Remove(gameEvent.Id));
+        }
     }
 
     public IEnumerable<GameEvent> GetEvents() => eventCache.Values.Where(gameEvent => gameEvent.IsActive());

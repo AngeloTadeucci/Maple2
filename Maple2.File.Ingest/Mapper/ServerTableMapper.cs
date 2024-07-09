@@ -754,14 +754,17 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private GameEventData? ParseGameEventData(GameEventType type, string value1, string value2, string value3, string value4) {
+        var value1Xml = new XmlDocument();
+        var value2Xml = new XmlDocument();
+        var value3Xml = new XmlDocument();
+        var value4Xml = new XmlDocument();
+
         switch (type) {
             case GameEventType.BlueMarble:
-                var value1Xml = new XmlDocument();
                 if (!string.IsNullOrEmpty(value1)) {
                     value1Xml.LoadXml(value1);
                 }
 
-                var value2Xml = new XmlDocument();
                 value2Xml.LoadXml(value2);
                 var rounds = new List<BlueMarble.Round>();
                 var requiredItem = new ItemComponent(0, 0, 0, ItemTag.None);
@@ -906,7 +909,33 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     requiredPlaySeconds = 0;
                 }
 
-                //TODO: value3 - requirements
+                Console.WriteLine(value3);
+
+                AttendGift.Require? giftRequirement = null;
+                if (!string.IsNullOrEmpty(value3)) {
+                    value3Xml.LoadXml(value3);
+                    if (value3Xml.FirstChild is { Name: "ms2" }) {
+                        XmlNode? requirementNode = value3Xml.FirstChild.SelectSingleNode("require");
+                        if (requirementNode != null) {
+                            if (!Enum.TryParse(requirementNode.Attributes?["type"]?.Value, true, out AttendGiftRequirement requirement)) {
+                                requirement = AttendGiftRequirement.None;
+                            }
+
+                            if (!int.TryParse(requirementNode.Attributes?["value1"]?.Value, out int requirementValue1)) {
+                                requirementValue1 = 0;
+                            }
+
+                            if (!int.TryParse(requirementNode.Attributes?["value2"]?.Value, out int requirementValue2)) {
+                                requirementValue2 = 0;
+                            }
+
+                            giftRequirement = new AttendGift.Require(
+                                Type: requirement,
+                                Value1: requirementValue1,
+                                Value2: requirementValue2);
+                        }
+                    }
+                }
 
                 return new AttendGift(
                     Items: rewards.ToArray(),
@@ -914,7 +943,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     MailTitle: mailTitle,
                     MailContent: mailContent,
                     Link: link,
-                    RequiredPlaySeconds: requiredPlaySeconds);
+                    RequiredPlaySeconds: requiredPlaySeconds,
+                    Requirement: giftRequirement);
             case GameEventType.ReturnUser:
                 var requiredTime = DateTimeOffset.MinValue;
                 if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime requiredDateTime)) {
@@ -985,7 +1015,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 return new LoginNotice();
             case GameEventType.FieldEffect:
                 return new FieldEffect(
-                    MapIds: value4.Split(',').Select(int.Parse).ToArray(),
+                    MapIds: value1.Split(',').Select(int.Parse).ToArray(),
                     Effect: value2);
             default:
                 return null;

@@ -44,6 +44,7 @@ public class GameEvent : IByteSerializable {
     }
 
     public void WriteTo(IByteWriter writer) {
+        writer.WriteUnicodeString(Name);
         switch (Metadata.Data) {
             case StringBoard stringBoard:
                 writer.WriteInt(Id);

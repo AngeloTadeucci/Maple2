@@ -13,34 +13,32 @@ public static class GameEventPacket {
         Reload = 3,
     }
 
-    public static ByteWriter Load(IList<GameEvent> gameEvents) {
+    public static ByteWriter Load(params GameEvent[] gameEvents) {
         var pWriter = Packet.Of(SendOp.GameEvent);
         pWriter.Write<Command>(Command.Load);
-        pWriter.WriteInt(gameEvents.Count);
+        pWriter.WriteInt(gameEvents.Length);
         foreach (GameEvent gameEvent in gameEvents) {
-            pWriter.WriteUnicodeString(gameEvent.Name);
             pWriter.WriteClass<GameEvent>(gameEvent);
         }
 
         return pWriter;
     }
 
-    public static ByteWriter Add(IList<GameEvent> gameEvents) {
+    public static ByteWriter Add(params GameEvent[] gameEvents) {
         var pWriter = Packet.Of(SendOp.GameEvent);
         pWriter.Write<Command>(Command.Add);
-        pWriter.WriteInt(gameEvents.Count);
+        pWriter.WriteInt(gameEvents.Length);
         foreach (GameEvent gameEvent in gameEvents) {
-            pWriter.WriteUnicodeString(gameEvent.Name);
             pWriter.WriteClass<GameEvent>(gameEvent);
         }
 
         return pWriter;
     }
 
-    public static ByteWriter Remove(IList<int> eventIds) {
+    public static ByteWriter Remove(params int[] eventIds) {
         var pWriter = Packet.Of(SendOp.GameEvent);
         pWriter.Write<Command>(Command.Remove);
-        pWriter.WriteInt(eventIds.Count);
+        pWriter.WriteInt(eventIds.Length);
         foreach (int value in eventIds) {
             pWriter.WriteInt(value);
         }
@@ -48,12 +46,11 @@ public static class GameEventPacket {
         return pWriter;
     }
 
-    public static ByteWriter Reload(IList<GameEvent> gameEvents) {
+    public static ByteWriter Reload(params GameEvent[] gameEvents) {
         var pWriter = Packet.Of(SendOp.GameEvent);
         pWriter.Write<Command>(Command.Reload);
-        pWriter.WriteInt(gameEvents.Count);
+        pWriter.WriteInt(gameEvents.Length);
         foreach (GameEvent gameEvent in gameEvents) {
-            pWriter.WriteUnicodeString(gameEvent.Name);
             pWriter.WriteClass<GameEvent>(gameEvent);
         }
 

@@ -61,9 +61,13 @@ public record AttendGift(
     string MailTitle,
     string MailContent,
     string Link,
-    int RequiredPlaySeconds) : GameEventData {
+    int RequiredPlaySeconds,
+    AttendGift.Require? Requirement) : GameEventData {
 
-    public record Requirement();
+    public record Require(
+        AttendGiftRequirement Type,
+        int Value1,
+        int Value2); // Value2 is used for ItemID type. this is duration in days ?
 };
 
 public record BlueMarble(
