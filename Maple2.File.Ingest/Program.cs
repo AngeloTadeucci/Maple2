@@ -116,7 +116,7 @@ UpdateDatabase(metadataContext, new NifMapper());
 UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
-UpdateDatabase(metadataContext, new NavMeshMapper(terrainReader));
+_ = new NavMeshMapper(metadataContext, exportedReader);
 
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
 UpdateDatabase(metadataContext, new AiMapper(serverReader));

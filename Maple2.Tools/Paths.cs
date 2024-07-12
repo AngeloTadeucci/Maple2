@@ -9,6 +9,9 @@ public static class Paths {
 
     public static readonly string DB_SEEDS_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Database.Seed", "Seeds");
 
-    public static readonly string WEB_DATA_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Server.Web/Data");
+    public static readonly string WEB_DATA_DIR = Path.Combine(SOLUTION_DIR, "Maple2.Server.Web", "Data");
+
+    public static readonly string NAVMESH_DIR = Path.Combine(SOLUTION_DIR, "Maple2.File.Ingest", "Navmeshes");
+    public static readonly string NAVMESH_HASH_DIR = Path.Combine(SOLUTION_DIR, "Maple2.File.Ingest", "Navmeshes", "Hashes");
 
 }

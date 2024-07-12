@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using DotRecast.Detour.Crowd;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PathEngine;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
@@ -93,13 +93,10 @@ public partial class FieldManager {
     }
 
     public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
-        Agent? agent = Navigation.AddAgent(npc, position);
+        DtCrowdAgent agent = Navigation.AddAgent(npc, position);
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = position;
-        if (agent is not null) {
-            spawnPosition = Navigation.FromPosition(agent.getPosition());
-        }
         var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
@@ -126,20 +123,16 @@ public partial class FieldManager {
             return null;
         }
 
-        Agent? agent = Navigation.AddAgent(npc, position);
-        if (agent == null) {
-            return null;
-        }
+        DtCrowdAgent agent = Navigation.AddAgent(npc, position);
 
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
-        Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
         var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, Constant.PetFieldAiPath, player) {
             Owner = owner,
-            Position = Navigation.FromPosition(agent.getPosition()),
+            Position = position,
             Rotation = rotation,
-            Origin = owner?.Position ?? spawnPosition,
+            Origin = owner?.Position ?? position,
         };
         Pets[fieldPet.ObjectId] = fieldPet;
 

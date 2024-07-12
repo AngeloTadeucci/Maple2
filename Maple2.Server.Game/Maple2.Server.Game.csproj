@@ -27,7 +27,6 @@
 <!--            <ExcludeAssets>contentFiles</ExcludeAssets>-->
         </PackageReference>
         <PackageReference Include="Maple2.Lua" Version="2.0.1" />
-        <PackageReference Include="Maple2.PathEngine" Version="5.36.5" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
         <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
         <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
@@ -37,6 +36,10 @@
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
         <PackageReference Include="DijkstraAlgorithm" Version="1.1.0" />
+        <PackageReference Include="DotRecast.Core" Version="2024.2.3" />
+        <PackageReference Include="DotRecast.Detour" Version="2024.2.3" />
+        <PackageReference Include="DotRecast.Recast" Version="2024.2.3" />
+        <PackageReference Include="DotRecast.Recast.Toolset" Version="2024.2.3" />
     </ItemGroup>
 
     <ItemGroup>
