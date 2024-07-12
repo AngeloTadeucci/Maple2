@@ -1,4 +1,4 @@
-using Maple2.PacketLib.Tools;
+﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Session;
@@ -13,6 +13,6 @@ public class FileHashHandler : PacketHandler<GameSession> {
         string filename = packet.ReadString();
         string md5 = packet.ReadString();
 
-        Log.Logger.Debug($"Hash for {filename}: {md5}");
+        Log.Logger.Debug("Hash for {filename}: {md5}", filename, md5);
     }
 }
