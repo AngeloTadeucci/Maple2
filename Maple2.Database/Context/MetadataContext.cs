@@ -220,12 +220,14 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("nif");
         builder.HasKey(nif => nif.Llid);
         builder.Property(nif => nif.Blocks).HasJsonConversion();
+        builder.Property(nif => nif.PhysXBounds).HasJsonConversion();
     }
 
     private static void ConfigureNXSMeshMetadata(EntityTypeBuilder<NxsMeshMetadata> builder) {
         builder.ToTable("nxs-mesh");
         builder.Property(mesh => mesh.Index).ValueGeneratedNever();
         builder.HasKey(mesh => mesh.Index);
+        builder.Property(nif => nif.Bounds).HasJsonConversion();
     }
 
     private static void ConfigureFunctionCubeMetadata(EntityTypeBuilder<FunctionCubeMetadata> builder) {

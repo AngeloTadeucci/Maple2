@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text.Json.Serialization;
 using Maple2.Model.Enum;
+using Maple2.Tools.VectorMath;
 
 namespace Maple2.Model.Metadata;
 
 public record NifMetadata(
     uint Llid,
+    BoundingBox3 PhysXBounds,
     NifMetadata.NifBlockMetadata[] Blocks
 ) {
 
@@ -62,5 +64,6 @@ public record NifMetadata(
 
 public record NxsMeshMetadata(
     int Index,
-    byte[] Data
+    byte[] Data,
+    BoundingBox3 Bounds
 );

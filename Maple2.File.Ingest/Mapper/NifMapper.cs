@@ -2,15 +2,20 @@
 using Maple2.File.IO.Nif;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Maple2.Tools.VectorMath;
+using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 
 public class NifMapper : TypeMapper<NifMetadata> {
     protected override IEnumerable<NifMetadata> Map() {
         foreach ((uint llid, NifDocument document) in NifParserHelper.nifDocuments) {
+            BoundingBox3 bounds = NifParserHelper.nifBounds[llid];
+
             yield return new NifMetadata(
-                llid,
-                MapBlockMetadata(document).ToArray()
+                Llid: llid,
+                PhysXBounds: bounds,
+                Blocks: MapBlockMetadata(document).ToArray()
             );
         }
     }
