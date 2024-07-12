@@ -80,7 +80,7 @@ public sealed partial class FieldManager : IDisposable {
 
         ItemDrop = new ItemDropManager(this);
 
-        Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
+        Navigation = new Navigation(metadata.XBlock);
     }
 
     // Init is separate from constructor to allow properties to be injected first.

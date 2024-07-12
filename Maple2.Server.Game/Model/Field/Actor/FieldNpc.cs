@@ -3,9 +3,7 @@ using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PathEngine;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Model.Routine;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
@@ -14,11 +12,11 @@ using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Tools.Extensions;
-using Maple2.Database.Storage;
 using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
 using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Core.Packets;
 using Serilog;
+using DotRecast.Detour.Crowd;
 
 namespace Maple2.Server.Game.Model;
 
@@ -96,7 +94,7 @@ public class FieldNpc : Actor<Npc> {
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
-    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
+    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
@@ -130,9 +128,7 @@ public class FieldNpc : Actor<Npc> {
 
     }
 
-    protected override void Dispose(bool disposing) {
-        Navigation?.Dispose();
-    }
+    protected override void Dispose(bool disposing) { }
 
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
 

@@ -1,12 +1,13 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
+﻿using System.Numerics;
+using DotRecast.Detour;
+using DotRecast.Detour.Crowd;
+using DotRecast.Detour.Io;
+using DotRecast.Recast.Toolset;
+using DotRecast.Recast.Toolset.Builder;
 using Maple2.Model.Metadata;
-using Maple2.PathEngine;
-using Maple2.PathEngine.Interface;
-using Maple2.PathEngine.Types;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Util;
+using Maple2.Tools;
+using Maple2.Tools.DotRecast;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
@@ -14,98 +15,62 @@ namespace Maple2.Server.Game.Manager.Field;
 public sealed class Navigation : IDisposable {
     private static readonly ILogger Logger = Log.Logger.ForContext<Navigation>();
 
-    // ErrorHandler must be initialized here to retain ownership.
-    private static readonly LogErrorHandler ErrorHandler = new(Logger);
-    private static readonly PathEngine.PathEngine PathEngine = new(ErrorHandler);
-
     public readonly string Name;
-    private readonly Mesh mesh;
-    private readonly CollisionContext context;
+    private readonly DtNavMesh navMesh;
+    private readonly DtNavMeshQuery navMeshQuery;
+    public DtCrowd Crowd { get; private set; }
+    private readonly DtCrowdAgentConfig crowdAgentConfig = new DtCrowdAgentConfig();
 
-    private readonly ConcurrentDictionary<(int, int), Shape> shapeCache = new();
-
-    public Navigation(string name, byte[]? data = null) {
+    public Navigation(string name) {
         Name = name;
-        if (data == null) {
-            Logger.Error("No navigation mesh for: {XBlock}", name);
-            mesh = PathEngine.buildMeshFromContent(Array.Empty<IFaceVertexMesh>());
-        } else {
-            mesh = PathEngine.loadMeshFromBuffer(FileFormat.tok, data);
-        }
-        context = mesh.newContext();
+        navMesh = LoadNavMesh();
+        navMeshQuery = new DtNavMeshQuery(navMesh);
+
+        Crowd = new DtCrowd(new DtCrowdConfig(maxAgentRadius: 0.3f), navMesh, __ => new DtQueryDefaultFilter(
+            SampleAreaModifications.SAMPLE_POLYFLAGS_ALL,
+            SampleAreaModifications.SAMPLE_POLYFLAGS_DISABLED,
+            [1f, 10f, 1f, 1f, 2f, 1.5f]) // TODO: understand what actually these values are
+        );
     }
 
-    public AgentNavigation ForAgent(FieldNpc npc, Agent agent) {
-        return new AgentNavigation(npc, agent, mesh, context);
+    private DtNavMesh LoadNavMesh() {
+        FileStream fs = new FileStream(System.IO.Path.Combine(Paths.NAVMESH_DIR, $"{Name}.navmesh"), FileMode.Open, FileAccess.Read);
+        BinaryReader br = new BinaryReader(fs);
+        DtMeshSetReader reader = new DtMeshSetReader();
+
+        DtNavMesh dtNavMesh = reader.Read(br, DotRecastHelper.VERTS_PER_POLY);
+        br.Close();
+        fs.Close();
+        return dtNavMesh;
     }
 
-    public Agent? AddAgent(NpcMetadata metadata, Vector3 origin) {
-        // Using radius for width for now
-        Shape shape = GetShape((int) metadata.Property.Capsule.Radius, (int) metadata.Property.Capsule.Height);
-        if (!TryFindPosition(shape, ToPosition(origin), metadata.Action.MoveArea, out Position? position)) {
-            return null;
-        }
-
-        Agent agent = mesh.placeAgent(shape, (Position) position);
-        context.addAgent(agent);
-        return agent;
+    public AgentNavigation ForAgent(FieldNpc npc, DtCrowdAgent agent) {
+        return new AgentNavigation(npc, agent, Crowd);
     }
 
-    private bool TryFindPosition(Shape? shape, Position origin, int distance, [NotNullWhen(true)] out Position? position) {
-        position = origin;
-        if (!mesh.positionIsValid(origin)) {
-            return false;
-        }
-
-        if (distance > 0) {
-            try {
-                // Unobstructed Position is required for pathfinding, attempt to find one.
-                position = mesh.findClosestUnobstructedPosition(shape, context, (Position) position, distance);
-            } catch { /* ignored */ }
-        }
-
-        if (!mesh.positionIsValid((Position) position)) {
-            return false;
-        }
-
-        return true;
+    public DtCrowdAgent AddAgent(NpcMetadata metadata, Vector3 origin) {
+        RcNavMeshBuildSettings settings = DotRecastHelper.NavMeshBuildSettings;
+        // use metadata speed instead of settings?
+        DtCrowdAgentParams agentParams = CreateAgentParams(0.3f, 1.4f, settings.agentMaxAcceleration, settings.agentMaxSpeed);
+        return Crowd.AddAgent(DotRecastHelper.ToNavMeshSpace(origin), agentParams);
     }
 
-    public Position ToPosition(Vector3 vector) {
-        return mesh.positionNear3DPoint((int) vector.X, (int) vector.Y, (int) vector.Z, horizontalRange: 25, verticalRange: 5);
-    }
-
-    public Vector3 FromPosition(Position position) {
-        if (!mesh.positionIsValid(position)) {
-            return default;
-        }
-
-        float z = mesh.heightAtPositionF(position);
-        return new Vector3(position.X, position.Y, z);
-    }
-
-    public Shape GetShape(int width, int height) {
-        if (shapeCache.TryGetValue((width, height), out Shape? shape)) {
-            return shape;
-        }
-
-        int halfWidth = Math.Max(width / 2, 1);
-        int halfHeight = Math.Max(height / 2, 1);
-        List<Point> vertices = [
-            new Point(-halfWidth, -halfHeight),
-            new Point(-halfWidth, halfHeight),
-            new Point(halfWidth, halfHeight),
-            new Point(halfWidth, -halfHeight),
-        ];
-
-        shape = PathEngine.newShape(vertices);
-        mesh.generateUnobstructedSpaceFor(shape, true);
-        mesh.generatePathfindPreprocessFor(shape);
-        shapeCache.TryAdd((width, height), shape);
-        return shape;
+    private DtCrowdAgentParams CreateAgentParams(float agentRadius, float agentHeight, float agentMaxAcceleration, float agentMaxSpeed) {
+        DtCrowdAgentParams ap = new() {
+            radius = agentRadius,
+            height = agentHeight,
+            maxAcceleration = agentMaxAcceleration,
+            maxSpeed = agentMaxSpeed,
+            updateFlags = crowdAgentConfig.GetUpdateFlags(),
+            obstacleAvoidanceType = crowdAgentConfig.obstacleAvoidanceType,
+            separationWeight = crowdAgentConfig.separationWeight
+        };
+        ap.collisionQueryRange = ap.radius * 12.0f;
+        ap.pathOptimizationRange = ap.radius * 30.0f;
+        return ap;
     }
 
     public void Dispose() {
-        mesh.Dispose();
+
     }
 }
