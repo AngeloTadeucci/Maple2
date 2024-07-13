@@ -15,7 +15,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<NpcMetadata> NpcMetadata { get; set; } = null!;
     public DbSet<MapMetadata> MapMetadata { get; set; } = null!;
     public DbSet<MapEntity> MapEntity { get; set; } = null!;
-    public DbSet<NavMesh> NavMesh { get; set; } = null!;
     public DbSet<PetMetadata> PetMetadata { get; set; } = null!;
     public DbSet<QuestMetadata> QuestMetadata { get; set; } = null!;
     public DbSet<RideMetadata> RideMetadata { get; set; } = null!;
@@ -39,7 +38,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NpcMetadata>(ConfigureNpcMetadata);
         modelBuilder.Entity<MapMetadata>(ConfigureMapMetadata);
         modelBuilder.Entity<MapEntity>(ConfigureMapEntity);
-        modelBuilder.Entity<NavMesh>(ConfigureNavMesh);
         modelBuilder.Entity<PetMetadata>(ConfigurePetMetadata);
         modelBuilder.Entity<QuestMetadata>(ConfigureQuestMetadata);
         modelBuilder.Entity<RideMetadata>(ConfigureRideMetadata);
@@ -131,11 +129,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("map-entity");
         builder.HasKey(entity => new { entity.XBlock, Id = entity.Guid });
         builder.Property(entity => entity.Block).HasJsonConversion().IsRequired();
-    }
-
-    private static void ConfigureNavMesh(EntityTypeBuilder<NavMesh> builder) {
-        builder.ToTable("nav-mesh");
-        builder.HasKey(navmesh => navmesh.XBlock);
     }
 
     private static void ConfigurePetMetadata(EntityTypeBuilder<PetMetadata> builder) {
