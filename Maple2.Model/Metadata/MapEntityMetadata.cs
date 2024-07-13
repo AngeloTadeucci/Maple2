@@ -21,7 +21,6 @@ public class MapEntityMetadata {
     public required IReadOnlyDictionary<int, EventSpawnPointItem> EventItemSpawns { get; init; }
     public TaxiStation? Taxi { get; init; }
     public Prism BoundingBox { get; init; }
-    public NavMesh? NavMesh { get; init; }
 
     public required IReadOnlyDictionary<Guid, BreakableActor> BreakableActors { get; init; }
 
