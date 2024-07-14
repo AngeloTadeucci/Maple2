@@ -33,7 +33,7 @@ namespace Maple2.Server.World.Migrations {
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
-                name: "Quest");
+                name: "quest");
 
             migrationBuilder.AddColumn<string>(
                 name: "Quests",

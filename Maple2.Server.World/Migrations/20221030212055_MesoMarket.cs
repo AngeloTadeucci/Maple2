@@ -9,7 +9,7 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AlterColumn<DateTime>(
                 name: "LastModified",
-                table: "Item",
+                table: "item",
                 type: "datetime(6)",
                 nullable: false,
                 oldClrType: typeof(DateTime),
@@ -20,7 +20,7 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.AddColumn<string>(
                 name: "MarketLimits",
-                table: "Account",
+                table: "account",
                 type: "json",
                 nullable: false,
                 defaultValue: "{}")
@@ -44,12 +44,12 @@ namespace Maple2.Server.World.Migrations {
                     table.PrimaryKey("PK_meso-market", x => x.Id);
                     table.ForeignKey(name: "FK_meso-market_Account_AccountId",
                         column: x => x.AccountId,
-                        principalTable: "Account",
+                        principalTable: "account",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(name: "FK_meso-market_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -96,11 +96,11 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.DropColumn(
                 name: "MarketLimits",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "LastModified",
-                table: "Item",
+                table: "item",
                 type: "datetime(6)",
                 rowVersion: true,
                 nullable: false,

@@ -9,21 +9,21 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<short>(
                 name: "Channel",
-                table: "Character",
+                table: "character",
                 type: "smallint",
                 nullable: false,
                 defaultValue: (short) 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "ReturnMapId",
-                table: "Character",
+                table: "character",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<bool>(
                 name: "Online",
-                table: "Account",
+                table: "account",
                 type: "tinyint(1)",
                 nullable: false,
                 defaultValue: false);
@@ -33,15 +33,15 @@ namespace Maple2.Server.World.Migrations {
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "Channel",
-                table: "Character");
+                table: "character");
 
             migrationBuilder.DropColumn(
                 name: "ReturnMapId",
-                table: "Character");
+                table: "character");
 
             migrationBuilder.DropColumn(
                 name: "Online",
-                table: "Account");
+                table: "account");
         }
     }
 }
