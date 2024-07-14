@@ -11,7 +11,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Account",
+                name: "account",
                 columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
@@ -37,7 +37,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Item",
+                name: "item",
                 columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
@@ -103,7 +103,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Character",
+                name: "character",
                 columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
@@ -142,7 +142,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Home",
+                name: "home",
                 columns: table => new {
                     AccountId = table.Column<long>(type: "bigint", nullable: false),
                     Message = table.Column<string>(type: "longtext", nullable: false)
@@ -216,7 +216,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Buddy",
+                name: "buddy",
                 columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
@@ -276,7 +276,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Club",
+                name: "club",
                 columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),

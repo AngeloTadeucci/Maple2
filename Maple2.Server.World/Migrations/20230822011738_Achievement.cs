@@ -28,7 +28,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Achievement",
+                name: "achievement",
                 columns: table => new {
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<int>(type: "int", nullable: false),

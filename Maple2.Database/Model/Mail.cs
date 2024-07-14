@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -84,6 +85,7 @@ internal class Mail {
     }
 
     public static void Configure(EntityTypeBuilder<Mail> builder) {
+        builder.ToTable("mail");
         builder.HasKey(mail => new { mail.ReceiverId, mail.Id });
 
         builder.Property(mail => mail.Id).ValueGeneratedOnAdd();

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -138,6 +139,7 @@ internal class Item {
     }
 
     public static void Configure(EntityTypeBuilder<Item> builder) {
+        builder.ToTable("item");
         builder.HasKey(item => item.Id);
         builder.Property(character => character.CreationTime)
             .ValueGeneratedOnAdd();

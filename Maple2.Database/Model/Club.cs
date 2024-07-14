@@ -45,6 +45,7 @@ internal class Club {
     }
 
     public static void Configure(EntityTypeBuilder<Club> builder) {
+        builder.ToTable("club");
         builder.HasKey(club => club.Id);
         builder.HasIndex(club => club.Name).IsUnique();
 

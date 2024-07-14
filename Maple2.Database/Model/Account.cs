@@ -111,6 +111,7 @@ internal class Account {
     }
 
     public static void Configure(EntityTypeBuilder<Account> builder) {
+        builder.ToTable("account");
         builder.HasKey(account => account.Id);
         builder.Property(account => account.Username).IsRequired();
         builder.HasIndex(account => account.Username)

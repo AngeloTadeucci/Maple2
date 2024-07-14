@@ -75,6 +75,7 @@ internal class Home {
     }
 
     public static void Configure(EntityTypeBuilder<Home> builder) {
+        builder.ToTable("home");
         builder.HasKey(home => home.AccountId);
         builder.OneToOne<Home, Account>()
             .HasForeignKey<Home>(home => home.AccountId);
