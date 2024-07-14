@@ -19,7 +19,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_pet-config_Item_ItemUid",
                         column: x => x.ItemUid,
-                        principalTable: "Item",
+                        principalTable: "item",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })

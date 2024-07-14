@@ -37,7 +37,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_Mail_Character_ReceiverId",
                         column: x => x.ReceiverId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -58,7 +58,7 @@ namespace Maple2.Server.World.Migrations {
 
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
-                name: "Mail");
+                name: "mail");
 
             // DROP TRIGGER IF EXISTS SetMailId
         }

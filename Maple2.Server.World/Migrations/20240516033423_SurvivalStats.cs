@@ -9,35 +9,35 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<bool>(
                 name: "ActiveGoldPass",
-                table: "Account",
+                table: "account",
                 type: "tinyint(1)",
                 nullable: false,
                 defaultValue: false);
 
             migrationBuilder.AddColumn<long>(
                 name: "SurvivalExp",
-                table: "Account",
+                table: "account",
                 type: "bigint",
                 nullable: false,
                 defaultValue: 0L);
 
             migrationBuilder.AddColumn<int>(
                 name: "SurvivalGoldLevelRewardClaimed",
-                table: "Account",
+                table: "account",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "SurvivalLevel",
-                table: "Account",
+                table: "account",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "SurvivalSilverLevelRewardClaimed",
-                table: "Account",
+                table: "account",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
@@ -47,23 +47,23 @@ namespace Maple2.Server.World.Migrations {
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "ActiveGoldPass",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "SurvivalExp",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "SurvivalGoldLevelRewardClaimed",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "SurvivalLevel",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "SurvivalSilverLevelRewardClaimed",
-                table: "Account");
+                table: "account");
         }
     }
 }

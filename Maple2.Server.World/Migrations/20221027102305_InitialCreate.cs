@@ -135,7 +135,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_Character_Account_AccountId",
                         column: x => x.AccountId,
-                        principalTable: "Account",
+                        principalTable: "account",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -166,7 +166,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_Home_Account_AccountId",
                         column: x => x.AccountId,
-                        principalTable: "Account",
+                        principalTable: "account",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -184,7 +184,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_item-storage_Account_AccountId",
                         column: x => x.AccountId,
-                        principalTable: "Account",
+                        principalTable: "account",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -233,13 +233,13 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_Buddy_Character_BuddyId",
                         column: x => x.BuddyId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Buddy_Character_OwnerId",
                         column: x => x.OwnerId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -269,7 +269,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_character-unlock_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -293,7 +293,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_Club_Character_LeaderId",
                         column: x => x.LeaderId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -317,7 +317,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_skill-tab_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -336,13 +336,13 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_club-member_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_club-member_Club_ClubId",
                         column: x => x.ClubId,
-                        principalTable: "Club",
+                        principalTable: "club",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -372,7 +372,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_character-config_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -386,28 +386,28 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.CreateIndex(
                 name: "IX_Account_Username",
-                table: "Account",
+                table: "account",
                 column: "Username",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Buddy_BuddyId",
-                table: "Buddy",
+                table: "buddy",
                 column: "BuddyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Buddy_OwnerId",
-                table: "Buddy",
+                table: "buddy",
                 column: "OwnerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Character_AccountId",
-                table: "Character",
+                table: "character",
                 column: "AccountId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Character_Name",
-                table: "Character",
+                table: "character",
                 column: "Name",
                 unique: true);
 
@@ -419,12 +419,12 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.CreateIndex(
                 name: "IX_Club_LeaderId",
-                table: "Club",
+                table: "club",
                 column: "LeaderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Club_Name",
-                table: "Club",
+                table: "club",
                 column: "Name",
                 unique: true);
 
@@ -466,7 +466,7 @@ namespace Maple2.Server.World.Migrations {
 
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
-                name: "Buddy");
+                name: "buddy");
 
             migrationBuilder.DropTable(
                 name: "character-config");
@@ -478,10 +478,10 @@ namespace Maple2.Server.World.Migrations {
                 name: "club-member");
 
             migrationBuilder.DropTable(
-                name: "Home");
+                name: "home");
 
             migrationBuilder.DropTable(
-                name: "Item");
+                name: "item");
 
             migrationBuilder.DropTable(
                 name: "item-storage");
@@ -493,16 +493,16 @@ namespace Maple2.Server.World.Migrations {
                 name: "skill-tab");
 
             migrationBuilder.DropTable(
-                name: "Club");
+                name: "club");
 
             migrationBuilder.DropTable(
                 name: "ugcmap");
 
             migrationBuilder.DropTable(
-                name: "Character");
+                name: "character");
 
             migrationBuilder.DropTable(
-                name: "Account");
+                name: "account");
         }
     }
 }
