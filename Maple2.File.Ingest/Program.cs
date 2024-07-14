@@ -29,7 +29,6 @@ if (ms2Root == null) {
 
 string xmlPath = Path.Combine(ms2Root, "Xml.m2d");
 string exportedPath = Path.Combine(ms2Root, "Resource/Exported.m2d");
-string terrainPath = Path.Combine(ms2Root, "Resource/PrecomputedTerrain.m2d");
 string serverPath = Path.Combine(ms2Root, "Server.m2d");
 
 if (!File.Exists(xmlPath)) {
@@ -38,10 +37,6 @@ if (!File.Exists(xmlPath)) {
 
 if (!File.Exists(exportedPath)) {
     throw new FileNotFoundException("Could not find Exported.m2d file");
-}
-
-if (!File.Exists(terrainPath)) {
-    throw new FileNotFoundException("Could not find PrecomputedTerrain.m2d file");
 }
 
 if (!File.Exists(serverPath)) {
@@ -62,7 +57,6 @@ string dataDbConnection = $"Server={server};Port={port};Database={database};User
 
 using var xmlReader = new M2dReader(xmlPath);
 using var exportedReader = new M2dReader(exportedPath);
-using var terrainReader = new M2dReader(terrainPath);
 using var serverReader = new M2dReader(serverPath);
 
 DbContextOptions options = new DbContextOptionsBuilder()
