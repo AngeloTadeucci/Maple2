@@ -28,7 +28,7 @@ Process process;
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
     process = Process.Start("CMD.exe", "/C " + cmdCommand);
 } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-    process = Process.Start("bash", "-c " + cmdCommand);
+    process = Process.Start("bash", "-c \"" + cmdCommand + "\"");
 } else {
     throw new PlatformNotSupportedException("Unsupported OS platform");
 }
