@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using Maple2.Tools;
 
 namespace Maple2.File.Ingest.Utils;
