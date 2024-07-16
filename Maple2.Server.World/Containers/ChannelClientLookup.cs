@@ -19,8 +19,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     private record Entry(IPEndPoint Endpoint, ChannelClient Client, Health.HealthClient Health);
 
+    private enum ChannelStatus {
+        Active,
+        Pending,
+        Inactive
+    }
+
     private readonly List<Entry> channels = [];
-    private readonly List<bool> activeChannels = [];
+    private readonly List<ChannelStatus> activeChannels = [];
 
     private readonly ILogger logger = Log.ForContext<ChannelClientLookup>();
 
@@ -29,7 +35,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     public IEnumerable<int> Keys {
         get {
             for (int i = 0; i < activeChannels.Count; i++) {
-                if (activeChannels[i]) {
+                if (activeChannels[i] is ChannelStatus.Active) {
                     yield return i + 1;
                 }
             }
@@ -38,7 +44,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp) {
         for (int i = 0; i < channels.Count; i++) {
-            if (channels[i].Endpoint.Address.ToString() == gameIp && !activeChannels[i]) {
+            if (channels[i].Endpoint.Address.ToString() == gameIp && activeChannels[i] is ChannelStatus.Inactive) {
                 return ((ushort) (Target.BaseGamePort + i + 1), Target.BaseGrpcChannelPort + i + 1, i + 1);
             }
         }
@@ -48,7 +54,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     public int FirstChannel() {
         for (int i = 0; i < activeChannels.Count; i++) {
-            if (activeChannels[i]) {
+            if (activeChannels[i] is ChannelStatus.Active) {
                 return i + 1;
             }
         }
@@ -57,7 +63,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public bool Contains(int channel) {
-        return ValidChannel(channel) && activeChannels[channel - 1];
+        return ValidChannel(channel) && activeChannels[channel - 1] is ChannelStatus.Active;
     }
 
     public bool ValidChannel(int channel) {
@@ -76,7 +82,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     public bool TryGetActiveEndpoint(int channel, [NotNullWhen(true)] out IPEndPoint? endpoint) {
         int i = channel - 1;
-        if (!ValidChannel(channel) || !activeChannels[i]) {
+        if (!ValidChannel(channel) || activeChannels[i] is ChannelStatus.Inactive) {
             endpoint = null;
             return false;
         }
@@ -98,7 +104,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);
         channels.Add(new Entry(gameEndpoint, client, healthClient));
-        activeChannels.Add(false);
+        activeChannels.Add(ChannelStatus.Pending);
 
         var cancel = new CancellationToken();
         Task.Factory.StartNew(() => MonitorChannel(channel, cancel), cancellationToken: cancel);
@@ -115,15 +121,15 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                     cancellationToken: cancellationToken);
                 switch (response.Status) {
                     case HealthCheckResponse.Types.ServingStatus.Serving:
-                        if (!activeChannels[i]) {
+                        if (activeChannels[i] is ChannelStatus.Inactive or ChannelStatus.Pending) {
                             logger.Information("Channel {Channel} has become active", channel);
-                            activeChannels[i] = true;
+                            activeChannels[i] = ChannelStatus.Active;
                         }
                         break;
                     default:
-                        if (activeChannels[i]) {
+                        if (activeChannels[i] is ChannelStatus.Active or ChannelStatus.Pending) {
                             logger.Information("Channel {Channel} has become inactive due to {Status}", channel, response.Status);
-                            activeChannels[i] = false;
+                            activeChannels[i] = ChannelStatus.Inactive;
                         }
                         break;
                 }
@@ -131,10 +137,10 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 if (ex.Status.StatusCode != StatusCode.Unavailable) {
                     logger.Warning("{Error} monitoring channel {Channel}", ex.Message, channel);
                 }
-                if (activeChannels[i]) {
+                if (activeChannels[i] is ChannelStatus.Active or ChannelStatus.Pending) {
                     logger.Information("Channel {Channel} has become inactive", channel);
                 }
-                activeChannels[i] = false;
+                activeChannels[i] = ChannelStatus.Inactive;
             }
 
             await Task.Delay(MonitorInterval, cancellationToken);
@@ -144,7 +150,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     public IEnumerator<(int, ChannelClient)> GetEnumerator() {
         for (int i = 0; i < channels.Count; i++) {
-            if (!activeChannels[i]) {
+            if (activeChannels[i] is ChannelStatus.Inactive) {
                 continue;
             }
 
