@@ -44,6 +44,8 @@ service World {
   rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
   // Time Events
   rpc TimeEvent(TimeEventRequest) returns (TimeEventResponse);
+  // Port management
+  rpc Port(PortRequest) returns (PortResponse);
 }
 
 enum Server {
@@ -457,4 +459,14 @@ message GlobalPortalInfo {
   int32 instance_id = 4;
   int32 map_id = 5;
   int32 portal_id = 6;
+}
+
+message PortRequest {
+  string game_ip = 1;
+}
+
+message PortResponse {
+  int32 game_port = 1;
+  int32 grpc_port = 2;
+  int32 game_channel = 3;
 }

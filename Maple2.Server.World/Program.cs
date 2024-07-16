@@ -81,6 +81,14 @@ app.MapGet("/", () => "Communication with gRPC endpoints must be made through a 
 app.MapGrpcService<WorldService>();
 app.MapGrpcService<GlobalService>();
 
+IHostApplicationLifetime lifetime = app.Lifetime;
+lifetime.ApplicationStopping.Register(() => {
+    Log.Information("WorldServer stopping");
+    WorldServer world = app.Services.GetRequiredService<WorldServer>();
+    world.Stop();
+    lifetime.StopApplication();
+});
+
 
 ILifetimeScope root = app.Services.GetAutofacRoot();
 var gameStorage = root.Resolve<GameStorage>();

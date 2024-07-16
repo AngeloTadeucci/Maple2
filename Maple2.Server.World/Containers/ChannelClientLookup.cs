@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Health.V1;
 using Grpc.Net.Client;
@@ -23,16 +19,16 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     private record Entry(IPEndPoint Endpoint, ChannelClient Client, Health.HealthClient Health);
 
-    private readonly Entry[] channels;
-    private readonly bool[] activeChannels;
+    private readonly List<Entry> channels = [];
+    private readonly List<bool> activeChannels = [];
 
     private readonly ILogger logger = Log.ForContext<ChannelClientLookup>();
 
-    public int Count => channels.Length;
+    public int Count => channels.Count;
 
     public IEnumerable<int> Keys {
         get {
-            for (int i = 0; i < activeChannels.Length; i++) {
+            for (int i = 0; i < activeChannels.Count; i++) {
                 if (activeChannels[i]) {
                     yield return i + 1;
                 }
@@ -40,31 +36,18 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         }
     }
 
-    // TODO: Dynamic channel
-    public ChannelClientLookup(int channelCount = 2) {
-        channels = new Entry[channelCount];
-        activeChannels = new bool[channelCount];
-
-        string[]? channelServices = Environment.GetEnvironmentVariable("CHANNEL_SERVICE")?.Split(",");
-        if (channelServices == null) {
-            channelServices = new string[channelCount];
-            Array.Fill(channelServices, IPAddress.Loopback.ToString());
-        }
-        for (int i = 0; i < channelCount; i++) {
-            var gameEndpoint = new IPEndPoint(Target.GameIp, Target.GamePort + i);
-            var grpcUri = new Uri($"http://{channelServices[i]}:{Target.GrpcChannelPort + i}");
-            GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
-            var client = new ChannelClient(grpcChannel);
-            var healthClient = new Health.HealthClient(grpcChannel);
-            channels[i] = new Entry(gameEndpoint, client, healthClient);
+    public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp) {
+        for (int i = 0; i < channels.Count; i++) {
+            if (channels[i].Endpoint.Address.ToString() == gameIp && !activeChannels[i]) {
+                return ((ushort) (Target.BaseGamePort + i + 1), Target.BaseGrpcChannelPort + i + 1, i + 1);
+            }
         }
 
-        var cancel = new CancellationToken();
-        MonitorChannels(cancel);
+        return AddChannel(gameIp);
     }
 
     public int FirstChannel() {
-        for (int i = 0; i < activeChannels.Length; i++) {
+        for (int i = 0; i < activeChannels.Count; i++) {
             if (activeChannels[i]) {
                 return i + 1;
             }
@@ -78,7 +61,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public bool ValidChannel(int channel) {
-        return channel > 0 && channel <= activeChannels.Length;
+        return channel > 0 && channel <= activeChannels.Count;
     }
 
     public bool TryGetClient(int channel, [NotNullWhen(true)] out ChannelClient? client) {
@@ -102,14 +85,25 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         return true;
     }
 
-    private void MonitorChannels(CancellationToken cancellationToken) {
-        for (int i = 0; i < channels.Length; i++) {
-            int channel = i + 1;
-            Task.Factory.StartNew(() => MonitorChannel(channel, cancellationToken), cancellationToken: cancellationToken);
-        }
+    private (ushort gamePort, int grpcPort, int channel) AddChannel(string gameIp) {
+        int channel = channels.Count + 1;
 
-        // Try to let channel list populate, this only happens once.
-        Thread.Sleep(1000);
+        int newGamePort = Target.BaseGamePort + channel;
+        int newGrpcChannelPort = Target.BaseGrpcChannelPort + channel;
+
+        IPAddress ipAddress = IPAddress.Parse(gameIp);
+        var gameEndpoint = new IPEndPoint(ipAddress, newGamePort);
+        var grpcUri = new Uri($"http://{ipAddress}:{newGrpcChannelPort}");
+        GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
+        var client = new ChannelClient(grpcChannel);
+        var healthClient = new Health.HealthClient(grpcChannel);
+        channels.Add(new Entry(gameEndpoint, client, healthClient));
+        activeChannels.Add(false);
+
+        var cancel = new CancellationToken();
+        Task.Factory.StartNew(() => MonitorChannel(channel, cancel), cancellationToken: cancel);
+
+        return ((ushort) newGamePort, newGrpcChannelPort, channel);
     }
 
     private async Task MonitorChannel(int channel, CancellationToken cancellationToken) {
@@ -137,6 +131,9 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 if (ex.Status.StatusCode != StatusCode.Unavailable) {
                     logger.Warning("{Error} monitoring channel {Channel}", ex.Message, channel);
                 }
+                if (activeChannels[i]) {
+                    logger.Information("Channel {Channel} has become inactive", channel);
+                }
                 activeChannels[i] = false;
             }
 
@@ -146,7 +143,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public IEnumerator<(int, ChannelClient)> GetEnumerator() {
-        for (int i = 0; i < channels.Length; i++) {
+        for (int i = 0; i < channels.Count; i++) {
             if (!activeChannels[i]) {
                 continue;
             }

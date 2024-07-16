@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using System.Numerics;
 using Autofac;
-using Community.CsharpSqlite;
 using Grpc.Core;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
@@ -48,7 +47,6 @@ public sealed partial class GameSession : Core.Network.Session {
     public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
-    public int Channel;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -104,7 +102,6 @@ public sealed partial class GameSession : Core.Network.Session {
         CommandHandler = context.Resolve<CommandRouter>(new NamedParameter("session", this));
         Scheduler = new EventQueue();
         Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
-        Channel = Target.GameChannel;
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
@@ -119,7 +116,6 @@ public sealed partial class GameSession : Core.Network.Session {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
-        Channel = channel;
 
         State = SessionState.ChangeMap;
         server.OnConnected(this);
@@ -127,7 +123,7 @@ public sealed partial class GameSession : Core.Network.Session {
         using GameStorage.Request db = GameStorage.Context();
         db.BeginTransaction();
         int objectId = FieldManager.NextGlobalId();
-        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, (short) Channel);
+        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, (short) GameServer.GetChannel());
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
@@ -390,6 +386,10 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
         ConditionUpdate(ConditionType.map, codeLong: Player.Value.Character.MapId);
         ConditionUpdate(ConditionType.job_change, codeLong: (int) Player.Value.Character.Job.Code());
+
+        // Update the client with the latest channel list.
+        ChannelsResponse response = World.Channels(new ChannelsRequest());
+        Send(ChannelPacket.Dynamic(response.Channels));
         return true;
     }
 
