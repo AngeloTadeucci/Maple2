@@ -124,7 +124,7 @@ public sealed partial class GameSession : Core.Network.Session {
         using GameStorage.Request db = GameStorage.Context();
         db.BeginTransaction();
         int objectId = FieldManager.NextGlobalId();
-        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, (short) GameServer.GetChannel());
+        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));

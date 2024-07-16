@@ -26,11 +26,11 @@ public class GameServer : Server<GameSession> {
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
 
-    private static int _channel = 0;
+    private static short _channel = 0;
 
     public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage, int port, int channel)
             : base((ushort) port, router, context, serverTableMetadataStorage) {
-        _channel = channel;
+        _channel = (short) channel;
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
@@ -207,7 +207,7 @@ public class GameServer : Server<GameSession> {
         }
     }
 
-    public static int GetChannel() {
+    public static short GetChannel() {
         return _channel;
     }
 }
