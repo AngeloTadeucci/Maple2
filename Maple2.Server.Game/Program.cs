@@ -38,11 +38,11 @@ CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
 
-PortResponse? response = null;
+AddChannelResponse? response = null;
 try {
     GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
     var worldClient = new WorldClient(channel);
-    response = worldClient.Port(new PortRequest {
+    response = worldClient.AddChannel(new AddChannelRequest {
         GameIp = Target.GameIp.ToString(),
     });
 
