@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
 using Autofac;
@@ -390,6 +391,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // Update the client with the latest channel list.
         ChannelsResponse response = World.Channels(new ChannelsRequest());
         Send(ChannelPacket.Dynamic(response.Channels));
+        Send(ServerListPacket.Load(Target.SERVER_NAME, [new IPEndPoint(Target.LoginIp, Target.LoginPort)], response.Channels));
         return true;
     }
 

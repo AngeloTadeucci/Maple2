@@ -137,7 +137,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 if (ex.Status.StatusCode != StatusCode.Unavailable) {
                     logger.Warning("{Error} monitoring channel {Channel}", ex.Message, channel);
                 }
-                if (activeChannels[i] is ChannelStatus.Active or ChannelStatus.Pending) {
+                if (activeChannels[i] is ChannelStatus.Active) {
                     logger.Information("Channel {Channel} has become inactive", channel);
                 }
                 activeChannels[i] = ChannelStatus.Inactive;
