@@ -75,7 +75,8 @@ public class HomeHandler : PacketHandler<GameSession> {
         if (string.IsNullOrEmpty(home.Indoor.Name)) {
             int templateId = packet.ReadInt(); // -1 = none
 
-            if (templateId < -1 && templateId > 2) {
+            if (templateId < -1 || templateId > 2) {
+                Logger.Warning("Invalid template id {templateId} for initializing home for {session.Player.Value.Character.Name}");
                 return;
             }
 
