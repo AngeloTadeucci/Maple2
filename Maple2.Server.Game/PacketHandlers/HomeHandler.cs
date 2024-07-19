@@ -71,18 +71,20 @@ public class HomeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int templateId = packet.ReadInt(); // -1 = none
-
-        if (templateId < -1 && templateId > 2) {
-            return;
-        }
-
-        // Template ids in XML are 1-based, but the client uses 0-based
-        templateId++;
-
-        MapMetadataStorage.TryGetExportedUgc(templateId.ToString(), out ExportedUgcMapMetadata? exportedUgcMap);
-
+        // If the home has no name, initialize home
         if (string.IsNullOrEmpty(home.Indoor.Name)) {
+            int templateId = packet.ReadInt(); // -1 = none
+
+            if (templateId < -1 || templateId > 2) {
+                Logger.Warning("Invalid template id {templateId} for initializing home for {session.Player.Value.Character.Name}");
+                return;
+            }
+
+            // Template ids in XML are 1-based, but the client uses 0-based
+            templateId++;
+
+            MapMetadataStorage.TryGetExportedUgc(templateId.ToString(), out ExportedUgcMapMetadata? exportedUgcMap);
+
             session.Housing.InitNewHome(session.Player.Value.Character.Name, exportedUgcMap);
         }
 
