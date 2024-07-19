@@ -17,6 +17,7 @@ public class WorldServer {
     private readonly GlobalPortalLookup globalPortalLookup;
     private readonly Thread thread;
     private readonly EventQueue scheduler;
+    private readonly CancellationTokenSource tokenSource = new();
 
     private readonly ILogger logger = Log.ForContext<WorldServer>();
 
@@ -37,10 +38,18 @@ public class WorldServer {
     }
 
     private void Loop() {
-        while (true) {
+        while (!tokenSource.Token.IsCancellationRequested) {
             scheduler.InvokeAll();
-            Thread.Sleep(TimeSpan.FromMinutes(1));
+            try {
+                Task.Delay(TimeSpan.FromMinutes(1), tokenSource.Token).Wait();
+            } catch {/* do nothing */ }
         }
+    }
+
+    public void Stop() {
+        tokenSource.Cancel();
+        thread.Join();
+        scheduler.Stop();
     }
 
     #region Daily Reset
