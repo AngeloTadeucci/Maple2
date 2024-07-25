@@ -7,7 +7,7 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<string>(
                 name: "PremiumRewardsClaimed",
-                table: "Account",
+                table: "account",
                 type: "json",
                 nullable: false,
                 defaultValue: "[]")
@@ -17,7 +17,7 @@ namespace Maple2.Server.World.Migrations {
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "PremiumRewardsClaimed",
-                table: "Account");
+                table: "account");
         }
     }
 }

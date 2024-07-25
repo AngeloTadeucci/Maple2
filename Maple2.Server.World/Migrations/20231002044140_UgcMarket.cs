@@ -67,7 +67,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_ugc-market-item-sold_Account_AccountId",
                         column: x => x.AccountId,
-                        principalTable: "Account",
+                        principalTable: "account",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })

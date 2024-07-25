@@ -86,7 +86,7 @@ namespace Maple2.Server.World.Migrations {
                 name: "FK_game-event-user-value_Character_CharacterId",
                 table: "game-event-user-value",
                 column: "CharacterId",
-                principalTable: "Character",
+                principalTable: "character",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }

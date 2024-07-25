@@ -12,7 +12,7 @@ namespace Maple2.Server.World.Migrations {
                 table: "character-unlock");
 
             migrationBuilder.CreateTable(
-                name: "Quest",
+                name: "quest",
                 columns: table => new {
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<int>(type: "int", nullable: false),
@@ -33,7 +33,7 @@ namespace Maple2.Server.World.Migrations {
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
-                name: "Quest");
+                name: "quest");
 
             migrationBuilder.AddColumn<string>(
                 name: "Quests",

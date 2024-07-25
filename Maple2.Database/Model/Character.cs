@@ -113,6 +113,7 @@ internal class Character {
     }
 
     public static void Configure(EntityTypeBuilder<Character> builder) {
+        builder.ToTable("character");
         builder.HasKey(character => character.Id);
         builder.HasOne<Account>()
             .WithMany(account => account.Characters)

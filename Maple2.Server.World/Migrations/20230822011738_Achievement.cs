@@ -9,7 +9,7 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "Trophy",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.AddColumn<string>(
                 name: "CollectedItems",
@@ -28,7 +28,7 @@ namespace Maple2.Server.World.Migrations {
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Achievement",
+                name: "achievement",
                 columns: table => new {
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     Id = table.Column<int>(type: "int", nullable: false),
@@ -50,7 +50,7 @@ namespace Maple2.Server.World.Migrations {
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
-                name: "Achievement");
+                name: "achievement");
 
             migrationBuilder.DropColumn(
                 name: "CollectedItems",
@@ -62,7 +62,7 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.AddColumn<string>(
                 name: "Trophy",
-                table: "Account",
+                table: "account",
                 type: "json",
                 nullable: false)
                 .Annotation("MySql:CharSet", "utf8mb4");

@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maple2.Database.Model;
@@ -40,6 +41,7 @@ internal class Buddy {
     }
 
     public static void Configure(EntityTypeBuilder<Buddy> builder) {
+        builder.ToTable("buddy");
         builder.HasKey(buddy => buddy.Id);
 
         builder.HasOne<Character>()
