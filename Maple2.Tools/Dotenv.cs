@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Maple2.Tools;
@@ -7,7 +7,7 @@ public static class DotEnv {
         string dotenv = Path.Combine(Paths.SOLUTION_DIR, ".env");
 
         if (!File.Exists(dotenv)) {
-            throw new FileNotFoundException(".env file not found!");
+            return;
         }
 
         foreach (string line in File.ReadAllLines(dotenv)) {

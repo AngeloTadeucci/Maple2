@@ -1,9 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 # World Service, Global Service
 EXPOSE 21001
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Maple2.Server.World/Maple2.Server.World.csproj", "Maple2.Server.World/"]
 COPY ["Maple2.Tools/Maple2.Tools.csproj", "Maple2.Tools/"]

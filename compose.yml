@@ -6,12 +6,15 @@ services:
     image: maple2-world:dev
     ports:
       - "21001:21001"
+    env_file:
+      - .env
     environment:
+      DB_IP: "mysql"
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       CHANNEL_SERVICE: "game-main,game-alt"
-      GAME_IP: "127.0.0.1"
-      LOGIN_IP: "127.0.0.1"
+    depends_on:
+      - mysql
 
   login:
     build:
@@ -19,17 +22,19 @@ services:
       dockerfile: ./Maple2.Server.Login/Dockerfile
     image: maple2-login:dev
     depends_on:
+      - mysql
       - world
     ports:
-      - "20001:20001"
+      - 20001:20001
     links:
       - "world"
+    env_file:
+      - .env
     environment:
+      DB_IP: "mysql"
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       WORLD_SERVICE: "world"
-      LOGIN_IP: "127.0.0.1"
-      WEB_URI: "http://127.0.0.1"
 
   game-main:
     build:
@@ -37,11 +42,13 @@ services:
       dockerfile: ./Maple2.Server.Game/Dockerfile
     image: maple2-game:dev
     depends_on:
+      - mysql
       - world
     ports:
-      - "20002:20002"
-      - "21002:21002"
+      - 20002:20002
+      - 21002:21002
     environment:
+      DB_IP: "mysql"
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       GAME_CHANNEL: 1
@@ -56,10 +63,11 @@ services:
       dockerfile: ./Maple2.Server.Game/Dockerfile
     image: maple2-game:dev
     depends_on:
+      - mysql
       - world
     ports:
-      - "20003:20003"
-      - "21003:21003"
+      - 20003:20003
+      - 21003:21003
     environment:
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
@@ -75,7 +83,25 @@ services:
       dockerfile: ./Maple2.Server.Web/Dockerfile
     image: maple2-web:dev
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
     environment:
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    container_name: maple2-db
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+volumes:
+  mysql:
