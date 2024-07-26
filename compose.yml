@@ -4,8 +4,10 @@ services:
       context: .
       dockerfile: ./Maple2.Server.World/Dockerfile
     image: maple2-world:dev
+    depends_on:
+      - mysql
     ports:
-      - "21001:21001"
+      - 21001:21001
     env_file:
       - .env
     environment:
@@ -13,8 +15,6 @@ services:
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       CHANNEL_SERVICE: "game-main,game-alt"
-    depends_on:
-      - mysql
 
   login:
     build:
@@ -82,13 +82,15 @@ services:
       context: .
       dockerfile: ./Maple2.Server.Web/Dockerfile
     image: maple2-web:dev
+    depends_on:
+      - mysql
     ports:
       - 80:80
       - 443:443
+    env_file:
+      - .env
     environment:
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
-    depends_on:
-      - mysql
 
   mysql:
     image: mysql:8.0

@@ -1,11 +1,11 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
 WORKDIR /app
 # Web Service (HTTP)
 EXPOSE 80
 # Web Service (HTTPS)
 # EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Maple2.Server.Web/Maple2.Server.Web.csproj", "Maple2.Server.Web/"]
 COPY ["Maple2.Database/Maple2.Database.csproj", "Maple2.Database/"]
