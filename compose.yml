@@ -1,4 +1,19 @@
 services:
+  metadata:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /app/Maple2.File.Ingest
+    command: dotnet run
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    env_file:
+      - .env
+    environment:
+      DB_IP: mysql
+    volumes:
+      - .:/app
+
   world:
     build:
       context: .
@@ -27,14 +42,14 @@ services:
     ports:
       - 20001:20001
     links:
-      - "world"
+      - world
     env_file:
       - .env
     environment:
-      DB_IP: "mysql"
+      DB_IP: mysql
+      WORLD_SERVICE: world
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
       DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
-      WORLD_SERVICE: "world"
 
   game-main:
     build:
@@ -54,7 +69,7 @@ services:
       GAME_CHANNEL: 1
       GAME_PORT: 20002
       GRPC_CHANNEL_PORT: 21002
-      WORLD_SERVICE: "world"
+      WORLD_SERVICE: world
       GAME_IP: "127.0.0.1"
 
   game-alt:
@@ -74,7 +89,7 @@ services:
       GAME_CHANNEL: 2
       GAME_PORT: 20003
       GRPC_CHANNEL_PORT: 21003
-      WORLD_SERVICE: "world"
+      WORLD_SERVICE: world
       GAME_IP: "127.0.0.1"
 
   web:
