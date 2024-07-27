@@ -21,4 +21,3 @@ RUN dotnet publish -r win-x64 "Maple2.Server.World.csproj" -c Debug -o /app/publ
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Maple2.Server.World.dll"]
