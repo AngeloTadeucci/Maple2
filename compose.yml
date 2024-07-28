@@ -1,4 +1,4 @@
-﻿services:
+services:
   db-seed:
     container_name: maple2-db-seed
     image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -69,7 +69,7 @@
     env_file:
       - .env
     environment:
-      DB_IP: "mysql"
+      DB_IP: mysql
       CHANNEL_SERVICE: "game-main,game-alt"
 
   game-main:
