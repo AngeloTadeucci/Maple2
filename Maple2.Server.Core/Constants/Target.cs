@@ -11,13 +11,15 @@ public static class Target {
     public static readonly ushort LoginPort = 20001;
 
     public static readonly IPAddress GameIp = IPAddress.Loopback;
-    public static readonly ushort GamePort = 20002;
-    public static readonly short GameChannel = 1;
+    public static readonly ushort BaseGamePort = 20002;
 
     public static readonly Uri WebUri = new("http://localhost");
 
+    public static readonly IPAddress GrpcWorldIp = IPAddress.Loopback;
     public static readonly ushort GrpcWorldPort = 21001;
-    public static readonly ushort GrpcChannelPort = 21002;
+    public static readonly Uri GrpcWorldUri = new($"http://{GrpcWorldIp}:{GrpcWorldPort}");
+
+    public static readonly ushort BaseGrpcChannelPort = 21002;
 
     static Target() {
         if (IPAddress.TryParse(Environment.GetEnvironmentVariable("LOGIN_IP"), out IPAddress? loginIpAddress)) {
@@ -30,19 +32,16 @@ public static class Target {
         if (IPAddress.TryParse(Environment.GetEnvironmentVariable("GAME_IP"), out IPAddress? gameIpAddress)) {
             GameIp = gameIpAddress;
         }
-        if (ushort.TryParse(Environment.GetEnvironmentVariable("GAME_PORT"), out ushort gamePortOverride)) {
-            GamePort = gamePortOverride;
-        }
-        if (short.TryParse(Environment.GetEnvironmentVariable("GAME_CHANNEL"), out short gameChannel)) {
-            GameChannel = gameChannel;
+
+        if (IPAddress.TryParse(Environment.GetEnvironmentVariable("GRPC_WORLD_IP"), out IPAddress? grpcWorldIpOverride)) {
+            GrpcWorldIp = grpcWorldIpOverride;
         }
 
         if (ushort.TryParse(Environment.GetEnvironmentVariable("GRPC_WORLD_PORT"), out ushort grpcWorldPortOverride)) {
             GrpcWorldPort = grpcWorldPortOverride;
         }
-        if (ushort.TryParse(Environment.GetEnvironmentVariable("GRPC_CHANNEL_PORT"), out ushort grpcChannelPortOverride)) {
-            GrpcChannelPort = grpcChannelPortOverride;
-        }
+
+        GrpcWorldUri = new Uri($"http://{GrpcWorldIp}:{GrpcWorldPort}");
 
         string webIP = Environment.GetEnvironmentVariable("WEB_IP") ?? "localhost";
         string webPort = Environment.GetEnvironmentVariable("WEB_PORT") ?? "4000";

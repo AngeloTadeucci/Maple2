@@ -8,7 +8,6 @@ using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
 using Maple2.Model.Game.Shop;
-using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
@@ -27,10 +26,11 @@ public class GameServer : Server<GameSession> {
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
 
-    public int Channel => Target.GameChannel;
+    private static short _channel = 0;
 
-    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage)
-            : base(Target.GamePort, router, context, serverTableMetadataStorage) {
+    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage, int port, int channel)
+            : base((ushort) port, router, context, serverTableMetadataStorage) {
+        _channel = (short) channel;
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
@@ -205,5 +205,9 @@ public class GameServer : Server<GameSession> {
         foreach (GameSession session in sessions.Values) {
             session.Send(packet);
         }
+    }
+
+    public static short GetChannel() {
+        return _channel;
     }
 }
