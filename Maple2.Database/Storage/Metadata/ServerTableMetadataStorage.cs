@@ -47,7 +47,7 @@ public class ServerTableMetadataStorage {
 
     public IEnumerable<GameEvent> GetGameEvents() {
         foreach ((int id, GameEventMetadata gameEvent) in GameEventTable.Entries) {
-            if (gameEvent.EndTime < DateTimeOffset.Now) {
+            if (gameEvent.EndTime < DateTimeOffset.Now.DateTime) {
                 continue;
             }
 
