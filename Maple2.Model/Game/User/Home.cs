@@ -48,7 +48,7 @@ public class Home : IByteSerializable {
     public int PlotMapId => Outdoor?.MapId ?? 0;
     public int PlotNumber => Outdoor?.Number ?? 0;
     public int ApartmentNumber => Outdoor?.ApartmentNumber ?? 0;
-    public long PlotExpiryTime => Outdoor?.ExpiryTime ?? Indoor.ExpiryTime;
+    public long PlotExpiryTime => Outdoor?.ExpiryTime ?? (string.IsNullOrEmpty(Name) ? 0 : Indoor.ExpiryTime); // If the name is empty, the plot is not setup yet.
     public PlotState State => Outdoor?.State ?? PlotState.Open;
 
     public Home() {
