@@ -28,10 +28,10 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      MS2_DATA_FOLDER: /app/MapleStory2/Data
+      MS2_DATA_FOLDER: /ClientData
     volumes:
       - .:/app
-      - /home/user/MapleStory2/Data:/app/MapleStory2/Data
+      - ${MS2_DOCKER_DATA_FOLDER}:/ClientData
 
   login:
     build:
@@ -54,8 +54,6 @@ services:
     environment:
       DB_IP: mysql
       WORLD_SERVICE: world
-      GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
-      DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
 
   world:
     build:
@@ -72,8 +70,6 @@ services:
       - .env
     environment:
       DB_IP: "mysql"
-      GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
-      DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       CHANNEL_SERVICE: "game-main,game-alt"
 
   game-main:
@@ -91,8 +87,6 @@ services:
       - .env
     environment:
       DB_IP: "mysql"
-      GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
-      DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       GAME_CHANNEL: 1
       GAME_PORT: 20002
       GRPC_CHANNEL_PORT: 21002
@@ -114,8 +108,6 @@ services:
       - .env
     environment:
       DB_IP: "mysql"
-      GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
-      DATA_DB_CONNECTION: "Server=host.docker.internal;Database=maple-data;User=root;Password=maplestory;oldguids=true"
       GAME_CHANNEL: 2
       GAME_PORT: 20003
       GRPC_CHANNEL_PORT: 21003
@@ -138,7 +130,7 @@ services:
       GAME_DB_CONNECTION: "Server=host.docker.internal;Database=game-server;User=root;Password=maplestory;oldguids=true"
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4
     restart: unless-stopped
     container_name: maple2-db
     env_file:
