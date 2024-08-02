@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using DotRecast.Core;
 using DotRecast.Core.Numerics;
 using DotRecast.Detour;
@@ -17,7 +18,7 @@ public sealed class AgentNavigation {
     public readonly DtCrowdAgent agent;
     private readonly DtCrowd crowd;
 
-    public List<RcVec3f> currentPath = [];
+    public List<RcVec3f>? currentPath = [];
     private int currentPathIndex = 0;
     private float currentPathProgress = 0;
 
@@ -27,33 +28,33 @@ public sealed class AgentNavigation {
         crowd = dtCrowd;
     }
 
-    public List<RcVec3f> FindPath(Vector3 startVec, Vector3 targetVec) {
+    public List<RcVec3f>? FindPath(Vector3 startVec, Vector3 targetVec) {
         return FindPath(crowd, DotRecastHelper.ToNavMeshSpace(startVec), DotRecastHelper.ToNavMeshSpace(targetVec));
     }
 
-    public List<RcVec3f> FindPath(RcVec3f startVec, RcVec3f targetVec) {
+    public List<RcVec3f>? FindPath(RcVec3f startVec, RcVec3f targetVec) {
         return FindPath(crowd, startVec, targetVec);
     }
 
-    private List<RcVec3f> FindPath(DtCrowd crowd, RcVec3f startVec, RcVec3f targetVec) {
+    private List<RcVec3f>? FindPath(DtCrowd crowd, RcVec3f startVec, RcVec3f targetVec) {
         DtNavMesh navMesh = crowd.GetNavMesh();
         DtNavMeshQuery navMeshQuery = crowd.GetNavMeshQuery();
         IDtQueryFilter filter = crowd.GetFilter(0);
         if (!FindNearestPoly(startVec, out long pos1Ref, out RcVec3f _)) {
             Logger.Error("Failed to find nearest poly at {StartVec}", startVec);
-            return [];
+            return null;
         }
 
         if (!FindNearestPoly(targetVec, out long posRef2, out RcVec3f _)) {
             Logger.Error("Failed to find nearest poly at {TargetVec}", targetVec);
-            return [];
+            return null;
         }
 
         List<long> pathIterPolys = [];
         navMeshQuery.FindPath(pos1Ref, posRef2, startVec, targetVec, filter, ref pathIterPolys, new DtFindPathOption(0, float.MaxValue));
         if (pathIterPolys.Count == 0) {
             Logger.Error("Failed to find path from {StartVec} to {TargetVec}", startVec, targetVec);
-            return [];
+            return null;
         }
 
         int pathIterPolysCount = pathIterPolys.Count;
@@ -176,7 +177,7 @@ public sealed class AgentNavigation {
     private bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
         var status = crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), crowd.GetFilter(0), out nearestRef, out position, out _);
         if (status.Failed()) {
-            Logger.Error("Failed to find nearest poly from {Source} => {Position}", point, position);
+            Logger.Error("Failed to find nearest poly from position {Source} for NPC {Npc}", point, npc.Value.Metadata.Name);
             return false;
         }
 
@@ -189,11 +190,11 @@ public sealed class AgentNavigation {
 
     public (Vector3 Start, Vector3 End) Advance(TimeSpan timeSpan, float speed, out bool followSegment) {
         followSegment = false;
-        if (currentPath.Count < 2) {
+        if (currentPath?.Count < 2) {
             return default;
         }
 
-        Vector3 start = DotRecastHelper.FromNavMeshSpace(currentPath[currentPathIndex]);
+        Vector3 start = DotRecastHelper.FromNavMeshSpace(currentPath![currentPathIndex]);
 
         if (currentPathIndex >= currentPath.Count - 1) {
             return default;
@@ -283,33 +284,44 @@ public sealed class AgentNavigation {
             Logger.Error(ex, "Failed to find path to {Target}", target);
         }
 
-        return currentPath != null;
+        return currentPath is not null;
     }
 
-    public bool PathAway(Vector3 goal, int distance) {
-        if (!FindNearestPoly(agent.npos, out _, out _)) {
+    public bool PathAwayFrom(Vector3 goal, int distance) {
+        if (!FindNearestPoly(agent.npos, out _, out RcVec3f position)) {
             return false;
         }
 
-        if (!FindNearestPoly(goal, out _, out _)) {
+        // get target in navmesh space
+        RcVec3f target = DotRecastHelper.ToNavMeshSpace(goal);
+
+        // get distance in navmesh space
+        float fDistance = distance * DotRecastHelper.MapRotation.GetRightAxis().Length();
+
+        // get direction from agent to target
+        RcVec3f direction = RcVec3f.Subtract(target, position);
+
+        // get the point that is fDistance away from the target in the opposite direction
+        RcVec3f positionAway = RcVec3f.Add(position, RcVec3f.Normalize(direction) * -fDistance);
+
+        // find the nearest poly to the positionAway
+        if (!FindNearestPoly(positionAway, out _, out RcVec3f positionAwayNavMesh)) {
             return false;
         }
 
-        return SetPathAway(goal, distance);
+        return SetPathAway(positionAwayNavMesh);
     }
 
-    private bool SetPathAway(Vector3 target, int distance) {
+    private bool SetPathAway(RcVec3f target) {
         currentPath = [];
         currentPathIndex = 0;
         currentPathProgress = 0;
         try {
-            // find a random point away from the target
-            Vector3 randomPoint = FindClosestPoint(target, distance);
-            currentPath = FindPath(agent.npos, DotRecastHelper.ToNavMeshSpace(randomPoint));
+            currentPath = FindPath(agent.npos, target);
         } catch (Exception ex) {
             Logger.Error(ex, "Failed to find path away from {Target}", target);
         }
 
-        return currentPath != null;
+        return currentPath is not null;
     }
 }
