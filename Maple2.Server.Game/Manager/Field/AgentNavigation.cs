@@ -299,7 +299,7 @@ public sealed class AgentNavigation {
         float fDistance = distance * DotRecastHelper.MapRotation.GetRightAxis().Length();
 
         // get direction from agent to target
-        RcVec3f direction = RcVec3f.Subtract(target, position);
+        RcVec3f direction = RcVec3f.Normalize(RcVec3f.Subtract(target, position));
 
         // get the point that is fDistance away from the target in the opposite direction
         RcVec3f positionAway = RcVec3f.Add(position, RcVec3f.Normalize(direction) * -fDistance);
