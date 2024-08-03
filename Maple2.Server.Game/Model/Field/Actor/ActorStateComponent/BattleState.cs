@@ -89,7 +89,7 @@ public class BattleState {
     }
 
     public bool IsInRange(float distanceSquared, float verticalOffset, float radiusSquared, float heightUp, float heightDown) {
-        return distanceSquared < radiusSquared && verticalOffset <= heightUp && verticalOffset >= heightDown;
+        return distanceSquared < radiusSquared && verticalOffset <= heightUp && verticalOffset >= heightDown - 10;
     }
 
     public bool ShouldTargetActor(IActor target, float radiusSquared, float heightUp, float heightDown) {
