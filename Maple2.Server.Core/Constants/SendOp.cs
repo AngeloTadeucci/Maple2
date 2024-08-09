@@ -118,7 +118,7 @@ public enum SendOp : ushort {
     Notice = 0x0073,
     RelocateWorld = 0x0074,
     Liftable = 0x0075,
-    ItemFusion = 0x0076,
+    ItemMerge = 0x0076,
     Vibrate = 0x0077,
     HideVibrate = 0x0078,
     ShowVibrate = 0x0079,
