@@ -222,6 +222,9 @@ public class VertexShader : Shader {
 
         Shader.Dispose();
         InputLayout.Dispose();
+
+        Shader = default;
+        InputLayout = default;
     }
 
     public unsafe void Bind() {

@@ -194,7 +194,9 @@ public sealed partial class FieldManager : IDisposable {
 
     private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
-            Update();
+            if (!(DebugRenderer?.IsActive ?? false)) {
+                Update();
+            }
 
             // Environment.TickCount has ~16ms precision so sleep until next update
             Thread.Sleep(15);
@@ -202,7 +204,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public void Update() {
-        if (Players.IsEmpty || (DebugRenderer?.IsActive ?? false)) {
+        if (Players.IsEmpty) {
             return;
         }
 

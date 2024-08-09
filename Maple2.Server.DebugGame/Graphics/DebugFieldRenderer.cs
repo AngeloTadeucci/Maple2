@@ -8,18 +8,14 @@ namespace Maple2.Server.DebugGame.Graphics {
         public bool IsActive {
             get {
                 activeMutex.WaitOne();
-                bool isActive = this.isActive;
+                bool isActive = activeWindows.Count > 0;
                 activeMutex.ReleaseMutex();
                 return isActive;
             }
-            set {
-                activeMutex.WaitOne();
-                isActive = value;
-                activeMutex.ReleaseMutex();
-            }
         }
-        private bool isActive;
-        private Mutex activeMutex;
+
+        private HashSet<DebugFieldWindow> activeWindows = new HashSet<DebugFieldWindow>();
+        private Mutex activeMutex = new();
 
         public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {
             Context = context;
@@ -31,15 +27,39 @@ namespace Maple2.Server.DebugGame.Graphics {
                 return;
             }
 
-            Field.Update();
+            if (!Context.HasFieldUpdated(Field)) {
+                Context.FieldUpdated(Field);
+
+                Field.Update();
+            }
         }
 
-        public void Render(long tickCount) {
+        public void Render(double delta) {
 
         }
 
         public void CleanUp() {
 
+        }
+
+        public void AttachWindow(DebugFieldWindow window) {
+            activeMutex.WaitOne();
+
+            if (!activeWindows.Contains(window)) {
+                activeWindows.Add(window);
+            }
+
+            activeMutex.ReleaseMutex();
+        }
+
+        public void DetachWindow(DebugFieldWindow window) {
+            activeMutex.WaitOne();
+
+            if (activeWindows.Contains(window)) {
+                activeWindows.Remove(window);
+            }
+
+            activeMutex.ReleaseMutex();
         }
     }
 }

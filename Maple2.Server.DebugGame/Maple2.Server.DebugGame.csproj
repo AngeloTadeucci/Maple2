@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ImGui.NET" Version="1.91.0.1" />
+    <PackageReference Include="Maple2.ImGui.NET" Version="1.91.0.3" />
     <PackageReference Include="Silk.NET" Version="2.21.0" />
     <PackageReference Include="Silk.NET.Direct3D.Compilers" Version="2.21.0" />
     <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0" />
