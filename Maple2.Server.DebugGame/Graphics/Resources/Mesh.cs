@@ -48,16 +48,16 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
                 vertexBufferBindings[3] = vertexBuffer3;
                 vertexBufferBindings[4] = vertexBuffer4;
 
-                vertexBufferStrides[0] = (uint)sizeof(Data.VertexBuffer.PositionBinding);
-                vertexBufferStrides[1] = (uint)sizeof(Data.VertexBuffer.AttributeBinding);
-                vertexBufferStrides[2] = (uint)sizeof(Data.VertexBuffer.OrientationBinding);
-                vertexBufferStrides[3] = (uint)sizeof(Data.VertexBuffer.MorphBinding);
-                vertexBufferStrides[4] = (uint)sizeof(Data.VertexBuffer.BlendBinding);
+                vertexBufferStrides[0] = (uint) sizeof(Data.VertexBuffer.PositionBinding);
+                vertexBufferStrides[1] = (uint) sizeof(Data.VertexBuffer.AttributeBinding);
+                vertexBufferStrides[2] = (uint) sizeof(Data.VertexBuffer.OrientationBinding);
+                vertexBufferStrides[3] = (uint) sizeof(Data.VertexBuffer.MorphBinding);
+                vertexBufferStrides[4] = (uint) sizeof(Data.VertexBuffer.BlendBinding);
 
             }
 
             topologyType = meshData.IsTriangleMesh ? D3DPrimitiveTopology.D3D10PrimitiveTopologyTrianglelist : D3DPrimitiveTopology.D3D10PrimitiveTopologyLinelist;
-            indexCount = (uint)meshData.IndexBuffer.Length;
+            indexCount = (uint) meshData.IndexBuffer.Length;
         }
 
         private unsafe void UploadBuffer<BufferType>(ReadOnlySpan<BufferType> data, ref ComPtr<ID3D11Buffer> buffer, BindFlag flags) {
@@ -66,7 +66,7 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
                 Usage = Usage.Default,
                 BindFlags = (uint) flags
             };
-                
+
             fixed (BufferType* bindingData = data) {
                 var subresourceData = new SubresourceData {
                     PSysMem = bindingData

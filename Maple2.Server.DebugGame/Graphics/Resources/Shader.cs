@@ -14,7 +14,7 @@ public abstract class Shader {
 
     protected ComPtr<ID3D10Blob> Bytecode;
     protected ComPtr<ID3D10Blob> CompileErrors;
-    public bool Loaded {  get; private set; }
+    public bool Loaded { get; private set; }
 
     public Shader() {
     }

@@ -5,7 +5,7 @@ using System.Linq;
 namespace Maple2.Tools.Extensions;
 
 public static class ListExtension {
-    public static int AddSorted<T>(this List<T> @this, T item) where T: IComparable<T> {
+    public static int AddSorted<T>(this List<T> @this, T item) where T : IComparable<T> {
         return @this.AddSorted(item, Comparer<T>.Create((item, item2) => item.CompareTo(item2)));
     }
 

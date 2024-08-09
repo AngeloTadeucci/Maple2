@@ -56,8 +56,7 @@ public class Texture {
                     ppTexture2D: ref texture));
                 Texture2D = texture;
             }
-        }
-        else {
+        } else {
             // handle split texture memory. likely covers .dds textures
         }
 

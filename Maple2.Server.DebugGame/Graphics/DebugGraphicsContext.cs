@@ -146,15 +146,15 @@ namespace Maple2.Server.DebugGame.Graphics {
 
                 // Factory1 adds DXGI 1.1 support & Factory2 adds DXGI 1.2 support
                 DxFactory = Dxgi.CreateDXGIFactory<IDXGIFactory2>();
-                
+
                 IDXGISwapChain1* swapChain = default;
 
                 SilkMarshal.ThrowHResult(DxFactory.CreateSwapChainForHwnd(
                     pDevice: (IUnknown*) (ID3D11Device*) DxDevice,
                     hWnd: DebuggerWindow!.Native!.DXHandle!.Value,
                     pDesc: &swapChainDescription,
-                    pFullscreenDesc: (SwapChainFullscreenDesc*)null,
-                    pRestrictToOutput: (IDXGIOutput*)null,
+                    pFullscreenDesc: (SwapChainFullscreenDesc*) null,
+                    pRestrictToOutput: (IDXGIOutput*) null,
                     ppSwapChain: &swapChain));
 
                 DxSwapChain = swapChain;
@@ -331,9 +331,9 @@ namespace Maple2.Server.DebugGame.Graphics {
             Viewport viewport = new Viewport(0, 0, DebuggerWindow!.FramebufferSize.X, DebuggerWindow!.FramebufferSize.Y, 0, 1);
             DxDeviceContext.RSSetViewports(1, ref viewport);
 
-            DxDeviceContext.OMSetRenderTargets(1, ref renderTargetView.Handle, (ID3D11DepthStencilView*)null);
+            DxDeviceContext.OMSetRenderTargets(1, ref renderTargetView.Handle, (ID3D11DepthStencilView*) null);
 
-            ImGuiController!.BeginFrame((float)delta);
+            ImGuiController!.BeginFrame((float) delta);
 
             #region Render code
             // Begin region for render code

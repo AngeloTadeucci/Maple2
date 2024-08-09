@@ -119,8 +119,7 @@ public class DebugFieldWindow {
             }
 
             Context.FieldWindowClosed(this);
-        }
-        catch (InvalidOperationException ex) {
+        } catch (InvalidOperationException ex) {
             // hit a weird race condition: 'You cannot call `Reset` inside of the render loop!'; try again later
         }
 

@@ -56,7 +56,7 @@ namespace Maple2.Server.DebugGame.Graphics.Data {
                 MorphPos1 = morphPos1;
             }
         }
-        
+
         // Bindings[4] - Contains skeletal mesh blending parameters
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         public struct BlendBinding {
@@ -91,7 +91,7 @@ namespace Maple2.Server.DebugGame.Graphics.Data {
         public Span<uint> IndexBuffer { get => CollectionsMarshal.AsSpan(indexBuffer); }
 
         public int PrimitiveCount {
-            get => (int)indexBuffer.Count / PrimitiveVertexCount;
+            get => (int) indexBuffer.Count / PrimitiveVertexCount;
             set => Resize(indexBuffer, value);
         }
 

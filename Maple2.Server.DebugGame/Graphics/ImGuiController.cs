@@ -134,8 +134,7 @@ public class ImGuiController {
 
         if (connected) {
             RegisterKeyboard(keyboard);
-        }
-        else {
+        } else {
             UnregisterKeyboard(keyboard);
         }
 
