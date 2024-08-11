@@ -403,7 +403,7 @@ namespace Maple2.Server.DebugGame.Graphics {
         private unsafe void OnRender(double delta) {
             DateTime currentTime = DateTime.Now;
 
-            int deltaMs = (int)((currentTime.Ticks - lastTime.Ticks) / TimeSpan.TicksPerMillisecond);
+            int deltaMs = (int) ((currentTime.Ticks - lastTime.Ticks) / TimeSpan.TicksPerMillisecond);
 
             int timeLeftToWait = int.Max(0, 15 - deltaMs - 1);
 
@@ -420,8 +420,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             if (deltaTimes.Count < 50) {
                 deltaTimes.Add(deltaMs);
-            }
-            else {
+            } else {
                 deltaTimes[deltaIndex] = deltaMs;
                 deltaIndex = (deltaIndex + 1) % 50;
             }
@@ -469,7 +468,7 @@ namespace Maple2.Server.DebugGame.Graphics {
         private void FieldListWindow() {
             ImGui.Begin("Fields");
 
-            bool selectFieldDisabled = selectedWindow is null || selectedRenderer is null;
+            bool selectFieldDisabled = selectedWindow is null || selectedRenderer is null || selectedWindow?.ActiveRenderer == selectedRenderer;
 
             if (selectFieldDisabled) {
                 ImGui.BeginDisabled();
