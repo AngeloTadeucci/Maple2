@@ -62,7 +62,5 @@ public class ItemMergeHandler : PacketHandler<GameSession> {
         }
 
         session.Send(ItemMergePacket.Stage(catalystUids));
-
-
     }
 }

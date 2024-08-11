@@ -1068,7 +1068,6 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 values.Add(value);
                                 weights.Add(weight);
                             }
-
                         }
 
                         basicOptions[basicAttribute] = new ItemMergeOption(

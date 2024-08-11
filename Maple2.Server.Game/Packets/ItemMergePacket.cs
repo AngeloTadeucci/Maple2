@@ -62,5 +62,4 @@ public static class ItemMergePacket {
         pWriter.WriteFloat(option.Rates[0]);
         pWriter.WriteFloat(option.Rates[^1]);
     }
-
 }
