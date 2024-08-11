@@ -1,15 +1,10 @@
-﻿using Grpc.Core;
-using Maple2.Database.Storage;
-using Maple2.Model.Error;
+﻿using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
-using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Server.World.Service;
-using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -22,7 +17,7 @@ public class ItemMergeHandler : PacketHandler<GameSession> {
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
-    public required WorldClient World { private get; init; }
+    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -37,6 +32,36 @@ public class ItemMergeHandler : PacketHandler<GameSession> {
 
     private void HandleStage(GameSession session, IByteReader packet) {
         long itemUid = packet.ReadLong();
+
+        Item? item = session.Item.Inventory.Get(itemUid);
+        if (item == null) {
+            item = session.Item.Equips.Get(itemUid);
+            if (item == null) {
+                // TODO: Error
+                return;
+            }
+        }
+        int type = item.Type.Type;
+
+        List<long> catalystUids = new();
+        foreach ((int id, Dictionary<int, ItemMergeSlot> options) in session.ServerTableMetadata.ItemMergeTable.Entries) {
+            Item? catalyst = session.Item.Inventory.Find(id).FirstOrDefault();
+            if (catalyst == null) {
+                continue;
+            }
+
+            if (catalyst.Metadata.Limit.Level < item.Metadata.Limit.Level) {
+                continue;
+            }
+
+            if (!options.TryGetValue(type, out ItemMergeSlot? mergeSlot)) {
+                continue;
+            }
+
+            catalystUids.Add(catalyst.Uid);
+        }
+
+        session.Send(ItemMergePacket.Stage(catalystUids));
 
 
     }

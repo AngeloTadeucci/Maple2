@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Xml;
 using Maple2.Database.Extensions;
+using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Enum;
@@ -12,6 +13,7 @@ using DayOfWeek = System.DayOfWeek;
 using ExpType = Maple2.Model.Enum.ExpType;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
+using ScriptType = Maple2.Model.Enum.ScriptType;
 using TimeEventType = Maple2.File.Parser.Enum.TimeEventType;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -35,6 +37,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
         yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
+        yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
 
     }
 
@@ -1018,6 +1021,153 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             default:
                 return null;
         }
+    }
+
+    private ItemMergeTable ParseItemMergeOptionTable() {
+        var results = new Dictionary<int, Dictionary<int, ItemMergeSlot>>();
+        foreach ((int id, MergeOption mergeOption) in parser.ParseItemMergeOption()) {
+            var slots = new Dictionary<int, ItemMergeSlot>();
+            foreach (MergeOption.Slot slotEntry in mergeOption.slot) {
+                var ingredients = new List<ItemComponent>();
+                if (slotEntry.itemMaterial1.Length > 0) {
+                    var tag = ItemTag.None;
+                    string[] item = slotEntry.itemMaterial1[0].Split(':');
+                    if (item.Length == 2) {
+                        tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
+                    }
+
+                    if (!int.TryParse(item[0], out int itemId)) {
+                        itemId = 0;
+                    }
+
+                    if (!int.TryParse(slotEntry.itemMaterial1[1], out int rarity)) {
+                        rarity = 1;
+                    }
+
+                    if (!int.TryParse(slotEntry.itemMaterial1[2], out int amount)) {
+                        amount = 1;
+                    }
+
+                    if (tag != ItemTag.None || itemId > 0) {
+                        ingredients.Add(new ItemComponent(
+                            ItemId: itemId,
+                            Rarity: rarity,
+                            Amount: amount,
+                            Tag: tag));
+                    }
+                }
+
+                if (slotEntry.itemMaterial2.Length > 0) {
+                    var tag = ItemTag.None;
+                    string[] item = slotEntry.itemMaterial2[0].Split(':');
+                    if (item.Length == 2) {
+                        tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
+                    }
+
+                    if (!int.TryParse(item[0], out int itemId)) {
+                        itemId = 0;
+                    }
+
+                    if (!int.TryParse(slotEntry.itemMaterial2[1], out int rarity)) {
+                        rarity = 1;
+                    }
+
+                    if (!int.TryParse(slotEntry.itemMaterial2[2], out int amount)) {
+                        amount = 1;
+                    }
+
+                    if (tag != ItemTag.None || itemId > 0) {
+                        ingredients.Add(new ItemComponent(
+                            ItemId: itemId,
+                            Rarity: rarity,
+                            Amount: amount,
+                            Tag: tag));
+                    }
+                }
+
+                var basicOptions = new Dictionary<BasicAttribute, ItemMergeOption>();
+                var specialOptions = new Dictionary<SpecialAttribute, ItemMergeOption>();
+
+                foreach (MergeOption.Option mergeOptionEntry in slotEntry.option) {
+                    if (mergeOptionEntry.optionName is "str" or "dex" or "int" or "luk" or "hp" or "hp_rgp" or "hp_inv" or "sp" or "sp_rgp" or "sp_inv" or "ep" or "ep_rgp" or "ep_inv" or "asp" or "msp" or "atp" or "evp" or "cap" or "cad" or "car" or "ndd" or "abp" or "jmp" or "pap" or "map" or "par" or "mar" or "wapmin" or "wapmax" or "dmg" or "pen" or "rmsp" or "bap" or "bap_pet") {
+                        var basicAttribute = mergeOptionEntry.optionName.ToBasicAttribute();
+                        List<int> values = [];
+                        List<float> rates = [];
+                        List<int> weights = [];
+                        if (basicAttribute is BasicAttribute.Piercing or BasicAttribute.PerfectGuard or
+                            BasicAttribute.PhysicalRes or BasicAttribute.MagicalRes) {
+                            for (int i = 0; i < 9; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                rates.Add(value);
+                                weights.Add(weight);
+                            }
+                        } else {
+                            for (int i = 0; i < 9; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                values.Add(value);
+                                weights.Add(weight);
+                            }
+
+                        }
+
+                        basicOptions[basicAttribute] = new ItemMergeOption(
+                            Values: values.ToArray(),
+                            Rates: rates.ToArray(),
+                            Weights: weights.ToArray());
+                    } else {
+                        var specialAttribute = mergeOptionEntry.optionName.ToSpecialAttribute();
+                        List<int> values = [];
+                        List<float> rates = [];
+                        List<int> weights = [];
+                        if (mergeOptionEntry.optionName is "killhprestore" or "skillcooldown" or "knockbackreduce" or "improve_massive_ox_msp" or "improve_massive_trapmaster_msp" or "improve_massive_finalsurvival_msp"
+                            or "improve_massive_crazyrunner_msp" or "improve_massive_sh_crazyrunner_msp" or "improve_massive_escape_msp" or "improve_massive_springbeach_msp" or "improve_massive_dancedance_msp" or
+                            "improve_darkstream_evp" or "complete_fieldmission_msp" or "additionaleffect_95000018" or "additionaleffect_95000012" or "additionaleffect_95000014" or "additionaleffect_95000020" or
+                            "additionaleffect_95000021" or "additionaleffect_95000022" or "additionaleffect_95000023" or "additionaleffect_95000024" or "additionaleffect_95000025" or "additionaleffect_95000026" or
+                            "additionaleffect_95000027" or "additionaleffect_95000028" or "additionaleffect_95000029") {
+                            for (int i = 0; i < 9; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                values.Add(value);
+                                weights.Add(weight);
+                            }
+                        } else {
+                            for (int i = 0; i < 9; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                rates.Add(value);
+                                weights.Add(weight);
+                            }
+                        }
+
+                        specialOptions[specialAttribute] = new ItemMergeOption(
+                            Values: values.ToArray(),
+                            Rates: rates.ToArray(),
+                            Weights: weights.ToArray());
+                    }
+                }
+                var slot = new ItemMergeSlot(
+                    Slot: slotEntry.part,
+                    MesoCost: slotEntry.consumeMeso,
+                    Materials: ingredients.ToArray(),
+                    BasicOptions: basicOptions,
+                    SpecialOptions: specialOptions
+                );
+
+                slots.Add(slotEntry.part, slot);
+            }
+            results.Add(id, slots);
+        }
+        return new ItemMergeTable(results);
     }
 }
 

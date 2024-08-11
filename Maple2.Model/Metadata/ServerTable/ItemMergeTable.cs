@@ -5,12 +5,7 @@ using Maple2.Model.Game;
 namespace Maple2.Model.Metadata;
 
 public record ItemMergeTable(
-    IReadOnlyDictionary<int, IReadOnlyDictionary<int, ItemOptionConstant>> Options
-) : Table {
-    public record Entry(
-        int Id,
-        IReadOnlyDictionary<int, ItemMergeSlot> Slots);
-}
+    IReadOnlyDictionary<int, Dictionary<int, ItemMergeSlot>> Entries) : ServerTable;
 
 public record ItemMergeSlot(
     int Slot,
@@ -21,9 +16,7 @@ public record ItemMergeSlot(
 );
 
 public record ItemMergeOption(
-    int MinValue,
     int[] Values,
-    float MinRate,
     float[] Rates,
     int[] Weights
 );
