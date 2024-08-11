@@ -42,7 +42,9 @@ namespace Maple2.Server.DebugGame.Graphics {
         private string resourceRootPath = "";
 
         private List<DebugFieldRenderer> fieldRenderers = new();
+        public IReadOnlyList<DebugFieldRenderer> FieldRenderers { get => fieldRenderers; }
         private DebugFieldRenderer? selectedRenderer = null;
+        public IReadOnlyList<DebugFieldWindow> FieldWindows { get => fieldWindows; }
         private List<DebugFieldWindow> fieldWindows = new();
         private DebugFieldWindow? selectedWindow = null;
         private HashSet<FieldManager> updatedFields = new();
@@ -64,8 +66,12 @@ namespace Maple2.Server.DebugGame.Graphics {
             bool subWindowsUpdating = false;
 
             while (!(DebuggerWindow?.IsClosing ?? true) || subWindowsUpdating) {
-                if (DebuggerWindow is not null) {
+                if (DebuggerWindow is not null && !DebuggerWindow.IsClosing) {
                     UpdateWindow(DebuggerWindow, IsClosing);
+
+                    if (DebuggerWindow.IsClosing) {
+                        CleanUp();
+                    }
                 }
 
                 DebugFieldWindow[] windows = fieldWindows.ToArray();
@@ -167,7 +173,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                 window.Close();
             }
 
-            CleanUp();
+            IsClosing = true;
         }
 
         private void OnLoad() {
@@ -248,7 +254,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             SampleTexture = new Texture(this);
             SampleTexture.Load("sample_derp_wave.png");
 
-            ImGuiController = new ImGuiController(this, Input);
+            ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
             ImGuiController.Initialize(DebuggerWindow);
         }
@@ -439,8 +445,8 @@ namespace Maple2.Server.DebugGame.Graphics {
             CoreModels!.Quad.Draw(); // draw a full screen quad/rectangle
 
             // logic
-            FieldListWindow();
-            RendererListWindow();
+            //FieldListWindow();
+            //RendererListWindow();
 
             // End region for render code
             #endregion
@@ -451,179 +457,6 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             renderTargetView.Dispose();
             framebuffer.Dispose();
-        }
-
-        private void FieldListWindow() {
-            ImGui.Begin("Fields");
-
-            bool selectFieldDisabled = selectedWindow is null || selectedRenderer is null || selectedWindow?.ActiveRenderer == selectedRenderer;
-
-            if (selectFieldDisabled) {
-                ImGui.BeginDisabled();
-            }
-
-            if (ImGui.Button("Select field") && !selectFieldDisabled) {
-                selectedWindow!.SetActiveRenderer(selectedRenderer);
-
-                selectedRenderer = null;
-            }
-
-            if (selectFieldDisabled) {
-                ImGui.EndDisabled();
-            }
-
-            ImGui.SameLine();
-
-            selectFieldDisabled = selectedWindow?.ActiveRenderer is null;
-
-            if (selectFieldDisabled) {
-                ImGui.BeginDisabled();
-            }
-
-            if (ImGui.Button("Unselect Field")) {
-                selectedWindow!.SetActiveRenderer(null);
-            }
-
-            if (selectFieldDisabled) {
-                ImGui.EndDisabled();
-            }
-
-            if (ImGui.BeginTable("Active fields", 3)) {
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-
-                ImGui.TableSetColumnIndex(0);
-                ImGui.Text("Map Id");
-                ImGui.TableSetColumnIndex(1);
-                ImGui.Text("Map Name");
-                ImGui.TableSetColumnIndex(2);
-                ImGui.Text("Instance Id");
-
-                int index = 0;
-                foreach (DebugFieldRenderer renderer in fieldRenderers) {
-                    ImGui.TableNextRow();
-
-                    bool selected = renderer == selectedRenderer || selectedWindow?.ActiveRenderer == renderer;
-                    bool nextSelected = false;
-
-                    selectFieldDisabled = selectedWindow?.ActiveRenderer == renderer;
-
-                    if (selectFieldDisabled) {
-                        ImGui.BeginDisabled();
-                    }
-
-                    ImGui.TableSetColumnIndex(0);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 0", renderer.Field.MapId, index), selected);
-                    ImGui.TableSetColumnIndex(1);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 1", renderer.Field.Metadata.Name, index), selected);
-                    ImGui.TableSetColumnIndex(2);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 2", renderer.Field.InstanceId, index), selected);
-
-                    if (selectFieldDisabled) {
-                        ImGui.EndDisabled();
-                    }
-
-                    if (nextSelected) {
-                        selectedRenderer = renderer;
-                    }
-
-                    ++index;
-                }
-
-                ImGui.EndTable();
-            }
-
-            ImGui.End();
-        }
-
-        private void RendererListWindow() {
-            ImGui.Begin("Windows");
-
-            ImGui.Text(string.Format("Average frame time: {0} ms; {1} FPS", DeltaAverage, 1000.0f / DeltaAverage));
-            ImGui.Text(string.Format("Min frame time: {0} ms; {1} FPS", DeltaMin, 1000.0f / DeltaMin));
-            ImGui.Text(string.Format("Max frame time: {0} ms; {1} FPS", DeltaMax, 1000.0f / DeltaMax));
-
-            bool newWindowDisabled = false;
-
-            DebugFieldWindow[] windows = fieldWindows.ToArray();
-
-            foreach (DebugFieldWindow window in windows) {
-                newWindowDisabled |= window.IsClosing;
-            }
-
-            if (newWindowDisabled) {
-                ImGui.BeginDisabled();
-            }
-
-            if (ImGui.Button("New window") && !newWindowDisabled) {
-                selectedWindow = FieldWindowOpened();
-            }
-
-            if (newWindowDisabled) {
-                ImGui.EndDisabled();
-            }
-
-            bool selectWindowDisabled = selectedWindow is null;
-
-            if (selectWindowDisabled) {
-                ImGui.BeginDisabled();
-            }
-
-            ImGui.SameLine();
-
-            bool closeWindow = ImGui.Button("Close window");
-
-            if (closeWindow && !selectWindowDisabled) {
-                selectedWindow!.Close();
-            }
-
-            if (selectWindowDisabled) {
-                ImGui.EndDisabled();
-            }
-
-            if (closeWindow) {
-                selectedWindow = null;
-            }
-
-            if (ImGui.BeginTable("Active windows", 4)) {
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-
-                ImGui.TableSetColumnIndex(0);
-                ImGui.Text("Window");
-                ImGui.TableSetColumnIndex(1);
-                ImGui.Text("Map Id");
-                ImGui.TableSetColumnIndex(2);
-                ImGui.Text("Map Name");
-                ImGui.TableSetColumnIndex(3);
-                ImGui.Text("Instance Id");
-
-                int index = 0;
-                foreach (DebugFieldWindow window in fieldWindows) {
-                    ImGui.TableNextRow();
-
-                    bool selected = window == selectedWindow;
-                    bool nextSelected = false;
-
-                    ImGui.TableSetColumnIndex(0);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 0", window.WindowName, index), selected);
-                    ImGui.TableSetColumnIndex(1);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 1", window.ActiveRenderer?.Field.MapId.ToString() ?? "", index), selected);
-                    ImGui.TableSetColumnIndex(2);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 2", window.ActiveRenderer?.Field.Metadata.Name ?? "", index), selected);
-                    ImGui.TableSetColumnIndex(3);
-                    nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 3", window.ActiveRenderer?.Field.InstanceId.ToString() ?? "", index), selected);
-
-                    if (nextSelected) {
-                        selectedWindow = window;
-                        selectedRenderer = window.ActiveRenderer;
-                    }
-
-                    ++index;
-                }
-
-                ImGui.EndTable();
-            }
-
-            ImGui.End();
         }
     }
 }

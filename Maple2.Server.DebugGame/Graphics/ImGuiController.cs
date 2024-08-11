@@ -1,25 +1,86 @@
 ﻿using ImGuiNET;
-using Microsoft.Scripting.Runtime;
+using Maple2.Server.DebugGame.Graphics.UI;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenAL;
 using Silk.NET.Windowing;
 using System.Drawing;
 using System.Numerics;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
+public enum ImGuiWindowType {
+    NoToolbar,
+    Main,
+    Field
+}
+
 public class ImGuiController {
     public DebugGraphicsContext Context { get; init; }
     public IWindow? ParentWindow { get; private set; }
     public IInputContext Input { get; init; }
     public IntPtr ImGuiContext { get; private set; }
+    public ImGuiWindowType WindowType { get; init; }
     private List<char> pressedCharacters;
 
-    public ImGuiController(DebugGraphicsContext context, IInputContext input) {
+    private List<IUiWindow> uiWindows = new();
+    private Dictionary<Type, IUiWindow> uiWindowMap = new();
+    private static bool _initializedReflectedTypes = false;
+    private static IEnumerable<Type> _uiWindowTypes = Array.Empty<Type>();
+
+    public ImGuiController(DebugGraphicsContext context, IInputContext input, ImGuiWindowType windowType = ImGuiWindowType.NoToolbar) {
         Context = context;
         Input = input;
         pressedCharacters = new List<char>();
+        WindowType = windowType;
+
+        InitializeWindows(null);
+    }
+
+    public ImGuiController(DebugGraphicsContext context, IInputContext input, DebugFieldWindow fieldWindow) {
+        Context = context;
+        Input = input;
+        pressedCharacters = new List<char>();
+        WindowType = ImGuiWindowType.Field;
+
+        InitializeWindows(fieldWindow);
+    }
+
+    private void InitializeWindows(DebugFieldWindow? fieldWindow) {
+        if (WindowType == ImGuiWindowType.NoToolbar) {
+            return;
+        }
+
+        if (!_initializedReflectedTypes) {
+            _initializedReflectedTypes = true;
+
+            _uiWindowTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).Where(t => t.GetInterfaces().Contains(typeof(IUiWindow)));
+        }
+
+        foreach (Type type in _uiWindowTypes) {
+            var windowObject = Activator.CreateInstance(type);
+
+            if (windowObject is not IUiWindow window) {
+                throw new InvalidCastException($"Type {type.Name} doesn't implement IUiWindow");
+            }
+
+            bool windowIsAllowed = WindowType switch {
+                ImGuiWindowType.NoToolbar => false,
+                ImGuiWindowType.Main => window.AllowMainWindow,
+                ImGuiWindowType.Field => window.AllowFieldWindow,
+                _ => false
+            };
+
+            if (!windowIsAllowed) {
+                continue;
+            }
+
+            uiWindows.Add(window);
+            uiWindowMap.Add(((dynamic) window).GetType(), window);
+        }
+
+        foreach (IUiWindow window in uiWindows) {
+            window.Initialize(Context, this, fieldWindow);
+        }
     }
 
     public unsafe void Initialize(IWindow window) {
@@ -76,6 +137,8 @@ public class ImGuiController {
 
         ImGuiNative.igImGui_ImplDX11_NewFrame();
         ImGui.NewFrame();
+
+        RenderWindows();
     }
 
     public unsafe void EndFrame() {
@@ -85,6 +148,74 @@ public class ImGuiController {
 
         ImGui.Render();
         ImGuiNative.igImGui_ImplDX11_RenderDrawData(ImGui.GetDrawData().NativePtr);
+    }
+
+    public T? GetUiWindow<T>() where T : IUiWindow {
+        Type type = typeof(T);
+
+        uiWindowMap.TryGetValue(type, out IUiWindow? window);
+
+        if (window is not T value) {
+            return default;
+        }
+
+        return value;
+    }
+
+    public void RenderWindows() {
+        if (WindowType == ImGuiWindowType.NoToolbar) {
+            return;
+        }
+
+        float height = ImGui.CalcTextSize("M").Y;// + 2 * ImGui.GetStyle().FramePadding.Y;
+        float width = ParentWindow!.FramebufferSize.X;
+
+        ImGui.SetNextWindowPos(new Vector2(0, 0));
+        ImGui.SetNextWindowSize(new Vector2(width, height));
+
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar;
+        windowFlags |= ImGuiWindowFlags.NoResize;
+        windowFlags |= ImGuiWindowFlags.NoMove;
+        windowFlags |= ImGuiWindowFlags.NoScrollbar;
+        windowFlags |= ImGuiWindowFlags.NoSavedSettings;
+
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0, 0));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+
+        height = ImGui.CalcTextSize("M").Y;// + 2 * ImGui.GetStyle().FramePadding.Y;
+
+        ImGui.SetWindowSize(new Vector2(width, height));
+
+        ImGui.Begin("##TOOLBAR", windowFlags);
+
+        ImGuiComboFlags comboFlags = ImGuiComboFlags.NoArrowButton;
+        comboFlags |= ImGuiComboFlags.HeightLargest;
+        comboFlags |= ImGuiComboFlags.WidthFitPreview;
+
+        if (ImGui.BeginCombo("##TOOLBAR COMBO", "View", comboFlags)) {
+            foreach (IUiWindow window in uiWindows) {
+                bool toggle = ImGui.Selectable(window.TypeName, window.Enabled);
+
+                if (toggle) {
+                    window.Enabled ^= true;
+                }
+            }
+
+            ImGui.EndCombo();
+        }
+
+        ImGui.PopStyleVar(2); // WindowBorderSize, WindowPadding
+
+        ImGui.End();
+
+
+        foreach (IUiWindow window in uiWindows) {
+            if (!window.Enabled) {
+                continue;
+            }
+
+            window.Render();
+        }
     }
 
     private void RegisterKeyboard(IKeyboard keyboard) {
