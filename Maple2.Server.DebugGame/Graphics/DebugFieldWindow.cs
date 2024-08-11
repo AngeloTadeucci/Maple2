@@ -24,15 +24,6 @@ public class DebugFieldWindow {
     public ImGuiController? ImGuiController { get; private set; }
     public int WindowId { get; init; }
     public string WindowName { get; init; }
-    public bool IsClosing {
-        get {
-            fieldWindowsMutex.WaitOne();
-            bool isClosing = shouldClose;
-            fieldWindowsMutex.ReleaseMutex();
-
-            return isClosing;
-        }
-    }
     private bool shouldClose = false;
     private bool shouldForceClose = false;
     private bool shouldResize = false;
@@ -41,6 +32,8 @@ public class DebugFieldWindow {
     private Vector2D<int> newSize = default;
     private Mutex fieldWindowsMutex = new();
     private int updateTimeoutCount = 0;
+    public bool IsInitialized { get; private set; }
+    public bool IsClosing { get; private set; }
 
     private static int _windowIdCounter = 0;
 
@@ -66,10 +59,12 @@ public class DebugFieldWindow {
 
     public void Initialize() {
         unsafe {
-            if (DebuggerWindow is not null) {
+            if (IsInitialized) {
                 CleanUp();
             }
         }
+
+        IsInitialized = true;
 
         var windowOptions = WindowOptions.Default;
         windowOptions.Size = DebugGraphicsContext.DefaultWindowSize;
@@ -84,14 +79,15 @@ public class DebugFieldWindow {
         DebuggerWindow = Window.Create(windowOptions);
 
         DebuggerWindow.FramebufferResize += OnFramebufferResize;
-        //DebuggerWindow.Render += OnRender;
-        DebuggerWindow.Update += OnWindowUpdate;
+        DebuggerWindow.Render += OnRender;
+        DebuggerWindow.Update += OnUpdate;
         DebuggerWindow.Load += OnLoad;
         DebuggerWindow.Closing += OnClose;
 
         Log.Information("Creating field renderer window");
 
-        new Thread(DebuggerWindow.Run).Start();
+        DebuggerWindow.Initialize();
+        //new Thread(DebuggerWindow.Run).Start();
     }
 
     public void CleanUp() {
@@ -169,25 +165,11 @@ public class DebugFieldWindow {
         initialized = true;
     }
 
-    public void OnWindowUpdate(double delta) {
+    public unsafe void OnUpdate(double delta) {
         fieldWindowsMutex.WaitOne();
         if (shouldForceClose) {
             DebuggerWindow!.Close();
             CleanUp();
-        }
-        fieldWindowsMutex.ReleaseMutex();
-    }
-
-    public unsafe void OnUpdate(double delta) {
-        fieldWindowsMutex.WaitOne();
-        if (shouldClose && !isCurrentlyRendering) {
-            // Preventing window closing from happening at the same time as a render call is difficult, so only close after 3 updates with no render call
-            if (updateTimeoutCount > 3) {
-                DebuggerWindow!.Close();
-                CleanUp();
-            }
-
-            updateTimeoutCount++;
         }
         fieldWindowsMutex.ReleaseMutex();
 
@@ -277,16 +259,8 @@ public class DebugFieldWindow {
         this.newSize = newSize;
     }
 
-    public void ForceClose() {
-        fieldWindowsMutex.WaitOne();
-
-        shouldForceClose = true;
-
-        fieldWindowsMutex.ReleaseMutex();
-    }
-
     public void Close() {
-        DebuggerWindow!.Close();
+        IsClosing = true;
     }
 
     private void UnloadField(DebugFieldRenderer renderer) {

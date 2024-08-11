@@ -48,9 +48,114 @@ namespace Maple2.Server.DebugGame.Graphics {
         private Mutex fieldWindowsMutex = new();
         private DebugFieldWindow? selectedWindow = null;
         private HashSet<FieldManager> updatedFields = new();
+        private int deltaIndex = 0;
+        private List<int> deltaTimes = new();
+        private int deltaAverage {
+            get {
+                int total = 0;
+
+                foreach (int deltaMs in deltaTimes) {
+                    total += deltaMs;
+                }
+
+                return total / deltaTimes.Count;
+            }
+        }
+        private int deltaMin {
+            get {
+                int min = deltaTimes.FirstOrDefault();
+
+                foreach (int deltaMs in deltaTimes) {
+                    min = int.Min(min, deltaMs);
+                }
+
+                return min;
+            }
+        }
+        private int deltaMax {
+            get {
+                int max = 0;
+
+                foreach (int deltaMs in deltaTimes) {
+                    max = int.Max(max, deltaMs);
+                }
+
+                return max;
+            }
+        }
+        private DateTime lastTime = DateTime.Now;
+        public bool IsClosing { get; private set; }
 
         public DebugGraphicsContext() {
             Fields = new Dictionary<FieldManager, DebugFieldRenderer>();
+        }
+
+        public void RunDebugger() {
+            DebuggerWindow!.Initialize();
+
+            bool subWindowsUpdating = false;
+
+            while (!(DebuggerWindow?.IsClosing ?? true) || subWindowsUpdating) {
+                if (DebuggerWindow is not null) {
+                    UpdateWindow(DebuggerWindow, IsClosing);
+                }
+
+                fieldWindowsMutex.WaitOne();
+                DebugFieldWindow[] windows = fieldWindows.ToArray();
+                fieldWindowsMutex.ReleaseMutex();
+
+                subWindowsUpdating = false;
+
+                foreach (DebugFieldWindow window in windows) {
+                    if (!window.IsInitialized) {
+                        window.Initialize();
+                    }
+
+                    if (window.DebuggerWindow is not null) {
+                        bool isStillOpen = UpdateWindow(window.DebuggerWindow, window.IsClosing);
+
+                        subWindowsUpdating |= isStillOpen;
+
+                        if (!isStillOpen) {
+                            window.CleanUp();
+                        }
+                    }
+                }
+            }
+
+        }
+
+        public bool UpdateWindow(IView window, bool shouldClose) {
+            bool startedOpen = window.IsClosing;
+
+            if (shouldClose && !window.IsClosing) {
+                window.Close();
+            }
+
+            if (!window.IsClosing) {
+                window.DoEvents();
+            }
+
+            if (!window.IsClosing) {
+                window.DoUpdate();
+            }
+
+            if (!window.IsClosing) {
+                window.DoRender();
+            }
+
+            bool hasUpdated = !window.IsClosing;
+
+            if (startedOpen && window.IsClosing) {
+                window.DoEvents();
+                window.Reset();
+            }
+
+            return hasUpdated;
+        }
+
+        private string GetWindowName() {
+            return $"Maple2 Visual Debugger";
         }
 
         public void Initialize() {
@@ -62,10 +167,9 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             var windowOptions = WindowOptions.Default;
             windowOptions.Size = DefaultWindowSize;
-            windowOptions.Title = "Maple2 Visual Debugger";
+            windowOptions.Title = GetWindowName();
             windowOptions.API = GraphicsAPI.None;
-            windowOptions.FramesPerSecond = 60;
-            windowOptions.UpdatesPerSecond = 60;
+            windowOptions.ShouldSwapAutomatically = false;
 
             DebuggerWindow = Window.Create(windowOptions);
 
@@ -74,11 +178,11 @@ namespace Maple2.Server.DebugGame.Graphics {
             DebuggerWindow.Update += OnUpdate;
             DebuggerWindow.Load += OnLoad;
             DebuggerWindow.Closing += OnClose;
-            DebuggerWindow.IsEventDriven = false;
 
             Log.Information("Creating window");
 
-            new Thread(DebuggerWindow.Run).Start();
+            //new Thread(DebuggerWindow.Run).Start();
+            new Thread(RunDebugger).Start();
         }
 
         public static unsafe void DxLog(Message message) {
@@ -94,9 +198,11 @@ namespace Maple2.Server.DebugGame.Graphics {
         private void OnClose() {
             fieldWindowsMutex.WaitOne();
             foreach (DebugFieldWindow window in fieldWindows) {
-                window.ForceClose();
+                window.DebuggerWindow?.Close();
             }
             fieldWindowsMutex.ReleaseMutex();
+
+            CleanUp();
         }
 
         private void OnLoad() {
@@ -278,7 +384,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             fieldWindows.Add(window);
             fieldWindowsMutex.ReleaseMutex();
 
-            window.Initialize();
+            //window.Initialize();
 
             return window;
         }
@@ -307,18 +413,35 @@ namespace Maple2.Server.DebugGame.Graphics {
         }
 
         private void OnUpdate(double delta) {
-            fieldWindowsMutex.WaitOne();
-            DebugFieldWindow[] windows = fieldWindows.ToArray();
-            fieldWindowsMutex.ReleaseMutex();
-
             updatedFields.Clear();
-
-            foreach (DebugFieldWindow window in windows) {
-                window.OnUpdate(delta);
-            }
         }
 
         private unsafe void OnRender(double delta) {
+            DateTime currentTime = DateTime.Now;
+
+            int deltaMs = (int)((currentTime.Ticks - lastTime.Ticks) / TimeSpan.TicksPerMillisecond);
+
+            int timeLeftToWait = int.Max(0, 15 - deltaMs - 1);
+
+            while (timeLeftToWait > 0) {
+                Thread.Sleep(1);
+
+                currentTime = DateTime.Now;
+
+                deltaMs = (int) ((currentTime.Ticks - lastTime.Ticks) / TimeSpan.TicksPerMillisecond);
+                timeLeftToWait = int.Max(0, 16 - deltaMs - 1);
+            }
+
+            lastTime = currentTime;
+
+            if (deltaTimes.Count < 50) {
+                deltaTimes.Add(deltaMs);
+            }
+            else {
+                deltaTimes[deltaIndex] = deltaMs;
+                deltaIndex = (deltaIndex + 1) % 50;
+            }
+
             DebuggerWindow!.MakeCurrent();
 
             ComPtr<ID3D11Texture2D> framebuffer = DxSwapChain.GetBuffer<ID3D11Texture2D>(0);
@@ -357,14 +480,6 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             renderTargetView.Dispose();
             framebuffer.Dispose();
-
-            fieldWindowsMutex.WaitOne();
-            DebugFieldWindow[] windows = fieldWindows.ToArray();
-            fieldWindowsMutex.ReleaseMutex();
-
-            foreach (DebugFieldWindow window in windows) {
-                window.OnRender(delta);
-            }
         }
 
         private void FieldListWindow() {
@@ -425,6 +540,13 @@ namespace Maple2.Server.DebugGame.Graphics {
 
         private void RendererListWindow() {
             ImGui.Begin("Windows");
+
+            int avg = deltaAverage;
+            int min = deltaMin;
+            int max = deltaMax;
+            ImGui.Text(string.Format("Average frame time: {0} ms; {1} FPS", avg, 1000.0f / avg));
+            ImGui.Text(string.Format("Min frame time: {0} ms; {1} FPS", min, 1000.0f / min));
+            ImGui.Text(string.Format("Max frame time: {0} ms; {1} FPS", max, 1000.0f / max));
 
             bool newWindowDisabled = false;
 
