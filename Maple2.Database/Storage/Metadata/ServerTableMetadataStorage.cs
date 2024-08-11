@@ -1,6 +1,4 @@
-﻿using System;
-using Maple2.Database.Context;
-using Maple2.Model.Enum;
+﻿using Maple2.Database.Context;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 
@@ -18,6 +16,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
     private readonly Lazy<TimeEventTable> timeEventTable;
     private readonly Lazy<GameEventTable> gameEventTable;
+    private readonly Lazy<ItemMergeTable> itemMergeTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -30,6 +29,7 @@ public class ServerTableMetadataStorage {
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
     public TimeEventTable TimeEventTable => timeEventTable.Value;
     public GameEventTable GameEventTable => gameEventTable.Value;
+    public ItemMergeTable ItemMergeTable => itemMergeTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -43,6 +43,7 @@ public class ServerTableMetadataStorage {
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
         gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
+        itemMergeTable = Retrieve<ItemMergeTable>(context, "itemMergeOptionBase.xml");
     }
 
     public IEnumerable<GameEvent> GetGameEvents() {

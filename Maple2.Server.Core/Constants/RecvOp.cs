@@ -64,7 +64,7 @@ public enum RecvOp : ushort {
     Liftable = 0x003D,
     MyInfo = 0x003E,
     RelocateWorld = 0x003F,
-    ItemFusion = 0x0040,
+    ItemMerge = 0x0040,
     RequestRide = 0x0041,
     RideSync = 0x0042,
     FittingDoll = 0x0043,
