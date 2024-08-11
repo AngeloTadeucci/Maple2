@@ -1029,60 +1029,14 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             var slots = new Dictionary<int, ItemMergeSlot>();
             foreach (MergeOption.Slot slotEntry in mergeOption.slot) {
                 var ingredients = new List<ItemComponent>();
-                if (slotEntry.itemMaterial1.Length > 0) {
-                    var tag = ItemTag.None;
-                    string[] item = slotEntry.itemMaterial1[0].Split(':');
-                    if (item.Length == 2) {
-                        tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
-                    }
 
-                    if (!int.TryParse(item[0], out int itemId)) {
-                        itemId = 0;
-                    }
-
-                    if (!int.TryParse(slotEntry.itemMaterial1[1], out int rarity)) {
-                        rarity = 1;
-                    }
-
-                    if (!int.TryParse(slotEntry.itemMaterial1[2], out int amount)) {
-                        amount = 1;
-                    }
-
-                    if (tag != ItemTag.None || itemId > 0) {
-                        ingredients.Add(new ItemComponent(
-                            ItemId: itemId,
-                            Rarity: rarity,
-                            Amount: amount,
-                            Tag: tag));
-                    }
+                ItemComponent? ingredient1 = ParseItemMaterial(slotEntry.itemMaterial1);
+                if (ingredient1 != null) {
+                    ingredients.Add(ingredient1);
                 }
-
-                if (slotEntry.itemMaterial2.Length > 0) {
-                    var tag = ItemTag.None;
-                    string[] item = slotEntry.itemMaterial2[0].Split(':');
-                    if (item.Length == 2) {
-                        tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
-                    }
-
-                    if (!int.TryParse(item[0], out int itemId)) {
-                        itemId = 0;
-                    }
-
-                    if (!int.TryParse(slotEntry.itemMaterial2[1], out int rarity)) {
-                        rarity = 1;
-                    }
-
-                    if (!int.TryParse(slotEntry.itemMaterial2[2], out int amount)) {
-                        amount = 1;
-                    }
-
-                    if (tag != ItemTag.None || itemId > 0) {
-                        ingredients.Add(new ItemComponent(
-                            ItemId: itemId,
-                            Rarity: rarity,
-                            Amount: amount,
-                            Tag: tag));
-                    }
+                ItemComponent? ingredient2 = ParseItemMaterial(slotEntry.itemMaterial2);
+                if (ingredient2 != null) {
+                    ingredients.Add(ingredient2);
                 }
 
                 var basicOptions = new Dictionary<BasicAttribute, ItemMergeOption>();
@@ -1096,6 +1050,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         List<int> weights = [];
                         if (basicAttribute is BasicAttribute.Piercing or BasicAttribute.PerfectGuard or
                             BasicAttribute.PhysicalRes or BasicAttribute.MagicalRes) {
+                            // Looping by 9 because that's the max amount of values in the xml
                             for (int i = 0; i < 9; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
                                 if (value == 0) {
@@ -1168,6 +1123,23 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             results.Add(id, slots);
         }
         return new ItemMergeTable(results);
+
+        ItemComponent? ParseItemMaterial(string[] itemMaterial) {
+            var tag = ItemTag.None;
+            if (itemMaterial.Length > 0) {
+                string[] item = itemMaterial[0].Split(':');
+                if (item.Length == 2) {
+                    tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
+                }
+                int itemId = int.TryParse(item[0], out int id) ? id : 0;
+                int rarity = int.TryParse(itemMaterial[1], out int r) ? r : 1;
+                int amount = int.TryParse(itemMaterial[2], out int a) ? a : 1;
+                if (tag != ItemTag.None || itemId > 0) {
+                    return new ItemComponent(itemId, rarity, amount, tag);
+                }
+            }
+            return null;
+        }
     }
 }
 
