@@ -42,10 +42,8 @@ namespace Maple2.Server.DebugGame.Graphics {
         private string resourceRootPath = "";
 
         private List<DebugFieldRenderer> fieldRenderers = new();
-        private Mutex fieldRenderersMutex = new();
         private DebugFieldRenderer? selectedRenderer = null;
         private List<DebugFieldWindow> fieldWindows = new();
-        private Mutex fieldWindowsMutex = new();
         private DebugFieldWindow? selectedWindow = null;
         private HashSet<FieldManager> updatedFields = new();
         private int deltaIndex = 0;
@@ -100,9 +98,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                     UpdateWindow(DebuggerWindow, IsClosing);
                 }
 
-                fieldWindowsMutex.WaitOne();
                 DebugFieldWindow[] windows = fieldWindows.ToArray();
-                fieldWindowsMutex.ReleaseMutex();
 
                 subWindowsUpdating = false;
 
@@ -181,7 +177,6 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             Log.Information("Creating window");
 
-            //new Thread(DebuggerWindow.Run).Start();
             new Thread(RunDebugger).Start();
         }
 
@@ -196,11 +191,11 @@ namespace Maple2.Server.DebugGame.Graphics {
         }
 
         private void OnClose() {
-            fieldWindowsMutex.WaitOne();
-            foreach (DebugFieldWindow window in fieldWindows) {
-                window.DebuggerWindow?.Close();
+            DebugFieldWindow[] windows = fieldWindows.ToArray();
+
+            foreach (DebugFieldWindow window in windows) {
+                window.Close();
             }
-            fieldWindowsMutex.ReleaseMutex();
 
             CleanUp();
         }
@@ -215,7 +210,6 @@ namespace Maple2.Server.DebugGame.Graphics {
             Shader.ShaderRootPath = GetResourceRootPath("Shaders");
             Texture.TextureRootPath = GetResourceRootPath("Textures");
 
-            // input.Keyboards[].Keydown = OnKeyDown(IKeyboard keyboard, Key key, int scancode)
             unsafe {
                 ComPtr<ID3D11Device> device = default;
                 ComPtr<ID3D11DeviceContext> deviceContext = default;
@@ -354,9 +348,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             DebugFieldRenderer renderer = new DebugFieldRenderer(this, field);
 
-            fieldRenderersMutex.WaitOne();
             int index = fieldRenderers.AddSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
-            fieldRenderersMutex.ReleaseMutex();
 
             return renderer;
         }
@@ -370,9 +362,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             renderer.CleanUp();
 
-            fieldRenderersMutex.WaitOne();
             fieldRenderers.RemoveSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
-            fieldRenderersMutex.ReleaseMutex();
 
             Fields.Remove(field);
         }
@@ -380,19 +370,13 @@ namespace Maple2.Server.DebugGame.Graphics {
         public DebugFieldWindow FieldWindowOpened() {
             DebugFieldWindow window = new DebugFieldWindow(this);
 
-            fieldWindowsMutex.WaitOne();
             fieldWindows.Add(window);
-            fieldWindowsMutex.ReleaseMutex();
-
-            //window.Initialize();
 
             return window;
         }
 
         public void FieldWindowClosed(DebugFieldWindow window) {
-            fieldWindowsMutex.WaitOne();
             fieldWindows.Remove(window);
-            fieldWindowsMutex.ReleaseMutex();
 
             window.SetActiveRenderer(null);
         }
@@ -493,6 +477,24 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             if (ImGui.Button("Select field") && !selectFieldDisabled) {
                 selectedWindow!.SetActiveRenderer(selectedRenderer);
+
+                selectedRenderer = null;
+            }
+
+            if (selectFieldDisabled) {
+                ImGui.EndDisabled();
+            }
+
+            ImGui.SameLine();
+
+            selectFieldDisabled = selectedWindow?.ActiveRenderer is null;
+
+            if (selectFieldDisabled) {
+                ImGui.BeginDisabled();
+            }
+
+            if (ImGui.Button("Unselect Field")) {
+                selectedWindow!.SetActiveRenderer(null);
             }
 
             if (selectFieldDisabled) {
@@ -510,12 +512,17 @@ namespace Maple2.Server.DebugGame.Graphics {
                 ImGui.Text("Instance Id");
 
                 int index = 0;
-                fieldRenderersMutex.WaitOne();
                 foreach (DebugFieldRenderer renderer in fieldRenderers) {
                     ImGui.TableNextRow();
 
-                    bool selected = renderer == selectedRenderer;
+                    bool selected = renderer == selectedRenderer || selectedWindow?.ActiveRenderer == renderer;
                     bool nextSelected = false;
+
+                    selectFieldDisabled = selectedWindow?.ActiveRenderer == renderer;
+
+                    if (selectFieldDisabled) {
+                        ImGui.BeginDisabled();
+                    }
 
                     ImGui.TableSetColumnIndex(0);
                     nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 0", renderer.Field.MapId, index), selected);
@@ -524,13 +531,16 @@ namespace Maple2.Server.DebugGame.Graphics {
                     ImGui.TableSetColumnIndex(2);
                     nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 2", renderer.Field.InstanceId, index), selected);
 
+                    if (selectFieldDisabled) {
+                        ImGui.EndDisabled();
+                    }
+
                     if (nextSelected) {
                         selectedRenderer = renderer;
                     }
 
                     ++index;
                 }
-                fieldRenderersMutex.ReleaseMutex();
 
                 ImGui.EndTable();
             }
@@ -550,9 +560,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             bool newWindowDisabled = false;
 
-            fieldWindowsMutex.WaitOne();
             DebugFieldWindow[] windows = fieldWindows.ToArray();
-            fieldWindowsMutex.ReleaseMutex();
 
             foreach (DebugFieldWindow window in windows) {
                 newWindowDisabled |= window.IsClosing;
@@ -605,7 +613,6 @@ namespace Maple2.Server.DebugGame.Graphics {
                 ImGui.Text("Instance Id");
 
                 int index = 0;
-                fieldWindowsMutex.WaitOne();
                 foreach (DebugFieldWindow window in fieldWindows) {
                     ImGui.TableNextRow();
 
@@ -628,7 +635,6 @@ namespace Maple2.Server.DebugGame.Graphics {
 
                     ++index;
                 }
-                fieldWindowsMutex.ReleaseMutex();
 
                 ImGui.EndTable();
             }

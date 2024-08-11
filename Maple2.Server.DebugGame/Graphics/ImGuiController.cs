@@ -15,7 +15,6 @@ public class ImGuiController {
     public IInputContext Input { get; init; }
     public IntPtr ImGuiContext { get; private set; }
     private List<char> pressedCharacters;
-    private static Mutex _contextMutex = new();
 
     public ImGuiController(DebugGraphicsContext context, IInputContext input) {
         Context = context;
@@ -25,8 +24,6 @@ public class ImGuiController {
 
     public unsafe void Initialize(IWindow window) {
         ParentWindow = window;
-
-        _contextMutex.WaitOne();
 
         ImGuiContext = ImGui.CreateContext();
         ImGui.SetCurrentContext(ImGuiContext);
@@ -40,23 +37,9 @@ public class ImGuiController {
         foreach (IKeyboard keyboard in Input.Keyboards) {
             RegisterKeyboard(keyboard);
         }
-
-        _contextMutex.ReleaseMutex();
-    }
-
-    public void InvalidateDevice() {
-        //ImGuiNative.igImGui_ImplDX11_InvalidateDeviceObjects();
-        //ImGuiNative.igImGui_ImplDX11_Shutdown();
-    }
-
-    public unsafe void CreateDevice() {
-        //ImGuiNative.igImGui_ImplDX11_CreateDeviceObjects();
-        //ImGuiNative.igImGui_ImplDX11_Init(Context.DxDevice, Context.DxDeviceContext);
     }
 
     public void CleanUp() {
-        _contextMutex.WaitOne();
-
         if (ImGui.GetCurrentContext() != ImGuiContext) {
             ImGui.SetCurrentContext(ImGuiContext);
         }
@@ -71,8 +54,6 @@ public class ImGuiController {
         foreach (IKeyboard keyboard in Input.Keyboards) {
             UnregisterKeyboard(keyboard);
         }
-
-        _contextMutex.ReleaseMutex();
     }
 
     private void SetImGuiWindowData(float delta) {
@@ -85,7 +66,6 @@ public class ImGuiController {
     }
 
     public void BeginFrame(float delta) {
-        _contextMutex.WaitOne();
         if (ImGui.GetCurrentContext() != ImGuiContext) {
             ImGui.SetCurrentContext(ImGuiContext);
         }
@@ -105,8 +85,6 @@ public class ImGuiController {
 
         ImGui.Render();
         ImGuiNative.igImGui_ImplDX11_RenderDrawData(ImGui.GetDrawData().NativePtr);
-
-        _contextMutex.ReleaseMutex();
     }
 
     private void RegisterKeyboard(IKeyboard keyboard) {
@@ -122,8 +100,6 @@ public class ImGuiController {
     }
 
     private void OnConnectionChanged(IInputDevice device, bool connected) {
-        _contextMutex.WaitOne();
-
         if (ImGui.GetCurrentContext() != ImGuiContext) {
             ImGui.SetCurrentContext(ImGuiContext);
         }
@@ -137,8 +113,6 @@ public class ImGuiController {
         } else {
             UnregisterKeyboard(keyboard);
         }
-
-        _contextMutex.ReleaseMutex();
     }
 
     private static void OnKeyEvent(IKeyboard keyboard, Key keyCode, int scanCode, bool isDown) {

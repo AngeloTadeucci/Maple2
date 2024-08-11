@@ -24,14 +24,6 @@ public class DebugFieldWindow {
     public ImGuiController? ImGuiController { get; private set; }
     public int WindowId { get; init; }
     public string WindowName { get; init; }
-    private bool shouldClose = false;
-    private bool shouldForceClose = false;
-    private bool shouldResize = false;
-    private bool isCurrentlyRendering = false;
-    private bool initialized = false;
-    private Vector2D<int> newSize = default;
-    private Mutex fieldWindowsMutex = new();
-    private int updateTimeoutCount = 0;
     public bool IsInitialized { get; private set; }
     public bool IsClosing { get; private set; }
 
@@ -87,12 +79,9 @@ public class DebugFieldWindow {
         Log.Information("Creating field renderer window");
 
         DebuggerWindow.Initialize();
-        //new Thread(DebuggerWindow.Run).Start();
     }
 
     public void CleanUp() {
-        initialized = false;
-
         unsafe {
             if (DxSwapChain.Handle is not null) {
                 DxSwapChain.Dispose();
@@ -105,28 +94,20 @@ public class DebugFieldWindow {
             }
         }
 
-        try {
-            if (DebuggerWindow is not null) {
-                DebuggerWindow.Dispose();
+        if (DebuggerWindow is not null) {
+            DebuggerWindow.Dispose();
 
-                DebuggerWindow = default;
+            DebuggerWindow = default;
 
-                Log.Information("Field debugger window cleaning up");
-            }
-
-            Context.FieldWindowClosed(this);
-        } catch (InvalidOperationException ex) {
-            // hit a weird race condition: 'You cannot call `Reset` inside of the render loop!'; try again later
+            Log.Information("Field debugger window cleaning up");
         }
+
+        Context.FieldWindowClosed(this);
 
     }
 
     private void OnClose() {
-        fieldWindowsMutex.WaitOne();
-
-        shouldClose = true;
-
-        fieldWindowsMutex.ReleaseMutex();
+        CleanUp();
     }
 
     private void OnLoad() {
@@ -161,19 +142,10 @@ public class DebugFieldWindow {
         ImGuiController = new ImGuiController(Context, Input);
 
         ImGuiController.Initialize(DebuggerWindow);
-
-        initialized = true;
     }
 
     public unsafe void OnUpdate(double delta) {
-        fieldWindowsMutex.WaitOne();
-        if (shouldForceClose) {
-            DebuggerWindow!.Close();
-            CleanUp();
-        }
-        fieldWindowsMutex.ReleaseMutex();
-
-        if (!initialized) {
+        if (IsClosing) {
             return;
         }
 
@@ -184,29 +156,9 @@ public class DebugFieldWindow {
     }
 
     public unsafe void OnRender(double delta) {
-        if (!initialized) {
+        if (IsClosing) {
             return;
         }
-
-        fieldWindowsMutex.WaitOne();
-
-        if (shouldClose) {
-            fieldWindowsMutex.ReleaseMutex();
-
-            return;
-        }
-
-        updateTimeoutCount = 0;
-        isCurrentlyRendering = true;
-
-        fieldWindowsMutex.ReleaseMutex();
-
-        if (shouldResize) {
-            // there is currently a bug with resizing where the framebuffer positioning doesn't take into account title bar size
-            SilkMarshal.ThrowHResult(DxSwapChain.ResizeBuffers(0, (uint) newSize.X, (uint) newSize.Y, Format.FormatB8G8R8A8Unorm, 0));
-        }
-
-        shouldResize = false;
 
         DebuggerWindow!.MakeCurrent();
 
@@ -248,15 +200,11 @@ public class DebugFieldWindow {
         renderTargetView.Dispose();
         framebuffer.Dispose();
 
-        fieldWindowsMutex.WaitOne();
-
-        isCurrentlyRendering = false;
-
-        fieldWindowsMutex.ReleaseMutex();
     }
+
     private unsafe void OnFramebufferResize(Vector2D<int> newSize) {
-        shouldResize = true;
-        this.newSize = newSize;
+        // there is currently a bug with resizing where the framebuffer positioning doesn't take into account title bar size
+        SilkMarshal.ThrowHResult(DxSwapChain.ResizeBuffers(0, (uint) newSize.X, (uint) newSize.Y, Format.FormatB8G8R8A8Unorm, 0));
     }
 
     public void Close() {
