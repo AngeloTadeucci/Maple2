@@ -25,9 +25,9 @@ struct vs_BlendBinding {
 float4 intToVector(uint value) {
     float4 result;
     result.x = (float)((value >> (3 * 16)) & 0xFF);
-    result.x = (float)((value >> (2 * 16)) & 0xFF);
-    result.x = (float)((value >> (1 * 16)) & 0xFF);
-    result.x = (float)(value & 0xFF);
+    result.y = (float)((value >> (2 * 16)) & 0xFF);
+    result.z = (float)((value >> (1 * 16)) & 0xFF);
+    result.w = (float)(value & 0xFF);
 
 	return result;
 }

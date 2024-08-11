@@ -227,7 +227,6 @@ public sealed partial class FieldManager : IDisposable {
         foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
 
         RoomTimer?.Update(FieldTick);
-        DebugRenderer?.Render(FieldTick);
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {

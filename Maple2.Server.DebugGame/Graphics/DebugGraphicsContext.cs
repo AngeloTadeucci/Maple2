@@ -48,39 +48,9 @@ namespace Maple2.Server.DebugGame.Graphics {
         private HashSet<FieldManager> updatedFields = new();
         private int deltaIndex = 0;
         private List<int> deltaTimes = new();
-        private int deltaAverage {
-            get {
-                int total = 0;
-
-                foreach (int deltaMs in deltaTimes) {
-                    total += deltaMs;
-                }
-
-                return total / deltaTimes.Count;
-            }
-        }
-        private int deltaMin {
-            get {
-                int min = deltaTimes.FirstOrDefault();
-
-                foreach (int deltaMs in deltaTimes) {
-                    min = int.Min(min, deltaMs);
-                }
-
-                return min;
-            }
-        }
-        private int deltaMax {
-            get {
-                int max = 0;
-
-                foreach (int deltaMs in deltaTimes) {
-                    max = int.Max(max, deltaMs);
-                }
-
-                return max;
-            }
-        }
+        public int DeltaAverage { get; private set; }
+        public int DeltaMin { get; private set; }
+        public int DeltaMax { get; private set; }
         private DateTime lastTime = DateTime.Now;
         public bool IsClosing { get; private set; }
 
@@ -332,7 +302,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                 return 1;
             }
 
-            if (item1.Field.InstanceId < item1.Field.InstanceId) {
+            if (item1.Field.InstanceId < item2.Field.InstanceId) {
                 return -1;
             }
 
@@ -400,7 +370,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             updatedFields.Clear();
         }
 
-        private unsafe void OnRender(double delta) {
+        private void UpdateDeltaTracker() {
             DateTime currentTime = DateTime.Now;
 
             int deltaMs = (int) ((currentTime.Ticks - lastTime.Ticks) / TimeSpan.TicksPerMillisecond);
@@ -424,6 +394,24 @@ namespace Maple2.Server.DebugGame.Graphics {
                 deltaTimes[deltaIndex] = deltaMs;
                 deltaIndex = (deltaIndex + 1) % 50;
             }
+
+            int total = 0;
+
+            DeltaMin = deltaTimes.FirstOrDefault();
+            DeltaMax = 0;
+
+            foreach (int delta in deltaTimes) {
+                total += delta;
+
+                DeltaMin = int.Min(DeltaMin, delta);
+                DeltaMax = int.Max(DeltaMax, delta);
+            }
+
+            DeltaAverage = total / deltaTimes.Count;
+        }
+
+        private unsafe void OnRender(double delta) {
+            UpdateDeltaTracker();
 
             DebuggerWindow!.MakeCurrent();
 
@@ -550,12 +538,9 @@ namespace Maple2.Server.DebugGame.Graphics {
         private void RendererListWindow() {
             ImGui.Begin("Windows");
 
-            int avg = deltaAverage;
-            int min = deltaMin;
-            int max = deltaMax;
-            ImGui.Text(string.Format("Average frame time: {0} ms; {1} FPS", avg, 1000.0f / avg));
-            ImGui.Text(string.Format("Min frame time: {0} ms; {1} FPS", min, 1000.0f / min));
-            ImGui.Text(string.Format("Max frame time: {0} ms; {1} FPS", max, 1000.0f / max));
+            ImGui.Text(string.Format("Average frame time: {0} ms; {1} FPS", DeltaAverage, 1000.0f / DeltaAverage));
+            ImGui.Text(string.Format("Min frame time: {0} ms; {1} FPS", DeltaMin, 1000.0f / DeltaMin));
+            ImGui.Text(string.Format("Max frame time: {0} ms; {1} FPS", DeltaMax, 1000.0f / DeltaMax));
 
             bool newWindowDisabled = false;
 
