@@ -21,6 +21,7 @@ public class PlayerCommand : Command {
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
         AddCommand(new SkillPointCommand(session));
+        AddCommand(new CurrencyCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -214,6 +215,46 @@ public class PlayerCommand : Command {
             try {
                 rank = (short) Math.Clamp((int) rank, 0, 1);
                 session.Config.AddSkillPoint(SkillPointSource.Unknown, points, rank);
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
+        }
+    }
+    private class CurrencyCommand : Command {
+        private readonly GameSession session;
+
+        public CurrencyCommand(GameSession session) : base("currency", "Add currency to player.") {
+            this.session = session;
+
+            var currency = new Argument<string>("currency", "Type of currency to add: meso, meret, valortoken, treva, rue, havifruit, reversecoin, mentortoken, menteetoken, starpoint, mesotoken.");
+            var amount = new Argument<long>("amount", "Amount of currency to add.");
+
+            AddArgument(currency);
+            AddArgument(amount);
+            this.SetHandler<InvocationContext, string, long>(Handle, currency, amount);
+        }
+
+        private void Handle(InvocationContext ctx, string currency, long amount) {
+            try {
+                switch (currency.ToLower()) {
+                    // Handling meso and meret separately because they are not in the CurrencyType enum.
+                    case "meso":
+                        session.Currency.Meso += amount;
+                        break;
+                    case "meret":
+                        session.Currency.GameMeret += amount;
+                        break;
+                    default:
+                        if (!Enum.TryParse(currency, true, out CurrencyType currencyType)) {
+                            ctx.Console.Error.WriteLine($"Failed to parse currency type: {currency}");
+                            ctx.ExitCode = 1;
+                            return;
+                        }
+                        session.Currency[currencyType] += amount;
+                        break;
+                }
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
                 ctx.Console.Error.WriteLine(ex.Message);
