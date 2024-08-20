@@ -42,6 +42,9 @@ public partial class FieldManager {
 
     #region Helpers
     public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
+    public IReadOnlyDictionary<int, FieldPlayer> GetPlayers() {
+        return Players;
+    }
     #endregion
 
     #region Spawn

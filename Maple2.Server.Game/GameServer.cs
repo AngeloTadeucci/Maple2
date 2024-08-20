@@ -12,6 +12,7 @@ using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.DebugGraphics;
 
 namespace Maple2.Server.Game;
 
@@ -25,16 +26,18 @@ public class GameServer : Server<GameSession> {
     private Dictionary<int, Shop> shopCache;
     private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
+    private readonly IGraphicsContext debugGraphicsContext;
 
     private static short _channel = 0;
 
-    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage, int port, int channel)
+    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage, IGraphicsContext debugGraphicsContext, int port, int channel)
             : base((ushort) port, router, context, serverTableMetadataStorage) {
         _channel = (short) channel;
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
+        this.debugGraphicsContext = debugGraphicsContext;
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
@@ -42,6 +45,8 @@ public class GameServer : Server<GameSession> {
         shopItemCache = db.GetShopItems();
         premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
             db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
+
+        debugGraphicsContext.Initialize();
     }
 
     public override void OnConnected(GameSession session) {
@@ -186,6 +191,8 @@ public class GameServer : Server<GameSession> {
     }
 
     public override Task StopAsync(CancellationToken cancellationToken) {
+        debugGraphicsContext.CleanUp();
+
         lock (mutex) {
             foreach (GameSession session in connectingSessions) {
                 session.Send(NoticePacket.Disconnect(new InterfaceText("GameServer Maintenance")));

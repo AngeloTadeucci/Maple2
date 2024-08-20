@@ -13,6 +13,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.DebugGame.Graphics;
 using Maple2.Server.Game;
 using Maple2.Server.Game.Commands;
 using Maple2.Server.Game.DebugGraphics;
@@ -71,7 +72,7 @@ builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = Tim
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(dispose: true);
 
-IGraphicsContext debugGraphicsContext = new HeadlessGraphicsContext();
+IGraphicsContext debugGraphicsContext = new DebugGraphicsContext();
 
 builder.Services.AddGrpc();
 builder.Services.RegisterModule<WorldClientModule>();
@@ -119,7 +120,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterModule<WebDbModule>();
 
     // Make all packet handlers available to PacketRouter
-    autofac.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom("Maple2.Server.Game.dll"))
         .Where(type => typeof(PacketHandler<GameSession>).IsAssignableFrom(type))
         .As<PacketHandler<GameSession>>()
         .PropertiesAutowired()

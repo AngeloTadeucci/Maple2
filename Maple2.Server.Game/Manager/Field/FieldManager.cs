@@ -9,6 +9,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -39,6 +40,7 @@ public sealed partial class FieldManager : IDisposable {
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
+    public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All
     #endregion
 
@@ -63,6 +65,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly long OwnerId;
     public readonly int InstanceId;
     public readonly AiManager Ai;
+    public IFieldRenderer? DebugRenderer { get; private set; }
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0) {
         Metadata = metadata;
@@ -73,7 +76,7 @@ public sealed partial class FieldManager : IDisposable {
         Scheduler = new EventQueue();
         FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
-        thread = new Thread(Update);
+        thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
         OwnerId = ownerId;
         InstanceId = NextGlobalId();
@@ -171,6 +174,7 @@ public sealed partial class FieldManager : IDisposable {
         initialized = true;
         Scheduler.Start();
         thread.Start();
+        DebugRenderer = DebugGraphicsContext.FieldAdded(this);
     }
 
     /// <summary>
@@ -188,36 +192,41 @@ public sealed partial class FieldManager : IDisposable {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
-    private void Update() {
+    private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
-            if (Players.IsEmpty) {
-                Thread.Sleep(15);
-                continue;
+            if (!(DebugRenderer?.IsActive ?? false)) {
+                Update();
             }
-
-            Scheduler.InvokeAll();
-
-            FieldTick = Environment.TickCount64;
-            foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(FieldTick);
-
-            foreach (FieldPlayer player in Players.Values) player.Update(FieldTick);
-            foreach (FieldNpc npc in Npcs.Values) npc.Update(FieldTick);
-            foreach (FieldNpc mob in Mobs.Values) mob.Update(FieldTick);
-            foreach (FieldPet pet in Pets.Values) pet.Update(FieldTick);
-            foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
-            foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
-            foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
-            foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
-            foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
-            foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
-            foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
-            foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
-
-            RoomTimer?.Update(FieldTick);
 
             // Environment.TickCount has ~16ms precision so sleep until next update
             Thread.Sleep(15);
         }
+    }
+
+    public void Update() {
+        if (Players.IsEmpty) {
+            return;
+        }
+
+        Scheduler.InvokeAll();
+
+        FieldTick = Environment.TickCount64;
+        foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(FieldTick);
+
+        foreach (FieldPlayer player in Players.Values) player.Update(FieldTick);
+        foreach (FieldNpc npc in Npcs.Values) npc.Update(FieldTick);
+        foreach (FieldNpc mob in Mobs.Values) mob.Update(FieldTick);
+        foreach (FieldPet pet in Pets.Values) pet.Update(FieldTick);
+        foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
+        foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
+        foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
+        foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
+        foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
+        foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
+        foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
+        foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
+
+        RoomTimer?.Update(FieldTick);
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {
@@ -433,6 +442,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public void Dispose() {
+        DebugGraphicsContext.FieldRemoved(this);
         cancel.Cancel();
         cancel.Dispose();
         thread.Join();
