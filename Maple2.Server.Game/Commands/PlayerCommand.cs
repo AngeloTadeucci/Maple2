@@ -244,6 +244,9 @@ public class PlayerCommand : Command {
                         session.Currency.Meso += amount;
                         break;
                     case "meret":
+                        session.Currency.Meret += amount;
+                        break;
+                    case "gamemeret":
                         session.Currency.GameMeret += amount;
                         break;
                     default:
