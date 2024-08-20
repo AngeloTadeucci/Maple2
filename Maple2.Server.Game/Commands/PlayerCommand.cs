@@ -248,11 +248,12 @@ public class PlayerCommand : Command {
                         session.Currency.GameMeret += amount;
                         break;
                     default:
-                        if (TryParseCurrencyType(currency, out CurrencyType parsedCurrencyType)) {
-                            session.Currency[parsedCurrencyType] += amount;
-                        } else {
-                            throw new ArgumentException("Invalid currency type.");
+                        if (!Enum.TryParse(currency, true, out CurrencyType currencyType)) {
+                            ctx.Console.Error.WriteLine($"Failed to parse currency type: {currency}");
+                            ctx.ExitCode = 1;
+                            return;
                         }
+                        session.Currency[currencyType] += amount;
                         break;
                 }
                 ctx.ExitCode = 0;
@@ -260,9 +261,6 @@ public class PlayerCommand : Command {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
-        }
-        public bool TryParseCurrencyType(string currency, out CurrencyType currencyType) {
-            return Enum.TryParse(currency, true, out currencyType);
         }
     }
 }
