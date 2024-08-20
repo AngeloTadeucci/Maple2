@@ -7,7 +7,6 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Maple2.Server.Game.Commands;
 
