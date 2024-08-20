@@ -244,8 +244,11 @@ public class PlayerCommand : Command {
                         session.Currency.Meso += amount;
                         break;
                     case "meret":
-                        session.Currency.GameMeret += amount;
+                        session.Currency.Meret += amount;
                         break;
+                    case "gamemeret":
+                        session.Currency.GameMeret += amount;
+                        break; 
                     default:
                         if (!Enum.TryParse(currency, true, out CurrencyType currencyType)) {
                             ctx.Console.Error.WriteLine($"Failed to parse currency type: {currency}");
