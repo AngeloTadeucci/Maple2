@@ -7,7 +7,6 @@ public partial class GameStorage {
         public List<BannerSlot> FindBannerSlotsByBannerId(long bannerId) {
             return Context.BannerSlots
                 .Where(slot => slot.BannerId == bannerId)
-                .AsEnumerable()
                 .Select(slot => new BannerSlot(slot.Id, slot.ActivateTime, slot.BannerId, slot.Template))
                 .ToList();
         }
