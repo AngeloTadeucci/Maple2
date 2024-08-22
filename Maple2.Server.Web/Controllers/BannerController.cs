@@ -12,7 +12,7 @@ public class BannerController : ControllerBase {
     public IResult GetBanner(long bannerId, string fileHash) {
         string fullPath = Path.Combine(Paths.WEB_DATA_DIR, "banner", bannerId.ToString(), $"{fileHash}.m2u");
         if (!System.IO.File.Exists(fullPath)) {
-            return Results.BadRequest();
+            return Results.NotFound();
         }
 
         FileStream banner = System.IO.File.OpenRead(fullPath);

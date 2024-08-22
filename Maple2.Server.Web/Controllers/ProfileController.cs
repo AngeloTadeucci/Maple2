@@ -12,7 +12,7 @@ public class ProfileController : ControllerBase {
     public IResult GetAvatar(long characterId, string hash) {
         string fullPath = $"{Paths.WEB_DATA_DIR}/profiles/{characterId}/{hash}.png";
         if (!System.IO.File.Exists(fullPath)) {
-            return Results.BadRequest();
+            return Results.NotFound();
         }
 
         FileStream profileImage = System.IO.File.OpenRead(fullPath);
