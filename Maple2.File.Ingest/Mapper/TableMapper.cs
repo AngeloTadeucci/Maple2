@@ -69,6 +69,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
         yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
         yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
+        yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
 
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
@@ -1473,5 +1474,17 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
 
         return new SurvivalSkinInfoTable(results);
+    }
+
+    private BannerTable ParseBanner() {
+        var results = new Dictionary<long, BannerTable.Entry>();
+        foreach ((int id, Banner banner) in parser.ParseBanner()) {
+            results.Add(id, new BannerTable.Entry(
+                Id: id,
+                MapId: banner.field,
+                Price: banner.price.ToList()
+                ));
+        }
+        return new BannerTable(results);
     }
 }

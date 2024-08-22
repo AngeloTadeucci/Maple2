@@ -1,6 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Ugc;
+using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -8,6 +10,52 @@ namespace Maple2.Server.Game.Manager.Field;
 
 public partial class FieldManager {
     public readonly ConcurrentDictionary<int, Plot> Plots = new();
+    public readonly ConcurrentDictionary<long, UgcBanner> Banners = new();
+    private DateTimeOffset lastUpdate = DateTimeOffset.MinValue;
+
+    private void UpdateBanners() {
+        if (DateTimeOffset.UtcNow - lastUpdate < TimeSpan.FromMinutes(1)) {
+            return;
+        }
+
+        DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
+        foreach (UgcBanner ugcBanner in Banners.Values) {
+            DeleteOldBannerSlots(ugcBanner, dateTimeOffset);
+
+            BannerSlot? slot = ugcBanner.Slots.FirstOrDefault(x => x.ActivateTime.Day == dateTimeOffset.Day && x.ActivateTime.Hour == dateTimeOffset.Hour);
+
+            if (slot is null || slot.Expired || slot.Active) {
+                continue;
+            }
+
+            slot.Active = true;
+            Broadcast(UgcPacket.ActivateBanner(ugcBanner));
+        }
+
+        using GameStorage.Request db = GameStorage.Context();
+        foreach (UgcBanner ugcBanner in Banners.Values) {
+            IEnumerable<BannerSlot> expiredSlots = ugcBanner.Slots.Where(x => x.Expired);
+
+            db.RemoveBannerSlots(expiredSlots);
+            foreach (BannerSlot slot in expiredSlots) {
+                ugcBanner.Slots.Remove(slot);
+            }
+        }
+
+        lastUpdate = dateTimeOffset;
+    }
+
+    private static void DeleteOldBannerSlots(UgcBanner ugcBanner, DateTimeOffset dateTimeOffset) {
+        foreach (BannerSlot bannerSlot in ugcBanner.Slots) {
+            // check if the banner is expired
+            DateTimeOffset expireTimeStamp = dateTimeOffset.Subtract(TimeSpan.FromHours(4));
+            if (bannerSlot.ActivateTime >= expireTimeStamp) {
+                continue;
+            }
+
+            bannerSlot.Expired = true;
+        }
+    }
 
     public bool UpdatePlotInfo(PlotInfo plotInfo) {
         if (MapId != plotInfo.MapId || !Plots.ContainsKey(plotInfo.Number)) {

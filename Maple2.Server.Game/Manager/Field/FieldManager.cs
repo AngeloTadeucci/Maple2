@@ -6,6 +6,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
@@ -171,6 +172,27 @@ public sealed partial class FieldManager : IDisposable {
             AddSkill(skill, regionSkill.Interval, regionSkill.Position, regionSkill.Rotation);
         }
 
+        foreach (KeyValuePair<long, BannerTable.Entry> entry in TableMetadata.BannerTable.Entries) {
+            if (entry.Value.MapId != MapId) {
+                continue;
+            }
+
+            using GameStorage.Request db = GameStorage.Context();
+
+            UgcBanner ugcBanner = new(entry.Key, MapId, db.FindBannerSlotsByBannerId(entry.Key));
+            Banners[entry.Key] = ugcBanner;
+
+            DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
+
+            BannerSlot? slot = ugcBanner.Slots.FirstOrDefault(x => x.ActivateTime.Day == dateTimeOffset.Day && x.ActivateTime.Hour == dateTimeOffset.Hour);
+
+            if (slot is null || slot.Expired || slot.Active) {
+                continue;
+            }
+
+            slot.Active = true;
+        }
+
         initialized = true;
         Scheduler.Start();
         thread.Start();
@@ -225,6 +247,7 @@ public sealed partial class FieldManager : IDisposable {
         foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
         foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
         foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
+        UpdateBanners();
 
         RoomTimer?.Update(FieldTick);
     }
