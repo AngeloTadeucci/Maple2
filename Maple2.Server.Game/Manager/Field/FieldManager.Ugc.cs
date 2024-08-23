@@ -34,7 +34,7 @@ public partial class FieldManager {
 
         using GameStorage.Request db = GameStorage.Context();
         foreach (UgcBanner ugcBanner in Banners.Values) {
-            IEnumerable<BannerSlot> expiredSlots = ugcBanner.Slots.Where(x => x.Expired);
+            List<BannerSlot> expiredSlots = ugcBanner.Slots.Where(x => x.Expired).ToList();
 
             db.RemoveBannerSlots(expiredSlots);
             foreach (BannerSlot slot in expiredSlots) {

@@ -92,6 +92,10 @@ public class UgcHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (session.Item.Inventory.FreeSlots(InventoryType.Outfit) <= 0) {
+            return;
+        }
+
         if (useVoucher) {
             Item? voucher = session.Item.Inventory.Filter(item => item.Metadata.Property.Tag == ItemTag.FreeDesignCoupon).FirstOrDefault();
             if (voucher != null) {
@@ -252,11 +256,6 @@ public class UgcHandler : PacketHandler<GameSession> {
                         Logger.Fatal("Failed to create UGC Item {ugcUid}", ugcUid);
                         throw new InvalidOperationException($"Fatal: UGC Item creation: {ugcUid}");
                     }
-                }
-
-                if (!session.Item.Inventory.CanAdd(item)) {
-                    session.Item.MailItem(item);
-                    return;
                 }
 
                 session.Item.Inventory.Add(item, notifyNew: true);
