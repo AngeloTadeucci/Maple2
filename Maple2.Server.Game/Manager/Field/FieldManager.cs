@@ -26,6 +26,7 @@ namespace Maple2.Server.Game.Manager.Field;
 public sealed partial class FieldManager : IDisposable {
     private static int _globalIdCounter = 10000000;
     private int localIdCounter = 50000000;
+    private DateTime? fieldEmptySince;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
