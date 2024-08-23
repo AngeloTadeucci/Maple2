@@ -1477,9 +1477,9 @@ public class TableMapper : TypeMapper<TableMetadata> {
     }
 
     private BannerTable ParseBanner() {
-        var results = new Dictionary<long, BannerTable.Entry>();
+        List<BannerTable.Entry> results = [];
         foreach ((int id, Banner banner) in parser.ParseBanner()) {
-            results.Add(id, new BannerTable.Entry(
+            results.Add(new BannerTable.Entry(
                 Id: id,
                 MapId: banner.field,
                 Price: banner.price.ToList()

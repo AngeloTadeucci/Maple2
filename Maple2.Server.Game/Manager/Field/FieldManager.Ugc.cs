@@ -11,10 +11,10 @@ namespace Maple2.Server.Game.Manager.Field;
 public partial class FieldManager {
     public readonly ConcurrentDictionary<int, Plot> Plots = new();
     public readonly ConcurrentDictionary<long, UgcBanner> Banners = new();
-    private DateTimeOffset lastUpdate = DateTimeOffset.MinValue;
+    private DateTimeOffset lastBannerUpdate = DateTimeOffset.MinValue;
 
     private void UpdateBanners() {
-        if (DateTimeOffset.UtcNow - lastUpdate < TimeSpan.FromMinutes(1)) {
+        if (DateTimeOffset.UtcNow - lastBannerUpdate < TimeSpan.FromMinutes(1)) {
             return;
         }
 
@@ -42,7 +42,7 @@ public partial class FieldManager {
             }
         }
 
-        lastUpdate = dateTimeOffset;
+        lastBannerUpdate = dateTimeOffset;
     }
 
     private static void DeleteOldBannerSlots(UgcBanner ugcBanner, DateTimeOffset dateTimeOffset) {

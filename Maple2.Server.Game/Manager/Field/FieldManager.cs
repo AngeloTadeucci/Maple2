@@ -172,15 +172,15 @@ public sealed partial class FieldManager : IDisposable {
             AddSkill(skill, regionSkill.Interval, regionSkill.Position, regionSkill.Rotation);
         }
 
-        foreach (KeyValuePair<long, BannerTable.Entry> entry in TableMetadata.BannerTable.Entries) {
-            if (entry.Value.MapId != MapId) {
+        foreach (BannerTable.Entry entry in TableMetadata.BannerTable.Entries) {
+            if (entry.MapId != MapId) {
                 continue;
             }
 
             using GameStorage.Request db = GameStorage.Context();
 
-            UgcBanner ugcBanner = new(entry.Key, MapId, db.FindBannerSlotsByBannerId(entry.Key));
-            Banners[entry.Key] = ugcBanner;
+            UgcBanner ugcBanner = new(entry.Id, MapId, db.FindBannerSlotsByBannerId(entry.Id));
+            Banners[entry.Id] = ugcBanner;
 
             DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
 

@@ -163,7 +163,7 @@ public class UgcHandler : PacketHandler<GameSession> {
             return;
         }
 
-        TableMetadata.BannerTable.Entries.TryGetValue(bannerId, out BannerTable.Entry? bannerMetadata);
+        BannerTable.Entry? bannerMetadata = TableMetadata.BannerTable.Entries.FirstOrDefault(x => x.Id == bannerId);
         if (bannerMetadata is null) {
             Logger.Warning("Failed to find banner metadata {BannerId}", bannerId);
             return;

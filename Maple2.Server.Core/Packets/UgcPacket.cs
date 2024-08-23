@@ -112,7 +112,7 @@ public static class UgcPacket {
         pWriter.WriteInt(counter1);
         for (int i = 0; i < counter1; i++) {
             bool flagA = false;
-            pWriter.WriteBool(flagA);
+            pWriter.WriteBool(flagA); // CUgcBannerRollingImage
             if (flagA) {
                 pWriter.WriteLong();
                 pWriter.WriteUnicodeString();
