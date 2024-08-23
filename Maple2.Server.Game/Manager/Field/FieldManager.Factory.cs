@@ -25,11 +25,17 @@ public partial class FieldManager {
         private readonly ConcurrentDictionary<int, ConcurrentDictionary<long, FieldManager>> homeFields; // K1: MapId, K2: OwnerId
         private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>> fields; // K1: MapId, K2: InstanceId
 
+        private readonly CancellationTokenSource cancel;
+        private readonly Thread thread;
+
         public Factory(IComponentContext context) {
             this.context = context;
 
             fields = new ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>>();
             homeFields = new ConcurrentDictionary<int, ConcurrentDictionary<long, FieldManager>>();
+            cancel = new CancellationTokenSource();
+            thread = new Thread(DisposeLoop);
+            thread.Start();
         }
 
         /// <summary>
@@ -114,6 +120,54 @@ public partial class FieldManager {
             return field;
         }
 
+        /// <summary>
+        /// Disposes the field managers that have no players and have been empty for more than 10 minutes.
+        /// </summary>
+        private void DisposeLoop() {
+            while (!cancel.IsCancellationRequested) {
+                foreach (ConcurrentDictionary<int, FieldManager> manager in fields.Values) {
+                    foreach (FieldManager fieldManager in manager.Values) {
+                        if (!fieldManager.Players.IsEmpty) {
+                            logger.Verbose("Field {MapId} {InstanceId} has players", fieldManager.MapId, fieldManager.InstanceId);
+                            fieldManager.fieldEmptySince = null;
+                            continue;
+                        }
+
+                        Model.RoomTimer? roomTimer = fieldManager.RoomTimer;
+                        if (roomTimer is null) {
+                            if (fieldManager.fieldEmptySince is null) {
+                                logger.Verbose("Field {MapId} {InstanceId} is empty, starting timer", fieldManager.MapId, fieldManager.InstanceId);
+                                fieldManager.fieldEmptySince = DateTime.UtcNow;
+                            } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > TimeSpan.FromMinutes(3)) {
+                                logger.Verbose("Field {MapId} {InstanceId} has been empty for more than 10 minutes, disposing", fieldManager.MapId, fieldManager.InstanceId);
+                                fieldManager.Dispose();
+                            }
+                            continue;
+                        }
+
+                        if (roomTimer is not null && roomTimer.Expired(fieldManager.FieldTick) == true) {
+                            logger.Verbose("Field {MapId} {InstanceId} room timer expired, disposing", fieldManager.MapId, fieldManager.InstanceId);
+                            fieldManager.Dispose();
+                        } else {
+                            logger.Verbose("Field {MapId} {InstanceId} room timer has not expired", fieldManager.MapId, fieldManager.InstanceId);
+                        }
+                    }
+                }
+
+                // remove fields disposed
+                foreach (int mapId in fields.Keys) {
+                    foreach (int instanceId in fields[mapId].Keys) {
+                        if (fields[mapId][instanceId].cancel.IsCancellationRequested) {
+                            fields[mapId].TryRemove(instanceId, out _);
+                        }
+                    }
+                }
+
+                logger.Verbose("FieldManager dispose loop sleeping for 1 minute");
+                Thread.Sleep(TimeSpan.FromMinutes(1));
+            }
+        }
+
         public void Dispose() {
             foreach (ConcurrentDictionary<int, FieldManager> manager in fields.Values) {
                 foreach (FieldManager fieldManager in manager.Values) {
@@ -129,6 +183,8 @@ public partial class FieldManager {
 
             fields.Clear();
             homeFields.Clear();
+            cancel.Cancel();
+            thread.Join();
         }
     }
 }

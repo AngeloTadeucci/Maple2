@@ -42,4 +42,6 @@ public class RoomTimer : IUpdatable {
             field.Dispose();
         }
     }
+
+    public bool Expired(long tickCount) => tickCount > StartTick + Duration;
 }
