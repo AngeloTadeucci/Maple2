@@ -138,7 +138,7 @@ public partial class FieldManager {
                             if (fieldManager.fieldEmptySince is null) {
                                 logger.Verbose("Field {MapId} {InstanceId} is empty, starting timer", fieldManager.MapId, fieldManager.InstanceId);
                                 fieldManager.fieldEmptySince = DateTime.UtcNow;
-                            } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > TimeSpan.FromMinutes(3)) {
+                            } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > TimeSpan.FromMinutes(10)) {
                                 logger.Verbose("Field {MapId} {InstanceId} has been empty for more than 10 minutes, disposing", fieldManager.MapId, fieldManager.InstanceId);
                                 fieldManager.Dispose();
                             }
