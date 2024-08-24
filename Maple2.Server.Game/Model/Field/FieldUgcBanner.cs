@@ -1,4 +1,4 @@
-using Maple2.Model.Game.Ugc;
+﻿using Maple2.Model.Game.Ugc;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
 
