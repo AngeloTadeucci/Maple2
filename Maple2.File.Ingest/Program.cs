@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
@@ -16,6 +18,14 @@ const string locale = "NA";
 const string env = "Live";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+bool skipNavmesh = false;
+
+foreach (string? arg in args) {
+    if (arg == "--skip-navmesh") {
+        skipNavmesh = true;
+    }
+}
 
 // Force Globalization to en-US because we use periods instead of commas for decimals
 CultureInfo.CurrentCulture = new("en-US");
@@ -53,19 +63,38 @@ if (server == null || port == null || database == null || user == null || passwo
     throw new ArgumentException("Database connection information was not set");
 }
 
-string dataDbConnection = $"Server={server};Port={port};Database={database};User={user};Password={password};oldguids=true";
+string worldServerDir = Path.Combine(Paths.SOLUTION_DIR, "Maple2.Server.World");
+
+string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
+
+Console.WriteLine("Migrating game database...");
+
+Process process;
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+    process = Process.Start("CMD.exe", "/C " + cmdCommand);
+} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+    process = Process.Start("bash", "-c \"" + cmdCommand + "\"");
+} else {
+    throw new PlatformNotSupportedException("Unsupported OS platform");
+}
+
+process.WaitForExit();
+
+Console.WriteLine("Game Migration complete!");
 
 using var xmlReader = new M2dReader(xmlPath);
 using var exportedReader = new M2dReader(exportedPath);
 using var serverReader = new M2dReader(serverPath);
 
+string dataDbConnection = $"Server={server};Port={port};Database={database};User={user};Password={password};oldguids=true";
+
 DbContextOptions options = new DbContextOptionsBuilder()
     .UseMySql(dataDbConnection, ServerVersion.AutoDetect(dataDbConnection)).Options;
 
-Console.WriteLine("Connecting to database...");
+Console.WriteLine("Connecting to metadata database...");
 using var metadataContext = new MetadataContext(options);
 
-Console.WriteLine("Ensuring database is created...");
+Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB
 
@@ -110,7 +139,9 @@ UpdateDatabase(metadataContext, new NifMapper());
 UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
-_ = new NavMeshMapper(metadataContext, exportedReader);
+if (!skipNavmesh) {
+    _ = new NavMeshMapper(metadataContext, exportedReader);
+}
 
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
 UpdateDatabase(metadataContext, new AiMapper(serverReader));
