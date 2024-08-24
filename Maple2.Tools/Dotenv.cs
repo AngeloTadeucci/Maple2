@@ -7,6 +7,7 @@ public static class DotEnv {
         string dotenv = Path.Combine(Paths.SOLUTION_DIR, ".env");
 
         if (!File.Exists(dotenv)) {
+            Console.WriteLine("No .env file found");
             return;
         }
 
@@ -15,13 +16,16 @@ public static class DotEnv {
                 continue;
             }
 
-            string[] parts = line.Split('=', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length != 2) {
+            int index = line.IndexOf('=');
+            if (index == -1) {
+                Console.WriteLine($"Invalid .env line: {line}");
                 continue;
             }
 
-            Environment.SetEnvironmentVariable(parts[0], parts[1]);
+            string key = line[..index].Trim();
+            string value = line[(index + 1)..].Trim();
+
+            Environment.SetEnvironmentVariable(key, value);
         }
     }
 }

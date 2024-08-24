@@ -47,7 +47,7 @@ if (Test-Path .env) {
 }
 
 # Get the path to the client
-$FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{ 
+$FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
     InitialDirectory = [Environment]::GetFolderPath('Desktop')
     Filter = "MapleStory2.exe|MapleStory2.exe"
     Title = "Maplestory2 Executable"
@@ -134,19 +134,22 @@ if ($answer -eq "y") {
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Initializing project..." -ForegroundColor Blue
 
+# Ask if they want to skip navmesh generation
+Write-Host "You need navmeshes to run the server, you can either generate them or download them from the discord server. Link in README.md." -ForegroundColor Yellow
+Write-Host "Navmesh generation can take up to an hour depending on your system." -ForegroundColor Yellow
+
 # Set the working directory to the Maple2.File.Ingest project
 Set-Location -Path "Maple2.File.Ingest"
-# Runs the command: 'dotnet run'
-Invoke-Dotnet -Command "run" -Arguments "--init"
-Set-Location -Path ".."
 
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "Seeding database..." -ForegroundColor Blue
+$answer = Read-Host "Do you want to skip navmesh generation? (y/n)"
 
-# Set the working directory to the Maple2.Database.Seed project
-Set-Location -Path "Maple2.Database.Seed"
-# Runs the command: 'dotnet run'
-Invoke-Dotnet -Command "run" -Arguments "--seed"
+# if starts with y, add argument --skip-navmesh to the dotnet run command
+if ($answer -eq "y") {
+    Invoke-Dotnet -Command "run" -Arguments "--skip-navmesh"
+} else {
+    Invoke-Dotnet -Command "run" -Arguments "--init"
+}
+
 Set-Location -Path ".."
 
 Write-Host "====================================" -ForegroundColor Cyan
