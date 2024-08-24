@@ -99,7 +99,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
         IPAddress ipAddress = IPAddress.Parse(gameIp);
         var gameEndpoint = new IPEndPoint(ipAddress, newGamePort);
-        var grpcUri = new Uri($"http://{ipAddress}:{newGrpcChannelPort}");
+        var grpcUri = new Uri($"http://{IPAddress.Loopback}:{newGrpcChannelPort}");
         GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);

@@ -32,8 +32,8 @@ Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(configRoot)
     .CreateLogger();
 
-IPAddress.TryParse(Environment.GetEnvironmentVariable("WEB_IP"), out IPAddress? webIp);
-webIp ??= IPAddress.Any;
+// IPAddress.TryParse(Environment.GetEnvironmentVariable("WEB_IP"), out IPAddress? webIp);
+IPAddress webIp = IPAddress.Any;
 
 int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT") ?? "4000", out int webPort);
 
