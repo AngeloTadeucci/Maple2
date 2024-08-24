@@ -8,6 +8,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -161,7 +162,7 @@ public class UgcHandler : PacketHandler<GameSession> {
     private void UploadBanner(GameSession session, IByteReader packet) {
         long bannerId = packet.ReadLong();
 
-        session.Field.Banners.TryGetValue(bannerId, out UgcBanner? banner);
+        session.Field.Banners.TryGetValue(bannerId, out FieldUgcBanner? banner);
         if (banner is null) {
             Logger.Warning("Failed to find banner {BannerId}", bannerId);
             return;
@@ -295,7 +296,7 @@ public class UgcHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleLoadBanners(GameSession session, IByteReader packet) {
-        session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.ToList()));
+        session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.Select(x => (UgcBanner) x).ToList()));
     }
 
     private void HandleReserveBanner(GameSession session, IByteReader packet) {
@@ -306,7 +307,7 @@ public class UgcHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Field.Banners.TryGetValue(bannerId, out UgcBanner? banner);
+        session.Field.Banners.TryGetValue(bannerId, out FieldUgcBanner? banner);
         if (banner is null) {
             Logger.Warning("Failed to find banner {BannerId}", bannerId);
             return;

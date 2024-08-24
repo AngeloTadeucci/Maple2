@@ -3,6 +3,7 @@ using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Ugc;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -10,7 +11,7 @@ namespace Maple2.Server.Game.Manager.Field;
 
 public partial class FieldManager {
     public readonly ConcurrentDictionary<int, Plot> Plots = new();
-    public readonly ConcurrentDictionary<long, UgcBanner> Banners = new();
+    public readonly ConcurrentDictionary<long, FieldUgcBanner> Banners = new();
     private DateTimeOffset lastBannerUpdate = DateTimeOffset.MinValue;
 
     private void UpdateBanners() {
@@ -19,17 +20,8 @@ public partial class FieldManager {
         }
 
         DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
-        foreach (UgcBanner ugcBanner in Banners.Values) {
-            DeleteOldBannerSlots(ugcBanner, dateTimeOffset);
-
-            BannerSlot? slot = ugcBanner.Slots.FirstOrDefault(x => x.ActivateTime.Day == dateTimeOffset.Day && x.ActivateTime.Hour == dateTimeOffset.Hour);
-
-            if (slot is null || slot.Expired || slot.Active) {
-                continue;
-            }
-
-            slot.Active = true;
-            Broadcast(UgcPacket.ActivateBanner(ugcBanner));
+        foreach (FieldUgcBanner ugcBanner in Banners.Values) {
+            ugcBanner.Update(FieldTick);
         }
 
         using GameStorage.Request db = GameStorage.Context();
@@ -43,18 +35,6 @@ public partial class FieldManager {
         }
 
         lastBannerUpdate = dateTimeOffset;
-    }
-
-    private static void DeleteOldBannerSlots(UgcBanner ugcBanner, DateTimeOffset dateTimeOffset) {
-        foreach (BannerSlot bannerSlot in ugcBanner.Slots) {
-            // check if the banner is expired
-            DateTimeOffset expireTimeStamp = dateTimeOffset.Subtract(TimeSpan.FromHours(4));
-            if (bannerSlot.ActivateTime >= expireTimeStamp) {
-                continue;
-            }
-
-            bannerSlot.Expired = true;
-        }
     }
 
     public bool UpdatePlotInfo(PlotInfo plotInfo) {

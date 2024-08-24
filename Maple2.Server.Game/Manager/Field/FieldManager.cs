@@ -13,6 +13,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -179,7 +180,7 @@ public sealed partial class FieldManager : IDisposable {
 
             using GameStorage.Request db = GameStorage.Context();
 
-            UgcBanner ugcBanner = new(entry.Id, MapId, db.FindBannerSlotsByBannerId(entry.Id));
+            FieldUgcBanner ugcBanner = new(this, entry.Id, MapId, db.FindBannerSlotsByBannerId(entry.Id));
             Banners[entry.Id] = ugcBanner;
 
             DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
