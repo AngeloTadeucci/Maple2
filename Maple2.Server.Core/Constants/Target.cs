@@ -13,6 +13,8 @@ public static class Target {
     public static readonly IPAddress GameIp = IPAddress.Loopback;
     public static readonly ushort BaseGamePort = 20002;
 
+    public static readonly IPAddress GrpcGameIp = IPAddress.Loopback;
+
     public static readonly Uri WebUri = new("http://localhost");
 
     public static readonly IPAddress GrpcWorldIp = IPAddress.Loopback;
@@ -31,6 +33,10 @@ public static class Target {
 
         if (IPAddress.TryParse(Environment.GetEnvironmentVariable("GAME_IP"), out IPAddress? gameIpAddress)) {
             GameIp = gameIpAddress;
+        }
+
+        if (IPAddress.TryParse(Environment.GetEnvironmentVariable("GRPC_GAME_IP"), out IPAddress? grpcGameIpAddress)) {
+            GrpcGameIp = grpcGameIpAddress;
         }
 
         if (IPAddress.TryParse(Environment.GetEnvironmentVariable("GRPC_WORLD_IP"), out IPAddress? grpcWorldIpOverride)) {

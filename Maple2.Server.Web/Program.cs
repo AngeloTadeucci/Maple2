@@ -32,14 +32,11 @@ Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(configRoot)
     .CreateLogger();
 
-// IPAddress.TryParse(Environment.GetEnvironmentVariable("WEB_IP"), out IPAddress? webIp);
-IPAddress webIp = IPAddress.Any;
-
 int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT") ?? "4000", out int webPort);
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options => {
-    options.Listen(new IPEndPoint(webIp, webPort), listen => {
+    options.Listen(new IPEndPoint(IPAddress.Any, webPort), listen => {
         listen.Protocols = HttpProtocols.Http1;
     });
     // Omitting for now since HTTPS requires a certificate

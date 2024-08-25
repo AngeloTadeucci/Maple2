@@ -45,6 +45,7 @@ try {
     var worldClient = new WorldClient(channel);
     response = worldClient.AddChannel(new AddChannelRequest {
         GameIp = Target.GameIp.ToString(),
+        GrpcGameIp = Target.GrpcGameIp.ToString()
     });
 
 } catch (RpcException e) {

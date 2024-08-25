@@ -463,6 +463,7 @@ message GlobalPortalInfo {
 
 message AddChannelRequest {
   string game_ip = 1;
+  string grpc_game_ip = 2;
 }
 
 message AddChannelResponse {
