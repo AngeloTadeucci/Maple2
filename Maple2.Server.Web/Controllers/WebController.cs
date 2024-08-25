@@ -69,12 +69,13 @@ public class WebController : ControllerBase {
             UgcType.ProfileAvatar => UploadProfileAvatar(fileBytes, characterId),
             UgcType.Item or UgcType.Mount or UgcType.Furniture => UploadItem(fileBytes, id, ugcUid, resource!),
             UgcType.ItemIcon => UploadItemIcon(fileBytes, id, ugcUid, resource!),
+            UgcType.Banner => UploadBanner(fileBytes, id, ugcUid),
             _ => HandleUnknownMode(type),
         };
     }
 
     private static IResult UploadProfileAvatar(byte[] fileBytes, long characterId) {
-        string filePath = $"{Paths.WEB_DATA_DIR}/profiles/{characterId}/";
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "profiles", characterId.ToString());
         try {
             // Deleting old files in the character folder
             if (Path.Exists(filePath)) {
@@ -87,12 +88,12 @@ public class WebController : ControllerBase {
         }
 
         string uniqueFileName = Guid.NewGuid().ToString();
-        System.IO.File.WriteAllBytes($"{filePath}/{uniqueFileName}.png", fileBytes);
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{uniqueFileName}.png"), fileBytes);
         return Results.Text($"0,data/profiles/avatar/{characterId}/{uniqueFileName}.png");
     }
 
     private IResult UploadItem(byte[] fileBytes, int itemId, long ugcId, UgcResource resource) {
-        string filePath = $"{Paths.WEB_DATA_DIR}/items/{itemId}/";
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "items", itemId.ToString());
         try {
             Directory.CreateDirectory(filePath);
         } catch (Exception ex) {
@@ -103,12 +104,12 @@ public class WebController : ControllerBase {
         string ugcPath = $"item/ms2/01/{itemId}/{resource.Id}.m2u";
 
         db.UpdatePath(ugcId, ugcPath);
-        System.IO.File.WriteAllBytes($"{filePath}/{resource.Id}.m2u", fileBytes);
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{resource.Id}.m2u"), fileBytes);
         return Results.Text($"0,{ugcPath}");
     }
 
     private IResult UploadItemIcon(byte[] fileBytes, int itemId, long ugcId, UgcResource resource) {
-        string filePath = $"{Paths.WEB_DATA_DIR}/itemicon/{itemId}/";
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "itemicon", itemId.ToString());
         try {
             Directory.CreateDirectory(filePath);
         } catch (Exception ex) {
@@ -118,7 +119,24 @@ public class WebController : ControllerBase {
         //TODO: Verify that the item exists in the database
         string ugcPath = $"itemicon/ms2/01/{itemId}/{resource.Id}.png";
 
-        System.IO.File.WriteAllBytes($"{filePath}/{ugcId}.png", fileBytes);
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.png"), fileBytes);
+        return Results.Text($"0,{ugcPath}");
+    }
+
+    private IResult UploadBanner(byte[] fileBytes, int bannerId, long ugcId) {
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "banner", bannerId.ToString());
+        try {
+            Directory.CreateDirectory(filePath);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed preparing directory: {Path}", filePath);
+            return Results.Problem("Internal Server Error", statusCode: 500);
+        }
+        using WebStorage.Request db = webStorage.Context();
+        string ugcPath = $"banner/ms2/01/{bannerId}/{ugcId}.m2u";
+
+        db.UpdatePath(ugcId, ugcPath);
+
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.m2u"), fileBytes);
         return Results.Text($"0,{ugcPath}");
     }
 
