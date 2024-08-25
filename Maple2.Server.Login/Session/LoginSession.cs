@@ -94,29 +94,8 @@ public class LoginSession : Core.Network.Session {
         CharacterId = character.Id;
 
         var unlock = new Unlock();
-        int[] defaultEmotes = [
-            90200011, // Greet
-            90200004, // Scheme
-            90200024, // Reject
-            90200041, // Sit
-            90200042, // Ledge Sit
-            90200057, // Possessed Fan Dance
-            90200043, // Epiphany
-            90200022, // Bow
-            90200031, // Cry
-            90200005, // Dejected
-            90200006, // Like
-            90200003, // Pout
-            90200092, // High Five
-            90200077, // Catch of the Day
-            90200073, // Make It Rain
-            90200023, // Surprise
-            90200001, // Anger
-            90200019, // Scissors
-            90200020, // Rock
-            90200021, // Paper
-        ];
-        foreach (int emoteId in defaultEmotes) {
+
+        foreach (int emoteId in Constant.DefaultEmotes) {
             unlock.Emotes.Add(emoteId);
         }
         character.AchievementInfo = db.GetAchievementInfo(AccountId, character.Id);
