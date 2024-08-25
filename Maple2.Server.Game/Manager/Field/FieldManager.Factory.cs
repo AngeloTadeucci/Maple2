@@ -138,8 +138,8 @@ public partial class FieldManager {
                             if (fieldManager.fieldEmptySince is null) {
                                 logger.Verbose("Field {MapId} {InstanceId} is empty, starting timer", fieldManager.MapId, fieldManager.InstanceId);
                                 fieldManager.fieldEmptySince = DateTime.UtcNow;
-                            } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > TimeSpan.FromMinutes(10)) {
-                                logger.Verbose("Field {MapId} {InstanceId} has been empty for more than 10 minutes, disposing", fieldManager.MapId, fieldManager.InstanceId);
+                            } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > Constant.FieldDisposeEmptyTime) {
+                                logger.Verbose("Field {MapId} {InstanceId} has been empty for more than {Time}, disposing", fieldManager.MapId, fieldManager.InstanceId, Constant.FieldDisposeEmptyTime);
                                 fieldManager.Dispose();
                             }
                             continue;
@@ -163,8 +163,8 @@ public partial class FieldManager {
                     }
                 }
 
-                logger.Verbose("FieldManager dispose loop sleeping for 1 minute");
-                Thread.Sleep(TimeSpan.FromMinutes(1));
+                logger.Verbose("FieldManager dispose loop sleeping for {Interval}ms", Constant.FieldDisposeLoopInterval);
+                Thread.Sleep(Constant.FieldDisposeLoopInterval);
             }
         }
 

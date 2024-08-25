@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Serilog;
 
 // TODO: Move this to a Global server
@@ -31,31 +32,44 @@ public partial class GlobalService : Global.GlobalBase {
 
         using GameStorage.Request db = gameStorage.Context();
         Account? account = db.GetAccount(username);
-        // Create account if not exists.
-        if (account == null) {
-            account = new Account {
-                Username = username,
-                MachineId = machineId,
-            };
+        if (account is null) {
+            if (Constant.AutoRegister) {
+                account = new Account {
+                    Username = username,
+                    MachineId = machineId,
+                };
 
-            db.BeginTransaction();
-            account = db.CreateAccount(account);
-            if (account == null) {
-                throw new RpcException(new Status(StatusCode.Internal, "Failed to create account."));
+                db.BeginTransaction();
+                account = db.CreateAccount(account);
+                if (account == null) {
+                    throw new RpcException(new Status(StatusCode.Internal, "Failed to create account."));
+                }
+
+                db.Commit();
+                return Task.FromResult(new LoginResponse { AccountId = account.Id });
             }
 
-            db.Commit();
-        } else {
-            if (account.MachineId == default) {
-                account.MachineId = machineId;
-                db.UpdateAccount(account, true);
-            } else if (account.MachineId != machineId) {
-                logger.Warning("MachineId mismatch for account {AccountId}", account.Id);
-                // return Task.FromResult(new LoginResponse {
-                //     Code = LoginResponse.Types.Code.BlockNexonSn,
-                //     Message = "MachineId mismatch",
-                // });
+            return Task.FromResult(new LoginResponse {
+                Code = LoginResponse.Types.Code.ErrorId,
+                Message = "Account not found",
+            });
+        }
+
+        // TODO: Implement password check
+
+        if (account.MachineId != machineId) {
+            logger.Warning("MachineId mismatch for account {AccountId}", account.Id);
+            if (Constant.BlockLoginWithMismatchedMachineId) {
+                return Task.FromResult(new LoginResponse {
+                    Code = LoginResponse.Types.Code.BlockNexonSn,
+                    Message = "MachineId mismatch",
+                });
             }
+        }
+
+        if (account.MachineId == default) {
+            account.MachineId = machineId;
+            db.UpdateAccount(account, true);
         }
 
         return Task.FromResult(new LoginResponse { AccountId = account.Id });

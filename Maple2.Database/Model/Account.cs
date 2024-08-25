@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
+using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -117,7 +115,7 @@ internal class Account {
         builder.HasIndex(account => account.Username)
             .IsUnique();
         builder.Property(account => account.MaxCharacters)
-            .HasDefaultValue(4);
+            .HasDefaultValue(Constant.DefaultMaxCharacters);
         builder.HasMany(account => account.Characters);
         builder.Property(account => account.Currency).HasJsonConversion().IsRequired();
         builder.Property(account => account.MarketLimits).HasJsonConversion().IsRequired();

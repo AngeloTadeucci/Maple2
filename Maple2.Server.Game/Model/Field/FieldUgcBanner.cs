@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Game.Ugc;
+﻿using Maple2.Model.Metadata;
+using Maple2.Model.Game.Ugc;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
 
@@ -28,7 +29,7 @@ public class FieldUgcBanner : UgcBanner, IUpdatable {
     private void DeleteOldBannerSlots(DateTimeOffset dateTimeOffset) {
         foreach (BannerSlot bannerSlot in Slots) {
             // check if the banner is expired
-            DateTimeOffset expireTimeStamp = dateTimeOffset.Subtract(TimeSpan.FromHours(4));
+            DateTimeOffset expireTimeStamp = dateTimeOffset.Subtract(Constant.FieldUgcBannerRemoveAfter);
             if (bannerSlot.ActivateTime >= expireTimeStamp) {
                 continue;
             }
