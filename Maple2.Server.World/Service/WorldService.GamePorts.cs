@@ -5,7 +5,7 @@ namespace Maple2.Server.World.Service;
 
 public partial class WorldService {
     public override Task<AddChannelResponse> AddChannel(AddChannelRequest request, ServerCallContext context) {
-        (ushort gamePort, int grpcPort, int channel) = channelClients.FindOrCreateChannelByIp(request.GameIp);
+        (ushort gamePort, int grpcPort, int channel) = channelClients.FindOrCreateChannelByIp(request.GameIp, request.GrpcGameIp);
 
         return Task.FromResult(new AddChannelResponse {
             GamePort = gamePort,
