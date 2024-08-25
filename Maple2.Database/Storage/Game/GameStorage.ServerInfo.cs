@@ -25,6 +25,7 @@ public partial class GameStorage {
             lock (Context) {
                 ServerInfo serverInfo = Context.ServerInfo.Find("DailyReset")!;
                 serverInfo.LastModified = DateTime.Now;
+                Context.Update(serverInfo);
                 Context.SaveChanges();
 
                 Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeExp` = `PrestigeCurrentExp`");
