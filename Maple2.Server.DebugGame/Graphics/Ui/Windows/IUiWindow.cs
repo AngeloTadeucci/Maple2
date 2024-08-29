@@ -1,4 +1,4 @@
-﻿namespace Maple2.Server.DebugGame.Graphics.UI;
+﻿namespace Maple2.Server.DebugGame.Graphics.Ui.Windows;
 
 public interface IUiWindow {
     public bool AllowMainWindow { get => false; }
