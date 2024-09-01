@@ -15,12 +15,13 @@ COPY ["Maple2.Server.Core/Maple2.Server.Core.csproj", "Maple2.Server.Core/"]
 RUN dotnet restore -r win-x64 "Maple2.Server.Game/Maple2.Server.Game.csproj"
 COPY . .
 WORKDIR "/src/Maple2.Server.Game"
-RUN dotnet build -r win-x64 "Maple2.Server.Game.csproj" -c Debug -o /app/build
 
 FROM build AS publish
-RUN dotnet publish -r win-x64 "Maple2.Server.Game.csproj" -c Debug -o /app/publish
+RUN dotnet publish -r win-x64 "Maple2.Server.Game.csproj" -c Debug
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /src/Maple2.Server.Game/bin/Debug/net8.0/win-x64/publish .
+COPY --from=build /src/Maple2.File.Ingest/Navmeshes /Maple2.File.Ingest/Navmeshes
+
 ENTRYPOINT ["dotnet", "Maple2.Server.Game.dll"]
