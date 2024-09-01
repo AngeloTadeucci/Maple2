@@ -239,25 +239,20 @@ public sealed class NpcScriptManager {
         QuestState questState = quest?.State ?? QuestState.None;
 
         int stateId = questState switch {
-            QuestState.None => GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 100, 200),
-            QuestState.Started => GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300),
+            QuestState.None => NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 100, 200),
+            QuestState.Started => NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300),
             _ => 0,
         };
 
         if (quest != null && session.Quest.CanStart(quest.Metadata.Require)) {
-            stateId = GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300);
+            stateId = NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300);
         }
 
         if (quest != null && quest.Metadata.Basic.CompleteNpc == Npc.Value.Id) {
-            stateId = GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 300, 400);
+            stateId = NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 300, 400);
         }
 
         return scriptMetadata.States.TryGetValue(stateId, out ScriptState? scriptState) ? scriptState : null;
-
-        int GetFirstStateScript(IEnumerable<int> questStates, int lowerBound, int upperBound) {
-            IEnumerable<int> statesInRange = questStates.Where(id => id >= lowerBound && id < upperBound);
-            return statesInRange.Min();
-        }
     }
 
     private NpcTalkButton GetButton() {
