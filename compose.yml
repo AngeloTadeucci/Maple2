@@ -92,7 +92,7 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      GRPC_GAME_IP: game-main
+      GRPC_GAME_IP: game-alt
       GRPC_WORLD_IP: world
 
   web:
