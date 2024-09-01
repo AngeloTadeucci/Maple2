@@ -238,10 +238,10 @@ public static class NpcTalkUtil {
         }
 
         return scriptMetadata.States.TryGetValue(stateId, out ScriptState? scriptState) ? scriptState : null;
+    }
 
-        int GetFirstStateScript(IEnumerable<int> questStates, int lowerBound, int upperBound) {
-            IEnumerable<int> statesInRange = questStates.Where(id => id >= lowerBound && id < upperBound);
-            return statesInRange.Min();
-        }
+    public static int GetFirstStateScript(IEnumerable<int> questStates, int lowerBound, int upperBound) {
+        IEnumerable<int> statesInRange = questStates.Where(id => id >= lowerBound && id <= upperBound);
+        return statesInRange.Min();
     }
 }
