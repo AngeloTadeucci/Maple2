@@ -84,7 +84,6 @@ namespace Maple2.Server.World.Migrations {
                     WeeklyContribution = table.Column<int>(type: "int", nullable: false),
                     TotalContribution = table.Column<int>(type: "int", nullable: false),
                     DailyDonationCount = table.Column<int>(type: "int", nullable: false),
-                    LoginTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CheckinTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DonationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
