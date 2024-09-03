@@ -67,6 +67,7 @@ public sealed partial class FieldManager : IDisposable {
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
+    public readonly FieldInstance FieldInstance = default;
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
@@ -83,6 +84,11 @@ public sealed partial class FieldManager : IDisposable {
         Ai = new AiManager(this);
         OwnerId = ownerId;
         InstanceId = NextGlobalId();
+
+        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(metadata.Id, out InstanceFieldMetadata? instanceField);
+        if (instanceField != null) {
+            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
+        }
 
         ItemDrop = new ItemDropManager(this);
 

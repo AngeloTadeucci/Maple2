@@ -11,11 +11,11 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Packets;
 
 public static class FieldEnterPacket {
-    public static ByteWriter Request(IActor<Player> player, FieldInstance instanceField = default) {
+    public static ByteWriter Request(IActor<Player> player) {
         var pWriter = Packet.Of(SendOp.RequestFieldEnter);
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteInt(player.Value.Character.MapId);
-        pWriter.Write<FieldInstance>(instanceField);
+        pWriter.Write<FieldInstance>(player.Field.FieldInstance);
         pWriter.WriteInt();
         pWriter.Write<Vector3>(player.Position);
         pWriter.Write<Vector3>(player.Rotation);

@@ -267,13 +267,7 @@ public sealed partial class GameSession : Core.Network.Session {
         // RoomDungeon
         // FieldEntrance
         // InGameRank
-
-        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? instanceField);
-        FieldInstance fieldInstance = default;
-        if (instanceField != null) {
-            fieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
-        }
-        Send(FieldEnterPacket.Request(Player, fieldInstance));
+        Send(FieldEnterPacket.Request(Player));
 
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
