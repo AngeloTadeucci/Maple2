@@ -647,9 +647,26 @@ public class GuildHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Send(session.PrepareField(house.MapId, instanceId: (int) session.Guild.Id)
-                ? FieldEnterPacket.Request(session.Player)
-                : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = session.AccountId,
+                CharacterId = session.CharacterId,
+                MachineId = session.MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = house.MapId,
+                OwnerId = session.Guild.Id,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            session.Send(MigrationPacket.GameToGame(endpoint, response.Token, house.MapId));
+            session.State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            session.Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            session.Disconnect();
+        }
     }
 
     private void HandleSendGift(GameSession session, IByteReader packet) {

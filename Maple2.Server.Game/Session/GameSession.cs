@@ -267,7 +267,14 @@ public sealed partial class GameSession : Core.Network.Session {
         // RoomDungeon
         // FieldEntrance
         // InGameRank
-        Send(FieldEnterPacket.Request(Player));
+
+        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? instanceField);
+        FieldInstance fieldInstance = default;
+        if (instanceField != null) {
+            fieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
+        }
+        Send(FieldEnterPacket.Request(Player, fieldInstance));
+
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
@@ -309,9 +316,13 @@ public sealed partial class GameSession : Core.Network.Session {
             ownerId = AccountId;
         }
 
-        FieldManager? newField = mapId == Constant.DefaultHomeMapId ?
-            FieldFactory.Get(Constant.DefaultHomeMapId, ownerId) :
-            FieldFactory.Get(mapId, instanceId);
+        FieldManager? newField;
+        if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+            newField = FieldFactory.Get(mapId, ownerId);
+        } else {
+            newField = FieldFactory.Get(mapId, instanceId);
+        }
+
         if (newField == null) {
             return false;
         }

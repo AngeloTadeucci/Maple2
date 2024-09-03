@@ -55,13 +55,10 @@ public partial class FieldManager {
         /// Else, it will return the first instance found if no instanceId is provided.
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId = 0) {
-            if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-                ConcurrentDictionary<long, FieldManager> ownerFields = homeFields.GetOrAdd(mapId, new ConcurrentDictionary<long, FieldManager>());
-
-                return ownerFields.TryGetValue(instanceId, out FieldManager? ownerField) ? ownerField : Create(mapId, instanceId);
-            }
-
             ConcurrentDictionary<int, FieldManager> mapFields = fields.GetOrAdd(mapId, new ConcurrentDictionary<int, FieldManager>());
+            if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+                return mapFields.TryGetValue(instanceId, out FieldManager? ownerField) ? ownerField : Create(mapId, instanceId);
+            }
 
             // Get first result if possible
             FieldManager? firstField = mapFields.FirstOrDefault().Value;
@@ -164,7 +161,9 @@ public partial class FieldManager {
                 }
 
                 logger.Verbose("FieldManager dispose loop sleeping for {Interval}ms", Constant.FieldDisposeLoopInterval);
-                Thread.Sleep(Constant.FieldDisposeLoopInterval);
+                try {
+                    Task.Delay(Constant.FieldDisposeLoopInterval, cancel.Token).Wait(cancel.Token);
+                } catch {/* Do nothing */ }
             }
         }
 
