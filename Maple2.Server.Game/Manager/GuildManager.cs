@@ -113,6 +113,13 @@ public class GuildManager : IDisposable {
                 Level = buff.Level,
                 ExpiryTime = buff.ExpiryTime,
             }).ToList(),
+            Posters = info.Posters.Select(poster => new GuildPoster {
+                Id = poster.Id,
+                Picture = poster.Picture,
+                OwnerId = poster.OwnerId,
+                OwnerName = poster.OwnerName,
+                ResourceId = poster.ResourceId,
+            }).ToList(),
             Npcs = info.Npcs.Select(npc => new GuildNpc {
                 Type = (GuildNpcType) npc.Type,
                 Level = npc.Level,
@@ -271,7 +278,23 @@ public class GuildManager : IDisposable {
         }
 
         Guild.Emblem = emblem;
+        session.Send(GuildPacket.UpdateEmblem(Guild.Emblem));
         session.Send(GuildPacket.NotifyUpdateEmblem(requestorName, emblem));
+        return true;
+    }
+
+    public bool AddOrUpdatePoster(GuildPoster poster) {
+        if (Guild == null) {
+            return false;
+        }
+
+        GuildPoster? oldPoster = Guild.Posters.FirstOrDefault(p => p.Id == poster.Id);
+        if (oldPoster is not null) {
+            Guild.Posters.Remove(oldPoster);
+        }
+
+        Guild.Posters.Add(poster);
+        session.Send(GuildPacket.UpdatePoster(poster));
         return true;
     }
 

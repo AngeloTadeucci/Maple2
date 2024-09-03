@@ -318,6 +318,41 @@ public class GuildManager : IDisposable {
         return GuildError.none;
     }
 
+    public GuildError AddOrUpdatePoster(int id, string picture, long ownerId, string ownerName, long resourceId) {
+        if (!Guild.Members.TryGetValue(ownerId, out GuildMember? requestor)) {
+            return GuildError.s_guild_err_null_member;
+        }
+
+        GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
+        if (rank == null || !rank.Permission.HasFlag(GuildPermission.EditEmblem)) {
+            return GuildError.s_guild_err_no_authority;
+        }
+
+        GuildPoster? oldPoster = Guild.Posters.FirstOrDefault(poster => poster.Id == id);
+        if (oldPoster != null) {
+            Guild.Posters.Remove(oldPoster);
+        }
+
+        Guild.Posters.Add(new GuildPoster {
+            Id = id,
+            Picture = picture,
+            OwnerId = ownerId,
+            OwnerName = ownerName,
+            ResourceId = resourceId,
+        });
+
+        Broadcast(new GuildRequest {
+            UpdatePoster = new GuildRequest.Types.UpdatePoster {
+                Id = id,
+                Picture = picture,
+                OwnerId = ownerId,
+                OwnerName = ownerName,
+                ResourceId = resourceId,
+            },
+        });
+        return GuildError.none;
+    }
+
     public string ConsumeInvite(long characterId) {
         foreach ((long id, (string name, DateTime expiryTime)) in pendingInvites) {
             // Remove any expired entries while iterating.

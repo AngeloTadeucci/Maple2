@@ -55,21 +55,21 @@ public partial class FieldManager {
         /// Else, it will return the first instance found if no instanceId is provided.
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId = 0) {
-            ConcurrentDictionary<int, FieldManager> mapFields = fields.GetOrAdd(mapId, new ConcurrentDictionary<int, FieldManager>());
-
             if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-                return GetOrCreateField(mapFields, mapId, instanceId);
+                ConcurrentDictionary<long, FieldManager> ownerFields = homeFields.GetOrAdd(mapId, new ConcurrentDictionary<long, FieldManager>());
+
+                return ownerFields.TryGetValue(instanceId, out FieldManager? ownerField) ? ownerField : Create(mapId, instanceId);
             }
+
+            ConcurrentDictionary<int, FieldManager> mapFields = fields.GetOrAdd(mapId, new ConcurrentDictionary<int, FieldManager>());
 
             // Get first result if possible
             FieldManager? firstField = mapFields.FirstOrDefault().Value;
-            return firstField ??
-                   // Map is not intentionally an instance, and no fields are found
-                   GetOrCreateField(mapFields, mapId, instanceId);
+            if (firstField is not null) {
+                return firstField;
+            }
 
-        }
-
-        private FieldManager? GetOrCreateField(ConcurrentDictionary<int, FieldManager> mapFields, int mapId, int instanceId) {
+            // Map is not intentionally an instance, and no fields are found
             return mapFields.TryGetValue(instanceId, out FieldManager? field) ? field : Create(mapId, instanceId);
         }
 

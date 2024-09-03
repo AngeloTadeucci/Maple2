@@ -1,6 +1,8 @@
-﻿using Maple2.Database.Extensions;
+﻿using Grpc.Core;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
@@ -9,7 +11,11 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model.Field;
+using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.World.Service;
+using WorldClient = Maple2.Server.World.Service.World.WorldClient;
+
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -21,7 +27,7 @@ public class UgcHandler : PacketHandler<GameSession> {
     public required WebStorage WebStorage { private get; init; }
     public required ItemMetadataStorage ItemMetadata { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
-
+    public required WorldClient World { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -72,7 +78,10 @@ public class UgcHandler : PacketHandler<GameSession> {
                 UploadBanner(session, packet);
                 return;
             case UgcType.GuildEmblem:
-                long guildId = packet.ReadLong();
+                UploadGuildEmblem(session, packet);
+                return;
+            case UgcType.GuildBanner:
+                UploadGuildBanner(session, packet);
                 return;
             default:
                 Logger.Information("Unimplemented Ugc Type: {type}", info.Type);
@@ -223,6 +232,58 @@ public class UgcHandler : PacketHandler<GameSession> {
         session.Send(UgcPacket.Upload(resource));
     }
 
+    private void UploadGuildBanner(GameSession session, IByteReader packet) {
+        long guildId = packet.ReadLong();
+        int bannerId = packet.ReadInt();
+
+        if (session.Guild.Guild is null) {
+            Logger.Warning("Failed to find guild for UGC {GuildId}", guildId);
+            return;
+        }
+
+        if (session.Guild.Id != guildId) {
+            Logger.Warning("Invalid guild for UGC {GuildId}", guildId);
+            return;
+        }
+
+        using WebStorage.Request request = WebStorage.Context();
+        UgcResource? resource = request.CreateUgc(UgcType.GuildBanner, session.CharacterId);
+        if (resource == null) {
+            Logger.Fatal("Failed to create UGC resource for banner {BannerId}", bannerId);
+            throw new InvalidOperationException($"Fatal: Creating UGC resource: {bannerId}");
+        }
+
+        session.StagedGuildPoster = new GuildPoster {
+            Id = bannerId,
+            OwnerId = session.CharacterId,
+            OwnerName = session.PlayerName,
+            ResourceId = resource.Id,
+        };
+
+        session.Send(UgcPacket.Upload(resource));
+    }
+
+    private void UploadGuildEmblem(GameSession session, IByteReader packet) {
+        if (session.Guild.Guild is null) {
+            Logger.Error("Cannot upload guild emblem without a guild");
+            return;
+        }
+
+        if (!session.Guild.HasPermission(session.CharacterId, GuildPermission.EditEmblem)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_no_authority));
+            return;
+        }
+
+        using WebStorage.Request request = WebStorage.Context();
+        UgcResource? resource = request.CreateUgc(UgcType.GuildEmblem, session.CharacterId);
+        if (resource == null) {
+            Logger.Fatal("Failed to create UGC resource for guild id {GuildId}", session.Guild.Id);
+            throw new InvalidOperationException($"Fatal: Creating UGC resource: {session.Guild.Id}");
+        }
+
+        session.Send(UgcPacket.Upload(resource));
+    }
+
     private void HandleConfirmation(GameSession session, IByteReader packet) {
         var info = packet.Read<UgcInfo>();
         packet.ReadInt();
@@ -237,47 +298,23 @@ public class UgcHandler : PacketHandler<GameSession> {
 
         using WebStorage.Request webRequest = WebStorage.Context();
         UgcResource? resource = webRequest.GetUgc(ugcUid);
-        if (resource == null || resource.Id != ugcUid) {
+        if (resource == null) {
             Logger.Warning("Failed to find UGC resource {UgcUid}", ugcUid);
             return;
         }
 
         switch (info.Type) {
             case UgcType.Item or UgcType.Furniture or UgcType.Mount:
-                Item? item = session.StagedUgcItem;
-                if (item?.Template == null || !TableMetadata.UgcDesignTable.Entries.TryGetValue(item.Id, out UgcDesignTable.Entry? ugcMetadata)) {
-                    return;
-                }
-
-                item.Template.Url = resource.Path;
-
-                using (GameStorage.Request gameRequest = session.GameStorage.Context()) {
-                    item = gameRequest.CreateItem(session.CharacterId, item);
-                    if (item == null) {
-                        Logger.Fatal("Failed to create UGC Item {ugcUid}", ugcUid);
-                        throw new InvalidOperationException($"Fatal: UGC Item creation: {ugcUid}");
-                    }
-                }
-
-                session.Item.Inventory.Add(item, notifyNew: true);
-                session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, item, ugcMetadata.CreatePrice, info.Type));
-                session.Send(UgcPacket.UpdatePath(resource));
+                ConfirmItem(session, info, ugcUid, resource);
                 break;
             case UgcType.Banner:
-                UgcBanner? banner = session.Field.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
-                if (banner is null) {
-                    Logger.Warning("Failed to find banner for UGC {UgcUid}", ugcUid);
-                    return;
-                }
-
-                using (GameStorage.Request db = session.GameStorage.Context()) {
-                    foreach (BannerSlot slot in banner.Slots.Where(slot => slot.Template?.Id == ugcUid)) {
-                        slot.Template!.Url = resource.Path;
-                        db.UpdateBannerSlot(slot);
-                    }
-                }
-
-                session.Send(UgcPacket.UpdateBanner(banner));
+                ConfirmBanner(session, ugcUid, resource);
+                break;
+            case UgcType.GuildBanner:
+                ConfirmGuildBanner(session, ugcUid, resource);
+                break;
+            case UgcType.GuildEmblem:
+                ConfirmGuildEmblem(session, ugcUid, resource);
                 break;
             default:
                 Logger.Warning("Unhandled Confirmation for UGC Type {UgcType}", info.Type);
@@ -285,6 +322,104 @@ public class UgcHandler : PacketHandler<GameSession> {
         }
 
         session.StagedUgcItem = null;
+        session.StagedGuildPoster = null;
+
+        void ConfirmGuildBanner(GameSession session, long ugcUid, UgcResource resource) {
+            Guild? guild = session.Guild.Guild;
+            if (guild is null) {
+                Logger.Warning("Failed to find guild for UGC {UgcUid}", ugcUid);
+                return;
+            }
+
+            if (session.StagedGuildPoster is null || session.StagedGuildPoster.ResourceId != ugcUid) {
+                Logger.Warning("Failed to find guild poster for UGC {UgcUid}", ugcUid);
+                return;
+            }
+
+            try {
+                var request = new GuildRequest {
+                    RequestorId = session.CharacterId,
+                    UpdatePoster = new GuildRequest.Types.UpdatePoster {
+                        GuildId = session.Guild.Id,
+                        Id = session.StagedGuildPoster.Id,
+                        Picture = resource.Path,
+                        OwnerId = session.StagedGuildPoster.OwnerId,
+                        OwnerName = session.StagedGuildPoster.OwnerName,
+                        ResourceId = session.StagedGuildPoster.ResourceId,
+                    },
+                };
+
+                GuildResponse response = World.Guild(request);
+                var error = (GuildError) response.Error;
+                if (error != GuildError.none) {
+                    session.Send(GuildPacket.Error(error));
+                    return;
+                }
+            } catch (RpcException) { /* ignored */ }
+        }
+
+        void ConfirmGuildEmblem(GameSession session, long ugcUid, UgcResource resource) {
+            Guild? guild = session.Guild.Guild;
+            if (guild is null) {
+                Logger.Warning("Failed to find guild for UGC {UgcUid}", ugcUid);
+                return;
+            }
+
+            try {
+                var request = new GuildRequest {
+                    RequestorId = session.CharacterId,
+                    UpdateEmblem = new GuildRequest.Types.UpdateEmblem {
+                        GuildId = session.Guild.Id,
+                        Emblem = resource.Path,
+                    },
+                };
+
+                GuildResponse response = World.Guild(request);
+                var error = (GuildError) response.Error;
+                if (error != GuildError.none) {
+                    session.Send(GuildPacket.Error(error));
+                    return;
+                }
+            } catch (RpcException) { /* ignored */ }
+        }
+
+        void ConfirmBanner(GameSession session, long ugcUid, UgcResource resource) {
+            UgcBanner? banner = session.Field.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
+            if (banner is null) {
+                Logger.Warning("Failed to find banner for UGC {UgcUid}", ugcUid);
+                return;
+            }
+
+            using (GameStorage.Request db = session.GameStorage.Context()) {
+                foreach (BannerSlot slot in banner.Slots.Where(slot => slot.Template?.Id == ugcUid)) {
+                    slot.Template!.Url = resource.Path;
+                    db.UpdateBannerSlot(slot);
+                }
+            }
+
+            session.Send(UgcPacket.UpdateBanner(banner));
+        }
+
+        void ConfirmItem(GameSession session, UgcInfo info, long ugcUid, UgcResource resource) {
+            Item? item = session.StagedUgcItem;
+            if (item?.Template == null || !TableMetadata.UgcDesignTable.Entries.TryGetValue(item.Id, out UgcDesignTable.Entry? ugcMetadata)) {
+                return;
+            }
+
+            item.Template.Url = resource.Path;
+
+            using (GameStorage.Request gameRequest = session.GameStorage.Context()) {
+                item = gameRequest.CreateItem(session.CharacterId, item);
+                if (item == null) {
+                    Logger.Fatal("Failed to create UGC Item {ugcUid}", ugcUid);
+                    throw new InvalidOperationException($"Fatal: UGC Item creation: {ugcUid}");
+                }
+            }
+
+            session.Item.Inventory.Add(item, notifyNew: true);
+            session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, item, ugcMetadata.CreatePrice, info.Type));
+            session.Send(UgcPacket.UpdatePath(resource));
+        }
     }
 
     private static void HandleProfilePicture(GameSession session, IByteReader packet) {

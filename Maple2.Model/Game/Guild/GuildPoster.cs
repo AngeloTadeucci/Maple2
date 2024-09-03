@@ -8,6 +8,7 @@ public class GuildPoster : IByteSerializable {
     public string Picture = string.Empty;
     public long OwnerId;
     public string OwnerName = string.Empty;
+    public long ResourceId;
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Id);
