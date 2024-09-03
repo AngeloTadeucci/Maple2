@@ -98,9 +98,20 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         int newGrpcChannelPort = Target.BaseGrpcChannelPort + channel;
 
         IPAddress ipAddress = IPAddress.Parse(gameIp);
-        IPAddress grpcIpAddress = IPAddress.Parse(grpcGameIp);
-        var gameEndpoint = new IPEndPoint(ipAddress, newGamePort);
-        var grpcUri = new Uri($"http://{grpcIpAddress}:{newGrpcChannelPort}");
+        IPEndPoint gameEndpoint = new IPEndPoint(ipAddress, newGamePort);
+
+        Uri grpcUri;
+
+        bool isDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+        if (isDocker) {
+            // When running in Docker, use the provided grpcGameIp as hostnames
+            grpcUri = new Uri($"http://{grpcGameIp}:{newGrpcChannelPort}");
+        } else {
+            // Outside of Docker, parse the IP addresses normally
+            IPAddress grpcIpAddress = IPAddress.Parse(grpcGameIp);
+            grpcUri = new Uri($"http://{grpcIpAddress}:{newGrpcChannelPort}");
+        }
+
         GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);

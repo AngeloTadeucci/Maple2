@@ -65,7 +65,7 @@ dotnet_naming_symbols.private_static_readonly_symbols.applicable_accessibilities
 dotnet_naming_symbols.private_static_readonly_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_static_readonly_symbols.required_modifiers = static,readonly
 dotnet_naming_symbols.unity_serialized_field_symbols.applicable_accessibilities = *
-dotnet_naming_symbols.unity_serialized_field_symbols.applicable_kinds = 
+dotnet_naming_symbols.unity_serialized_field_symbols.applicable_kinds =
 dotnet_naming_symbols.unity_serialized_field_symbols.resharper_applicable_kinds = unity_serialised_field
 dotnet_naming_symbols.unity_serialized_field_symbols.resharper_required_modifiers = instance
 dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:none
@@ -107,7 +107,7 @@ resharper_csharp_wrap_ternary_expr_style = wrap_if_long
 resharper_formatter_off_tag = @formatter:off
 resharper_formatter_on_tag = @formatter:on
 resharper_formatter_tags_enabled = true
-resharper_instance_members_qualify_declared_in = 
+resharper_instance_members_qualify_declared_in =
 resharper_keep_existing_attribute_arrangement = true
 resharper_keep_existing_declaration_block_arrangement = true
 resharper_keep_existing_embedded_block_arrangement = true
@@ -162,3 +162,6 @@ indent_size = 2
 indent_style = space
 indent_size = 4
 tab_width = 4
+
+[*.yml]
+indent_size = 2

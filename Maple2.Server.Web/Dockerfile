@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 # Web Service (HTTP)
 EXPOSE 80
@@ -15,7 +15,6 @@ COPY ["Maple2.Tools/Maple2.Tools.csproj", "Maple2.Tools/"]
 RUN dotnet restore -r win-x64 "Maple2.Server.Web/Maple2.Server.Web.csproj"
 COPY . .
 WORKDIR "/src/Maple2.Server.Web"
-RUN dotnet build -r win-x64 "Maple2.Server.Web.csproj" -c Debug -o /app/build
 
 FROM build AS publish
 RUN dotnet publish -r win-x64 "Maple2.Server.Web.csproj" -c Debug -o /app/publish

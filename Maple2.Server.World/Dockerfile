@@ -13,7 +13,6 @@ COPY ["Maple2.Server.Core/Maple2.Server.Core.csproj", "Maple2.Server.Core/"]
 RUN dotnet restore -r win-x64 "Maple2.Server.World/Maple2.Server.World.csproj"
 COPY . .
 WORKDIR "/src/Maple2.Server.World"
-RUN dotnet build -r win-x64 "Maple2.Server.World.csproj" -c Debug -o /app/build
 
 FROM build AS publish
 RUN dotnet publish -r win-x64 "Maple2.Server.World.csproj" -c Debug -o /app/publish

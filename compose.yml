@@ -1,24 +1,9 @@
 services:
-  db-seed:
-    container_name: maple2-db-seed
-    image: mcr.microsoft.com/dotnet/sdk:8.0
-    entrypoint: /app/Maple2.Database.Seed/docker-entrypoint.sh
-    depends_on:
-      - mysql
-    links:
-      - mysql
-    env_file:
-      - .env
-    environment:
-      DB_IP: mysql
-    volumes:
-      - .:/app
-      - dotnet_tools:/root/.dotnet/tools
-
   file-ingest:
     container_name: maple2-file-ingest
     image: mcr.microsoft.com/dotnet/sdk:8.0
     working_dir: /app/Maple2.File.Ingest
+    entrypoint: /app/Maple2.File.Ingest/docker-entrypoint.sh
     command: dotnet run
     depends_on:
       - mysql
@@ -32,6 +17,7 @@ services:
     volumes:
       - .:/app
       - ${MS2_DOCKER_DATA_FOLDER}:/ClientData
+      - dotnet_tools:/root/.dotnet/tools
 
   login:
     build:
@@ -53,7 +39,7 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      WORLD_SERVICE: world
+      GRPC_WORLD_IP: world
 
   world:
     build:
@@ -70,7 +56,6 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      CHANNEL_SERVICE: "game-main,game-alt"
 
   game-main:
     build:
@@ -80,18 +65,16 @@ services:
     depends_on:
       - mysql
       - world
+    # Ports are dynamically assigned from world server, sadly we can't dynamically expose them here. So we have to hardcode them.
     ports:
-      - 20002:20002
-      - 21002:21002
+      - 20003:20003
+      - 21003:21003
     env_file:
       - .env
     environment:
       DB_IP: mysql
-      GAME_CHANNEL: 1
-      GAME_PORT: 20002
-      GRPC_CHANNEL_PORT: 21002
-      WORLD_SERVICE: world
-      GAME_IP: "127.0.0.1"
+      GRPC_GAME_IP: game-main
+      GRPC_WORLD_IP: world
 
   game-alt:
     build:
@@ -101,29 +84,29 @@ services:
     depends_on:
       - mysql
       - world
+    # Ports are dynamically assigned from world server, sadly we can't dynamically expose them here. So we have to hardcode them.
     ports:
-      - 20003:20003
-      - 21003:21003
+      - 20004:20004
+      - 21004:21004
     env_file:
       - .env
     environment:
       DB_IP: mysql
-      GAME_CHANNEL: 2
-      GAME_PORT: 20003
-      GRPC_CHANNEL_PORT: 21003
-      WORLD_SERVICE: world
-      GAME_IP: "127.0.0.1"
+      GRPC_GAME_IP: game-alt
+      GRPC_WORLD_IP: world
 
   web:
     build:
       context: .
       dockerfile: ./Maple2.Server.Web/Dockerfile
+    container_name: maple2-web
     image: maple2/web
     depends_on:
       - mysql
     ports:
       - 80:80
       - 443:443
+      - 4000:4000
     env_file:
       - .env
     environment:
