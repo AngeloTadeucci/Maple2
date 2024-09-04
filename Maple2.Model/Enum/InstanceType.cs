@@ -1,6 +1,7 @@
 ﻿namespace Maple2.Model.Enum;
 
-public enum InstanceType {
+public enum InstanceType : byte {
+    none = 0,
     solo = 1,
     channelScale = 2,
     massiveEvent = 3,

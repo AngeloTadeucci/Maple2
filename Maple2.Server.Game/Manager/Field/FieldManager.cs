@@ -67,7 +67,7 @@ public sealed partial class FieldManager : IDisposable {
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
-    public readonly FieldInstance FieldInstance = default;
+    public FieldInstance FieldInstance = default;
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
@@ -85,11 +85,6 @@ public sealed partial class FieldManager : IDisposable {
         OwnerId = ownerId;
         InstanceId = NextGlobalId();
 
-        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(metadata.Id, out InstanceFieldMetadata? instanceField);
-        if (instanceField != null) {
-            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
-        }
-
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock);
@@ -99,6 +94,11 @@ public sealed partial class FieldManager : IDisposable {
     private void Init() {
         if (initialized) {
             return;
+        }
+
+        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField);
+        if (instanceField != null) {
+            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
 
         if (ugcMetadata.Plots.Count > 0) {
