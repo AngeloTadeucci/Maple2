@@ -449,9 +449,6 @@ namespace Maple2.Server.World.Migrations {
                 b.Property<DateTime>("DonationTime")
                     .HasColumnType("datetime(6)");
 
-                b.Property<DateTime>("LoginTime")
-                    .HasColumnType("datetime(6)");
-
                 b.Property<string>("Message")
                     .IsRequired()
                     .HasColumnType("longtext");
