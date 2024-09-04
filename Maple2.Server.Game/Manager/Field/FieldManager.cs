@@ -96,8 +96,7 @@ public sealed partial class FieldManager : IDisposable {
             return;
         }
 
-        ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField);
-        if (instanceField != null) {
+        if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
 
