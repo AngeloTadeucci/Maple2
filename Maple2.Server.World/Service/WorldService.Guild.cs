@@ -41,6 +41,8 @@ public partial class WorldService {
                 return Task.FromResult(UpdateGuildNotice(request.RequestorId, request.UpdateNotice));
             case GuildRequest.GuildOneofCase.UpdateEmblem:
                 return Task.FromResult(UpdateGuildEmblem(request.RequestorId, request.UpdateEmblem));
+            case GuildRequest.GuildOneofCase.UpdatePoster:
+                return Task.FromResult(UpdateGuildPoster(request.RequestorId, request.UpdatePoster));
             default:
                 return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
@@ -215,6 +217,19 @@ public partial class WorldService {
         return new GuildResponse { GuildId = emblem.GuildId };
     }
 
+    private GuildResponse UpdateGuildPoster(long requestorId, GuildRequest.Types.UpdatePoster poster) {
+        if (!guildLookup.TryGet(poster.GuildId, out GuildManager? manager)) {
+            return new GuildResponse { Error = (int) GuildError.s_guild_err_null_guild };
+        }
+
+        GuildError error = manager.AddOrUpdatePoster(poster.Id, poster.Picture, poster.OwnerId, poster.OwnerName, poster.ResourceId);
+        if (error != GuildError.none) {
+            return new GuildResponse { Error = (int) error };
+        }
+
+        return new GuildResponse { GuildId = poster.GuildId };
+    }
+
     private static GuildInfo ToGuildInfo(Guild guild) {
         return new GuildInfo {
             Id = guild.Id,
@@ -251,6 +266,15 @@ public partial class WorldService {
                     Id = buff.Id,
                     Level = buff.Level,
                     ExpiryTime = buff.ExpiryTime,
+                }),
+            },
+            Posters = {
+                guild.Posters.Select(poster => new GuildInfo.Types.Poster {
+                    Id = poster.Id,
+                    Picture = poster.Picture,
+                    OwnerId = poster.OwnerId,
+                    OwnerName = poster.OwnerName,
+                    ResourceId = poster.ResourceId,
                 }),
             },
             Npcs = {

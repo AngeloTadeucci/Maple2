@@ -309,9 +309,13 @@ public sealed partial class GameSession : Core.Network.Session {
             ownerId = AccountId;
         }
 
-        FieldManager? newField = mapId == Constant.DefaultHomeMapId ?
-            FieldFactory.Get(Constant.DefaultHomeMapId, ownerId) :
-            FieldFactory.Get(mapId, instanceId);
+        FieldManager? newField;
+        if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+            newField = FieldFactory.Get(mapId, ownerId);
+        } else {
+            newField = FieldFactory.Get(mapId, instanceId);
+        }
+
         if (newField == null) {
             return false;
         }

@@ -28,6 +28,8 @@ public partial class ChannelService {
                 return Task.FromResult(UpdateGuildNotice(request.ReceiverIds, request.UpdateNotice));
             case GuildRequest.GuildOneofCase.UpdateEmblem:
                 return Task.FromResult(UpdateGuildEmblem(request.ReceiverIds, request.UpdateEmblem));
+            case GuildRequest.GuildOneofCase.UpdatePoster:
+                return Task.FromResult(UpdateGuildPoster(request.ReceiverIds, request.UpdatePoster));
             default:
                 return Task.FromResult(new GuildResponse { Error = (int) GuildError.s_guild_err_none });
         }
@@ -172,6 +174,24 @@ public partial class ChannelService {
             }
 
             session.Guild.UpdateEmblem(update.RequestorName, update.Emblem);
+        }
+
+        return new GuildResponse();
+    }
+
+    private GuildResponse UpdateGuildPoster(IEnumerable<long> receiverIds, GuildRequest.Types.UpdatePoster update) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            session.Guild.AddOrUpdatePoster(new GuildPoster {
+                Id = update.Id,
+                Picture = update.Picture,
+                OwnerId = update.OwnerId,
+                OwnerName = update.OwnerName,
+                ResourceId = update.ResourceId,
+            });
         }
 
         return new GuildResponse();

@@ -70,6 +70,8 @@ public class WebController : ControllerBase {
             UgcType.Item or UgcType.Mount or UgcType.Furniture => UploadItem(fileBytes, id, ugcUid, resource!),
             UgcType.ItemIcon => UploadItemIcon(fileBytes, id, ugcUid, resource!),
             UgcType.Banner => UploadBanner(fileBytes, id, ugcUid),
+            UgcType.GuildEmblem => HandleGuildEmblem(fileBytes, id, ugcUid),
+            UgcType.GuildBanner => HandleGuildBanner(fileBytes, id, ugcUid),
             _ => HandleUnknownMode(type),
         };
     }
@@ -137,6 +139,40 @@ public class WebController : ControllerBase {
         db.UpdatePath(ugcId, ugcPath);
 
         System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.m2u"), fileBytes);
+        return Results.Text($"0,{ugcPath}");
+    }
+
+    private IResult HandleGuildEmblem(byte[] fileBytes, int guildId, long ugcId) {
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "guildmark", guildId.ToString());
+        try {
+            Directory.CreateDirectory(filePath);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed preparing directory: {Path}", filePath);
+            return Results.Problem("Internal Server Error", statusCode: 500);
+        }
+        using WebStorage.Request db = webStorage.Context();
+        string ugcPath = $"guildmark/ms2/01/{guildId}/{ugcId}.png";
+
+        db.UpdatePath(ugcId, ugcPath);
+
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.png"), fileBytes);
+        return Results.Text($"0,{ugcPath}");
+    }
+
+    private IResult HandleGuildBanner(byte[] fileBytes, int guildId, long ugcId) {
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "guildmark", guildId.ToString(), "banner");
+        try {
+            Directory.CreateDirectory(filePath);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed preparing directory: {Path}", filePath);
+            return Results.Problem("Internal Server Error", statusCode: 500);
+        }
+        using WebStorage.Request db = webStorage.Context();
+        string ugcPath = $"guildmark/ms2/01/{guildId}/banner/{ugcId}.png";
+
+        db.UpdatePath(ugcId, ugcPath);
+
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.png"), fileBytes);
         return Results.Text($"0,{ugcPath}");
     }
 

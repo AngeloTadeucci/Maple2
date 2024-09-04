@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using System.Net;
+using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -7,6 +8,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -62,6 +64,8 @@ public class GuildHandler : PacketHandler<GameSession> {
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required WorldClient World { private get; init; }
+    public required TableMetadataStorage TableMetadata { private get; init; }
+
     // ReSharper restore All
     #endregion
 
@@ -100,9 +104,6 @@ public class GuildHandler : PacketHandler<GameSession> {
                 return;
             case Command.UpdateNotice:
                 HandleUpdateNotice(session, packet);
-                return;
-            case Command.UpdateEmblem:
-                HandleUpdateEmblem(session, packet);
                 return;
             case Command.IncreaseCapacity:
                 HandleIncreaseCapacity(session);
@@ -557,34 +558,6 @@ public class GuildHandler : PacketHandler<GameSession> {
         } catch (RpcException) { /* ignored */ }
     }
 
-    private void HandleUpdateEmblem(GameSession session, IByteReader packet) {
-        string emblem = packet.ReadUnicodeString();
-
-        if (!session.Guild.HasPermission(session.CharacterId, GuildPermission.EditEmblem)) {
-            session.Send(GuildPacket.Error(GuildError.s_guild_err_no_authority));
-            return;
-        }
-
-        try {
-            var request = new GuildRequest {
-                RequestorId = session.CharacterId,
-                UpdateEmblem = new GuildRequest.Types.UpdateEmblem {
-                    GuildId = session.Guild.Id,
-                    Emblem = emblem,
-                },
-            };
-
-            GuildResponse response = World.Guild(request);
-            var error = (GuildError) response.Error;
-            if (error != GuildError.none) {
-                session.Send(GuildPacket.Error(error));
-                return;
-            }
-
-            session.Send(GuildPacket.UpdateEmblem(emblem));
-        } catch (RpcException) { /* ignored */ }
-    }
-
     private void HandleIncreaseCapacity(GameSession session) {
 
     }
@@ -659,7 +632,41 @@ public class GuildHandler : PacketHandler<GameSession> {
     }
 
     private void HandleEnterHouse(GameSession session) {
+        if (session.Guild.Guild is null) {
+            return;
+        }
+        TableMetadata.GuildTable.Houses.TryGetValue(session.Guild.Guild.HouseRank, out IReadOnlyDictionary<int, GuildTable.House>? houseRank);
 
+        if (houseRank is null) {
+            return;
+        }
+
+        houseRank.TryGetValue(session.Guild.Guild.HouseTheme, out GuildTable.House? house);
+
+        if (house is null) {
+            return;
+        }
+
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = session.AccountId,
+                CharacterId = session.CharacterId,
+                MachineId = session.MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = house.MapId,
+                OwnerId = session.Guild.Id,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            session.Send(MigrationPacket.GameToGame(endpoint, response.Token, house.MapId));
+            session.State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            session.Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            session.Disconnect();
+        }
     }
 
     private void HandleSendGift(GameSession session, IByteReader packet) {

@@ -81,6 +81,13 @@ message GuildRequest {
     string requestor_name = 1;
     string emblem = 2;
   }
+  message UpdatePoster {
+    int32 id = 1;
+    string picture = 2;
+    int64 owner_id = 3;
+    string owner_name = 4;
+    int64 resource_id = 5;
+  }
 
   int64 guild_id = 1;
   repeated int64 receiver_ids = 2;
@@ -94,6 +101,7 @@ message GuildRequest {
     UpdateLeader update_leader = 9;
     UpdateNotice update_notice = 10;
     UpdateEmblem update_emblem = 11;
+    UpdatePoster update_poster = 12;
   }
 }
 

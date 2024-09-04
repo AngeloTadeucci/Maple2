@@ -121,6 +121,13 @@ message GuildInfo {
     int32 level = 2;
     int64 expiry_time = 3;
   }
+  message Poster {
+    int32 id = 1;
+    string picture = 2;
+    int64 owner_id = 3;
+    string owner_name = 4;
+    int64 resource_id = 5;
+  }
   message Npc {
     int32 type = 1;
     int32 level = 2;
@@ -141,7 +148,7 @@ message GuildInfo {
   repeated Rank ranks = 12;
   repeated Buff buffs = 13;
   // events
-  // posters
+  repeated Poster posters = 15;
   repeated Npc npcs = 16;
   // bank
 }
@@ -197,6 +204,14 @@ message GuildRequest {
     int64 guild_id = 1;
     string emblem = 2;
   }
+  message UpdatePoster {
+    int64 guild_id = 1;
+    int32 id = 2;
+    string picture = 3;
+    int64 owner_id = 4;
+    string owner_name = 5;
+    int64 resource_id = 6;
+  }
 
   int64 requestor_id = 4;
   oneof guild {
@@ -211,6 +226,7 @@ message GuildRequest {
     UpdateLeader update_leader = 11;
     UpdateNotice update_notice = 12;
     UpdateEmblem update_emblem = 13;
+    UpdatePoster update_poster = 14;
   }
 }
 
