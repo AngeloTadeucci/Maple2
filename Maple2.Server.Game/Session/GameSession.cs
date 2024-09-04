@@ -268,7 +268,6 @@ public sealed partial class GameSession : Core.Network.Session {
         // FieldEntrance
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
-
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
