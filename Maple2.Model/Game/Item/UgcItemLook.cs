@@ -41,7 +41,7 @@ public sealed class UgcItemLook : IByteSerializable, IByteDeserializable {
     }
 
     public void ReadFrom(IByteReader reader) {
-        reader.ReadLong();
+        Id = reader.ReadLong();
         FileName = reader.ReadUnicodeString();
         Name = reader.ReadUnicodeString();
         reader.ReadByte();
