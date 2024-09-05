@@ -67,7 +67,7 @@ public sealed partial class FieldManager : IDisposable {
     public int MapId => Metadata.Id;
     public readonly long OwnerId;
     public readonly int InstanceId;
-    public FieldInstance FieldInstance = new();
+    public FieldInstance FieldInstance = FieldInstance.Default;
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
