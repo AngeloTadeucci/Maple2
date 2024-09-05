@@ -7,6 +7,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -15,7 +16,7 @@ public static class FieldEnterPacket {
         var pWriter = Packet.Of(SendOp.RequestFieldEnter);
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteInt(player.Value.Character.MapId);
-        pWriter.Write<FieldInstance>(player.Field.FieldInstance);
+        pWriter.WriteClass<FieldInstance>(player.Field.FieldInstance);
         pWriter.WriteInt();
         pWriter.Write<Vector3>(player.Position);
         pWriter.Write<Vector3>(player.Rotation);
