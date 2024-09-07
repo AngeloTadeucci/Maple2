@@ -111,7 +111,6 @@ public class FurnishingManager {
     public long PurchaseCube(int id) {
         const int amount = 1;
         lock (session.Item) {
-
             int count = storage.Count;
             long itemUid = AddStorage(id);
             if (itemUid == 0) {
@@ -122,6 +121,23 @@ public class FurnishingManager {
             if (storage.Count != count) {
                 session.Send(FurnishingStoragePacket.Count(storage.Count));
             }
+            return itemUid;
+        }
+    }
+
+    public long PurchaseCube(Item item) {
+        lock (session.Item) {
+            int count = storage.Count;
+            long itemUid = AddStorage(item);
+            if (itemUid == 0) {
+                return 0;
+            }
+
+            session.Send(FurnishingStoragePacket.Purchase(item.Id, item.Amount));
+            if (storage.Count != count) {
+                session.Send(FurnishingStoragePacket.Count(storage.Count));
+            }
+
             return itemUid;
         }
     }
@@ -143,32 +159,12 @@ public class FurnishingManager {
     }
 
     private long AddStorage(int itemId) {
-        const int amount = 1;
         Item? item = session.Field.ItemDrop.CreateItem(itemId);
         if (item == null) {
             return 0;
         }
 
-        Item? stored = storage.FirstOrDefault(existing => existing.Id == itemId);
-        if (stored == null) {
-            item.Group = ItemGroup.Furnishing;
-            using GameStorage.Request db = session.GameStorage.Context();
-            item = db.CreateItem(session.AccountId, item);
-            if (item == null || storage.Add(item).Count <= 0) {
-                return 0;
-            }
-
-            session.Send(FurnishingStoragePacket.Add(item));
-            return item.Uid;
-        }
-
-        if (stored.Amount + amount > item.Metadata.Property.SlotMax) {
-            return 0;
-        }
-
-        stored.Amount += amount;
-        session.Send(FurnishingStoragePacket.Update(stored.Uid, stored.Amount));
-        return stored.Uid;
+        return AddStorage(item);
     }
 
     public long AddStorage(Item? item) {
@@ -194,7 +190,13 @@ public class FurnishingManager {
             return 0;
         }
 
+        int previousAmount = stored.Amount;
         stored.Amount += amount;
+        if (previousAmount == 0) {
+            session.Send(FurnishingStoragePacket.Add(stored));
+            return stored.Uid;
+        }
+
         session.Send(FurnishingStoragePacket.Update(stored.Uid, stored.Amount));
         return stored.Uid;
     }

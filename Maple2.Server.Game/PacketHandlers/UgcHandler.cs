@@ -408,15 +408,20 @@ public class UgcHandler : PacketHandler<GameSession> {
 
             item.Template.Url = resource.Path;
 
-            using (GameStorage.Request gameRequest = session.GameStorage.Context()) {
+            // Dont create the item if it's a furniture since it's tied to account id
+            if (info.Type is UgcType.Furniture) {
+                session.Item.Furnishing.PurchaseCube(item);
+            } else {
+                using GameStorage.Request gameRequest = session.GameStorage.Context();
                 item = gameRequest.CreateItem(session.CharacterId, item);
                 if (item == null) {
                     Logger.Fatal("Failed to create UGC Item {ugcUid}", ugcUid);
                     throw new InvalidOperationException($"Fatal: UGC Item creation: {ugcUid}");
                 }
+
+                session.Item.Inventory.Add(item, notifyNew: true);
             }
 
-            session.Item.Inventory.Add(item, notifyNew: true);
             session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, item, ugcMetadata.CreatePrice, info.Type));
             session.Send(UgcPacket.UpdatePath(resource));
         }
