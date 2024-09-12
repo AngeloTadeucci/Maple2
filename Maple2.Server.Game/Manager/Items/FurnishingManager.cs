@@ -13,7 +13,7 @@ namespace Maple2.Server.Game.Manager.Items;
 
 public class FurnishingManager {
     private static long _cubeIdCounter = Constant.FurnishingBaseId;
-    private static long NextCubeId() => Interlocked.Increment(ref _cubeIdCounter);
+    public static long NextCubeId() => Interlocked.Increment(ref _cubeIdCounter);
 
     private readonly GameSession session;
 

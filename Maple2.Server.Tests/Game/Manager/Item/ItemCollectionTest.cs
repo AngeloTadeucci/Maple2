@@ -265,7 +265,7 @@ public class ItemCollectionTest {
         var fakeCustomize = new ItemMetadataCustomize(0, 0);
         var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, Array.Empty<JobCode>(), Array.Empty<JobCode>());
         var fakeLife = new ItemMetadataLife(0, 0);
-        var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null);
+        var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null, null);
         return new Model.Game.Item(fakeMetadata, rarity, amount) { Uid = Rng.NextInt64() };
     }
 }

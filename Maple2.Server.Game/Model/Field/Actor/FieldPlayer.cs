@@ -367,4 +367,8 @@ public class FieldPlayer : Actor<Player> {
     public override void KeyframeEvent(string keyName) {
 
     }
+
+    public void MoveToPosition(Vector3 position, Vector3 rotation) {
+        Session.Send(PortalPacket.MoveByPortal(this, position, rotation));
+    }
 }
