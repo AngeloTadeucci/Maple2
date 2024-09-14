@@ -37,7 +37,7 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             }
         }
 
-        if (session.Field.MapId != Constant.DefaultHomeMapId || session.Field.OwnerId <= 0) {
+        if (session.Field.MapId is not Constant.DefaultHomeMapId || session.Field.OwnerId <= 0) {
             session.Send(LoadUgcMapPacket.Load(plotCubes.Count));
 
             LoadPlots(session, plotCubes);
@@ -50,23 +50,14 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             return;
         }
 
-        // TODO: Check if plot has entry points
-
-        // plots start at 0,0 and are built towards negative x and y
-        int dimension = -1 * (home.Area - 1);
-
-        // find the blocks in most negative x,y direction, with the highest z value
-        int height = 0;
-        if (plotCubes.Count > 0) {
-            height = plotCubes.Where(cube => cube.Position.X == dimension && cube.Position.Y == dimension)
-                .Max(cube => cube.Position.Z);
+        // Check if current plot is decor planner
+        if (session.Field.Plots.First().Value.IsDecorPlanner) {
+            home.EnterDecor();
         }
 
-        dimension *= VectorExtensions.BLOCK_SIZE;
+        // TODO: Check if plot has entry points
 
-        height++; // add 1 to height to be on top of the block
-        height *= VectorExtensions.BLOCK_SIZE;
-        session.Player.Position = new Vector3(dimension, dimension, height + 1);
+        session.Player.Position = home.CalculateSafePosition(plotCubes);
 
         // Technically this sends home details to all players who enter map (including passcode)
         // but you would already know passcode if you entered the map.

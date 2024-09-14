@@ -113,7 +113,14 @@ public sealed partial class GameSession : Core.Network.Session {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel, int mapId, int portalId, long ownerId, int instanceId) {
+    public bool EnterServer(long accountId, Guid machineId, MigrateInResponse migrateResponse) {
+        long characterId = migrateResponse.CharacterId;
+        int channel = migrateResponse.Channel;
+        int mapId = migrateResponse.MapId;
+        int portalId = migrateResponse.PortalId;
+        long ownerId = migrateResponse.OwnerId;
+        int instanceId = migrateResponse.InstanceId;
+
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
@@ -164,10 +171,19 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
+        if (migrateResponse.InDecorPlanner) {
+            instanceId = FieldManager.NextGlobalId();
+        }
+
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
+        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
+        }
+
+        if (migrateResponse.InDecorPlanner) {
+            player.Home.EnterDecor();
+            fieldManager.Plots.First().Value.SetDecorPlanner();
         }
 
         var playerUpdate = new PlayerUpdateRequest {
@@ -304,14 +320,21 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out _, portalId, ownerId, instanceId, position, rotation);
+    }
+
+    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, instanceId, position, rotation);
+    }
+
+    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int instanceId, in Vector3 position, in Vector3 rotation) {
         // If entering home without instanceKey set, default to own home.
         if (mapId == Player.Value.Home.Indoor.MapId && ownerId == 0) {
             ownerId = AccountId;
         }
 
-        FieldManager? newField;
         if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-            newField = FieldFactory.Get(mapId, ownerId);
+            newField = FieldFactory.Get(mapId, ownerId: ownerId, instanceId: instanceId);
         } else {
             newField = FieldFactory.Get(mapId, instanceId);
         }
@@ -331,7 +354,6 @@ public sealed partial class GameSession : Core.Network.Session {
 
         return true;
     }
-
     public bool EnterField() {
         if (Field == null) {
             return false;
@@ -400,6 +422,11 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void ReturnField() {
+        if (!Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsDecorPlanner) {
+            ExitDecorPlanner();
+            return;
+        }
+
         Character character = Player.Value.Character;
         int mapId = character.ReturnMapId;
         Vector3 position = character.ReturnPosition;
@@ -447,21 +474,6 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public IList<ShopItem> FindShopItems(int shopId) => server.FindShopItems(shopId);
 
-    public bool Temp() {
-        // -> RequestMoveField
-
-        // <- RequestFieldEnter
-        // -> RequestLoadUgcMap
-        //   <- LoadUgcMap
-        //   <- LoadCubes
-        // -> Ugc
-        //   <- Ugc
-        // -> ResponseFieldEnter
-
-
-        return true;
-    }
-
     public void DailyReset() {
         // Gathering counts reset
         Config.GatheringCounts.Clear();
@@ -476,6 +488,38 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
+    }
+
+    public void EnterDecorPlanner() {
+        MigrateToDecorPlanner(true);
+    }
+
+    public void ExitDecorPlanner() {
+        MigrateToDecorPlanner(false);
+    }
+
+    private void MigrateToDecorPlanner(bool inDecorPlanner) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = Constant.DefaultHomeMapId,
+                OwnerId = AccountId,
+                InDecorPlanner = inDecorPlanner,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
     }
 
     #region Dispose

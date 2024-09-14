@@ -58,7 +58,8 @@ public sealed partial class FieldManager : IDisposable {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
-    private bool initialized = false;
+    private bool initialized;
+    public bool Disposed { get; private set; }
 
     private readonly ILogger logger = Log.Logger.ForContext<FieldManager>();
 
@@ -472,10 +473,16 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public void Dispose() {
+        if (Disposed) {
+            return;
+        }
+
         DebugGraphicsContext.FieldRemoved(this);
         cancel.Cancel();
         cancel.Dispose();
         thread.Join();
         Navigation.Dispose();
+
+        Disposed = true;
     }
 }

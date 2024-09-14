@@ -100,6 +100,7 @@ public static class Constant {
 
 
     public const long FurnishingBaseId = 2870000000000000000;
+    public const bool AllowWaterOnGround = false;
 
     #region Field
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
@@ -109,7 +110,7 @@ public static class Constant {
 
     #region Character
     public static readonly int[] DefaultEmotes = [
-            90200011, // Greet
+        90200011, // Greet
         90200004, // Scheme
         90200024, // Reject
         90200041, // Sit

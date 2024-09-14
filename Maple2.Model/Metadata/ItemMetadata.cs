@@ -18,7 +18,8 @@ public record ItemMetadata(
     ItemMetadataAdditionalEffect[] AdditionalEffects,
     ItemMetadataOption? Option,
     ItemMetadataMusic? Music,
-    ItemMetadataHousing? Housing) : ISearchResult;
+    ItemMetadataHousing? Housing,
+    ItemMetadataInstall? Install) : ISearchResult;
 
 public record ItemMetadataLife(
     long ExpirationDuration,
@@ -109,6 +110,12 @@ public record ItemMetadataHousing(
     int TrophyId,
     int TrophyLevel,
     int InteriorLevel);
+
+public record ItemMetadataInstall(
+    bool IsSolidCube,
+    int InteractId,
+    MapAttribute MapAttribute
+);
 
 public record DefaultHairMetadata(
     Vector3 BackPosition = default,

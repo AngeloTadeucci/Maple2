@@ -98,6 +98,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(item => item.Option).HasJsonConversion();
         builder.Property(item => item.Music).HasJsonConversion();
         builder.Property(item => item.Housing).HasJsonConversion();
+        builder.Property(item => item.Install).HasJsonConversion();
     }
 
     private static void ConfigureNpcMetadata(EntityTypeBuilder<NpcMetadata> builder) {
