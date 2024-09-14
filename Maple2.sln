@@ -27,6 +27,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.env = .env
 		.env.example = .env.example
+		dev.bat = dev.bat
+		setup.bat = setup.bat
+		setup.ps1 = setup.ps1
+		start.bat = start.bat
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maple2.Server.DebugGame", "Maple2.Server.DebugGame\Maple2.Server.DebugGame.csproj", "{F0E28D7F-A88B-4DFE-BCA6-C36C18FBF269}"
