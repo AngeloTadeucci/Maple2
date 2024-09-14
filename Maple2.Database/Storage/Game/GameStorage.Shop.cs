@@ -10,28 +10,6 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public IList<Shop> GetShops() {
-            return Context.Shop.Select<Model.Shop.Shop, Shop>(shop => shop).ToList();
-        }
-
-        public Shop? GetShop(int shopId) {
-            return Context.Shop.Find(shopId);
-        }
-
-        public Dictionary<int, Dictionary<int, ShopItem>> GetShopItems() {
-            return Context.ShopItem
-                .GroupBy(item => item.ShopId)
-                .ToDictionary(item => item.Key, x => x
-                    .Select<Model.Shop.ShopItem, ShopItem>(item => item)
-                    .ToDictionary(item => item.Id));
-        }
-
-        public IList<ShopItem> GetShopItems(int shopId) {
-            return Context.ShopItem.Where(model => model.ShopId == shopId)
-                .Select<Model.Shop.ShopItem, ShopItem>(item => item)
-                .ToList();
-        }
-
         public CharacterShopData? CreateCharacterShopData(long ownerId, CharacterShopData shop) {
             Model.Shop.CharacterShopData model = shop;
             model.OwnerId = ownerId;
@@ -99,10 +77,10 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        public bool DeleteCharacterShopItemData(long ownerId, int shopItemId) {
+        public bool DeleteCharacterShopItemData(long ownerId, int shopId, int shopItemId) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-            Model.Shop.CharacterShopItemData? data = Context.CharacterShopItemData.Find(shopItemId, ownerId);
+            Model.Shop.CharacterShopItemData? data = Context.CharacterShopItemData.Find(shopItemId, shopId, ownerId);
             if (data == null) {
                 return false;
             }

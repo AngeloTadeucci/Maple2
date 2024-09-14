@@ -1,47 +1,23 @@
 ﻿using System.Collections.Generic;
 using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
-using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game.Shop;
 
 public class Shop : IByteSerializable {
-    public readonly int Id;
-    public int CategoryId { get; init; }
-    public string Name { get; init; }
-    public ShopSkin Skin { get; init; }
-    public bool HideUnuseable { get; init; }
-    public bool HideStats { get; init; }
-    public bool DisableBuyback { get; init; }
-    public bool OpenWallet { get; init; }
-    public bool DisplayNew { get; init; }
-    public bool RandomizeOrder { get; init; }
-    public long RestockTime { get; set; }
-    public ShopRestockData? RestockData { get; init; }
+    public int Id => Metadata.Id;
+    public ShopMetadata Metadata;
+    public ShopRestockData RestockData => Metadata.RestockData;
+    public long RestockTime;
+    public int RestockCount;
     public SortedDictionary<int, ShopItem> Items;
 
-    public Shop(int id) {
-        Id = id;
+    public Shop(ShopMetadata metadata) {
+        Metadata = metadata;
+        RestockTime = metadata.RestockTime;
         Items = new SortedDictionary<int, ShopItem>();
-    }
-
-    /// <summary>
-    /// Clones shops for instanced player shops.
-    /// </summary>
-    public Shop Clone() {
-        return new Shop(Id) {
-            CategoryId = CategoryId,
-            Name = Name,
-            Skin = Skin,
-            HideUnuseable = HideUnuseable,
-            HideStats = HideStats,
-            DisableBuyback = DisableBuyback,
-            OpenWallet = OpenWallet,
-            DisplayNew = DisplayNew,
-            RandomizeOrder = RandomizeOrder,
-            RestockData = RestockData,
-        };
     }
 
     public virtual void WriteTo(IByteWriter writer) {
@@ -49,19 +25,27 @@ public class Shop : IByteSerializable {
         writer.WriteLong(RestockTime);
         writer.WriteInt();
         writer.WriteShort((short) Items.Count);
-        writer.WriteInt(CategoryId);
-        writer.WriteBool(OpenWallet);
-        writer.WriteBool(DisableBuyback);
-        writer.WriteBool(RestockTime > 0);
-        writer.WriteBool(RandomizeOrder);
-        writer.Write<ShopSkin>(Skin);
-        writer.Write(HideUnuseable);
-        writer.WriteBool(HideStats);
+        writer.WriteInt(Metadata.CategoryId);
+        writer.WriteBool(Metadata.OpenWallet);
+        writer.WriteBool(Metadata.IsOnlySell);
+        writer.WriteBool(Metadata.EnableReset);
+        writer.WriteBool(Metadata.DisableDisplayOrderSort);
+        writer.Write<ShopFrameType>(Metadata.FrameType);
+        writer.WriteBool(Metadata.DisplayOnlyUsable);
+        writer.WriteBool(Metadata.HideStats);
         writer.WriteBool(false);
-        writer.WriteBool(DisplayNew);
-        writer.WriteString(Name);
-        if (RestockTime > 0 && RestockData != null) {
-            writer.WriteClass<ShopRestockData>(RestockData);
+        writer.WriteBool(Metadata.DisplayNew);
+        writer.WriteString(Metadata.Name);
+        if (Metadata.EnableReset) {
+            writer.Write<ShopCurrencyType>(RestockData.CurrencyType);
+            writer.Write<ShopCurrencyType>(RestockData.ExcessCurrencyType);
+            writer.WriteInt();
+            writer.WriteInt(RestockData.Price);
+            writer.WriteBool(RestockData.EnablePriceMultiplier);
+            writer.WriteInt(RestockCount);
+            writer.Write<ResetType>(RestockData.ResetType);
+            writer.WriteBool(RestockData.DisableInstantRestock);
+            writer.WriteBool(RestockData.AccountWide);;
         }
     }
 }

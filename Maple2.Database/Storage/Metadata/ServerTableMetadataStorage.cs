@@ -1,4 +1,6 @@
-﻿using Maple2.Database.Context;
+﻿using System;
+using Maple2.Database.Context;
+using Maple2.Model.Enum;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 
@@ -17,6 +19,8 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<TimeEventTable> timeEventTable;
     private readonly Lazy<GameEventTable> gameEventTable;
     private readonly Lazy<ItemMergeTable> itemMergeTable;
+    private readonly Lazy<ShopTable> shopTable;
+    private readonly Lazy<ShopItemTable> shopItemTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -30,6 +34,8 @@ public class ServerTableMetadataStorage {
     public TimeEventTable TimeEventTable => timeEventTable.Value;
     public GameEventTable GameEventTable => gameEventTable.Value;
     public ItemMergeTable ItemMergeTable => itemMergeTable.Value;
+    public ShopTable ShopTable => shopTable.Value;
+    public ShopItemTable ShopItemTable => shopItemTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -44,11 +50,13 @@ public class ServerTableMetadataStorage {
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
         gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
         itemMergeTable = Retrieve<ItemMergeTable>(context, "itemMergeOptionBase.xml");
+        shopTable = Retrieve<ShopTable>(context, "shop_game_info.xml");
+        shopItemTable = Retrieve<ShopItemTable>(context, "shop_game.xml");
     }
 
     public IEnumerable<GameEvent> GetGameEvents() {
         foreach ((int id, GameEventMetadata gameEvent) in GameEventTable.Entries) {
-            if (gameEvent.EndTime < DateTimeOffset.Now.DateTime) {
+            if (gameEvent.EndTime < DateTime.Now) {
                 continue;
             }
 
