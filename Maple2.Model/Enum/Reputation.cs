@@ -1,6 +1,7 @@
 ﻿namespace Maple2.Model.Enum;
 
 public enum ReputationType : short {
+    None = 0,
     GreenHood = 1,
     Lumiknight = 2,
     DarkWind = 3,

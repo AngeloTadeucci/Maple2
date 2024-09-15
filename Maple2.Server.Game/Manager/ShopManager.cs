@@ -25,12 +25,12 @@ public sealed class ShopManager {
     #endregion
     private readonly GameSession session;
     // TODO: the CharacterShopData's restock count need to be reset at daily reset.
-    private IDictionary<int, CharacterShopData> accountShopData;
-    private IDictionary<int, CharacterShopData> characterShopData;
-    private IDictionary<int, Shop> instancedShops;
-    private IDictionary<int, IDictionary<int, CharacterShopItemData>> characterShopItemData;
-    private IDictionary<int, IDictionary<int, CharacterShopItemData>> accountShopItemData;
-    private IDictionary<int, BuyBackItem> buyBackItems;
+    private readonly IDictionary<int, CharacterShopData> accountShopData;
+    private readonly IDictionary<int, CharacterShopData> characterShopData;
+    private readonly Dictionary<int, Shop> instancedShops;
+    private readonly Dictionary<int, IDictionary<int, CharacterShopItemData>> characterShopItemData;
+    private readonly Dictionary<int, IDictionary<int, CharacterShopItemData>> accountShopItemData;
+    private readonly Dictionary<int, BuyBackItem> buyBackItems;
     private Shop? activeShop;
     private int shopNpcId;
 
@@ -85,145 +85,194 @@ public sealed class ShopManager {
         return accountShopData.TryGetValue(shopId, out data) || characterShopData.TryGetValue(shopId, out data);
     }
 
+    private bool TryRemoveShopData(int shopId) {
+        if (accountShopData.Remove(shopId)) {
+            return true;
+        }
+        return characterShopData.Remove(shopId);
+    }
+
     private bool TryGetShopItemData(int shopId, [NotNullWhen(true)] out IDictionary<int, CharacterShopItemData>? data) {
         return accountShopItemData.TryGetValue(shopId, out data) || characterShopItemData.TryGetValue(shopId, out data);
     }
 
+    /// <summary>
+    /// Load shop.
+    /// </summary>
+    /// <param name="shopId">Shop ID</param>
+    /// <param name="npcId">Npc ID. Optional parameter. This only is used for displaying the NPC's name on the shop window top bar.</param>
     public void Load(int shopId, int npcId = 0) {
-        Shop? shop = session.FindShop(shopId);
-        if (shop == null) {
-            logger.Warning("Shop {Id} has not been implemented", shopId);
+        if (!session.ServerTableMetadata.ShopTable.Entries.TryGetValue(shopId, out ShopMetadata? metadata)) {
+            logger.Warning("Shop {Id} not found", shopId);
             return;
         }
 
-        if (shop.RestockData != null) {
-            shop = GetInstancedShop(shop);
+        if (metadata.EnableReset) {
+            activeShop = GetInstancedShop(metadata);
+        } else {
+            activeShop = new Shop(metadata) {
+                Items = GetShopItems(metadata),
+            };
         }
 
-        activeShop = shop;
         shopNpcId = npcId;
 
         session.Send(ShopPacket.Open(activeShop, shopNpcId));
-        session.Send(ShopPacket.LoadItems(shop.Items.Values));
-        if (!shop.DisableBuyback) {
+        session.Send(ShopPacket.LoadItems(activeShop.Items.Values));
+        if (!metadata.IsOnlySell) {
             session.Send(ShopPacket.BuyBackItemCount((short) buyBackItems.Count));
             if (buyBackItems.Count > 0) {
-                session.Send(ShopPacket.LoadBuyBackItem((BuyBackItem[]) buyBackItems.Values));
+                session.Send(ShopPacket.LoadBuyBackItem(buyBackItems.Values.ToArray()));
             }
         }
     }
 
-    private Shop GetInstancedShop(Shop serverShop) {
-        if (instancedShops.TryGetValue(serverShop.Id, out Shop? instancedShop)) {
+    private Shop GetInstancedShop(ShopMetadata metadata) {
+        if (instancedShops.TryGetValue(metadata.Id, out Shop? instancedShop)) {
             if (instancedShop.RestockTime < DateTime.Now.ToEpochSeconds()) {
             }
             return instancedShop;
         }
 
-
-        if (!TryGetShopData(serverShop.Id, out CharacterShopData? data)) {
-            long restockTime = GetRestockTime(serverShop.RestockData!.Interval);
-            if (serverShop.RestockTime > 0) {
-                restockTime = serverShop.RestockTime;
-            }
-            return CreateInstancedShop(serverShop, CreateShopData(serverShop), restockTime);
-
+        if (!TryGetShopData(metadata.Id, out CharacterShopData? data)) {
+            long restockTime = GetRestockTime(metadata);
+            return CreateInstancedShop(metadata, CreateShopData(metadata, restockTime), restockTime);
         }
+
         if (data.RestockTime < DateTime.Now.ToEpochSeconds()) {
-            return CreateInstancedShop(serverShop, CreateShopData(serverShop), GetRestockTime(serverShop.RestockData!.Interval));
+            using GameStorage.Request db = session.GameStorage.Context();
+            if (!TryRemoveShopData(data.ShopId)) {
+                throw new InvalidOperationException($"Failed to remove shop data {metadata.Id} for character {session.CharacterId}");
+            }
+            db.DeleteCharacterShopData(metadata.RestockData.AccountWide ? session.AccountId : session.CharacterId, metadata.Id);
+
+            long restockTime = GetRestockTime(metadata);
+            return CreateInstancedShop(metadata, CreateShopData(metadata, restockTime), restockTime);
         }
 
         // Assemble shop
-        instancedShop = serverShop.Clone();
-        instancedShop.RestockTime = data.RestockTime;
+        instancedShop = new Shop(metadata) {
+            RestockTime = data.RestockTime,
+            Items = GetShopItems(metadata),
+        };
 
         if (!TryGetShopItemData(instancedShop.Id, out IDictionary<int, CharacterShopItemData>? dataDictionary)) {
-            dataDictionary = CreateShopItemData(serverShop);
+            dataDictionary = CreateShopItemData(instancedShop);
         }
 
         foreach ((int shopItemId, CharacterShopItemData itemData) in dataDictionary) {
-            if (!serverShop.Items.TryGetValue(shopItemId, out ShopItem? shopItem)) {
+            if (!instancedShop.Items.TryGetValue(shopItemId, out ShopItem? shopItem)) {
                 continue;
             }
 
-            ShopItem itemCopy = shopItem.Clone();
-            itemCopy.Item = itemData.Item;
-            itemCopy.StockPurchased = itemData.StockPurchased;
-            instancedShop.Items.Add(shopItemId, itemCopy);
+            instancedShop.Items[shopItemId] = new ShopItem(shopItem.Metadata) {
+                Item = itemData.Item,
+                StockPurchased = itemData.StockPurchased,
+            };
         }
 
         instancedShops[instancedShop.Id] = instancedShop;
         return instancedShop;
     }
 
-    private Shop CreateInstancedShop(Shop shop, CharacterShopData shopData, long restockTime) {
-        Shop instancedShop = shop.Clone()!;
-
+    private Shop CreateInstancedShop(ShopMetadata metadata, CharacterShopData shopData, long restockTime) {
+        var shop = new Shop(metadata);
         // First delete any existing shop item data
-        long ownerId = shop.RestockData!.PersistantInventory ? session.AccountId : session.CharacterId;
+        long ownerId = metadata.RestockData.AccountWide ? session.AccountId : session.CharacterId;
         using GameStorage.Request db = session.GameStorage.Context();
 
-        if (TryGetShopItemData(shop.Id, out IDictionary<int, CharacterShopItemData>? shopItemDatas)) {
+        if (TryGetShopItemData(metadata.Id, out IDictionary<int, CharacterShopItemData>? shopItemDatas)) {
             foreach ((int shopItemId, CharacterShopItemData itemData) in shopItemDatas) {
-                db.DeleteCharacterShopItemData(ownerId, shopItemId);
+                db.DeleteCharacterShopItemData(ownerId, itemData.ShopId, shopItemId);
             }
         }
 
         // Create new shop data
-        instancedShop.Items = GetShopItems(shop);
-        instancedShop.RestockTime = restockTime;
-        instancedShop.RestockData!.RestockCount = shopData.RestockCount;
-        CreateShopItemData(instancedShop);
-        instancedShops[instancedShop.Id] = instancedShop;
-        return instancedShop;
+        shop.Items = GetShopItems(metadata);
+        shop.RestockTime = restockTime;
+        shop.RestockCount = shopData.RestockCount;
+        CreateShopItemData(shop);
+        instancedShops[shop.Id] = shop;
+        return shop;
     }
 
-    private SortedDictionary<int, ShopItem> GetShopItems(Shop shop) {
+    private SortedDictionary<int, ShopItem> GetShopItems(ShopMetadata metadata) {
         var items = new SortedDictionary<int, ShopItem>();
-        using GameStorage.Request db = session.GameStorage.Context();
-        IEnumerable<ShopItem> itemList;
-        if (shop.RestockData?.Interval == ShopRestockInterval.Minute) {
-            itemList = session.FindShopItems(shop.Id).OrderBy(_ => Random.Shared.Next()).Take(12);
-        } else {
-            itemList = shop.Items.Values;
+
+        if (!session.ServerTableMetadata.ShopItemTable.Entries.TryGetValue(metadata.Id, out Dictionary<int, ShopItemMetadata>? shopItemMetadatas)) {
+            return new SortedDictionary<int, ShopItem>();
         }
 
-        foreach (ShopItem shopItem in itemList) {
-            Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
-            if (item == null) {
-                continue;
+
+        if (metadata.EnableReset) {
+            int minItemCount = metadata.RestockData.MinItemCount;
+            if (shopItemMetadatas.Count < metadata.RestockData.MinItemCount) {
+                minItemCount = shopItemMetadatas.Count;
             }
-            shopItem.Item = item;
-            items.Add(shopItem.Id, shopItem.Clone());
+            while (items.Count < minItemCount) {
+                foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
+                    if (items.Count >= metadata.RestockData.MaxItemCount) {
+                        break;
+                    }
+
+                    if (items.ContainsKey(shopItemMetadata.Id)) {
+                        continue;
+                    }
+
+                    if (Random.Shared.Next(10000) > shopItemMetadata.Probability) {
+                        continue;
+                    }
+
+                    Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                    if (item == null) {
+                        continue;
+                    }
+
+                    var shopItem = new ShopItem(shopItemMetadata) {
+                        Item = item,
+                    };
+                    items.Add(shopItemMetadata.Id, shopItem);
+                }
+            }
+        } else {
+            foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
+                Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                if (item == null) {
+                    continue;
+                }
+
+                var shopItem = new ShopItem(shopItemMetadata) {
+                    Item = item,
+                };
+                items.Add(shopItemMetadata.Id, shopItem);
+            }
         }
 
         return items;
     }
 
-    private CharacterShopData CreateShopData(Shop shop) {
-        if (!TryGetShopData(shop.Id, out CharacterShopData? data)) {
+    private CharacterShopData CreateShopData(ShopMetadata metadata, long restockTime) {
+        if (!TryGetShopData(metadata.Id, out CharacterShopData? data)) {
             data = new CharacterShopData {
-                Interval = shop.RestockData!.Interval,
-                RestockTime = GetRestockTime(shop.RestockData!.Interval),
-                ShopId = shop.Id,
+                Interval = metadata.RestockData.ResetType,
+                RestockTime = restockTime,
+                ShopId = metadata.Id,
             };
 
-            if (shop.RestockData.PersistantInventory) {
-                accountShopData[shop.Id] = data;
+            if (metadata.RestockData.AccountWide) {
+                accountShopData[metadata.Id] = data;
             } else {
-                characterShopData[shop.Id] = data;
+                characterShopData[metadata.Id] = data;
             }
         }
 
-        shop.RestockTime = data.RestockTime;
-
-        // We do not save shops with minute intervals to database
-        if (shop.RestockData!.Interval != ShopRestockInterval.Minute) {
+        // We do not save shops with default reset type to database
+        if (metadata.RestockData.ResetType != ResetType.Default) {
             using GameStorage.Request db = session.GameStorage.Context();
-            long ownerId = shop.RestockData.PersistantInventory ? session.AccountId : session.CharacterId;
+            long ownerId = metadata.RestockData.AccountWide ? session.AccountId : session.CharacterId;
             data = db.CreateCharacterShopData(ownerId, data);
             if (data == null) {
-                throw new InvalidOperationException($"Failed to create shop data {shop.Id} for character {session.CharacterId}");
+                throw new InvalidOperationException($"Failed to create shop data {metadata.Id} for character {session.CharacterId}");
             }
         }
 
@@ -231,16 +280,16 @@ public sealed class ShopManager {
     }
 
     private IDictionary<int, CharacterShopItemData> CreateShopItemData(Shop shop) {
-        Dictionary<int, CharacterShopItemData> itemData = new Dictionary<int, CharacterShopItemData>();
+        var itemData = new Dictionary<int, CharacterShopItemData>();
         using GameStorage.Request db = session.GameStorage.Context();
-        long ownerId = shop.RestockData!.PersistantInventory ? session.AccountId : session.CharacterId;
+        long ownerId = shop.RestockData.AccountWide ? session.AccountId : session.CharacterId;
         foreach ((int id, ShopItem item) in shop.Items) {
             var data = new CharacterShopItemData {
                 ShopId = shop.Id,
                 ShopItemId = id,
                 Item = item.Item,
             };
-            if (shop.RestockData.Interval != ShopRestockInterval.Minute) {
+            if (shop.RestockData.ResetType != ResetType.Default) {
                 data = db.CreateCharacterShopItemData(ownerId, data);
                 if (data == null) {
                     continue;
@@ -249,7 +298,7 @@ public sealed class ShopManager {
             itemData[id] = data;
         }
 
-        if (shop.RestockData?.PersistantInventory == true) {
+        if (shop.RestockData.AccountWide) {
             accountShopItemData[shop.Id] = itemData;
             return accountShopItemData[shop.Id];
         }
@@ -258,55 +307,53 @@ public sealed class ShopManager {
     }
 
     public void InstantRestock() {
-        if (activeShop?.RestockData?.DisableInstantRestock != false) {
+        if (activeShop?.RestockData.DisableInstantRestock != false) {
             return;
         }
 
-        Shop? shop = session.FindShop(activeShop.Id);
-        if (shop == null) {
-            return;
-        }
+        var shop = new Shop(activeShop.Metadata);
 
-        int cost = activeShop.RestockData.Cost;
+        int cost = activeShop.RestockData.Price;
         ShopCurrencyType currencyType = activeShop.RestockData.CurrencyType;
-        if (activeShop.RestockData.EnableCostMultiplier) {
-            (ShopCurrencyType CurrencyType, int Cost) multiplierCost = Core.Formulas.Shop.ExcessRestockCost(activeShop.RestockData);
+        if (activeShop.RestockData.EnablePriceMultiplier) {
+            (ShopCurrencyType CurrencyType, int Cost) multiplierCost = Core.Formulas.Shop.ExcessRestockCost(activeShop.RestockData.CurrencyType, activeShop.RestockCount);
             cost = multiplierCost.Cost;
             currencyType = multiplierCost.CurrencyType;
         }
-        if (!Pay(new ShopCost {
-            Amount = cost,
-            Type = currencyType,
-        }, activeShop.RestockData.Cost)) {
+        if (!Pay(new ShopCost { Amount = cost, Type = currencyType }, activeShop.RestockData.Price)) {
+            session.Send(ShopPacket.Error(ShopError.s_err_lack_shopitem)); // not neccessarily the right error.
             return;
         }
 
         if (!TryGetShopData(shop.Id, out CharacterShopData? data)) {
-            data = CreateShopData(shop);
+            data = CreateShopData(shop.Metadata, GetInstantRestockTime(shop.RestockData.ResetType));
+        } else {
+            data.RestockTime = GetInstantRestockTime(activeShop.RestockData.ResetType);
         }
-        data.RestockTime = GetInstantRestockTime(activeShop.RestockData!.Interval);
         data.RestockCount++;
-        activeShop = CreateInstancedShop(shop, data, data.RestockTime);
+        activeShop = CreateInstancedShop(shop.Metadata, data, data.RestockTime);
         session.Send(ShopPacket.InstantRestock());
         session.Send(ShopPacket.Open(activeShop, shopNpcId));
         session.Send(ShopPacket.LoadItems(activeShop.Items.Values));
     }
 
     public void Refresh() {
-        if (activeShop?.RestockData == null) {
+        if (activeShop == null) {
             return;
         }
 
-        Shop? shop = session.FindShop(activeShop.Id);
-        if (shop == null) {
+        if (!activeShop.Metadata.EnableReset) {
             return;
         }
 
+        var shop = new Shop(activeShop.Metadata);
         if (!TryGetShopData(shop.Id, out CharacterShopData? data)) {
-            data = CreateShopData(shop);
+            data = CreateShopData(shop.Metadata, GetInstantRestockTime(shop.RestockData.ResetType));
+        } else {
+            data.RestockTime = GetInstantRestockTime(shop.RestockData.ResetType);
         }
-        data.RestockTime = GetInstantRestockTime(activeShop.RestockData!.Interval);
-        activeShop = CreateInstancedShop(shop, data, data.RestockTime);
+
+        activeShop = CreateInstancedShop(shop.Metadata, data, data.RestockTime);
         session.Send(ShopPacket.Open(activeShop, shopNpcId));
         session.Send(ShopPacket.LoadItems(activeShop.Items.Values));
     }
@@ -320,30 +367,36 @@ public sealed class ShopManager {
         shopItem.StockPurchased += quantity;
     }
 
-    private long GetRestockTime(ShopRestockInterval interval) {
+    private long GetRestockTime(ShopMetadata metadata) {
+        if (metadata.RestockTime > 0) {
+            return metadata.RestockTime;
+        }
         // Follows a time schedule
         DateTime now = DateTime.Now;
-        switch (interval) {
-            case ShopRestockInterval.Minute:
+        switch (metadata.RestockData.ResetType) {
+            case ResetType.Default:
                 return new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0).AddMinutes(1).ToEpochSeconds();
-            case ShopRestockInterval.Day:
+            case ResetType.Day:
                 return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0).AddDays(1).ToEpochSeconds();
-            case ShopRestockInterval.Week:
+            case ResetType.Week:
                 return DateTime.Now.NextDayOfWeek(Constant.ResetDay).Date.ToEpochSeconds();
-            case ShopRestockInterval.Month:
+            case ResetType.Month:
                 return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(1).ToEpochSeconds();
+            case ResetType.Unlimited:
+                return long.MaxValue;
             default:
-                logger.Error("Unknown restock interval {Interval}", interval);
+                logger.Error("Unknown restock interval {Interval}", metadata.RestockData.ResetType);
                 return long.MaxValue;
         }
     }
 
-    private long GetInstantRestockTime(ShopRestockInterval interval) {
+    private long GetInstantRestockTime(ResetType interval) {
         return interval switch {
-            ShopRestockInterval.Minute => DateTime.Now.AddMinutes(1).ToEpochSeconds(),
-            ShopRestockInterval.Day => DateTime.Now.AddDays(1).ToEpochSeconds(),
-            ShopRestockInterval.Week => DateTime.Now.AddDays(7).ToEpochSeconds(),
-            ShopRestockInterval.Month => DateTime.Now.AddMonths(1).ToEpochSeconds(),
+            ResetType.Default => DateTime.Now.AddMinutes(1).ToEpochSeconds(),
+            ResetType.Day => DateTime.Now.AddDays(1).ToEpochSeconds(),
+            ResetType.Week => DateTime.Now.AddDays(7).ToEpochSeconds(),
+            ResetType.Month => DateTime.Now.AddMonths(1).ToEpochSeconds(),
+            ResetType.Unlimited => long.MaxValue,
             _ => long.MaxValue,
         };
     }
@@ -360,8 +413,8 @@ public sealed class ShopManager {
         }
 
 
-        if (shopItem.RestrictedBuyData != null) {
-            RestrictedBuyData buyData = shopItem.RestrictedBuyData;
+        if (shopItem.Metadata.RestrictedBuyData != null) {
+            RestrictedBuyData buyData = shopItem.Metadata.RestrictedBuyData;
             if (DateTime.Now.ToEpochSeconds() < buyData.StartTime || DateTime.Now.ToEpochSeconds() > buyData.EndTime) {
                 session.Send(ShopPacket.Error(ShopError.s_err_invalid_item_cannot_buy_by_period));
                 return;
@@ -388,11 +441,12 @@ public sealed class ShopManager {
             return;
         }
 
-        if (shopItem.RequireAchievementId > 0 && !session.Achievement.HasAchievement(shopItem.RequireAchievementId, shopItem.RequireAchievementRank)) {
+        if (shopItem.Metadata.Requirements.Achievement.Id > 0 && !session.Achievement.HasAchievement(shopItem.Metadata.Requirements.Achievement.Id, shopItem.Metadata.Requirements.Achievement.Rank)) {
             return;
         }
 
-        if (shopItem.RequireGuildTrophy > 0 && session.Guild.Guild != null && session.Guild.Guild.AchievementInfo.Total < shopItem.RequireGuildTrophy) {
+        if (shopItem.Metadata.Requirements.GuildTrophy > 0 &&
+            (session.Guild.Guild == null || session.Guild.Guild.AchievementInfo.Total < shopItem.Metadata.Requirements.GuildTrophy)) {
             session.Send(ShopPacket.Error(ShopError.s_err_lack_guild_trophy));
             return;
         }
@@ -406,18 +460,18 @@ public sealed class ShopManager {
             return;
         }
 
-        int price = shopItem.Cost.SaleAmount > 0 ? shopItem.Cost.SaleAmount * quantity : shopItem.Cost.Amount * quantity;
-        if (!Pay(shopItem.Cost, price)) {
+        int price = shopItem.Metadata.Cost.SaleAmount > 0 ? shopItem.Metadata.Cost.SaleAmount * quantity : shopItem.Metadata.Cost.Amount * quantity;
+        if (!Pay(shopItem.Metadata.Cost, price)) {
             return;
         }
 
-        if (activeShop.RestockData != null && shopItem.StockCount > 0) {
+        if (activeShop.Metadata.EnableReset && shopItem.StockCount > 0) {
             UpdateStockCount(activeShop.Id, shopItem, quantity);
-            session.Send(ShopPacket.Update(shopItem.Id, quantity * shopItem.StockPurchased));
+            session.Send(ShopPacket.Update(shopItem.Id, shopItem.StockPurchased * shopItem.Metadata.SellUnit));
         }
 
         session.Item.Inventory.Add(item, true);
-        session.Send(ShopPacket.Buy(shopItem, quantity, price));
+        session.Send(ShopPacket.Buy(shopItem, shopItem.Metadata.SellUnit * quantity, price));
     }
 
     public void PurchaseBuyBack(int id) {
@@ -435,10 +489,7 @@ public sealed class ShopManager {
             return;
         }
 
-        if (!Pay(new ShopCost {
-            Type = ShopCurrencyType.Meso,
-            Amount = (int) buyBackItem.Price,
-        }, (int) buyBackItem.Price)) {
+        if (!Pay(new ShopCost { Type = ShopCurrencyType.Meso, Amount = (int) buyBackItem.Price }, (int) buyBackItem.Price)) {
             return;
         }
 
@@ -455,7 +506,7 @@ public sealed class ShopManager {
             return;
         }
 
-        if (activeShop.DisableBuyback) {
+        if (activeShop.Metadata.IsOnlySell) {
             session.Send(ShopPacket.Error(ShopError.s_msg_cant_sell_to_only_sell_shop));
             return;
         }
@@ -524,7 +575,7 @@ public sealed class ShopManager {
                 if (!session.Item.Inventory.ConsumeItemComponents(new[] {
                         ingredient
                     })) {
-                    session.Send(ShopPacket.Error(ShopError.s_err_lack_payment_item, cost.ItemId));
+                    session.Send(ShopPacket.Error(ShopError.s_err_lack_payment_item, 0, cost.ItemId));
                     return false;
                 }
                 break;
@@ -572,8 +623,8 @@ public sealed class ShopManager {
             session.Item.Inventory.Discard(item.Item);
         }
 
-        db.SaveCharacterShopData(session.AccountId, accountShopData.Values.Where(value => value.Interval != ShopRestockInterval.Minute).ToList());
-        db.SaveCharacterShopData(session.CharacterId, characterShopData.Values.Where(value => value.Interval != ShopRestockInterval.Minute).ToList());
+        db.SaveCharacterShopData(session.AccountId, accountShopData.Values.Where(value => value.Interval != ResetType.Default).ToList());
+        db.SaveCharacterShopData(session.CharacterId, characterShopData.Values.Where(value => value.Interval != ResetType.Default).ToList());
         db.SaveCharacterShopItemData(session.AccountId, accountShopItemData.Values.SelectMany(value => value.Values).ToList());
         db.SaveCharacterShopItemData(session.CharacterId, characterShopItemData.Values.SelectMany(value => value.Values).ToList());
     }

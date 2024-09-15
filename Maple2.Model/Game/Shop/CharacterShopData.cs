@@ -6,5 +6,5 @@ public class CharacterShopData {
     public required int ShopId { get; init; }
     public long RestockTime { get; set; }
     public int RestockCount { get; set; }
-    public ShopRestockInterval Interval { get; init; }
+    public ResetType Interval { get; init; }
 }

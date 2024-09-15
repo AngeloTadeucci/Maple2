@@ -8,9 +8,11 @@ using Maple2.File.Parser.Enum;
 using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using DayOfWeek = System.DayOfWeek;
 using ExpType = Maple2.Model.Enum.ExpType;
+using GuildNpcType = Maple2.Model.Enum.GuildNpcType;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
 using ScriptType = Maple2.Model.Enum.ScriptType;
@@ -38,6 +40,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
         yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
         yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
+        yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
+        yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
 
     }
 
@@ -744,16 +748,16 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 _ => DayOfWeek.Sunday,
             };
         }
+    }
 
-        (TimeSpan, TimeSpan) ParsePartTime(string partTimeString) {
-            string[] partTimeStringArray = partTimeString.Split("-").ToArray();
-            if (partTimeStringArray.Length != 2) {
-                return (TimeSpan.Zero, TimeSpan.Zero);
-            }
-            TimeSpan startTime = TimeSpan.Parse(partTimeStringArray[0]);
-            TimeSpan endTime = TimeSpan.Parse(partTimeStringArray[1]);
-            return (startTime, endTime);
+    private (TimeSpan, TimeSpan) ParsePartTime(string partTimeString) {
+        string[] partTimeStringArray = partTimeString.Split("-").ToArray();
+        if (partTimeStringArray.Length != 2) {
+            return (TimeSpan.Zero, TimeSpan.Zero);
         }
+        TimeSpan startTime = TimeSpan.Parse(partTimeStringArray[0]);
+        TimeSpan endTime = TimeSpan.Parse(partTimeStringArray[1]);
+        return (startTime, endTime);
     }
 
     private GameEventData? ParseGameEventData(GameEventType type, string value1, string value2, string value3, string value4) {
@@ -1139,6 +1143,148 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             }
             return null;
         }
+    }
+
+    private ShopTable ParseShop() {
+        var results = new Dictionary<int, ShopMetadata>();
+        foreach ((int shopId, ShopGameInfo shopInfo) in parser.ParseShopGameInfo()) {
+            var entry = new ShopMetadata(
+                Id: shopInfo.shopID,
+                CategoryId: shopInfo.categoryID,
+                Name: shopInfo.iconName,
+                FrameType: (ShopFrameType) shopInfo.uiFrameType,
+                DisplayOnlyUsable: shopInfo.showOnlyUsableItem,
+                HideStats: shopInfo.hideOptionInfo,
+                DisplayProbability: shopInfo.showProbInfo,
+                IsOnlySell: shopInfo.isOnlySell,
+                OpenWallet: shopInfo.isOpenTokenPocket,
+                DisplayNew: false, // this isn't present in the table
+                DisableDisplayOrderSort: shopInfo.disableDisplayOrderSort,
+                RestockTime: string.IsNullOrEmpty(shopInfo.resetFixedTime) ? 0 : DateTime.ParseExact(shopInfo.resetFixedTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                EnableReset: shopInfo.resetEnable,
+                RestockData: new ShopRestockData(
+                    ResetType: (ResetType) shopInfo.resetType,
+                    CurrencyType: (ShopCurrencyType) shopInfo.resetPaymentType,
+                    ExcessCurrencyType: (ShopCurrencyType) shopInfo.resetPaymentType, // not present in the table, using resetPaymentType for now
+                    MinItemCount: shopInfo.resetListMin,
+                    MaxItemCount: shopInfo.resetListMax,
+                    Price: shopInfo.resetPrice,
+                    EnablePriceMultiplier: false, // not present in the table
+                    DisableInstantRestock: shopInfo.resetButtonHide,
+                    AccountWide: shopInfo.resetByAccount)
+                );
+            results.Add(shopId, entry);
+        }
+        return new ShopTable(results);
+    }
+
+    private ShopItemTable ParseShopItems() {
+        var results = new Dictionary<int, Dictionary<int, ShopItemMetadata>>();
+        foreach ((int shopId, ShopGame data) in parser.ParseShopGame()) {
+            var shopResults = new Dictionary<int, ShopItemMetadata>();
+            foreach (ShopGame.Item item in data.item) {
+                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? Array.Empty<string>() : item.requireAchieve.Split(",");
+                int achievementId = 0;
+                int achievementRank = 0;
+                if (achievementArray.Length == 2) {
+                    if (!int.TryParse(achievementArray[0], out achievementId)) {
+                        achievementId = 0;
+                    }
+                    if (!int.TryParse(achievementArray[1], out achievementRank)) {
+                        achievementRank = 1;
+                    }
+                }
+
+                byte championshipRank = 0;
+                short championShipJoinCount = 0;
+                if (item.requireChampionshipInfo.Length == 2) {
+                    championshipRank = (byte) item.requireChampionshipInfo[0];
+                    championShipJoinCount = (short) item.requireChampionshipInfo[1];
+                }
+
+                var npcType = GuildNpcType.Unknown;
+                short guildNpcLevel = 0;
+                if (item.requireGuildNpc.Length == 2) {
+                    npcType = item.requireGuildNpc[0] switch {
+                        "goods" => GuildNpcType.Goods,
+                        "equip" => GuildNpcType.Equip,
+                        "gemstone" => GuildNpcType.Gemstone,
+                        "itemMerge" => GuildNpcType.ItemMerge,
+                        "music" => GuildNpcType.Music,
+                        "quest" => GuildNpcType.Quest,
+                        _ => GuildNpcType.Unknown,
+                    };
+                    if (short.TryParse(item.requireGuildNpc[1], out short level)) {
+                        guildNpcLevel = level;
+                    }
+                }
+
+                RestrictedBuyData? restrictedBuyData = null;
+                if (!string.IsNullOrEmpty(item.startDate) && !string.IsNullOrEmpty(item.endDate)) {
+                    var buyTimeOfDays = new List<BuyTimeOfDay>();
+                    foreach (string partTime in item.partTime) {
+                        (TimeSpan startPartTime, TimeSpan endPartTime) = ParsePartTime(partTime);
+                        buyTimeOfDays.Add(new BuyTimeOfDay(startPartTime.Seconds, endPartTime.Seconds));
+                    }
+                    restrictedBuyData = new RestrictedBuyData {
+                        Days = item.dayOfWeek.Length == 0 ? [] : Array.ConvertAll(item.dayOfWeek, day => (ShopBuyDay) day),
+                        TimeRanges = buyTimeOfDays,
+                        StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                        EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds()
+                    };
+                }
+
+                var entry = new ShopItemMetadata(
+                    Id: item.sn,
+                    ShopId: shopId,
+                    ItemId: item.id,
+                    Rarity: (byte) item.grade,
+                    Cost: new ShopCost {
+                        Amount = (int) item.price,
+                        ItemId = item.paymentItemID,
+                        SaleAmount = 0, // ?
+                        Type = (ShopCurrencyType) item.paymentType
+                    },
+                    SellCount: item.sellCount,
+                    Category: item.category,
+                    Requirements: new ShopItemMetadata.Requirement(
+                        GuildTrophy: item.requireGuildTrophy,
+                        Achievement: new ShopItemMetadata.Achievement(
+                            Id: achievementId,
+                            Rank: achievementRank),
+                        Championship: new ShopItemMetadata.Championship(
+                            Rank: championshipRank,
+                            JoinCount: championShipJoinCount),
+                        GuildNpc: new ShopItemMetadata.GuildNpc(
+                            Type: npcType,
+                            Level: guildNpcLevel),
+                        QuestAlliance: new ShopItemMetadata.QuestAlliance(
+                            Type: item.requireAlliance switch {
+                                "MapleUnion" => ReputationType.MapleAlliance,
+                                "TriaRoyalGuard" => ReputationType.RoyalGuard,
+                                "DarkWind" => ReputationType.DarkWind,
+                                "GreenHood" => ReputationType.GreenHood,
+                                "LumiKnight" => ReputationType.Lumiknight,
+                                "MapleUnion_KritiasExped" => ReputationType.KritiasMapleAlliance,
+                                "GreenHood_KritiasExped" => ReputationType.KritiasGreenHood,
+                                "Lumiknight_KritiasExped" => ReputationType.KritiasLumiknight,
+                                "Georg" => ReputationType.Humanitas,
+                                _ => ReputationType.None,
+                            },
+                            Grade: item.requireAllianceGrade)),
+                    RestrictedBuyData: restrictedBuyData,
+                    SellUnit: (short) item.sellUnit,
+                    Label: (ShopItemLabel) item.frameType,
+                    IconTag: item.paymentIconTag,
+                    WearForPreview: item.wearForPreview,
+                    RandomOption: item.randomOption,
+                    Probability: item.prob,
+                    IsPremiumItem: item.premiumItem);
+                shopResults.Add(item.sn, entry);
+            }
+            results.Add(shopId, shopResults);
+        }
+        return new ShopItemTable(results);
     }
 }
 
