@@ -320,10 +320,7 @@ public sealed class ShopManager {
             cost = multiplierCost.Cost;
             currencyType = multiplierCost.CurrencyType;
         }
-        if (!Pay(new ShopCost {
-                Amount = cost,
-                Type = currencyType,
-            }, activeShop.RestockData.Price)) {
+        if (!Pay(new ShopCost { Amount = cost, Type = currencyType }, activeShop.RestockData.Price)) {
             session.Send(ShopPacket.Error(ShopError.s_err_lack_shopitem)); // not neccessarily the right error.
             return;
         }
@@ -492,10 +489,7 @@ public sealed class ShopManager {
             return;
         }
 
-        if (!Pay(new ShopCost {
-                Type = ShopCurrencyType.Meso,
-                Amount = (int) buyBackItem.Price,
-            }, (int) buyBackItem.Price)) {
+        if (!Pay(new ShopCost { Type = ShopCurrencyType.Meso, Amount = (int) buyBackItem.Price }, (int) buyBackItem.Price)) {
             return;
         }
 

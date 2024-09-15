@@ -1027,7 +1027,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         }
     }
 
-        private ItemMergeTable ParseItemMergeOptionTable() {
+    private ItemMergeTable ParseItemMergeOptionTable() {
         var results = new Dictionary<int, Dictionary<int, ItemMergeSlot>>();
         foreach ((int id, MergeOption mergeOption) in parser.ParseItemMergeOption()) {
             var slots = new Dictionary<int, ItemMergeSlot>();
@@ -1227,7 +1227,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         buyTimeOfDays.Add(new BuyTimeOfDay(startPartTime.Seconds, endPartTime.Seconds));
                     }
                     restrictedBuyData = new RestrictedBuyData {
-                        Days = item.dayOfWeek.Length == 0 ? [] : ParseBuyDays(item.dayOfWeek),
+                        Days = item.dayOfWeek.Length == 0 ? [] : Array.ConvertAll(item.dayOfWeek, day => (ShopBuyDay) day),
                         TimeRanges = buyTimeOfDays,
                         StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture).ToEpochSeconds(),
                         EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds()
@@ -1285,19 +1285,6 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             results.Add(shopId, shopResults);
         }
         return new ShopItemTable(results);
-
-        ShopBuyDay[] ParseBuyDays(Parser.Enum.DayOfWeek[] dayOfWeeks) {
-            return dayOfWeeks.Select(day => day switch {
-                Parser.Enum.DayOfWeek.sun => ShopBuyDay.Sunday,
-                Parser.Enum.DayOfWeek.mon => ShopBuyDay.Monday,
-                Parser.Enum.DayOfWeek.tue => ShopBuyDay.Tuesday,
-                Parser.Enum.DayOfWeek.wed => ShopBuyDay.Wednesday,
-                Parser.Enum.DayOfWeek.thu => ShopBuyDay.Thursday,
-                Parser.Enum.DayOfWeek.fri => ShopBuyDay.Friday,
-                Parser.Enum.DayOfWeek.sat => ShopBuyDay.Saturday,
-                _ => ShopBuyDay.Sunday,
-            }).ToArray();
-        }
     }
 }
 

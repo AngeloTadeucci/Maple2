@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
@@ -8,7 +7,7 @@ namespace Maple2.Model.Game.Shop;
 
 public class Shop : IByteSerializable {
     public int Id => Metadata.Id;
-    public ShopMetadata Metadata;
+    public readonly ShopMetadata Metadata;
     public ShopRestockData RestockData => Metadata.RestockData;
     public long RestockTime;
     public int RestockCount;
@@ -45,7 +44,7 @@ public class Shop : IByteSerializable {
             writer.WriteInt(RestockCount);
             writer.Write<ResetType>(RestockData.ResetType);
             writer.WriteBool(RestockData.DisableInstantRestock);
-            writer.WriteBool(RestockData.AccountWide);;
+            writer.WriteBool(RestockData.AccountWide);
         }
     }
 }
