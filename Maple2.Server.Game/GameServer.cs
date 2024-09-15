@@ -8,6 +8,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
 using Maple2.Model.Game.Shop;
+using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
@@ -23,8 +24,6 @@ public class GameServer : Server<GameSession> {
     private readonly Dictionary<long, GameSession> sessions;
     private readonly ImmutableList<SystemBanner> bannerCache;
     private readonly ConcurrentDictionary<int, PremiumMarketItem> premiumMarketCache;
-    private Dictionary<int, Shop> shopCache;
-    private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
     private readonly IGraphicsContext debugGraphicsContext;
 
@@ -41,8 +40,6 @@ public class GameServer : Server<GameSession> {
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
-        shopCache = db.GetShops().ToDictionary(shop => shop.Id, shop => shop);
-        shopItemCache = db.GetShopItems();
         premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
             db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
 
@@ -117,54 +114,6 @@ public class GameServer : Server<GameSession> {
     }
 
     public IEnumerable<GameEvent> GetEvents() => eventCache.Values.Where(gameEvent => gameEvent.IsActive());
-
-    public Shop? FindShop(GameSession session, int shopId) {
-        using GameStorage.Request db = gameStorage.Context();
-        if (!shopCache.TryGetValue(shopId, out Shop? shop)) {
-            shop = db.GetShop(shopId);
-            if (shop != null) {
-                shopCache[shopId] = shop;
-            }
-            if (shop?.RestockTime == 0) { // everything else would be player-based shops that would get refreshed
-                if (!shopItemCache.TryGetValue(shopId, out Dictionary<int, ShopItem>? shopItems)) {
-                    shopItems = db.GetShopItems(shopId).ToDictionary(item => item.Id);
-                    shopItemCache[shopId] = shopItems;
-                }
-                foreach ((int shopItemId, ShopItem shopItem) in shopItems) {
-                    Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
-                    if (item == null) {
-                        continue;
-                    }
-                    shopItem.Item = item;
-                    shop.Items[shopItem.Id] = shopItem;
-                }
-            } else {
-                return shop;
-            }
-        }
-
-        if (shop.Items.Count == 0 && shopItemCache.TryGetValue(shop.Id, out Dictionary<int, ShopItem>? items)) {
-            foreach ((int shopItemId, ShopItem shopItem) in items) {
-                Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
-                if (item == null) {
-                    continue;
-                }
-                shopItem.Item = item;
-                shop.Items[shopItem.Id] = shopItem;
-            }
-        }
-
-        return shopCache[shopId];
-    }
-
-    public IList<ShopItem> FindShopItems(int shopId) {
-        if (shopItemCache.TryGetValue(shopId, out Dictionary<int, ShopItem>? items)) {
-            return items.Values.ToList();
-        }
-
-        using GameStorage.Request db = gameStorage.Context();
-        return db.GetShopItems(shopId);
-    }
 
     public IList<SystemBanner> GetSystemBanners() => bannerCache;
 

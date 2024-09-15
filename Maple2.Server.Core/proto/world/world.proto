@@ -66,6 +66,7 @@ message MigrateOutRequest {
   optional int32 portal_id = 7;
   optional int64 owner_id = 8;
   optional int32 instance_id = 9;
+  optional bool in_decor_planner = 10;
 }
 
 message MigrateOutResponse {
@@ -91,6 +92,7 @@ message MigrateInResponse {
   int32 portal_id = 4;
   int64 owner_id = 5;
   int32 instance_id = 6;
+  bool in_decor_planner = 7;
 }
 
 message ChannelsRequest {}

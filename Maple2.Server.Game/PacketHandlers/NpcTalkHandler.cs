@@ -148,6 +148,10 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                 return;
             }
         } else if (scriptState == null && selectState == null) {
+            if (talkType.HasFlag(NpcTalkType.Dialog)) {
+                session.Send(NpcTalkPacket.Respond(npc, talkType, default));
+                return;
+            }
             session.Send(NpcTalkPacket.Close());
             return;
         } else {

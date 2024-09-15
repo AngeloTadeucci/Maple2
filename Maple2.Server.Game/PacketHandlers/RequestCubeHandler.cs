@@ -8,6 +8,8 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -202,8 +204,14 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                     return;
                 }
 
-                if (TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? plotCube)) {
-                    session.Field?.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
+                if (!TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? plotCube)) {
+                    return;
+                }
+
+                session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
+
+                if (plot.IsDecorPlanner) {
+                    return;
                 }
                 break;
             case LiftableCube liftable:
@@ -241,10 +249,16 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (TryRemoveCube(session, plot, position, out PlotCube? cube)) {
-            session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
-            session.ConditionUpdate(ConditionType.uninstall_item, codeLong: cube.ItemId);
+        if (!TryRemoveCube(session, plot, position, out PlotCube? cube)) {
+            return;
         }
+
+        session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
+        if (plot.IsDecorPlanner) {
+            return;
+        }
+
+        session.ConditionUpdate(ConditionType.uninstall_item, codeLong: cube.ItemId);
     }
 
     private void HandleRotateCube(GameSession session, IByteReader packet) {
@@ -267,6 +281,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field?.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
+        if (plot.IsDecorPlanner) {
+            return;
+        }
+
         session.ConditionUpdate(ConditionType.rotate_cube, codeLong: cube.ItemId);
     }
 
@@ -280,7 +298,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? placedCube)) {
+        if (TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? placedCube, isReplace: true)) {
             session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, position, rotation, placedCube));
         }
     }
@@ -333,13 +351,34 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         session.Housing.SetHomeMessage(message);
     }
 
-    private void HandleClearCubes(GameSession session) { }
+    private void HandleClearCubes(GameSession session) {
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        foreach (PlotCube cube in plot.Cubes.Values) {
+            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+            }
+        }
+
+        session.Send(NoticePacket.Message(StringCode.s_ugcmap_package_automatic_removal_completed, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+    }
 
     private void HandleLoadUnknown(GameSession session, IByteReader packet) {
         int slot = packet.ReadInt();
     }
 
     private void HandleIncreaseArea(GameSession session) {
+        if (session.Player.Value.Home.IsDecorPlanner) {
+            int decorArea = session.Player.Value.Home.DecorArea + 1;
+            if (session.Player.Value.Home.SetDecorArea(decorArea)) {
+                session.Field?.Broadcast(CubePacket.IncreaseArea((byte) decorArea));
+            }
+            return;
+        }
+
         int area = session.Player.Value.Home.Area + 1;
         if (session.Player.Value.Home.SetArea(area) && session.Housing.SaveHome()) {
             session.Field?.Broadcast(CubePacket.IncreaseArea((byte) area));
@@ -347,9 +386,84 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleDecreaseArea(GameSession session) {
-        int area = session.Player.Value.Home.Area - 1;
-        if (session.Player.Value.Home.SetArea(area) && session.Housing.SaveHome()) {
-            session.Field?.Broadcast(CubePacket.DecreaseArea((byte) area));
+        int newArea;
+        if (session.Player.Value.Home.IsDecorPlanner) {
+            newArea = session.Player.Value.Home.DecorArea - 1;
+            if (session.Player.Value.Home.SetDecorArea(newArea)) {
+                session.Field?.Broadcast(CubePacket.DecreaseArea((byte) newArea));
+            }
+        } else {
+            newArea = session.Player.Value.Home.Area - 1;
+            if (session.Player.Value.Home.SetArea(newArea) && session.Housing.SaveHome()) {
+                session.Field?.Broadcast(CubePacket.DecreaseArea((byte) newArea));
+            }
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        // Remove cubes that are now outside the new area
+        List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => IsCoordOutsideArea(cube.Position, session.Player.Value.Home)).ToList();
+        foreach (PlotCube cube in cubesToRemove) {
+            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+            }
+        }
+
+        Vector3 safeCoord = session.Player.Value.Home.CalculateSafePosition(plot.Cubes.Values.ToList());
+
+        foreach (FieldPlayer fieldPlayer in session.Field.Players.Values) {
+            fieldPlayer.MoveToPosition(safeCoord, default);
+        }
+    }
+
+    private void HandleIncreaseHeight(GameSession session) {
+        if (session.Player.Value.Home.IsDecorPlanner) {
+            int decorHeight = session.Player.Value.Home.DecorHeight + 1;
+            if (session.Player.Value.Home.SetDecorHeight(decorHeight)) {
+                session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) decorHeight));
+            }
+            return;
+        }
+
+        int height = session.Player.Value.Home.Height + 1;
+        if (session.Player.Value.Home.SetHeight(height) && session.Housing.SaveHome()) {
+            session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) height));
+        }
+    }
+
+    private void HandleDecreaseHeight(GameSession session) {
+        int newHeight;
+        if (session.Player.Value.Home.IsDecorPlanner) {
+            newHeight = session.Player.Value.Home.DecorHeight - 1;
+            if (session.Player.Value.Home.SetDecorHeight(newHeight)) {
+                session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
+            }
+        } else {
+            newHeight = session.Player.Value.Home.Height - 1;
+            if (session.Player.Value.Home.SetHeight(newHeight) && session.Housing.SaveHome()) {
+                session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
+            }
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        // Remove cubes that are now outside the new height
+        List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => cube.Position.Z > newHeight).ToList();
+        foreach (PlotCube cube in cubesToRemove) {
+            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+            }
+        }
+
+        Vector3 safeCoord = session.Player.Value.Home.CalculateSafePosition(plot.Cubes.Values.ToList());
+        foreach (FieldPlayer fieldPlayer in session.Field!.Players.Values) {
+            fieldPlayer.MoveToPosition(safeCoord, default);
         }
     }
 
@@ -379,20 +493,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field?.Broadcast(CubePacket.SetPermission(permission, setting));
-    }
-
-    private void HandleIncreaseHeight(GameSession session) {
-        int height = session.Player.Value.Home.Height + 1;
-        if (session.Player.Value.Home.SetHeight(height) && session.Housing.SaveHome()) {
-            session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) height));
-        }
-    }
-
-    private void HandleDecreaseHeight(GameSession session) {
-        int height = session.Player.Value.Home.Height - 1;
-        if (session.Player.Value.Home.SetHeight(height) && session.Housing.SaveHome()) {
-            session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) height));
-        }
     }
 
     private void HandleSaveHome(GameSession session, IByteReader packet) {
@@ -441,23 +541,51 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     #region Helpers
-    private static bool TryPlaceCube(GameSession session, HeldCube cube, Plot plot, in Vector3B position, float rotation,
-                                     [NotNullWhen(true)] out PlotCube? result) {
-        // Cannot overlap cubes
-        if (plot.Cubes.ContainsKey(position)) {
-            result = null;
+    private bool TryPlaceCube(GameSession session, HeldCube cube, Plot plot, in Vector3B position, float rotation,
+                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
+        result = null;
+        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
+            Logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
+            return false;
+        }
+
+        bool isSolidCube = itemMetadata.Install.IsSolidCube;
+        bool isOnGround = position.Z == 0; // TODO: Handle outside plots
+        bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
+
+        // If the cube is not a solid cube and it's replacing ground, it's not allowed.
+        if ((!isSolidCube && isOnGround) && !allowWaterOnGround) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
             return false;
+        }
+
+        // Cannot overlap cubes if not replacing
+        if (plot.Cubes.ContainsKey(position) && !isReplace) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
+            return false;
+        }
+
+        if (isReplace) {
+            TryRemoveCube(session, plot, position, out _);
         }
 
         //TODO: check outside plot - coords belongs to plot
 
         // TODO: check outside plot bounds
 
-        if (IsCoordOutsideArea(position, session.Player.Value.Home.Area)) {
-            result = null;
+        if (IsCoordOutsideArea(position, session.Player.Value.Home)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
             return false;
+        }
+
+        if (plot.IsDecorPlanner) {
+            result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
+                Position = position,
+                Rotation = rotation,
+            };
+
+            plot.Cubes.Add(position, result);
+            return true;
         }
 
         if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
@@ -487,6 +615,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return false;
         }
 
+        if (plot.IsDecorPlanner) {
+            return true;
+        }
+
         if (!session.Item.Furnishing.RetrieveCube(cube.Id)) {
             throw new InvalidOperationException($"Failed to deposit cube {cube.Id} back into storage.");
         }
@@ -494,13 +626,22 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         return true;
     }
 
-    private static bool IsCoordOutsideArea(Vector3B position, int area) {
-        if (position.X > 0 || position.Y > 0 || position.Z < 0 || position.Z >= area) {
+    private static bool IsCoordOutsideArea(Vector3B position, Home home) {
+        int height = home.IsDecorPlanner ? home.DecorHeight : home.Height;
+        int area = home.IsDecorPlanner ? home.DecorArea : home.Area;
+
+        // Check if the position is outside the planar area bounds
+        if (position.X > 0 || position.Y > 0 || position.Z < 0) {
             return true;
         }
 
         area *= -1;
         if (position.X <= area || position.Y <= area) {
+            return true;
+        }
+
+        // Check if the position is outside the height bounds
+        if (position.Z > height) {
             return true;
         }
 

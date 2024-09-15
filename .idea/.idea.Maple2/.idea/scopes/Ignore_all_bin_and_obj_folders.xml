@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Ignore all bin and obj folders" pattern="!file:*/bin//*&amp;&amp;!file:*/obj//*" />
+</component>

@@ -140,6 +140,10 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 TrophyId: data.housing.trophyID,
                 TrophyLevel: data.housing.trophyLevel,
                 InteriorLevel: data.housing.interiorLevel);
+            ItemMetadataInstall? install = data.property.type != 6 ? null : new ItemMetadataInstall(
+                IsSolidCube: data.install.cubeProp == 1,
+                InteractId: data.install.objCode,
+                MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
             yield return new ItemMetadata(
                 Id: id,
@@ -207,7 +211,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     (skillId, level) => new ItemMetadataAdditionalEffect(skillId, level)).ToArray(),
                 Option: option,
                 Music: music,
-                Housing: housing
+                Housing: housing,
+                Install: install
             );
         }
     }

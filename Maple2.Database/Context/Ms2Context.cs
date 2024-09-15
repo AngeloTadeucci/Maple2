@@ -26,8 +26,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<Mail> Mail { get; set; } = null!;
     internal DbSet<MesoListing> MesoMarket { get; set; } = null!;
     internal DbSet<SoldMesoListing> MesoMarketSold { get; set; } = null!;
-    internal DbSet<Shop> Shop { get; set; } = null!;
-    internal DbSet<ShopItem> ShopItem { get; set; } = null!;
     internal DbSet<CharacterShopData> CharacterShopData { get; set; } = null!;
     internal DbSet<CharacterShopItemData> CharacterShopItemData { get; set; } = null!;
     internal DbSet<GameEventUserValue> GameEventUserValue { get; set; } = null!;
@@ -76,8 +74,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
 
         modelBuilder.Entity<MesoListing>(MesoListing.Configure);
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);
-        modelBuilder.Entity<Shop>(Maple2.Database.Model.Shop.Shop.Configure);
-        modelBuilder.Entity<ShopItem>(Maple2.Database.Model.Shop.ShopItem.Configure);
         modelBuilder.Entity<CharacterShopData>(Maple2.Database.Model.Shop.CharacterShopData.Configure);
         modelBuilder.Entity<CharacterShopItemData>(Maple2.Database.Model.Shop.CharacterShopItemData.Configure);
         modelBuilder.Entity<BeautyShop>(Maple2.Database.Model.Shop.BeautyShop.Configure);

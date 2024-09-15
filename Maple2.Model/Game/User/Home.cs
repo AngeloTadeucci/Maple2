@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
@@ -15,6 +15,10 @@ public class Home : IByteSerializable {
 
     public byte Area { get; private set; }
     public byte Height { get; private set; }
+
+    public byte DecorArea { get; private set; }
+    public byte DecorHeight { get; private set; }
+    public bool IsDecorPlanner => Indoor.IsDecorPlanner;
 
     public int CurrentArchitectScore { get; set; }
     public int ArchitectScore { get; set; }
@@ -51,6 +55,8 @@ public class Home : IByteSerializable {
     public long PlotExpiryTime => Outdoor?.ExpiryTime ?? (string.IsNullOrEmpty(Name) ? 0 : Indoor.ExpiryTime); // If the name is empty, the plot is not setup yet.
     public PlotState State => Outdoor?.State ?? PlotState.Open;
 
+    public bool IsHomeSetup => !string.IsNullOrEmpty(Name);
+
     public Home() {
         message = string.Empty;
         Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
@@ -67,6 +73,18 @@ public class Home : IByteSerializable {
         if (Height == height) return false;
         Height = (byte) Math.Clamp(height, Constant.MinHomeHeight, Constant.MaxHomeHeight);
         return Height == height;
+    }
+
+    public bool SetDecorArea(int area) {
+        if (DecorArea == area) return false;
+        DecorArea = (byte) Math.Clamp(area, Constant.MinHomeArea, Constant.MaxHomeArea);
+        return DecorArea == area;
+    }
+
+    public bool SetDecorHeight(int height) {
+        if (DecorHeight == height) return false;
+        DecorHeight = (byte) Math.Clamp(height, Constant.MinHomeHeight, Constant.MaxHomeHeight);
+        return DecorHeight == height;
     }
 
     public bool SetBackground(HomeBackground background) {
@@ -96,6 +114,34 @@ public class Home : IByteSerializable {
         return true;
     }
 
+    public void EnterDecor() {
+        DecorArea = Area;
+        DecorHeight = Height;
+        Indoor.IsDecorPlanner = true;
+    }
+
+    public Vector3 CalculateSafePosition(List<PlotCube> plotCubes) {
+        int area = IsDecorPlanner ? DecorArea : Area;
+
+        // plots start at 0,0 and are built towards negative x and y
+        int dimension = -1 * (area - 1);
+
+        // find the blocks in most negative x,y direction, with the highest z value
+        int height = 0;
+        if (plotCubes.Count > 0) {
+            List<PlotCube> cubes = plotCubes.Where(cube => cube.Position.X == dimension && cube.Position.Y == dimension).ToList();
+            if (cubes.Count > 0) {
+                height = cubes.Max(cube => cube.Position.Z);
+            }
+        }
+
+        dimension *= VectorExtensions.BLOCK_SIZE;
+
+        height++; // add 1 to height to be on top of the block
+        height *= VectorExtensions.BLOCK_SIZE;
+        return new Vector3(dimension, dimension, height);
+    }
+
     public void WriteTo(IByteWriter writer) {
         writer.WriteLong(AccountId);
         writer.WriteUnicodeString(Indoor.Name);
@@ -105,7 +151,7 @@ public class Home : IByteSerializable {
         writer.WriteInt(ArchitectScore);
         writer.WriteInt(PlotMapId);
         writer.WriteInt(PlotNumber);
-        writer.WriteByte(); // (1=Removes Top-Right UI)
+        writer.WriteBool(Indoor.IsDecorPlanner); // (1=Updates UI to enable decor planner, disable blue prints)
         writer.WriteByte(Area);
         writer.WriteByte(Height);
         writer.Write<HomeBackground>(Background);

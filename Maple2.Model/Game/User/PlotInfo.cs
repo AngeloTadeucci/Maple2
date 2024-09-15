@@ -26,6 +26,8 @@ public class PlotInfo {
 
     public long ExpiryTime { get; set; }
 
+    public bool IsDecorPlanner { get; set; }
+
     public PlotInfo(UgcMapGroup metadata) {
         Metadata = metadata;
     }
@@ -47,4 +49,8 @@ public class PlotInfo {
 public class Plot(UgcMapGroup metadata) : PlotInfo(metadata) {
     public readonly Dictionary<Vector3B, PlotCube> Cubes = new();
 
+    public void SetDecorPlanner() {
+        IsDecorPlanner = true;
+        Cubes.Clear();
+    }
 }
