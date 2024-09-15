@@ -13,6 +13,11 @@ public static class ConditionUtil {
 
     private static bool CheckCode(this ConditionMetadata.Parameters code, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
+            case ConditionType.emotiontime:
+                if (code.Strings != null && code.Strings.Contains(stringValue)) {
+                    return true;
+                }
+                break;
             case ConditionType.emotion:
             case ConditionType.trigger:
             case ConditionType.npc_race:

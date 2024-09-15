@@ -236,6 +236,15 @@ public class FieldPlayer : Actor<Player> {
                     Session.ConditionUpdate(ConditionType.riding, codeLong: Value.Character.MapId);
                 }
                 break;
+            case ActorState.EmotionIdle:
+                if (UpdateStateSyncTimeTracking()) {
+                    Field.SkillMetadata.TryGet(stateSync.Flag1EmotionId, 1, out var emote);
+                    if (emote == null) {
+                        break;
+                    }
+                    Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
+                }
+                break;
                 // TODO: Any more condition states?
         }
 
@@ -368,3 +377,4 @@ public class FieldPlayer : Actor<Player> {
 
     }
 }
+
