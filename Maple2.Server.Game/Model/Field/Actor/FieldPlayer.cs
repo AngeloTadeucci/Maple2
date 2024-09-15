@@ -238,7 +238,7 @@ public class FieldPlayer : Actor<Player> {
                 break;
             case ActorState.EmotionIdle:
                 if (UpdateStateSyncTimeTracking()) {
-                    Field.SkillMetadata.TryGet(stateSync.Flag1EmotionId, 1, out var emote);
+                    Field.SkillMetadata.TryGet(stateSync.EmotionId, 1, out var emote);
                     if (emote == null) {
                         break;
                     }

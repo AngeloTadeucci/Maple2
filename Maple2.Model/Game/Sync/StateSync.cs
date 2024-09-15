@@ -36,7 +36,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
     public int SyncNumber;
 
     #region Flag1
-    public int Flag1EmotionId; // Skill ID for emotes + flying mounts (not ground)
+    public int EmotionId; // Skill ID for emotes + flying mounts (not ground)
     public short Flag1Unknown2; // Goes to 1 for flying mounts
     #endregion
 
@@ -73,7 +73,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
         writer.Write<Flag>(Flags);
 
         if (Flags.HasFlag(Flag.Flag1)) {
-            writer.WriteInt(Flag1EmotionId);
+            writer.WriteInt(EmotionId);
             writer.WriteShort(Flag1Unknown2);
         }
 
@@ -122,7 +122,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
         Flags = reader.Read<Flag>();
 
         if (Flags.HasFlag(Flag.Flag1)) {
-            Flag1EmotionId = reader.ReadInt();
+            EmotionId = reader.ReadInt();
             Flag1Unknown2 = reader.ReadShort();
         }
 
@@ -170,7 +170,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
         builder.AppendLine($" Position:{Position}, Rotation:{Rotation}, Speed:{Speed}");
         builder.AppendLine($" Animation:{Animation} ({UnknownFloat1}, {UnknownFloat2}), Unknown1:{Unknown1}, Rotation2:{Rotation2}, Unknown3:{Unknown3}");
         if (Flags.HasFlag(Flag.Flag1)) {
-            builder.Append($"Flag1: {Flag1EmotionId}, {Flag1Unknown2}");
+            builder.Append($"Flag1: {EmotionId}, {Flag1Unknown2}");
         }
         if (Flags.HasFlag(Flag.Flag2)) {
             builder.Append($"Flag2: {Flag2Unknown1}, {Flag2Unknown2}");

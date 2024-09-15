@@ -14,10 +14,6 @@ public static class ConditionUtil {
     private static bool CheckCode(this ConditionMetadata.Parameters code, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
             case ConditionType.emotiontime:
-                if (code.Strings != null && code.Strings.Contains(stringValue)) {
-                    return true;
-                }
-                break;
             case ConditionType.emotion:
             case ConditionType.trigger:
             case ConditionType.npc_race:
@@ -146,6 +142,11 @@ public static class ConditionUtil {
 
     private static bool CheckTarget(this ConditionMetadata.Parameters target, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
+            case ConditionType.emotiontime:
+                if (target.Integers != null && target.Integers.Any(value => value == session.Player.Value.Character.MapId)) {
+                    return true;
+                }
+                break;
             case ConditionType.emotion:
                 if (target.Range != null && target.Range.Value.Min >= session.Player.Value.Character.MapId &&
                     target.Range.Value.Max <= session.Player.Value.Character.MapId) {
