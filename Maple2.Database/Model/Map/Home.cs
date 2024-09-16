@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -26,6 +24,7 @@ internal class Home {
 
     public string? Passcode { get; set; }
     public IDictionary<HomePermission, HomePermissionSetting> Permissions { get; set; } = new Dictionary<HomePermission, HomePermissionSetting>();
+    public List<HomeLayout> Layouts { get; set; } = [];
 
     public DateTime LastModified { get; set; }
 
@@ -44,6 +43,7 @@ internal class Home {
             Camera = other.Camera,
             Passcode = other.Passcode,
             Permissions = other.Permissions,
+            Layouts = other.Layouts.ConvertAll(layout => (HomeLayout) layout),
         };
     }
 
@@ -60,6 +60,7 @@ internal class Home {
             ArchitectScore = other.ArchitectScore,
             Passcode = other.Passcode,
             LastModified = other.LastModified.ToEpochSeconds(),
+            Layouts = other.Layouts.ConvertAll(layout => (Maple2.Model.Game.HomeLayout) layout),
         };
 
         home.SetArea(other.Area);
@@ -86,8 +87,39 @@ internal class Home {
             .HasDefaultValue(Constant.MinHomeHeight);
 
         builder.Property(home => home.Permissions).HasJsonConversion();
+        builder.Property(home => home.Layouts).HasJsonConversion();
 
         builder.Property(map => map.LastModified)
             .ValueGeneratedOnAddOrUpdate();
+    }
+}
+
+internal class HomeLayout {
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public byte Area { get; set; }
+    public byte Height { get; set; }
+    public DateTimeOffset Timestamp { get; set; }
+    public List<UgcMapCube> Cubes { get; set; }
+
+    [return: NotNullIfNotNull(nameof(other))]
+    public static implicit operator HomeLayout?(Maple2.Model.Game.HomeLayout? other) {
+        return other == null ? null : new HomeLayout {
+            Id = other.Id,
+            Name = other.Name,
+            Area = other.Area,
+            Height = other.Height,
+            Timestamp = other.Timestamp,
+            Cubes = other.Cubes.ConvertAll(cube => (UgcMapCube) cube),
+        };
+    }
+
+    [return: NotNullIfNotNull(nameof(other))]
+    public static implicit operator Maple2.Model.Game.HomeLayout?(HomeLayout? other) {
+        if (other == null) {
+            return null;
+        }
+
+        return new Maple2.Model.Game.HomeLayout(other.Id, other.Name, other.Area, other.Height, other.Timestamp, other.Cubes.ConvertAll(cube => (Maple2.Model.Game.PlotCube) cube));
     }
 }

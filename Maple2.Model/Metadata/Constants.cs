@@ -36,6 +36,7 @@ public static class Constant {
     public const int HomeNameMaxLength = 16;
     public const int HomeMessageMaxLength = 100;
     public const int HomePasscodeLength = 6;
+    public const int HomeMaxLayoutSlots = 5;
     public const int PerformanceMapId = 2000064; // Queenstown
     public const int BaseStorageCount = 36;
     public const float MesoMarketTaxRate = 0.1f;

@@ -35,3 +35,10 @@ public enum HomeCamera : byte {
     TopView = 2,
     AreaView = 3,
 }
+
+public enum PlotMode : byte {
+    Normal = 0,
+    DecorPlanner = 1,
+    Unkown = 2,
+    BlueprintPlanner = 3,
+}

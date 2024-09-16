@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -36,7 +37,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         VoteHome = 25,
         SetHomeMessage = 29,
         ClearCubes = 31,
-        LoadUnknown = 35,
+        RequestLayout = 35,
         IncreaseArea = 37,
         DecreaseArea = 38,
         DesignRankReward = 40,
@@ -44,13 +45,14 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         SetPermission = 43,
         IncreaseHeight = 44,
         DecreaseHeight = 45,
-        SaveHome = 46,
-        LoadHome = 47,
-        ConfirmLoadHome = 48,
+        SaveLayout = 46,
+        DecorPlannerLoadLayout = 47,
+        LoadLayout = 48,
         KickOut = 49,
         SetBackground = 51,
         SetLighting = 52,
         SetCamera = 54,
+        CreateBlueprint = 63,
         SaveBlueprint = 64,
         LoadBlueprint = 65,
     }
@@ -103,8 +105,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             case Command.ClearCubes:
                 HandleClearCubes(session);
                 break;
-            case Command.LoadUnknown:
-                HandleLoadUnknown(session, packet);
+            case Command.RequestLayout:
+                HandleRequestLayout(session, packet);
                 break;
             case Command.IncreaseArea:
                 HandleIncreaseArea(session);
@@ -127,14 +129,12 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             case Command.DecreaseHeight:
                 HandleDecreaseHeight(session);
                 break;
-            case Command.SaveHome:
-                HandleSaveHome(session, packet);
+            case Command.SaveLayout:
+                HandleSaveLayout(session, packet);
                 break;
-            case Command.LoadHome:
-                HandleLoadHome(session, packet);
-                break;
-            case Command.ConfirmLoadHome:
-                HandleConfirmLoadHome(session, packet);
+            case Command.DecorPlannerLoadLayout:
+            case Command.LoadLayout:
+                HandleLoadLayout(session, packet);
                 break;
             case Command.KickOut:
                 HandleKickOut(session);
@@ -156,6 +156,12 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 break;
         }
     }
+
+    #region Autofac Autowired
+    // ReSharper disable MemberCanBePrivate.Global
+    public required TableMetadataStorage TableMetadata { private get; init; }
+    // ReSharper restore All
+    #endregion
 
     private void HandleHoldCube(GameSession session, IByteReader packet) {
         var cubeItem = packet.ReadClass<PlotCube>();
@@ -210,7 +216,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
                 session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
 
-                if (plot.IsDecorPlanner) {
+                if (plot.IsPlanner) {
                     return;
                 }
                 break;
@@ -254,7 +260,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
-        if (plot.IsDecorPlanner) {
+        if (plot.IsPlanner) {
             return;
         }
 
@@ -281,7 +287,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field?.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
-        if (plot.IsDecorPlanner) {
+        if (plot.IsPlanner) {
             return;
         }
 
@@ -299,7 +305,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         if (TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? placedCube, isReplace: true)) {
-            session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, position, rotation, placedCube));
+            session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
         }
     }
 
@@ -366,14 +372,60 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         session.Send(NoticePacket.Message(StringCode.s_ugcmap_package_automatic_removal_completed, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
     }
 
-    private void HandleLoadUnknown(GameSession session, IByteReader packet) {
+    private void HandleRequestLayout(GameSession session, IByteReader packet) {
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        if (plot.Cubes.Count != 0) {
+            session.Send(NoticePacket.Message(StringCode.s_err_ugcmap_package_clear_indoor_first, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+            return;
+        }
+
         int slot = packet.ReadInt();
+
+        HomeLayout? layout = session.Player.Value.Home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+        if (layout == null) {
+            return;
+        }
+
+        Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId).ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
+        int cubeCount = 0;
+        Dictionary<FurnishingMoneyType, long> cubeCosts = new();
+        cubeCosts.Add(FurnishingMoneyType.Meso, 0);
+        cubeCosts.Add(FurnishingMoneyType.Meret, 0);
+        foreach ((int id, int amount) in groupedCubes) {
+            TableMetadata.FurnishingShopTable.Entries.TryGetValue(id, out FurnishingShopTable.Entry? shopEntry);
+            if (shopEntry is null) {
+                Logger.Error("Failed to get shop entry for cube {cubeId}.", id);
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
+                return;
+            }
+
+            Item? item = session.Item.Furnishing.GetItem(id);
+            if (item is null) {
+                cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * amount;
+                cubeCount += amount;
+                continue;
+            }
+
+            if (item.Amount >= amount) {
+                continue;
+            }
+
+            int missingCubes = amount - item.Amount;
+            cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * missingCubes;
+            cubeCount += missingCubes;
+        }
+
+        session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
     }
 
     private void HandleIncreaseArea(GameSession session) {
-        if (session.Player.Value.Home.IsDecorPlanner) {
-            int decorArea = session.Player.Value.Home.DecorArea + 1;
-            if (session.Player.Value.Home.SetDecorArea(decorArea)) {
+        if (session.Player.Value.Home.IsPlanner) {
+            int decorArea = session.Player.Value.Home.PlannerArea + 1;
+            if (session.Player.Value.Home.SetPlannerArea(decorArea)) {
                 session.Field?.Broadcast(CubePacket.IncreaseArea((byte) decorArea));
             }
             return;
@@ -387,9 +439,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
     private void HandleDecreaseArea(GameSession session) {
         int newArea;
-        if (session.Player.Value.Home.IsDecorPlanner) {
-            newArea = session.Player.Value.Home.DecorArea - 1;
-            if (session.Player.Value.Home.SetDecorArea(newArea)) {
+        if (session.Player.Value.Home.IsPlanner) {
+            newArea = session.Player.Value.Home.PlannerArea - 1;
+            if (session.Player.Value.Home.SetPlannerArea(newArea)) {
                 session.Field?.Broadcast(CubePacket.DecreaseArea((byte) newArea));
             }
         } else {
@@ -420,9 +472,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleIncreaseHeight(GameSession session) {
-        if (session.Player.Value.Home.IsDecorPlanner) {
-            int decorHeight = session.Player.Value.Home.DecorHeight + 1;
-            if (session.Player.Value.Home.SetDecorHeight(decorHeight)) {
+        if (session.Player.Value.Home.IsPlanner) {
+            int decorHeight = session.Player.Value.Home.PlannerHeight + 1;
+            if (session.Player.Value.Home.SetPlannerHeight(decorHeight)) {
                 session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) decorHeight));
             }
             return;
@@ -436,9 +488,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
     private void HandleDecreaseHeight(GameSession session) {
         int newHeight;
-        if (session.Player.Value.Home.IsDecorPlanner) {
-            newHeight = session.Player.Value.Home.DecorHeight - 1;
-            if (session.Player.Value.Home.SetDecorHeight(newHeight)) {
+        if (session.Player.Value.Home.IsPlanner) {
+            newHeight = session.Player.Value.Home.PlannerHeight - 1;
+            if (session.Player.Value.Home.SetPlannerHeight(newHeight)) {
                 session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
             }
         } else {
@@ -495,17 +547,86 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         session.Field?.Broadcast(CubePacket.SetPermission(permission, setting));
     }
 
-    private void HandleSaveHome(GameSession session, IByteReader packet) {
+    private void HandleSaveLayout(GameSession session, IByteReader packet) {
         int slot = packet.ReadInt();
         string name = packet.ReadUnicodeString();
+
+        Home home = session.Player.Value.Home;
+        if (slot is > Constant.HomeMaxLayoutSlots or < 0) {
+            return;
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        HomeLayout? layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+        if (layout is not null) {
+            home.Layouts.Remove(layout);
+        }
+
+        byte area = home.IsPlanner ? home.PlannerArea : home.Area;
+        byte height = home.IsPlanner ? home.PlannerHeight : home.Height;
+        layout = new HomeLayout(slot, name, area, height, DateTimeOffset.Now, plot.Cubes.Values.ToList());
+        home.Layouts.Add(layout);
+
+        session.Housing.SaveHome();
+
+        session.Send(CubePacket.SaveLayout(session.AccountId, layout));
     }
 
-    private void HandleLoadHome(GameSession session, IByteReader packet) {
-        int slot = packet.ReadInt();
-    }
+    private void HandleLoadLayout(GameSession session, IByteReader packet) {
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot is null) {
+            return;
+        }
 
-    private void HandleConfirmLoadHome(GameSession session, IByteReader packet) {
+        if (plot.Cubes.Count != 0) {
+            session.Send(NoticePacket.Message(StringCode.s_err_ugcmap_package_clear_indoor_first, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+            return;
+        }
+
         int slot = packet.ReadInt();
+
+        Home home = session.Player.Value.Home;
+        HomeLayout? layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+        if (layout is null) {
+            return;
+        }
+
+        if (plot.IsPlanner) {
+            home.SetPlannerArea(layout.Area);
+            home.SetPlannerHeight(layout.Height);
+        } else {
+            home.SetArea(layout.Area);
+            home.SetHeight(layout.Height);
+        }
+        session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(home.Area, home.Height));
+
+        foreach (PlotCube cube in layout.Cubes) {
+            if (!TryPlaceCube(session, cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+                return;
+            }
+
+            ByteWriter sendPacket;
+            if (cube.Position.Z == 0) {
+                sendPacket = CubePacket.ReplaceCube(session.Player.ObjectId, plotCube);
+            } else {
+                sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
+            }
+
+            session.Field.Broadcast(sendPacket);
+        }
+
+        Vector3 position = home.CalculateSafePosition(plot.Cubes.Values.ToList());
+        foreach (FieldPlayer fieldPlayer in session.Field.Players.Values) {
+            fieldPlayer.MoveToPosition(position, default);
+        }
+
+        session.Item.Furnishing.SendStorageCount();
+        session.Housing.SaveHome();
+        session.Field.Broadcast(NoticePacket.Message(StringCode.s_ugcmap_package_automatic_creation_completed, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
     }
 
     private void HandleKickOut(GameSession session) { }
@@ -565,7 +686,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        if (isReplace) {
+        if (isReplace && plot.Cubes.ContainsKey(position)) {
             TryRemoveCube(session, plot, position, out _);
         }
 
@@ -578,7 +699,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        if (plot.IsDecorPlanner) {
+        if (plot.IsPlanner) {
             result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
                 Position = position,
                 Rotation = rotation,
@@ -588,8 +709,18 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return true;
         }
 
+        TableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
+        if (shopEntry is null) {
+            session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
+            return false;
+        }
+
+        if (!session.Item.Furnishing.PurchaseCube(shopEntry)) {
+            return false;
+        }
+
         if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
-            long itemUid = session.Item.Furnishing.PurchaseCube(cube.ItemId);
+            long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
             if (itemUid == 0) {
                 session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_for_sale));
                 return false;
@@ -615,7 +746,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        if (plot.IsDecorPlanner) {
+        if (plot.IsPlanner) {
             return true;
         }
 
@@ -627,8 +758,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     private static bool IsCoordOutsideArea(Vector3B position, Home home) {
-        int height = home.IsDecorPlanner ? home.DecorHeight : home.Height;
-        int area = home.IsDecorPlanner ? home.DecorArea : home.Area;
+        int height = home.IsPlanner ? home.PlannerHeight : home.Height;
+        int area = home.IsPlanner ? home.PlannerArea : home.Area;
 
         // Check if the position is outside the planar area bounds
         if (position.X > 0 || position.Y > 0 || position.Z < 0) {

@@ -57,6 +57,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "colorpalette.xml", Table = ParseColorPaletteTable() };
         yield return new TableMetadata { Name = "meretmarketcategory.xml", Table = ParseMeretMarketCategoryTable() };
         yield return new TableMetadata { Name = "shop_beautycoupon.xml", Table = ParseShopBeautyCouponTable() };
+        yield return new TableMetadata { Name = "na/shop_*.xml", Table = ParseFurnishingShopTable() };
         yield return new TableMetadata { Name = "gacha_info.xml", Table = ParseGachaInfoTable() };
         yield return new TableMetadata { Name = "nametagsymbol.xml", Table = ParseInsigniaTable() };
         yield return new TableMetadata { Name = "exp*.xml", Table = ParseExpTable() };
@@ -1202,6 +1203,20 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
 
         return new GachaInfoTable(results);
+    }
+
+    private FurnishingShopTable ParseFurnishingShopTable() {
+        var results = new Dictionary<int, FurnishingShopTable.Entry>();
+        foreach ((int id, ShopFurnishing? shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
+            results.Add(id, new FurnishingShopTable.Entry(
+                ItemId: shop!.id,
+                Buyable: shop.ugcHousingBuy,
+                FurnishingTokenType: (FurnishingMoneyType) shop.ugcHousingMoneyType,
+                Price: shop.ugcHousingDefaultPrice
+            ));
+        }
+
+        return new FurnishingShopTable(results);
     }
 
     private InsigniaTable ParseInsigniaTable() {

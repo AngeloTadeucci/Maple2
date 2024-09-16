@@ -38,7 +38,7 @@ public static class CubePacket {
         // 32
         // 33
         ReturnMap = 34,
-        // 36
+        RequestLayout = 36,
         IncreaseArea = 37,
         DecreaseArea = 38,
         DesignRankReward = 39,
@@ -47,7 +47,7 @@ public static class CubePacket {
         SetPermission = 43,
         IncreaseHeight = 44,
         DecreaseHeight = 45,
-        SaveHome = 46,
+        SaveLayout = 46,
         // 50
         SetBackground = 51,
         SetLighting = 52,
@@ -59,7 +59,8 @@ public static class CubePacket {
         RemoveBuildPermission = 58,
         LoadBuildPermission = 59,
         // Blueprint stuff:
-        // 60, 61, 62, 63, 64, 67, 69
+        // 60, 61, 63, 64, 67, 69
+        UpdateHomeAreaAndHeight = 62,
         FunctionCubeError = 71,
     }
 
@@ -208,17 +209,17 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter ReplaceCube(int objectId, in Vector3B position, float rotation, PlotCube cube) {
+    public static ByteWriter ReplaceCube(int objectId, PlotCube cube) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.ReplaceCube);
         pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
         pWriter.WriteInt(objectId); // Owner
         pWriter.WriteInt(objectId); // Player
-        pWriter.Write<Vector3B>(position);
+        pWriter.Write<Vector3B>(cube.Position);
         pWriter.WriteLong(cube.Id);
-        pWriter.WriteClass<PlotCube>(cube);
+        pWriter.WriteClass<HeldCube>(cube);
         pWriter.WriteBool(false); // Unknown
-        pWriter.WriteFloat(rotation);
+        pWriter.WriteFloat(cube.Rotation);
         pWriter.WriteInt(); // Unknown
 
         return pWriter;
@@ -329,6 +330,19 @@ public static class CubePacket {
         return pWriter;
     }
 
+    public static ByteWriter BuyCubes(Dictionary<FurnishingMoneyType, long> cubeCosts, int cubeCount) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.RequestLayout);
+        pWriter.WriteByte((byte) cubeCosts.Keys.Count);
+        pWriter.WriteInt(cubeCount);
+        foreach ((FurnishingMoneyType moneyType, long amount) in cubeCosts) {
+            pWriter.Write<FurnishingMoneyType>(moneyType);
+            pWriter.WriteLong(amount);
+        }
+
+        return pWriter;
+    }
+
     public static ByteWriter IncreaseArea(byte area) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.IncreaseArea);
@@ -390,9 +404,12 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter SaveHome() {
+    public static ByteWriter SaveLayout(long accountId, HomeLayout layout) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
-        pWriter.Write<Command>(Command.SaveHome);
+        pWriter.Write<Command>(Command.SaveLayout);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteLong(accountId);
+        pWriter.WriteClass<HomeLayout>(layout);
 
         return pWriter;
     }
@@ -455,6 +472,16 @@ public static class CubePacket {
     public static ByteWriter LoadBuildPermission() {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.LoadBuildPermission);
+
+        return pWriter;
+    }
+
+    public static ByteWriter UpdateHomeAreaAndHeight(byte area, byte height) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.UpdateHomeAreaAndHeight);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteByte(area);
+        pWriter.WriteByte(height);
 
         return pWriter;
     }

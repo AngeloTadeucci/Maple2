@@ -3,14 +3,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class RemoveBeautyShops : Migration
-    {
+    public partial class RemoveBeautyShops : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "beauty-shop-entry");
 
@@ -19,12 +16,10 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "beauty-shop",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Category = table.Column<byte>(type: "tinyint unsigned", nullable: false),
@@ -41,16 +36,14 @@ namespace Maple2.Server.World.Migrations
                     Unknown2 = table.Column<byte>(type: "tinyint unsigned", nullable: false),
                     VoucherId = table.Column<int>(type: "int", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_beauty-shop", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "beauty-shop-entry",
-                columns: table => new
-                {
+                columns: table => new {
                     ShopId = table.Column<int>(type: "int", nullable: false),
                     ItemId = table.Column<int>(type: "int", nullable: false),
                     CostAmount = table.Column<int>(type: "int", nullable: false),
@@ -61,8 +54,7 @@ namespace Maple2.Server.World.Migrations
                     RequireAchievementRank = table.Column<byte>(type: "tinyint unsigned", nullable: false),
                     RequireLevel = table.Column<short>(type: "smallint", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_beauty-shop-entry", x => new { x.ShopId, x.ItemId });
                     table.ForeignKey(
                         name: "FK_beauty-shop-entry_beauty-shop_ShopId",

@@ -28,6 +28,7 @@ public class TableMetadataStorage {
     private readonly Lazy<ColorPaletteTable> colorPaletteTable;
     private readonly Lazy<MeretMarketCategoryTable> meretMarketCategoryTable;
     private readonly Lazy<ShopBeautyCouponTable> shopBeautyCouponTable;
+    private readonly Lazy<FurnishingShopTable> furnishingShopTable;
     private readonly Lazy<GachaInfoTable> gachaInfoTable;
     private readonly Lazy<InsigniaTable> insigniaTable;
     private readonly Lazy<ExpTable> expTable;
@@ -84,6 +85,7 @@ public class TableMetadataStorage {
     public ColorPaletteTable ColorPaletteTable => colorPaletteTable.Value;
     public MeretMarketCategoryTable MeretMarketCategoryTable => meretMarketCategoryTable.Value;
     public ShopBeautyCouponTable ShopBeautyCouponTable => shopBeautyCouponTable.Value;
+    public FurnishingShopTable FurnishingShopTable => furnishingShopTable.Value;
     public GachaInfoTable GachaInfoTable => gachaInfoTable.Value;
     public InsigniaTable InsigniaTable => insigniaTable.Value;
     public ExpTable ExpTable => expTable.Value;
@@ -141,6 +143,7 @@ public class TableMetadataStorage {
         colorPaletteTable = Retrieve<ColorPaletteTable>(context, "colorpalette.xml");
         meretMarketCategoryTable = Retrieve<MeretMarketCategoryTable>(context, "meretmarketcategory.xml");
         shopBeautyCouponTable = Retrieve<ShopBeautyCouponTable>(context, "shop_beautycoupon.xml");
+        furnishingShopTable = Retrieve<FurnishingShopTable>(context, "na/shop_*.xml");
         gachaInfoTable = Retrieve<GachaInfoTable>(context, "gacha_info.xml");
         insigniaTable = Retrieve<InsigniaTable>(context, "nametagsymbol.xml");
         expTable = Retrieve<ExpTable>(context, "exp*.xml");

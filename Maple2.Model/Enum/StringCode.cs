@@ -2987,6 +2987,7 @@ public enum StringCode {
     s_err_ugcmap_package_should_use_in_indoor = 2984,
     s_err_ugcmap_package_not_a_valid_package_item = 2985,
     s_err_ugcmap_package_cant_use_in_others_home = 2986,
+    [Description("You must clear your home of furnishings first.")]
     s_err_ugcmap_package_clear_indoor_first = 2987,
     s_err_ugcmap_package_not_a_valid_indoor = 2988,
     s_err_ugcmap_package_not_a_indoor_for_package_item = 2989,

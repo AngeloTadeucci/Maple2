@@ -60,6 +60,7 @@ public class TableMetadata {
 [JsonDerivedType(typeof(DefaultItemsTable), typeDiscriminator: "defaultitems")]
 [JsonDerivedType(typeof(MeretMarketCategoryTable), typeDiscriminator: "meretmarketcategory")]
 [JsonDerivedType(typeof(ShopBeautyCouponTable), typeDiscriminator: "shopbeautycoupon")]
+[JsonDerivedType(typeof(FurnishingShopTable), typeDiscriminator: "na/shop_*")]
 [JsonDerivedType(typeof(GachaInfoTable), typeDiscriminator: "gacha_info")]
 [JsonDerivedType(typeof(InsigniaTable), typeDiscriminator: "nametagsymbol")]
 [JsonDerivedType(typeof(ExpTable), typeDiscriminator: "exp")]
