@@ -29,6 +29,7 @@ using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
 using Maple2.Tools.Scheduler;
+using PlotMode = Maple2.Model.Enum.PlotMode;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Session;
@@ -119,6 +120,7 @@ public sealed partial class GameSession : Core.Network.Session {
         int portalId = migrateResponse.PortalId;
         long ownerId = migrateResponse.OwnerId;
         int instanceId = migrateResponse.InstanceId;
+        PlotMode plotMode = (PlotMode) migrateResponse.PlotMode;
 
         AccountId = accountId;
         CharacterId = characterId;
@@ -170,7 +172,7 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (migrateResponse.InDecorPlanner) {
+        if (plotMode is not PlotMode.Normal) {
             instanceId = FieldManager.NextGlobalId();
         }
 
@@ -180,9 +182,9 @@ public sealed partial class GameSession : Core.Network.Session {
             return false;
         }
 
-        if (migrateResponse.InDecorPlanner) {
-            player.Home.EnterDecor();
-            fieldManager.Plots.First().Value.SetDecorPlanner();
+        if (plotMode is not PlotMode.Normal) {
+            player.Home.EnterPlanner(plotMode);
+            fieldManager.Plots.First().Value.SetPlannerMode(plotMode);
         }
 
         var playerUpdate = new PlayerUpdateRequest {
@@ -421,8 +423,8 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void ReturnField() {
-        if (!Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsDecorPlanner) {
-            ExitDecorPlanner();
+        if (!Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
+            MigrateToPlanner(PlotMode.Normal);
             return;
         }
 
@@ -485,15 +487,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(PrestigePacket.Load(Player.Value.Account));
     }
 
-    public void EnterDecorPlanner() {
-        MigrateToDecorPlanner(true);
-    }
-
-    public void ExitDecorPlanner() {
-        MigrateToDecorPlanner(false);
-    }
-
-    private void MigrateToDecorPlanner(bool inDecorPlanner) {
+    public void MigrateToPlanner(PlotMode plotMode) {
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
@@ -502,7 +496,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 Server = Server.World.Service.Server.Game,
                 MapId = Constant.DefaultHomeMapId,
                 OwnerId = AccountId,
-                InDecorPlanner = inDecorPlanner,
+                PlotMode = (World.Service.PlotMode) plotMode,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);

@@ -50,9 +50,10 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             return;
         }
 
-        // Check if current plot is decor planner
-        if (session.Field.Plots.First().Value.IsDecorPlanner) {
-            home.EnterDecor();
+        // Check if current plot is planner
+        Plot indoor = session.Field.Plots.First().Value;
+        if (indoor.IsPlanner) {
+            home.EnterPlanner(indoor.PlotMode);
         }
 
         // TODO: Check if plot has entry points

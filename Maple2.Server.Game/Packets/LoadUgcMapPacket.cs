@@ -22,8 +22,6 @@ public static class LoadUgcMapPacket {
         pWriter.WriteInt();
         pWriter.WriteBool(true);
         pWriter.WriteClass<Home>(home);
-        pWriter.WriteByte(); // saved designs
-        pWriter.WriteByte(); // saved blueprints
 
         return pWriter;
     }

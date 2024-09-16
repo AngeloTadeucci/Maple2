@@ -3,6 +3,7 @@ using System;
 using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    partial class Ms2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240915233502_AddHomeLayouts")]
+    partial class AddHomeLayouts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1070,6 +1073,90 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("server-info", (string)null);
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShop", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("RecolorCostAmount")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("RecolorCostCurrencyType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("RecolorCostItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServiceCostAmount")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("ServiceCostCurrencyType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("ServiceCostItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServiceRewardItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShopSubType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShopType")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Unknown1")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Unknown2")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("beauty-shop", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShopEntry", b =>
+                {
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CostAmount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CostItemId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("CostType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Label")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("RequireAchievementId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("RequireAchievementRank")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<short>("RequireLevel")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("ShopId", "ItemId");
+
+                    b.ToTable("beauty-shop-entry", (string)null);
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.Shop.CharacterShopData", b =>
                 {
                     b.Property<int>("ShopId")
@@ -1606,6 +1693,15 @@ namespace Maple2.Server.World.Migrations
                     b.HasOne("Maple2.Database.Model.Item", null)
                         .WithOne()
                         .HasForeignKey("Maple2.Database.Model.PetConfig", "ItemUid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShopEntry", b =>
+                {
+                    b.HasOne("Maple2.Database.Model.Shop.BeautyShop", null)
+                        .WithMany()
+                        .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

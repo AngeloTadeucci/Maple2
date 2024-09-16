@@ -410,7 +410,7 @@ public class UgcHandler : PacketHandler<GameSession> {
 
             // Dont create the item if it's a furniture since it's tied to account id
             if (info.Type is UgcType.Furniture) {
-                session.Item.Furnishing.PurchaseCube(item);
+                session.Item.Furnishing.AddCube(item);
             } else {
                 using GameStorage.Request gameRequest = session.GameStorage.Context();
                 item = gameRequest.CreateItem(session.CharacterId, item);

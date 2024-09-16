@@ -66,7 +66,13 @@ message MigrateOutRequest {
   optional int32 portal_id = 7;
   optional int64 owner_id = 8;
   optional int32 instance_id = 9;
-  optional bool in_decor_planner = 10;
+  optional PlotMode plot_mode = 10;
+}
+
+enum PlotMode {
+  NORMAL = 0;
+  DECOR_PLANNER = 1;
+  BLUEPRINT_DESIGNER = 3;
 }
 
 message MigrateOutResponse {
@@ -92,7 +98,7 @@ message MigrateInResponse {
   int32 portal_id = 4;
   int64 owner_id = 5;
   int32 instance_id = 6;
-  bool in_decor_planner = 7;
+  PlotMode plot_mode = 7;
 }
 
 message ChannelsRequest {}

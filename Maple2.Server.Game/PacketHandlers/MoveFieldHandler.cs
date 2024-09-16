@@ -11,6 +11,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
+using PlotMode = Maple2.Model.Enum.PlotMode;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -130,11 +131,16 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.EnterDecorPlanner();
+        session.MigrateToPlanner(PlotMode.DecorPlanner);
     }
 
     private void HandleBlueprintDesigner(GameSession session) {
+        Home home = session.Player.Value.Home;
+        if (!home.IsHomeSetup) {
+            return;
+        }
 
+        session.MigrateToPlanner(PlotMode.BlueprintPlanner);
     }
 
     private void HandleModelHome(GameSession session) {

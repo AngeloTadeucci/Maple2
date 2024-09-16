@@ -16,9 +16,9 @@ public class Home : IByteSerializable {
     public byte Area { get; private set; }
     public byte Height { get; private set; }
 
-    public byte DecorArea { get; private set; }
-    public byte DecorHeight { get; private set; }
-    public bool IsDecorPlanner => Indoor.IsDecorPlanner;
+    public byte PlannerArea { get; private set; }
+    public byte PlannerHeight { get; private set; }
+    public bool IsPlanner => Indoor.PlotMode is PlotMode.DecorPlanner or PlotMode.BlueprintPlanner;
 
     public int CurrentArchitectScore { get; set; }
     public int ArchitectScore { get; set; }
@@ -34,6 +34,7 @@ public class Home : IByteSerializable {
     public long DecorationLevel { get; set; }
     public long DecorationRewardTimestamp { get; set; }
     public List<int> InteriorRewardsClaimed { get; set; }
+    public List<HomeLayout> Layouts { get; set; }
 
     private string message;
     public string Message {
@@ -75,16 +76,16 @@ public class Home : IByteSerializable {
         return Height == height;
     }
 
-    public bool SetDecorArea(int area) {
-        if (DecorArea == area) return false;
-        DecorArea = (byte) Math.Clamp(area, Constant.MinHomeArea, Constant.MaxHomeArea);
-        return DecorArea == area;
+    public bool SetPlannerArea(int area) {
+        if (PlannerArea == area) return false;
+        PlannerArea = (byte) Math.Clamp(area, Constant.MinHomeArea, Constant.MaxHomeArea);
+        return PlannerArea == area;
     }
 
-    public bool SetDecorHeight(int height) {
-        if (DecorHeight == height) return false;
-        DecorHeight = (byte) Math.Clamp(height, Constant.MinHomeHeight, Constant.MaxHomeHeight);
-        return DecorHeight == height;
+    public bool SetPlannerHeight(int height) {
+        if (PlannerHeight == height) return false;
+        PlannerHeight = (byte) Math.Clamp(height, Constant.MinHomeHeight, Constant.MaxHomeHeight);
+        return PlannerHeight == height;
     }
 
     public bool SetBackground(HomeBackground background) {
@@ -114,14 +115,14 @@ public class Home : IByteSerializable {
         return true;
     }
 
-    public void EnterDecor() {
-        DecorArea = Area;
-        DecorHeight = Height;
-        Indoor.IsDecorPlanner = true;
+    public void EnterPlanner(PlotMode mode) {
+        PlannerArea = Area;
+        PlannerHeight = Height;
+        Indoor.PlotMode = mode;
     }
 
     public Vector3 CalculateSafePosition(List<PlotCube> plotCubes) {
-        int area = IsDecorPlanner ? DecorArea : Area;
+        int area = IsPlanner ? PlannerArea : Area;
 
         // plots start at 0,0 and are built towards negative x and y
         int dimension = -1 * (area - 1);
@@ -151,7 +152,7 @@ public class Home : IByteSerializable {
         writer.WriteInt(ArchitectScore);
         writer.WriteInt(PlotMapId);
         writer.WriteInt(PlotNumber);
-        writer.WriteBool(Indoor.IsDecorPlanner); // (1=Updates UI to enable decor planner, disable blue prints)
+        writer.Write<PlotMode>(Indoor.PlotMode);
         writer.WriteByte(Area);
         writer.WriteByte(Height);
         writer.Write<HomeBackground>(Background);
@@ -166,5 +167,37 @@ public class Home : IByteSerializable {
                 writer.Write<HomePermissionSetting>(setting);
             }
         }
+
+        writer.WriteByte((byte) Layouts.Count);
+        foreach (HomeLayout layout in Layouts) {
+            writer.WriteClass<HomeLayout>(layout);
+        }
+        writer.WriteByte(); // saved blueprints
+    }
+}
+
+public class HomeLayout : IByteSerializable {
+    public long HomeId { get; private set; }
+    public int Id { get; private set; }
+    public string Name { get; private set; }
+    public byte Area { get; private set; }
+    public byte Height { get; private set; }
+    public DateTimeOffset Timestamp { get; private set; }
+    public List<PlotCube> Cubes { get; private set; }
+
+    public HomeLayout(int layoutId, string layoutName, byte area, byte height, DateTimeOffset timestamp, List<PlotCube> cubes) {
+        Id = layoutId;
+        Name = layoutName;
+        Area = area;
+        Height = height;
+        Timestamp = timestamp;
+        Cubes = cubes;
+    }
+
+
+    public void WriteTo(IByteWriter pWriter) {
+        pWriter.WriteInt(Id);
+        pWriter.WriteUnicodeString(Name);
+        pWriter.WriteLong(Timestamp.ToUnixTimeSeconds());
     }
 }

@@ -4,14 +4,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class RemoveShops : Migration
-    {
+    public partial class RemoveShops : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropForeignKey(
                 name: "FK_character-shop-data_shop_ShopId",
                 table: "character-shop-data");
@@ -45,8 +42,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropPrimaryKey(
                 name: "PK_character-shop-item-data",
                 table: "character-shop-item-data");
@@ -58,8 +54,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "shop",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
@@ -76,16 +71,14 @@ namespace Maple2.Server.World.Migrations
                     RestockTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Skin = table.Column<byte>(type: "tinyint unsigned", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_shop", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "shop-item",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     AutoPreviewEquip = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -115,8 +108,7 @@ namespace Maple2.Server.World.Migrations
                     ShopId = table.Column<int>(type: "int", nullable: false),
                     StockCount = table.Column<int>(type: "int", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_shop-item", x => x.Id);
                     table.ForeignKey(
                         name: "FK_shop-item_shop_ShopId",
