@@ -1351,7 +1351,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         PaymentItemId: item.paymentItemID),
                     Weight: item.weight,
                     AchievementId: item.achieveID,
-                    AchievementRank: item.achieveGrade,
+                    AchievementRank: (byte) item.achieveGrade,
                     RequiredLevel: item.requireLevel,
                     SaleTag: (ShopItemLabel) item.saleTag);
             }

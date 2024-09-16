@@ -33,6 +33,6 @@ public record BeautyShopItem(
     BeautyShopCostMetadata Cost,
     int Weight,
     int AchievementId,
-    short AchievementRank,
+    byte AchievementRank,
     short RequiredLevel,
     ShopItemLabel SaleTag);

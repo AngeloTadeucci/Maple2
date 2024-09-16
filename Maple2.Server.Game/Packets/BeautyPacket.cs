@@ -167,7 +167,7 @@ public static class BeautyPacket {
             pWriter.Write<ShopItemLabel>(item.SaleTag);
             pWriter.WriteShort(item.RequiredLevel);
             pWriter.WriteInt(item.AchievementId);
-            pWriter.WriteByte((byte)item.AchievementRank);
+            pWriter.WriteByte(item.AchievementRank);
             pWriter.WriteClass<BeautyShopCost>(item.Cost);
         }
     }
