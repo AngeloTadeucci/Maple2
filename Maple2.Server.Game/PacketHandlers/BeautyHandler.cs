@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Storage;
+﻿using Maple2.Database.Extensions;
+using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -12,6 +13,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -110,52 +112,68 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        using GameStorage.Request db = session.GameStorage.Context();
-        BeautyShop? shop = db.GetBeautyShop(metadata.Basic.ShopId);
-        if (shop == null) {
+        if (!session.ServerTableMetadata.BeautyShopTable.Entries.TryGetValue(metadata.Basic.ShopId, out BeautyShopMetadata? shopMetadata)) {
             // TODO: Error?
             return;
         }
 
         // filter out non-usable genders
-        var entries = new List<BeautyShopEntry>();
-        foreach (BeautyShopEntry entry in shop.Entries) {
-            if (!ItemMetadata.TryGet(entry.ItemId, out ItemMetadata? itemMetadata)) {
-                continue;
-            }
+        List<BeautyShopItem> entries = FilterItemsByGender(session.Player.Value.Character.Gender, shopMetadata.Items).ToList();
 
-            if (itemMetadata.Limit.Gender == session.Player.Value.Character.Gender ||
-                itemMetadata.Limit.Gender == Gender.All) {
-                entries.Add(entry);
+        // Add date-based items
+        if (shopMetadata.ItemGroups.Length > 0) {
+            BeautyShopItemGroup? group = shopMetadata.ItemGroups
+                .Where(group => group.StartTime < DateTime.Now.ToEpochSeconds())
+                .OrderByDescending(group => group.StartTime)
+                .FirstOrDefault();
+            if (group != null) {
+                entries.AddRange(FilterItemsByGender(session.Player.Value.Character.Gender, group.Items));
             }
-
         }
-        shop.Entries = entries;
-        session.BeautyShop = shop;
 
-        switch (shop.Category) {
-            case BeautyShopCategory.Dye:
-                switch (shop.ShopType) {
-                    case BeautyShopType.Item:
-                        session.Send(BeautyPacket.DyeShop(shop));
-                        break;
-                    case BeautyShopType.Skin:
-                        session.Send(BeautyPacket.BeautyShop(shop));
-                        break;
-                    default:
+        session.BeautyShop = new BeautyShop(shopMetadata, entries.ToArray()) {
+            Type = shopType,
+        };
+
+        switch (session.BeautyShop.Type) {
+            case BeautyShopType.Modify:
+                switch (session.BeautyShop.Metadata.Category) {
+                    case BeautyShopCategory.Mirror:
+                        // No packet for mirror
                         return;
+                    case BeautyShopCategory.Dye:
+                        session.Send(BeautyPacket.DyeShop(session.BeautyShop));
+                        break;
+                    case BeautyShopCategory.Skin:
+                        session.Send(BeautyPacket.BeautyShop(session.BeautyShop));
+                        break;
                 }
                 break;
-            case BeautyShopCategory.Save:
-                session.Send(BeautyPacket.SaveShop(shop));
+            case BeautyShopType.Save:
+                session.Send(BeautyPacket.SaveShop(session.BeautyShop));
                 session.Beauty.Load();
                 break;
-            case BeautyShopCategory.Special:
-            case BeautyShopCategory.Standard:
-                session.Send(BeautyPacket.BeautyShop(shop));
+            case BeautyShopType.Default:
+            case BeautyShopType.Random:
+                session.Send(BeautyPacket.BeautyShop(session.BeautyShop));
                 break;
             default:
-                return;
+                Logger.Error("Unknown beauty shop category: {Category}", session.BeautyShop.Metadata.Category);
+                break;
+        }
+        return;
+
+        IEnumerable<BeautyShopItem> FilterItemsByGender(Gender gender, BeautyShopItem[] items) {
+            foreach (BeautyShopItem entry in items) {
+                if (!ItemMetadata.TryGet(entry.Id, out ItemMetadata? itemMetadata)) {
+                    continue;
+                }
+
+                if (itemMetadata.Limit.Gender == gender ||
+                    itemMetadata.Limit.Gender == Gender.All) {
+                    yield return entry;
+                }
+            }
         }
     }
 
@@ -168,7 +186,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        BeautyShopEntry? entry = session.BeautyShop.Entries.FirstOrDefault(entry => entry.ItemId == itemId);
+        BeautyShopItem? entry = session.BeautyShop.Items.FirstOrDefault(entry => entry.Id == itemId);
         if (entry == null) {
             return;
         }
@@ -183,7 +201,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             }
         }
 
-        if (ModifyBeauty(session, packet, session.BeautyShop.ShopType, entry.ItemId)) {
+        if (ModifyBeauty(session, packet, session.BeautyShop.Metadata.Category, entry.Id)) {
             session.ConditionUpdate(ConditionType.beauty_add, codeLong: itemId);
         }
     }
@@ -215,13 +233,13 @@ public class BeautyHandler : PacketHandler<GameSession> {
                 return;
             }
         } else {
-            if (!PayWithCurrency(session, shop.ServiceCost)) {
+            if (!PayWithCurrency(session, shop.Metadata.StyleCostMetadata)) {
                 return;
             }
         }
 
         EquipColor? startColor = cosmetic.Appearance?.Color;
-        if (ModifyBeauty(session, packet, session.BeautyShop.ShopType, cosmetic.Id) && startColor != null) {
+        if (ModifyBeauty(session, packet, session.BeautyShop.Metadata.Category, cosmetic.Id) && startColor != null) {
             Item newCosmetic = session.Item.Equips.Get(cosmetic.Metadata.SlotNames.First())!;
             if (!Equals(newCosmetic.Appearance?.Color, startColor)) {
                 session.ConditionUpdate(ConditionType.beauty_change_color, codeLong: cosmetic.Id);
@@ -243,7 +261,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
                 return;
             }
         } else {
-            if (!PayWithCurrency(session, session.BeautyShop.ServiceCost)) {
+            if (!PayWithCurrency(session, session.BeautyShop.Metadata.StyleCostMetadata)) {
                 return;
             }
         }
@@ -266,14 +284,19 @@ public class BeautyHandler : PacketHandler<GameSession> {
                 return;
             }
         } else {
-            if (!PayWithCurrency(session, shop.ServiceCost)) {
+            if (!PayWithCurrency(session, shop.Metadata.StyleCostMetadata)) {
                 return;
             }
         }
 
-        BeautyShopEntry entry = shop.Entries[Random.Shared.Next(shop.Entries.Count)];
+        WeightedSet<BeautyShopItem> weightedSet = new();
+        foreach (BeautyShopItem item in shop.Items) {
+            weightedSet.Add(item, item.Weight);
+        }
 
-        if (!ItemMetadata.TryGet(entry.ItemId, out ItemMetadata? itemMetadata)) {
+        BeautyShopItem entry = weightedSet.Get();
+
+        if (!ItemMetadata.TryGet(entry.Id, out ItemMetadata? itemMetadata)) {
             return;
         }
         DefaultHairMetadata defaultHairMetadata = itemMetadata.DefaultHairs[Random.Shared.Next(itemMetadata.DefaultHairs.Length)];
@@ -297,7 +320,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             (float) backLength, defaultHairMetadata.BackPosition, defaultHairMetadata.BackRotation, (float) frontLength, defaultHairMetadata.FrontPosition,
             defaultHairMetadata.FrontRotation);
 
-        Item? newHair = session.Field.ItemDrop.CreateItem(entry.ItemId);
+        Item? newHair = session.Field.ItemDrop.CreateItem(entry.Id);
         if (newHair == null) {
             return;
         }
@@ -348,7 +371,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
         }
         if (!newHairSelected) {
             session.Beauty.SelectPreviousHair();
-            Item? voucher = session.Field.ItemDrop.CreateItem(session.BeautyShop.ServiceRewardItemId);
+            Item? voucher = session.Field.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
             if (voucher != null && !session.Item.Inventory.Add(voucher, true)) {
                 session.Item.MailItem(voucher);
             }
@@ -396,7 +419,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (!PayWithCurrency(session, session.BeautyShop.ServiceCost)) {
+        if (!PayWithCurrency(session, session.BeautyShop.Metadata.StyleCostMetadata)) {
             return;
         }
 
@@ -432,7 +455,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
                     return;
                 }
             } else {
-                if (!PayWithCurrency(session, session.BeautyShop.RecolorCost)) {
+                if (!PayWithCurrency(session, session.BeautyShop.Metadata.ColorCostMetadata)) {
                     return;
                 }
             }
@@ -450,90 +473,71 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (!int.TryParse(voucher.Metadata.Function.Parameters, out int shopId) ||
-            !TableMetadata.ShopBeautyCouponTable.Entries.TryGetValue(shopId, out IReadOnlyList<int>? itemIds)) {
+        if (!int.TryParse(voucher.Metadata.Function.Parameters, out int shopId)) {
             return;
         }
 
-        List<BeautyShopEntry> entries = itemIds.Select(itemId => new BeautyShopEntry(itemId, new BeautyShopCost(ShopCurrencyType.Item, voucher.Id, 1))).ToList();
+        if (!session.ServerTableMetadata.BeautyShopTable.Entries.TryGetValue(shopId, out BeautyShopMetadata? shopMetadata) ||
+            shopMetadata.Items.Length == 0) {
+            return;
+        }
 
         // Shop all must be the same type (hair, face, etc). Will not work correctly if mixed. Assumes all items are the same type, so we'll just check the first one.
-        if (!ItemMetadata.TryGet(itemIds.First(), out ItemMetadata? itemEntry)) {
+        if (!ItemMetadata.TryGet(shopMetadata.Items.First().Id, out ItemMetadata? itemEntry)) {
             return;
         }
 
-        BeautyShopType shopType = itemEntry.SlotNames.First() switch {
-            EquipSlot.HR => BeautyShopType.Hair,
-            EquipSlot.FA => BeautyShopType.Face,
-            EquipSlot.SK => BeautyShopType.Skin,
-            EquipSlot.FD => BeautyShopType.Makeup,
-            _ => BeautyShopType.Hair,
-        };
-
-        BeautyShop shop = new BeautyShop(shopId) {
-            Category = BeautyShopCategory.Standard,
-            Entries = entries,
-            ShopType = shopType,
-            RecolorCost = new BeautyShopCost(ShopCurrencyType.Item, voucher.Id, 1),
-        };
+        var shop = new BeautyShop(shopMetadata, shopMetadata.Items);
 
         session.BeautyShop = shop;
         session.Send(BeautyPacket.BeautyShop(shop));
     }
 
     private static bool PayWithVoucher(GameSession session, BeautyShop shop) {
-        ItemTag voucherTag = shop.ShopType switch {
-            BeautyShopType.Hair when shop.Category == BeautyShopCategory.Special => Constant.BeautyHairSpecialVoucherTag,
-            BeautyShopType.Hair => Constant.BeautyHairStandardVoucherTag,
-            BeautyShopType.Face => Constant.BeautyFaceVoucherTag,
-            BeautyShopType.Makeup => Constant.BeautyMakeupVoucherTag,
-            BeautyShopType.Skin => Constant.BeautySkinVoucherTag,
-            BeautyShopType.Item => Constant.BeautyItemColorVoucherTag,
-            _ => ItemTag.None,
-        };
+        ItemTag voucherTag = shop.Metadata.CouponTag;
 
         if (voucherTag == ItemTag.None) {
             return false;
         }
 
         var ingredient = new IngredientInfo(voucherTag, 1);
-        if (!session.Item.Inventory.Consume(new[] { ingredient })) {
+        if (!session.Item.Inventory.Consume([ingredient])) {
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert, StringCode.s_err_invalid_item));
             return false;
         }
 
-        session.Send(BeautyPacket.Voucher(shop.VoucherId, 1));
+        session.Send(BeautyPacket.Voucher(shop.Metadata.CouponId, 1));
         return true;
     }
 
-    private static bool PayWithCurrency(GameSession session, BeautyShopCost cost) {
-        switch (cost.Type) {
+    private static bool PayWithCurrency(GameSession session, BeautyShopCostMetadata cost) {
+        switch (cost.CurrencyType) {
             case ShopCurrencyType.Meso:
-                if (session.Currency.CanAddMeso(-cost.Amount) != -cost.Amount) {
+                if (session.Currency.CanAddMeso(-cost.Price) != -cost.Price) {
                     session.Send(BeautyPacket.Error(BeautyError.lack_currency));
                     return false;
                 }
-                session.Currency.Meso -= cost.Amount;
+                session.Currency.Meso -= cost.Price;
                 break;
             case ShopCurrencyType.Meret:
             case ShopCurrencyType.EventMeret: // TODO: EventMeret?
             case ShopCurrencyType.GameMeret:
-                if (session.Currency.CanAddMeret(-cost.Amount) != -cost.Amount) {
+                if (session.Currency.CanAddMeret(-cost.Price) != -cost.Price) {
                     session.Send(BeautyPacket.Error(BeautyError.s_err_lack_merat_ask));
                     return false;
                 }
 
-                session.Currency.Meret -= cost.Amount;
+                session.Currency.Meret -= cost.Price;
                 break;
             case ShopCurrencyType.Item:
-                var ingredient = new ItemComponent(cost.ItemId, -1, cost.Amount, ItemTag.None);
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+                var ingredient = new ItemComponent(cost.PaymentItemId, -1, cost.Price, ItemTag.None);
+                if (!session.Item.Inventory.ConsumeItemComponents([ingredient])) {
                     session.Send(BeautyPacket.Error(BeautyError.lack_currency));
                     return false;
                 }
                 break;
             default:
-                CurrencyType currencyType = cost.Type switch {
+                CurrencyType currencyType = cost.CurrencyType switch {
                     ShopCurrencyType.ValorToken => CurrencyType.ValorToken,
                     ShopCurrencyType.Treva => CurrencyType.Treva,
                     ShopCurrencyType.Rue => CurrencyType.Rue,
@@ -546,29 +550,29 @@ public class BeautyHandler : PacketHandler<GameSession> {
                     _ => CurrencyType.None,
 
                 };
-                if (currencyType == CurrencyType.None || session.Currency[currencyType] < cost.Amount) {
+                if (currencyType == CurrencyType.None || session.Currency[currencyType] < cost.Price) {
                     session.Send(BeautyPacket.Error(BeautyError.lack_currency));
                     return false;
                 }
 
-                session.Currency[currencyType] -= cost.Amount;
+                session.Currency[currencyType] -= cost.Price;
                 break;
         }
         return true;
     }
 
-    private static bool ModifyBeauty(GameSession session, IByteReader packet, BeautyShopType type, int itemId) {
+    private static bool ModifyBeauty(GameSession session, IByteReader packet, BeautyShopCategory category, int itemId) {
         Item? newCosmetic = session.Field.ItemDrop.CreateItem(itemId, 1, 1);
         if (newCosmetic == null) {
             return false;
         }
 
-        newCosmetic.Appearance = type switch {
-            BeautyShopType.Hair => packet.ReadClass<HairAppearance>(),
-            BeautyShopType.Makeup => packet.ReadClass<DecalAppearance>(),
-            BeautyShopType.Face => packet.ReadClass<ItemAppearance>(),
-            BeautyShopType.Item => packet.ReadClass<ItemAppearance>(),
-            BeautyShopType.Skin => packet.ReadClass<ItemAppearance>(),
+        newCosmetic.Appearance = category switch {
+            BeautyShopCategory.Hair => packet.ReadClass<HairAppearance>(),
+            BeautyShopCategory.Makeup => packet.ReadClass<DecalAppearance>(),
+            BeautyShopCategory.Face => packet.ReadClass<ItemAppearance>(),
+            BeautyShopCategory.Dye => packet.ReadClass<ItemAppearance>(),
+            BeautyShopCategory.Skin => packet.ReadClass<ItemAppearance>(),
             _ => ItemAppearance.Default,
         };
         using GameStorage.Request db = session.GameStorage.Context();

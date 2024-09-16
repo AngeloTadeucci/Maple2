@@ -34,8 +34,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<UgcMarketItem> UgcMarketItem { get; set; } = null!;
     internal DbSet<SoldUgcMarketItem> SoldUgcMarketItem { get; set; } = null!;
     internal DbSet<BlackMarketListing> BlackMarketListing { get; set; } = null!;
-    internal DbSet<BeautyShop> BeautyShop { get; set; } = null!;
-    internal DbSet<BeautyShopEntry> BeautyShopEntry { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
     internal DbSet<ServerInfo> ServerInfo { get; set; } = null!;
@@ -76,8 +74,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);
         modelBuilder.Entity<CharacterShopData>(Maple2.Database.Model.Shop.CharacterShopData.Configure);
         modelBuilder.Entity<CharacterShopItemData>(Maple2.Database.Model.Shop.CharacterShopItemData.Configure);
-        modelBuilder.Entity<BeautyShop>(Maple2.Database.Model.Shop.BeautyShop.Configure);
-        modelBuilder.Entity<BeautyShopEntry>(Maple2.Database.Model.Shop.BeautyShopEntry.Configure);
         modelBuilder.Entity<BlackMarketListing>(Maple2.Database.Model.BlackMarketListing.Configure);
 
         modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.GameEventUserValue.Configure);

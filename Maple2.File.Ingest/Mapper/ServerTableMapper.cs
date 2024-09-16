@@ -42,6 +42,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
         yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
         yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
+        yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
 
     }
 
@@ -1285,6 +1286,76 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             results.Add(shopId, shopResults);
         }
         return new ShopItemTable(results);
+    }
+
+    private BeautyShopTable ParseBeautyShops() {
+        var results = new Dictionary<int, BeautyShopMetadata>();
+        results = MergeBeautyShopData(results, parser.ParseShopBeauty());
+        results = MergeBeautyShopData(results, parser.ParseShopBeautyCoupon());
+        results = MergeBeautyShopData(results, parser.ParseShopBeautySpecialHair());
+        return new BeautyShopTable(results);
+    }
+
+    private Dictionary<int, BeautyShopMetadata> MergeBeautyShopData(Dictionary<int, BeautyShopMetadata> entries, IEnumerable<(int, ShopBeauty)> beautyParser) {
+        foreach ((int shopId, ShopBeauty shop) in beautyParser) {
+            List<BeautyShopItemGroup> itemGroups = [];
+            foreach (ShopBeauty.ItemGroup group in shop.itemGroup) {
+                itemGroups.Add(new BeautyShopItemGroup(
+                    StartTime: string.IsNullOrEmpty(group.saleStartTime) ? 0 : DateTime.ParseExact(group.saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                    Items: ParseBeautyShopItems(group.item).ToArray()));
+            }
+
+            entries.Add(shopId, new BeautyShopMetadata(
+                Id: shop.shopID,
+                Category: (BeautyShopCategory) shop.categoryID,
+                SubType: shop.shopID switch {
+                    // Hardcoding this because I'm not sure where this information is located in the xmls
+                    500 => 16,
+                    501 => 19,
+                    504 => 17,
+                    505 => 28,
+                    506 => 18,
+                    508 => 21,
+                    509 => 0,
+                    510 => 20,
+                    _ => 0,
+                },
+                StyleCostMetadata: new BeautyShopCostMetadata(
+                    CurrencyType: (ShopCurrencyType) shop.stylePaymentType,
+                    Price: shop.stylePrice,
+                    Icon: shop.stylePaymentIconTag,
+                    PaymentItemId: shop.stylePaymentItemID),
+                ColorCostMetadata: new BeautyShopCostMetadata(
+                    CurrencyType: (ShopCurrencyType) shop.colorPaymentType,
+                    Price: shop.colorPrice,
+                    Icon: shop.colorPaymentIconTag,
+                    PaymentItemId: shop.colorPaymentItemID),
+                IsRandom: shop.random,
+                IsByItem: shop.byItem,
+                ReturnCouponId: shop.returnCouponID,
+                CouponId: shop.displayCouponID,
+                CouponTag: Enum.TryParse(shop.couponTag, out ItemTag tag) ? tag : ItemTag.None,
+                Items: ParseBeautyShopItems(shop.item).ToArray(),
+                ItemGroups: itemGroups.ToArray()));
+        }
+        return entries;
+
+        IEnumerable<BeautyShopItem> ParseBeautyShopItems(IList<ShopBeauty.Item> items) {
+            foreach (ShopBeauty.Item item in items) {
+                yield return new BeautyShopItem(
+                    Id: item.id,
+                    Cost: new BeautyShopCostMetadata(
+                        CurrencyType: (ShopCurrencyType) item.paymentType,
+                        Price: item.price,
+                        Icon: item.paymentIconTag,
+                        PaymentItemId: item.paymentItemID),
+                    Weight: item.weight,
+                    AchievementId: item.achieveID,
+                    AchievementRank: (byte) item.achieveGrade,
+                    RequiredLevel: item.requireLevel,
+                    SaleTag: (ShopItemLabel) item.saleTag);
+            }
+        }
     }
 }
 

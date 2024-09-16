@@ -39,4 +39,5 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(ItemMergeTable), typeDiscriminator: "itemMerge")]
 [JsonDerivedType(typeof(ShopTable), typeDiscriminator: "shop")]
 [JsonDerivedType(typeof(ShopItemTable), typeDiscriminator: "shopItem")]
+[JsonDerivedType(typeof(BeautyShopTable), typeDiscriminator: "beautyShop")]
 public abstract record ServerTable;
