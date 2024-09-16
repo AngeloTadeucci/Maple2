@@ -392,9 +392,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
         Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId).ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
         int cubeCount = 0;
-        Dictionary<FurnishingMoneyType, long> cubeCosts = new();
-        cubeCosts.Add(FurnishingMoneyType.Meso, 0);
-        cubeCosts.Add(FurnishingMoneyType.Meret, 0);
+        Dictionary<FurnishingCurrencyType, long> cubeCosts = new();
+        cubeCosts.Add(FurnishingCurrencyType.Meso, 0);
+        cubeCosts.Add(FurnishingCurrencyType.Meret, 0);
         foreach ((int id, int amount) in groupedCubes) {
             TableMetadata.FurnishingShopTable.Entries.TryGetValue(id, out FurnishingShopTable.Entry? shopEntry);
             if (shopEntry is null) {

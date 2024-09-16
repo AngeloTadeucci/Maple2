@@ -1211,7 +1211,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
             results.Add(id, new FurnishingShopTable.Entry(
                 ItemId: shop!.id,
                 Buyable: shop.ugcHousingBuy,
-                FurnishingTokenType: (FurnishingMoneyType) shop.ugcHousingMoneyType,
+                FurnishingTokenType: (FurnishingCurrencyType) shop.ugcHousingMoneyType,
                 Price: shop.ugcHousingDefaultPrice
             ));
         }

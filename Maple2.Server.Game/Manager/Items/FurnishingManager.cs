@@ -126,7 +126,7 @@ public class FurnishingManager {
         lock (session.Item) {
             long negAmount;
             switch (furnishingShopMetadata.FurnishingTokenType) {
-                case FurnishingMoneyType.Meso:
+                case FurnishingCurrencyType.Meso:
                     negAmount = -furnishingShopMetadata.Price;
                     if (session.Currency.CanAddMeso(negAmount) != negAmount) {
                         session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_meso_balance));
@@ -135,7 +135,7 @@ public class FurnishingManager {
 
                     session.Currency.Meso -= furnishingShopMetadata.Price;
                     break;
-                case FurnishingMoneyType.Meret:
+                case FurnishingCurrencyType.Meret:
                     negAmount = -furnishingShopMetadata.Price;
                     if (session.Currency.CanAddMeret(negAmount) != negAmount) {
                         session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_merat_balance));

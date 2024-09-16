@@ -330,13 +330,13 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter BuyCubes(Dictionary<FurnishingMoneyType, long> cubeCosts, int cubeCount) {
+    public static ByteWriter BuyCubes(Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.RequestLayout);
         pWriter.WriteByte((byte) cubeCosts.Keys.Count);
         pWriter.WriteInt(cubeCount);
-        foreach ((FurnishingMoneyType moneyType, long amount) in cubeCosts) {
-            pWriter.Write<FurnishingMoneyType>(moneyType);
+        foreach ((FurnishingCurrencyType moneyType, long amount) in cubeCosts) {
+            pWriter.Write<FurnishingCurrencyType>(moneyType);
             pWriter.WriteLong(amount);
         }
 

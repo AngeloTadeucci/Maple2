@@ -6,6 +6,6 @@ public record FurnishingShopTable(IReadOnlyDictionary<int, FurnishingShopTable.E
     public record Entry(
         int ItemId,
         bool Buyable,
-        FurnishingMoneyType FurnishingTokenType,
+        FurnishingCurrencyType FurnishingTokenType,
         int Price);
 }
