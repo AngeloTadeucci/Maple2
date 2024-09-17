@@ -62,6 +62,7 @@ public class Home : IByteSerializable {
         message = string.Empty;
         Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
         InteriorRewardsClaimed = [];
+        Layouts = [];
     }
 
     public bool SetArea(int area) {
