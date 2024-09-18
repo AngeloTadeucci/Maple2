@@ -9,7 +9,7 @@ public abstract class MarketItem : IByteSerializable {
     protected string Name => ItemMetadata.Name ?? string.Empty;
     public long Price { get; set; }
     public int SalesCount { get; set; }
-    public required int TabId { get; init; }
+    public int TabId { get; init; }
     public long CreationTime { get; init; }
 
     public MarketItem(ItemMetadata itemMetadata) {

@@ -243,7 +243,7 @@ public static class MeretMarketPacket {
                     pWriter.WriteClass<PremiumMarketPromoData>(premium.PromoData);
                 }
                 pWriter.WriteByte();
-                pWriter.WriteBool(premium.ShowSaleTime);
+                pWriter.WriteBool(premium.Metadata.ShowSaleTime);
                 pWriter.WriteInt();
                 pWriter.WriteByte((byte) premium.AdditionalQuantities.Count);
                 foreach (PremiumMarketItem addEntry in premium.AdditionalQuantities) {

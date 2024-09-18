@@ -322,39 +322,40 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         }
 
         // TODO: Find meret market error packets
-        if (entry.SellBeginTime > DateTime.Now.ToEpochSeconds() || entry.SellEndTime < DateTime.Now.ToEpochSeconds()) {
+        if ((entry.Metadata.SaleStartTime != 0 && entry.Metadata.SaleStartTime > DateTime.Now.ToEpochSeconds()) ||
+            (entry.Metadata.SaleEndTime != 0 && entry.Metadata.SaleEndTime < DateTime.Now.ToEpochSeconds())) {
             return null;
         }
 
-        if ((entry.RequireMinLevel > 0 && entry.RequireMinLevel > session.Player.Value.Character.Level) ||
-            (entry.RequireMaxLevel > 0 && entry.RequireMaxLevel < session.Player.Value.Character.Level)) {
+        if ((entry.Metadata.RequireMinLevel > 0 && entry.Metadata.RequireMinLevel > session.Player.Value.Character.Level) ||
+            (entry.Metadata.RequireMaxLevel > 0 && entry.Metadata.RequireMaxLevel < session.Player.Value.Character.Level)) {
             return null;
         }
 
         // If JobRequirement is None, no job is eligible.
-        if ((entry.JobRequirement & session.Player.Value.Character.Job.Code().FilterFlag()) == JobFilterFlag.None) {
+        if ((entry.Metadata.JobRequirement & session.Player.Value.Character.Job.Code().FilterFlag()) == JobFilterFlag.None) {
             return null;
         }
 
-        if (entry.RequireAchievementId > 0 && session.Achievement.HasAchievement(entry.RequireAchievementId, entry.RequireAchievementRank)) {
+        if (entry.Metadata.RequireAchievementId > 0 && session.Achievement.HasAchievement(entry.Metadata.RequireAchievementId, entry.Metadata.RequireAchievementRank)) {
             return null;
         }
 
-        long price = entry.SalePrice > 0 ? entry.SalePrice : entry.Price;
-        StringCode payResult = Pay(session, price, entry.CurrencyType);
+        long price = entry.Metadata.SalePrice > 0 ? entry.Metadata.SalePrice : entry.Price;
+        StringCode payResult = Pay(session, price, entry.Metadata.CurrencyType);
         if (payResult != StringCode.s_empty_string) {
             session.Send(NoticePacket.MessageBox(payResult));
             return null;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Rarity, entry.Quantity + entry.BonusQuantity);
+        Item? item = session.Field.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
         if (item == null) {
-            Logger.Fatal("Failed to create item {ItemId}, {Rarity}, {Quantity}", entry.ItemMetadata.Id, entry.Rarity, entry.Quantity + entry.BonusQuantity);
-            throw new InvalidOperationException($"Fatal: Failed to create item {entry.ItemMetadata.Id}, {entry.Rarity}, {entry.Quantity + entry.BonusQuantity}");
+            Logger.Fatal("Failed to create item {ItemId}, {Rarity}, {Quantity}", entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
+            throw new InvalidOperationException($"Fatal: Failed to create item {entry.ItemMetadata.Id}, {entry.Metadata.Rarity}, {entry.Metadata.Quantity + entry.Metadata.BonusQuantity}");
         }
 
-        if (entry.ItemDuration > 0) {
-            item.ExpiryTime = DateTime.Now.AddDays(entry.ItemDuration).ToEpochSeconds();
+        if (entry.Metadata.DurationInDays > 0) {
+            item.ExpiryTime = DateTime.Now.AddDays(entry.Metadata.DurationInDays).ToEpochSeconds();
         }
 
         return item;

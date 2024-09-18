@@ -8,6 +8,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
 using Maple2.Model.Game.Shop;
+using Maple2.Model.Metadata;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
@@ -27,9 +28,12 @@ public class GameServer : Server<GameSession> {
     private readonly GameStorage gameStorage;
     private readonly IGraphicsContext debugGraphicsContext;
 
+    private readonly ItemMetadataStorage itemMetadataStorage;
+
+
     private static short _channel = 0;
 
-    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ServerTableMetadataStorage serverTableMetadataStorage, IGraphicsContext debugGraphicsContext, int port, int channel)
+    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ItemMetadataStorage itemMetadataStorage, ServerTableMetadataStorage serverTableMetadataStorage, IGraphicsContext debugGraphicsContext, int port, int channel)
             : base((ushort) port, router, context, serverTableMetadataStorage) {
         _channel = (short) channel;
         this.fieldFactory = fieldFactory;
@@ -37,11 +41,26 @@ public class GameServer : Server<GameSession> {
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
         this.debugGraphicsContext = debugGraphicsContext;
+        this.itemMetadataStorage = itemMetadataStorage;
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
-        premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
-            db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
+
+        premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>();
+        foreach ((int id, MeretMarketItemMetadata marketItemMetadata) in serverTableMetadataStorage.MeretMarketTable.Entries) {
+            if (marketItemMetadata.ParentId != 0) {
+                if (premiumMarketCache.TryGetValue(marketItemMetadata.ParentId, out PremiumMarketItem? parentItem)&&
+                    itemMetadataStorage.TryGet(parentItem.Metadata.ItemId, out ItemMetadata? subItemMetadata)) {
+                    parentItem.AdditionalQuantities.Add(new PremiumMarketItem(marketItemMetadata, subItemMetadata));
+                }
+                continue;
+            }
+
+            if (!itemMetadataStorage.TryGet(marketItemMetadata.ItemId, out ItemMetadata? itemMetadata)) {
+                continue;
+            }
+            premiumMarketCache.TryAdd(id, new PremiumMarketItem(marketItemMetadata, itemMetadata));
+        }
 
         debugGraphicsContext.Initialize();
     }

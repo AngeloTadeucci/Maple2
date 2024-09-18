@@ -30,7 +30,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<CharacterShopItemData> CharacterShopItemData { get; set; } = null!;
     internal DbSet<GameEventUserValue> GameEventUserValue { get; set; } = null!;
     internal DbSet<SystemBanner> SystemBanner { get; set; } = null!;
-    internal DbSet<PremiumMarketItem> PremiumMarketItem { get; set; } = null!;
     internal DbSet<UgcMarketItem> UgcMarketItem { get; set; } = null!;
     internal DbSet<SoldUgcMarketItem> SoldUgcMarketItem { get; set; } = null!;
     internal DbSet<BlackMarketListing> BlackMarketListing { get; set; } = null!;
@@ -62,7 +61,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<UgcResource>(Maple2.Database.Model.UgcResource.Configure);
         modelBuilder.Entity<Mail>(Maple2.Database.Model.Mail.Configure);
         modelBuilder.Entity<SystemBanner>(Maple2.Database.Model.SystemBanner.Configure);
-        modelBuilder.Entity<PremiumMarketItem>(Maple2.Database.Model.PremiumMarketItem.Configure);
         modelBuilder.Entity<UgcMarketItem>(Maple2.Database.Model.UgcMarketItem.Configure);
         modelBuilder.Entity<SoldUgcMarketItem>(Maple2.Database.Model.SoldUgcMarketItem.Configure);
         modelBuilder.Entity<Achievement>(Maple2.Database.Model.Achievement.Configure);

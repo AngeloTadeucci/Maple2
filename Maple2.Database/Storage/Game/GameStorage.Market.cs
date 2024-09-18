@@ -146,23 +146,6 @@ public partial class GameStorage {
             return SaveChanges();
         }
 
-        public ICollection<PremiumMarketItem> GetPremiumMarketItems() {
-            IList<PremiumMarketItem> selectedResults = Context.PremiumMarketItem
-                .Where(entry => entry.ParentId == 0)
-                .AsEnumerable()
-                .Select(ToMarketEntry)
-                .ToList()!;
-
-            foreach (PremiumMarketItem marketEntry in selectedResults) {
-                marketEntry.AdditionalQuantities = Context.PremiumMarketItem
-                    .Where(subEntry => subEntry.ParentId == marketEntry.Id)
-                    .AsEnumerable()
-                    .Select(ToMarketEntry)
-                    .ToList()!;
-            }
-            return selectedResults;
-        }
-
         public ICollection<UgcMarketItem> GetUgcMarketItems(params int[] tabIds) {
             if (tabIds.Length == 0) {
                 return Context.UgcMarketItem
@@ -213,14 +196,6 @@ public partial class GameStorage {
         public UgcMarketItem? GetUgcMarketItem(long id) {
             Model.UgcMarketItem? item = Context.UgcMarketItem.Find(id);
             return ToMarketEntry(item);
-        }
-
-        private PremiumMarketItem? ToMarketEntry(Model.PremiumMarketItem? model) {
-            if (model == null) {
-                return null;
-            }
-
-            return game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? metadata) ? model.Convert(metadata) : null;
         }
 
         private UgcMarketItem? ToMarketEntry(Model.UgcMarketItem? model) {
