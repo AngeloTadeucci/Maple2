@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Maple2.Database.Extensions;
+using Maple2.Database.Model;
 using Maple2.Model.Enum;
-using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
+using BlackMarketListing = Maple2.Model.Game.BlackMarketListing;
+using Item = Maple2.Model.Game.Item;
 using MesoListing = Maple2.Model.Game.MesoListing;
 using PremiumMarketItem = Maple2.Model.Game.PremiumMarketItem;
+using SoldUgcMarketItem = Maple2.Model.Game.SoldUgcMarketItem;
+using UgcMarketItem = Maple2.Model.Game.UgcMarketItem;
 
 namespace Maple2.Database.Storage;
 
@@ -204,6 +208,13 @@ public partial class GameStorage {
             }
 
             return game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? metadata) ? model.Convert(metadata) : null;
+        }
+
+        public bool CreateSoldMeretMarketItem(PremiumMarketItem item, long characterId) {
+            SoldMeretMarketItem model = item;
+            model.CharacterId = characterId;
+            Context.SoldMeretMarketItem.Add(model);
+            return Context.TrySaveChanges();
         }
 
         public BlackMarketListing? CreateBlackMarketingListing(BlackMarketListing listing) {

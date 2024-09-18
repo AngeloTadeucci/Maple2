@@ -1371,8 +1371,10 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new MeretMarketTable(results);
 
         MeretMarketItemMetadata ParseMarketItemMetadata(ShopMeretCustom item, ShopMeretCustom? parent = null) {
-            string? saleStartTime = string.IsNullOrEmpty(item.saleStartTime) ? item.saleStartTime : parent?.saleStartTime;
-            string? saleEndTime = string.IsNullOrEmpty(item.saleEndTime) ? item.saleEndTime : parent?.saleEndTime;
+            string? saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
+            string? saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
+            string? promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
+            string? promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
             int[] jobRequirement = parent?.jobRequire ?? item.jobRequire;
             return new MeretMarketItemMetadata(
                 Id: item.id,
@@ -1389,8 +1391,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 CurrencyType: (MeretMarketCurrencyType) (parent?.paymentType ?? item.paymentType),
                 Price: item.price,
                 SalePrice: item.salePrice == 0 ? item.price : item.salePrice,
-                SaleStartTime: string.IsNullOrEmpty(saleStartTime) ? 0 : DateTime.ParseExact(item.saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
-                SaleEndTime: string.IsNullOrEmpty(saleEndTime) ? 0 : DateTime.ParseExact(item.saleEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                SaleStartTime: string.IsNullOrEmpty(saleStartTime) ? 0 : DateTime.ParseExact(saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                SaleEndTime: string.IsNullOrEmpty(saleEndTime) ? 0 : DateTime.ParseExact(saleEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
                 JobRequirement: jobRequirement.Select(job => (JobCode) job).AsEnumerable().FilterFlags(),
                 RestockUnavailable: parent?.noRestock ?? item.noRestock,
                 RequireMinLevel: parent?.minLevel ?? item.minLevel,
@@ -1401,8 +1403,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 Giftable: parent?.giftable ?? item.giftable,
                 ShowSaleTime: item.showSaleTime,
                 PromoName: item.promoName,
-                PromoStartTime: string.IsNullOrEmpty(item.promoSaleStartTime) ? 0 : DateTime.ParseExact(item.promoSaleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
-                PromoEndTime: string.IsNullOrEmpty(item.promoSaleEndTime) ? 0 : DateTime.ParseExact(item.promoSaleEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds());
+                PromoStartTime: string.IsNullOrEmpty(promoStartTime) ? 0 : DateTime.ParseExact(promoStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                PromoEndTime: string.IsNullOrEmpty(promoEndTime) ? 0 : DateTime.ParseExact(promoEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds());
         }
     }
 }

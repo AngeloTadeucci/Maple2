@@ -358,6 +358,11 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             item.ExpiryTime = DateTime.Now.AddDays(entry.Metadata.DurationInDays).ToEpochSeconds();
         }
 
+        using GameStorage.Request db = session.GameStorage.Context();
+        if (!db.CreateSoldMeretMarketItem(entry, session.CharacterId)) {
+            Logger.Fatal("Failed to create Sold Meret Market Entry for {itemId}", entry.Id);
+        }
+
         return item;
     }
 
