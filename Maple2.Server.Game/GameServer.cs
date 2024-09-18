@@ -49,7 +49,7 @@ public class GameServer : Server<GameSession> {
         premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>();
         foreach ((int id, MeretMarketItemMetadata marketItemMetadata) in serverTableMetadataStorage.MeretMarketTable.Entries) {
             if (marketItemMetadata.ParentId != 0) {
-                if (premiumMarketCache.TryGetValue(marketItemMetadata.ParentId, out PremiumMarketItem? parentItem)&&
+                if (premiumMarketCache.TryGetValue(marketItemMetadata.ParentId, out PremiumMarketItem? parentItem) &&
                     itemMetadataStorage.TryGet(parentItem.Metadata.ItemId, out ItemMetadata? subItemMetadata)) {
                     parentItem.AdditionalQuantities.Add(new PremiumMarketItem(marketItemMetadata, subItemMetadata));
                 }
