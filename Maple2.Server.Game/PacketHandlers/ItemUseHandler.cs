@@ -128,7 +128,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         }
 
         session.StagedItemBlueprint = item.Blueprint;
-        RequestCubeHandler.RequestLayout(session, layout, TableMetadata);
+        session.Housing.RequestLayout(layout);
     }
 
     private static void HandleStoryBook(GameSession session, Item item) {

@@ -1,23 +1,33 @@
-﻿using Maple2.Database.Extensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.PacketLib.Tools;
+using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Items;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Serilog;
+using Serilog.Core;
 
 namespace Maple2.Server.Game.Manager;
 
 public class HousingManager {
     private readonly GameSession session;
+    private readonly TableMetadataStorage tableMetadata;
     private Home Home => session.Player.Value.Home;
 
     private readonly ILogger logger = Log.Logger.ForContext<HousingManager>();
 
-    public HousingManager(GameSession session) {
+    public HousingManager(GameSession session, TableMetadataStorage tableMetadata) {
         this.session = session;
+        this.tableMetadata = tableMetadata;
     }
 
     public void SetPlot(PlotInfo? plot) {
@@ -307,4 +317,198 @@ public class HousingManager {
         db.SavePlotInfo(Home.Indoor);
         db.SaveCubes(Home.Indoor, plotCubes);
     }
+
+    #region Helpers
+    public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
+                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
+        result = null;
+        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
+            logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
+            return false;
+        }
+
+        bool isSolidCube = itemMetadata.Install.IsSolidCube;
+        bool isOnGround = position.Z == 0; // TODO: Handle outside plots
+        bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
+
+        // If the cube is not a solid cube and it's replacing ground, it's not allowed.
+        if ((!isSolidCube && isOnGround) && !allowWaterOnGround) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
+            return false;
+        }
+
+        // Cannot overlap cubes if not replacing
+        if (plot.Cubes.ContainsKey(position) && !isReplace) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
+            return false;
+        }
+
+        if (isReplace && plot.Cubes.ContainsKey(position)) {
+            TryRemoveCube(plot, position, out _);
+        }
+
+        //TODO: check outside plot - coords belongs to plot
+
+        // TODO: check outside plot bounds
+
+        if (IsCoordOutsideArea(position)) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
+            return false;
+        }
+
+        if (plot.IsPlanner) {
+            result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
+                Position = position,
+                Rotation = rotation,
+            };
+
+            plot.Cubes.Add(position, result);
+            return true;
+        }
+
+        tableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
+        if (shopEntry is null) {
+            session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
+            return false;
+        }
+
+        if (!session.Item.Furnishing.PurchaseCube(shopEntry)) {
+            return false;
+        }
+
+        if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
+            long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
+            if (itemUid == 0) {
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_for_sale));
+                return false;
+            }
+
+            session.Send(CubePacket.PurchaseCube(session.Player.ObjectId));
+            // Now that we have purchased the cube, it must be placeable.
+            if (!session.Item.Furnishing.TryPlaceCube(itemUid, out result)) {
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_owned_item));
+                return false;
+            }
+        }
+
+        result.Position = position;
+        result.Rotation = rotation;
+        plot.Cubes.Add(position, result);
+        return true;
+    }
+
+    public bool TryRemoveCube(Plot plot, in Vector3B position, [NotNullWhen(true)] out PlotCube? cube) {
+        if (!plot.Cubes.Remove(position, out cube)) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_no_cube_to_remove));
+            return false;
+        }
+
+        if (plot.IsPlanner) {
+            return true;
+        }
+
+        if (!session.Item.Furnishing.RetrieveCube(cube.Id)) {
+            throw new InvalidOperationException($"Failed to deposit cube {cube.Id} back into storage.");
+        }
+
+        return true;
+    }
+
+    public bool IsCoordOutsideArea(Vector3B position) {
+        int height = Home.IsPlanner ? Home.PlannerHeight : Home.Height;
+        int area = Home.IsPlanner ? Home.PlannerArea : Home.Area;
+
+        // Check if the position is outside the planar area bounds
+        if (position.X > 0 || position.Y > 0 || position.Z < 0) {
+            return true;
+        }
+
+        area *= -1;
+        if (position.X <= area || position.Y <= area) {
+            return true;
+        }
+
+        // Check if the position is outside the height bounds
+        if (position.Z > height) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void RequestLayout(HomeLayout layout) {
+        Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId)
+            .ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
+        int cubeCount = 0;
+        Dictionary<FurnishingCurrencyType, long> cubeCosts = new() {
+            {
+                FurnishingCurrencyType.Meso, 0
+            }, {
+                FurnishingCurrencyType.Meret, 0
+            },
+        };
+
+        foreach ((int id, int amount) in groupedCubes) {
+            tableMetadata.FurnishingShopTable.Entries.TryGetValue(id, out FurnishingShopTable.Entry? shopEntry);
+            if (shopEntry is null) {
+                Log.Logger.Error("Failed to get shop entry for cube {cubeId}.", id);
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
+                return;
+            }
+
+            Item? item = session.Item.Furnishing.GetItem(id);
+            if (item is null) {
+                cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * amount;
+                cubeCount += amount;
+                continue;
+            }
+
+            if (item.Amount >= amount) {
+                continue;
+            }
+
+            int missingCubes = amount - item.Amount;
+            cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * missingCubes;
+            cubeCount += missingCubes;
+        }
+
+        session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
+    }
+
+    public void ApplyLayout(Plot plot, HomeLayout layout) {
+        if (plot.IsPlanner) {
+            Home.SetPlannerArea(layout.Area);
+            Home.SetPlannerHeight(layout.Height);
+        } else {
+            Home.SetArea(layout.Area);
+            Home.SetHeight(layout.Height);
+        }
+
+        session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
+
+        foreach (PlotCube cube in layout.Cubes) {
+            if (!TryPlaceCube(cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+                return;
+            }
+
+            ByteWriter sendPacket;
+            if (cube.Position.Z == 0) {
+                sendPacket = CubePacket.ReplaceCube(session.Player.ObjectId, plotCube);
+            } else {
+                sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
+            }
+
+            session.Field.Broadcast(sendPacket);
+        }
+
+        Vector3 position = Home.CalculateSafePosition(plot.Cubes.Values.ToList());
+        foreach (FieldPlayer fieldPlayer in session.Field.Players.Values) {
+            fieldPlayer.MoveToPosition(position, default);
+        }
+
+        session.Item.Furnishing.SendStorageCount();
+        session.Housing.SaveHome();
+        session.Field.Broadcast(NoticePacket.Message(StringCode.s_ugcmap_package_automatic_creation_completed, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+    }
+    #endregion
 }
