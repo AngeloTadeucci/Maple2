@@ -139,6 +139,13 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
+        public bool UpdateItem(Item item) {
+            Model.Item model = item;
+            Context.Item.Update(model);
+
+            return Context.TrySaveChanges();
+        }
+
         public bool SaveStorageInfo(long accountId, long mesos, short expand) {
             ItemStorage? info = Context.ItemStorage.Find(accountId);
             if (info == null) {

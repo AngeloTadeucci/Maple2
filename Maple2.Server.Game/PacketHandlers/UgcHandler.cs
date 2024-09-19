@@ -52,7 +52,7 @@ public class UgcHandler : PacketHandler<GameSession> {
                 HandleProfilePicture(session, packet);
                 return;
             case Command.LoadBanners:
-                HandleLoadBanners(session, packet);
+                HandleLoadBanners(session);
                 return;
             case Command.ReserveBanner:
                 HandleReserveBanner(session, packet);
@@ -82,6 +82,9 @@ public class UgcHandler : PacketHandler<GameSession> {
                 return;
             case UgcType.GuildBanner:
                 UploadGuildBanner(session, packet);
+                return;
+            case UgcType.LayoutBlueprint:
+                UploadLayoutBlueprint(session, packet);
                 return;
             default:
                 Logger.Information("Unimplemented Ugc Type: {type}", info.Type);
@@ -284,6 +287,38 @@ public class UgcHandler : PacketHandler<GameSession> {
         session.Send(UgcPacket.Upload(resource));
     }
 
+    private void UploadLayoutBlueprint(GameSession session, IByteReader packet) {
+        long blueprintUid = packet.ReadLong();
+        long itemUid = packet.ReadLong();
+        int itemId = packet.ReadInt();
+        string name = packet.ReadUnicodeString();
+
+        Item? item = session.StagedUgcItem;
+        if (item is null || item.Uid != itemUid || item.Id != itemId) {
+            Logger.Error("Failed to find staged item for UGC {ItemUid} {ItemId}", itemUid, itemId);
+            return;
+        }
+
+        using WebStorage.Request request = WebStorage.Context();
+        UgcResource? resource = request.CreateUgc(UgcType.LayoutBlueprint, session.CharacterId);
+        if (resource == null) {
+            Logger.Fatal("Failed to create UGC resource for guild id {GuildId}", session.Guild.Id);
+            throw new InvalidOperationException($"Fatal: Creating UGC resource: {session.Guild.Id}");
+        }
+
+        item.Template = new UgcItemLook {
+            Id = resource.Id,
+            AccountId = session.AccountId,
+            Author = session.PlayerName,
+            CharacterId = session.CharacterId,
+            CreationTime = DateTime.Now.ToEpochSeconds(),
+            Name = name,
+        };
+
+        session.StagedUgcItem = item;
+        session.Send(UgcPacket.Upload(resource));
+    }
+
     private void HandleConfirmation(GameSession session, IByteReader packet) {
         var info = packet.Read<UgcInfo>();
         packet.ReadInt();
@@ -305,16 +340,19 @@ public class UgcHandler : PacketHandler<GameSession> {
 
         switch (info.Type) {
             case UgcType.Item or UgcType.Furniture or UgcType.Mount:
-                ConfirmItem(session, info, ugcUid, resource);
+                ConfirmItem();
                 break;
             case UgcType.Banner:
-                ConfirmBanner(session, ugcUid, resource);
+                ConfirmBanner();
                 break;
             case UgcType.GuildBanner:
-                ConfirmGuildBanner(session, ugcUid, resource);
+                ConfirmGuildBanner();
                 break;
             case UgcType.GuildEmblem:
-                ConfirmGuildEmblem(session, ugcUid, resource);
+                ConfirmGuildEmblem();
+                break;
+            case UgcType.LayoutBlueprint:
+                ConfirmLayoutBlueprint();
                 break;
             default:
                 Logger.Warning("Unhandled Confirmation for UGC Type {UgcType}", info.Type);
@@ -323,8 +361,9 @@ public class UgcHandler : PacketHandler<GameSession> {
 
         session.StagedUgcItem = null;
         session.StagedGuildPoster = null;
+        return;
 
-        void ConfirmGuildBanner(GameSession session, long ugcUid, UgcResource resource) {
+        void ConfirmGuildBanner() {
             Guild? guild = session.Guild.Guild;
             if (guild is null) {
                 Logger.Warning("Failed to find guild for UGC {UgcUid}", ugcUid);
@@ -355,10 +394,11 @@ public class UgcHandler : PacketHandler<GameSession> {
                     session.Send(GuildPacket.Error(error));
                     return;
                 }
-            } catch (RpcException) { /* ignored */ }
+            } catch (RpcException) { /* ignored */
+            }
         }
 
-        void ConfirmGuildEmblem(GameSession session, long ugcUid, UgcResource resource) {
+        void ConfirmGuildEmblem() {
             Guild? guild = session.Guild.Guild;
             if (guild is null) {
                 Logger.Warning("Failed to find guild for UGC {UgcUid}", ugcUid);
@@ -380,10 +420,11 @@ public class UgcHandler : PacketHandler<GameSession> {
                     session.Send(GuildPacket.Error(error));
                     return;
                 }
-            } catch (RpcException) { /* ignored */ }
+            } catch (RpcException) { /* ignored */
+            }
         }
 
-        void ConfirmBanner(GameSession session, long ugcUid, UgcResource resource) {
+        void ConfirmBanner() {
             UgcBanner? banner = session.Field.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
             if (banner is null) {
                 Logger.Warning("Failed to find banner for UGC {UgcUid}", ugcUid);
@@ -400,7 +441,7 @@ public class UgcHandler : PacketHandler<GameSession> {
             session.Send(UgcPacket.UpdateBanner(banner));
         }
 
-        void ConfirmItem(GameSession session, UgcInfo info, long ugcUid, UgcResource resource) {
+        void ConfirmItem() {
             Item? item = session.StagedUgcItem;
             if (item?.Template == null || !TableMetadata.UgcDesignTable.Entries.TryGetValue(item.Id, out UgcDesignTable.Entry? ugcMetadata)) {
                 return;
@@ -425,6 +466,24 @@ public class UgcHandler : PacketHandler<GameSession> {
             session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, item, ugcMetadata.CreatePrice, info.Type));
             session.Send(UgcPacket.UpdatePath(resource));
         }
+
+        void ConfirmLayoutBlueprint() {
+            Item? item = session.StagedUgcItem;
+            if (item?.Template is null || item.Blueprint is null) {
+                return;
+            }
+
+            item.Template.Url = resource.Path;
+
+            using GameStorage.Request gameRequest = session.GameStorage.Context();
+            if (!gameRequest.UpdateItem(item)) {
+                Logger.Fatal("Failed to update UGC Item {ugcUid}", ugcUid);
+                throw new InvalidOperationException($"Fatal: UGC Item update: {ugcUid}");
+            }
+
+            session.Send(UgcPacket.UpdateLayoutBlueprint(session.Player.ObjectId, item));
+            session.Send(UgcPacket.UpdatePath(resource));
+        }
     }
 
     private static void HandleProfilePicture(GameSession session, IByteReader packet) {
@@ -435,8 +494,8 @@ public class UgcHandler : PacketHandler<GameSession> {
         session.Field?.Broadcast(UgcPacket.ProfilePicture(session.Player));
     }
 
-    private static void HandleLoadBanners(GameSession session, IByteReader packet) {
-        session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.Select(x => (UgcBanner) x).ToList()));
+    private static void HandleLoadBanners(GameSession session) {
+        session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.Select(fieldUgcBanner => (UgcBanner) fieldUgcBanner).ToList()));
     }
 
     private void HandleReserveBanner(GameSession session, IByteReader packet) {

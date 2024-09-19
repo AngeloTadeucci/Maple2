@@ -35,6 +35,7 @@ public class Home : IByteSerializable {
     public long DecorationRewardTimestamp { get; set; }
     public List<int> InteriorRewardsClaimed { get; set; }
     public List<HomeLayout> Layouts { get; set; }
+    public List<HomeLayout> Blueprints { get; set; }
 
     private string message;
     public string Message {
@@ -63,6 +64,7 @@ public class Home : IByteSerializable {
         Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
         InteriorRewardsClaimed = [];
         Layouts = [];
+        Blueprints = [];
     }
 
     public bool SetArea(int area) {
@@ -173,18 +175,31 @@ public class Home : IByteSerializable {
         foreach (HomeLayout layout in Layouts) {
             writer.WriteClass<HomeLayout>(layout);
         }
-        writer.WriteByte(); // saved blueprints
+        writer.WriteByte((byte) Blueprints.Count);
+        foreach (HomeLayout blueprint in Blueprints) {
+            writer.WriteClass<HomeLayout>(blueprint);
+        }
     }
 }
 
 public class HomeLayout : IByteSerializable {
-    public long HomeId { get; private set; }
+    public long Uid { get; private set; }
     public int Id { get; private set; }
     public string Name { get; private set; }
     public byte Area { get; private set; }
     public byte Height { get; private set; }
     public DateTimeOffset Timestamp { get; private set; }
-    public List<PlotCube> Cubes { get; private set; }
+    public List<PlotCube> Cubes { get; set; }
+
+    public HomeLayout(long uid, int layoutId, string layoutName, byte area, byte height, DateTimeOffset timestamp, List<PlotCube> plotCubes) {
+        Uid = uid;
+        Id = layoutId;
+        Name = layoutName;
+        Area = area;
+        Height = height;
+        Timestamp = timestamp;
+        Cubes = plotCubes;
+    }
 
     public HomeLayout(int layoutId, string layoutName, byte area, byte height, DateTimeOffset timestamp, List<PlotCube> cubes) {
         Id = layoutId;
@@ -194,7 +209,6 @@ public class HomeLayout : IByteSerializable {
         Timestamp = timestamp;
         Cubes = cubes;
     }
-
 
     public void WriteTo(IByteWriter pWriter) {
         pWriter.WriteInt(Id);

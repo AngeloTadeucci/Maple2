@@ -39,6 +39,8 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<ServerInfo> ServerInfo { get; set; } = null!;
     internal DbSet<Medal> Medal { get; set; } = null!;
     internal DbSet<BannerSlot> BannerSlots { get; set; } = null!;
+    internal DbSet<HomeLayout> HomeLayouts { get; set; } = null!;
+    internal DbSet<HomeLayoutCube> UgcCubeLayouts { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -69,6 +71,8 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<Quest>(Maple2.Database.Model.Quest.Configure);
         modelBuilder.Entity<Medal>(Maple2.Database.Model.Medal.Configure);
         modelBuilder.Entity<BannerSlot>(Maple2.Database.Model.BannerSlot.Configure);
+        modelBuilder.Entity<HomeLayout>(Maple2.Database.Model.HomeLayout.Configure);
+        modelBuilder.Entity<HomeLayoutCube>(Maple2.Database.Model.HomeLayoutCube.Configure);
 
         modelBuilder.Entity<MesoListing>(MesoListing.Configure);
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);

@@ -8,6 +8,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Config;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Account = Maple2.Model.Game.Account;
 using Character = Maple2.Model.Game.Character;
@@ -19,6 +20,7 @@ using SkillPoint = Maple2.Model.Game.SkillPoint;
 using Wardrobe = Maple2.Model.Game.Wardrobe;
 using GameEventUserValue = Maple2.Model.Game.GameEventUserValue;
 using Home = Maple2.Model.Game.Home;
+using HomeLayout = Maple2.Database.Model.HomeLayout;
 
 namespace Maple2.Database.Storage;
 
@@ -91,11 +93,28 @@ public partial class GameStorage {
             var result = (from character in Context.Character where character.Id == characterId
                           join account in Context.Account on character.AccountId equals account.Id
                           join indoor in Context.UgcMap on
-                              new { OwnerId = character.AccountId, Indoor = true } equals new { indoor.OwnerId, indoor.Indoor }
+                              new {
+                                  OwnerId = character.AccountId,
+                                  Indoor = true
+                              } equals new {
+                                  indoor.OwnerId,
+                                  indoor.Indoor
+                              }
                           join outdoor in Context.UgcMap on
-                              new { OwnerId = character.AccountId, Indoor = false } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
+                              new {
+                                  OwnerId = character.AccountId,
+                                  Indoor = false
+                              } equals new {
+                                  outdoor.OwnerId,
+                                  outdoor.Indoor
+                              } into plot
                           from outdoor in plot.DefaultIfEmpty()
-                          select new { character, indoor, outdoor, account.PremiumTime })
+                          select new {
+                              character,
+                              indoor,
+                              outdoor,
+                              account.PremiumTime
+                          })
                 .FirstOrDefault();
             if (result == null) {
                 return null;
@@ -120,6 +139,26 @@ public partial class GameStorage {
             if (indoor == null) {
                 Logger.LogError("Home does not have a indoor entry: {OwnerId}", ownerId);
                 return null;
+            }
+
+            foreach (long layoutUid in model.Layouts) {
+                HomeLayout? layout = GetHomeLayout(layoutUid);
+                if (layout is null) {
+                    Logger.LogError("Home layout not found: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Layouts.Add(layout);
+            }
+
+            foreach (long layoutUid in model.Blueprints) {
+                HomeLayout? layout = GetHomeLayout(layoutUid);
+                if (layout is null) {
+                    Logger.LogError("Home layout not found: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Blueprints.Add(layout);
             }
 
             home.Indoor = indoor;
@@ -147,7 +186,11 @@ public partial class GameStorage {
 
             Context.Account.Update(account);
             Context.Character.Update(character);
-            Context.SaveChanges();
+            try {
+                Context.SaveChanges();
+            } catch (Exception e) {
+                Console.WriteLine(e);
+            }
 
             Tuple<long, string> guild = Context.GuildMember
                 .Where(member => member.CharacterId == characterId)
@@ -286,24 +329,24 @@ public partial class GameStorage {
         }
 
         public bool SaveCharacterConfig(
-                long characterId,
-                IList<KeyBind> keyBinds,
-                IList<QuickSlot[]> hotBars,
-                IEnumerable<SkillMacro> skillMacros,
-                IEnumerable<Wardrobe> wardrobes,
-                IList<int> favoriteStickers,
-                IList<long> favoriteDesigners,
-                IDictionary<LapenshardSlot, int> lapenshards,
-                IList<SkillCooldown> skillCooldowns,
-                long deathTick,
-                int deathCount,
-                int explorationProgress,
-                StatAttributes.PointAllocation allocation,
-                StatAttributes.PointSources statSources,
-                SkillPoint skillPoint,
-                IDictionary<int, int> gatheringCounts,
-                IDictionary<int, int> guideRecords,
-                SkillBook skillBook) {
+            long characterId,
+            IList<KeyBind> keyBinds,
+            IList<QuickSlot[]> hotBars,
+            IEnumerable<SkillMacro> skillMacros,
+            IEnumerable<Wardrobe> wardrobes,
+            IList<int> favoriteStickers,
+            IList<long> favoriteDesigners,
+            IDictionary<LapenshardSlot, int> lapenshards,
+            IList<SkillCooldown> skillCooldowns,
+            long deathTick,
+            int deathCount,
+            int explorationProgress,
+            StatAttributes.PointAllocation allocation,
+            StatAttributes.PointSources statSources,
+            SkillPoint skillPoint,
+            IDictionary<int, int> gatheringCounts,
+            IDictionary<int, int> guideRecords,
+            SkillBook skillBook) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
@@ -318,8 +361,8 @@ public partial class GameStorage {
             config.FavoriteStickers = favoriteStickers;
             config.FavoriteDesigners = favoriteDesigners;
             config.Lapenshards = lapenshards;
-            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64).
-                Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
+            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64)
+                .Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
                 .ToList();
             config.DeathTick = deathTick;
             config.DeathCount = deathCount;
@@ -358,12 +401,16 @@ public partial class GameStorage {
             Model.Account model = account;
             model.Id = 0;
 #if DEBUG
-            model.Currency = new AccountCurrency { Meret = 99999 };
+            model.Currency = new AccountCurrency {
+                Meret = 99999
+            };
 #endif
             Context.Account.Add(model);
             Context.SaveChanges(); // Exception if failed.
 
-            Context.Home.Add(new Home { AccountId = model.Id });
+            Context.Home.Add(new Home {
+                AccountId = model.Id
+            });
             Context.UgcMap.Add(new UgcMap {
                 OwnerId = model.Id,
                 MapId = Constant.DefaultHomeMapId,
@@ -379,7 +426,9 @@ public partial class GameStorage {
             Model.Character model = character;
             model.Id = 0;
 #if DEBUG
-            model.Currency = new CharacterCurrency { Meso = 999999999 };
+            model.Currency = new CharacterCurrency {
+                Meso = 999999999
+            };
 #endif
             Context.Character.Add(model);
             return Context.TrySaveChanges() ? model : null;
@@ -390,7 +439,9 @@ public partial class GameStorage {
             model.CharacterId = characterId;
             Context.CharacterUnlock.Add(model);
 
-            SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") { Id = characterId });
+            SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") {
+                Id = characterId
+            });
             if (defaultTab == null) {
                 return false;
             }

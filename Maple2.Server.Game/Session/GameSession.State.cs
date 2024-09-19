@@ -23,6 +23,8 @@ public partial class GameSession {
     public Item? StagedScoreItem = null;
     public bool EnsembleReady = false;
 
+    public ItemBlueprint? StagedItemBlueprint = null;
+
     public Item? ChangeAttributesItem = null;
 
     public TradeManager? Trade;

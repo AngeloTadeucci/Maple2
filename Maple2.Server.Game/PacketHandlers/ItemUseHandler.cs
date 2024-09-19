@@ -39,6 +39,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         }
 
         switch (item.Metadata.Function?.Type) {
+            case ItemFunction.BlueprintImport:
+                HandleBlueprintImport(session, item);
+                break;
             case ItemFunction.StoryBook:
                 HandleStoryBook(session, item);
                 break;
@@ -101,6 +104,31 @@ public class ItemUseHandler : PacketHandler<GameSession> {
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
         }
+    }
+    private void HandleBlueprintImport(GameSession session, Item item) {
+        if (item.Blueprint is null) {
+            Logger.Error("Item {ItemUid} is missing blueprint", item.Uid);
+            return;
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        if (plot.Cubes.Count != 0) {
+            session.Send(NoticePacket.Message(StringCode.s_err_ugcmap_package_clear_indoor_first, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+            return;
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        HomeLayout? layout = db.GetHomeLayout(item.Blueprint.BlueprintUid);
+        if (layout == null) {
+            return;
+        }
+
+        session.StagedItemBlueprint = item.Blueprint;
+        RequestCubeHandler.RequestLayout(session, layout, TableMetadata);
     }
 
     private static void HandleStoryBook(GameSession session, Item item) {
