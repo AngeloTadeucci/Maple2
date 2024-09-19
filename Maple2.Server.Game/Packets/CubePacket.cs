@@ -490,12 +490,12 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter CreateBlueprint(Item item) {
+    public static ByteWriter CreateBlueprint(long itemUid, ItemBlueprint blueprint) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.CreateBlueprint);
         pWriter.WriteByte(1);
-        pWriter.WriteLong(item.Uid);
-        pWriter.WriteClass<ItemBlueprint>(item.Blueprint!);
+        pWriter.WriteLong(itemUid);
+        pWriter.WriteClass<ItemBlueprint>(blueprint);
 
         return pWriter;
     }
