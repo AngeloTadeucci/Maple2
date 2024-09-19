@@ -186,11 +186,7 @@ public partial class GameStorage {
 
             Context.Account.Update(account);
             Context.Character.Update(character);
-            try {
-                Context.SaveChanges();
-            } catch (Exception e) {
-                Console.WriteLine(e);
-            }
+            Context.SaveChanges();
 
             Tuple<long, string> guild = Context.GuildMember
                 .Where(member => member.CharacterId == characterId)
