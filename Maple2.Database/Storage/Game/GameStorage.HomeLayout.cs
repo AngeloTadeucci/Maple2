@@ -9,9 +9,9 @@ public partial class GameStorage {
     public partial class Request {
         public HomeLayout? SaveHomeLayout(HomeLayout layout) {
             Model.HomeLayout homeLayout = layout;
-            Context.HomeLayouts.Add(homeLayout);
+            Context.HomeLayout.Add(homeLayout);
             foreach (HomeLayoutCube cubes in homeLayout.Cubes) {
-                Context.UgcCubeLayouts.Add(cubes);
+                Context.UgcCubeLayout.Add(cubes);
             }
             bool success = Context.TrySaveChanges();
 
@@ -20,12 +20,12 @@ public partial class GameStorage {
 
         public void RemoveHomeLayout(HomeLayout layout) {
             Model.HomeLayout homeLayout = layout;
-            Context.HomeLayouts.Remove(homeLayout);
+            Context.HomeLayout.Remove(homeLayout);
             Context.TrySaveChanges();
         }
 
         public HomeLayout? GetHomeLayout(long layoutUid) {
-            HomeLayout? layout = Context.HomeLayouts
+            HomeLayout? layout = Context.HomeLayout
                 .Where(homeLayout => homeLayout.Uid == layoutUid)
                 .Include(homeLayout => homeLayout.Cubes)
                 .FirstOrDefault();
