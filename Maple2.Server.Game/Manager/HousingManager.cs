@@ -25,6 +25,8 @@ public class HousingManager {
 
     private readonly ILogger logger = Log.Logger.ForContext<HousingManager>();
 
+    public ItemBlueprint? StagedItemBlueprint = null;
+
     public HousingManager(GameSession session, TableMetadataStorage tableMetadata) {
         this.session = session;
         this.tableMetadata = tableMetadata;

@@ -575,12 +575,12 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         HomeLayout? layout;
         // blueprint load
         if (slot is 0) {
-            if (session.StagedItemBlueprint is null) {
+            if (session.Housing.StagedItemBlueprint is null) {
                 return;
             }
 
             using GameStorage.Request db = session.GameStorage.Context();
-            layout = db.GetHomeLayout(session.StagedItemBlueprint.BlueprintUid);
+            layout = db.GetHomeLayout(session.Housing.StagedItemBlueprint.BlueprintUid);
         } else {
             layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
         }
@@ -588,7 +588,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.StagedItemBlueprint = null;
+        session.Housing.StagedItemBlueprint = null;
         session.Housing.ApplyLayout(plot, layout);
     }
 

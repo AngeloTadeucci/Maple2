@@ -127,7 +127,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.StagedItemBlueprint = item.Blueprint;
+        session.Housing.StagedItemBlueprint = item.Blueprint;
         session.Housing.RequestLayout(layout);
     }
 
