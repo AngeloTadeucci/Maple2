@@ -329,7 +329,7 @@ public class HousingManager {
 
     #region Helpers
     public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
-                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
+                             [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
         if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
             logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
@@ -450,11 +450,8 @@ public class HousingManager {
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
         int cubeCount = 0;
         Dictionary<FurnishingCurrencyType, long> cubeCosts = new() {
-            {
-                FurnishingCurrencyType.Meso, 0
-            }, {
-                FurnishingCurrencyType.Meret, 0
-            },
+            { FurnishingCurrencyType.Meso, 0 },
+            { FurnishingCurrencyType.Meret, 0 },
         };
 
         foreach ((int id, int amount) in groupedCubes) {

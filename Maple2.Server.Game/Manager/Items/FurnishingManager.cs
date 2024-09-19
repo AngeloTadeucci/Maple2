@@ -66,7 +66,7 @@ public class FurnishingManager {
 
     public Item? GetCube(long itemUid) {
         lock (session.Item) {
-            return storage.FirstOrDefault(item => item.Uid == itemUid);
+            return storage.Get(itemUid);
         }
     }
 
@@ -266,12 +266,6 @@ public class FurnishingManager {
     public void SendStorageCount() {
         lock (session.Item) {
             session.Send(FurnishingStoragePacket.Count(storage.Count));
-        }
-    }
-
-    public Item? GetItemById(int itemId) {
-        lock (session.Item) {
-            return storage.FirstOrDefault(item => item.Id == itemId);
         }
     }
 
