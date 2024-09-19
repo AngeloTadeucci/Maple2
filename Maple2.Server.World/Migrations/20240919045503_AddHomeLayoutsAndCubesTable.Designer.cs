@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240918223130_AddHomeLayoutsAndCubesTable")]
+    [Migration("20240919045503_AddHomeLayoutsAndCubesTable")]
     partial class AddHomeLayoutsAndCubesTable
     {
         /// <inheritdoc />

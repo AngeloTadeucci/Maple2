@@ -4,11 +4,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations {
+namespace Maple2.Server.World.Migrations
+{
     /// <inheritdoc />
-    public partial class AddHomeLayoutsAndCubesTable : Migration {
+    public partial class AddHomeLayoutsAndCubesTable : Migration
+    {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder) {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
             migrationBuilder.AddColumn<string>(
                 name: "Blueprints",
                 table: "home",
@@ -17,17 +20,10 @@ namespace Maple2.Server.World.Migrations {
                 nullable: false)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.AddColumn<string>(
-                name: "Layouts",
-                table: "home",
-                type: "json",
-                defaultValue: "[]",
-                nullable: false)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.CreateTable(
                 name: "home-layout",
-                columns: table => new {
+                columns: table => new
+                {
                     Uid = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Id = table.Column<int>(type: "int", nullable: false),
@@ -37,14 +33,16 @@ namespace Maple2.Server.World.Migrations {
                     Height = table.Column<byte>(type: "tinyint unsigned", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
                 },
-                constraints: table => {
+                constraints: table =>
+                {
                     table.PrimaryKey("PK_home-layout", x => x.Uid);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "home-layout-cube",
-                columns: table => new {
+                columns: table => new
+                {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     HomeLayoutId = table.Column<long>(type: "bigint", nullable: false),
@@ -56,7 +54,8 @@ namespace Maple2.Server.World.Migrations {
                     Template = table.Column<string>(type: "json", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
-                constraints: table => {
+                constraints: table =>
+                {
                     table.PrimaryKey("PK_home-layout-cube", x => x.Id);
                     table.ForeignKey(
                         name: "FK_home-layout-cube_home-layout_HomeLayoutId",
@@ -74,7 +73,8 @@ namespace Maple2.Server.World.Migrations {
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder) {
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
             migrationBuilder.DropTable(
                 name: "home-layout-cube");
 

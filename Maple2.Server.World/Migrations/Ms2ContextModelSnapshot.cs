@@ -1505,7 +1505,7 @@ namespace Maple2.Server.World.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("Maple2.Database.Model.SkillBook", "SkillBook", b1 =>
+                    b.OwnsOne("Maple2.Database.Model.CharacterConfig.SkillBook#Maple2.Database.Model.SkillBook", "SkillBook", b1 =>
                         {
                             b1.Property<long>("CharacterConfigCharacterId")
                                 .HasColumnType("bigint");
@@ -1523,11 +1523,11 @@ namespace Maple2.Server.World.Migrations
                             b1.HasIndex("ActiveSkillTabId")
                                 .IsUnique();
 
-                            b1.ToTable("character-config");
+                            b1.ToTable("character-config", (string)null);
 
                             b1.HasOne("Maple2.Database.Model.SkillTab", null)
                                 .WithOne()
-                                .HasForeignKey("Maple2.Database.Model.CharacterConfig.SkillBook#Maple2.Database.Model.SkillBook", "ActiveSkillTabId")
+                                .HasForeignKey("Maple2.Database.Model.CharacterConfig.SkillBook#Maple2.Database.Model.CharacterConfig.SkillBook#Maple2.Database.Model.SkillBook", "ActiveSkillTabId")
                                 .HasPrincipalKey("Maple2.Database.Model.SkillTab", "Id")
                                 .OnDelete(DeleteBehavior.Cascade)
                                 .IsRequired();
