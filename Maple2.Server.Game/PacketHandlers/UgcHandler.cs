@@ -302,8 +302,8 @@ public class UgcHandler : PacketHandler<GameSession> {
         using WebStorage.Request request = WebStorage.Context();
         UgcResource? resource = request.CreateUgc(UgcType.LayoutBlueprint, session.CharacterId);
         if (resource == null) {
-            Logger.Fatal("Failed to create UGC resource for guild id {GuildId}", session.Guild.Id);
-            throw new InvalidOperationException($"Fatal: Creating UGC resource: {session.Guild.Id}");
+            Logger.Fatal("Failed to create UGC resource for layout blueprint for character {CharacterId}", session.CharacterId);
+            throw new InvalidOperationException($"Fatal: Creating UGC resource for layout blueprint for character: {session.CharacterId}");
         }
 
         item.Template = new UgcItemLook {
