@@ -307,11 +307,18 @@ public class HousingManager {
 
         List<PlotCube> plotCubes = [];
         foreach (ExportedUgcMapMetadata.Cube cube in template.Cubes) {
-            PlotCube plotCube = new(cube.ItemId, 0, null) {
-                Position = template.BaseCubePosition + cube.OffsetPosition,
-                Rotation = cube.Rotation
-            };
-
+            long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
+            if (itemUid == 0) {
+                logger.Error("Failed to add cube {cubeId} to storage.", cube.ItemId);
+                continue;
+            }
+            session.Item.Furnishing.TryPlaceCube(itemUid, out PlotCube? plotCube);
+            if (plotCube is null) {
+                logger.Error("Failed to place cube {cubeId}.", cube.ItemId);
+                continue;
+            }
+            plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
+            plotCube.Rotation = cube.Rotation;
             plotCubes.Add(plotCube);
         }
 
@@ -489,6 +496,8 @@ public class HousingManager {
         session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
 
         foreach (PlotCube cube in layout.Cubes) {
+            Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
+            cube.Id = item?.Uid ?? 0;
             if (!TryPlaceCube(cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
                 return;
             }
