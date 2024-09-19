@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Maple2.Database.Extensions;
+using Maple2.Database.Model;
 using Maple2.Model.Enum;
-using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
+using BlackMarketListing = Maple2.Model.Game.BlackMarketListing;
+using Item = Maple2.Model.Game.Item;
 using MesoListing = Maple2.Model.Game.MesoListing;
 using PremiumMarketItem = Maple2.Model.Game.PremiumMarketItem;
+using SoldUgcMarketItem = Maple2.Model.Game.SoldUgcMarketItem;
+using UgcMarketItem = Maple2.Model.Game.UgcMarketItem;
 
 namespace Maple2.Database.Storage;
 
@@ -146,23 +150,6 @@ public partial class GameStorage {
             return SaveChanges();
         }
 
-        public ICollection<PremiumMarketItem> GetPremiumMarketItems() {
-            IList<PremiumMarketItem> selectedResults = Context.PremiumMarketItem
-                .Where(entry => entry.ParentId == 0)
-                .AsEnumerable()
-                .Select(ToMarketEntry)
-                .ToList()!;
-
-            foreach (PremiumMarketItem marketEntry in selectedResults) {
-                marketEntry.AdditionalQuantities = Context.PremiumMarketItem
-                    .Where(subEntry => subEntry.ParentId == marketEntry.Id)
-                    .AsEnumerable()
-                    .Select(ToMarketEntry)
-                    .ToList()!;
-            }
-            return selectedResults;
-        }
-
         public ICollection<UgcMarketItem> GetUgcMarketItems(params int[] tabIds) {
             if (tabIds.Length == 0) {
                 return Context.UgcMarketItem
@@ -215,7 +202,7 @@ public partial class GameStorage {
             return ToMarketEntry(item);
         }
 
-        private PremiumMarketItem? ToMarketEntry(Model.PremiumMarketItem? model) {
+        private UgcMarketItem? ToMarketEntry(Model.UgcMarketItem? model) {
             if (model == null) {
                 return null;
             }
@@ -223,12 +210,11 @@ public partial class GameStorage {
             return game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? metadata) ? model.Convert(metadata) : null;
         }
 
-        private UgcMarketItem? ToMarketEntry(Model.UgcMarketItem? model) {
-            if (model == null) {
-                return null;
-            }
-
-            return game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? metadata) ? model.Convert(metadata) : null;
+        public bool CreateSoldMeretMarketItem(PremiumMarketItem item, long characterId) {
+            SoldMeretMarketItem model = item;
+            model.CharacterId = characterId;
+            Context.SoldMeretMarketItem.Add(model);
+            return Context.TrySaveChanges();
         }
 
         public BlackMarketListing? CreateBlackMarketingListing(BlackMarketListing listing) {

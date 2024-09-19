@@ -81,6 +81,7 @@ builder.Services.AddSingleton<GameServer>(provider => new GameServer(
     provider.GetRequiredService<PacketRouter<GameSession>>(),
     provider.GetRequiredService<IComponentContext>(),
     provider.GetRequiredService<GameStorage>(),
+    provider.GetRequiredService<ItemMetadataStorage>(),
     provider.GetRequiredService<ServerTableMetadataStorage>(),
     debugGraphicsContext,
     response.GamePort,
