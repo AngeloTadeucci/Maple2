@@ -100,11 +100,14 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
         public readonly Dictionary<BasicAttribute, BasicOption> Basic;
         public readonly Dictionary<SpecialAttribute, SpecialOption> Special;
 
+        public readonly float MultiplyFactor;
+
         public int Count => Basic.Count + Special.Count;
 
-        public Option(Dictionary<BasicAttribute, BasicOption>? basicOption = null, Dictionary<SpecialAttribute, SpecialOption>? specialOption = null) {
+        public Option(Dictionary<BasicAttribute, BasicOption>? basicOption = null, Dictionary<SpecialAttribute, SpecialOption>? specialOption = null, float multiplyFactor = 1) {
             Basic = basicOption ?? new Dictionary<BasicAttribute, BasicOption>();
             Special = specialOption ?? new Dictionary<SpecialAttribute, SpecialOption>();
+            MultiplyFactor = multiplyFactor;
         }
 
         public override string ToString() {
