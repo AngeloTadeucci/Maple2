@@ -19,11 +19,11 @@ const string env = "Live";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-bool skipNavmesh = false;
+bool runNavmesh = false;
 
 foreach (string? arg in args) {
-    if (arg == "--skip-navmesh") {
-        skipNavmesh = true;
+    if (arg == "--run-navmesh") {
+        runNavmesh = true;
     }
 }
 
@@ -139,7 +139,7 @@ UpdateDatabase(metadataContext, new NifMapper());
 UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader));
-if (!skipNavmesh) {
+if (runNavmesh) {
     _ = new NavMeshMapper(metadataContext, exportedReader);
 }
 
