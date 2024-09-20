@@ -10,7 +10,7 @@ using Serilog;
 namespace Maple2.Server.Game.Scripting.Trigger;
 
 public partial class TriggerScriptLoader {
-    private const string RootDir = "Scripts/Trigger/";
+    private string rootDir = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Scripts/Trigger/");
 
     private readonly ScriptEngine engine;
     private readonly ConcurrentDictionary<string, List<ScriptSource>> scriptSources;
@@ -22,7 +22,7 @@ public partial class TriggerScriptLoader {
     public TriggerScriptLoader() {
         engine = Python.CreateEngine();
         ICollection<string> paths = engine.GetSearchPaths();
-        paths.Add(RootDir);
+        paths.Add(rootDir);
         engine.SetSearchPaths(paths);
 
         scriptSources = new ConcurrentDictionary<string, List<ScriptSource>>();
@@ -69,11 +69,11 @@ public partial class TriggerScriptLoader {
             return true;
         }
 
-        if (!File.Exists($"{RootDir}{key}.py")) {
+        if (!File.Exists($"{rootDir}{key}.py")) {
             return false;
         }
 
-        ScriptSource scriptSource = engine.CreateScriptSourceFromFile($"{RootDir}{key}.py");
+        ScriptSource scriptSource = engine.CreateScriptSourceFromFile($"{rootDir}{key}.py");
         string code = scriptSource.GetCode();
         string[] lines = code.Split(["\n", "\r\n"], StringSplitOptions.None);
         scripts = new List<ScriptSource>();
