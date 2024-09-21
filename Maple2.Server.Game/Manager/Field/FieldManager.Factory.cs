@@ -40,18 +40,21 @@ public partial class FieldManager {
         /// Get player home map field or any player owned map. If not found, create a new field.
         /// </summary>
         public FieldManager? Get(int mapId, long ownerId = 0, int instanceId = 0) {
-            fields.TryGetValue(mapId, out OwnerFields? ownerFields);
-            if (ownerFields is null) {
+            if (ownerId == 0 && instanceId == 0) {
+                return Create(mapId);
+            }
+
+            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
                 return Create(mapId, ownerId: ownerId, instanceId: instanceId);
             }
 
-            ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields);
-            if (instancedFields is null) {
+            if (!ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields)) {
                 return Create(mapId, ownerId: ownerId, instanceId: instanceId);
             }
 
-            instancedFields.TryGetValue(instanceId, out FieldManager? field);
-            return field ?? Create(mapId, ownerId: ownerId, instanceId: instanceId);
+            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                Create(mapId, ownerId: ownerId, instanceId: instanceId);
+
         }
 
         /// <summary>
@@ -59,18 +62,16 @@ public partial class FieldManager {
         /// Else, it will return the first instance found if no instanceId is provided.
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId) {
-            fields.TryGetValue(mapId, out OwnerFields? ownerFields);
-            if (ownerFields is null) {
+            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
                 return Create(mapId, ownerId: 0, instanceId: instanceId);
             }
 
-            ownerFields.TryGetValue(0, out InstancedFields? instancedFields);
-            if (instancedFields is null) {
+            if (!ownerFields.TryGetValue(0, out InstancedFields? instancedFields)) {
                 return Create(mapId, ownerId: 0, instanceId: instanceId);
             }
 
-            instancedFields.TryGetValue(instanceId, out FieldManager? field);
-            return field ?? Create(mapId, ownerId: 0, instanceId: instanceId);
+            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                Create(mapId, ownerId: 0, instanceId: instanceId);
         }
 
         /// <summary>
