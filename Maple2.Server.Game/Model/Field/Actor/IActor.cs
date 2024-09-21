@@ -23,7 +23,6 @@ public interface IActor : IFieldEntity {
 
     public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect) { }
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) { }
-    public virtual void AddBuff(IActor caster, IActor owner, int id, short level, bool notifyField = true) { }
 
     public virtual void TargetAttack(SkillRecord record) { }
 
