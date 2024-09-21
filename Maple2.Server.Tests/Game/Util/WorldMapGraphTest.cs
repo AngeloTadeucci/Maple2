@@ -32,7 +32,7 @@ public class WorldMapGraphStorageTest {
         DbContextOptions options = new DbContextOptionsBuilder()
             .UseMySql(dataDbConnection, ServerVersion.AutoDetect(dataDbConnection)).Options;
 
-        using var context = new MetadataContext(options);
+        var context = new MetadataContext(options);
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
         var tableMetadataStorage = new TableMetadataStorage(context);
