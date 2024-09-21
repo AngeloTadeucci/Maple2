@@ -25,6 +25,7 @@ public class DotDamageRecord {
             CanCrit = dotDamage.UseGrade,
             Element = dotDamage.Element,
             AttackType = dotDamage.Type,
+            Rate = dotDamage.Rate,
         };
         Type = DamageType.Normal;
 
@@ -32,7 +33,7 @@ public class DotDamageRecord {
         if (!dotDamage.IsConstDamage) {
             (DamageType type, long amount) = DamageCalculator.CalculateDamage(caster, target, Properties);
             Type = type;
-            hpAmount += (int) (dotDamage.Rate * amount);
+            hpAmount += (int) amount;
             hpAmount += (int) (dotDamage.DamageByTargetMaxHp * Target.Stats.Values[BasicAttribute.Health].Total);
         }
         if (dotDamage.NotKill) {

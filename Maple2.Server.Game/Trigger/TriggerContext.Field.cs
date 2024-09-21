@@ -350,28 +350,28 @@ public partial class TriggerContext {
         Field.Broadcast(BreakablePacket.Update(updated));
     }
 
-    public void AddBuff(int[] boxIds, int buffId, int level, bool isPlayer, bool isSkillSet, string feature) {
-        DebugLog("[AddBuff] boxIds:{Ids}, buffId:{BuffId}, level:{Level}, isPlayer:{IsPlayer}, isSkillSet:{Arg5}, feature:{Feature}",
-            string.Join(", ", boxIds), buffId, level, isPlayer, isSkillSet, feature);
+    public void AddBuff(int[] boxIds, int buffId, int level, bool ignorePlayer, bool isSkillSet, string feature) {
+        DebugLog("[AddBuff] boxIds:{Ids}, buffId:{BuffId}, level:{Level}, ignorePlayer:{ignorePlayer}, isSkillSet:{Arg5}, feature:{Feature}",
+            string.Join(", ", boxIds), buffId, level, ignorePlayer, isSkillSet, feature);
         if (isSkillSet) {
             logger.Error("[AddBuff] SkillSets not implemented...");
             return;
         }
 
-        if (isPlayer) {
+        if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxIds)) {
-                player.AddBuff(Field.FieldActor, player, buffId, (short) level);
+                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxIds)) {
-                monster.AddBuff(Field.FieldActor, monster, buffId, (short) level);
+                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level);
             }
         }
     }
 
-    public void RemoveBuff(int boxId, int buffId, bool isPlayer) {
-        ErrorLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, isPlayer:{IsPlayer}", boxId, buffId, isPlayer);
-        if (isPlayer) {
+    public void RemoveBuff(int boxId, int buffId, bool ignorePlayer) {
+        ErrorLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
+        if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxId)) {
                 player.Buffs.Remove(buffId);
             }
