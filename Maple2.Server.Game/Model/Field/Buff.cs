@@ -223,9 +223,9 @@ public class Buff : IUpdatable, IByteSerializable {
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
         if (dotBuff.Target == SkillEntity.Target) {
-            Owner.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
         } else {
-            Caster.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
         }
     }
 

@@ -30,9 +30,9 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<CharacterShopItemData> CharacterShopItemData { get; set; } = null!;
     internal DbSet<GameEventUserValue> GameEventUserValue { get; set; } = null!;
     internal DbSet<SystemBanner> SystemBanner { get; set; } = null!;
-    internal DbSet<PremiumMarketItem> PremiumMarketItem { get; set; } = null!;
     internal DbSet<UgcMarketItem> UgcMarketItem { get; set; } = null!;
     internal DbSet<SoldUgcMarketItem> SoldUgcMarketItem { get; set; } = null!;
+    internal DbSet<SoldMeretMarketItem> SoldMeretMarketItem { get; set; } = null!;
     internal DbSet<BlackMarketListing> BlackMarketListing { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
@@ -64,7 +64,6 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<UgcResource>(Maple2.Database.Model.UgcResource.Configure);
         modelBuilder.Entity<Mail>(Maple2.Database.Model.Mail.Configure);
         modelBuilder.Entity<SystemBanner>(Maple2.Database.Model.SystemBanner.Configure);
-        modelBuilder.Entity<PremiumMarketItem>(Maple2.Database.Model.PremiumMarketItem.Configure);
         modelBuilder.Entity<UgcMarketItem>(Maple2.Database.Model.UgcMarketItem.Configure);
         modelBuilder.Entity<SoldUgcMarketItem>(Maple2.Database.Model.SoldUgcMarketItem.Configure);
         modelBuilder.Entity<Achievement>(Maple2.Database.Model.Achievement.Configure);
@@ -76,6 +75,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
 
         modelBuilder.Entity<MesoListing>(MesoListing.Configure);
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);
+        modelBuilder.Entity<SoldMeretMarketItem>(Maple2.Database.Model.SoldMeretMarketItem.Configure);
         modelBuilder.Entity<CharacterShopData>(Maple2.Database.Model.Shop.CharacterShopData.Configure);
         modelBuilder.Entity<CharacterShopItemData>(Maple2.Database.Model.Shop.CharacterShopItemData.Configure);
         modelBuilder.Entity<BlackMarketListing>(Maple2.Database.Model.BlackMarketListing.Configure);

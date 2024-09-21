@@ -6,6 +6,7 @@ using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Enum;
 using Maple2.File.Parser.Xml.Table.Server;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Shop;
@@ -43,12 +44,13 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
         yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
         yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
+        yield return new ServerTableMetadata { Name = "shop_merat_custom.xml", Table = ParseMeretCustomShop() };
 
     }
 
     private InstanceFieldTable ParseInstanceField() {
         var results = new Dictionary<int, InstanceFieldMetadata>();
-        foreach ((int instanceId, Parser.Xml.Table.Server.InstanceField instanceField) in parser.ParseInstanceField()) {
+        foreach ((int instanceId, InstanceField instanceField) in parser.ParseInstanceField()) {
             foreach (int fieldId in instanceField.fieldIDs) {
 
                 InstanceFieldMetadata instanceFieldMetadata = new(
@@ -80,9 +82,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser) {
-        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> scripts) in parser) {
+        foreach ((int npcId, IDictionary<int, NpcScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
-            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptCondition scriptCondition) in scripts) {
+            foreach ((int scriptId, NpcScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
                     KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
@@ -134,9 +136,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> ScriptConditions)> parser) {
-        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> scripts) in parser) {
+        foreach ((int questId, IDictionary<int, QuestScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
-            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptCondition scriptCondition) in scripts) {
+            foreach ((int scriptId, QuestScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
                     KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
@@ -209,9 +211,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
-        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
+        foreach ((int npcId, IDictionary<int, NpcScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
-            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptFunction scriptFunction) in scripts) {
+            foreach ((int scriptId, NpcScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
                     short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
@@ -268,9 +270,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
-        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> scripts) in parser) {
+        foreach ((int questId, IDictionary<int, QuestScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
-            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptFunction scriptFunction) in scripts) {
+            foreach ((int scriptId, QuestScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
                     short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
@@ -519,7 +521,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             var entries = new Dictionary<int, IndividualDropItemTable.Entry>();
 
             foreach (IndividualItemDrop.Group group in dropBox.group) {
-                List<IndividualDropItemTable.Item> items = new();
+                List<IndividualDropItemTable.Item> items = [];
                 foreach (IndividualItemDrop.Group.Item item in group.v) {
                     int minCount = item.minCount <= 0 ? 1 : item.minCount;
                     int maxCount = item.maxCount < item.minCount ? item.minCount : item.maxCount;
@@ -1355,6 +1357,54 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     RequiredLevel: item.requireLevel,
                     SaleTag: (ShopItemLabel) item.saleTag);
             }
+        }
+    }
+
+    private MeretMarketTable ParseMeretCustomShop() {
+        var results = new Dictionary<int, MeretMarketItemMetadata>();
+        foreach ((int id, ShopMeretCustom entry) in parser.ParseShopMeretCustom()) {
+            foreach (ShopMeretCustom addQuantity in entry.additionalQuantity) {
+                results.Add(addQuantity.id, ParseMarketItemMetadata(addQuantity, entry));
+            }
+            results.Add(id, ParseMarketItemMetadata(entry));
+        }
+        return new MeretMarketTable(results);
+
+        MeretMarketItemMetadata ParseMarketItemMetadata(ShopMeretCustom item, ShopMeretCustom? parent = null) {
+            string? saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
+            string? saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
+            string? promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
+            string? promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
+            int[] jobRequirement = parent?.jobRequire ?? item.jobRequire;
+            return new MeretMarketItemMetadata(
+                Id: item.id,
+                ParentId: parent?.id ?? 0,
+                TabId: parent?.tabID ?? item.tabID,
+                Banner: item.banner,
+                BannerTag: (MeretMarketBannerTag) item.bannerTag,
+                ItemId: parent?.itemID ?? item.itemID,
+                Rarity: (byte) (parent?.grade ?? item.grade),
+                Quantity: item.quantity,
+                BonusQuantity: item.bonusQuantity,
+                DurationInDays: item.durationDay,
+                SaleTag: (MeretMarketItemSaleTag) item.saleTag,
+                CurrencyType: (MeretMarketCurrencyType) (parent?.paymentType ?? item.paymentType),
+                Price: item.price,
+                SalePrice: item.salePrice == 0 ? item.price : item.salePrice,
+                SaleStartTime: string.IsNullOrEmpty(saleStartTime) ? 0 : DateTime.ParseExact(saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                SaleEndTime: string.IsNullOrEmpty(saleEndTime) ? 0 : DateTime.ParseExact(saleEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                JobRequirement: jobRequirement.Select(job => (JobCode) job).AsEnumerable().FilterFlags(),
+                RestockUnavailable: parent?.noRestock ?? item.noRestock,
+                RequireMinLevel: parent?.minLevel ?? item.minLevel,
+                RequireMaxLevel: parent?.maxLevel ?? item.maxLevel,
+                RequireAchievementId: parent?.achieveID ?? item.achieveID,
+                RequireAchievementRank: parent?.achieveGrade ?? item.achieveGrade,
+                PcCafe: parent?.pcCafe ?? item.pcCafe,
+                Giftable: parent?.giftable ?? item.giftable,
+                ShowSaleTime: item.showSaleTime,
+                PromoName: item.promoName,
+                PromoStartTime: string.IsNullOrEmpty(promoStartTime) ? 0 : DateTime.ParseExact(promoStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                PromoEndTime: string.IsNullOrEmpty(promoEndTime) ? 0 : DateTime.ParseExact(promoEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds());
         }
     }
 }
