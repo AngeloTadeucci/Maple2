@@ -38,8 +38,8 @@ internal class TriggerDefinitionOverride {
             Types = BuildTypeOverride(("spawnId", Int, null), ("duration", Int, null), ("delayTick", Int, null), ("npcID", Int, null)),
         };
         ActionOverride["add_buff"] = new TriggerDefinitionOverride("add_buff") {
-            Names = BuildNameOverride(("arg1", "boxIds"), ("arg2", "skillId"), ("arg3", "level"), ("arg4", "isPlayer"), ("arg5", "isSkillSet")),
-            Types = BuildTypeOverride(("boxIds", IntList, Required), ("skillId", Int, Required), ("level", Int, Required), ("isPlayer", Bool, "True"), ("isSkillSet", Bool, "True")),
+            Names = BuildNameOverride(("arg1", "boxIds"), ("arg2", "skillId"), ("arg3", "level"), ("arg4", "ignorePlayer"), ("arg5", "isSkillSet")),
+            Types = BuildTypeOverride(("boxIds", IntList, Required), ("skillId", Int, Required), ("level", Int, Required), ("ignorePlayer", Bool, "True"), ("isSkillSet", Bool, "True")),
         };
         ActionOverride["add_cinematic_talk"] = new TriggerDefinitionOverride("add_cinematic_talk") {
             Names = BuildNameOverride(("npcID", "npcId"), ("illustID", "illustId"), ("illust", "illustId"), ("delay", "delayTick")),

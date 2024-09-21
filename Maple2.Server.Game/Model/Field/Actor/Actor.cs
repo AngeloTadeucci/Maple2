@@ -171,10 +171,9 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         foreach (SkillEffectMetadata effect in record.Attack.Skills) {
             if (effect.Condition != null) {
                 foreach (IActor actor in record.Targets) {
-                    IActor caster = GetTarget(effect.Condition.Target, record.Caster, actor);
                     IActor owner = GetTarget(effect.Condition.Target, record.Caster, actor);
-                    if (effect.Condition.Condition.Check(caster, owner, actor)) {
-                        actor.ApplyEffect(caster, owner, effect);
+                    if (effect.Condition.Condition.Check(record.Caster, owner, actor)) {
+                        actor.ApplyEffect(record.Caster, owner, effect);
                     }
                 }
             } else if (effect.Splash != null) {
