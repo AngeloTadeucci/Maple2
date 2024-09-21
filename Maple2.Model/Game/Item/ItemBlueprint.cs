@@ -1,4 +1,5 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
 namespace Maple2.Model.Game;
@@ -9,14 +10,10 @@ public sealed class ItemBlueprint : IByteSerializable, IByteDeserializable {
     public int Width;
     public int Height;
     public DateTimeOffset CreationTime;
-    public int Unknown;
+    public BlueprintType Type = BlueprintType.Original;
     public long AccountId;
     public long CharacterId;
     public string CharacterName = "";
-
-    public ItemBlueprint() {
-        Unknown = 1;
-    }
 
     public ItemBlueprint Clone() {
         return (ItemBlueprint) MemberwiseClone();
@@ -28,7 +25,7 @@ public sealed class ItemBlueprint : IByteSerializable, IByteDeserializable {
         writer.WriteInt(Width);
         writer.WriteInt(Height);
         writer.WriteLong(CreationTime.ToUnixTimeSeconds());
-        writer.WriteInt(Unknown);
+        writer.Write<BlueprintType>(Type);
         writer.WriteLong(AccountId);
         writer.WriteLong(CharacterId);
         writer.WriteUnicodeString(CharacterName);
@@ -40,7 +37,7 @@ public sealed class ItemBlueprint : IByteSerializable, IByteDeserializable {
         Width = reader.ReadInt();
         Height = reader.ReadInt();
         CreationTime = DateTimeOffset.FromUnixTimeSeconds(reader.ReadLong());
-        Unknown = reader.ReadInt();
+        Type = (BlueprintType) reader.ReadInt();
         AccountId = reader.ReadLong();
         CharacterId = reader.ReadLong();
         CharacterName = reader.ReadUnicodeString();

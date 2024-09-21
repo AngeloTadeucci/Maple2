@@ -493,7 +493,7 @@ public static class CubePacket {
     public static ByteWriter CreateBlueprint(long itemUid, ItemBlueprint blueprint) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.CreateBlueprint);
-        pWriter.WriteByte(1);
+        pWriter.Write<UgcMapError>(UgcMapError.s_empty_string);
         pWriter.WriteLong(itemUid);
         pWriter.WriteClass<ItemBlueprint>(blueprint);
 

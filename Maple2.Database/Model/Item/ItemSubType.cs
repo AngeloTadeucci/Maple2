@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Maple2.Model.Enum;
 
 namespace Maple2.Database.Model;
 
@@ -48,13 +49,13 @@ internal record ItemBlueprint(
     int Width,
     int Height,
     DateTimeOffset CreationTime,
-    int Unknown,
+    int Type,
     long AccountId,
     long CharacterId,
     string CharacterName) {
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ItemBlueprint?(Maple2.Model.Game.ItemBlueprint? other) {
-        return other == null ? null : new ItemBlueprint(other.BlueprintUid, other.Length, other.Width, other.Height, other.CreationTime, other.Unknown, other.AccountId, other.CharacterId, other.CharacterName);
+        return other == null ? null : new ItemBlueprint(other.BlueprintUid, other.Length, other.Width, other.Height, other.CreationTime, (int) other.Type, other.AccountId, other.CharacterId, other.CharacterName);
     }
 
     [return: NotNullIfNotNull(nameof(other))]
@@ -65,7 +66,7 @@ internal record ItemBlueprint(
             Width = other.Width,
             Height = other.Height,
             CreationTime = other.CreationTime,
-            Unknown = other.Unknown,
+            Type = (BlueprintType) other.Type,
             AccountId = other.AccountId,
             CharacterId = other.CharacterId,
             CharacterName = other.CharacterName,
