@@ -188,6 +188,9 @@ public class HomeLayout : IByteSerializable {
     public string Name { get; private set; }
     public byte Area { get; private set; }
     public byte Height { get; private set; }
+    public HomeBackground Background { get; init; }
+    public HomeLighting Lighting { get; init; }
+    public HomeCamera Camera { get; init; }
     public DateTimeOffset Timestamp { get; private set; }
     public List<PlotCube> Cubes { get; set; }
 

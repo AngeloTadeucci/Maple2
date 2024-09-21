@@ -111,8 +111,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Plot? plot = session.Housing.GetFieldPlot();
-        if (plot == null) {
+        Plot? plot = session.Housing.GetIndoorPlot();
+        if (plot is null) {
+            session.Send(NoticePacket.Message(StringCode.s_ugcmap_not_use_blueprint_item, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
             return;
         }
 

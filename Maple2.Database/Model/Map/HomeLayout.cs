@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,6 +12,9 @@ internal class HomeLayout {
     public string Name { get; set; }
     public byte Area { get; set; }
     public byte Height { get; set; }
+    public HomeBackground Background { get; set; }
+    public HomeLighting Lighting { get; set; }
+    public HomeCamera Camera { get; set; }
     public DateTimeOffset Timestamp { get; set; }
     public List<HomeLayoutCube> Cubes { get; set; } = null!;
 
@@ -24,6 +28,9 @@ internal class HomeLayout {
             Height = other.Height,
             Timestamp = other.Timestamp,
             Cubes = other.Cubes.ConvertAll(cube => (HomeLayoutCube) cube),
+            Background = other.Background,
+            Lighting = other.Lighting,
+            Camera = other.Camera,
         };
     }
 
@@ -33,7 +40,11 @@ internal class HomeLayout {
             return null;
         }
 
-        return new Maple2.Model.Game.HomeLayout(other.Uid, other.Id, other.Name, other.Area, other.Height, other.Timestamp, other.Cubes.ConvertAll(cube => (PlotCube) cube));
+        return new Maple2.Model.Game.HomeLayout(other.Uid, other.Id, other.Name, other.Area, other.Height, other.Timestamp, other.Cubes.ConvertAll(cube => (PlotCube) cube)) {
+            Background = other.Background,
+            Lighting = other.Lighting,
+            Camera = other.Camera,
+        };
     }
 
     public static void Configure(EntityTypeBuilder<HomeLayout> builder) {

@@ -123,6 +123,17 @@ public class HousingManager {
         return plot;
     }
 
+    public Plot? GetIndoorPlot() {
+        if (session.Field == null) {
+            return null;
+        }
+
+        if (session.AccountId != session.Field.OwnerId || session.Field.MapId != Home.Indoor.MapId) return null;
+
+        session.Field.Plots.TryGetValue(Home.Indoor.Number, out Plot? plot);
+        return plot;
+    }
+
     public bool SaveFieldPlot(int number) {
         if (session.Field?.Plots.TryGetValue(number, out Plot? plot) != true) {
             return false;
@@ -481,7 +492,7 @@ public class HousingManager {
         session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
     }
 
-    public void ApplyLayout(Plot plot, HomeLayout layout) {
+    public void ApplyLayout(Plot plot, HomeLayout layout, bool isBlueprint = false) {
         if (plot.IsPlanner) {
             Home.SetPlannerArea(layout.Area);
             Home.SetPlannerHeight(layout.Height);
@@ -491,6 +502,20 @@ public class HousingManager {
         }
 
         session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
+        if (isBlueprint) {
+            if (session.Player.Value.Home.SetBackground(layout.Background)) {
+                session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
+            }
+
+            if (session.Player.Value.Home.SetLighting(layout.Lighting)) {
+                session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
+            }
+
+            if (session.Player.Value.Home.SetCamera(layout.Camera)) {
+                session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
+            }
+        }
+
 
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
