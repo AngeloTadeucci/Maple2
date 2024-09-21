@@ -7,7 +7,7 @@ namespace Maple2.Model.Game;
 public class HeldCube : IByteSerializable, IByteDeserializable {
     public static readonly HeldCube Default = new();
 
-    public long Id { get; protected set; }
+    public long Id { get; set; }
     public int ItemId { get; protected set; }
     public UgcItemLook? Template { get; protected set; }
 

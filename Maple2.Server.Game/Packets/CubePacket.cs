@@ -7,7 +7,9 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
+// ReSharper disable RedundantTypeArgumentsOfMethod
 
 namespace Maple2.Server.Game.Packets;
 
@@ -61,6 +63,8 @@ public static class CubePacket {
         // Blueprint stuff:
         // 60, 61, 63, 64, 67, 69
         UpdateHomeAreaAndHeight = 62,
+        CreateBlueprint = 63,
+        SaveBlueprint = 64,
         FunctionCubeError = 71,
     }
 
@@ -482,6 +486,26 @@ public static class CubePacket {
         pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
         pWriter.WriteByte(area);
         pWriter.WriteByte(height);
+
+        return pWriter;
+    }
+
+    public static ByteWriter CreateBlueprint(long itemUid, ItemBlueprint blueprint) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.CreateBlueprint);
+        pWriter.Write<UgcMapError>(UgcMapError.s_empty_string);
+        pWriter.WriteLong(itemUid);
+        pWriter.WriteClass<ItemBlueprint>(blueprint);
+
+        return pWriter;
+    }
+
+    public static ByteWriter SaveBlueprint(long accountId, HomeLayout layout) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.SaveBlueprint);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteLong(accountId);
+        pWriter.WriteClass<HomeLayout>(layout);
 
         return pWriter;
     }

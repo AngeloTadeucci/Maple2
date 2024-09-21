@@ -145,7 +145,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Mastery = new MasteryManager(this, Lua);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
         Config = new ConfigManager(db, this);
-        Housing = new HousingManager(this);
+        Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
         ItemBox = new ItemBoxManager(this);

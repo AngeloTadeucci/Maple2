@@ -10,9 +10,9 @@ public enum UgcType : byte {
     GuildEmblem = 6,
     Mount = 7,
     GuildBanner = 8,
-    Unknown9 = 9,
+    LayoutBlueprint = 9,
     Unknown10 = 10,
     ItemIcon = 201,
     Unknown11 = 202,
-    Unknown12 = 209,
+    BlueprintIcon = 209,
 }
