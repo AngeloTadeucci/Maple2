@@ -15,7 +15,7 @@ public class ItemIconController : ControllerBase {
             return Results.NotFound();
         }
 
-        FileStream itemIcon = System.IO.File.OpenRead(fullPath);
+        using FileStream itemIcon = System.IO.File.OpenRead(fullPath);
         return Results.File(itemIcon, contentType: "image/png");
     }
 }
