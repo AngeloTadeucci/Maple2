@@ -30,7 +30,7 @@ public class DataDbModule : Module {
 
     protected override void Load(ContainerBuilder builder) {
         // NoTracking, Metadata is cached separately, and we use a single context for lifetime.
-        using var context = new MetadataContext(options);
+        var context = new MetadataContext(options);
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         builder.RegisterInstance(context);
 
