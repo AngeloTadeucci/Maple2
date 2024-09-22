@@ -1,11 +1,12 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
 public sealed class ItemCustomMusicScore : IByteSerializable, IByteDeserializable {
     public int Length;
-    public int Instrument;
+    public Instrument Instrument;
     public string Title;
     public string Author;
     public long AuthorId; // AccountId
@@ -24,7 +25,7 @@ public sealed class ItemCustomMusicScore : IByteSerializable, IByteDeserializabl
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Length);
-        writer.WriteInt(Instrument);
+        writer.Write<Instrument>(Instrument);
         writer.WriteUnicodeString(Title);
         writer.WriteUnicodeString(Author);
         writer.WriteInt(1);
@@ -36,7 +37,7 @@ public sealed class ItemCustomMusicScore : IByteSerializable, IByteDeserializabl
 
     public void ReadFrom(IByteReader reader) {
         Length = reader.ReadInt();
-        Instrument = reader.ReadInt();
+        Instrument = reader.Read<Instrument>();
         Title = reader.ReadUnicodeString();
         Author = reader.ReadUnicodeString();
         reader.ReadInt();

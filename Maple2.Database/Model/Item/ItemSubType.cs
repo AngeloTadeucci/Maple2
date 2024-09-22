@@ -94,7 +94,7 @@ internal record ItemPet(string Name, long Exp, int EvolvePoints, short Level, sh
 
 internal record ItemCustomMusicScore(
     int Length,
-    int Instrument,
+    Instrument Instrument,
     string Title,
     string Author,
     long AuthorId,

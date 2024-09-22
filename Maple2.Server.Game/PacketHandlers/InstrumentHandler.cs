@@ -237,7 +237,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         }
 
         int length = packet.ReadInt();
-        int instrument = packet.ReadInt();
+        var instrument = packet.Read<Instrument>();
         string title = packet.ReadUnicodeString();
         string mml = packet.ReadString();
 
@@ -245,7 +245,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         score.Music.Instrument = instrument;
         score.Music.Title = title;
         score.Music.Author = session.PlayerName;
-        score.Music.AuthorId = session.CharacterId;
+        score.Music.AuthorId = session.AccountId;
         score.Music.Mml = mml;
 
         session.Send(InstrumentPacket.ComposeScore(score));
