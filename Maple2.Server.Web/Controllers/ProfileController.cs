@@ -15,7 +15,7 @@ public class ProfileController : ControllerBase {
             return Results.NotFound();
         }
 
-        using FileStream profileImage = System.IO.File.OpenRead(fullPath);
+        FileStream profileImage = System.IO.File.OpenRead(fullPath);
         return Results.File(profileImage, contentType: "image/png");
     }
 }
