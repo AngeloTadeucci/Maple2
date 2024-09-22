@@ -290,7 +290,7 @@ public class ItemDropManager {
         return itemMetadata.Limit.JobRecommends.Contains(job) || itemMetadata.Limit.JobRecommends.Contains(JobCode.None);
     }
 
-    public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
+    public Item? CreateItem(int itemId, int rarity = -1, int amount = 1, bool rollMax = false) {
         if (!field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
             return null;
         }
@@ -304,7 +304,7 @@ public class ItemDropManager {
         }
 
         var item = new Item(itemMetadata, rarity, amount);
-        item.Stats = field.ItemStatsCalc.GetStats(item);
+        item.Stats = field.ItemStatsCalc.GetStats(item, rollMax);
         item.Socket = field.ItemStatsCalc.GetSockets(item);
 
         if (item.Appearance != null) {

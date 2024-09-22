@@ -18,7 +18,7 @@ public sealed class ItemStatsCalculator {
     // ReSharper restore All
     #endregion
 
-    public ItemStats? GetStats(Item item) {
+    public ItemStats? GetStats(Item item, bool rollMax = false) {
         if (item.Metadata.Option == null) {
             return null;
         }
@@ -36,7 +36,7 @@ public sealed class ItemStatsCalculator {
         }
 
         if (GetRandomOption(item, out ItemStats.Option? option)) {
-            RandomizeValues(item.Type, ref option);
+            RandomizeValues(item.Type, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
 
@@ -106,30 +106,30 @@ public sealed class ItemStatsCalculator {
     }
 
     // TODO: These should technically be weighted towards the lower end.
-    public bool RandomizeValues(in ItemType type, ref ItemStats.Option option) {
+    public bool RandomizeValues(in ItemType type, ref ItemStats.Option option, bool rollMax = false) {
         ItemEquipVariationTable? table = GetVariationTable(type);
         if (table == null) {
             return false;
         }
 
         foreach (BasicAttribute attribute in option.Basic.Keys) {
-            int index = Random.Shared.Next(2, 18);
+            int index = rollMax ? 17 : Random.Shared.Next(2, 18);
             if (table.Values.TryGetValue(attribute, out int[]? values)) {
                 int value = values.ElementAtOrDefault(index);
-                option.Basic[attribute] = new BasicOption(value);
+                option.Basic[attribute] = new BasicOption((int) (value * option.MultiplyFactor));
             } else if (table.Rates.TryGetValue(attribute, out float[]? rates)) {
                 float rate = rates.ElementAtOrDefault(index);
-                option.Basic[attribute] = new BasicOption(rate);
+                option.Basic[attribute] = new BasicOption(rate * option.MultiplyFactor);
             }
         }
         foreach (SpecialAttribute attribute in option.Special.Keys) {
-            int index = Random.Shared.Next(2, 18);
+            int index = rollMax ? 17 : Random.Shared.Next(2, 18);
             if (table.SpecialValues.TryGetValue(attribute, out int[]? values)) {
                 int value = values.ElementAtOrDefault(index);
-                option.Special[attribute] = new SpecialOption(0f, value);
+                option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
             } else if (table.SpecialRates.TryGetValue(attribute, out float[]? rates)) {
                 float rate = rates.ElementAtOrDefault(index);
-                option.Special[attribute] = new SpecialOption(rate);
+                option.Special[attribute] = new SpecialOption(rate * option.MultiplyFactor);
             }
         }
 
@@ -251,7 +251,7 @@ public sealed class ItemStatsCalculator {
 
         int total = count < 0 ? Random.Shared.Next(option.NumPick.Min, option.NumPick.Max + 1) : count;
         if (total == 0) {
-            return new ItemStats.Option(statResult, specialResult);
+            return new ItemStats.Option(statResult, specialResult, multiplyFactor: option.MultiplyFactor);
         }
         // Ensures that there are enough options to choose.
         total = Math.Min(total, option.Entries.Length);
@@ -276,7 +276,7 @@ public sealed class ItemStatsCalculator {
             }
         }
 
-        return new ItemStats.Option(statResult, specialResult);
+        return new ItemStats.Option(statResult, specialResult, multiplyFactor: option.MultiplyFactor);
 
         // Helper function
         bool AddResult(ItemOption.Entry entry, IDictionary<BasicAttribute, BasicOption> statDict, IDictionary<SpecialAttribute, SpecialOption> specialDict) {

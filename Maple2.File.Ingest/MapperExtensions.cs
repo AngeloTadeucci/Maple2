@@ -432,7 +432,7 @@ public static class MapperExtensions {
             }
 
             var option = new ItemOption(
-                MultiplyFactor: entry.multiply_factor,
+                MultiplyFactor: entry.multiply_factor == 0 ? 1 : entry.multiply_factor,
                 NumPick: new ItemOption.Range<int>(entry.optionNumPick[0], entry.optionNumPick[1]),
                 Entries: optionEntries.ToArray());
             if (results[entry.code].ContainsKey(entry.grade)) {
