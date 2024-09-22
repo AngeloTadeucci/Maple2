@@ -15,7 +15,7 @@ public class BannerController : ControllerBase {
             return Results.NotFound();
         }
 
-        using FileStream banner = System.IO.File.OpenRead(fullPath);
+        FileStream banner = System.IO.File.OpenRead(fullPath);
         return Results.File(banner, contentType: "application/octet-stream");
     }
 }

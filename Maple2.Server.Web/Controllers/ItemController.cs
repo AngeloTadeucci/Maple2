@@ -15,7 +15,7 @@ public class ItemController : ControllerBase {
             return Results.NotFound();
         }
 
-        using FileStream item = System.IO.File.OpenRead(fullPath);
+        FileStream item = System.IO.File.OpenRead(fullPath);
         return Results.File(item, contentType: "application/octet-stream");
     }
 }
