@@ -15,7 +15,7 @@ public class SystemController : ControllerBase {
             return Results.NotFound();
         }
 
-        FileStream bannerImage = System.IO.File.OpenRead(fullPath);
+        using FileStream bannerImage = System.IO.File.OpenRead(fullPath);
         return Results.File(bannerImage, contentType: "image/png");
     }
 }

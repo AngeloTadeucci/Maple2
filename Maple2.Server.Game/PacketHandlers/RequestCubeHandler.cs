@@ -15,6 +15,7 @@ using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
+using Serilog;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -148,6 +149,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             case Command.SetCamera:
                 HandleSetCamera(session, packet);
                 break;
+            case Command.CreateBlueprint:
+                HandleCreateBlueprint(session);
+                break;
             case Command.SaveBlueprint:
                 HandleSaveBlueprint(session, packet);
                 break;
@@ -210,7 +214,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                     return;
                 }
 
-                if (!TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? plotCube)) {
+                if (!session.Housing.TryPlaceCube(cubeItem, plot, position, rotation, out PlotCube? plotCube)) {
                     return;
                 }
 
@@ -255,7 +259,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (!TryRemoveCube(session, plot, position, out PlotCube? cube)) {
+        if (!session.Housing.TryRemoveCube(plot, position, out PlotCube? cube)) {
             return;
         }
 
@@ -304,7 +308,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (TryPlaceCube(session, cubeItem, plot, position, rotation, out PlotCube? placedCube, isReplace: true)) {
+        if (session.Housing.TryPlaceCube(cubeItem, plot, position, rotation, out PlotCube? placedCube, isReplace: true)) {
             session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
         }
     }
@@ -364,7 +368,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         foreach (PlotCube cube in plot.Cubes.Values) {
-            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+            if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
                 session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
@@ -390,36 +394,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId).ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
-        int cubeCount = 0;
-        Dictionary<FurnishingCurrencyType, long> cubeCosts = new();
-        cubeCosts.Add(FurnishingCurrencyType.Meso, 0);
-        cubeCosts.Add(FurnishingCurrencyType.Meret, 0);
-        foreach ((int id, int amount) in groupedCubes) {
-            TableMetadata.FurnishingShopTable.Entries.TryGetValue(id, out FurnishingShopTable.Entry? shopEntry);
-            if (shopEntry is null) {
-                Logger.Error("Failed to get shop entry for cube {cubeId}.", id);
-                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
-                return;
-            }
-
-            Item? item = session.Item.Furnishing.GetItem(id);
-            if (item is null) {
-                cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * amount;
-                cubeCount += amount;
-                continue;
-            }
-
-            if (item.Amount >= amount) {
-                continue;
-            }
-
-            int missingCubes = amount - item.Amount;
-            cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * missingCubes;
-            cubeCount += missingCubes;
-        }
-
-        session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
+        session.Housing.RequestLayout(layout);
     }
 
     private void HandleIncreaseArea(GameSession session) {
@@ -457,9 +432,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         // Remove cubes that are now outside the new area
-        List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => IsCoordOutsideArea(cube.Position, session.Player.Value.Home)).ToList();
+        List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => session.Housing.IsCoordOutsideArea(cube.Position)).ToList();
         foreach (PlotCube cube in cubesToRemove) {
-            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+            if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
                 session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
@@ -508,7 +483,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         // Remove cubes that are now outside the new height
         List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => cube.Position.Z > newHeight).ToList();
         foreach (PlotCube cube in cubesToRemove) {
-            if (TryRemoveCube(session, plot, cube.Position, out _)) {
+            if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
                 session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
@@ -561,14 +536,22 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
+        using GameStorage.Request db = session.GameStorage.Context();
+
         HomeLayout? layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
         if (layout is not null) {
             home.Layouts.Remove(layout);
+            db.RemoveHomeLayout(layout);
         }
 
         byte area = home.IsPlanner ? home.PlannerArea : home.Area;
         byte height = home.IsPlanner ? home.PlannerHeight : home.Height;
-        layout = new HomeLayout(slot, name, area, height, DateTimeOffset.Now, plot.Cubes.Values.ToList());
+        layout = db.SaveHomeLayout(new HomeLayout(slot, name, area, height, DateTimeOffset.Now, plot.Cubes.Values.ToList()));
+        if (layout is null) {
+            Logger.Error("Failed to save layout for {AccountId}", session.AccountId);
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+            return;
+        }
         home.Layouts.Add(layout);
 
         session.Housing.SaveHome();
@@ -590,44 +573,34 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         int slot = packet.ReadInt();
 
         Home home = session.Player.Value.Home;
-        HomeLayout? layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
-        if (layout is null) {
-            return;
-        }
 
-        if (plot.IsPlanner) {
-            home.SetPlannerArea(layout.Area);
-            home.SetPlannerHeight(layout.Height);
-        } else {
-            home.SetArea(layout.Area);
-            home.SetHeight(layout.Height);
-        }
-        session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(home.Area, home.Height));
-
-        foreach (PlotCube cube in layout.Cubes) {
-            if (!TryPlaceCube(session, cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+        HomeLayout? layout;
+        // blueprint load
+        if (slot is 0) {
+            if (session.Housing.StagedItemBlueprint is null) {
                 return;
             }
 
-            ByteWriter sendPacket;
-            if (cube.Position.Z == 0) {
-                sendPacket = CubePacket.ReplaceCube(session.Player.ObjectId, plotCube);
-            } else {
-                sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
+            using GameStorage.Request db = session.GameStorage.Context();
+            layout = db.GetHomeLayout(session.Housing.StagedItemBlueprint.BlueprintUid);
+            if (layout is null) {
+                Logger.Error("Failed to load layout for {AccountId}", session.AccountId);
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+                return;
             }
-
-            session.Field.Broadcast(sendPacket);
+        } else {
+            layout = home.Layouts.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+            if (layout is null) {
+                Logger.Error("Failed to find layout {Slot} for {AccountId}", slot, session.AccountId);
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+                return;
+            }
         }
 
-        Vector3 position = home.CalculateSafePosition(plot.Cubes.Values.ToList());
-        foreach (FieldPlayer fieldPlayer in session.Field.Players.Values) {
-            fieldPlayer.MoveToPosition(position, default);
-        }
-
-        session.Item.Furnishing.SendStorageCount();
-        session.Housing.SaveHome();
-        session.Field.Broadcast(NoticePacket.Message(StringCode.s_ugcmap_package_automatic_creation_completed, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+        session.Housing.StagedItemBlueprint = null;
+        session.Housing.ApplyLayout(plot, layout, isBlueprint: slot is 0);
     }
+
 
     private void HandleKickOut(GameSession session) { }
 
@@ -652,131 +625,132 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
     }
 
+    private void HandleCreateBlueprint(GameSession session) {
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot is null) {
+            return;
+        }
+
+        if (!TableMetadata.UgcDesignTable.Entries.TryGetValue(Constant.BlueprintId, out UgcDesignTable.Entry? design)) {
+            Logger.Error("Failed to find design {BlueprintId}", Constant.BlueprintId);
+            return;
+        }
+
+        long blueprintCost = design.CreatePrice;
+
+        long negAmount = -1 * blueprintCost;
+        if (session.Currency.CanAddMeret(negAmount) != negAmount) {
+            session.Send(CubePacket.Error(UgcMapError.s_err_ugcmap_not_enough_meso_balance));
+            return;
+        }
+
+        session.Currency.Meret -= blueprintCost;
+
+        Item? item = session.Field.ItemDrop.CreateItem(Constant.BlueprintId);
+        if (item is null) {
+            return;
+        }
+
+        Home home = session.Player.Value.Home;
+        byte area = home.PlannerArea;
+        byte height = home.PlannerHeight;
+        using GameStorage.Request db = session.GameStorage.Context();
+
+        var homeLayout = new HomeLayout(0, "Blueprint", area, height, DateTimeOffset.Now, plot.Cubes.Values.ToList()) {
+            Background = home.Background,
+            Lighting = home.Lighting,
+            Camera = home.Camera,
+        };
+        HomeLayout? layout = db.SaveHomeLayout(homeLayout);
+        if (layout is null) {
+            Logger.Error("Failed to save layout for {AccountId}", session.AccountId);
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+            return;
+        }
+
+        item.Blueprint = new ItemBlueprint {
+            BlueprintUid = layout.Uid,
+            Width = home.PlannerArea,
+            Length = home.PlannerArea,
+            Height = home.PlannerHeight,
+            CreationTime = DateTimeOffset.Now,
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            CharacterName = session.PlayerName,
+        };
+
+        item = db.CreateItem(session.CharacterId, item);
+        if (item == null) {
+            return;
+        }
+
+        session.Item.Inventory.Add(item, notifyNew: true);
+
+        session.StagedUgcItem = item;
+        session.Send(CubePacket.CreateBlueprint(item.Uid, item.Blueprint!));
+    }
+
     private void HandleSaveBlueprint(GameSession session, IByteReader packet) {
         int slot = packet.ReadInt();
         string name = packet.ReadUnicodeString();
+
+        Home home = session.Player.Value.Home;
+        if (slot is > Constant.HomeMaxLayoutSlots or < 0) {
+            return;
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+
+        HomeLayout? layout = home.Blueprints.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+        if (layout is not null) {
+            home.Blueprints.Remove(layout);
+            db.RemoveHomeLayout(layout);
+        }
+
+        byte area = home.PlannerArea;
+        byte height = home.PlannerHeight;
+        var homeLayout = new HomeLayout(slot, name, area, height, DateTimeOffset.Now, plot.Cubes.Values.ToList()) {
+            Background = home.Background,
+            Lighting = home.Lighting,
+            Camera = home.Camera,
+        };
+        layout = db.SaveHomeLayout(homeLayout);
+        if (layout is null) {
+            Logger.Error("Failed to save layout for {AccountId}", session.AccountId);
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+            return;
+        }
+        home.Blueprints.Add(layout);
+
+        session.Housing.SaveHome();
+
+        session.Send(CubePacket.SaveBlueprint(session.AccountId, layout));
     }
 
     private void HandleLoadBlueprint(GameSession session, IByteReader packet) {
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot is null) {
+            return;
+        }
+
+        if (plot.Cubes.Count != 0) {
+            session.Send(NoticePacket.Message(StringCode.s_err_ugcmap_package_clear_indoor_first, NoticePacket.Flags.Message | NoticePacket.Flags.Alert));
+            return;
+        }
+
         int slot = packet.ReadInt();
+
+        Home home = session.Player.Value.Home;
+        HomeLayout? layout = home.Blueprints.FirstOrDefault(homeLayout => homeLayout.Id == slot);
+        if (layout is null) {
+            return;
+        }
+
+        session.Housing.ApplyLayout(plot, layout, isBlueprint: true);
     }
-
-    #region Helpers
-    private bool TryPlaceCube(GameSession session, HeldCube cube, Plot plot, in Vector3B position, float rotation,
-                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
-        result = null;
-        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
-            Logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
-            return false;
-        }
-
-        bool isSolidCube = itemMetadata.Install.IsSolidCube;
-        bool isOnGround = position.Z == 0; // TODO: Handle outside plots
-        bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
-
-        // If the cube is not a solid cube and it's replacing ground, it's not allowed.
-        if ((!isSolidCube && isOnGround) && !allowWaterOnGround) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
-            return false;
-        }
-
-        // Cannot overlap cubes if not replacing
-        if (plot.Cubes.ContainsKey(position) && !isReplace) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
-            return false;
-        }
-
-        if (isReplace && plot.Cubes.ContainsKey(position)) {
-            TryRemoveCube(session, plot, position, out _);
-        }
-
-        //TODO: check outside plot - coords belongs to plot
-
-        // TODO: check outside plot bounds
-
-        if (IsCoordOutsideArea(position, session.Player.Value.Home)) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
-            return false;
-        }
-
-        if (plot.IsPlanner) {
-            result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
-                Position = position,
-                Rotation = rotation,
-            };
-
-            plot.Cubes.Add(position, result);
-            return true;
-        }
-
-        TableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
-        if (shopEntry is null) {
-            session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
-            return false;
-        }
-
-        if (!session.Item.Furnishing.PurchaseCube(shopEntry)) {
-            return false;
-        }
-
-        if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
-            long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
-            if (itemUid == 0) {
-                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_for_sale));
-                return false;
-            }
-
-            session.Send(CubePacket.PurchaseCube(session.Player.ObjectId));
-            // Now that we have purchased the cube, it must be placeable.
-            if (!session.Item.Furnishing.TryPlaceCube(itemUid, out result)) {
-                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_owned_item));
-                return false;
-            }
-        }
-
-        result.Position = position;
-        result.Rotation = rotation;
-        plot.Cubes.Add(position, result);
-        return true;
-    }
-
-    private static bool TryRemoveCube(GameSession session, Plot plot, in Vector3B position, [NotNullWhen(true)] out PlotCube? cube) {
-        if (!plot.Cubes.Remove(position, out cube)) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_no_cube_to_remove));
-            return false;
-        }
-
-        if (plot.IsPlanner) {
-            return true;
-        }
-
-        if (!session.Item.Furnishing.RetrieveCube(cube.Id)) {
-            throw new InvalidOperationException($"Failed to deposit cube {cube.Id} back into storage.");
-        }
-
-        return true;
-    }
-
-    private static bool IsCoordOutsideArea(Vector3B position, Home home) {
-        int height = home.IsPlanner ? home.PlannerHeight : home.Height;
-        int area = home.IsPlanner ? home.PlannerArea : home.Area;
-
-        // Check if the position is outside the planar area bounds
-        if (position.X > 0 || position.Y > 0 || position.Z < 0) {
-            return true;
-        }
-
-        area *= -1;
-        if (position.X <= area || position.Y <= area) {
-            return true;
-        }
-
-        // Check if the position is outside the height bounds
-        if (position.Z > height) {
-            return true;
-        }
-
-        return false;
-    }
-    #endregion
 }

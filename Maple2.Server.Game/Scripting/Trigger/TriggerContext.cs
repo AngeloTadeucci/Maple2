@@ -6,7 +6,7 @@ namespace Maple2.Server.Game.Scripting.Trigger;
 public interface ITriggerContext {
     // Actions
     public void AddBalloonTalk(int spawnId, string msg, int duration, int delayTick, int npcId);
-    public void AddBuff(int[] boxIds, int skillId, int level, bool isPlayer, bool isSkillSet, string feature);
+    public void AddBuff(int[] boxIds, int skillId, int level, bool ignorePlayer, bool isSkillSet, string feature);
     public void AddCinematicTalk(int npcId, string illustId, string msg, int duration, Align align, int delayTick);
     public void AddEffectNif(int spawnId, string nifPath, bool isOutline, float scale, int rotateZ);
     public void AddUserValue(string key, int value);
@@ -110,7 +110,7 @@ public interface ITriggerContext {
     public void PlaySystemSoundInBox(string sound, int[] boxIds);
     public void RandomAdditionalEffect(string target, int boxId, int spawnId, int targetCount, int tick, int waitTick, string targetEffect, int additionalEffectId);
     public void RemoveBalloonTalk(int spawnId);
-    public void RemoveBuff(int boxId, int skillId, bool isPlayer);
+    public void RemoveBuff(int boxId, int skillId, bool ignorePlayer);
     public void RemoveCinematicTalk();
     public void RemoveEffectNif(int spawnId);
     public void ResetCamera(float interpolationTime);

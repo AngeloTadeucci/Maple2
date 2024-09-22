@@ -4,6 +4,8 @@ using Maple2.Model.Game.Ugc;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Tools.Extensions;
+using Microsoft.EntityFrameworkCore.Query;
+// ReSharper disable RedundantTypeArgumentsOfMethod
 
 namespace Maple2.Server.Core.Packets;
 
@@ -17,6 +19,7 @@ public static class UgcPacket {
         UpdateItem = 13,
         UpdateFurnishing = 14,
         UpdateMount = 15,
+        UpdateLayoutBlueprint = 16,
         SetEndpoint = 17,
         LoadBanner = 18,
         ReserveBanners = 20,
@@ -99,6 +102,19 @@ public static class UgcPacket {
         pWriter.WriteLong(createPrice);
         pWriter.WriteByte();
 
+        pWriter.WriteClass<UgcItemLook>(item.Template);
+
+        return pWriter;
+    }
+
+    public static ByteWriter UpdateLayoutBlueprint(int objectId, Item item) {
+        var pWriter = Packet.Of(SendOp.Ugc);
+        pWriter.Write<Command>(Command.UpdateLayoutBlueprint);
+        pWriter.WriteInt(objectId);
+        pWriter.WriteLong(item.Blueprint!.BlueprintUid);
+        pWriter.WriteLong(item.Uid);
+        pWriter.WriteInt(item.Id);
+        pWriter.WriteUnicodeString(item.Template!.Name);
         pWriter.WriteClass<UgcItemLook>(item.Template);
 
         return pWriter;

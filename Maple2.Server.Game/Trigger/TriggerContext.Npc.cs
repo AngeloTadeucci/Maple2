@@ -246,7 +246,7 @@ public partial class TriggerContext {
 
     private IEnumerable<FieldNpc> NpcsInBox(params int[] boxIds) {
         if (boxIds.Length == 0 || boxIds[0] == 0) {
-            return Field.Mobs.Values;
+            return Field.EnumerateNpcs();
         }
 
         IEnumerable<TriggerBox> boxes = boxIds

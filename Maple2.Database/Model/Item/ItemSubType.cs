@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Maple2.Model.Enum;
 
 namespace Maple2.Database.Model;
 
@@ -12,8 +13,15 @@ internal abstract record ItemSubType;
 
 internal record ItemUgc(UgcItemLook Template, ItemBlueprint Blueprint) : ItemSubType;
 
-internal record UgcItemLook(long Id, string FileName, string Name, long AccountId, long CharacterId, string Author,
-        long CreationTime, string Url) {
+internal record UgcItemLook(
+    long Id,
+    string FileName,
+    string Name,
+    long AccountId,
+    long CharacterId,
+    string Author,
+    long CreationTime,
+    string Url) {
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator UgcItemLook?(Maple2.Model.Game.UgcItemLook? other) {
         return other == null ? null : new UgcItemLook(other.Id, other.FileName, other.Name, other.AccountId, other.CharacterId,
@@ -35,15 +43,34 @@ internal record UgcItemLook(long Id, string FileName, string Name, long AccountI
     }
 }
 
-internal record ItemBlueprint {
+internal record ItemBlueprint(
+    long BlueprintUid,
+    int Length,
+    int Width,
+    int Height,
+    DateTimeOffset CreationTime,
+    int Type,
+    long AccountId,
+    long CharacterId,
+    string CharacterName) {
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ItemBlueprint?(Maple2.Model.Game.ItemBlueprint? other) {
-        return other == null ? null : new ItemBlueprint();
+        return other == null ? null : new ItemBlueprint(other.BlueprintUid, other.Length, other.Width, other.Height, other.CreationTime, (int) other.Type, other.AccountId, other.CharacterId, other.CharacterName);
     }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.ItemBlueprint?(ItemBlueprint? other) {
-        return other == null ? null : new Maple2.Model.Game.ItemBlueprint();
+        return other == null ? null : new Maple2.Model.Game.ItemBlueprint {
+            BlueprintUid = other.BlueprintUid,
+            Length = other.Length,
+            Width = other.Width,
+            Height = other.Height,
+            CreationTime = other.CreationTime,
+            Type = (BlueprintType) other.Type,
+            AccountId = other.AccountId,
+            CharacterId = other.CharacterId,
+            CharacterName = other.CharacterName,
+        };
     }
 }
 
@@ -65,8 +92,14 @@ internal record ItemPet(string Name, long Exp, int EvolvePoints, short Level, sh
     }
 }
 
-internal record ItemCustomMusicScore(int Length, int Instrument, string Title, string Author, long AuthorId,
-        bool IsLocked, string Mml) : ItemSubType {
+internal record ItemCustomMusicScore(
+    int Length,
+    int Instrument,
+    string Title,
+    string Author,
+    long AuthorId,
+    bool IsLocked,
+    string Mml) : ItemSubType {
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator ItemCustomMusicScore?(Maple2.Model.Game.ItemCustomMusicScore? other) {
         return other == null ? null : new ItemCustomMusicScore(other.Length, other.Instrument, other.Title,

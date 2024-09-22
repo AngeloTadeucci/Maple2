@@ -1797,6 +1797,7 @@ public enum StringCode {
     s_ugcmap_height_level_extended_successfully = 1793,
     s_ugcmap_area_level_shrink_successfully = 1794,
     s_ugcmap_height_level_shrink_successfully = 1795,
+    [Description("You can only use a blueprint while in your home.")]
     s_ugcmap_not_use_blueprint_item = 1796,
     s_ugc_edit_homeless = 1797,
     s_ugc_edit_different_indoorsize = 1798,
@@ -2984,6 +2985,7 @@ public enum StringCode {
     s_function_cube_error_invalid_summon_user = 2981,
     s_err_ugcmap_package_cant_use = 2982,
     s_err_ugcmap_package_cant_use_in_this_map = 2983,
+    [Description("Can only be used in the indoor space of the house.")]
     s_err_ugcmap_package_should_use_in_indoor = 2984,
     s_err_ugcmap_package_not_a_valid_package_item = 2985,
     s_err_ugcmap_package_cant_use_in_others_home = 2986,

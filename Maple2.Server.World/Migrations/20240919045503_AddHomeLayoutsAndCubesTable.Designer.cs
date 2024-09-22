@@ -3,6 +3,7 @@ using System;
 using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    partial class Ms2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240919045503_AddHomeLayoutsAndCubesTable")]
+    partial class AddHomeLayoutsAndCubesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -712,20 +715,11 @@ namespace Maple2.Server.World.Migrations
                     b.Property<byte>("Area")
                         .HasColumnType("tinyint unsigned");
 
-                    b.Property<byte>("Background")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<byte>("Camera")
-                        .HasColumnType("tinyint unsigned");
-
                     b.Property<byte>("Height")
                         .HasColumnType("tinyint unsigned");
 
                     b.Property<int>("Id")
                         .HasColumnType("int");
-
-                    b.Property<byte>("Lighting")
-                        .HasColumnType("tinyint unsigned");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1005,6 +999,100 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("pet-config", (string)null);
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.PremiumMarketItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("BannerLabel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BannerName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("BonusQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("CurrencyType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<bool>("Giftable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("ItemDuration")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JobRequirement")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Label")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("ParentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("PcCafe")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("Price")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PromoData")
+                        .HasColumnType("json");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Rarity")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("RequireAchievementId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequireAchievementRank")
+                        .HasColumnType("int");
+
+                    b.Property<short>("RequireMaxLevel")
+                        .HasColumnType("smallint");
+
+                    b.Property<short>("RequireMinLevel")
+                        .HasColumnType("smallint");
+
+                    b.Property<bool>("RestockUnavailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("SalePrice")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SalesCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SellBeginTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("SellEndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("ShowSaleTime")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("TabId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("premium-market-item", (string)null);
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.Quest", b =>
                 {
                     b.Property<long>("OwnerId")
@@ -1120,30 +1208,6 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("CharacterId");
 
                     b.ToTable("skill-tab", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.SoldMeretMarketItem", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("CharacterId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MarketId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Price")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("SoldTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("meret-market-sold", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.SoldMesoListing", b =>

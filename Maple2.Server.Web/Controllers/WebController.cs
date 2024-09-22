@@ -9,6 +9,7 @@ using Maple2.Tools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Serilog.Core;
 
 namespace Maple2.Server.Web.Controllers;
 
@@ -34,7 +35,7 @@ public class WebController : ControllerBase {
         IByteReader packet = new ByteReader(memoryStream.ToArray());
         packet.ReadInt();
         var type = (UgcType) packet.ReadInt();
-        packet.ReadLong();
+        long accountId = packet.ReadLong();
         long characterId = packet.ReadLong();
         long ugcUid = packet.ReadLong();
         int id = packet.ReadInt(); // item id, guild id, others?
@@ -43,6 +44,8 @@ public class WebController : ControllerBase {
 
         byte[] fileBytes = packet.ReadBytes(packet.Available);
 
+        Log.Logger.Debug("Upload: type={Type}, accountId={AccountId}, characterId={CharacterId}, ugcUid={UgcUid}, id={Id}", type, accountId, characterId, ugcUid, id);
+
         UgcResource? resource = null;
         if (ugcUid != 0) {
             using WebStorage.Request db = webStorage.Context();
@@ -50,18 +53,9 @@ public class WebController : ControllerBase {
             if (resource == null) {
                 return Results.NotFound($"{ugcUid} does not exist.");
             }
-
-            if (type != UgcType.ItemIcon && !string.IsNullOrEmpty(resource.Path)) {
-                if (System.IO.File.Exists(resource.Path)) {
-                    return Results.Conflict("resource already exists.");
-                }
-
-                await System.IO.File.WriteAllBytesAsync(resource.Path, fileBytes);
-                return Results.Text($"0,{resource.Path}");
-            }
         }
 
-        if (type is UgcType.ItemIcon or UgcType.Item && resource == null) {
+        if (type is UgcType.ItemIcon or UgcType.Item or UgcType.BlueprintIcon or UgcType.LayoutBlueprint && resource == null) {
             return Results.BadRequest("Invalid UGC resource.");
         }
 
@@ -72,6 +66,8 @@ public class WebController : ControllerBase {
             UgcType.Banner => UploadBanner(fileBytes, id, ugcUid),
             UgcType.GuildEmblem => HandleGuildEmblem(fileBytes, id, ugcUid),
             UgcType.GuildBanner => HandleGuildBanner(fileBytes, id, ugcUid),
+            UgcType.BlueprintIcon => HandleBlueprintIcon(fileBytes, ugcUid, resource!),
+            UgcType.LayoutBlueprint => HandleBlueprintPreview(fileBytes, ugcUid, resource!),
             _ => HandleUnknownMode(type),
         };
     }
@@ -175,6 +171,39 @@ public class WebController : ControllerBase {
         System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{ugcId}.png"), fileBytes);
         return Results.Text($"0,{ugcPath}");
     }
+
+    private IResult HandleBlueprintIcon(byte[] fileBytes, long ugcUid, UgcResource resource) {
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "blueprint", ugcUid.ToString());
+        try {
+            Directory.CreateDirectory(filePath);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed preparing directory: {Path}", filePath);
+            return Results.Problem("Internal Server Error", statusCode: 500);
+        }
+
+        string ugcPath = $"blueprint/ms2/01/{ugcUid}/{resource.Id}_icon.png";
+
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{resource.Id}_icon.png"), fileBytes);
+        return Results.Text($"0,{ugcPath}");
+    }
+
+    private IResult HandleBlueprintPreview(byte[] fileBytes, long ugcUid, UgcResource resource) {
+        string filePath = Path.Combine(Paths.WEB_DATA_DIR, "blueprint", ugcUid.ToString());
+        try {
+            Directory.CreateDirectory(filePath);
+        } catch (Exception ex) {
+            Log.Error(ex, "Failed preparing directory: {Path}", filePath);
+            return Results.Problem("Internal Server Error", statusCode: 500);
+        }
+        using WebStorage.Request db = webStorage.Context();
+        string ugcPath = $"blueprint/ms2/01/{ugcUid}/{resource.Id}.png";
+
+        db.UpdatePath(ugcUid, ugcPath);
+
+        System.IO.File.WriteAllBytes(Path.Combine(filePath, $"{resource.Id}.png"), fileBytes);
+        return Results.Text($"0,{ugcPath}");
+    }
+
 
     private static IResult HandleUnknownMode(UgcType mode) {
         Log.Logger.Warning("Invalid upload mode: {Mode}", mode);
