@@ -15,7 +15,7 @@ public class GuildController : ControllerBase {
             return Results.NotFound();
         }
 
-        using FileStream guildMark = System.IO.File.OpenRead(fullPath);
+        FileStream guildMark = System.IO.File.OpenRead(fullPath);
         return Results.File(guildMark, contentType: "image/png");
     }
 
@@ -26,7 +26,7 @@ public class GuildController : ControllerBase {
             return Results.NotFound();
         }
 
-        using FileStream guildBanner = System.IO.File.OpenRead(fullPath);
+        FileStream guildBanner = System.IO.File.OpenRead(fullPath);
         return Results.File(guildBanner, contentType: "image/png");
     }
 }

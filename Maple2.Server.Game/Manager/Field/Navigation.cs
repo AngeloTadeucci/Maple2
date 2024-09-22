@@ -34,11 +34,13 @@ public sealed class Navigation : IDisposable {
     }
 
     private DtNavMesh LoadNavMesh() {
-        using FileStream fs = new FileStream(System.IO.Path.Combine(Paths.NAVMESH_DIR, $"{Name}.navmesh"), FileMode.Open, FileAccess.Read);
-        using BinaryReader br = new BinaryReader(fs);
+        FileStream fs = new FileStream(System.IO.Path.Combine(Paths.NAVMESH_DIR, $"{Name}.navmesh"), FileMode.Open, FileAccess.Read);
+        BinaryReader br = new BinaryReader(fs);
         DtMeshSetReader reader = new DtMeshSetReader();
 
         DtNavMesh dtNavMesh = reader.Read(br, DotRecastHelper.VERTS_PER_POLY);
+        br.Close();
+        fs.Close();
         return dtNavMesh;
     }
 
