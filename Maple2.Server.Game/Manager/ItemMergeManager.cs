@@ -170,7 +170,7 @@ public sealed class ItemMergeManager {
                 weightedSet.Add((mergeOption.Values[i], mergeOption.Rates[i]), mergeOption.Weights[i]);
             }
 
-            (ItemMergeTable.Range<int> valueRange, ItemMergeTable.Range<int> rateRange) =  weightedSet.Get();
+            (ItemMergeTable.Range<int> valueRange, ItemMergeTable.Range<int> rateRange) = weightedSet.Get();
             int value = Random.Shared.Next(valueRange.Min, valueRange.Max);
             float rate = Random.Shared.Next(rateRange.Min, rateRange.Max);
             rate /= 1000;
