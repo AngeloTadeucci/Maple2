@@ -11,7 +11,6 @@ using Serilog;
 namespace Maple2.Server.Game.Manager;
 
 public sealed class ItemMergeManager {
-    private readonly Lua.Lua lua;
 
     private readonly GameSession session;
 
@@ -20,15 +19,17 @@ public sealed class ItemMergeManager {
     private Item? upgradeItem;
     private Item? catalystItem;
 
-    public ItemMergeManager(GameSession session, Lua.Lua lua) {
+    public ItemMergeManager(GameSession session) {
         this.session = session;
-        this.lua = lua;
+    }
+
+    private void Clear() {
+        upgradeItem = null;
+        catalystItem = null;
     }
 
     public void Stage(long itemUid) {
-        // Clear out any previous items
-        upgradeItem = null;
-        catalystItem = null;
+        Clear();
 
         Item? item = session.Item.Inventory.Get(itemUid);
         if (item == null) {
@@ -52,7 +53,7 @@ public sealed class ItemMergeManager {
                 continue;
             }
 
-            if (!options.TryGetValue(type, out ItemMergeSlot? mergeSlot)) {
+            if (!options.ContainsKey(type)) {
                 continue;
             }
 
@@ -81,6 +82,15 @@ public sealed class ItemMergeManager {
         }
 
         session.Send(ItemMergePacket.Select(mergeSlot, ItemMerge.CostMultiplier(upgradeItem.Rarity)));
+
+        if (!session.NpcMetadata.TryGet(Constant.EmpowermentNpc, out NpcMetadata? npcMetadata) ||
+            !session.ScriptMetadata.TryGet(Constant.EmpowermentNpc, out ScriptMetadata? script) ||
+            !script.States.TryGetValue(Constant.MergeSmithScriptID, out ScriptState? state)) {
+            return;
+        }
+
+        CinematicEventScript[] eventScripts = state.Contents.First().Events;
+        session.NpcScript = new NpcScriptManager(session, eventScripts);
     }
 
     public void Empower(long itemUid, long catalystUid) {
@@ -123,17 +133,25 @@ public sealed class ItemMergeManager {
             (BasicAttribute attribute, ItemMergeOption mergeOption) = mergeSlot.BasicOptions.ElementAt(selectedIndex);
 
             (int value, float rate) = Roll(mergeOption);
-            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option();
-            upgradeItem.Stats![ItemStats.Type.Empowerment1].Basic[attribute] = new BasicOption(value, rate);
+            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
+                Basic = {
+                    [attribute] = new BasicOption(value, rate),
+                },
+            };
         } else {
             (SpecialAttribute attribute, ItemMergeOption mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count - 1);
 
             (int value, float rate) = Roll(mergeOption);
-            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option();
-            upgradeItem.Stats![ItemStats.Type.Empowerment1].Special[attribute] = new SpecialOption(rate, value);
+            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
+                Special = {
+                    [attribute] = new SpecialOption(rate, value),
+                },
+            };
         }
 
         session.Send(ItemMergePacket.Empower(upgradeItem));
+        session.NpcScript?.Event();
+        session.ConditionUpdate(ConditionType.adventure_level);
 
         return;
 

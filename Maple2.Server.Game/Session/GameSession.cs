@@ -121,7 +121,7 @@ public sealed partial class GameSession : Core.Network.Session {
         int portalId = migrateResponse.PortalId;
         long ownerId = migrateResponse.OwnerId;
         int instanceId = migrateResponse.InstanceId;
-        PlotMode plotMode = (PlotMode) migrateResponse.PlotMode;
+        var plotMode = (PlotMode) migrateResponse.PlotMode;
 
         AccountId = accountId;
         CharacterId = characterId;
@@ -149,7 +149,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
-        ItemMerge = new ItemMergeManager(this, Lua);
+        ItemMerge = new ItemMergeManager(this);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
         GameEventUserValue = new GameEventUserValueManager(this);
