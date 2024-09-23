@@ -1063,7 +1063,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add(value);
+                                rates.Add((float) value/1000);
+                                values.Add(0);
                                 weights.Add(weight);
                             }
                         } else {
@@ -1073,6 +1074,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                     continue;
                                 }
                                 values.Add(value);
+                                rates.Add(0);
                                 weights.Add(weight);
                             }
                         }
@@ -1097,6 +1099,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                     continue;
                                 }
                                 values.Add(value);
+                                rates.Add(0);
                                 weights.Add(weight);
                             }
                         } else {
@@ -1105,7 +1108,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add(value);
+                                rates.Add((float) value/1000);
+                                values.Add(0);
                                 weights.Add(weight);
                             }
                         }

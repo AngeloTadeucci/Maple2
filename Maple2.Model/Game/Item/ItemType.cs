@@ -59,6 +59,7 @@ public readonly record struct ItemType(byte Group, byte Type) {
     public bool IsStickerPack => Group is 2 && Type is 11;
     public bool IsOutfitCapsule => Group is 2 && Type is 20;
     public bool IsOutfitCoin => Group is 2 && Type is 22;
+    public bool IsExchangeTranscendenceCrystal => Group is 2 && Type is 30;
 
     public bool IsMisc => Group is 3 && Type is 0;
     public bool IsScroll => Group is 3 && Type is 10;
@@ -70,6 +71,7 @@ public readonly record struct ItemType(byte Group, byte Type) {
     public bool IsCustomMusicScore => Group is 3 && Type is 51;
     public bool IsBlueprint => Group is 3 && Type is 52;
     public bool IsFragment => Group is 3 && Type is 60;
+    public bool IsTranscendenceCrystal => Group is 3 && Type is 70;
     public bool IsBook => Group is 3 && Type is 90;
 
     public bool IsGemstone => Group is 4 && Type is 2;

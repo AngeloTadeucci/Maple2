@@ -80,6 +80,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public StatsManager Stats { get; set; } = null!;
     public BuffManager Buffs { get; set; } = null!;
     public ItemEnchantManager ItemEnchant { get; set; } = null!;
+    public ItemMergeManager ItemMerge { get; set; } = null!;
     public ItemBoxManager ItemBox { get; set; } = null!;
     public BeautyManager Beauty { get; set; } = null!;
     public GameEventUserValueManager GameEventUserValue { get; set; } = null!;
@@ -148,6 +149,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
+        ItemMerge = new ItemMergeManager(this, Lua);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
         GameEventUserValue = new GameEventUserValueManager(this);

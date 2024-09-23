@@ -1,9 +1,11 @@
 ﻿using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -11,6 +13,8 @@ public static class ItemMergePacket {
     private enum Command : byte {
         Stage = 0,
         Select = 1,
+        Empower = 3,
+        Remove = 4,
     }
 
     public static ByteWriter Stage(ICollection<long> crystals) {
@@ -28,7 +32,7 @@ public static class ItemMergePacket {
         var pWriter = Packet.Of(SendOp.ItemMerge);
         pWriter.Write<Command>(Command.Select);
         pWriter.WriteInt(1); // Step. Hardcoding 1 as there's never more than one
-        pWriter.WriteLong(metadata.MesoCost);
+        pWriter.WriteLong(metadata.MesoCost * materialMultiplier);
         pWriter.WriteInt(1); // Needs to be 1 for meso cost to show?
         pWriter.WriteByte((byte) metadata.Materials.Length);
         foreach (ItemComponent ingredient in metadata.Materials) {
@@ -52,6 +56,34 @@ public static class ItemMergePacket {
             pWriter.WriteShort((short) attribute);
             pWriter.WriteMergeStat(mergeOption);
         }
+
+        return pWriter;
+    }
+
+    public static ByteWriter Empower(Item item, ItemMergeError error = ItemMergeError.ok) {
+        var pWriter = Packet.Of(SendOp.ItemMerge);
+        pWriter.Write<Command>(Command.Empower);
+        pWriter.Write<ItemMergeError>(error);
+        pWriter.WriteLong(item.Uid);
+        pWriter.WriteClass<Item>(item);
+
+        return pWriter;
+    }
+
+    // Overload for error
+    public static ByteWriter Error(ItemMergeError error) {
+        var pWriter = Packet.Of(SendOp.ItemMerge);
+        pWriter.Write<Command>(Command.Empower);
+        pWriter.Write<ItemMergeError>(error);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Remove(Item item) {
+        var pWriter = Packet.Of(SendOp.ItemMerge);
+        pWriter.Write<Command>(Command.Remove);
+        pWriter.WriteLong(item.Uid);
+        pWriter.WriteClass<Item>(item);
 
         return pWriter;
     }
