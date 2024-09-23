@@ -58,7 +58,7 @@ public sealed class NpcScriptManager {
 
     public void Event() {
         CinematicEventScript script = eventScripts[Index];
-        ScriptContent content =  script.Contents[Random.Shared.Next(script.Contents.Length - 1)];
+        ScriptContent content = script.Contents[Random.Shared.Next(script.Contents.Length - 1)];
         session.Send(NpcTalkPacket.Update(content));
         Index++;
     }
