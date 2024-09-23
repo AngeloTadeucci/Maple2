@@ -14,6 +14,7 @@ public static class ItemMergePacket {
         Stage = 0,
         Select = 1,
         Empower = 3,
+        Error = 3, // Same as Empower
         Remove = 4,
     }
 
@@ -70,10 +71,9 @@ public static class ItemMergePacket {
         return pWriter;
     }
 
-    // Overload for error
     public static ByteWriter Error(ItemMergeError error) {
         var pWriter = Packet.Of(SendOp.ItemMerge);
-        pWriter.Write<Command>(Command.Empower);
+        pWriter.Write<Command>(Command.Error);
         pWriter.Write<ItemMergeError>(error);
 
         return pWriter;

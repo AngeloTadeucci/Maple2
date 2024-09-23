@@ -91,6 +91,7 @@ public sealed class ItemMergeManager {
 
         CinematicEventScript[] eventScripts = state.Contents.First().Events;
         session.NpcScript = new NpcScriptManager(session, eventScripts);
+        session.NpcScript.Event();
     }
 
     public void Empower(long itemUid, long catalystUid) {
@@ -110,7 +111,8 @@ public sealed class ItemMergeManager {
         }
 
         int multiplier = ItemMerge.CostMultiplier(upgradeItem.Rarity);
-        if (session.Currency.CanAddMeso(-(mergeSlot.MesoCost * multiplier)) != -(mergeSlot.MesoCost * multiplier)) {
+        long totalMesoCost = mergeSlot.MesoCost * multiplier;
+        if (session.Currency.CanAddMeso(-totalMesoCost) != -totalMesoCost) {
             session.Send(ItemMergePacket.Error(ItemMergeError.s_item_merge_option_error_lack_meso));
             return;
         }

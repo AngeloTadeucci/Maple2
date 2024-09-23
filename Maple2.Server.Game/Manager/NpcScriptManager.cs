@@ -53,7 +53,6 @@ public sealed class NpcScriptManager {
     public NpcScriptManager(GameSession session, CinematicEventScript[] eventScripts) {
         this.session = session;
         this.eventScripts = eventScripts;
-        Event();
     }
 
     public void Event() {
