@@ -1063,7 +1063,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add((float) value/1000);
+                                rates.Add((float) value / 1000);
                                 values.Add(0);
                                 weights.Add(weight);
                             }
@@ -1108,7 +1108,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add((float) value/1000);
+                                rates.Add((float) value / 1000);
                                 values.Add(0);
                                 weights.Add(weight);
                             }
