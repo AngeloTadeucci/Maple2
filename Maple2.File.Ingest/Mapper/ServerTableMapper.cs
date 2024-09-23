@@ -1050,14 +1050,15 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 var specialOptions = new Dictionary<SpecialAttribute, ItemMergeTable.Option>();
 
                 foreach (MergeOption.Option mergeOptionEntry in slotEntry.option) {
-                    if (mergeOptionEntry.optionName is "str" or "dex" or "int" or "luk" or "hp" or "hp_rgp" or "hp_inv" or "sp" or "sp_rgp" or "sp_inv" or "ep" or "ep_rgp" or "ep_inv" or "asp" or "msp" or "atp" or "evp" or "cap" or "cad" or "car" or "ndd" or "abp" or "jmp" or "pap" or "map" or "par" or "mar" or "wapmin" or "wapmax" or "dmg" or "pen" or "rmsp" or "bap" or "bap_pet") {
+                    if (mergeOptionEntry.optionName is "str" or "dex" or "int" or "luk" or "hp" or "hp_rgp" or "hp_inv" or "sp" or "sp_rgp" or "sp_inv" or "ep" or "ep_rgp" or "ep_inv" or "asp" or "msp" or "atp" or "evp" or
+                        "cap" or "cad" or "car" or "ndd" or "abp" or "jmp" or "pap" or "map" or "par" or "mar" or "wapmin" or "wapmax" or "dmg" or "pen" or "rmsp" or "bap" or "bap_pet") {
                         var basicAttribute = mergeOptionEntry.optionName.ToBasicAttribute();
                         List<ItemMergeTable.Range<int>> values = [];
                         List<ItemMergeTable.Range<int>> rates = [];
                         List<int> weights = [];
                         int min = mergeOptionEntry.min;
                         if (basicAttribute is BasicAttribute.Piercing or BasicAttribute.PerfectGuard or
-                            BasicAttribute.PhysicalRes or BasicAttribute.MagicalRes) {
+                            BasicAttribute.JumpHeight) {
                             // Looping by 10 because that's the max amount of values in the xml
                             for (int i = 0; i < 10; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
@@ -1092,12 +1093,16 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         List<ItemMergeTable.Range<int>> rates = [];
                         List<int> weights = [];
                         int min = mergeOptionEntry.min;
-                        if (mergeOptionEntry.optionName is "killhprestore" or "skillcooldown" or "knockbackreduce" or "improve_massive_ox_msp" or "improve_massive_trapmaster_msp" or "improve_massive_finalsurvival_msp"
-                            or "improve_massive_crazyrunner_msp" or "improve_massive_sh_crazyrunner_msp" or "improve_massive_escape_msp" or "improve_massive_springbeach_msp" or "improve_massive_dancedance_msp" or
-                            "improve_darkstream_evp" or "complete_fieldmission_msp" or "additionaleffect_95000018" or "additionaleffect_95000012" or "additionaleffect_95000014" or "additionaleffect_95000020" or
-                            "additionaleffect_95000021" or "additionaleffect_95000022" or "additionaleffect_95000023" or "additionaleffect_95000024" or "additionaleffect_95000025" or "additionaleffect_95000026" or
-                            "additionaleffect_95000027" or "additionaleffect_95000028" or "additionaleffect_95000029") {
-                            for (int i = 0; i < 9; i++) {
+                        if (specialAttribute is SpecialAttribute.HpOnKill or SpecialAttribute.ReduceCooldown or SpecialAttribute.ReduceKnockBack or SpecialAttribute.MassiveOxSpeed or SpecialAttribute.MassiveTrapMasterSpeed or
+                            SpecialAttribute.MassiveFinalSurvivalSpeed or SpecialAttribute.MassiveCrazyRunnerSpeed or SpecialAttribute.MassiveShCrazyRunnerSpeed or SpecialAttribute.MassiveEscapeSpeed or SpecialAttribute.MassiveSpringBeachSpeed or
+                            SpecialAttribute.MassiveDanceDanceSpeed or SpecialAttribute.DarkStreamEvp or SpecialAttribute.CompleteFieldMissionSpeed or SpecialAttribute.AdditionalEffect95000018 or SpecialAttribute.AdditionalEffect95000012 or
+                            SpecialAttribute.AdditionalEffect95000014 or SpecialAttribute.AdditionalEffect95000020 or SpecialAttribute.AdditionalEffect95000021 or SpecialAttribute.AdditionalEffect95000022 or SpecialAttribute.AdditionalEffect95000023
+                            or SpecialAttribute.AdditionalEffect95000024 or SpecialAttribute.AdditionalEffect95000025 or SpecialAttribute.AdditionalEffect95000026 or SpecialAttribute.AdditionalEffect95000027 or SpecialAttribute.AdditionalEffect95000028 or
+                            SpecialAttribute.AdditionalEffect95000029 or SpecialAttribute.DashDistance or SpecialAttribute.SpiritOnKill or SpecialAttribute.StaminaOnKill or SpecialAttribute.PvpDamage or SpecialAttribute.ReducePvpDamage or SpecialAttribute.SkillLevelUpTier1
+                            or SpecialAttribute.SkillLevelUpTier2 or SpecialAttribute.SkillLevelUpTier3 or SpecialAttribute.SkillLevelUpTier4 or SpecialAttribute.SkillLevelUpTier5 or SpecialAttribute.SkillLevelUpTier6 or SpecialAttribute.SkillLevelUpTier7 or SpecialAttribute.SkillLevelUpTier8
+                            or SpecialAttribute.SkillLevelUpTier9 or SpecialAttribute.SkillLevelUpTier10 or SpecialAttribute.SkillLevelUpTier11 or SpecialAttribute.SkillLevelUpTier12 or SpecialAttribute.SkillLevelUpTier13 or SpecialAttribute.SkillLevelUpTier14 or SpecialAttribute.ChaosRaidAttackSpeed
+                            or SpecialAttribute.ChaosRaidAccuracy or SpecialAttribute.ChaosRaidHp or SpecialAttribute.PetTrapReward) {
+                            for (int i = 0; i < 10; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
                                 if (value == 0) {
                                     continue;
@@ -1108,7 +1113,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 min = value;
                             }
                         } else {
-                            for (int i = 0; i < 9; i++) {
+                            for (int i = 0; i < 10; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
                                 if (value == 0) {
                                     continue;

@@ -137,7 +137,7 @@ public sealed class ItemMergeManager {
 
         int selectedIndex = Random.Shared.Next(mergeSlot.BasicOptions.Count + mergeSlot.SpecialOptions.Count);
 
-        if (selectedIndex <= mergeSlot.BasicOptions.Count - 1) {
+        if (selectedIndex < mergeSlot.BasicOptions.Count) {
             (BasicAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.BasicOptions.ElementAt(selectedIndex);
 
             (int value, float rate) = Roll(mergeOption);
@@ -147,7 +147,7 @@ public sealed class ItemMergeManager {
                 },
             };
         } else {
-            (SpecialAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count - 1);
+            (SpecialAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count);
 
             (int value, float rate) = Roll(mergeOption);
             upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
