@@ -85,8 +85,7 @@ public sealed class ItemMergeManager {
 
         session.Send(ItemMergePacket.Select(mergeSlot, ItemMerge.CostMultiplier(upgradeItem.Rarity)));
 
-        if (!session.NpcMetadata.TryGet(Constant.EmpowermentNpc, out NpcMetadata? npcMetadata) ||
-            !session.ScriptMetadata.TryGet(Constant.EmpowermentNpc, out ScriptMetadata? script) ||
+        if (!session.ScriptMetadata.TryGet(Constant.EmpowermentNpc, out ScriptMetadata? script) ||
             !script.States.TryGetValue(Constant.MergeSmithScriptID, out ScriptState? state)) {
             return;
         }

@@ -1143,6 +1143,12 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             }
             results.Add(id, slots);
         }
+        // Hardcoding values seeing as the missing ids here are utilizing table id 37000055
+        for (int i = 37000056; i < 37000064; i++) {
+            if (results.TryGetValue(37000055, out Dictionary<int, ItemMergeTable.Entry>? dictionary)) {
+                results.Add(i, dictionary);
+            }
+        }
         return new ItemMergeTable(results);
 
         ItemComponent? ParseItemMaterial(string[] itemMaterial) {
