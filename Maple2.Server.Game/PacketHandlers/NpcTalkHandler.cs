@@ -72,11 +72,6 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     }
 
     private void HandleTalk(GameSession session, IByteReader packet) {
-        // Already talking to an Npc.
-        if (session.NpcScript != null) {
-            return;
-        }
-
         int objectId = packet.ReadInt();
         if (!session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
             return; // Invalid Npc
