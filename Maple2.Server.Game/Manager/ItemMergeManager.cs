@@ -43,13 +43,13 @@ public sealed class ItemMergeManager {
         upgradeItem = item;
 
         List<long> catalystUids = [];
-        foreach ((int id, Dictionary<int, ItemMergeSlot> options) in session.ServerTableMetadata.ItemMergeTable.Entries) {
-            Item? catalyst = session.Item.Inventory.Find(id).FirstOrDefault();
-            if (catalyst == null) {
+        foreach ((int id, Dictionary<int, ItemMergeTable.Entry> options) in session.ServerTableMetadata.ItemMergeTable.Entries) {
+            IList<Item> catalysts = session.Item.Inventory.Find(id).ToList();
+            if (!catalysts.Any()) {
                 continue;
             }
 
-            if (catalyst.Metadata.Limit.Level < item.Metadata.Limit.Level) {
+            if (catalysts.FirstOrDefault()?.Metadata.Limit.Level < item.Metadata.Limit.Level) {
                 continue;
             }
 
@@ -57,7 +57,9 @@ public sealed class ItemMergeManager {
                 continue;
             }
 
-            catalystUids.Add(catalyst.Uid);
+            foreach (Item catalyst in catalysts) {
+                catalystUids.Add(catalyst.Uid);
+            }
         }
 
         session.Send(ItemMergePacket.Stage(catalystUids));
@@ -76,8 +78,8 @@ public sealed class ItemMergeManager {
 
         catalystItem = catalyst;
 
-        if (!session.ServerTableMetadata.ItemMergeTable.Entries.TryGetValue(catalyst.Id, out Dictionary<int, ItemMergeSlot>? options) ||
-            (!options.TryGetValue(upgradeItem.Type.Type, out ItemMergeSlot? mergeSlot))) {
+        if (!session.ServerTableMetadata.ItemMergeTable.Entries.TryGetValue(catalyst.Id, out Dictionary<int, ItemMergeTable.Entry>? options) ||
+            (!options.TryGetValue(upgradeItem.Type.Type, out ItemMergeTable.Entry? mergeSlot))) {
             return;
         }
 
@@ -105,8 +107,8 @@ public sealed class ItemMergeManager {
             return;
         }
 
-        if (!session.ServerTableMetadata.ItemMergeTable.Entries.TryGetValue(catalystItem.Id, out Dictionary<int, ItemMergeSlot>? options) ||
-            (!options.TryGetValue(upgradeItem.Type.Type, out ItemMergeSlot? mergeSlot))) {
+        if (!session.ServerTableMetadata.ItemMergeTable.Entries.TryGetValue(catalystItem.Id, out Dictionary<int, ItemMergeTable.Entry>? options) ||
+            (!options.TryGetValue(upgradeItem.Type.Type, out ItemMergeTable.Entry? mergeSlot))) {
             return;
         }
 
@@ -117,12 +119,16 @@ public sealed class ItemMergeManager {
             return;
         }
 
-        if (!session.Item.Inventory.ConsumeItemComponents(mergeSlot.Materials, multiplier)) {
+        List<IngredientInfo> ingredients = [];
+        foreach (ItemComponent component in mergeSlot.Materials) {
+            ingredients.Add(new IngredientInfo(component.Tag, component.Amount * multiplier));
+        }
+        if (!session.Item.Inventory.Consume(ingredients)) {
             session.Send(ItemMergePacket.Error(ItemMergeError.s_item_merge_option_error_lack_material));
             return;
         }
 
-        if (!session.Item.Inventory.Consume(catalystItem.Uid)) {
+        if (!session.Item.Inventory.Consume(catalystItem.Uid, 1)) {
             session.Send(ItemMergePacket.Error(ItemMergeError.s_item_merge_option_error_invalid_merge_scroll));
             return;
         }
@@ -132,7 +138,7 @@ public sealed class ItemMergeManager {
         int selectedIndex = Random.Shared.Next(mergeSlot.BasicOptions.Count + mergeSlot.SpecialOptions.Count);
 
         if (selectedIndex <= mergeSlot.BasicOptions.Count - 1) {
-            (BasicAttribute attribute, ItemMergeOption mergeOption) = mergeSlot.BasicOptions.ElementAt(selectedIndex);
+            (BasicAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.BasicOptions.ElementAt(selectedIndex);
 
             (int value, float rate) = Roll(mergeOption);
             upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
@@ -141,7 +147,7 @@ public sealed class ItemMergeManager {
                 },
             };
         } else {
-            (SpecialAttribute attribute, ItemMergeOption mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count - 1);
+            (SpecialAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count - 1);
 
             (int value, float rate) = Roll(mergeOption);
             upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
@@ -153,18 +159,22 @@ public sealed class ItemMergeManager {
 
         session.Send(ItemMergePacket.Empower(upgradeItem));
         session.NpcScript?.Event();
-        session.ConditionUpdate(ConditionType.adventure_level);
+        session.ConditionUpdate(ConditionType.item_merge_success);
 
         return;
 
-        (int, float) Roll(ItemMergeOption mergeOption) {
-            WeightedSet<(int, float)> weightedSet = new();
+        (int, float) Roll(ItemMergeTable.Option mergeOption) {
+            WeightedSet<(ItemMergeTable.Range<int>, ItemMergeTable.Range<int>)> weightedSet = new();
 
             for (int i = 0; i < mergeOption.Values.Length; i++) {
                 weightedSet.Add((mergeOption.Values[i], mergeOption.Rates[i]), mergeOption.Weights[i]);
             }
 
-            return weightedSet.Get();
+            (ItemMergeTable.Range<int> valueRange, ItemMergeTable.Range<int> rateRange) =  weightedSet.Get();
+            int value = Random.Shared.Next(valueRange.Min, valueRange.Max);
+            float rate = Random.Shared.Next(rateRange.Min, rateRange.Max);
+            rate /= 1000;
+            return (value, rate);
         }
     }
 }

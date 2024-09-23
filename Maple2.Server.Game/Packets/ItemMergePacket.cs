@@ -29,7 +29,7 @@ public static class ItemMergePacket {
         return pWriter;
     }
 
-    public static ByteWriter Select(ItemMergeSlot metadata, int materialMultiplier = 1) {
+    public static ByteWriter Select(ItemMergeTable.Entry metadata, int materialMultiplier = 1) {
         var pWriter = Packet.Of(SendOp.ItemMerge);
         pWriter.Write<Command>(Command.Select);
         pWriter.WriteInt(1); // Step. Hardcoding 1 as there's never more than one
@@ -38,7 +38,7 @@ public static class ItemMergePacket {
         pWriter.WriteByte((byte) metadata.Materials.Length);
         foreach (ItemComponent ingredient in metadata.Materials) {
             pWriter.WriteInt(ingredient.ItemId);
-            pWriter.WriteInt(); // ?? not rarity
+            pWriter.WriteInt((int) ingredient.Tag);
             pWriter.WriteInt(ingredient.Amount * materialMultiplier);
         }
 
@@ -46,14 +46,14 @@ public static class ItemMergePacket {
 
         // Basic Attributes
         pWriter.WriteInt(metadata.BasicOptions.Count);
-        foreach ((BasicAttribute attribute, ItemMergeOption mergeOption) in metadata.BasicOptions) {
+        foreach ((BasicAttribute attribute, ItemMergeTable.Option mergeOption) in metadata.BasicOptions) {
             pWriter.WriteShort((short) attribute);
             pWriter.WriteMergeStat(mergeOption);
         }
 
         // Special Attributes
         pWriter.WriteInt(metadata.SpecialOptions.Count);
-        foreach ((SpecialAttribute attribute, ItemMergeOption mergeOption) in metadata.SpecialOptions) {
+        foreach ((SpecialAttribute attribute, ItemMergeTable.Option mergeOption) in metadata.SpecialOptions) {
             pWriter.WriteShort((short) attribute);
             pWriter.WriteMergeStat(mergeOption);
         }
@@ -88,10 +88,10 @@ public static class ItemMergePacket {
         return pWriter;
     }
 
-    private static void WriteMergeStat(this IByteWriter pWriter, ItemMergeOption option) {
-        pWriter.WriteInt(option.Values[0]);
-        pWriter.WriteInt(option.Values[^1]);
-        pWriter.WriteFloat(option.Rates[0]);
-        pWriter.WriteFloat(option.Rates[^1]);
+    private static void WriteMergeStat(this IByteWriter pWriter, ItemMergeTable.Option option) {
+        pWriter.WriteInt(option.Values[0].Min);
+        pWriter.WriteInt(option.Values[^1].Max);
+        pWriter.WriteFloat((float) option.Rates[0].Min / 1000);
+        pWriter.WriteFloat((float) option.Rates[^1].Max / 1000);
     }
 }

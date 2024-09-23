@@ -1031,9 +1031,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private ItemMergeTable ParseItemMergeOptionTable() {
-        var results = new Dictionary<int, Dictionary<int, ItemMergeSlot>>();
+        var results = new Dictionary<int, Dictionary<int, ItemMergeTable.Entry>>();
         foreach ((int id, MergeOption mergeOption) in parser.ParseItemMergeOption()) {
-            var slots = new Dictionary<int, ItemMergeSlot>();
+            var slots = new Dictionary<int, ItemMergeTable.Entry>();
             foreach (MergeOption.Slot slotEntry in mergeOption.slot) {
                 var ingredients = new List<ItemComponent>();
 
@@ -1046,48 +1046,52 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     ingredients.Add(ingredient2);
                 }
 
-                var basicOptions = new Dictionary<BasicAttribute, ItemMergeOption>();
-                var specialOptions = new Dictionary<SpecialAttribute, ItemMergeOption>();
+                var basicOptions = new Dictionary<BasicAttribute, ItemMergeTable.Option>();
+                var specialOptions = new Dictionary<SpecialAttribute, ItemMergeTable.Option>();
 
                 foreach (MergeOption.Option mergeOptionEntry in slotEntry.option) {
                     if (mergeOptionEntry.optionName is "str" or "dex" or "int" or "luk" or "hp" or "hp_rgp" or "hp_inv" or "sp" or "sp_rgp" or "sp_inv" or "ep" or "ep_rgp" or "ep_inv" or "asp" or "msp" or "atp" or "evp" or "cap" or "cad" or "car" or "ndd" or "abp" or "jmp" or "pap" or "map" or "par" or "mar" or "wapmin" or "wapmax" or "dmg" or "pen" or "rmsp" or "bap" or "bap_pet") {
                         var basicAttribute = mergeOptionEntry.optionName.ToBasicAttribute();
-                        List<int> values = [];
-                        List<float> rates = [];
+                        List<ItemMergeTable.Range<int>> values = [];
+                        List<ItemMergeTable.Range<int>> rates = [];
                         List<int> weights = [];
+                        int min = mergeOptionEntry.min;
                         if (basicAttribute is BasicAttribute.Piercing or BasicAttribute.PerfectGuard or
                             BasicAttribute.PhysicalRes or BasicAttribute.MagicalRes) {
-                            // Looping by 9 because that's the max amount of values in the xml
-                            for (int i = 0; i < 9; i++) {
+                            // Looping by 10 because that's the max amount of values in the xml
+                            for (int i = 0; i < 10; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add((float) value / 1000);
-                                values.Add(0);
+                                rates.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                values.Add(new ItemMergeTable.Range<int>(0, 0));
                                 weights.Add(weight);
+                                min = value;
                             }
                         } else {
-                            for (int i = 0; i < 9; i++) {
+                            for (int i = 0; i < 10; i++) {
                                 (int value, int weight) = mergeOptionEntry[i];
                                 if (value == 0) {
                                     continue;
                                 }
-                                values.Add(value);
-                                rates.Add(0);
+                                values.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                rates.Add(new ItemMergeTable.Range<int>(0, 0));
                                 weights.Add(weight);
+                                min = value;
                             }
                         }
 
-                        basicOptions[basicAttribute] = new ItemMergeOption(
+                        basicOptions[basicAttribute] = new ItemMergeTable.Option(
                             Values: values.ToArray(),
                             Rates: rates.ToArray(),
                             Weights: weights.ToArray());
                     } else {
                         var specialAttribute = mergeOptionEntry.optionName.ToSpecialAttribute();
-                        List<int> values = [];
-                        List<float> rates = [];
+                        List<ItemMergeTable.Range<int>> values = [];
+                        List<ItemMergeTable.Range<int>> rates = [];
                         List<int> weights = [];
+                        int min = mergeOptionEntry.min;
                         if (mergeOptionEntry.optionName is "killhprestore" or "skillcooldown" or "knockbackreduce" or "improve_massive_ox_msp" or "improve_massive_trapmaster_msp" or "improve_massive_finalsurvival_msp"
                             or "improve_massive_crazyrunner_msp" or "improve_massive_sh_crazyrunner_msp" or "improve_massive_escape_msp" or "improve_massive_springbeach_msp" or "improve_massive_dancedance_msp" or
                             "improve_darkstream_evp" or "complete_fieldmission_msp" or "additionaleffect_95000018" or "additionaleffect_95000012" or "additionaleffect_95000014" or "additionaleffect_95000020" or
@@ -1098,9 +1102,10 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                values.Add(value);
-                                rates.Add(0);
+                                values.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                rates.Add(new ItemMergeTable.Range<int>(0, 0));
                                 weights.Add(weight);
+                                min = value;
                             }
                         } else {
                             for (int i = 0; i < 9; i++) {
@@ -1108,19 +1113,20 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                                 if (value == 0) {
                                     continue;
                                 }
-                                rates.Add((float) value / 1000);
-                                values.Add(0);
+                                rates.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                values.Add(new ItemMergeTable.Range<int>(0, 0));
                                 weights.Add(weight);
+                                min = value;
                             }
                         }
 
-                        specialOptions[specialAttribute] = new ItemMergeOption(
+                        specialOptions[specialAttribute] = new ItemMergeTable.Option(
                             Values: values.ToArray(),
                             Rates: rates.ToArray(),
                             Weights: weights.ToArray());
                     }
                 }
-                var slot = new ItemMergeSlot(
+                var slot = new ItemMergeTable.Entry(
                     Slot: slotEntry.part,
                     MesoCost: slotEntry.consumeMeso,
                     Materials: ingredients.ToArray(),
