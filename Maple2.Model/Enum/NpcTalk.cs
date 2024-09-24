@@ -116,3 +116,7 @@ public enum NpcTalkAction : byte {
     Unknown9 = 9,
     Cutscene = 10,
 }
+
+public enum NpcEventType : short {
+    Empower = 202,
+}

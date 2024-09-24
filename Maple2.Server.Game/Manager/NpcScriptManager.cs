@@ -23,6 +23,8 @@ public sealed class NpcScriptManager {
     public NpcTalkType TalkType;
     public NpcTalkButton Button;
 
+    private readonly CinematicEventScript[] eventScripts = [];
+
     public ScriptState? State { get; set; }
     public int Index { get; private set; } = 0;
     private readonly ILogger logger = Log.Logger.ForContext<NpcScriptManager>();
@@ -43,6 +45,21 @@ public sealed class NpcScriptManager {
         if (state?.Type == ScriptStateType.Job) {
             JobCondition = session.ServerTableMetadata.JobConditionTable.Entries.GetValueOrDefault(Npc.Value.Id);
         }
+    }
+
+    /// <summary>
+    /// Used for Event Scripts
+    /// </summary>
+    public NpcScriptManager(GameSession session, CinematicEventScript[] eventScripts) {
+        this.session = session;
+        this.eventScripts = eventScripts;
+    }
+
+    public void Event() {
+        CinematicEventScript script = eventScripts[Index];
+        ScriptContent content = script.Contents[Random.Shared.Next(script.Contents.Length - 1)];
+        session.Send(NpcTalkPacket.Update(content));
+        Index++;
     }
 
     public bool BeginNpcTalk() {
