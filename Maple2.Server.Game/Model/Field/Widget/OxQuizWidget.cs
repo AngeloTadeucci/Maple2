@@ -28,9 +28,9 @@ public class OxQuizWidget : Widget {
         if (isOnStr == "1") {
             isDevMode = true;
         }
-        #if DEBUG
+#if DEBUG
         isDevMode = true;
-        #endif
+#endif
     }
 
     private void PickQuiz(string levelStr, int numericArg) {
