@@ -1,9 +1,6 @@
-﻿using Maple2.Model.Game;
-using Maple2.Model.Metadata;
-using Maple2.PacketLib.Tools;
+﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -13,13 +10,9 @@ public class ItemMergeHandler : PacketHandler<GameSession> {
 
     private enum Command : byte {
         Stage = 0,
+        SelectCrystal = 1,
+        Empower = 2,
     }
-
-    #region Autofac Autowired
-    // ReSharper disable MemberCanBePrivate.Global
-    public required Lua.Lua Lua { private get; init; }
-    // ReSharper restore All
-    #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
@@ -27,40 +20,33 @@ public class ItemMergeHandler : PacketHandler<GameSession> {
             case Command.Stage:
                 HandleStage(session, packet);
                 break;
+            case Command.SelectCrystal:
+                HandleSelectCrystal(session, packet);
+                break;
+            case Command.Empower:
+                HandleEmpower(session, packet);
+                break;
         }
     }
 
     private void HandleStage(GameSession session, IByteReader packet) {
         long itemUid = packet.ReadLong();
 
-        Item? item = session.Item.Inventory.Get(itemUid);
-        if (item == null) {
-            item = session.Item.Equips.Get(itemUid);
-            if (item == null) {
-                // TODO: Error
-                return;
-            }
-        }
-        int type = item.Type.Type;
+        session.ItemMerge.Stage(itemUid);
+    }
 
-        List<long> catalystUids = new();
-        foreach ((int id, Dictionary<int, ItemMergeSlot> options) in session.ServerTableMetadata.ItemMergeTable.Entries) {
-            Item? catalyst = session.Item.Inventory.Find(id).FirstOrDefault();
-            if (catalyst == null) {
-                continue;
-            }
+    private void HandleSelectCrystal(GameSession session, IByteReader packet) {
+        long itemUid = packet.ReadLong();
+        long catalystUid = packet.ReadLong();
 
-            if (catalyst.Metadata.Limit.Level < item.Metadata.Limit.Level) {
-                continue;
-            }
+        session.ItemMerge.SelectCrystal(itemUid, catalystUid);
+    }
 
-            if (!options.TryGetValue(type, out ItemMergeSlot? mergeSlot)) {
-                continue;
-            }
+    private void HandleEmpower(GameSession session, IByteReader packet) {
+        long itemUid = packet.ReadLong();
+        long catalystUid = packet.ReadLong();
 
-            catalystUids.Add(catalyst.Uid);
-        }
+        session.ItemMerge.Empower(itemUid, catalystUid);
 
-        session.Send(ItemMergePacket.Stage(catalystUids));
     }
 }

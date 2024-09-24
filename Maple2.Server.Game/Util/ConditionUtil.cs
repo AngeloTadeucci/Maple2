@@ -135,6 +135,7 @@ public static class ConditionUtil {
             case ConditionType.buy_house:
             case ConditionType.extend_house:
             case ConditionType.exp:
+            case ConditionType.item_merge_success:
                 return true;
         }
         return false;
@@ -251,6 +252,7 @@ public static class ConditionUtil {
             case ConditionType.buy_house:
             case ConditionType.extend_house:
             case ConditionType.exp:
+            case ConditionType.item_merge_success:
                 return true;
         }
         return false;

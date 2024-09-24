@@ -50,6 +50,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             case Command.EnchantUnknown:
                 return;
             case Command.Enchant:
+                HandleEnchant(session, packet);
                 return;
             case Command.Quest:
                 HandleQuest(session, packet);
@@ -71,11 +72,6 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     }
 
     private void HandleTalk(GameSession session, IByteReader packet) {
-        // Already talking to an Npc.
-        if (session.NpcScript != null) {
-            return;
-        }
-
         int objectId = packet.ReadInt();
         if (!session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
             return; // Invalid Npc
@@ -222,6 +218,17 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         // Attempt to Continue, if |false|, the dialogue has terminated.
         if (!session.NpcScript.Continue(pick)) {
             session.NpcScript = null;
+        }
+    }
+
+    private void HandleEnchant(GameSession session, IByteReader packet) {
+        int npcId = packet.ReadInt();
+        int scriptId = packet.ReadInt();
+        var eventType = packet.Read<NpcEventType>();
+
+        if (eventType == NpcEventType.Empower) {
+            session.NpcScript?.Event();
+            return;
         }
     }
 
