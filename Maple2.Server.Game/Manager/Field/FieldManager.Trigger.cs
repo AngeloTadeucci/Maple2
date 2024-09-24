@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Manager.Field;

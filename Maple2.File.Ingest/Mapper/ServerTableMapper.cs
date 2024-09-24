@@ -40,6 +40,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
         yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
+        yield return new ServerTableMetadata { Name = "OxQuiz.xml", Table = ParseOxQuizTable() };
         yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
         yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
         yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
@@ -1028,6 +1029,21 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             default:
                 return null;
         }
+    }
+
+    private OxQuizTable ParseOxQuizTable() {
+        var results = new Dictionary<int, OxQuizTable.Entry>();
+        foreach ((int id, OxQuiz quiz) in parser.ParseOxQuiz()) {
+            results.Add(id, new OxQuizTable.Entry(
+                Id: quiz.quizID,
+                CategoryId: quiz.categoryID,
+                Category: quiz.categoryStr,
+                Question: quiz.quizStr,
+                Level: quiz.level,
+                IsTrue: quiz.answer,
+                Answer: quiz.answerStr));
+        }
+        return new OxQuizTable(results);
     }
 
     private ItemMergeTable ParseItemMergeOptionTable() {

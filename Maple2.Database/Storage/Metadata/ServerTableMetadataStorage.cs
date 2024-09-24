@@ -18,6 +18,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
     private readonly Lazy<TimeEventTable> timeEventTable;
     private readonly Lazy<GameEventTable> gameEventTable;
+    private readonly Lazy<OxQuizTable> oxQuizTable;
     private readonly Lazy<ItemMergeTable> itemMergeTable;
     private readonly Lazy<ShopTable> shopTable;
     private readonly Lazy<ShopItemTable> shopItemTable;
@@ -35,6 +36,7 @@ public class ServerTableMetadataStorage {
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
     public TimeEventTable TimeEventTable => timeEventTable.Value;
     public GameEventTable GameEventTable => gameEventTable.Value;
+    public OxQuizTable OxQuizTable => oxQuizTable.Value;
     public ItemMergeTable ItemMergeTable => itemMergeTable.Value;
     public ShopTable ShopTable => shopTable.Value;
     public ShopItemTable ShopItemTable => shopItemTable.Value;
@@ -53,6 +55,7 @@ public class ServerTableMetadataStorage {
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
         gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
+        oxQuizTable = Retrieve<OxQuizTable>(context, "oxQuiz.xml");
         itemMergeTable = Retrieve<ItemMergeTable>(context, "itemMergeOptionBase.xml");
         shopTable = Retrieve<ShopTable>(context, "shop_game_info.xml");
         shopItemTable = Retrieve<ShopItemTable>(context, "shop_game.xml");
