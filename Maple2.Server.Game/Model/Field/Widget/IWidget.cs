@@ -7,5 +7,11 @@ public interface IWidget {
     public FieldManager Field { get; }
     public ConcurrentDictionary<string, int> Conditions { get; set; }
 
-    void Action(string function, int arg, string arg2);
+    /// <summary>
+    /// Performs a specific action on the widget based on the provided function and arguments.
+    /// </summary>
+    /// <param name="function">The name of the action to perform.</param>
+    /// <param name="numericArg">A numeric argument for the action.</param>
+    /// <param name="stringArg">A string argument for the action.</param>
+    void Action(string function, int numericArg, string stringArg);
 }

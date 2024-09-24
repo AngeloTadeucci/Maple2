@@ -10,21 +10,21 @@ public class OxQuizWidget : Widget {
 
     private bool isDevMode;
     private int round;
-    private readonly Dictionary<int, OxQuizTable.Entry> questions; // round, question
+    private readonly ConcurrentDictionary<int, OxQuizTable.Entry> questions; // round, question
 
     public OxQuizWidget(FieldManager field) : base(field) {
         Conditions = new ConcurrentDictionary<string, int>();
-        questions = new Dictionary<int, OxQuizTable.Entry>();
+        questions = new ConcurrentDictionary<int, OxQuizTable.Entry>();
     }
 
-    public override void Action(string function, int argNum, string argStr) {
+    public override void Action(string function, int numericArg, string stringArg) {
         MethodInfo? method = GetType().GetMethod(function, BindingFlags.NonPublic | BindingFlags.Instance);
         if (method != null) {
-            method.Invoke(this, [argStr, argNum]);
+            method.Invoke(this, [stringArg, numericArg]);
         }
     }
 
-    private void DevMode(string isOnStr, int argNum) {
+    private void DevMode(string isOnStr, int numericArg) {
         if (isOnStr == "1") {
             isDevMode = true;
         }
@@ -33,7 +33,7 @@ public class OxQuizWidget : Widget {
         #endif
     }
 
-    private void PickQuiz(string levelStr, int argNum) {
+    private void PickQuiz(string levelStr, int numericArg) {
         round++;
         if (!int.TryParse(levelStr, out int level)) {
             level = 1;
@@ -45,7 +45,7 @@ public class OxQuizWidget : Widget {
         }
     }
 
-    private void ShowQuiz(string durationStr, int argNum) {
+    private void ShowQuiz(string durationStr, int numericArg) {
         if (!questions.TryGetValue(round, out OxQuizTable.Entry? question)) {
             return;
         }
@@ -59,7 +59,7 @@ public class OxQuizWidget : Widget {
         Field.Broadcast(QuizEventPacket.Question(question.Category, question.Question, answer, duration));
     }
 
-    private void ShowAnswer(string durationStr, int argNum) {
+    private void ShowAnswer(string durationStr, int numericArg) {
         if (!questions.TryGetValue(round, out OxQuizTable.Entry? question)) {
             return;
         }
@@ -69,7 +69,7 @@ public class OxQuizWidget : Widget {
         Field.Broadcast(QuizEventPacket.Answer(question.IsTrue, question.Answer, duration));
     }
 
-    private void PreJudge(string argStr, int argNum) {
+    private void PreJudge(string stringArg, int numericArg) {
         if (!questions.TryGetValue(round, out OxQuizTable.Entry? question)) {
             return;
         }
@@ -77,7 +77,7 @@ public class OxQuizWidget : Widget {
         Conditions["Incorrect"] = question.IsTrue ? 0 : 1;
     }
 
-    private void Judge(string argStr, int argNum) { }
+    private void Judge(string stringArg, int numericArg) { }
 
-    private void Winner(string argStr, int argNum) { }
+    private void Winner(string stringArg, int numericArg) { }
 }
