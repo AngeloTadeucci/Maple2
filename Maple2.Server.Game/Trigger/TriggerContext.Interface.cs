@@ -3,6 +3,7 @@ using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Tools.Extensions;
@@ -12,7 +13,11 @@ namespace Maple2.Server.Game.Trigger;
 public partial class TriggerContext {
     public void CreateWidget(string type) {
         ErrorLog("[CreateWidget] type:{Type}", type);
-        Field.Widgets[type] = new Widget(type);
+        var widget = type switch {
+            "OxQuiz" => new OxQuizWidget(Field),
+            _ => new Widget(Field),
+        };
+        Field.Widgets[type] = widget;
     }
 
     public void GuideEvent(int eventId) {
@@ -174,6 +179,9 @@ public partial class TriggerContext {
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return;
         }
+
+        DebugLog("Calling Action on widget of type {Type}", widget.GetType().Name);
+        widget.Action(func, widgetArgNum, widgetArg);
     }
 
     #region Conditions
