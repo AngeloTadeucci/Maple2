@@ -504,26 +504,23 @@ public class HousingManager {
         }
 
         session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
-        switch (isBlueprint) {
-            case true when plot.IsPlanner:
-                // If it's planner, only send packets don't save properties
+        if (isBlueprint && plot.IsPlanner) {
+            // If it's planner, only send packets don't save properties
+            session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
+            session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
+            session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
+        } else if (isBlueprint) {
+            if (session.Player.Value.Home.SetBackground(layout.Background)) {
                 session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
+            }
+
+            if (session.Player.Value.Home.SetLighting(layout.Lighting)) {
                 session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
+            }
+
+            if (session.Player.Value.Home.SetCamera(layout.Camera)) {
                 session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
-                break;
-            case true:
-                if (session.Player.Value.Home.SetBackground(layout.Background)) {
-                    session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
-                }
-
-                if (session.Player.Value.Home.SetLighting(layout.Lighting)) {
-                    session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
-                }
-
-                if (session.Player.Value.Home.SetCamera(layout.Camera)) {
-                    session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
-                }
-                break;
+            }
         }
 
         foreach (PlotCube cube in layout.Cubes) {
