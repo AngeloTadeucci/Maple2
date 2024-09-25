@@ -425,12 +425,13 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void ReturnField() {
-        if (!Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
+        Player player = Player.Value;
+        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
             MigrateToPlanner(PlotMode.Normal);
             return;
         }
 
-        Character character = Player.Value.Character;
+        Character character = player.Character;
         int mapId = character.ReturnMapId;
         Vector3 position = character.ReturnPosition;
 
