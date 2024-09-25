@@ -1,12 +1,12 @@
 ﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.UI;
+using Maple2.Server.DebugGame.Graphics.Ui.Windows;
 using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.DebugGame.Graphics.Ui;
 
 public class FieldPropertiesWindow : IUiWindow {
     public bool AllowMainWindow { get => false; }
-    public bool AllowFieldWindow { get => true; }
+    public bool AllowFieldWindow { get => false; }
     public bool Enabled { get; set; } = true;
     public string TypeName { get => "Field Properties"; }
     public DebugGraphicsContext? Context { get; set; }

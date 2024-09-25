@@ -53,10 +53,8 @@ namespace Maple2.Server.DebugGame.Graphics {
                 return renderers;
             }
         }
-        private DebugFieldRenderer? selectedRenderer = null;
         public IReadOnlyList<DebugFieldWindow> FieldWindows { get => fieldWindows; }
         private List<DebugFieldWindow> fieldWindows = new();
-        private DebugFieldWindow? selectedWindow = null;
         private HashSet<FieldManager> updatedFields = new();
         private int deltaIndex = 0;
         private List<int> deltaTimes = new();

@@ -40,6 +40,8 @@ public readonly record struct Vector3S(short X, short Y, short Z) {
     // This offset is used to correct rounding errors due to floating point arithmetic.
     private const float OFFSET = 0.001f;
 
+    public Vector3 Vector3 { get => new Vector3(X, Y, Z); }
+
     public static implicit operator Vector3S(Vector3 vector) {
         return new Vector3S(
             (short) MathF.Round(vector.X),

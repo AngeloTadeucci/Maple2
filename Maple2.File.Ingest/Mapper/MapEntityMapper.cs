@@ -1,19 +1,12 @@
 ﻿using Maple2.Database.Context;
 using Maple2.File.Flat;
 using Maple2.File.Flat.maplestory2library;
-using Maple2.File.Flat.physxmodellibrary;
 using Maple2.File.Flat.standardmodellibrary;
-using Maple2.File.Ingest.Helpers;
 using Maple2.File.IO;
-using Maple2.File.IO.Nif;
-using Maple2.File.Parser.Flat;
 using Maple2.File.Parser.MapXBlock;
-using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Tools.Extensions;
-using Maple2.Tools.VectorMath;
-using System.Numerics;
 using static M2dXmlGenerator.FeatureLocaleFilter;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -22,11 +15,10 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     private readonly HashSet<string> xBlocks;
     private readonly XBlockParser parser;
 
-    public MapEntityMapper(MetadataContext db, M2dReader exportedReader) {
+    public MapEntityMapper(MetadataContext db, M2dReader exportedReader, XBlockParser parser) {
         xBlocks = db.MapMetadata.Select(metadata => metadata.XBlock).ToHashSet();
-        var index = new FlatTypeIndex(exportedReader);
-        // index.CliExplorer();
-        parser = new XBlockParser(exportedReader, index);
+
+        this.parser = parser;
     }
 
     private IEnumerable<MapEntity> ParseMap(string xblock, IEnumerable<IMapEntity> entities) {
@@ -43,134 +35,6 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     break;
             }
         }
-
-        Dictionary<Vector3S, List<IMapEntity>> gridAlignedEntities = new Dictionary<Vector3S, List<IMapEntity>>();
-        List<IMapEntity> unalignedEntities = new List<IMapEntity>();
-        Vector3S minIndex = new Vector3S(short.MaxValue, short.MaxValue, short.MaxValue);
-        Vector3S maxIndex = new Vector3S(short.MinValue, short.MinValue, short.MinValue);
-
-        foreach (IMapEntity entity in entities) {
-            Vector3S nearestCubeIndex = new Vector3S();
-
-            if (entity is not IPlaceable placeable) {
-                continue;
-            }
-
-            Transform transform = new Transform();
-            transform.Position = placeable.Position;
-            transform.RotationAnglesDegrees = placeable.Rotation;
-            transform.Scale = placeable.Scale;
-
-            Vector3 position = (1 / 150.0f) * (placeable.Position - new Vector3(0, 0, 75)); // offset to round to nearest
-            nearestCubeIndex = new Vector3S((short) Math.Floor(position.X + 0.5f), (short) Math.Floor(position.Y + 0.5f), (short) Math.Floor(position.Z + 0.5f));
-            Vector3 voxelPosition = 150.0f * new Vector3(nearestCubeIndex.X, nearestCubeIndex.Y, nearestCubeIndex.Z);
-            BoundingBox3 entityBounds = new BoundingBox3();
-
-            switch (entity) {
-                /*
-                    PhysXProp                               | WhiteboxCube
-                    PhysXProp, MS2MapProperties, MS2Vibrate | PhysXCube, DoesMakeTok
-                    MS2MapProperties                        | PhysXCube
-                    MS2MapProperties, MS2Vibrate            | None
-                    MS2MapProperties, MS2Breakable          | PhysXCube, NxCube, BothCube, OnlyNxCube
-                    MS2Breakable                            | NxCube
-                 */
-                case IMS2Breakable breakable:
-                    continue; // intentionally skip breakables. these are dynamic so should be handled at run time
-                case IPhysXWhitebox whitebox:
-                    entityBounds.Min = -new Vector3(whitebox.ShapeDimensions.X, whitebox.ShapeDimensions.Y, 0.5f * whitebox.ShapeDimensions.Z);
-                    entityBounds.Max = new Vector3(whitebox.ShapeDimensions.X, whitebox.ShapeDimensions.Y, 0.5f * whitebox.ShapeDimensions.Z);
-                    break;
-                case IMesh mesh:
-                    if (entity is IMS2Vibrate vibrate && vibrate.Enabled) {
-                        entityBounds.Min = -new Vector3(75, 75, 0);
-                        entityBounds.Max = new Vector3(75, 75, 150);
-
-                        break;
-                    }
-
-                    bool isFluid = false;
-
-                    if (entity is IMS2MapProperties meshMapProperties) {
-                        if (meshMapProperties.DisableCollision) {
-                            continue;
-                        }
-
-                        if (meshMapProperties.GeneratePhysX) {
-                            Vector3 meshPhysXDimension = new Vector3(150, 150, 150);
-
-                            if (meshMapProperties.GeneratePhysXDimension != Vector3.Zero) {
-                                meshPhysXDimension = meshMapProperties.GeneratePhysXDimension;
-                            }
-
-                            entityBounds.Min = -new Vector3(0.5f * meshPhysXDimension.X, 0.5f * meshPhysXDimension.Y, 0);
-                            entityBounds.Max = new Vector3(0.5f * meshPhysXDimension.X, 0.5f * meshPhysXDimension.Y, meshPhysXDimension.Z);
-
-                            break;
-                        }
-
-                        isFluid = meshMapProperties.CubeType == "Fluid";
-                    }
-
-                    if (mesh.NifAsset.Length < 9 || mesh.NifAsset.Substring(0, 9).ToLower() != "urn:llid:") {
-                        Console.WriteLine($"Non llid NifAsset: '{mesh.NifAsset}'");
-
-                        continue;
-                    }
-
-                    // require length of "urn:llid:XXXXXXXX"
-                    if (mesh.NifAsset.Length < 9 + 8) {
-                        continue;
-                    }
-
-                    uint llid = Convert.ToUInt32(mesh.NifAsset.Substring(mesh.NifAsset.LastIndexOf(':') + 1, 8), 16);
-
-                    if (!NifParserHelper.nifBounds.TryGetValue(llid, out entityBounds)) {
-                        Console.WriteLine($"NIF with LLID {llid:X} not found");
-
-                        continue;
-                    }
-
-                    break;
-                case IMS2MapProperties mapProperties: // GeneratePhysX
-                    if (mapProperties.DisableCollision) {
-                        continue;
-                    }
-
-                    if (!mapProperties.GeneratePhysX) {
-                        continue;
-                    }
-
-                    Vector3 physXDimension = new Vector3(150, 150, 150);
-
-                    if (mapProperties.GeneratePhysXDimension != Vector3.Zero) {
-                        physXDimension = mapProperties.GeneratePhysXDimension;
-                    }
-
-                    entityBounds.Min = -new Vector3(0.5f * physXDimension.X, 0.5f * physXDimension.Y, 0);
-                    entityBounds.Max = new Vector3(0.5f * physXDimension.X, 0.5f * physXDimension.Y, physXDimension.Z);
-
-                    break;
-                default:
-                    continue;
-            }
-
-            entityBounds = BoundingBox3.Transform(entityBounds, transform.Transformation);
-
-            BoundingBox3 cellBounds = new BoundingBox3(voxelPosition - new Vector3(75, 75, 0), voxelPosition + new Vector3(75, 75, 150));
-
-            if (!cellBounds.Contains(entityBounds, 1e-5f)) {
-                // put in list for aabb tree
-
-                continue;
-            }
-
-            // grid aligned
-            minIndex = new Vector3S(Math.Min(minIndex.X, nearestCubeIndex.X), Math.Min(minIndex.Y, nearestCubeIndex.Y), Math.Min(minIndex.Z, nearestCubeIndex.Z));
-            maxIndex = new Vector3S(Math.Max(maxIndex.X, nearestCubeIndex.X), Math.Max(maxIndex.Y, nearestCubeIndex.Y), Math.Max(maxIndex.Z, nearestCubeIndex.Z));
-        }
-
-        maxIndex += new Vector3S(0, 0, 1); // make room for potential spawn tiles
 
         foreach (IMapEntity entity in entities) {
             switch (entity) {
