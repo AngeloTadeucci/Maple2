@@ -43,7 +43,6 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         Purchase = 30,
         Featured = 101,
         OpenUgcShop = 102,
-        Unk103 = 103,
         Search = 104,
         BlueprintSearch = 105,
         LoadCart = 107, // Just a guess?
@@ -99,9 +98,6 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
                 return;
             case Command.FindItem:
                 HandleFindItem(session, packet);
-                return;
-            case Command.Unk103:
-                HandleUnk103(session, packet);
                 return;
             case Command.Search:
                 HandleSearch(session, packet);
@@ -408,6 +404,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             return null;
         }
         item.Template = ugcItem.Look;
+        item.Blueprint = ugcItem.Blueprint;
         return item;
     }
 
@@ -457,14 +454,6 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         }
         session.Send(MeretMarketPacket.LoadBlueprints([ugcMarketItem], 1, 1));
 
-    }
-
-    private void HandleUnk103(GameSession session, IByteReader packet) {
-        ByteWriter write = Packet.Of(SendOp.MeretMarket);
-        write.WriteByte((byte) Command.Unk103);
-        write.WriteByte();
-
-        session.Send(write);
     }
 
     private void HandleSearch(GameSession session, IByteReader packet) {
