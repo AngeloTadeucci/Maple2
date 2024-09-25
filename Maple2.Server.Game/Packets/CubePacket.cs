@@ -65,6 +65,7 @@ public static class CubePacket {
         UpdateHomeAreaAndHeight = 62,
         CreateBlueprint = 63,
         SaveBlueprint = 64,
+        CalculateEstimate = 67,
         FunctionCubeError = 71,
     }
 
@@ -506,6 +507,20 @@ public static class CubePacket {
         pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
         pWriter.WriteLong(accountId);
         pWriter.WriteClass<HomeLayout>(layout);
+
+        return pWriter;
+    }
+
+    public static ByteWriter CalculateEstimate(Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.CalculateEstimate);
+        pWriter.WriteByte((byte) cubeCosts.Keys.Count);
+        pWriter.WriteInt(cubeCount);
+        foreach ((FurnishingCurrencyType moneyType, long amount) in cubeCosts) {
+            pWriter.Write<FurnishingCurrencyType>(moneyType);
+            pWriter.WriteLong(amount);
+        }
+        pWriter.WriteBool(true);
 
         return pWriter;
     }

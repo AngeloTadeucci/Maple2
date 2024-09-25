@@ -456,7 +456,7 @@ public class HousingManager {
         return false;
     }
 
-    public void RequestLayout(HomeLayout layout) {
+    public bool RequestLayout(HomeLayout layout, out (Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) result) {
         Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
         int cubeCount = 0;
@@ -470,7 +470,8 @@ public class HousingManager {
             if (shopEntry is null) {
                 Log.Logger.Error("Failed to get shop entry for cube {cubeId}.", id);
                 session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
-                return;
+                result = (cubeCosts, cubeCount);
+                return false;
             }
 
             Item? item = session.Item.Furnishing.GetItem(id);
@@ -489,7 +490,8 @@ public class HousingManager {
             cubeCount += missingCubes;
         }
 
-        session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
+        result = (cubeCosts, cubeCount);
+        return true;
     }
 
     public void ApplyLayout(Plot plot, HomeLayout layout, bool isBlueprint = false) {
@@ -502,20 +504,27 @@ public class HousingManager {
         }
 
         session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
-        if (isBlueprint) {
-            if (session.Player.Value.Home.SetBackground(layout.Background)) {
+        switch (isBlueprint) {
+            case true when plot.IsPlanner:
+                // If it's planner, only send packets don't save properties
                 session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
-            }
-
-            if (session.Player.Value.Home.SetLighting(layout.Lighting)) {
                 session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
-            }
-
-            if (session.Player.Value.Home.SetCamera(layout.Camera)) {
                 session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
-            }
-        }
+                break;
+            case true:
+                if (session.Player.Value.Home.SetBackground(layout.Background)) {
+                    session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
+                }
 
+                if (session.Player.Value.Home.SetLighting(layout.Lighting)) {
+                    session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
+                }
+
+                if (session.Player.Value.Home.SetCamera(layout.Camera)) {
+                    session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
+                }
+                break;
+        }
 
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);

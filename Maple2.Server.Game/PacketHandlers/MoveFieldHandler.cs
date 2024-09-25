@@ -144,6 +144,6 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
     }
 
     private void HandleModelHome(GameSession session) {
-
+        session.MigrateToPlanner(PlotMode.ModelHome);
     }
 }

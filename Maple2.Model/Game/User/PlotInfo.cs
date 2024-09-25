@@ -28,7 +28,7 @@ public class PlotInfo {
 
     public PlotMode PlotMode { get; set; }
 
-    public bool IsPlanner => PlotMode is PlotMode.DecorPlanner or PlotMode.BlueprintPlanner;
+    public bool IsPlanner => PlotMode is PlotMode.DecorPlanner or PlotMode.BlueprintPlanner or PlotMode.ModelHome;
 
 
     public PlotInfo(UgcMapGroup metadata) {
