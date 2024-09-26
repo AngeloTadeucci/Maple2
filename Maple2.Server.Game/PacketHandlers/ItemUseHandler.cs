@@ -128,8 +128,12 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (!session.Housing.RequestLayout(layout, out (Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) result)) {
+            return;
+        }
+
         session.Housing.StagedItemBlueprint = item.Blueprint;
-        session.Housing.RequestLayout(layout);
+        session.Send(CubePacket.BuyCubes(result.cubeCosts, result.cubeCount));
     }
 
     private static void HandleStoryBook(GameSession session, Item item) {
