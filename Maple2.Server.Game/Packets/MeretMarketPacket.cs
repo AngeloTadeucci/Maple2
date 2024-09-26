@@ -173,13 +173,13 @@ public static class MeretMarketPacket {
         return pWriter;
     }
 
-    public static ByteWriter LoadBlueprints(ICollection<MarketItem> marketItems, int totalItems, byte itemsPerPage) {
+    public static ByteWriter LoadBlueprints(ICollection<MarketItem> marketItems, int totalItems, byte itemsPerPage, int startPage) {
         var pWriter = Packet.Of(SendOp.MeretMarket);
         pWriter.Write<Command>(Command.LoadBlueprints);
         pWriter.WriteInt(marketItems.Count);
         pWriter.WriteInt(totalItems);
         pWriter.WriteByte(itemsPerPage);
-        pWriter.WriteInt(1); // current page
+        pWriter.WriteInt(startPage);
         foreach (MarketItem entry in marketItems) {
             pWriter.WriteBool(true);
             pWriter.WriteMarketItem(entry);

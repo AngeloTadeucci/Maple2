@@ -452,7 +452,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         if (ugcMarketItem is null) {
             return;
         }
-        session.Send(MeretMarketPacket.LoadBlueprints([ugcMarketItem], 1, 1));
+        session.Send(MeretMarketPacket.LoadBlueprints([ugcMarketItem], 1, 1, 1));
 
     }
 
@@ -475,7 +475,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         int totalItems = entries.Count;
         entries = TakeLimit(entries, meretMarketSearch.StartPage, meretMarketSearch.ItemsPerPage);
 
-        session.Send(MeretMarketPacket.LoadBlueprints(entries, totalItems, meretMarketSearch.ItemsPerPage));
+        session.Send(MeretMarketPacket.LoadBlueprints(entries, totalItems, meretMarketSearch.ItemsPerPage, meretMarketSearch.StartPage));
     }
 
     private static MeretMarketSection ToMarketSection(byte section) {
