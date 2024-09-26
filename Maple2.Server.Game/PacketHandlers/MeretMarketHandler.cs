@@ -647,28 +647,5 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         int offset = startPage * itemsPerPage - itemsPerPage;
         return entries.Skip(offset).Take(numPages * itemsPerPage + Math.Min(0, offset)).ToList();
     }
-
-    private class MeretMarketSearch : IByteDeserializable {
-        public int TabId { get; private set; }
-        public GenderFilterFlag Gender { get; private set; }
-        public JobFilterFlag Job { get; private set; }
-        public MeretMarketSort SortBy { get; private set; }
-        public string SearchString { get; private set; } = "";
-        public int StartPage { get; private set; }
-        public byte ItemsPerPage { get; private set; }
-
-        public void ReadFrom(IByteReader packet) {
-            TabId = packet.ReadInt();
-            Gender = packet.Read<GenderFilterFlag>();
-            Job = packet.Read<JobFilterFlag>();
-            SortBy = packet.Read<MeretMarketSort>();
-            SearchString = packet.ReadUnicodeString();
-            StartPage = packet.ReadInt(); // 1
-            packet.ReadInt(); // 1
-            packet.ReadByte(); // 1 on premium, 0 on design menu
-            packet.ReadByte();
-            ItemsPerPage = packet.ReadByte();
-        }
-    }
     #endregion
 }

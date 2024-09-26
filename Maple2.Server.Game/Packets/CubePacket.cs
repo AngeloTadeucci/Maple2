@@ -520,7 +520,7 @@ public static class CubePacket {
             pWriter.Write<FurnishingCurrencyType>(moneyType);
             pWriter.WriteLong(amount);
         }
-        pWriter.WriteBool(true);
+        pWriter.WriteBool(true); // Always true, if false doesn't show the estimate
 
         return pWriter;
     }

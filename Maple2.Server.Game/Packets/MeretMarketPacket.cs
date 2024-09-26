@@ -179,7 +179,7 @@ public static class MeretMarketPacket {
         pWriter.WriteInt(marketItems.Count);
         pWriter.WriteInt(totalItems);
         pWriter.WriteByte(itemsPerPage);
-        pWriter.WriteInt(1);
+        pWriter.WriteInt(1); // current page
         foreach (MarketItem entry in marketItems) {
             pWriter.WriteBool(true);
             pWriter.WriteMarketItem(entry);
