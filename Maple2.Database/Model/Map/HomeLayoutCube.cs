@@ -17,7 +17,6 @@ internal class HomeLayoutCube {
     public float Rotation { get; set; }
 
     public int ItemId { get; set; }
-    public string InteractId { get; set; } = "";
     public HousingCategory HousingCategory { get; set; }
     public CubePortalSettings? PortalSettings { get; set; }
     public UgcItemLook? Template { get; set; }
@@ -27,11 +26,8 @@ internal class HomeLayoutCube {
         return other == null ? null : new PlotCube(other.ItemId, other.Id, other.Template) {
             Position = new Vector3B(other.X, other.Y, other.Z),
             Rotation = other.Rotation,
-            InteractId = other.InteractId,
             HousingCategory = other.HousingCategory,
-            InteractState = other.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming
-                ? InteractCubeState.InUse
-                : InteractCubeState.None,
+            InteractState = GetInteractState(other.HousingCategory),
             PortalSettings = other.PortalSettings,
         };
     }
@@ -45,9 +41,16 @@ internal class HomeLayoutCube {
             Rotation = other.Rotation,
             ItemId = other.ItemId,
             Template = other.Template,
-            InteractId = other.InteractId,
             HousingCategory = other.HousingCategory,
             PortalSettings = other.PortalSettings,
+        };
+    }
+
+    private static InteractCubeState GetInteractState(HousingCategory category) {
+        return category switch {
+            HousingCategory.Ranching => InteractCubeState.InUse,
+            HousingCategory.Farming => InteractCubeState.InUse,
+            _ => InteractCubeState.None,
         };
     }
 

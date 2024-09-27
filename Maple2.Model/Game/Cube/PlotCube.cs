@@ -22,8 +22,6 @@ public class PlotCube : HeldCube {
 
     public int PlotId { get; set; }
 
-    public readonly ItemType ItemType;
-
     public string InteractId { get; set; } = "";
     public InteractCubeState InteractState { get; set; }
     public byte InteractUnkByte { get; set; }

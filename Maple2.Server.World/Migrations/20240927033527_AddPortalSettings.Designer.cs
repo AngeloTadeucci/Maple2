@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240926232205_AddPortalSettings")]
+    [Migration("20240927033527_AddPortalSettings")]
     partial class AddPortalSettings
     {
         /// <inheritdoc />
@@ -754,10 +754,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
 
-                    b.Property<string>("InteractId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
 
@@ -1311,10 +1307,6 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
-
-                    b.Property<string>("InteractId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");

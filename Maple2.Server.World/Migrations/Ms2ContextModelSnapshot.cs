@@ -751,10 +751,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
 
-                    b.Property<string>("InteractId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
 
@@ -1308,10 +1304,6 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
-
-                    b.Property<string>("InteractId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");

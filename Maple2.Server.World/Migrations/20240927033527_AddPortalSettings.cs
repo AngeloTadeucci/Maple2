@@ -2,11 +2,14 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations {
+namespace Maple2.Server.World.Migrations
+{
     /// <inheritdoc />
-    public partial class AddInteractIdToCubes : Migration {
+    public partial class AddPortalSettings : Migration
+    {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder) {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
             migrationBuilder.AddColumn<int>(
                 name: "HousingCategory",
                 table: "ugcmap-cube",
@@ -15,10 +18,10 @@ namespace Maple2.Server.World.Migrations {
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<string>(
-                name: "InteractId",
+                name: "PortalSettings",
                 table: "ugcmap-cube",
-                type: "longtext",
-                nullable: false)
+                type: "json",
+                nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<int>(
@@ -29,21 +32,22 @@ namespace Maple2.Server.World.Migrations {
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<string>(
-                name: "InteractId",
+                name: "PortalSettings",
                 table: "home-layout-cube",
-                type: "longtext",
-                nullable: false)
+                type: "json",
+                nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder) {
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
             migrationBuilder.DropColumn(
                 name: "HousingCategory",
                 table: "ugcmap-cube");
 
             migrationBuilder.DropColumn(
-                name: "InteractId",
+                name: "PortalSettings",
                 table: "ugcmap-cube");
 
             migrationBuilder.DropColumn(
@@ -51,7 +55,7 @@ namespace Maple2.Server.World.Migrations {
                 table: "home-layout-cube");
 
             migrationBuilder.DropColumn(
-                name: "InteractId",
+                name: "PortalSettings",
                 table: "home-layout-cube");
         }
     }
