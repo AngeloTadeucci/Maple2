@@ -514,6 +514,29 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
+    public void MigrateToHome(Home home) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = home.Indoor.MapId,
+                OwnerId = home.Indoor.OwnerId,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, home.Indoor.MapId));
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
+    }
+
     #region Dispose
     ~GameSession() => Dispose(false);
 

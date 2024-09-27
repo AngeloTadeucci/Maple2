@@ -228,6 +228,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
                 session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
 
+                if (plotCube.ItemType.IsInteractFurnishing) {
+                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+                }
+
                 if (plot.IsPlanner) {
                     return;
                 }
@@ -272,6 +276,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
+
         if (plot.IsPlanner) {
             return;
         }

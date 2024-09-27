@@ -279,7 +279,6 @@ public class HousingManager {
                     return false;
                 }
 
-
                 session.Currency.Meret -= cost.Amount;
                 return true;
         }
@@ -342,8 +341,19 @@ public class HousingManager {
     public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
-        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
+        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null || itemMetadata.Housing is null) {
             logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
+            return false;
+        }
+
+        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing.IsNotAllowedInBlueprint) {
+            if (itemMetadata.Housing.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_nurturing_in_design_home));
+            } else if (cube.ItemId is Constant.InteriorPortalCubeId) {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_magic_portal));
+            } else {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_blueprint));
+            }
             return false;
         }
 
@@ -380,7 +390,10 @@ public class HousingManager {
             result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
                 Position = position,
                 Rotation = rotation,
+                HousingCategory = itemMetadata.Housing.HousingCategory,
             };
+
+            result.PortalSettings?.SetName(position);
 
             plot.Cubes.Add(position, result);
             return true;
@@ -413,6 +426,8 @@ public class HousingManager {
 
         result.Position = position;
         result.Rotation = rotation;
+        result.HousingCategory = itemMetadata.Housing.HousingCategory;
+        result.PortalSettings?.SetName(position);
         plot.Cubes.Add(position, result);
         return true;
     }
@@ -421,6 +436,10 @@ public class HousingManager {
         if (!plot.Cubes.Remove(position, out cube)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_no_cube_to_remove));
             return false;
+        }
+
+        if (cube.ItemId is Constant.InteriorPortalCubeId && cube.PortalSettings is not null) {
+            session.Field.RemovePortal(cube.PortalSettings.PortalObjectId);
         }
 
         if (plot.IsPlanner) {

@@ -116,6 +116,17 @@ public sealed partial class FieldManager : IDisposable {
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
         }
+
+        if (MapId is Constant.DefaultHomeMapId) {
+            List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.PortalSettings is not null)
+                .ToList();
+
+            foreach (PlotCube cubePortal in cubePortals) {
+                SpawnCubePortal(cubePortal);
+            }
+        }
+
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);
         }
@@ -369,6 +380,41 @@ public sealed partial class FieldManager : IDisposable {
 
         // MoveByPortal (same map)
         Portal srcPortal = fieldPortal;
+        if (srcPortal.Type is PortalType.InHome) {
+            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.PortalSettings is not null && x.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+            if (cubePortal is null) {
+                return false;
+            }
+
+            switch (cubePortal.PortalSettings!.Destination) {
+                case CubePortalDestination.PortalInHome:
+                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.PortalSettings is not null && x.PortalSettings.PortalName == cubePortal.PortalSettings.DestinationTarget);
+                    if (destinationCube is null) {
+                        return false;
+                    }
+
+                    session.Player.MoveToPosition(destinationCube.Position, default);
+                    return true;
+                case CubePortalDestination.SelectedMap:
+                    session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
+                        ? FieldEnterPacket.Request(session.Player)
+                        : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                    return true;
+                case CubePortalDestination.FriendHome: {
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        Home? home = db.GetHome(fieldPortal.HomeId);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
+                        }
+
+                        session.MigrateToHome(home);
+                        return true;
+                    }
+            }
+            return false;
+        }
+
         if (srcPortal.TargetMapId == MapId) {
             if (TryGetPortal(srcPortal.TargetPortalId, out FieldPortal? dstPortal)) {
                 session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));

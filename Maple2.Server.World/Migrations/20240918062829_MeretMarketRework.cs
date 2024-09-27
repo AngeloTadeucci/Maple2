@@ -4,21 +4,17 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class MeretMarketRework : Migration
-    {
+    public partial class MeretMarketRework : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "premium-market-item");
 
             migrationBuilder.CreateTable(
                 name: "meret-market-sold",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     MarketId = table.Column<long>(type: "bigint", nullable: false),
@@ -27,23 +23,20 @@ namespace Maple2.Server.World.Migrations
                     SoldTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_meret-market-sold", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "meret-market-sold");
 
             migrationBuilder.CreateTable(
                 name: "premium-market-item",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     BannerLabel = table.Column<int>(type: "int", nullable: false),
@@ -77,8 +70,7 @@ namespace Maple2.Server.World.Migrations
                     ShowSaleTime = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     TabId = table.Column<int>(type: "int", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_premium-market-item", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");

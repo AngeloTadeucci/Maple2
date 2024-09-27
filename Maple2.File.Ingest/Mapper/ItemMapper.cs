@@ -136,10 +136,17 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 NoteLengthMax: data.MusicScore.noteLengthMax,
                 FileName: data.MusicScore.fileName,
                 PlayTime: data.MusicScore.playTime);
+            var housingCategory = HousingCategory.None;
+            if (!string.IsNullOrEmpty(data.housing.categoryTag)) {
+                string[] tags = data.housing.categoryTag.Split(',');
+                housingCategory = Enum.Parse<HousingCategory>(tags[0]);
+            }
             ItemMetadataHousing? housing = data.property.type != 6 ? null : new ItemMetadataHousing(
                 TrophyId: data.housing.trophyID,
                 TrophyLevel: data.housing.trophyLevel,
-                InteriorLevel: data.housing.interiorLevel);
+                InteriorLevel: data.housing.interiorLevel,
+                HousingCategory: housingCategory,
+                IsNotAllowedInBlueprint: data.housing.doNotInstallBlueprint);
             ItemMetadataInstall? install = data.property.type != 6 ? null : new ItemMetadataInstall(
                 IsSolidCube: data.install.cubeProp == 1,
                 InteractId: data.install.objCode,
