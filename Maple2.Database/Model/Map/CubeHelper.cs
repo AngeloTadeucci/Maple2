@@ -13,12 +13,4 @@ internal static class CubeHelper {
 
         return null;
     }
-
-    public static InteractCubeState GetInteractState(HousingCategory category) {
-        return category switch {
-            HousingCategory.Ranching => InteractCubeState.InUse,
-            HousingCategory.Farming => InteractCubeState.InUse,
-            _ => InteractCubeState.None,
-        };
-    }
 }

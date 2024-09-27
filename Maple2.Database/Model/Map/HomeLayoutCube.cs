@@ -28,7 +28,6 @@ internal class HomeLayoutCube {
             Position = new Vector3B(other.X, other.Y, other.Z),
             Rotation = other.Rotation,
             HousingCategory = other.HousingCategory,
-            InteractState = CubeHelper.GetInteractState(other.HousingCategory),
             CubePortalSettings = other.CubeSettings is CubePortalSettings portalSettings ? portalSettings : null,
         };
     }

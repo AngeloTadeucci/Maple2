@@ -32,29 +32,18 @@ public partial class GameStorage {
         }
 
         public IList<PlotCube> LoadCubesForOwner(long ownerId) {
-            return Context.UgcMap.Where(map => map.OwnerId == ownerId)
+            List<PlotCube> plotCubes = Context.UgcMap.Where(map => map.OwnerId == ownerId)
                 .Join(Context.UgcMapCube, ugcMap => ugcMap.Id, cube => cube.UgcMapId, (ugcMap, cube) => cube)
                 .AsEnumerable()
                 .Select<UgcMapCube, PlotCube>(cube => cube)
                 .ToList();
-        }
-
-        public PlotCube? CreateCube(Item item, int mapId, in Vector3B position = default, float rotation = default) {
-            if (item.Amount <= 0) {
-                return null;
+            foreach (PlotCube cube in plotCubes) {
+                if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
+                    cube.InteractState = functionCubeMetadata.DefaultState;
+                }
             }
 
-            var model = new UgcMapCube {
-                UgcMapId = mapId,
-                X = position.X,
-                Y = position.Y,
-                Z = position.Z,
-                Rotation = rotation,
-                ItemId = item.Id,
-                Template = item.Template,
-            };
-            Context.UgcMapCube.Add(model);
-            return Context.TrySaveChanges() ? model : null;
+            return plotCubes;
         }
 
         public PlotInfo? BuyPlot(string characterName, long ownerId, PlotInfo plot, TimeSpan days) {
@@ -178,7 +167,14 @@ public partial class GameStorage {
                 return null;
             }
 
-            return results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
+            PlotCube[] plotCubes = results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
+            foreach (PlotCube cube in plotCubes) {
+                if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
+                    cube.InteractState = functionCubeMetadata.DefaultState;
+                }
+            }
+
+            return plotCubes;
         }
 
         public bool InitUgcMap(IEnumerable<UgcMapMetadata> maps) {
@@ -223,8 +219,11 @@ public partial class GameStorage {
             };
 
             if (ugcMap.Cubes != null) {
-                foreach (PlotCube? cube in ugcMap.Cubes) {
-                    plot.Cubes.Add(cube!.Position, cube);
+                foreach (PlotCube cube in ugcMap.Cubes) {
+                    if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
+                        cube.InteractState = functionCubeMetadata.DefaultState;
+                    }
+                    plot.Cubes.Add(cube.Position, cube);
                 }
             }
 

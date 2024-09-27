@@ -15,7 +15,6 @@ public static class FunctionCubePacket {
         FailLifeSkill = 9,
     }
 
-
     public static ByteWriter SendCubes(List<PlotCube> cubes) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.SendCubes);

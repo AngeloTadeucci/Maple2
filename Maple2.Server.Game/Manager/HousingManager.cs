@@ -387,13 +387,17 @@ public class HousingManager {
         }
 
         if (plot.IsPlanner) {
-            result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
+            result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
                 Rotation = rotation,
                 HousingCategory = itemMetadata.Housing.HousingCategory,
             };
 
             result.CubePortalSettings?.SetName(position);
+
+            if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
+                result.InteractState = functionCubeMetadata.DefaultState;
+            }
 
             plot.Cubes.Add(position, result);
             return true;
@@ -428,6 +432,9 @@ public class HousingManager {
         result.Rotation = rotation;
         result.HousingCategory = itemMetadata.Housing.HousingCategory;
         result.CubePortalSettings?.SetName(position);
+        if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata2)) {
+            result.InteractState = functionCubeMetadata2.DefaultState;
+        }
         plot.Cubes.Add(position, result);
         return true;
     }

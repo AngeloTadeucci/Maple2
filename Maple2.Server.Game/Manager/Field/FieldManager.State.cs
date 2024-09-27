@@ -610,6 +610,12 @@ public partial class FieldManager {
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
         }
+        if (MapId is Constant.DefaultHomeMapId) {
+            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching)
+                .ToList();
+            added.Session.Send(FunctionCubePacket.SendCubes(lifeSkillCubes));
+        }
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             added.Session.Send(FieldPacket.AddPlayer(fieldPlayer.Session));
             if (fieldPlayer.Session.GuideObject != null) {
