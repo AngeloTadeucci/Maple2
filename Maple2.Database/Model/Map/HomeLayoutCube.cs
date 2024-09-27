@@ -18,7 +18,7 @@ internal class HomeLayoutCube {
 
     public int ItemId { get; set; }
     public HousingCategory HousingCategory { get; set; }
-    public CubePortalSettings? PortalSettings { get; set; }
+    public CubeSettings? CubeSettings { get; set; }
     public UgcItemLook? Template { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
@@ -27,8 +27,8 @@ internal class HomeLayoutCube {
             Position = new Vector3B(other.X, other.Y, other.Z),
             Rotation = other.Rotation,
             HousingCategory = other.HousingCategory,
-            InteractState = GetInteractState(other.HousingCategory),
-            PortalSettings = other.PortalSettings,
+            InteractState = CubeHelper.GetInteractState(other.HousingCategory),
+            CubePortalSettings = other.CubeSettings as CubePortalSettings,
         };
     }
 
@@ -42,15 +42,7 @@ internal class HomeLayoutCube {
             ItemId = other.ItemId,
             Template = other.Template,
             HousingCategory = other.HousingCategory,
-            PortalSettings = other.PortalSettings,
-        };
-    }
-
-    private static InteractCubeState GetInteractState(HousingCategory category) {
-        return category switch {
-            HousingCategory.Ranching => InteractCubeState.InUse,
-            HousingCategory.Farming => InteractCubeState.InUse,
-            _ => InteractCubeState.None,
+            CubeSettings = CubeHelper.GetCubeSettings(other),
         };
     }
 
@@ -63,6 +55,6 @@ internal class HomeLayoutCube {
             .HasForeignKey(cube => cube.HomeLayoutId);
 
         builder.Property(cube => cube.Template).HasJsonConversion();
-        builder.Property(cube => cube.PortalSettings).HasJsonConversion();
+        builder.Property(cube => cube.CubeSettings).HasJsonConversion();
     }
 }

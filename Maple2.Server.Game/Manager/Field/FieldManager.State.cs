@@ -167,24 +167,24 @@ public partial class FieldManager {
     public FieldPortal SpawnCubePortal(PlotCube plotCube) {
         int targetMapId = MapId;
         long targetHomeAccountId = 0;
-        if (!string.IsNullOrEmpty(plotCube.PortalSettings!.DestinationTarget)) {
-            switch (plotCube.PortalSettings.Destination) {
+        if (!string.IsNullOrEmpty(plotCube.CubePortalSettings!.DestinationTarget)) {
+            switch (plotCube.CubePortalSettings.Destination) {
                 case CubePortalDestination.PortalInHome:
                     targetMapId = Constant.DefaultHomeMapId;
                     break;
                 case CubePortalDestination.SelectedMap:
-                    targetMapId = int.Parse(plotCube.PortalSettings.DestinationTarget);
+                    targetMapId = int.Parse(plotCube.CubePortalSettings.DestinationTarget);
                     break;
                 case CubePortalDestination.FriendHome:
                     targetMapId = Constant.DefaultHomeMapId;
-                    targetHomeAccountId = long.Parse(plotCube.PortalSettings.DestinationTarget);
+                    targetHomeAccountId = long.Parse(plotCube.CubePortalSettings.DestinationTarget);
                     break;
             }
         }
-        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, plotCube.PortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, plotCube.CubePortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
         FieldPortal fieldPortal = SpawnPortal(portal);
         fieldPortal.HomeId = targetHomeAccountId;
-        plotCube.PortalSettings.PortalObjectId = fieldPortal.ObjectId;
+        plotCube.CubePortalSettings.PortalObjectId = fieldPortal.ObjectId;
 
         return fieldPortal;
     }

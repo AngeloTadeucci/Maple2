@@ -393,7 +393,7 @@ public class HousingManager {
                 HousingCategory = itemMetadata.Housing.HousingCategory,
             };
 
-            result.PortalSettings?.SetName(position);
+            result.CubePortalSettings?.SetName(position);
 
             plot.Cubes.Add(position, result);
             return true;
@@ -427,7 +427,7 @@ public class HousingManager {
         result.Position = position;
         result.Rotation = rotation;
         result.HousingCategory = itemMetadata.Housing.HousingCategory;
-        result.PortalSettings?.SetName(position);
+        result.CubePortalSettings?.SetName(position);
         plot.Cubes.Add(position, result);
         return true;
     }
@@ -438,8 +438,8 @@ public class HousingManager {
             return false;
         }
 
-        if (cube.ItemId is Constant.InteriorPortalCubeId && cube.PortalSettings is not null) {
-            session.Field.RemovePortal(cube.PortalSettings.PortalObjectId);
+        if (cube.ItemId is Constant.InteriorPortalCubeId && cube.CubePortalSettings is not null) {
+            session.Field.RemovePortal(cube.CubePortalSettings.PortalObjectId);
         }
 
         if (plot.IsPlanner) {

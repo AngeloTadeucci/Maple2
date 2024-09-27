@@ -5,11 +5,18 @@
 namespace Maple2.Server.World.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPortalSettings : Migration
+    public partial class AddCubeSettings : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "CubeSettings",
+                table: "ugcmap-cube",
+                type: "json",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.AddColumn<int>(
                 name: "HousingCategory",
                 table: "ugcmap-cube",
@@ -18,8 +25,8 @@ namespace Maple2.Server.World.Migrations
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<string>(
-                name: "PortalSettings",
-                table: "ugcmap-cube",
+                name: "CubeSettings",
+                table: "home-layout-cube",
                 type: "json",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -30,32 +37,25 @@ namespace Maple2.Server.World.Migrations
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
-
-            migrationBuilder.AddColumn<string>(
-                name: "PortalSettings",
-                table: "home-layout-cube",
-                type: "json",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "HousingCategory",
-                table: "ugcmap-cube");
-
-            migrationBuilder.DropColumn(
-                name: "PortalSettings",
+                name: "CubeSettings",
                 table: "ugcmap-cube");
 
             migrationBuilder.DropColumn(
                 name: "HousingCategory",
+                table: "ugcmap-cube");
+
+            migrationBuilder.DropColumn(
+                name: "CubeSettings",
                 table: "home-layout-cube");
 
             migrationBuilder.DropColumn(
-                name: "PortalSettings",
+                name: "HousingCategory",
                 table: "home-layout-cube");
         }
     }

@@ -53,22 +53,22 @@ public class HomeActionHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (cube.PortalSettings is null) {
+        if (cube.CubePortalSettings is null) {
             Logger.Warning("Cube does not have portal settings at {0}", coord);
             return;
         }
 
-        cube.PortalSettings.PortalName = packet.ReadUnicodeString();
-        cube.PortalSettings.Method = (PortalActionType) packet.ReadByte();
-        cube.PortalSettings.Destination = (CubePortalDestination) packet.ReadByte();
-        cube.PortalSettings.DestinationTarget = packet.ReadUnicodeString();
+        cube.CubePortalSettings.PortalName = packet.ReadUnicodeString();
+        cube.CubePortalSettings.Method = (PortalActionType) packet.ReadByte();
+        cube.CubePortalSettings.Destination = (CubePortalDestination) packet.ReadByte();
+        cube.CubePortalSettings.DestinationTarget = packet.ReadUnicodeString();
 
         foreach (FieldPortal portal in session.Field.GetPortals()) {
             session.Field.RemovePortal(portal.ObjectId);
         }
 
         List<PlotCube> cubePortals = plot.Cubes.Values
-            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.PortalSettings is not null)
+            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
             .ToList();
 
         foreach (PlotCube cubePortal in cubePortals) {
@@ -99,7 +99,7 @@ public class HomeActionHandler : PacketHandler<GameSession> {
 
         List<string> otherPortalsNames = plot.Cubes.Values
             .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.Id != cube.Id)
-            .Select(x => x.PortalSettings?.PortalName ?? string.Empty)
+            .Select(x => x.CubePortalSettings?.PortalName ?? string.Empty)
             .ToList();
 
         session.Send(HomeActionPacket.SendCubePortalSettings(cube, otherPortalsNames));

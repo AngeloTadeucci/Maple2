@@ -745,6 +745,9 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
                     b.Property<long>("HomeLayoutId")
                         .HasColumnType("bigint");
 
@@ -753,9 +756,6 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PortalSettings")
-                        .HasColumnType("json");
 
                     b.Property<float>("Rotation")
                         .HasColumnType("float");
@@ -1302,14 +1302,14 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PortalSettings")
-                        .HasColumnType("json");
 
                     b.Property<float>("Rotation")
                         .HasColumnType("float");

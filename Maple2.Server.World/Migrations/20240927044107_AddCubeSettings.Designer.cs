@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20240927033527_AddPortalSettings")]
-    partial class AddPortalSettings
+    [Migration("20240927044107_AddCubeSettings")]
+    partial class AddCubeSettings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -748,6 +748,9 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
                     b.Property<long>("HomeLayoutId")
                         .HasColumnType("bigint");
 
@@ -756,9 +759,6 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PortalSettings")
-                        .HasColumnType("json");
 
                     b.Property<float>("Rotation")
                         .HasColumnType("float");
@@ -1305,14 +1305,14 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
                     b.Property<int>("HousingCategory")
                         .HasColumnType("int");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PortalSettings")
-                        .HasColumnType("json");
 
                     b.Property<float>("Rotation")
                         .HasColumnType("float");

@@ -34,13 +34,13 @@ public static class HomeActionPacket {
     }
 
     public static ByteWriter SendCubePortalSettings(PlotCube cube, List<string> otherPortalsNames) {
-        Debug.Assert(cube.PortalSettings != null, nameof(cube.PortalSettings) + " != null");
+        Debug.Assert(cube.CubePortalSettings != null, nameof(cube.CubePortalSettings) + " != null");
 
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.PortalCube);
         pWriter.WriteByte();
         pWriter.Write<Vector3B>(cube.Position);
-        pWriter.WriteClass<CubePortalSettings>(cube.PortalSettings);
+        pWriter.WriteClass<CubePortalSettings>(cube.CubePortalSettings);
         pWriter.WriteInt(otherPortalsNames.Count);
         foreach (string portalName in otherPortalsNames) {
             pWriter.WriteUnicodeString(portalName);
