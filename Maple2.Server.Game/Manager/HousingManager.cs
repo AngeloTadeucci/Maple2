@@ -550,13 +550,30 @@ public class HousingManager {
             }
 
             ByteWriter sendPacket;
-            if (cube.Position.Z == 0) {
+            if (plotCube.Position.Z == 0) {
                 sendPacket = CubePacket.ReplaceCube(session.Player.ObjectId, plotCube);
             } else {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
+            if (plotCube.ItemType.IsInteractFurnishing) {
+                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+            }
+
+            if (cube.CubePortalSettings is not null) {
+                plotCube.CubePortalSettings = cube.CubePortalSettings;
+            }
+
             session.Field.Broadcast(sendPacket);
+        }
+
+        List<PlotCube> cubePortals = plot.Cubes.Values
+            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
+            .ToList();
+
+        foreach (PlotCube cubePortal in cubePortals) {
+            FieldPortal fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            session.Field.Broadcast(PortalPacket.Add(fieldPortal));
         }
 
         Vector3 position = Home.CalculateSafePosition(plot.Cubes.Values.ToList());

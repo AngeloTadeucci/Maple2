@@ -5,6 +5,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+// ReSharper disable ReplaceConditionalExpressionWithNullCoalescing
 
 namespace Maple2.Database.Model;
 
@@ -29,7 +30,7 @@ internal class UgcMapCube {
             Rotation = other.Rotation,
             HousingCategory = other.HousingCategory,
             InteractState = CubeHelper.GetInteractState(other.HousingCategory),
-            CubePortalSettings = other.CubeSettings as CubePortalSettings,
+            CubePortalSettings = other.CubeSettings is CubePortalSettings portalSettings ? portalSettings : null,
         };
     }
 

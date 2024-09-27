@@ -28,7 +28,7 @@ public class PlotCube : HeldCube {
 
     public HousingCategory HousingCategory { get; set; }
 
-    public CubePortalSettings? CubePortalSettings { get; init; }
+    public CubePortalSettings? CubePortalSettings { get; set; }
 
     public PlotCube(int itemId, long id = 0, UgcItemLook? template = null) {
         ItemId = itemId;
