@@ -52,9 +52,3 @@ public class PlotCube : HeldCube {
         return Convert.ToInt64(coordRevertedAsString, 16);
     }
 }
-
-public enum InteractCubeState {
-    None = 0,
-    InUse = 1,
-    Available = 2,
-}
