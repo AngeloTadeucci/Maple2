@@ -95,6 +95,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
     public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
     public SurvivalManager Survival { get; set; } = null!;
+    public MarriageManager Marriage { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -162,6 +163,7 @@ public sealed partial class GameSession : Core.Network.Session {
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
         Survival = new SurvivalManager(this);
+        Marriage = new MarriageManager(this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -389,6 +391,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(EmotePacket.Load(Player.Value.Unlock.Emotes.Select(id => new Emote(id)).ToList()));
         Config.LoadMacros();
         Config.LoadSkillCooldowns();
+        Marriage.Load();
 
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));

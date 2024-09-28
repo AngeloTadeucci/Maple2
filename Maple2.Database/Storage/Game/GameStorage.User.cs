@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Config;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Account = Maple2.Model.Game.Account;
 using Character = Maple2.Model.Game.Character;
@@ -231,6 +227,7 @@ public partial class GameStorage {
             player.Character.ClubIds = clubs.Select(club => club.Item1).ToList();
 
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+            player.Character.MarriageInfo = GetMarriageInfo(characterId);
             player.Character.PremiumTime = account.PremiumTime;
 
             return player;

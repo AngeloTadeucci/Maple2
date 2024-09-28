@@ -62,7 +62,8 @@ public class BuddyManager : IDisposable {
     }
 
     public bool IsBuddy(long characterId) {
-        return buddies.TryGetValue(characterId, out Buddy? buddy) && buddy.Type == BuddyType.Default;
+        Buddy? buddy = buddies.Values.FirstOrDefault(entry => entry.Info.CharacterId == characterId);
+        return buddy != null && buddy.Type == BuddyType.Default;
     }
 
     public bool IsBlocked(long characterId) {
