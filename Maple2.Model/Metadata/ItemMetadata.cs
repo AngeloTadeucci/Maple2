@@ -109,7 +109,10 @@ public record ItemMetadataMusic(
 public record ItemMetadataHousing(
     int TrophyId,
     int TrophyLevel,
-    int InteriorLevel);
+    int InteriorLevel,
+    HousingCategory HousingCategory,
+    bool IsNotAllowedInBlueprint
+);
 
 public record ItemMetadataInstall(
     bool IsSolidCube,

@@ -56,9 +56,15 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             home.EnterPlanner(indoor.PlotMode);
         }
 
-        // TODO: Check if plot has entry points
-
-        session.Player.Position = home.CalculateSafePosition(plotCubes);
+        List<PlotCube> entryPortals = plotCubes.Where(x => x.ItemId is Constant.PortalEntryId).ToList();
+        if (entryPortals.Count > 0) {
+            PlotCube entryPortal = entryPortals.OrderBy(_ => Random.Shared.Next()).First();
+            session.Player.Position = entryPortal.Position;
+            session.Player.Rotation = new Vector3(0, 0, entryPortal.Rotation);
+            session.Player.Rotation -= new Vector3(0, 0, 180);
+        } else {
+            session.Player.Position = home.CalculateSafePosition(plotCubes);
+        }
 
         // Technically this sends home details to all players who enter map (including passcode)
         // but you would already know passcode if you entered the map.

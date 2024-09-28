@@ -234,7 +234,7 @@ public enum SendOp : ushort {
     BypassKey = 0x00E8,
     NpcNotice = 0x00EA,
     LocalCamera = 0x00EB,
-    HomeGame = 0x00EC,
+    HomeAction = 0x00EC,
     PremiumClub = 0x00ED,
     SteamCashShop = 0x00EF,
     InGameRank = 0x00F0,

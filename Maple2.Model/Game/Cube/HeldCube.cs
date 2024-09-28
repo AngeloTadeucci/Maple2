@@ -9,6 +9,8 @@ public class HeldCube : IByteSerializable, IByteDeserializable {
 
     public long Id { get; set; }
     public int ItemId { get; protected set; }
+    public ItemType ItemType { get; protected set; }
+
     public UgcItemLook? Template { get; protected set; }
 
     public void WriteTo(IByteWriter writer) {

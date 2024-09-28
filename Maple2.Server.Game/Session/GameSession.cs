@@ -62,6 +62,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required AchievementMetadataStorage AchievementMetadata { get; init; }
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
+    public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { private get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
@@ -505,6 +506,29 @@ public sealed partial class GameSession : Core.Network.Session {
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
+    }
+
+    public void MigrateToHome(Home home) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = home.Indoor.MapId,
+                OwnerId = home.Indoor.OwnerId,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, home.Indoor.MapId));
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));

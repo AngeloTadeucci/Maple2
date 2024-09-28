@@ -144,7 +144,7 @@ public enum RecvOp : ushort {
     ItemRepack = 0x008D,
     Mapleopoly = 0x008E,
     PremiumClub = 0x008F,
-    HomeGame = 0x0091,
+    HomeAction = 0x0091,
     Mastery = 0x0093,
     ConstructShop = 0x0094,
     Club = 0x0096,

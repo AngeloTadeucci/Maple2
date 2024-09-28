@@ -27,6 +27,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
     public DbSet<NifMetadata> NifMetadata { get; set; } = null!;
     public DbSet<NxsMeshMetadata> NXSMeshMetadata { get; set; } = null!;
+    public DbSet<FunctionCubeMetadata> FunctionCubeMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -50,6 +51,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
         modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
         modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
+        modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -224,5 +226,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("nxs-mesh");
         builder.Property(mesh => mesh.Index).ValueGeneratedNever();
         builder.HasKey(mesh => mesh.Index);
+    }
+
+    private static void ConfigureFunctionCubeMetadata(EntityTypeBuilder<FunctionCubeMetadata> builder) {
+        builder.ToTable("function-cube");
+        builder.HasKey(cube => cube.Id);
+        builder.Property(cube => cube.AutoStateChange).HasJsonConversion();
     }
 }
