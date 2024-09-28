@@ -2,7 +2,9 @@
 using Maple2.Model.Metadata.FieldEntities;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
+using System.Collections.ObjectModel;
 using System.Numerics;
 
 namespace Maple2.Model.Game.Field;
@@ -17,21 +19,70 @@ internal enum FieldEntityMembers : byte {
     Llid = 0x20
 }
 
+/*
+ * FieldAccelerationStructure is a helper class that specializes in various spatial queries for objects.
+ * It's designed to maximize performance for finding objects in a 3D space with desired constraints.
+ * 
+ * Internally it uses specialized storage techniques with fast look up times, but knowledge on these
+ * techniques isn't necessary for use. The Query functions allow you to find the objects you need without
+ * knowing any of the implementation details.
+ * 
+ * You can do general queries or queries for specific entity types for all types of queries available.
+ * Every entity matching the query constraints will be reported back through a callback, or in a list with
+ * Query___List() methods.
+ * 
+ * Available query types include:
+ * - Cell: Captures all entities in a specific grid cell, or range of cells. Doesn't capture freely floating entities.
+ * - Point: Captures all entities intersecting with a specific point.
+ * - CellAtPoint: Captures all entities in the grid cell intersecting with a specific point. Doesn't capture freely floating entities.
+ * - BoundingBox: Captures all entities intersecting with a bounding box.
+ * - CellsInBoundingBox: Captures all entities in grid cells intersecting with a bounding box. Doesn't capture freely floating entities.
+ * - Sphere: Captures all entities intersecting with a sphere.
+ * - CellsInSphere: Captures all entities in grid cells intersecting with a sphere. Doesn't capture freely floating entities.
+ * - Ray: Captures all entities intersecting with a ray. Object results may not be in order.
+ * - CellsOnRay: Captures all entities intersecting with a ray. Object results may not be in order. Doesn't capture freely floating entities.
+ * - RayCast: Captures all boxes & meshes intersecting with a ray in order until false is returned by the callback.
+ * - CellRayCast: Captures all boxes & meshes intersecting with a ray in order until -1 is returned by the callback. Doesn't capture freely floating entities.
+ * 
+ * Special purpose queries:
+ * - Spawns: Captures all mob spawn candidates in a sphere.
+ * - Fluids: Captures all fluids within a bounding box.
+ * - VibrateObjects: Captures all vibrate objects within a bounding box.
+*/
 public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable {
     public const int AXIS_TRIM_ENTITY_COUNT = 10;
 
     public Vector3S GridSize { get; private set; } = new Vector3S();
     public Vector3S MinIndex { get; private set; } = new Vector3S();
     public Vector3S MaxIndex { get; private set; } = new Vector3S();
+
+    public ReadOnlyCollection<FieldEntity> AlignedEntities { get => alignedEntities.AsReadOnly(); }
+    public ReadOnlyCollection<FieldEntity> UnalignedEntities { get => unalignedEntities.AsReadOnly(); }
+
     public List<FieldEntity> alignedEntities;
     public List<FieldEntity> unalignedEntities; // TODO: add AABB tree implementation for querying unaligned objects
     private int[,,] cellGrid;
+
+    public ulong GridBytesWritten { get; private set; } = 0;
 
     public FieldAccelerationStructure() {
         alignedEntities = new();
         unalignedEntities = new();
         cellGrid = new int[0, 0, 0];
     }
+
+    #region QueryApi
+
+
+    public void QueryCell(Vector3 point, Action<FieldEntity> callback) {
+
+    }
+
+    public void QueryCells
+
+    #endregion
+
+    #region Initialization
 
     // used to guarantee deterministic output when parsing maps
     private void SortEntityList(List<FieldEntity> entityList) {
@@ -334,7 +385,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         writer.WriteShort(MinIndex.X);
         writer.WriteShort(MinIndex.Y);
         writer.WriteShort(MinIndex.Z);
-
+        
         for (short x = 0; x < GridSize.X; x++) {
             for (short y = 0; y < GridSize.Y; y++) {
                 for (short z = 0; z < GridSize.Z; z++) {
@@ -359,6 +410,10 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             }
         }
 
+        if (writer is ByteWriter byteWriter) {
+            GridBytesWritten = (ulong)byteWriter.Length;
+        }
+
         writer.WriteInt(alignedEntities.Count);
 
         foreach (FieldEntity entity in alignedEntities) {
@@ -372,6 +427,37 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         }
     }
 
+#endregion
+
+    #region Serialization
+
+    private Vector3S GetWorldGridIndex(Vector3 position) {
+        int x = (int) Math.Round(position.X) / 150;
+        int y = (int) Math.Round(position.Y) / 150;
+        int z = (int) Math.Round(position.Z) / 150;
+
+       return new Vector3S((short)x, (short)y, (short)z);
+    }
+
+    private bool IsGridAligned(Vector3 position) {
+        int x = (int) Math.Round(position.X) / 150;
+        int y = (int) Math.Round(position.Y) / 150;
+        int z = (int) Math.Round(position.Z) / 150;
+
+        return position.IsNearlyEqual(150 * new Vector3(x, y, z), 0.1f);
+    }
+
+    private bool IsCellBounds(Vector3 position, BoundingBox3 bounds) {
+        if (!IsGridAligned(position)) {
+            return false;
+        }
+
+        bool isMinOnCell = bounds.Min.IsNearlyEqual(position - new Vector3(75, 75, 0), 0.1f);
+        bool isMaxOnCell = bounds.Max.IsNearlyEqual(position + new Vector3(75, 75, 150), 0.1f);
+
+        return isMinOnCell && isMaxOnCell;
+    }
+
     public void WriteTo(FieldEntity entity, IByteWriter writer) {
         FieldEntityType type = entity switch {
             FieldVibrateEntity => FieldEntityType.Vibrate,
@@ -383,14 +469,48 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             _ => FieldEntityType.Unknown
         };
 
+        FieldEntityMembers memberFlags = FieldEntityMembers.None;
+
+        memberFlags |= (entity.Id.High == 0 && entity.Id.Low == 0) ? 0 : FieldEntityMembers.Id;
+        memberFlags |= IsGridAligned(entity.Position) ? 0 : FieldEntityMembers.Position;
+        memberFlags |= entity.Rotation.IsNearlyEqual(new Vector3(0, 0, 0), 1e-3f) ? 0 : FieldEntityMembers.Rotation;
+        memberFlags |= entity.Scale.IsNearlyEqual(1, 1e-3f) ? 0 : FieldEntityMembers.Scale;
+        memberFlags |= IsCellBounds(entity.Position, entity.Bounds) ? 0 : FieldEntityMembers.Bounds;
+
+        switch (entity) {
+            case FieldMeshColliderEntity meshCollider:
+                memberFlags |= (meshCollider.MeshLlid == 0) ? 0 : FieldEntityMembers.Llid;
+                break;
+            default:
+                break;
+        }
+
         writer.Write(type);
-        writer.Write(entity.Id.High);
-        writer.Write(entity.Id.Low);
-        writer.Write(entity.Position);
-        writer.Write(entity.Rotation);
-        writer.Write(entity.Scale);
-        writer.Write(entity.Bounds.Min);
-        writer.Write(entity.Bounds.Max);
+        writer.Write(memberFlags);
+
+        if ((memberFlags & FieldEntityMembers.Id) != 0) {
+            writer.Write(entity.Id.High);
+            writer.Write(entity.Id.Low);
+        }
+
+        if ((memberFlags & FieldEntityMembers.Position) != 0) {
+            writer.Write(entity.Position);
+        } else {
+            writer.Write(GetWorldGridIndex(entity.Position));
+        }
+
+        if ((memberFlags & FieldEntityMembers.Rotation) != 0) {
+            writer.Write(entity.Rotation);
+        }
+
+        if ((memberFlags & FieldEntityMembers.Scale) != 0) {
+            writer.Write(entity.Scale);
+        }
+
+        if ((memberFlags & FieldEntityMembers.Bounds) != 0) {
+            writer.Write(entity.Bounds.Min);
+            writer.Write(entity.Bounds.Max);
+        }
 
         switch(entity) {
             case FieldVibrateEntity vibrateEntity:
@@ -464,13 +584,42 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
     public FieldEntity ReadEntity(IByteReader reader) {
         FieldEntityType type = reader.Read<FieldEntityType>();
-        FieldEntityId id = new FieldEntityId(reader.Read<ulong>(), reader.Read<ulong>());
-        Vector3 position = reader.Read<Vector3>();
-        Vector3 rotation = reader.Read<Vector3>();
-        float scale = reader.ReadFloat();
-        BoundingBox3 bounds = new BoundingBox3(
-            min: reader.Read<Vector3>(),
-            max: reader.Read<Vector3>());
+        FieldEntityMembers memberFlags = reader.Read<FieldEntityMembers>();
+
+        FieldEntityId id = new FieldEntityId(0, 0);
+        Vector3 position;
+        Vector3 rotation = new Vector3(0, 0, 0);
+        float scale = 1;
+        BoundingBox3 bounds;
+        uint llid = 0;
+
+        if ((memberFlags & FieldEntityMembers.Id) != 0) {
+            id = new FieldEntityId(reader.Read<ulong>(), reader.Read<ulong>());
+        }
+
+        if ((memberFlags & FieldEntityMembers.Id) != 0) {
+            position = reader.Read<Vector3>();
+        } else {
+            position = 150 * reader.Read<Vector3S>().Vector3;
+        }
+
+        if ((memberFlags & FieldEntityMembers.Rotation) != 0) {
+            rotation = reader.Read<Vector3>();
+        }
+
+        if ((memberFlags & FieldEntityMembers.Rotation) != 0) {
+            scale = reader.ReadFloat();
+        }
+
+        if ((memberFlags & FieldEntityMembers.Bounds) != 0) {
+            bounds = new BoundingBox3(
+                min: reader.Read<Vector3>(),
+                max: reader.Read<Vector3>());
+        } else {
+            bounds = new BoundingBox3(
+                min: position - new Vector3(75, 75, 0),
+                max: position + new Vector3(75, 75, 150));
+        }
 
         switch (type) {
             case FieldEntityType.Vibrate:
@@ -497,21 +646,29 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Size: reader.Read<Vector3>(),
                     IsWhiteBox: reader.Read<bool>());
             case FieldEntityType.MeshCollider:
+                if ((memberFlags & FieldEntityMembers.Llid) != 0) {
+                    llid = reader.Read<uint>();
+                }
+
                 return new FieldMeshColliderEntity(
                     Id: id,
                     Position: position,
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    MeshLlid: reader.Read<uint>());
+                    MeshLlid: llid);
             case FieldEntityType.Fluid:
+                if ((memberFlags & FieldEntityMembers.Llid) != 0) {
+                    llid = reader.Read<uint>();
+                }
+
                 return new FieldFluidEntity(
                     Id: id,
                     Position: position,
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    MeshLlid: reader.Read<uint>());
+                    MeshLlid: llid);
             case FieldEntityType.Cell:
                 int childCount = reader.ReadInt();
                 List<FieldEntity> children = new List<FieldEntity>();
@@ -529,4 +686,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 throw new InvalidDataException($"Reading unhandled field entity type: {type}");
         }
     }
+
+    #endregion
+
 }

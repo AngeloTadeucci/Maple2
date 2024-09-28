@@ -14,6 +14,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
 using Pastel;
+using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
 
@@ -24,6 +25,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     private readonly XBlockParser parser;
 
     private readonly StatsTracker mapByteStats = new();
+    private readonly StatsTracker mapGridByteStats = new();
+    private readonly StatsTracker mapGridBytePercentStats = new();
     private readonly StatsTracker mapXStats = new();
     private readonly StatsTracker mapYStats = new();
     private readonly StatsTracker mapZStats = new();
@@ -305,9 +308,18 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
             writer.WriteClass(mapData);
 
             byte[] data = writer.ToArray();
+            MemoryStream dataStream = new MemoryStream();
+
+            using (DeflateStream dstream = new DeflateStream(dataStream, CompressionLevel.SmallestSize)) {
+                dstream.Write(data, 0, data.Length);
+            }
+
+            data = dataStream.ToArray();
 
             lock (this) {
                 mapByteStats.AddValue((ulong) data.LongLength);
+                mapGridByteStats.AddValue(mapData.GridBytesWritten);
+                mapGridBytePercentStats.AddValue((ulong) (10000 * (float) mapData.GridBytesWritten / data.LongLength));
                 mapXStats.AddValue((ulong) mapData.GridSize.X);
                 mapYStats.AddValue((ulong) mapData.GridSize.Y);
                 mapZStats.AddValue((ulong) mapData.GridSize.Z);
@@ -320,15 +332,18 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     }
 
     public void ReportStats() {
-        string blue = "".ColorBlue();
-        Console.WriteLine($"Total maps parsed: {blue}{mapByteStats.Entries}");
-        Console.WriteLine($"Total bytes: {blue}{mapByteStats.TotalValue}");
-        Console.WriteLine($"Average map bytes: {blue}{mapByteStats.AvgValue}");
-        Console.WriteLine($"Largest map dimensions: {blue}< {mapXStats.MaxValue}, {mapYStats.MaxValue}, {mapZStats.MaxValue} >");
-        Console.WriteLine($"Average map dimensions: {blue}< {mapXStats.AvgValue}, {mapYStats.AvgValue}, {mapZStats.AvgValue} >");
-        Console.WriteLine($"Largest aligned entities: {blue}{alignedStats.MaxValue}");
-        Console.WriteLine($"Average aligned entities: {blue}{alignedStats.AvgValue}");
-        Console.WriteLine($"Largest unaligned entities: {blue}{unalignedStats.MaxValue}");
-        Console.WriteLine($"Average unaligned entities: {blue}{unalignedStats.AvgValue}");
+        string blue = "\u001b[38;2;0;215;255m";
+        string white = "\u001b[0m";
+
+        Console.WriteLine($"Total maps parsed:{blue} {mapByteStats.Entries} {white}");
+        Console.WriteLine($"Total bytes:{blue} {mapByteStats.TotalValue} {white}");
+        Console.WriteLine($"Average map bytes:{blue} {mapByteStats.AvgValue} {white}");
+        Console.WriteLine($"Largest map bytes:{blue} {mapByteStats.MaxValue} {white}");
+        Console.WriteLine($"Largest map dimensions:{blue} < {mapXStats.MaxValue}, {mapYStats.MaxValue}, {mapZStats.MaxValue} > {white}");
+        Console.WriteLine($"Average map dimensions:{blue} < {mapXStats.AvgValue}, {mapYStats.AvgValue}, {mapZStats.AvgValue} > {white}");
+        Console.WriteLine($"Largest aligned entities:{blue} {alignedStats.MaxValue} {white}");
+        Console.WriteLine($"Average aligned entities:{blue} {alignedStats.AvgValue} {white}");
+        Console.WriteLine($"Largest unaligned entities:{blue} {unalignedStats.MaxValue} {white}");
+        Console.WriteLine($"Average unaligned entities:{blue} {unalignedStats.AvgValue} {white}");
     }
 }

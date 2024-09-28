@@ -4,6 +4,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
 using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
 
 namespace Maple2.Database.Storage.Metadata;
 
@@ -27,7 +28,14 @@ public class RideMetadataStorage(MetadataContext context) : MetadataStorage<stri
                 return false;
             }
 
-            ByteReader reader = new ByteReader(data.Data);
+            MemoryStream input = new MemoryStream(data.Data);
+            MemoryStream output = new MemoryStream();
+
+            using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress)) {
+                dstream.CopyTo(output);
+            }
+
+            ByteReader reader = new ByteReader(output.ToArray());
 
             mapData = reader.ReadClass<FieldAccelerationStructure>();
 

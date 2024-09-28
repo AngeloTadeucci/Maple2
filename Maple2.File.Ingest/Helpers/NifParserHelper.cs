@@ -34,6 +34,18 @@ public static class NifParserHelper {
         } catch (InvalidOperationException ex) {
             if (ex.InnerException is NifVersionNotSupportedException) {
 #if DEBUG
+                if (ex.InnerException.Message.StartsWith("[/library/triggerslibrary/gamebryodata/generic")) {
+                    return;
+                }
+                
+                if (ex.InnerException.Message.StartsWith("[/model/tool/shadersphere.nif]:")) {
+                    return;
+                }
+                
+                if (ex.InnerException.Message.StartsWith("[/model/tool/triggerproxy_")) {
+                    return;
+                }
+
                 Console.WriteLine(ex.InnerException.Message);
 #endif
                 return;
