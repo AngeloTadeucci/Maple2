@@ -321,6 +321,11 @@ public sealed partial class FieldManager : IDisposable {
         return Players.TryGetValue(objectId, out player);
     }
 
+    public bool TryGetPlayer(string name, [NotNullWhen(true)] out FieldPlayer? player) {
+        player = Players.Values.FirstOrDefault(p => p.Value.Character.Name == name);
+        return player != null;
+    }
+
     public bool TryGetPortal(int portalId, [NotNullWhen(true)] out FieldPortal? portal) {
         portal = fieldPortals.Values.FirstOrDefault(p => p.Value.Id == portalId);
         return portal != null;

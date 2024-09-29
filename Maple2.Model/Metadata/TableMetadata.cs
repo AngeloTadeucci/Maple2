@@ -77,4 +77,5 @@ public class TableMetadata {
 [JsonDerivedType(typeof(WorldMapTable), typeDiscriminator: "worldmap")]
 [JsonDerivedType(typeof(SurvivalSkinInfoTable), typeDiscriminator: "survivalskininfo")]
 [JsonDerivedType(typeof(BannerTable), typeDiscriminator: "banner")]
+[JsonDerivedType(typeof(WeddingRewardTable), typeDiscriminator: "weddingreward")]
 public abstract record Table;

@@ -49,5 +49,6 @@ public class Character {
     public List<long> ClubIds = [];
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
+    public MarriageInfo MarriageInfo;
     public long PremiumTime;
 }
