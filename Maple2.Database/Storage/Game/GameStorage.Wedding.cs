@@ -25,11 +25,12 @@ public partial class GameStorage {
                 return null;
             }
 
-            return Commit() ? GetMarriage(marriage.Id) : null;
+            return Commit() ? GetMarriage(marriageId: marriage.Id) : null;
         }
 
-        private Marriage? GetMarriage(long marriageId) {
-            Model.Marriage? marriage = Context.Marriage.Find(marriageId);
+        public Marriage? GetMarriage(long marriageId = 0, long characterId = 0) {
+            Model.Marriage? marriage = marriageId > 0 ? Context.Marriage.Find(marriageId) :
+                Context.Marriage.FirstOrDefault(member => member.Partner1Id == characterId || member.Partner2Id == characterId);
             if (marriage == null) {
                 return null;
             }
