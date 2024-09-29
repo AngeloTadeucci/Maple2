@@ -1,6 +1,4 @@
-﻿using System.Net;
-using Grpc.Core;
-using Maple2.Database.Storage;
+﻿using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -10,9 +8,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Server.World.Service;
 using PlotMode = Maple2.Model.Enum.PlotMode;
-using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -28,14 +24,6 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
         BlueprintDesigner = 5,
         ModelHome = 6,
     }
-
-    #region Autofac Autowired
-    // ReSharper disable MemberCanBePrivate.Global
-    public required MapMetadataStorage MapMetadata { private get; init; }
-    public required GameStorage GameStorage { private get; init; }
-    public required WorldClient World { private get; init; }
-    // ReSharper restore All
-    #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
@@ -99,26 +87,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             return;
         }
 
-        try {
-            var request = new MigrateOutRequest {
-                AccountId = session.AccountId,
-                CharacterId = session.CharacterId,
-                MachineId = session.MachineId.ToString(),
-                Server = Server.World.Service.Server.Game,
-                MapId = home.Indoor.MapId,
-                OwnerId = home.Indoor.OwnerId,
-            };
-
-            MigrateOutResponse response = World.MigrateOut(request);
-            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            session.Send(MigrationPacket.GameToGame(endpoint, response.Token, home.Indoor.MapId));
-            session.State = SessionState.ChangeMap;
-        } catch (RpcException ex) {
-            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
-            session.Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
-        } finally {
-            session.Disconnect();
-        }
+        session.MigrateToHome(home);
     }
 
     private void HandleReturn(GameSession session) {
@@ -144,6 +113,6 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
     }
 
     private void HandleModelHome(GameSession session) {
-
+        session.MigrateToPlanner(PlotMode.ModelHome);
     }
 }

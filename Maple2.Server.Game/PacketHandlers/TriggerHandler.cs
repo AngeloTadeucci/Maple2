@@ -2,6 +2,7 @@
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 

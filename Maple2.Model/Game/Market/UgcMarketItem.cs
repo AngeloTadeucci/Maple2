@@ -17,6 +17,8 @@ public class UgcMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
     public required string Description { get; set; }
     public required string[] Tags { get; set; } = Array.Empty<string>();
     public required UgcItemLook Look { get; init; }
+    public required ItemBlueprint Blueprint { get; init; }
+    public UgcItemMusicScore MusicScore = new(); // TODO: Implement UgcItemMusicScore
     public UgcMarketHomeCategory Category = UgcMarketHomeCategory.None;
 
     public override void WriteTo(IByteWriter writer) {
@@ -50,25 +52,8 @@ public class UgcMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
         writer.WriteUnicodeString(Description);
         writer.WriteUnicodeString(SellerCharacterName);
         writer.WriteClass<UgcItemLook>(Look);
-        writer.WriteLong();
-        writer.WriteInt();
-        writer.WriteInt();
-        writer.WriteUnicodeString();
-        writer.WriteUnicodeString();
-        writer.WriteString();
-        writer.WriteInt();
-        writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteUnicodeString();
-        writer.WriteLong();
-        writer.WriteInt();
-        writer.WriteInt();
-        writer.WriteInt();
-        writer.WriteLong();
-        writer.WriteInt();
-        writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteUnicodeString();
+        writer.WriteClass<UgcItemMusicScore>(MusicScore);
+        writer.WriteClass<ItemBlueprint>(Blueprint);
         writer.Write<UgcMarketHomeCategory>(Category);
     }
 }

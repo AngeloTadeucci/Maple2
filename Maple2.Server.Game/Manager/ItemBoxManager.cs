@@ -5,12 +5,17 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace Maple2.Server.Game.Manager;
 
 public class ItemBoxManager {
     private readonly GameSession session;
     public int BoxCount { get; private set; }
+
+    private readonly ILogger logger = Log.Logger.ForContext<ItemBoxManager>();
 
     public ItemBoxManager(GameSession session) {
         this.session = session;
@@ -22,6 +27,21 @@ public class ItemBoxManager {
     }
 
     public ItemBoxError Open(Item item, int count = 1, int index = 0) {
+        if (item.Type.IsTranscendenceCrystal) {
+            Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+            if (parameters.Count < 4) {
+                logger.Error("Invalid parameters for item box: {ItemId}", item.Id);
+                return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+            }
+            if (!parameters.TryGetValue("globalDropBoxId", out string? globalDropBoxIdStr) || !int.TryParse(globalDropBoxIdStr, out int globalDropBoxId)) {
+                globalDropBoxId = 0;
+            }
+
+            if (!parameters.TryGetValue("individualDropBoxId", out string? individualDropBoxIdStr) || !int.TryParse(individualDropBoxIdStr, out int individualDropBoxId)) {
+                individualDropBoxId = 0;
+            }
+            return OpenItemBox(item, globalDropBoxId, 0, 0, individualDropBoxId, 1, count);
+        }
         int[] itemBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? Array.Empty<int>();
         return item.Metadata.Function?.Type switch {
             ItemFunction.SelectItemBox => SelectItemBox(item, itemBoxParams[0], itemBoxParams[1], index, count),
@@ -185,7 +205,12 @@ public class ItemBoxManager {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
-        if (entryDic.Count == 0) {
+        Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? globalDropEntries = [];
+        if (globalDropBoxId > 0 && !session.ServerTableMetadata.GlobalDropItemBoxTable.DropGroups.TryGetValue(globalDropBoxId, out globalDropEntries)) {
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
+
+        if (entryDic.Count == 0 && globalDropEntries.Count == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
 
@@ -207,7 +232,9 @@ public class ItemBoxManager {
                 }
             }
 
-            IEnumerable<Item> itemList = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, individualDropBoxId);
+            IEnumerable<Item> itemList = session.Field.ItemDrop.GetGlobalDropItems(globalDropBoxId);
+
+            itemList = itemList.Concat(session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, individualDropBoxId));
             foreach (Item newItem in itemList) {
                 if (!session.Item.Inventory.Add(newItem, true)) {
                     session.Item.MailItem(newItem);

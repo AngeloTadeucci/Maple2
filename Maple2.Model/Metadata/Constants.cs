@@ -99,7 +99,9 @@ public static class Constant {
     public const int GuildCoinId = 30000861;
     public const int GuildCoinRarity = 4;
     public const int BlueprintId = 35200000;
-
+    public const int EmpowermentNpc = 11003416;
+    public const int InteriorPortalCubeId = 50400158;
+    public const int PortalEntryId = 50400190;
 
     public const long FurnishingBaseId = 2870000000000000000;
     public const bool AllowWaterOnGround = false;

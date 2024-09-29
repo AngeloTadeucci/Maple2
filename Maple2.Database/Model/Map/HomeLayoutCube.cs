@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Common;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+// ReSharper disable ReplaceConditionalExpressionWithNullCoalescing
 
 namespace Maple2.Database.Model;
 
@@ -16,6 +18,8 @@ internal class HomeLayoutCube {
     public float Rotation { get; set; }
 
     public int ItemId { get; set; }
+    public HousingCategory HousingCategory { get; set; }
+    public CubeSettings? CubeSettings { get; set; }
     public UgcItemLook? Template { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
@@ -23,6 +27,8 @@ internal class HomeLayoutCube {
         return other == null ? null : new PlotCube(other.ItemId, other.Id, other.Template) {
             Position = new Vector3B(other.X, other.Y, other.Z),
             Rotation = other.Rotation,
+            HousingCategory = other.HousingCategory,
+            CubePortalSettings = other.CubeSettings is CubePortalSettings portalSettings ? portalSettings : null,
         };
     }
 
@@ -35,6 +41,8 @@ internal class HomeLayoutCube {
             Rotation = other.Rotation,
             ItemId = other.ItemId,
             Template = other.Template,
+            HousingCategory = other.HousingCategory,
+            CubeSettings = CubeHelper.GetCubeSettings(other),
         };
     }
 
@@ -47,5 +55,6 @@ internal class HomeLayoutCube {
             .HasForeignKey(cube => cube.HomeLayoutId);
 
         builder.Property(cube => cube.Template).HasJsonConversion();
+        builder.Property(cube => cube.CubeSettings).HasJsonConversion();
     }
 }

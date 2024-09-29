@@ -745,8 +745,14 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
                     b.Property<long>("HomeLayoutId")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("HousingCategory")
+                        .HasColumnType("int");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
@@ -927,6 +933,50 @@ namespace Maple2.Server.World.Migrations
                     b.HasKey("ReceiverId", "Id");
 
                     b.ToTable("mail", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Marriage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ExpHistory")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<long>("Partner1Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Partner1Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("Partner2Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Partner2Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Profile")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Partner1Id");
+
+                    b.HasIndex("Partner2Id");
+
+                    b.ToTable("marriage", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Medal", b =>
@@ -1296,6 +1346,12 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CubeSettings")
+                        .HasColumnType("json");
+
+                    b.Property<int>("HousingCategory")
+                        .HasColumnType("int");
+
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
 
@@ -1332,6 +1388,10 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<long>("AccountId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Blueprint")
+                        .IsRequired()
+                        .HasColumnType("json");
 
                     b.Property<long>("CharacterId")
                         .HasColumnType("bigint");
@@ -1595,6 +1655,21 @@ namespace Maple2.Server.World.Migrations
                     b.HasOne("Maple2.Database.Model.Character", null)
                         .WithMany()
                         .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Marriage", b =>
+                {
+                    b.HasOne("Maple2.Database.Model.Character", null)
+                        .WithMany()
+                        .HasForeignKey("Partner1Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Maple2.Database.Model.Character", null)
+                        .WithMany()
+                        .HasForeignKey("Partner2Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

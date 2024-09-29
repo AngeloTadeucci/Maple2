@@ -2997,8 +2997,9 @@ public enum StringCode {
     s_err_ugcmap_package_failed_to_consume_package_item = 2991,
     s_err_ugcmap_package_automatic_creation_is_in_progress = 2992,
     s_err_ugcmap_package_automatic_removal_is_in_progress = 2993,
-    [Description("The home's interior has been cleared of all furnishings.")]
+    [Description("'The saved design has been applied.")]
     s_ugcmap_package_automatic_creation_completed = 2994,
+    [Description("The home's interior has been cleared of all furnishings.")]
     s_ugcmap_package_automatic_removal_completed = 2995,
     s_ugcmap_package_automatic_creation_suspended = 2996,
     s_ugcmap_package_automatic_removal_suspended = 2997,

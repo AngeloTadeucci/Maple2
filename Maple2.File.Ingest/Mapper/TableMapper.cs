@@ -25,6 +25,7 @@ using JobTable = Maple2.Model.Metadata.JobTable;
 using MagicPath = Maple2.Model.Metadata.MagicPath;
 using MasteryType = Maple2.Model.Enum.MasteryType;
 using MeretMarketCategory = Maple2.File.Parser.Xml.Table.MeretMarketCategory;
+using WeddingReward = Maple2.Model.Metadata.WeddingReward;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -71,6 +72,9 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
         yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
         yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
+
+        // Marriage/Wedding
+        yield return new TableMetadata { Name = "weddingreward.xml", Table = ParseWeddingReward() };
 
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
@@ -1501,5 +1505,17 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 ));
         }
         return new BannerTable(results);
+    }
+
+    private WeddingRewardTable ParseWeddingReward() {
+        var results = new Dictionary<MarriageExpType, WeddingReward>();
+        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward? reward) in parser.ParseWeddingReward()) {
+            results.Add((MarriageExpType) type, new WeddingReward(
+                Type: (MarriageExpType) type,
+                Amount: reward.rewardExp,
+                Limit: (MarriageExpLimit) reward.rewardLimit));
+        }
+
+        return new WeddingRewardTable(results);
     }
 }

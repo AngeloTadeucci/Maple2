@@ -45,6 +45,7 @@ public partial class FieldManager {
     public IReadOnlyDictionary<int, FieldPlayer> GetPlayers() {
         return Players;
     }
+    public ICollection<FieldPortal> GetPortals() => fieldPortals.Values;
     #endregion
 
     #region Spawn
@@ -159,6 +160,31 @@ public partial class FieldManager {
             InstanceId = instanceId,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
+
+        return fieldPortal;
+    }
+
+    public FieldPortal SpawnCubePortal(PlotCube plotCube) {
+        int targetMapId = MapId;
+        long targetHomeAccountId = 0;
+        if (!string.IsNullOrEmpty(plotCube.CubePortalSettings!.DestinationTarget)) {
+            switch (plotCube.CubePortalSettings.Destination) {
+                case CubePortalDestination.PortalInHome:
+                    targetMapId = Constant.DefaultHomeMapId;
+                    break;
+                case CubePortalDestination.SelectedMap:
+                    targetMapId = int.Parse(plotCube.CubePortalSettings.DestinationTarget);
+                    break;
+                case CubePortalDestination.FriendHome:
+                    targetMapId = Constant.DefaultHomeMapId;
+                    targetHomeAccountId = long.Parse(plotCube.CubePortalSettings.DestinationTarget);
+                    break;
+            }
+        }
+        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, plotCube.CubePortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        FieldPortal fieldPortal = SpawnPortal(portal);
+        fieldPortal.HomeId = targetHomeAccountId;
+        plotCube.CubePortalSettings.PortalObjectId = fieldPortal.ObjectId;
 
         return fieldPortal;
     }
@@ -484,7 +510,6 @@ public partial class FieldManager {
         Broadcast(PortalPacket.Add(fieldPortal));
         return fieldPortal;
     }
-
     #endregion
 
     #region Remove
@@ -584,6 +609,12 @@ public partial class FieldManager {
         added.Session.Send(InteractObjectPacket.Load(fieldInteracts.Values));
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
+        }
+        if (MapId is Constant.DefaultHomeMapId) {
+            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching)
+                .ToList();
+            added.Session.Send(FunctionCubePacket.SendCubes(lifeSkillCubes));
         }
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             added.Session.Send(FieldPacket.AddPlayer(fieldPlayer.Session));

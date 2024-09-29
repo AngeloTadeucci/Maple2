@@ -279,7 +279,6 @@ public class HousingManager {
                     return false;
                 }
 
-
                 session.Currency.Meret -= cost.Amount;
                 return true;
         }
@@ -342,8 +341,19 @@ public class HousingManager {
     public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
-        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null) {
+        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null || itemMetadata.Housing is null) {
             logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
+            return false;
+        }
+
+        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing.IsNotAllowedInBlueprint) {
+            if (itemMetadata.Housing.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_nurturing_in_design_home));
+            } else if (cube.ItemId is Constant.InteriorPortalCubeId) {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_magic_portal));
+            } else {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_blueprint));
+            }
             return false;
         }
 
@@ -377,10 +387,17 @@ public class HousingManager {
         }
 
         if (plot.IsPlanner) {
-            result = new PlotCube(cube.ItemId, id: FurnishingManager.NextCubeId(), template: cube.Template) {
+            result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
                 Rotation = rotation,
+                HousingCategory = itemMetadata.Housing.HousingCategory,
             };
+
+            result.CubePortalSettings?.SetName(position);
+
+            if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
+                result.InteractState = functionCubeMetadata.DefaultState;
+            }
 
             plot.Cubes.Add(position, result);
             return true;
@@ -413,6 +430,11 @@ public class HousingManager {
 
         result.Position = position;
         result.Rotation = rotation;
+        result.HousingCategory = itemMetadata.Housing.HousingCategory;
+        result.CubePortalSettings?.SetName(position);
+        if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata2)) {
+            result.InteractState = functionCubeMetadata2.DefaultState;
+        }
         plot.Cubes.Add(position, result);
         return true;
     }
@@ -421,6 +443,10 @@ public class HousingManager {
         if (!plot.Cubes.Remove(position, out cube)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_no_cube_to_remove));
             return false;
+        }
+
+        if (cube.ItemId is Constant.InteriorPortalCubeId && cube.CubePortalSettings is not null) {
+            session.Field.RemovePortal(cube.CubePortalSettings.PortalObjectId);
         }
 
         if (plot.IsPlanner) {
@@ -456,7 +482,7 @@ public class HousingManager {
         return false;
     }
 
-    public void RequestLayout(HomeLayout layout) {
+    public bool RequestLayout(HomeLayout layout, out (Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) result) {
         Dictionary<int, int> groupedCubes = layout.Cubes.GroupBy(plotCube => plotCube.ItemId)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count()); // Dictionary<item id, count>
         int cubeCount = 0;
@@ -470,7 +496,8 @@ public class HousingManager {
             if (shopEntry is null) {
                 Log.Logger.Error("Failed to get shop entry for cube {cubeId}.", id);
                 session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
-                return;
+                result = (cubeCosts, cubeCount);
+                return false;
             }
 
             Item? item = session.Item.Furnishing.GetItem(id);
@@ -489,7 +516,8 @@ public class HousingManager {
             cubeCount += missingCubes;
         }
 
-        session.Send(CubePacket.BuyCubes(cubeCosts, cubeCount));
+        result = (cubeCosts, cubeCount);
+        return true;
     }
 
     public void ApplyLayout(Plot plot, HomeLayout layout, bool isBlueprint = false) {
@@ -502,7 +530,12 @@ public class HousingManager {
         }
 
         session.Field.Broadcast(CubePacket.UpdateHomeAreaAndHeight(Home.Area, Home.Height));
-        if (isBlueprint) {
+        if (isBlueprint && plot.IsPlanner) {
+            // If it's planner, only send packets don't save properties
+            session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
+            session.Field.Broadcast(CubePacket.SetLighting(layout.Lighting));
+            session.Field.Broadcast(CubePacket.SetCamera(layout.Camera));
+        } else if (isBlueprint) {
             if (session.Player.Value.Home.SetBackground(layout.Background)) {
                 session.Field.Broadcast(CubePacket.SetBackground(layout.Background));
             }
@@ -516,7 +549,6 @@ public class HousingManager {
             }
         }
 
-
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
             cube.Id = item?.Uid ?? 0;
@@ -525,13 +557,30 @@ public class HousingManager {
             }
 
             ByteWriter sendPacket;
-            if (cube.Position.Z == 0) {
+            if (plotCube.Position.Z == 0) {
                 sendPacket = CubePacket.ReplaceCube(session.Player.ObjectId, plotCube);
             } else {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
+            if (plotCube.ItemType.IsInteractFurnishing) {
+                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+            }
+
+            if (cube.CubePortalSettings is not null) {
+                plotCube.CubePortalSettings = cube.CubePortalSettings;
+            }
+
             session.Field.Broadcast(sendPacket);
+        }
+
+        List<PlotCube> cubePortals = plot.Cubes.Values
+            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
+            .ToList();
+
+        foreach (PlotCube cubePortal in cubePortals) {
+            FieldPortal fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            session.Field.Broadcast(PortalPacket.Add(fieldPortal));
         }
 
         Vector3 position = Home.CalculateSafePosition(plot.Cubes.Values.ToList());

@@ -56,6 +56,8 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         CreateBlueprint = 63,
         SaveBlueprint = 64,
         LoadBlueprint = 65,
+        CalculateEstimate = 66,
+        PreviewBlueprint = 68,
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
@@ -158,6 +160,12 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             case Command.LoadBlueprint:
                 HandleLoadBlueprint(session, packet);
                 break;
+            case Command.CalculateEstimate:
+                HandleCalculateEstimate(session, packet);
+                break;
+            case Command.PreviewBlueprint:
+                HandlePreviewBlueprint(session, packet);
+                break;
         }
     }
 
@@ -220,6 +228,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
 
                 session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
 
+                if (plotCube.ItemType.IsInteractFurnishing) {
+                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+                }
+
                 if (plot.IsPlanner) {
                     return;
                 }
@@ -264,6 +276,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         }
 
         session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
+
         if (plot.IsPlanner) {
             return;
         }
@@ -394,7 +407,9 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Housing.RequestLayout(layout);
+        if (session.Housing.RequestLayout(layout, out (Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) result)) {
+            session.Send(CubePacket.BuyCubes(result.cubeCosts, result.cubeCount));
+        }
     }
 
     private void HandleIncreaseArea(GameSession session) {
@@ -748,6 +763,41 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
         Home home = session.Player.Value.Home;
         HomeLayout? layout = home.Blueprints.FirstOrDefault(homeLayout => homeLayout.Id == slot);
         if (layout is null) {
+            return;
+        }
+
+        session.Housing.ApplyLayout(plot, layout, isBlueprint: true);
+    }
+
+    private void HandleCalculateEstimate(GameSession session, IByteReader packet) {
+        long blueprintId = packet.ReadLong();
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        HomeLayout? layout = db.GetHomeLayout(blueprintId);
+        if (layout is null) {
+            Logger.Error("Failed to load layout for {AccountId}", session.AccountId);
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
+            return;
+        }
+
+        if (session.Housing.RequestLayout(layout, out (Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) result)) {
+            session.Send(CubePacket.CalculateEstimate(result.cubeCosts, result.cubeCount));
+        }
+    }
+
+    private void HandlePreviewBlueprint(GameSession session, IByteReader packet) {
+        long blueprintId = packet.ReadLong();
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot is null) {
+            return;
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        HomeLayout? layout = db.GetHomeLayout(blueprintId);
+        if (layout is null) {
+            Logger.Error("Failed to load layout for {AccountId}", session.AccountId);
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_db));
             return;
         }
 

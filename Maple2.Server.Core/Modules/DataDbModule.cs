@@ -46,5 +46,6 @@ public class DataDbModule : Module {
         builder.RegisterType<TableMetadataStorage>().SingleInstance();
         builder.RegisterType<ServerTableMetadataStorage>().SingleInstance();
         builder.RegisterType<AiMetadataStorage>().SingleInstance();
+        builder.RegisterType<FunctionCubeMetadataStorage>().SingleInstance();
     }
 }
