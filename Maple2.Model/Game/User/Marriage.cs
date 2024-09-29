@@ -16,8 +16,8 @@ public class Marriage : IByteSerializable {
     public long Id { get; init; }
     public MaritalStatus Status { get; set; }
 
-    public MarriagePartner Partner1 { get; set; }
-    public MarriagePartner Partner2 { get; set; }
+    public required MarriagePartner Partner1 { get; set; }
+    public required MarriagePartner Partner2 { get; set; }
     public long Exp { get; set; }
     public string Profile { get; set; } = string.Empty;
     public long CreationTime { get; set; }

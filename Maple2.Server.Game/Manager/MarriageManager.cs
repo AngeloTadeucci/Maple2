@@ -11,7 +11,7 @@ namespace Maple2.Server.Game.Manager;
 public sealed class MarriageManager {
     private readonly GameSession session;
 
-    public static Marriage Marriage;
+    public Marriage Marriage;
     private readonly CancellationTokenSource tokenSource;
 
     private readonly ILogger logger = Log.Logger.ForContext<MarriageManager>();
