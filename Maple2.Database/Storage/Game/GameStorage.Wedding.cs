@@ -30,7 +30,7 @@ public partial class GameStorage {
 
         public Marriage? GetMarriage(long marriageId = 0, long characterId = 0) {
             Model.Marriage? marriage = marriageId > 0 ? Context.Marriage.Find(marriageId) :
-                Context.Marriage.FirstOrDefault(member => member.Partner1Id == characterId || member.Partner2Id == characterId);
+                Context.Marriage.FirstOrDefault(marriage => marriage.Partner1Id == characterId || marriage.Partner2Id == characterId);
             if (marriage == null) {
                 return null;
             }
