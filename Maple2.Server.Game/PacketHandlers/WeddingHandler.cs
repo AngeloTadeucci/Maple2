@@ -1,4 +1,5 @@
 ﻿using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -60,7 +61,7 @@ public class WeddingHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleProposalReply(GameSession session, IByteReader packet) {
-        short replyCode = packet.ReadShort();
+        var response = packet.Read<ProposalResponse>();
         long playerId = packet.ReadLong();
 
         if (!session.PlayerInfo.GetOrFetch(playerId, out PlayerInfo? playerInfo) ||
@@ -72,15 +73,19 @@ public class WeddingHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (replyCode != 1) {
-            return;
-        }
 
-        using GameStorage.Request db = session.GameStorage.Context();
-        Marriage? marriage = db.CreateMarriage(session.CharacterId, playerId);
-        if (marriage == null) {
-            return;
+        switch (response) {
+            case ProposalResponse.Accept:
+                using (GameStorage.Request db = session.GameStorage.Context()) {
+                    Marriage? marriage = db.CreateMarriage(session.CharacterId, playerId);
+                    if (marriage == null) {
+                        return;
+                    }
+                }
+                break;
+            case ProposalResponse.Decline:
+            case ProposalResponse.Timeout:
+                break;
         }
-
     }
 }

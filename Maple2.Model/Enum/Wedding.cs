@@ -24,3 +24,9 @@ public enum MarriageExpLimit {
     day,
     month,
 }
+
+public enum ProposalResponse : short {
+    Accept = 1,
+    Decline = 2,
+    Timeout = 6,
+}

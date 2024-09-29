@@ -14,7 +14,7 @@ public partial class GameStorage {
             Model.Marriage marriage = new Model.Marriage {
                 Partner1Id = partner1Id,
                 Partner2Id = partner2Id,
-                Status = MaritalStatus.Single,
+                Status = MaritalStatus.Engaged,
                 Profile = string.Empty,
                 Partner1Message = string.Empty,
                 Partner2Message = string.Empty,
@@ -25,41 +25,17 @@ public partial class GameStorage {
                 return null;
             }
 
-            return Commit() ? LoadMarriage(marriage.Id, partner1Id, partner2Id) : null;
+            return Commit() ? GetMarriage(marriage.Id) : null;
         }
 
-        public Marriage? GetMarriage(long characterId) {
-            Model.Marriage? model = Context.Marriage.FirstOrDefault(member => member.Partner1Id == characterId || member.Partner2Id == characterId);
-            if (model == null) {
-                return null;
-            }
-            PlayerInfo? partner1 = GetPlayerInfo(model.Partner1Id);
-            PlayerInfo? partner2 = GetPlayerInfo(model.Partner2Id);
-
-            return partner1 == null || partner2 == null ? null : new Marriage {
-                Partner1 = new MarriagePartner {
-                    Info = partner1,
-                    Message = model.Partner1Message,
-                },
-                Partner2 = new MarriagePartner {
-                    Info = partner2,
-                    Message = model.Partner2Message,
-                },
-                Status = model.Status,
-                Profile = model.Profile,
-                ExpHistory = model.ExpHistory.Select<Model.MarriageExp, MarriageExp>(exp => exp).ToList(),
-                CreationTime = model.CreationTime.ToEpochSeconds(),
-            };
-        }
-
-        private Marriage? LoadMarriage(long marriageId, long partner1Id, long partner2Id) {
+        private Marriage? GetMarriage(long marriageId) {
             Model.Marriage? marriage = Context.Marriage.Find(marriageId);
             if (marriage == null) {
                 return null;
             }
 
-            PlayerInfo? partner1 = GetPlayerInfo(partner1Id);
-            PlayerInfo? partner2 = GetPlayerInfo(partner2Id);
+            PlayerInfo? partner1 = GetPlayerInfo(marriage.Partner1Id);
+            PlayerInfo? partner2 = GetPlayerInfo(marriage.Partner2Id);
             if (partner1 == null || partner2 == null) {
                 return null;
             }

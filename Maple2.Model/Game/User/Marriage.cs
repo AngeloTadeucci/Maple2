@@ -25,7 +25,6 @@ public class Marriage : IByteSerializable {
     public IList<MarriageExp> ExpHistory { get; set; } = [];
 
 
-
     public void WriteTo(IByteWriter writer) {
         writer.WriteLong(Id);
         writer.Write<MaritalStatus>(Status);
@@ -47,7 +46,7 @@ public class Marriage : IByteSerializable {
     }
 }
 
-public class MarriageExp : IByteSerializable{
+public class MarriageExp : IByteSerializable {
     public MarriageExpType Type { get; set; }
     public long Amount { get; set; }
     public long Time { get; set; }
@@ -78,7 +77,7 @@ public class MarriagePartner : IByteSerializable, IDisposable {
     }
 }
 
-public class MarriageInfo : IByteSerializable{
+public class MarriageInfo : IByteSerializable {
     public MaritalStatus Status { get; set; }
     public long CreationTime { get; set; }
     public string Partner1Name { get; set; } = string.Empty;

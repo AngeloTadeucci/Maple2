@@ -12,9 +12,9 @@ internal class Marriage {
     public long Partner2Id { get; set; }
     public MaritalStatus Status { get; set; }
     public IList<MarriageExp> ExpHistory { get; set; } = new List<MarriageExp>();
-    public string Profile { get; set; }
-    public string Partner1Message { get; set; }
-    public string Partner2Message { get; set; }
+    public required string Profile { get; set; }
+    public required string Partner1Message { get; set; }
+    public required string Partner2Message { get; set; }
     public DateTime CreationTime { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
