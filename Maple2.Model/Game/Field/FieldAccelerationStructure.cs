@@ -1,15 +1,11 @@
-﻿using DotRecast.Detour.Dynamic.Colliders;
-using Maple2.Model.Common;
+﻿using Maple2.Model.Common;
 using Maple2.Model.Metadata.FieldEntities;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
-using System.Collections.ObjectModel;
-using System.Net;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using static Maple2.Model.Metadata.WorldMapTable;
 
 namespace Maple2.Model.Game.Field;
 
@@ -172,7 +168,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         QueryFluids(box.Min, box.Max, callback);
     }
 
-    public List<FieldFluidEntity> QueryFluidsList(BoundingBox3 box, Action<FieldFluidEntity> callback) {
+    public List<FieldFluidEntity> QueryFluidsList(BoundingBox3 box) {
         List<FieldFluidEntity> fluids = new();
 
         QueryFluids(box, fluids.Add);
@@ -188,7 +184,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
-    public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max, Action<FieldFluidEntity> callback) {
+    public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max) {
         List<FieldFluidEntity> fluids = new();
 
         QueryFluids(min, max, fluids.Add);
@@ -200,7 +196,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         QueryFluids(center - 0.5f * size, center + 0.5f * size, callback);
     }
 
-    public List<FieldFluidEntity> QueryFluidsCenterList(Vector3 center, Vector3 size, Action<FieldFluidEntity> callback) {
+    public List<FieldFluidEntity> QueryFluidsCenterList(Vector3 center, Vector3 size) {
         List<FieldFluidEntity> fluids = new();
 
         QueryFluidsCenter(center, size, fluids.Add);
@@ -212,7 +208,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         QueryVibrateObjects(box.Min, box.Max, callback);
     }
 
-    public List<FieldVibrateEntity> QueryVibrateObjectsList(BoundingBox3 box, Action<FieldVibrateEntity> callback) {
+    public List<FieldVibrateEntity> QueryVibrateObjectsList(BoundingBox3 box) {
         List<FieldVibrateEntity> vibrateObjects = new();
 
         QueryVibrateObjects(box, vibrateObjects.Add);
@@ -228,7 +224,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
-    public List<FieldVibrateEntity> QueryVibrateObjectsList(Vector3 min, Vector3 max, Action<FieldVibrateEntity> callback) {
+    public List<FieldVibrateEntity> QueryVibrateObjectsList(Vector3 min, Vector3 max) {
         List<FieldVibrateEntity> vibrateObjects = new();
 
         QueryVibrateObjects(min, max, vibrateObjects.Add);
@@ -240,7 +236,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         QueryVibrateObjects(center - 0.5f * size, center + 0.5f * size, callback);
     }
 
-    public List<FieldVibrateEntity> QueryVibrateObjectsCenterList(Vector3 center, Vector3 size, Action<FieldVibrateEntity> callback) {
+    public List<FieldVibrateEntity> QueryVibrateObjectsCenterList(Vector3 center, Vector3 size) {
         List<FieldVibrateEntity> vibrateObjects = new();
 
         QueryVibrateObjectsCenter(center, size, vibrateObjects.Add);

@@ -13,9 +13,7 @@ using Maple2.Model.Metadata.FieldEntities;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
-using Pastel;
 using System.IO.Compression;
-using System.Linq;
 using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
