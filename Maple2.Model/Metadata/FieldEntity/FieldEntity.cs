@@ -1,5 +1,5 @@
-﻿using Maple2.Tools.VectorMath;
-using System.Numerics;
+﻿using System.Numerics;
+using Maple2.Tools.VectorMath;
 
 namespace Maple2.Model.Metadata.FieldEntity;
 
@@ -10,7 +10,8 @@ public enum FieldEntityType : byte {
     BoxCollider, // for cube tiles (IsWhiteBox = false) & arbitrarily sized white boxes
     MeshCollider,
     Fluid,
-    Cell // for cells culled from the grid & demoted to AABB tree
+    Cell, // for cells culled from the grid & demoted to AABB tree
+    SalableTile,
 }
 
 public record FieldEntityId(
@@ -83,3 +84,12 @@ public record FieldCellEntities(
     float Scale,
     BoundingBox3 Bounds,
     List<FieldEntity> Entities) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
+
+public record FieldSalableTile(
+    FieldEntityId Id,
+    Vector3 Position,
+    Vector3 Rotation,
+    float Scale,
+    BoundingBox3 Bounds,
+    int SalableGroup
+) : FieldEntity(Id, Position, Rotation, Scale, Bounds);

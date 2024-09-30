@@ -1,6 +1,4 @@
 ﻿using Maple2.Model.Common;
-using Maple2.Model.Metadata;
-using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
@@ -8,6 +6,8 @@ using Maple2.Tools.VectorMath;
 using Microsoft.VisualBasic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 
 namespace Maple2.Model.Game.Field;
 
@@ -19,21 +19,21 @@ internal enum FieldEntityMembers : byte {
     Rotation = 0x4,
     Scale = 0x8,
     Bounds = 0x10,
-    Llid = 0x20
+    Llid = 0x20,
 }
 
 /*
  * FieldAccelerationStructure is a helper class that specializes in various spatial queries for objects.
  * It's designed to maximize performance for finding objects in a 3D space with desired constraints.
- * 
+ *
  * Internally it uses specialized storage techniques with fast look up times, but knowledge on these
  * techniques isn't necessary for use. The Query functions allow you to find the objects you need without
  * knowing any of the implementation details.
- * 
+ *
  * You can do general queries or queries for specific entity types for all types of queries available.
  * Every entity matching the query constraints will be reported back through a callback, or in a list with
  * Query___List() methods.
- * 
+ *
  * Available query types include:
  * - Cell: Captures all entities in a specific grid cell, or range of cells. Doesn't capture freely floating entities.
  * - Point: Captures all entities intersecting with a specific point.
@@ -54,7 +54,7 @@ internal enum FieldEntityMembers : byte {
  * - Frustum: Captures all entities overlapping with a frustum. Useful for map rendering.
  * - CellsInFrustum: Captures all entities overlapping with a frustum. Useful for map rendering. Doesn't capture freely floating entities.
  * - TreeInFrustum: Captures all entities overlapping with a frustum. Useful for map rendering. Doesn't capture cells.
- * 
+ *
  * Special purpose queries:
  * - Spawns: Captures all mob spawn candidates in a sphere.
  * - Fluids: Captures all fluids within a bounding box.
@@ -178,10 +178,22 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
     public void QueryFluids(Vector3 min, Vector3 max, Action<FieldFluidEntity> callback) {
         QueryCells(min, max, (entity) => {
-            if (entity is FieldFluidEntity fluid && fluid.IsSurface && !fluid.IsShallow) {
+            if (entity is FieldFluidEntity { IsSurface: true, IsShallow: false } fluid) {
                 callback(fluid);
             }
         });
+    }
+
+    public void QuerySalableTiles(Vector3 min, Vector3 max, Action<FieldSalableTile> callback) {
+        QueryCells(min, max, (entity) => {
+            if (entity is FieldSalableTile tile) {
+                callback(tile);
+            }
+        });
+    }
+
+    public void QuerySalableTilesCenter(Vector3 center, Vector3 size, Action<FieldSalableTile> callback) {
+        QuerySalableTiles(center - 0.5f * size, center + 0.5f * size, callback);
     }
 
     public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max) {
@@ -681,7 +693,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             FieldFluidEntity => FieldEntityType.Fluid,
             FieldMeshColliderEntity => FieldEntityType.MeshCollider,
             FieldCellEntities => FieldEntityType.Cell,
-            _ => FieldEntityType.Unknown
+            FieldSalableTile => FieldEntityType.SalableTile,
+            _ => throw new InvalidDataException($"Writing unhandled field entity type: {entity.GetType().FullName}"),
         };
 
         FieldEntityMembers memberFlags = FieldEntityMembers.None;
@@ -700,7 +713,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 break;
         }
 
-        writer.Write(type);
+        writer.Write<FieldEntityType>(type);
         writer.Write(memberFlags);
 
         if ((memberFlags & FieldEntityMembers.Id) != 0) {
@@ -752,6 +765,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 foreach (FieldEntity childEntity in cell.Entities) {
                     WriteTo(childEntity, writer);
                 }
+                break;
+            case FieldSalableTile salableTile:
+                writer.Write(salableTile.SalableGroup);
                 break;
             default:
                 throw new InvalidDataException($"Writing unhandled field entity type: {entity.GetType().FullName}");
@@ -928,6 +944,14 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Scale: scale,
                     Bounds: bounds,
                     Entities: children);
+            case FieldEntityType.SalableTile:
+                return new FieldSalableTile(
+                    Id: id,
+                    Position: position,
+                    Rotation: rotation,
+                    Scale: scale,
+                    Bounds: bounds,
+                    SalableGroup: reader.Read<int>());
             default:
                 throw new InvalidDataException($"Reading unhandled field entity type: {type}");
         }

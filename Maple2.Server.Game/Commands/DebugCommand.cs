@@ -150,6 +150,7 @@ public class DebugCommand : Command {
             AddCommand(new DebugQuerySpawnCommand(session, mapDataStorage));
             AddCommand(new DebugQueryFluidCommand(session, mapDataStorage));
             AddCommand(new DebugQueryVibrateCommand(session, mapDataStorage));
+            AddCommand(new DebugQuerySalableTileCommand(session, mapDataStorage));
         }
 
         private class DebugQuerySpawnCommand : Command {
@@ -271,6 +272,49 @@ public class DebugCommand : Command {
                     Vector3S cell = FieldAccelerationStructure.PointToCell(center);
 
                     ctx.Console.Out.WriteLine($"Vibrate object found at {center.X} {center.Y} {center.Z} in cell {cell.X} {cell.Y} {cell.Z}");
+                });
+            }
+        }
+
+        private class DebugQuerySalableTileCommand : Command {
+            private readonly GameSession session;
+            private readonly MapDataStorage mapDataStorage;
+
+            public DebugQuerySalableTileCommand(GameSession session, MapDataStorage mapDataStorage) : base("salable", "Searches for nearby salable tiles.") {
+                this.session = session;
+                this.mapDataStorage = mapDataStorage;
+
+                var x = new Argument<float>("x", () => 300, "How far along the x axis to search from the player.");
+                var y = new Argument<float>("y", () => 300, "How far along the y axis to search from the player.");
+                var z = new Argument<float>("z", () => 300, "How far along the z axis to search from the player.");
+
+                AddArgument(x);
+                AddArgument(y);
+                AddArgument(z);
+
+                this.SetHandler<InvocationContext, float, float, float>(Handle, x, y, z);
+            }
+
+            private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
+                    return;
+                }
+
+                if (!mapDataStorage.TryGet(map.XBlock, out FieldAccelerationStructure? mapData)) {
+                    return;
+                }
+
+                Vector3 center = session.Player.Position;
+                Vector3S cell = FieldAccelerationStructure.PointToCell(center);
+
+                ctx.Console.Out.WriteLine($"Player at {center.X} {center.Y} {center.Z} in cell {cell.X} {cell.Y} {cell.Z}");
+
+                mapData.QuerySalableTilesCenter(session.Player.Position, 2 * new Vector3(x, y, z), (salableTile) => {
+                    Vector3 position = salableTile.Position;
+                    Vector3S toCell = FieldAccelerationStructure.PointToCell(position);
+
+
+                    ctx.Console.Out.WriteLine($"SalableGroupId {salableTile.SalableGroup} found at {position.X} {position.Y} {position.Z} in cell {toCell.X} {toCell.Y} {toCell.Z}");
                 });
             }
         }
