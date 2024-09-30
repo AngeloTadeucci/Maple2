@@ -102,7 +102,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         Vector3S minIndex = PointToCell(min) - MinIndex;
         Vector3S maxIndex = PointToCell(max) - MinIndex;
 
-        for (short x = short.Max(0, minIndex.X); x < short.Min((short)(maxIndex.X + 1), GridSize.X); ++x) {
+        for (short x = short.Max(0, minIndex.X); x < short.Min((short) (maxIndex.X + 1), GridSize.X); ++x) {
             for (short y = short.Max(0, minIndex.Y); y < short.Min((short) (maxIndex.Y + 1), GridSize.Y); ++y) {
                 for (short z = short.Max(0, minIndex.Z); z < short.Min((short) (maxIndex.Z + 1), GridSize.Z); ++z) {
                     (byte count, int startIndex) = GetCellInfo(cellGrid[x, y, z]);
@@ -300,7 +300,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             Vector3S minCubeIndex = PointToCell(minPosition);
             Vector3S maxCubeIndex = PointToCell(maxPosition);
 
-            for (short x = minCubeIndex.X;  x <= maxCubeIndex.X; x++) {
+            for (short x = minCubeIndex.X; x <= maxCubeIndex.X; x++) {
                 for (short y = minCubeIndex.Y; y <= maxCubeIndex.Y; y++) {
                     for (short z = minCubeIndex.Z; z <= maxCubeIndex.Z; z++) {
                         Vector3S coord = new Vector3S(x, y, z);
@@ -598,7 +598,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         writer.Write(GridSize);
         writer.Write(MinIndex);
         writer.Write<int>(vibrateEntities.Count);
-        
+
         for (short x = 0; x < GridSize.X; x++) {
             for (short y = 0; y < GridSize.Y; y++) {
                 for (short z = 0; z < GridSize.Z; z++) {
@@ -624,7 +624,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         }
 
         if (writer is ByteWriter byteWriter) {
-            GridBytesWritten = (ulong)byteWriter.Length;
+            GridBytesWritten = (ulong) byteWriter.Length;
         }
 
         writer.WriteInt(alignedEntities.Count);
@@ -646,7 +646,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         }
     }
 
-#endregion
+    #endregion
 
     #region Serialization
 
@@ -655,7 +655,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         int y = (int) Math.Round(position.Y) / 150;
         int z = (int) Math.Round(position.Z) / 150;
 
-       return new Vector3S((short)x, (short)y, (short)z);
+        return new Vector3S((short) x, (short) y, (short) z);
     }
 
     private bool IsGridAligned(Vector3 position) {
@@ -731,7 +731,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             writer.Write(entity.Bounds.Max);
         }
 
-        switch(entity) {
+        switch (entity) {
             case FieldVibrateEntity vibrateEntity:
                 writer.Write(vibrateEntity.VibrateIndex);
                 break;
@@ -753,7 +753,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 break;
             case FieldCellEntities cell:
                 writer.WriteInt(cell.Entities.Count);
-                foreach(FieldEntity childEntity in  cell.Entities) {
+                foreach (FieldEntity childEntity in cell.Entities) {
                     WriteTo(childEntity, writer);
                 }
                 break;
@@ -800,7 +800,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
                     if (cell.count == 0) {
                         // use list start index as empty count for byte streams
-                        z += (short)(cell.startIndex - 1);
+                        z += (short) (cell.startIndex - 1);
 
                         continue;
                     }

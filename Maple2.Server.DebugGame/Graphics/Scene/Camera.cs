@@ -9,8 +9,8 @@ public class Camera {
 
     public float AspectRatio { get; private set; }
     public float NearPlane { get; private set; }
-    public float FarPlane {  get; private set; }
-    public float FieldOfView {  get; private set; }
+    public float FarPlane { get; private set; }
+    public float FieldOfView { get; private set; }
 
     public void SetProperties(float fieldOfView, float aspectRatio, float nearPlane, float farPlane) {
 

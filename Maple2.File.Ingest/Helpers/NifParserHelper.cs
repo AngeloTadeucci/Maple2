@@ -37,11 +37,11 @@ public static class NifParserHelper {
                 if (ex.InnerException.Message.StartsWith("[/library/triggerslibrary/gamebryodata/generic")) {
                     return;
                 }
-                
+
                 if (ex.InnerException.Message.StartsWith("[/model/tool/shadersphere.nif]:")) {
                     return;
                 }
-                
+
                 if (ex.InnerException.Message.StartsWith("[/model/tool/triggerproxy_")) {
                     return;
                 }
