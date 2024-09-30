@@ -329,9 +329,9 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                 mapXStats.AddValue((ulong) mapData.GridSize.X);
                 mapYStats.AddValue((ulong) mapData.GridSize.Y);
                 mapZStats.AddValue((ulong) mapData.GridSize.Z);
-                alignedStats.AddValue((ulong) mapData.alignedEntities.Count);
-                alignedTrimmedStats.AddValue((ulong) mapData.alignedEntities.Count);
-                unalignedStats.AddValue((ulong) mapData.unalignedEntities.Count);
+                alignedStats.AddValue((ulong) mapData.AlignedEntities.Length);
+                alignedTrimmedStats.AddValue((ulong) mapData.AlignedTrimmedEntities.Length);
+                unalignedStats.AddValue((ulong) mapData.UnalignedEntities.Length);
             }
 
             return new MapDataMetadata(xblock, data);
