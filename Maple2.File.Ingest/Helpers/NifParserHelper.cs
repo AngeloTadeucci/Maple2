@@ -65,9 +65,6 @@ public static class NifParserHelper {
                 int value = nxsMeshes.Count + 1; // 1-based index
                 nxsMeshIndexMap[meshDataString] = value;
 
-                Vector3 min = new Vector3();
-                Vector3 max = new Vector3();
-
                 PhysXMesh mesh = new PhysXMesh(meshDesc.MeshData);
 
                 nxsMeshes.Add(new NxsMeshMetadata(value, meshDesc.MeshData, BoundingBox3.Compute(mesh.Vertices)));

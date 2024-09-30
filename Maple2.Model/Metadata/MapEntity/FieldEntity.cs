@@ -17,6 +17,13 @@ public record FieldEntityId(
     ulong High,
     ulong Low) {
     public bool IsNull { get => High == 0 && Low == 0; }
+
+    public static FieldEntityId FromString(string id) {
+        ulong High = Convert.ToUInt64(id.Substring(0, 16), 16);
+        ulong Low = Convert.ToUInt64(id.Substring(16, 16), 16);
+
+        return new FieldEntityId(High, Low);
+    }
 }
 
 public record FieldEntity(
@@ -31,7 +38,8 @@ public record FieldVibrateEntity(
     Vector3 Position,
     Vector3 Rotation,
     float Scale,
-    BoundingBox3 Bounds) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
+    BoundingBox3 Bounds,
+    int VibrateIndex) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
 public record FieldSpawnTile(
     FieldEntityId Id,
@@ -47,7 +55,8 @@ public record FieldBoxColliderEntity(
     float Scale,
     BoundingBox3 Bounds,
     Vector3 Size,
-    bool IsWhiteBox) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
+    bool IsWhiteBox,
+    bool IsFluid) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
 public record FieldMeshColliderEntity(
     FieldEntityId Id,
@@ -63,7 +72,9 @@ public record FieldFluidEntity(
     Vector3 Rotation,
     float Scale,
     BoundingBox3 Bounds,
-    uint MeshLlid) : FieldMeshColliderEntity(Id, Position, Rotation, Scale, Bounds, MeshLlid);
+    uint MeshLlid,
+    bool IsShallow,
+    bool IsSurface) : FieldMeshColliderEntity(Id, Position, Rotation, Scale, Bounds, MeshLlid);
 
 public record FieldCellEntities(
     FieldEntityId Id,

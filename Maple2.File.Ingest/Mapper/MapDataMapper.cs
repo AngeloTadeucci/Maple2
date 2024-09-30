@@ -31,6 +31,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     private readonly StatsTracker mapYStats = new();
     private readonly StatsTracker mapZStats = new();
     private readonly StatsTracker alignedStats = new();
+    private readonly StatsTracker alignedTrimmedStats = new();
     private readonly StatsTracker unalignedStats = new();
     private readonly HashSet<string> invalidLlids = new();
     private readonly HashSet<uint> missingLlids = new();
@@ -69,6 +70,9 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
         List<FieldEntity> unalignedEntities = new List<FieldEntity>();
         Vector3S minIndex = new Vector3S(short.MaxValue, short.MaxValue, short.MaxValue);
         Vector3S maxIndex = new Vector3S(short.MinValue, short.MinValue, short.MinValue);
+        Transform transform = new Transform();
+
+        int vibrateObjectId = 0;
 
         foreach (IMapEntity entity in entities) {
             Vector3S nearestCubeIndex = new Vector3S();
@@ -77,7 +81,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                 continue;
             }
 
-            Transform transform = new Transform();
+            transform.Transformation = Matrix4x4.Identity;
             transform.Position = placeable.Position;
             transform.RotationAnglesDegrees = placeable.Rotation;
             transform.Scale = placeable.Scale;
@@ -87,22 +91,18 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
             Vector3 voxelPosition = 150.0f * new Vector3(nearestCubeIndex.X, nearestCubeIndex.Y, nearestCubeIndex.Z);
             BoundingBox3 entityBounds = new BoundingBox3();
 
-            ulong idHigh = 0;
-            ulong idLow = 0;
-
             bool isHexId = entity.EntityId.Length == 32;
 
             for (int i = 0; isHexId && i < entity.EntityId.Length; ++i) {
                 isHexId = entity.EntityId[i].IsHexDigit();
             }
 
-            if (isHexId) {
-                idHigh = Convert.ToUInt64(entity.EntityId.Substring(0, 16), 16);
-                idLow = Convert.ToUInt64(entity.EntityId.Substring(16, 16), 16);
-            }
-
             FieldEntity? fieldEntity;
-            FieldEntityId entityId = new FieldEntityId(idHigh, idLow);
+            FieldEntityId entityId = new FieldEntityId(0, 0);
+
+            if (isHexId) {
+                entityId = FieldEntityId.FromString(entity.EntityId);
+            }
 
             switch (entity) {
                 /*
@@ -125,7 +125,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         Scale: placeable.Scale,
                         Bounds: entityBounds,
                         Size: whitebox.ShapeDimensions,
-                        IsWhiteBox: true);
+                        IsWhiteBox: true,
+                        IsFluid: false);
                     break;
                 case IMesh mesh:
                     if (entity is IMS2Vibrate vibrate && vibrate.Enabled) {
@@ -137,7 +138,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Position: placeable.Position,
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
-                            Bounds: entityBounds);
+                            Bounds: entityBounds,
+                            VibrateIndex: vibrateObjectId++);
 
                         break;
                     }
@@ -166,7 +168,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                                 Scale: placeable.Scale,
                                 Bounds: entityBounds,
                                 Size: meshPhysXDimension,
-                                IsWhiteBox: false);
+                                IsWhiteBox: false,
+                                IsFluid: meshMapProperties.CubeType == "Fluid");
 
                             break;
                         }
@@ -206,9 +209,11 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
                             Bounds: entityBounds,
-                            MeshLlid: llid);
+                            MeshLlid: llid,
+                            IsShallow: false,
+                            IsSurface: true);
 
-                        continue;
+                        break;
                     }
 
                     fieldEntity = new FieldMeshColliderEntity(
@@ -245,7 +250,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         Scale: placeable.Scale,
                         Bounds: entityBounds,
                         Size: physXDimension,
-                        IsWhiteBox: false);
+                        IsWhiteBox: false,
+                        IsFluid: false);
 
                     break;
                 default:
@@ -279,7 +285,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
 
         FieldAccelerationStructure fieldData = new FieldAccelerationStructure();
 
-        fieldData.AddEntities(gridAlignedEntities, minIndex, maxIndex, unalignedEntities);
+        fieldData.AddEntities(gridAlignedEntities, minIndex, maxIndex, unalignedEntities, vibrateObjectId);
 
         return fieldData;
     }
@@ -324,6 +330,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                 mapYStats.AddValue((ulong) mapData.GridSize.Y);
                 mapZStats.AddValue((ulong) mapData.GridSize.Z);
                 alignedStats.AddValue((ulong) mapData.alignedEntities.Count);
+                alignedTrimmedStats.AddValue((ulong) mapData.alignedEntities.Count);
                 unalignedStats.AddValue((ulong) mapData.unalignedEntities.Count);
             }
 
@@ -343,6 +350,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
         Console.WriteLine($"Average map dimensions:{blue} < {mapXStats.AvgValue}, {mapYStats.AvgValue}, {mapZStats.AvgValue} > {white}");
         Console.WriteLine($"Largest aligned entities:{blue} {alignedStats.MaxValue} {white}");
         Console.WriteLine($"Average aligned entities:{blue} {alignedStats.AvgValue} {white}");
+        Console.WriteLine($"Largest trimmed aligned entities:{blue} {alignedTrimmedStats.MaxValue} {white}");
+        Console.WriteLine($"Average trimmed aligned entities:{blue} {alignedTrimmedStats.AvgValue} {white}");
         Console.WriteLine($"Largest unaligned entities:{blue} {unalignedStats.MaxValue} {white}");
         Console.WriteLine($"Average unaligned entities:{blue} {unalignedStats.AvgValue} {white}");
     }

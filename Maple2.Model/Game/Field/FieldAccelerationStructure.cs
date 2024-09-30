@@ -1,11 +1,15 @@
-﻿using Maple2.Model.Common;
+﻿using DotRecast.Detour.Dynamic.Colliders;
+using Maple2.Model.Common;
 using Maple2.Model.Metadata.FieldEntities;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
 using System.Collections.ObjectModel;
+using System.Net;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using static Maple2.Model.Metadata.WorldMapTable;
 
 namespace Maple2.Model.Game.Field;
 
@@ -35,14 +39,22 @@ internal enum FieldEntityMembers : byte {
  * - Cell: Captures all entities in a specific grid cell, or range of cells. Doesn't capture freely floating entities.
  * - Point: Captures all entities intersecting with a specific point.
  * - CellAtPoint: Captures all entities in the grid cell intersecting with a specific point. Doesn't capture freely floating entities.
- * - BoundingBox: Captures all entities intersecting with a bounding box.
- * - CellsInBoundingBox: Captures all entities in grid cells intersecting with a bounding box. Doesn't capture freely floating entities.
+ * - TreeAtPoint: Captures all entities in the AABB tree intersecting with a specific point. Doesn't capture cells.
+ * - Box: Captures all entities intersecting with a bounding box.
+ * - CellsInBox: Captures all entities in grid cells intersecting with a bounding box. Doesn't capture freely floating entities.
+ * - TreeInBox: Captures all entities in the AABB tree intersecting with a bounding box. Doesn't capture cells.
  * - Sphere: Captures all entities intersecting with a sphere.
  * - CellsInSphere: Captures all entities in grid cells intersecting with a sphere. Doesn't capture freely floating entities.
+ * - TreeInSphere: Captures all entities in the AABB tree intersecting with a sphere. Doesn't capture cells.
  * - Ray: Captures all entities intersecting with a ray. Object results may not be in order.
  * - CellsOnRay: Captures all entities intersecting with a ray. Object results may not be in order. Doesn't capture freely floating entities.
+ * - TreeOnRay: Captures all entities in the AABB tree intersecting with a ray. Doesn't capture cells.
  * - RayCast: Captures all boxes & meshes intersecting with a ray in order until false is returned by the callback.
  * - CellRayCast: Captures all boxes & meshes intersecting with a ray in order until -1 is returned by the callback. Doesn't capture freely floating entities.
+ * - TreeRayCast: Captures all entities in the AABB tree intersecting with a ray in order until -1 is returned by the callback. Doesn't capture cells.
+ * - Frustum: Captures all entities overlapping with a frustum. Useful for map rendering.
+ * - CellsInFrustum: Captures all entities overlapping with a frustum. Useful for map rendering. Doesn't capture freely floating entities.
+ * - TreeInFrustum: Captures all entities overlapping with a frustum. Useful for map rendering. Doesn't capture cells.
  * 
  * Special purpose queries:
  * - Spawns: Captures all mob spawn candidates in a sphere.
@@ -56,29 +68,185 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     public Vector3S MinIndex { get; private set; } = new Vector3S();
     public Vector3S MaxIndex { get; private set; } = new Vector3S();
 
-    public ReadOnlyCollection<FieldEntity> AlignedEntities { get => alignedEntities.AsReadOnly(); }
-    public ReadOnlyCollection<FieldEntity> UnalignedEntities { get => unalignedEntities.AsReadOnly(); }
+    public ReadOnlySpan<FieldEntity> AlignedEntities { get => CollectionsMarshal.AsSpan(alignedEntities); }
+    public ReadOnlySpan<FieldEntity> AlignedTrimmedEntities { get => CollectionsMarshal.AsSpan(alignedTrimmedEntities); }
+    public ReadOnlySpan<FieldEntity> UnalignedEntities { get => CollectionsMarshal.AsSpan(unalignedEntities); }
+    // Make a list of vibrate objects on the field with the same size & order as this list
+    // Then in queries use field.VibrateObjects[vibrateEntity.VibrateIndex] to retrieve the right one
+    public ReadOnlySpan<FieldVibrateEntity> VibrateEntities { get => CollectionsMarshal.AsSpan(vibrateEntities); }
 
-    public List<FieldEntity> alignedEntities;
-    public List<FieldEntity> unalignedEntities; // TODO: add AABB tree implementation for querying unaligned objects
+    private List<FieldEntity> alignedEntities;
+    private List<FieldEntity> alignedTrimmedEntities;
+    private List<FieldEntity> unalignedEntities; // TODO: add AABB tree implementation for querying unaligned objects
+    private List<FieldVibrateEntity> vibrateEntities;
     private int[,,] cellGrid;
 
     public ulong GridBytesWritten { get; private set; } = 0;
 
     public FieldAccelerationStructure() {
         alignedEntities = new();
+        alignedTrimmedEntities = new();
         unalignedEntities = new();
+        vibrateEntities = new();
         cellGrid = new int[0, 0, 0];
+    }
+
+    public static Vector3S PointToCell(Vector3 point) {
+        point *= (1 / 150.0f);
+        return new Vector3S((short) Math.Floor(point.X + 0.5f), (short) Math.Floor(point.Y + 0.5f), (short) Math.Floor(point.Z));
     }
 
     #region QueryApi
 
+    public void QueryCells(Vector3 min, Vector3 max, Action<FieldEntity> callback) {
+        Vector3S minIndex = PointToCell(min) - MinIndex;
+        Vector3S maxIndex = PointToCell(max) - MinIndex;
 
-    public void QueryCell(Vector3 point, Action<FieldEntity> callback) {
+        for (short x = short.Max(0, minIndex.X); x < short.Min((short)(maxIndex.X + 1), GridSize.X); ++x) {
+            for (short y = short.Max(0, minIndex.Y); y < short.Min((short) (maxIndex.Y + 1), GridSize.Y); ++y) {
+                for (short z = short.Max(0, minIndex.Z); z < short.Min((short) (maxIndex.Z + 1), GridSize.Z); ++z) {
+                    (byte count, int startIndex) = GetCellInfo(cellGrid[x, y, z]);
 
+                    for (byte i = 0; i < count; ++i) {
+                        callback(alignedEntities[startIndex + i]);
+                    }
+                }
+            }
+        }
+
+        // TODO: query aabb tree
+        foreach (FieldEntity entity in alignedTrimmedEntities) {
+            if (entity.Bounds.Intersects(new BoundingBox3(min, max))) {
+                if (entity is FieldCellEntities cell) {
+                    foreach (FieldEntity child in cell.Entities) {
+                        callback(child);
+                    }
+
+                    continue;
+                }
+
+                callback(entity);
+            }
+        }
     }
 
-    public void QueryCells
+    public void QueryTreeInBox(Vector3 min, Vector3 max, Action<FieldEntity> callback) {
+        // TODO: query aabb tree
+        foreach (FieldEntity entity in unalignedEntities) {
+            if (entity.Bounds.Intersects(new BoundingBox3(min, max))) {
+                callback(entity);
+            }
+        }
+    }
+
+    public void QueryBox(Vector3 min, Vector3 max, Action<FieldEntity> callback) {
+        QueryCells(min, max, callback);
+        QueryTreeInBox(min, max, callback);
+    }
+
+    public void CellsInSphere(Vector3 center, float radius, Action<FieldEntity> callback) {
+        QueryCells(center - new Vector3(radius, radius, radius), center + new Vector3(radius, radius, radius), (entity) => {
+            if (entity.Bounds.IntersectsSphere(center, radius)) {
+                callback(entity);
+            }
+        });
+    }
+
+    public void QuerySpawns(Vector3 center, float radius, Action<FieldSpawnTile> callback) {
+        CellsInSphere(center, radius, (entity) => {
+            if (entity is FieldSpawnTile spawn) {
+                callback(spawn);
+            }
+        });
+    }
+
+    public List<FieldSpawnTile> QuerySpawnsList(Vector3 center, float radius) {
+        List<FieldSpawnTile> spawns = new();
+
+        QuerySpawns(center, radius, spawns.Add);
+
+        return spawns;
+    }
+
+    public void QueryFluids(BoundingBox3 box, Action<FieldFluidEntity> callback) {
+        QueryFluids(box.Min, box.Max, callback);
+    }
+
+    public List<FieldFluidEntity> QueryFluidsList(BoundingBox3 box, Action<FieldFluidEntity> callback) {
+        List<FieldFluidEntity> fluids = new();
+
+        QueryFluids(box, fluids.Add);
+
+        return fluids;
+    }
+
+    public void QueryFluids(Vector3 min, Vector3 max, Action<FieldFluidEntity> callback) {
+        QueryCells(min, max, (entity) => {
+            if (entity is FieldFluidEntity fluid && fluid.IsSurface && !fluid.IsShallow) {
+                callback(fluid);
+            }
+        });
+    }
+
+    public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max, Action<FieldFluidEntity> callback) {
+        List<FieldFluidEntity> fluids = new();
+
+        QueryFluids(min, max, fluids.Add);
+
+        return fluids;
+    }
+
+    public void QueryFluidsCenter(Vector3 center, Vector3 size, Action<FieldFluidEntity> callback) {
+        QueryFluids(center - 0.5f * size, center + 0.5f * size, callback);
+    }
+
+    public List<FieldFluidEntity> QueryFluidsCenterList(Vector3 center, Vector3 size, Action<FieldFluidEntity> callback) {
+        List<FieldFluidEntity> fluids = new();
+
+        QueryFluidsCenter(center, size, fluids.Add);
+
+        return fluids;
+    }
+
+    public void QueryVibrateObjects(BoundingBox3 box, Action<FieldVibrateEntity> callback) {
+        QueryVibrateObjects(box.Min, box.Max, callback);
+    }
+
+    public List<FieldVibrateEntity> QueryVibrateObjectsList(BoundingBox3 box, Action<FieldVibrateEntity> callback) {
+        List<FieldVibrateEntity> vibrateObjects = new();
+
+        QueryVibrateObjects(box, vibrateObjects.Add);
+
+        return vibrateObjects;
+    }
+
+    public void QueryVibrateObjects(Vector3 min, Vector3 max, Action<FieldVibrateEntity> callback) {
+        QueryBox(min, max, (entity) => {
+            if (entity is FieldVibrateEntity vibrateObject) {
+                callback(vibrateObject);
+            }
+        });
+    }
+
+    public List<FieldVibrateEntity> QueryVibrateObjectsList(Vector3 min, Vector3 max, Action<FieldVibrateEntity> callback) {
+        List<FieldVibrateEntity> vibrateObjects = new();
+
+        QueryVibrateObjects(min, max, vibrateObjects.Add);
+
+        return vibrateObjects;
+    }
+
+    public void QueryVibrateObjectsCenter(Vector3 center, Vector3 size, Action<FieldVibrateEntity> callback) {
+        QueryVibrateObjects(center - 0.5f * size, center + 0.5f * size, callback);
+    }
+
+    public List<FieldVibrateEntity> QueryVibrateObjectsCenterList(Vector3 center, Vector3 size, Action<FieldVibrateEntity> callback) {
+        List<FieldVibrateEntity> vibrateObjects = new();
+
+        QueryVibrateObjectsCenter(center, size, vibrateObjects.Add);
+
+        return vibrateObjects;
+    }
 
     #endregion
 
@@ -112,7 +280,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
             foreach (FieldEntity entity in entityList) {
                 if (entity is FieldBoxColliderEntity boxEntity && !boxEntity.IsWhiteBox) {
-                    occupancyMap[coord] = (occupancy.isOccupied, true);
+                    occupancyMap[coord] = (true, true);
 
                     continue;
                 }
@@ -121,15 +289,16 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     continue;
                 }
 
-                occupancyMap[coord] = (occupancy.isOccupied, true);
+                occupancyMap[coord] = (true, occupancy.isGround);
+
             }
         }
 
         foreach (FieldEntity entity in unalignedEntities) {
             Vector3 minPosition = (1 / 150.0f) * entity.Bounds.Min;
             Vector3 maxPosition = (1 / 150.0f) * entity.Bounds.Max;
-            Vector3S minCubeIndex = new Vector3S((short) Math.Floor(minPosition.X + 0.5f), (short) Math.Floor(minPosition.Y + 0.5f), (short) Math.Floor(minPosition.Z + 0.5f));
-            Vector3S maxCubeIndex = new Vector3S((short) Math.Floor(maxPosition.X + 0.5f), (short) Math.Floor(maxPosition.Y + 0.5f), (short) Math.Floor(maxPosition.Z + 0.5f));
+            Vector3S minCubeIndex = PointToCell(minPosition);
+            Vector3S maxCubeIndex = PointToCell(maxPosition);
 
             for (short x = minCubeIndex.X;  x <= maxCubeIndex.X; x++) {
                 for (short y = minCubeIndex.Y; y <= maxCubeIndex.Y; y++) {
@@ -176,6 +345,27 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                             Rotation: new Vector3(0, 0, 0),
                             Scale: 1,
                             Bounds: bounds));
+                    }
+
+                    bool isSurface = !occupancy.isOccupied;
+                    bool isShallow = isSurface && groundOccupancy.isGround;
+
+                    if ((!isSurface || isShallow) && gridAlignedEntities.TryGetValue(groundCoord, out List<FieldEntity>? entityList)) {
+                        for (int i = 0; i < entityList.Count; ++i) {
+                            FieldEntity entity = entityList[i];
+
+                            if (entity is FieldFluidEntity fluid) {
+                                entityList[i] = new FieldFluidEntity(
+                                    Id: fluid.Id,
+                                    Position: fluid.Position,
+                                    Rotation: fluid.Rotation,
+                                    Scale: fluid.Scale,
+                                    Bounds: fluid.Bounds,
+                                    MeshLlid: fluid.MeshLlid,
+                                    IsShallow: isShallow,
+                                    IsSurface: isSurface);
+                            }
+                        }
                     }
                 }
             }
@@ -295,7 +485,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 }
 
                 if (entityList.Count == 1) {
-                    unalignedEntities.Add(entityList.First());
+                    alignedTrimmedEntities.Add(entityList.First());
 
                     continue;
                 }
@@ -311,7 +501,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Bounds: bounds,
                     Entities: entityList);
 
-                unalignedEntities.Add(cell);
+                alignedTrimmedEntities.Add(cell);
             }
         }
     }
@@ -330,10 +520,32 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         return ((count & 0xFF) << 24) | (startIndex & 0xFFFFFF);
     }
 
-    public void AddEntities(Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities, Vector3S minIndex, Vector3S maxIndex, List<FieldEntity> unalignedEntities) {
+    public void AddVibrateEntities(List<FieldEntity> entities) {
+        foreach (FieldEntity entity in entities) {
+            if (entity is FieldVibrateEntity vibrate) {
+                vibrateEntities[vibrate.VibrateIndex] = vibrate;
+            }
+
+            if (entity is FieldCellEntities cell) {
+                AddVibrateEntities(cell.Entities);
+            }
+        }
+    }
+
+    public void AddEntities(Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities, Vector3S minIndex, Vector3S maxIndex, List<FieldEntity> unalignedEntities, int vibrateCount) {
         if (minIndex.X == short.MaxValue) {
             minIndex = new Vector3S(0, 0, 0);
             maxIndex = new Vector3S(0, 0, 0);
+        }
+
+        for (int i = 0; i < vibrateCount; ++i) {
+            vibrateEntities.Add(new FieldVibrateEntity(
+                Id: new FieldEntityId(0, 0),
+                Position: new Vector3(0, 0, 0),
+                Rotation: new Vector3(0, 0, 0),
+                Scale: 1,
+                Bounds: new BoundingBox3(),
+                VibrateIndex: i));
         }
 
         GenerateSpawnLocations(gridAlignedEntities, minIndex, maxIndex, unalignedEntities);
@@ -368,7 +580,12 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             }
         }
 
+        SortEntityList(alignedTrimmedEntities);
         SortEntityList(unalignedEntities);
+
+        AddVibrateEntities(alignedEntities);
+        AddVibrateEntities(alignedTrimmedEntities);
+        AddVibrateEntities(unalignedEntities);
 
         GenerateAabbTree();
     }
@@ -378,13 +595,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void WriteTo(IByteWriter writer) {
-        writer.WriteShort(GridSize.X);
-        writer.WriteShort(GridSize.Y);
-        writer.WriteShort(GridSize.Z);
-
-        writer.WriteShort(MinIndex.X);
-        writer.WriteShort(MinIndex.Y);
-        writer.WriteShort(MinIndex.Z);
+        writer.Write(GridSize);
+        writer.Write(MinIndex);
+        writer.Write<int>(vibrateEntities.Count);
         
         for (short x = 0; x < GridSize.X; x++) {
             for (short y = 0; y < GridSize.Y; y++) {
@@ -417,6 +630,12 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         writer.WriteInt(alignedEntities.Count);
 
         foreach (FieldEntity entity in alignedEntities) {
+            WriteTo(entity, writer);
+        }
+
+        writer.WriteInt(alignedTrimmedEntities.Count);
+
+        foreach (FieldEntity entity in alignedTrimmedEntities) {
             WriteTo(entity, writer);
         }
 
@@ -514,15 +733,23 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
         switch(entity) {
             case FieldVibrateEntity vibrateEntity:
+                writer.Write(vibrateEntity.VibrateIndex);
                 break;
             case FieldSpawnTile spawnTile:
                 break;
             case FieldBoxColliderEntity boxCollider:
                 writer.Write(boxCollider.Size);
                 writer.Write(boxCollider.IsWhiteBox);
+                writer.Write(boxCollider.IsFluid);
                 break;
             case FieldMeshColliderEntity meshCollider:
-                writer.Write(meshCollider.MeshLlid);
+                if ((memberFlags & FieldEntityMembers.Llid) != 0) {
+                    writer.Write(meshCollider.MeshLlid);
+                }
+                if (entity is FieldFluidEntity fluid) {
+                    writer.Write(fluid.IsShallow);
+                    writer.Write(fluid.IsSurface);
+                }
                 break;
             case FieldCellEntities cell:
                 writer.WriteInt(cell.Entities.Count);
@@ -541,13 +768,29 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         MaxIndex = MinIndex + GridSize - new Vector3S(1, 1, 1);
         cellGrid = new int[GridSize.X, GridSize.Y, GridSize.Z];
 
-        if (alignedEntities is null || unalignedEntities is null) {
+        if (alignedEntities is null || unalignedEntities is null || alignedTrimmedEntities is null || vibrateEntities is null) {
             alignedEntities = new();
+            alignedTrimmedEntities = new();
             unalignedEntities = new();
+            vibrateEntities = new();
         }
 
         alignedEntities.Clear();
+        alignedTrimmedEntities.Clear();
         unalignedEntities.Clear();
+        vibrateEntities.Clear();
+
+        int vibrateCount = reader.Read<int>();
+
+        for (int i = 0; i < vibrateCount; ++i) {
+            vibrateEntities.Add(new FieldVibrateEntity(
+                Id: new FieldEntityId(0, 0),
+                Position: new Vector3(0, 0, 0),
+                Rotation: new Vector3(0, 0, 0),
+                Scale: 1,
+                Bounds: new BoundingBox3(),
+                VibrateIndex: i));
+        }
 
         for (short x = 0; x < GridSize.X; x++) {
             for (short y = 0; y < GridSize.Y; y++) {
@@ -573,6 +816,12 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             alignedEntities.Add(ReadEntity(reader));
         }
 
+        int alignedTrimmedEntityCount = reader.ReadInt();
+
+        for (int i = 0; i < alignedTrimmedEntityCount; ++i) {
+            alignedTrimmedEntities.Add(ReadEntity(reader));
+        }
+
         int unalignedEntityCount = reader.ReadInt();
 
         for (int i = 0; i < unalignedEntityCount; ++i) {
@@ -580,6 +829,10 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         }
 
         GenerateAabbTree();
+
+        AddVibrateEntities(alignedEntities);
+        AddVibrateEntities(alignedTrimmedEntities);
+        AddVibrateEntities(unalignedEntities);
     }
 
     public FieldEntity ReadEntity(IByteReader reader) {
@@ -597,7 +850,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             id = new FieldEntityId(reader.Read<ulong>(), reader.Read<ulong>());
         }
 
-        if ((memberFlags & FieldEntityMembers.Id) != 0) {
+        if ((memberFlags & FieldEntityMembers.Position) != 0) {
             position = reader.Read<Vector3>();
         } else {
             position = 150 * reader.Read<Vector3S>().Vector3;
@@ -607,7 +860,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             rotation = reader.Read<Vector3>();
         }
 
-        if ((memberFlags & FieldEntityMembers.Rotation) != 0) {
+        if ((memberFlags & FieldEntityMembers.Scale) != 0) {
             scale = reader.ReadFloat();
         }
 
@@ -628,7 +881,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Position: position,
                     Rotation: rotation,
                     Scale: scale,
-                    Bounds: bounds);
+                    Bounds: bounds,
+                    VibrateIndex: reader.ReadInt());
             case FieldEntityType.SpawnTile:
                 return new FieldSpawnTile(
                     Id: id,
@@ -644,7 +898,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Scale: scale,
                     Bounds: bounds,
                     Size: reader.Read<Vector3>(),
-                    IsWhiteBox: reader.Read<bool>());
+                    IsWhiteBox: reader.Read<bool>(),
+                    IsFluid: reader.Read<bool>());
             case FieldEntityType.MeshCollider:
                 if ((memberFlags & FieldEntityMembers.Llid) != 0) {
                     llid = reader.Read<uint>();
@@ -668,7 +923,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    MeshLlid: llid);
+                    MeshLlid: llid,
+                    IsShallow: reader.Read<bool>(),
+                    IsSurface: reader.Read<bool>());
             case FieldEntityType.Cell:
                 int childCount = reader.ReadInt();
                 List<FieldEntity> children = new List<FieldEntity>();

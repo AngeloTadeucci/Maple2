@@ -65,6 +65,28 @@ public struct BoundingBox3 {
             }
         }
 
+        return result;
+    }
+
+    public static BoundingBox3 TransformAndTest(BoundingBox3 box, Matrix4x4 matrix) {
+        Vector3 translation = matrix.Translation;
+
+        BoundingBox3 result = new BoundingBox3(translation);
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                float a = matrix[j, i] * box.Min[j];
+                float b = matrix[j, i] * box.Max[j];
+
+                if (a > b) {
+                    (a, b) = (b, a);
+                }
+
+                result.Min[i] += a;
+                result.Max[i] += b;
+            }
+        }
+
         Vector3 size = box.Max - box.Min;
         List<Vector3> vertices = new List<Vector3>() {
             box.Min,
@@ -111,6 +133,28 @@ public struct BoundingBox3 {
         BoundingBox3 compoundBox = new BoundingBox3(Min, Max + box.Size);
 
         return compoundBox.Contains(box.Max, epsilon);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private float Square(float x) {
+        return x * x;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IntersectsSphere(Vector3 center, float radius, float epsilon = 0) {
+        // by Jim Arvo, in "Graphics Gems"
+
+        float dmin = 0;
+
+        for (int i = 0; i < 3; ++i) {
+            if (center[i] < Min[i]) {
+                dmin += Square(center[i] - Min[i]);
+            } else if (center[i] > Max[i]) {
+                dmin += Square(center[i] - Max[i]);
+            }
+        }
+
+        return dmin <= Square(radius);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

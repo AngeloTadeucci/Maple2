@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Autofac;
 using Maple2.Database.Storage;
+using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Serilog;
@@ -14,6 +15,7 @@ public partial class FieldManager {
         // ReSharper disable MemberCanBePrivate.Global
         public required MapMetadataStorage MapMetadata { private get; init; }
         public required MapEntityStorage MapEntities { private get; init; }
+        public required MapDataStorage MapData { private get; init; }
         public required ServerTableMetadataStorage ServerTableMetadata { private get; init; }
         public required NpcMetadataStorage NpcMetadata { get; init; } = null!;
         // ReSharper restore All
