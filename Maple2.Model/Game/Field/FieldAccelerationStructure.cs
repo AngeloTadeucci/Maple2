@@ -1,14 +1,17 @@
 ﻿using Maple2.Model.Common;
-using Maple2.Model.Metadata.FieldEntities;
+using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
+using Microsoft.VisualBasic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Maple2.Model.Game.Field;
 
+[Flags]
 internal enum FieldEntityMembers : byte {
     None = 0x0,
     Id = 0x1,
@@ -59,36 +62,33 @@ internal enum FieldEntityMembers : byte {
 */
 public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable {
     public const int AXIS_TRIM_ENTITY_COUNT = 10;
+    public const float BLOCK_SIZE = (float) Constant.BlockSize;
+    public const float HALF_BLOCK = 0.5f * BLOCK_SIZE;
 
     public Vector3S GridSize { get; private set; } = new Vector3S();
     public Vector3S MinIndex { get; private set; } = new Vector3S();
     public Vector3S MaxIndex { get; private set; } = new Vector3S();
 
-    public ReadOnlySpan<FieldEntity> AlignedEntities { get => CollectionsMarshal.AsSpan(alignedEntities); }
-    public ReadOnlySpan<FieldEntity> AlignedTrimmedEntities { get => CollectionsMarshal.AsSpan(alignedTrimmedEntities); }
-    public ReadOnlySpan<FieldEntity> UnalignedEntities { get => CollectionsMarshal.AsSpan(unalignedEntities); }
+    public ReadOnlySpan<FieldEntity> AlignedEntities => CollectionsMarshal.AsSpan(alignedEntities);
+    public ReadOnlySpan<FieldEntity> AlignedTrimmedEntities => CollectionsMarshal.AsSpan(alignedTrimmedEntities);
+    public ReadOnlySpan<FieldEntity> UnalignedEntities => CollectionsMarshal.AsSpan(unalignedEntities);
     // Make a list of vibrate objects on the field with the same size & order as this list
     // Then in queries use field.VibrateObjects[vibrateEntity.VibrateIndex] to retrieve the right one
-    public ReadOnlySpan<FieldVibrateEntity> VibrateEntities { get => CollectionsMarshal.AsSpan(vibrateEntities); }
+    public ReadOnlySpan<FieldVibrateEntity> VibrateEntities => CollectionsMarshal.AsSpan(vibrateEntities);
 
-    private List<FieldEntity> alignedEntities;
-    private List<FieldEntity> alignedTrimmedEntities;
-    private List<FieldEntity> unalignedEntities; // TODO: add AABB tree implementation for querying unaligned objects
-    private List<FieldVibrateEntity> vibrateEntities;
-    private int[,,] cellGrid;
+    private List<FieldEntity> alignedEntities = new();
+    private List<FieldEntity> alignedTrimmedEntities = new();
+    private List<FieldEntity> unalignedEntities = new(); // TODO: add AABB tree implementation for querying unaligned objects
+    private List<FieldVibrateEntity> vibrateEntities = new();
+    private int[,,] cellGrid = new int[0, 0, 0];
 
     public ulong GridBytesWritten { get; private set; } = 0;
 
     public FieldAccelerationStructure() {
-        alignedEntities = new();
-        alignedTrimmedEntities = new();
-        unalignedEntities = new();
-        vibrateEntities = new();
-        cellGrid = new int[0, 0, 0];
     }
 
     public static Vector3S PointToCell(Vector3 point) {
-        point *= (1 / 150.0f);
+        point *= (1 / BLOCK_SIZE);
         return new Vector3S((short) Math.Floor(point.X + 0.5f), (short) Math.Floor(point.Y + 0.5f), (short) Math.Floor(point.Z));
     }
 
@@ -291,8 +291,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         }
 
         foreach (FieldEntity entity in unalignedEntities) {
-            Vector3 minPosition = (1 / 150.0f) * entity.Bounds.Min;
-            Vector3 maxPosition = (1 / 150.0f) * entity.Bounds.Max;
+            Vector3 minPosition = (1 / BLOCK_SIZE) * entity.Bounds.Min;
+            Vector3 maxPosition = (1 / BLOCK_SIZE) * entity.Bounds.Max;
             Vector3S minCubeIndex = PointToCell(minPosition);
             Vector3S maxCubeIndex = PointToCell(maxPosition);
 
@@ -332,8 +332,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                             gridAlignedEntities.Add(coord, entities);
                         }
 
-                        Vector3 cellPosition = 150.0f * coord.Vector3;
-                        BoundingBox3 bounds = new BoundingBox3(cellPosition - new Vector3(75, 75, 0), cellPosition + new Vector3(75, 75, 150));
+                        Vector3 cellPosition = BLOCK_SIZE * coord.Vector3;
+                        BoundingBox3 bounds = new BoundingBox3(cellPosition - new Vector3(HALF_BLOCK, HALF_BLOCK, 0), cellPosition + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
 
                         entities.Add(new FieldSpawnTile(
                             Id: new FieldEntityId(0, 0),
@@ -473,7 +473,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             if (isTrimmed && entityList.Count > 0) {
                 trimmedCount += entityList.Count;
 
-                Vector3 cellPosition = 150.0f * coord.Vector3;
+                Vector3 cellPosition = BLOCK_SIZE * coord.Vector3;
                 BoundingBox3 bounds = entityList.First().Bounds;
 
                 foreach (FieldEntity entity in entityList) {
@@ -647,19 +647,19 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     #region Serialization
 
     private Vector3S GetWorldGridIndex(Vector3 position) {
-        int x = (int) Math.Round(position.X) / 150;
-        int y = (int) Math.Round(position.Y) / 150;
-        int z = (int) Math.Round(position.Z) / 150;
+        int x = (int) Math.Round(position.X) / Constant.BlockSize;
+        int y = (int) Math.Round(position.Y) / Constant.BlockSize;
+        int z = (int) Math.Round(position.Z) / Constant.BlockSize;
 
         return new Vector3S((short) x, (short) y, (short) z);
     }
 
     private bool IsGridAligned(Vector3 position) {
-        int x = (int) Math.Round(position.X) / 150;
-        int y = (int) Math.Round(position.Y) / 150;
-        int z = (int) Math.Round(position.Z) / 150;
+        int x = (int) Math.Round(position.X) / Constant.BlockSize;
+        int y = (int) Math.Round(position.Y) / Constant.BlockSize;
+        int z = (int) Math.Round(position.Z) / Constant.BlockSize;
 
-        return position.IsNearlyEqual(150 * new Vector3(x, y, z), 0.1f);
+        return position.IsNearlyEqual(BLOCK_SIZE * new Vector3(x, y, z), 0.1f);
     }
 
     private bool IsCellBounds(Vector3 position, BoundingBox3 bounds) {
@@ -667,8 +667,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             return false;
         }
 
-        bool isMinOnCell = bounds.Min.IsNearlyEqual(position - new Vector3(75, 75, 0), 0.1f);
-        bool isMaxOnCell = bounds.Max.IsNearlyEqual(position + new Vector3(75, 75, 150), 0.1f);
+        bool isMinOnCell = bounds.Min.IsNearlyEqual(position - new Vector3(HALF_BLOCK, HALF_BLOCK, 0), 0.1f);
+        bool isMaxOnCell = bounds.Max.IsNearlyEqual(position + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE), 0.1f);
 
         return isMinOnCell && isMaxOnCell;
     }
@@ -764,13 +764,6 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         MaxIndex = MinIndex + GridSize - new Vector3S(1, 1, 1);
         cellGrid = new int[GridSize.X, GridSize.Y, GridSize.Z];
 
-        if (alignedEntities is null || unalignedEntities is null || alignedTrimmedEntities is null || vibrateEntities is null) {
-            alignedEntities = new();
-            alignedTrimmedEntities = new();
-            unalignedEntities = new();
-            vibrateEntities = new();
-        }
-
         alignedEntities.Clear();
         alignedTrimmedEntities.Clear();
         unalignedEntities.Clear();
@@ -849,7 +842,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         if ((memberFlags & FieldEntityMembers.Position) != 0) {
             position = reader.Read<Vector3>();
         } else {
-            position = 150 * reader.Read<Vector3S>().Vector3;
+            position = BLOCK_SIZE * reader.Read<Vector3S>().Vector3;
         }
 
         if ((memberFlags & FieldEntityMembers.Rotation) != 0) {
@@ -866,8 +859,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 max: reader.Read<Vector3>());
         } else {
             bounds = new BoundingBox3(
-                min: position - new Vector3(75, 75, 0),
-                max: position + new Vector3(75, 75, 150));
+                min: position - new Vector3(HALF_BLOCK, HALF_BLOCK, 0),
+                max: position + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
         }
 
         switch (type) {
@@ -924,7 +917,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     IsSurface: reader.Read<bool>());
             case FieldEntityType.Cell:
                 int childCount = reader.ReadInt();
-                List<FieldEntity> children = new List<FieldEntity>();
+                var children = new List<FieldEntity>();
                 for (int i = 0; i < childCount; ++i) {
                     children.Add(ReadEntity(reader));
                 }

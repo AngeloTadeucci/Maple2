@@ -9,7 +9,7 @@ using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Common;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
-using Maple2.Model.Metadata.FieldEntities;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
@@ -19,6 +19,9 @@ using System.Numerics;
 namespace Maple2.File.Ingest.Mapper;
 
 public class MapDataMapper : TypeMapper<MapDataMetadata> {
+    public const float BLOCK_SIZE = (float) Constant.BlockSize;
+    public const float HALF_BLOCK = 0.5f * BLOCK_SIZE;
+
     private readonly HashSet<string> xBlocks;
     private readonly XBlockParser parser;
 
@@ -34,13 +37,13 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     private readonly HashSet<string> invalidLlids = new();
     private readonly HashSet<uint> missingLlids = new();
 
-    public MapDataMapper(MetadataContext db, M2dReader exportedReader, XBlockParser parser) {
+    public MapDataMapper(MetadataContext db, XBlockParser parser) {
         xBlocks = db.MapMetadata.Select(metadata => metadata.XBlock).ToHashSet();
 
         this.parser = parser;
     }
 
-    public class StatsTracker {
+    private class StatsTracker {
 
         public ulong MinValue = ulong.MaxValue;
         public ulong MaxValue;
@@ -63,7 +66,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
         }
     }
 
-    private FieldAccelerationStructure ParseMapEntities(string xblock, IEnumerable<IMapEntity> entities) {
+    private FieldAccelerationStructure ParseMapEntities(IEnumerable<IMapEntity> entities) {
         Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities = new Dictionary<Vector3S, List<FieldEntity>>();
         List<FieldEntity> unalignedEntities = new List<FieldEntity>();
         Vector3S minIndex = new Vector3S(short.MaxValue, short.MaxValue, short.MaxValue);
@@ -84,9 +87,9 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
             transform.RotationAnglesDegrees = placeable.Rotation;
             transform.Scale = placeable.Scale;
 
-            Vector3 position = (1 / 150.0f) * (placeable.Position - new Vector3(0, 0, 75)); // offset to round to nearest
+            Vector3 position = (1 / BLOCK_SIZE) * (placeable.Position - new Vector3(0, 0, HALF_BLOCK)); // offset to round to nearest
             nearestCubeIndex = new Vector3S((short) Math.Floor(position.X + 0.5f), (short) Math.Floor(position.Y + 0.5f), (short) Math.Floor(position.Z + 0.5f));
-            Vector3 voxelPosition = 150.0f * new Vector3(nearestCubeIndex.X, nearestCubeIndex.Y, nearestCubeIndex.Z);
+            Vector3 voxelPosition = BLOCK_SIZE * new Vector3(nearestCubeIndex.X, nearestCubeIndex.Y, nearestCubeIndex.Z);
             BoundingBox3 entityBounds = new BoundingBox3();
 
             bool isHexId = entity.EntityId.Length == 32;
@@ -128,8 +131,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                     break;
                 case IMesh mesh:
                     if (entity is IMS2Vibrate vibrate && vibrate.Enabled) {
-                        entityBounds.Min = -new Vector3(75, 75, 0);
-                        entityBounds.Max = new Vector3(75, 75, 150);
+                        entityBounds.Min = -new Vector3(HALF_BLOCK, HALF_BLOCK, 0);
+                        entityBounds.Max = new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE);
 
                         fieldEntity = new FieldVibrateEntity(
                             Id: entityId,
@@ -150,7 +153,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         }
 
                         if (meshMapProperties.GeneratePhysX) {
-                            Vector3 meshPhysXDimension = new Vector3(150, 150, 150);
+                            Vector3 meshPhysXDimension = new Vector3(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
                             if (meshMapProperties.GeneratePhysXDimension != Vector3.Zero) {
                                 meshPhysXDimension = meshMapProperties.GeneratePhysXDimension;
@@ -232,7 +235,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         continue;
                     }
 
-                    Vector3 physXDimension = new Vector3(150, 150, 150);
+                    Vector3 physXDimension = new Vector3(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
                     if (mapProperties.GeneratePhysXDimension != Vector3.Zero) {
                         physXDimension = mapProperties.GeneratePhysXDimension;
@@ -258,7 +261,9 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
 
             entityBounds = BoundingBox3.Transform(entityBounds, transform.Transformation);
 
-            BoundingBox3 cellBounds = new BoundingBox3(voxelPosition - new Vector3(75, 75, 0), voxelPosition + new Vector3(75, 75, 150));
+            BoundingBox3 cellBounds = new BoundingBox3(
+                min: voxelPosition - new Vector3(HALF_BLOCK, HALF_BLOCK, 0),
+                max: voxelPosition + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
 
             if (!cellBounds.Contains(entityBounds, 1e-5f)) {
                 // put in list for aabb tree
@@ -305,7 +310,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                 return new MapDataMetadata(xblock, GetEmptyMap());
             }
 
-            FieldAccelerationStructure mapData = ParseMapEntities(xblock, map.entities);
+            FieldAccelerationStructure mapData = ParseMapEntities(map.entities);
 
             ByteWriter writer = new ByteWriter();
 

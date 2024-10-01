@@ -1,6 +1,7 @@
 ﻿using Maple2.Tools.Extensions;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -10,8 +11,8 @@ public struct BoundingBox3 {
     public Vector3 Min;
     public Vector3 Max;
 
-    public Vector3 Size { get => Max - Min; }
-    public Vector3 Center { get => 0.5f * (Max + Min); }
+    public Vector3 Size => Max - Min;
+    public Vector3 Center => 0.5f * (Max + Min);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BoundingBox3(Vector3 min = new Vector3()) {
@@ -49,7 +50,7 @@ public struct BoundingBox3 {
     public static BoundingBox3 Transform(BoundingBox3 box, Matrix4x4 matrix) {
         Vector3 translation = matrix.Translation;
 
-        BoundingBox3 result = new BoundingBox3(translation);
+        var result = new BoundingBox3(translation);
 
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -106,7 +107,7 @@ public struct BoundingBox3 {
         BoundingBox3 result2 = Compute(vertices);
 
         if (!result.IsNearlyEqual(result2, 1e-2f)) {
-            throw new System.Exception("possibly wrong axis");
+            throw new InvalidDataException("possibly wrong axis");
         }
 
         return result;

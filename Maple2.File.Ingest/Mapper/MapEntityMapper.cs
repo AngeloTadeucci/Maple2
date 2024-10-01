@@ -15,7 +15,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     private readonly HashSet<string> xBlocks;
     private readonly XBlockParser parser;
 
-    public MapEntityMapper(MetadataContext db, M2dReader exportedReader, XBlockParser parser) {
+    public MapEntityMapper(MetadataContext db, XBlockParser parser) {
         xBlocks = db.MapMetadata.Select(metadata => metadata.XBlock).ToHashSet();
 
         this.parser = parser;

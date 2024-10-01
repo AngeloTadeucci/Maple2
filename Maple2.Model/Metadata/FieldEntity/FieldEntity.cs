@@ -1,7 +1,7 @@
 ﻿using Maple2.Tools.VectorMath;
 using System.Numerics;
 
-namespace Maple2.Model.Metadata.FieldEntities;
+namespace Maple2.Model.Metadata.FieldEntity;
 
 public enum FieldEntityType : byte {
     Unknown,

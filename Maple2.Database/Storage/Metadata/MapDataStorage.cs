@@ -37,7 +37,7 @@ public class MapDataStorage(MetadataContext context) : MetadataStorage<string, F
 
             ByteReader reader = new ByteReader(output.ToArray());
 
-            mapData = reader.ReadClass<FieldAccelerationStructure>();
+            mapData = reader.ReadClassWithNew<FieldAccelerationStructure>();
 
             Cache.AddReplace(xblock, mapData);
         }

@@ -60,6 +60,7 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
             indexCount = (uint) meshData.IndexBuffer.Length;
         }
 
+#pragma warning disable CS8500
         private unsafe void UploadBuffer<BufferType>(ReadOnlySpan<BufferType> data, ref ComPtr<ID3D11Buffer> buffer, BindFlag flags) {
             var bufferDescription = new BufferDesc {
                 ByteWidth = (uint) (data.Length * sizeof(BufferType)),
@@ -77,6 +78,7 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
                 buffer = bufferHandle;
             }
         }
+#pragma warning restore CS8500
 
         public void CleanUp() {
             if (indexCount == 0) {

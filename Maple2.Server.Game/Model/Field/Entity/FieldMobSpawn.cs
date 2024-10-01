@@ -1,9 +1,8 @@
 ﻿using System.Numerics;
-using System.Reflection.Metadata.Ecma335;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
-using Maple2.Model.Metadata.FieldEntities;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
@@ -69,15 +68,15 @@ public class FieldMobSpawn : FieldEntity<MapMetadataSpawn> {
 
     private List<Vector3> GetRandomSpawns(int count) {
         List<Vector3> spawnsPicked = new();
-        Vector3[] spawnsRemaining = new Vector3[validSpawns.Count];
+        var spawnsRemaining = new Vector3[validSpawns.Count];
 
         validSpawns.CopyTo(spawnsRemaining);
 
-        int selectSpawns = int.Min(count, validSpawns.Count);
+        int selectSpawns = Math.Min(count, validSpawns.Count);
         int remainder = count - selectSpawns;
 
         for (int i = 0; i < selectSpawns; ++i) {
-            int picked = Random.Shared.Next(0, spawnsRemaining.Length - i);
+            int picked = Random.Shared.Next(spawnsRemaining.Length - i);
 
             spawnsPicked.Add(spawnsRemaining[picked]);
             spawnsRemaining[picked] = spawnsRemaining[selectSpawns - i - 1]; // remove picked from list by replacing with last in list

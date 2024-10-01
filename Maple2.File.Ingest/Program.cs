@@ -144,9 +144,9 @@ var index = new FlatTypeIndex(exportedReader);
 
 XBlockParser parser = new XBlockParser(exportedReader, index);
 
-UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, exportedReader, parser));
+UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, parser));
 
-MapDataMapper mapDataMapper = new MapDataMapper(metadataContext, exportedReader, parser);
+MapDataMapper mapDataMapper = new MapDataMapper(metadataContext, parser);
 
 UpdateDatabase(metadataContext, mapDataMapper);
 
