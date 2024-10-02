@@ -12,9 +12,9 @@ namespace Maple2.Server.Global.Service;
 
 public partial class GlobalService : Global.GlobalBase {
     private readonly GameStorage gameStorage;
-    
+
     private readonly ILogger logger = Log.Logger.ForContext<GlobalService>();
-    
+
     public GlobalService(GameStorage gameStorage) {
         this.gameStorage = gameStorage;
     }
@@ -47,7 +47,7 @@ public partial class GlobalService : Global.GlobalBase {
             if (Constant.AutoRegister) {
                 byte[] saltBytes = EncryptionHelper.GenerateSalt();
                 string hashedPassword = EncryptionHelper.HashPassword(password, saltBytes);
-                
+
                 account = new Account {
                     Username = username,
                     Password = hashedPassword,
@@ -70,19 +70,17 @@ public partial class GlobalService : Global.GlobalBase {
                 Message = "Account not found",
             });
         }
-        
+
         bool isPasswordValid = EncryptionHelper.VerifyPassword(password, account.Password, account.Salt);
-        if (!isPasswordValid)
-        {
-            return Task.FromResult(new LoginResponse
-            {
+        if (!isPasswordValid) {
+            return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorPassword,
                 Message = "Incorrect Password."
             });
         }
-        
+
         if (account.MachineId != machineId) {
-            logger.Warning($"MachineId mismatch for account { account.Id}");
+            logger.Warning($"MachineId mismatch for account {account.Id}");
             if (Constant.BlockLoginWithMismatchedMachineId) {
                 return Task.FromResult(new LoginResponse {
                     Code = LoginResponse.Types.Code.BlockNexonSn,
@@ -95,7 +93,7 @@ public partial class GlobalService : Global.GlobalBase {
             account.MachineId = machineId;
             db.UpdateAccount(account, true);
         }
-        
+
         return Task.FromResult(new LoginResponse { AccountId = account.Id });
     }
 }
