@@ -10,6 +10,7 @@ namespace Maple2.Database.Model;
 internal class Account {
     public long Id { get; set; }
     public required string Username { get; set; }
+    public required string Password { get; set; }
     public Guid MachineId { get; set; }
     public int MaxCharacters { get; set; }
     public int PrestigeLevel { get; set; }
@@ -31,6 +32,7 @@ internal class Account {
 
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
+    public byte[] Salt { get; set; }
 
     public bool Online { get; set; }
 
@@ -46,6 +48,7 @@ internal class Account {
             LastModified = other.LastModified,
             Id = other.Id,
             Username = other.Username,
+            Password = other.Password,
             MachineId = other.MachineId,
             MaxCharacters = other.MaxCharacters,
             PrestigeLevel = other.PrestigeLevel,
@@ -70,6 +73,7 @@ internal class Account {
             SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
+            Salt = other.Salt,
             Online = other.Online,
         };
     }
@@ -84,6 +88,7 @@ internal class Account {
             LastModified = other.LastModified,
             Id = other.Id,
             Username = other.Username,
+            Password = other.Password,
             MachineId = other.MachineId,
             MaxCharacters = other.MaxCharacters,
             PrestigeLevel = other.PrestigeLevel,
@@ -104,6 +109,7 @@ internal class Account {
             SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
+            Salt = other.Salt,
             Online = other.Online,
         };
     }
@@ -112,10 +118,9 @@ internal class Account {
         builder.ToTable("account");
         builder.HasKey(account => account.Id);
         builder.Property(account => account.Username).IsRequired();
-        builder.HasIndex(account => account.Username)
-            .IsUnique();
-        builder.Property(account => account.MaxCharacters)
-            .HasDefaultValue(Constant.DefaultMaxCharacters);
+        builder.HasIndex(account => account.Username).IsUnique();
+        builder.Property(account => account.Password).IsRequired();
+        builder.Property(account => account.MaxCharacters).HasDefaultValue(Constant.DefaultMaxCharacters);
         builder.HasMany(account => account.Characters);
         builder.Property(account => account.Currency).HasJsonConversion().IsRequired();
         builder.Property(account => account.MarketLimits).HasJsonConversion().IsRequired();
