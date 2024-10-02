@@ -693,7 +693,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             FieldMeshColliderEntity => FieldEntityType.MeshCollider,
             FieldCellEntities => FieldEntityType.Cell,
             FieldSalableTile => FieldEntityType.SalableTile,
-            _ => throw new InvalidDataException($"Writing unhandled field entity type: {entity.GetType().FullName}"),
+            _ => FieldEntityType.Unknown,
         };
 
         FieldEntityMembers memberFlags = FieldEntityMembers.None;
@@ -712,7 +712,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 break;
         }
 
-        writer.Write<FieldEntityType>(type);
+        writer.Write(type);
         writer.Write(memberFlags);
 
         if ((memberFlags & FieldEntityMembers.Id) != 0) {
