@@ -9,12 +9,12 @@ using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Common;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
-using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
 using System.IO.Compression;
 using System.Numerics;
+using Maple2.Model.Metadata.FieldEntity;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -141,6 +141,21 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Scale: placeable.Scale,
                             Bounds: entityBounds,
                             VibrateIndex: vibrateObjectId++);
+
+                        break;
+                    }
+
+                    if (entity is IMS2CubeProp cube && cube.CubeSalableGroup != 0) {
+                        entityBounds.Min = -new Vector3(HALF_BLOCK, HALF_BLOCK, 0);
+                        entityBounds.Max = new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE);
+                        fieldEntity = new FieldSellableTile(
+                            Id: entityId,
+                            Position: placeable.Position,
+                            Rotation: placeable.Rotation,
+                            Scale: placeable.Scale,
+                            Bounds: entityBounds,
+                            SellableGroup: cube.CubeSalableGroup
+                        );
 
                         break;
                     }
