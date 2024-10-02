@@ -42,8 +42,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     packet.ReadShort(); // 1
                     var machineId = packet.Read<Guid>();
 
-                    // TODO: At some point remove this otherwise well leak of passwords
-                    Logger.Debug("Logging in with user:{User} pass:{Pass}", user, pass);
+                    Logger.Debug("Logging in with user:{User}", user);
                     LoginResponse response = Global.Login(new LoginRequest {
                         Username = user,
                         Password = pass,
