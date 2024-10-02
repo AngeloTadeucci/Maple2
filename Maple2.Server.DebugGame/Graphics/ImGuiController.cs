@@ -1,5 +1,6 @@
 ﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.UI;
+using Maple2.Server.DebugGame.Graphics.Ui.Windows;
+using Serilog;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
@@ -15,6 +16,8 @@ public enum ImGuiWindowType {
 }
 
 public class ImGuiController {
+    public static readonly ILogger Logger = Log.Logger.ForContext<ImGuiController>();
+
     public DebugGraphicsContext Context { get; init; }
     public IWindow? ParentWindow { get; private set; }
     public IInputContext Input { get; init; }
