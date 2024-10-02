@@ -3,6 +3,7 @@ using System.Linq;
 using Grpc.Core;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
+using Maple2.Server.Core.Helpers;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Global.Service;
@@ -41,6 +42,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     packet.ReadShort(); // 1
                     var machineId = packet.Read<Guid>();
 
+                    // TODO: At some point remove this otherwise well leak of passwords
                     Logger.Debug("Logging in with user:{User} pass:{Pass}", user, pass);
                     LoginResponse response = Global.Login(new LoginRequest {
                         Username = user,

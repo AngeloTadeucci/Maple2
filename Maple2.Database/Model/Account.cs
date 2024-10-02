@@ -32,7 +32,6 @@ internal class Account {
 
     public DateTime CreationTime { get; set; }
     public DateTime LastModified { get; set; }
-    public byte[] Salt { get; set; }
 
     public bool Online { get; set; }
 
@@ -73,7 +72,6 @@ internal class Account {
             SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
-            Salt = other.Salt,
             Online = other.Online,
         };
     }
@@ -109,7 +107,6 @@ internal class Account {
             SurvivalSilverLevelRewardClaimed = other.SurvivalSilverLevelRewardClaimed,
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
-            Salt = other.Salt,
             Online = other.Online,
         };
     }

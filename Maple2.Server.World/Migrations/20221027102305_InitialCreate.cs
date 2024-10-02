@@ -19,7 +19,6 @@ namespace Maple2.Server.World.Migrations {
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Password = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Salt = table.Column<byte[]>(type: "VARBINARY(64)", nullable: false),
                     MachineId = table.Column<Guid>(type: "binary(16)", nullable: false),
                     MaxCharacters = table.Column<int>(type: "int", nullable: false, defaultValue: 4),
                     PrestigeLevel = table.Column<int>(type: "int", nullable: false),

@@ -38,21 +38,19 @@ public partial class GlobalService : Global.GlobalBase {
 
         // Normalize username
         string username = request.Username.Trim().ToLower();
-        string password = request.Password.Trim().ToLower();
+        string password = request.Password.Trim();
         var machineId = new Guid(request.MachineId);
 
         using GameStorage.Request db = gameStorage.Context();
         Account? account = db.GetAccount(username);
         if (account is null) {
             if (Constant.AutoRegister) {
-                byte[] saltBytes = EncryptionHelper.GenerateSalt();
-                string hashedPassword = EncryptionHelper.HashPassword(password, saltBytes);
 
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password, 13);
                 account = new Account {
                     Username = username,
                     Password = hashedPassword,
                     MachineId = machineId,
-                    Salt = saltBytes
                 };
 
                 db.BeginTransaction();
@@ -71,7 +69,7 @@ public partial class GlobalService : Global.GlobalBase {
             });
         }
 
-        bool isPasswordValid = EncryptionHelper.VerifyPassword(password, account.Password, account.Salt);
+        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, account.Password);
         if (!isPasswordValid) {
             return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorPassword,
