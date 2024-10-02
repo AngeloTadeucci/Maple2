@@ -78,7 +78,7 @@ public partial class GlobalService : Global.GlobalBase {
         }
 
         if (account.MachineId != machineId) {
-            logger.Warning($"MachineId mismatch for account {account.Id}");
+            logger.Warning("MachineId mismatch for account {AccountId}", account.Id);
             if (Constant.BlockLoginWithMismatchedMachineId) {
                 return Task.FromResult(new LoginResponse {
                     Code = LoginResponse.Types.Code.BlockNexonSn,
