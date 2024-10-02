@@ -183,16 +183,16 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
-    public void QuerySalableTiles(Vector3 min, Vector3 max, Action<FieldSalableTile> callback) {
+    public void QuerySellableTiles(Vector3 min, Vector3 max, Action<FieldSellableTile> callback) {
         QueryCells(min, max, (entity) => {
-            if (entity is FieldSalableTile tile) {
+            if (entity is FieldSellableTile tile) {
                 callback(tile);
             }
         });
     }
 
-    public void QuerySalableTilesCenter(Vector3 center, Vector3 size, Action<FieldSalableTile> callback) {
-        QuerySalableTiles(center - 0.5f * size, center + 0.5f * size, callback);
+    public void QuerySellableTilesCenter(Vector3 center, Vector3 size, Action<FieldSellableTile> callback) {
+        QuerySellableTiles(center - 0.5f * size, center + 0.5f * size, callback);
     }
 
     public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max) {
@@ -692,7 +692,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             FieldFluidEntity => FieldEntityType.Fluid,
             FieldMeshColliderEntity => FieldEntityType.MeshCollider,
             FieldCellEntities => FieldEntityType.Cell,
-            FieldSalableTile => FieldEntityType.SalableTile,
+            FieldSellableTile => FieldEntityType.SellableTile,
             _ => FieldEntityType.Unknown,
         };
 
@@ -765,8 +765,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     WriteTo(childEntity, writer);
                 }
                 break;
-            case FieldSalableTile salableTile:
-                writer.Write(salableTile.SalableGroup);
+            case FieldSellableTile sellableTile:
+                writer.Write(sellableTile.SellableGroup);
                 break;
             default:
                 throw new InvalidDataException($"Writing unhandled field entity type: {entity.GetType().FullName}");
@@ -943,14 +943,14 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Scale: scale,
                     Bounds: bounds,
                     Entities: children);
-            case FieldEntityType.SalableTile:
-                return new FieldSalableTile(
+            case FieldEntityType.SellableTile:
+                return new FieldSellableTile(
                     Id: id,
                     Position: position,
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    SalableGroup: reader.Read<int>());
+                    SellableGroup: reader.Read<int>());
             default:
                 throw new InvalidDataException($"Reading unhandled field entity type: {type}");
         }

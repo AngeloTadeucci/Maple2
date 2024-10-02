@@ -10,8 +10,8 @@ public enum FieldEntityType : byte {
     BoxCollider, // for cube tiles (IsWhiteBox = false) & arbitrarily sized white boxes
     MeshCollider,
     Fluid,
+    SellableTile,
     Cell, // for cells culled from the grid & demoted to AABB tree
-    SalableTile,
 }
 
 public record FieldEntityId(
@@ -85,11 +85,11 @@ public record FieldCellEntities(
     BoundingBox3 Bounds,
     List<FieldEntity> Entities) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
-public record FieldSalableTile(
+public record FieldSellableTile(
     FieldEntityId Id,
     Vector3 Position,
     Vector3 Rotation,
     float Scale,
     BoundingBox3 Bounds,
-    int SalableGroup
+    int SellableGroup
 ) : FieldEntity(Id, Position, Rotation, Scale, Bounds);

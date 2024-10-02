@@ -146,15 +146,15 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                     }
 
                     if (entity is IMS2CubeProp cube && cube.CubeSalableGroup != 0) {
-                        entityBounds.Min = -new Vector3(75, 75, 0);
-                        entityBounds.Max = new Vector3(75, 75, 150);
-                        fieldEntity = new FieldSalableTile(
+                        entityBounds.Min = -new Vector3(HALF_BLOCK, HALF_BLOCK, 0);
+                        entityBounds.Max = new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE);
+                        fieldEntity = new FieldSellableTile(
                             Id: entityId,
                             Position: placeable.Position,
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
                             Bounds: entityBounds,
-                            SalableGroup: cube.CubeSalableGroup
+                            SellableGroup: cube.CubeSalableGroup
                         );
 
                         break;

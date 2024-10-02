@@ -150,7 +150,7 @@ public class DebugCommand : Command {
             AddCommand(new DebugQuerySpawnCommand(session, mapDataStorage));
             AddCommand(new DebugQueryFluidCommand(session, mapDataStorage));
             AddCommand(new DebugQueryVibrateCommand(session, mapDataStorage));
-            AddCommand(new DebugQuerySalableTileCommand(session, mapDataStorage));
+            AddCommand(new DebugQuerySellableTileCommand(session, mapDataStorage));
         }
 
         private class DebugQuerySpawnCommand : Command {
@@ -276,11 +276,11 @@ public class DebugCommand : Command {
             }
         }
 
-        private class DebugQuerySalableTileCommand : Command {
+        private class DebugQuerySellableTileCommand : Command {
             private readonly GameSession session;
             private readonly MapDataStorage mapDataStorage;
 
-            public DebugQuerySalableTileCommand(GameSession session, MapDataStorage mapDataStorage) : base("salable", "Searches for nearby salable tiles.") {
+            public DebugQuerySellableTileCommand(GameSession session, MapDataStorage mapDataStorage) : base("sellable", "Searches for nearby sellable tiles.") {
                 this.session = session;
                 this.mapDataStorage = mapDataStorage;
 
@@ -309,12 +309,12 @@ public class DebugCommand : Command {
 
                 ctx.Console.Out.WriteLine($"Player at {center.X} {center.Y} {center.Z} in cell {cell.X} {cell.Y} {cell.Z}");
 
-                mapData.QuerySalableTilesCenter(session.Player.Position, 2 * new Vector3(x, y, z), (salableTile) => {
-                    Vector3 position = salableTile.Position;
+                mapData.QuerySellableTilesCenter(session.Player.Position, 2 * new Vector3(x, y, z), (sellableTile) => {
+                    Vector3 position = sellableTile.Position;
                     Vector3S toCell = FieldAccelerationStructure.PointToCell(position);
 
 
-                    ctx.Console.Out.WriteLine($"SalableGroupId {salableTile.SalableGroup} found at {position.X} {position.Y} {position.Z} in cell {toCell.X} {toCell.Y} {toCell.Z}");
+                    ctx.Console.Out.WriteLine($"SellableGroupId {sellableTile.SellableGroup} found at {position.X} {position.Y} {position.Z} in cell {toCell.X} {toCell.Y} {toCell.Z}");
                 });
             }
         }
