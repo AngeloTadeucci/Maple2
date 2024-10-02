@@ -342,20 +342,17 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     }
 
     public void ReportStats() {
-        string blue = "\u001b[38;2;0;215;255m";
-        string white = "\u001b[0m";
-
-        Console.WriteLine($"Total maps parsed:{blue} {mapByteStats.Entries} {white}");
-        Console.WriteLine($"Total bytes:{blue} {mapByteStats.TotalValue} {white}");
-        Console.WriteLine($"Average map bytes:{blue} {mapByteStats.AvgValue} {white}");
-        Console.WriteLine($"Largest map bytes:{blue} {mapByteStats.MaxValue} {white}");
-        Console.WriteLine($"Largest map dimensions:{blue} < {mapXStats.MaxValue}, {mapYStats.MaxValue}, {mapZStats.MaxValue} > {white}");
-        Console.WriteLine($"Average map dimensions:{blue} < {mapXStats.AvgValue}, {mapYStats.AvgValue}, {mapZStats.AvgValue} > {white}");
-        Console.WriteLine($"Largest aligned entities:{blue} {alignedStats.MaxValue} {white}");
-        Console.WriteLine($"Average aligned entities:{blue} {alignedStats.AvgValue} {white}");
-        Console.WriteLine($"Largest trimmed aligned entities:{blue} {alignedTrimmedStats.MaxValue} {white}");
-        Console.WriteLine($"Average trimmed aligned entities:{blue} {alignedTrimmedStats.AvgValue} {white}");
-        Console.WriteLine($"Largest unaligned entities:{blue} {unalignedStats.MaxValue} {white}");
-        Console.WriteLine($"Average unaligned entities:{blue} {unalignedStats.AvgValue} {white}");
+        Console.WriteLine($"Total maps parsed: {mapByteStats.Entries.ToString().ColorBlue()}");
+        Console.WriteLine($"Total bytes: {mapByteStats.TotalValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Average map bytes: {mapByteStats.AvgValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Largest map bytes: {mapByteStats.MaxValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Largest map dimensions: {$"< {mapXStats.MaxValue}, {mapYStats.MaxValue}, {mapZStats.MaxValue} >".ColorBlue()} ");
+        Console.WriteLine($"Average map dimensions: {$"< {mapXStats.AvgValue}, {mapYStats.AvgValue}, {mapZStats.AvgValue} >".ColorBlue()} ");
+        Console.WriteLine($"Largest aligned entities: {alignedStats.MaxValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Average aligned entities: {alignedStats.AvgValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Largest trimmed aligned entities: {alignedTrimmedStats.MaxValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Average trimmed aligned entities: {alignedTrimmedStats.AvgValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Largest unaligned entities: {unalignedStats.MaxValue.ToString().ColorBlue()} ");
+        Console.WriteLine($"Average unaligned entities: {unalignedStats.AvgValue.ToString().ColorBlue()} ");
     }
 }

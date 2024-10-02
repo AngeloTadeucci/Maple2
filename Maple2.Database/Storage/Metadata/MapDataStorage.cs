@@ -9,7 +9,7 @@ using System.IO.Compression;
 namespace Maple2.Database.Storage.Metadata;
 
 public class MapDataStorage(MetadataContext context) : MetadataStorage<string, FieldAccelerationStructure>(context, CACHE_SIZE) {
-    private const int CACHE_SIZE = 500; // ~500 total items
+    private const int CACHE_SIZE = 1500; // ~1.1k total Maps
 
     public bool TryGet(string xblock, [NotNullWhen(true)] out FieldAccelerationStructure? mapData) {
         if (Cache.TryGet(xblock, out mapData)) {
