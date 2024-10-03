@@ -45,23 +45,16 @@ public partial class FieldManager {
         /// </summary>
         public FieldManager? Get(int mapId, long ownerId = 0, int instanceId = 0) {
             SemaphoreSlim mapLock = GetMapLock(mapId);
-            mapLock.Wait();
-
-            if (ownerId == 0 && instanceId == 0) {
-                return Create(mapId);
+            FieldManager? field;
+            try {
+                field = GetInternal(mapId, ownerId, instanceId);
+            } finally {
+                mapLock.Release();
             }
-
-            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
-                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
-            }
-
-            if (!ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields)) {
-                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
-            }
-
-            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
-                Create(mapId, ownerId: ownerId, instanceId: instanceId);
+            field?.Init();
+            return field;
         }
+
 
         /// <summary>
         /// Get map field instance. If not found, create a new field. If the map is defined as instanced, it will create a new instance.
@@ -69,17 +62,14 @@ public partial class FieldManager {
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId) {
             SemaphoreSlim mapLock = GetMapLock(mapId);
-            mapLock.Wait();
-
-            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
-                return Create(mapId, ownerId: 0, instanceId: instanceId);
+            FieldManager? field;
+            try {
+                field = GetInternal(mapId, instanceId);
+            } finally {
+                mapLock.Release();
             }
-
-            if (!ownerFields.TryGetValue(0, out InstancedFields? instancedFields)) {
-                return Create(mapId, ownerId: 0, instanceId: instanceId);
-            }
-
-            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field : Create(mapId, ownerId: 0, instanceId: instanceId);
+            field?.Init();
+            return field;
         }
 
         /// <summary>
@@ -105,16 +95,11 @@ public partial class FieldManager {
                 throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
             }
             var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata, ownerId);
+            context.InjectProperties(field);
 
             OwnerFields ownerFields = fields.GetOrAdd(mapId, new OwnerFields());
             InstancedFields instancedFields = ownerFields.GetOrAdd(ownerId, new InstancedFields());
             instancedFields.GetOrAdd(instanceId, field);
-
-            SemaphoreSlim mapLock = GetMapLock(mapId);
-            mapLock.Release();
-
-            context.InjectProperties(field);
-            field.Init();
 
             logger.Debug("Field:{MapId} OwnerId:{OwnerId} Instance:{InstanceId} initialized in {Time}ms", mapId, ownerId, field.InstanceId, sw.ElapsedMilliseconds);
             return field;
@@ -192,6 +177,36 @@ public partial class FieldManager {
 
         private SemaphoreSlim GetMapLock(int mapId) {
             return mapLocks.GetOrAdd(mapId, _ => new SemaphoreSlim(1, 1));
+        }
+
+        private FieldManager? GetInternal(int mapId, long ownerId = 0, int instanceId = 0) {
+            if (ownerId == 0 && instanceId == 0) {
+                return Create(mapId);
+            }
+
+            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
+                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
+            }
+
+            if (!ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields)) {
+                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
+            }
+
+            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                Create(mapId, ownerId: ownerId, instanceId: instanceId);
+        }
+
+        private FieldManager? GetInternal(int mapId, int instanceId) {
+            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
+                return Create(mapId, ownerId: 0, instanceId: instanceId);
+            }
+
+            if (!ownerFields.TryGetValue(0, out InstancedFields? instancedFields)) {
+                return Create(mapId, ownerId: 0, instanceId: instanceId);
+            }
+
+            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                Create(mapId, ownerId: 0, instanceId: instanceId);
         }
 
         public class InstancedFields : ConcurrentDictionary<int, FieldManager> {
