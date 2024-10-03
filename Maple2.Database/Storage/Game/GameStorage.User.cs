@@ -33,6 +33,11 @@ public partial class GameStorage {
 
         public bool VerifyPassword(long accountId, string password) {
             Model.Account? account = Context.Account.Find(accountId);
+#if DEBUG
+            if (string.IsNullOrEmpty(account?.Password)) {
+                return true;
+            }
+#endif
             return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
         }
 
