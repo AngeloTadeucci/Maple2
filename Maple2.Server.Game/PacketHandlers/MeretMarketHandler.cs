@@ -154,6 +154,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             Status = UgcMarketListingStatus.Active,
             PromotionEndTime = promote ? DateTime.Now.AddHours(Constant.UGCShopAdHour).ToEpochSeconds() : 0,
             ListingEndTime = DateTime.Now.AddDays(Constant.UGCShopSaleDay).ToEpochSeconds(),
+            CreationTime = DateTime.Now.ToEpochSeconds(),
             Price = Math.Clamp(price, Constant.UGCShopSellMinPrice, Constant.UGCShopSellMaxPrice),
             TabId = tabId,
         };
