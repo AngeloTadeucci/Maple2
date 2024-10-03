@@ -31,15 +31,22 @@ public partial class GameStorage {
                 .FirstOrDefault(account => account.Username == username);
         }
 
-        public bool UpdateAccount(Account account, bool commit = false) {
-            Context.Account.Update(account);
-            if (commit) {
-                return Context.TrySaveChanges();
-            }
-
-            return true;
+        public bool VerifyPassword(long accountId, string password) {
+            Model.Account? account = Context.Account.Find(accountId);
+            return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
         }
 
+        public bool UpdateMachineId(long accountId, Guid machineId) {
+            Model.Account? account = Context.Account.Find(accountId);
+            if (account == null) {
+                return false;
+            }
+            account.MachineId = machineId;
+            Context.Account.Update(account);
+
+            return Context.TrySaveChanges();
+        }
+        
         public (Account?, IList<Character>?) ListCharacters(long accountId) {
             Model.Account? model = Context.Account
                 .Include(account => account.Characters)
@@ -390,9 +397,10 @@ public partial class GameStorage {
         }
 
         #region Create
-        public Account CreateAccount(Account account) {
+        public Account CreateAccount(Account account, string password) {
             Model.Account model = account;
             model.Id = 0;
+            model.Password = BCrypt.Net.BCrypt.HashPassword(password, 13);
 #if DEBUG
             model.Currency = new AccountCurrency {
                 Meret = 99999

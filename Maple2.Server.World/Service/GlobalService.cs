@@ -2,7 +2,6 @@
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.Server.Core.Helpers;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -45,16 +44,13 @@ public partial class GlobalService : Global.GlobalBase {
         Account? account = db.GetAccount(username);
         if (account is null) {
             if (Constant.AutoRegister) {
-
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password, 13);
                 account = new Account {
                     Username = username,
-                    Password = hashedPassword,
                     MachineId = machineId,
                 };
 
                 db.BeginTransaction();
-                account = db.CreateAccount(account);
+                account = db.CreateAccount(account, password);
                 if (account == null) {
                     throw new RpcException(new Status(StatusCode.Internal, "Failed to create account."));
                 }
@@ -69,7 +65,7 @@ public partial class GlobalService : Global.GlobalBase {
             });
         }
 
-        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, account.Password);
+        bool isPasswordValid = db.VerifyPassword(account.Id, password);
         if (!isPasswordValid) {
             return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorPassword,
@@ -88,8 +84,7 @@ public partial class GlobalService : Global.GlobalBase {
         }
 
         if (account.MachineId == default) {
-            account.MachineId = machineId;
-            db.UpdateAccount(account, true);
+            db.UpdateMachineId(account.Id, machineId);;
         }
 
         return Task.FromResult(new LoginResponse { AccountId = account.Id });

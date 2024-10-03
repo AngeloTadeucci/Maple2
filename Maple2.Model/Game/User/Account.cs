@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Maple2.Model.Game;
+﻿namespace Maple2.Model.Game;
 
 public class Account {
     #region Immutable
@@ -9,7 +6,6 @@ public class Account {
     public long Id { get; init; }
 
     public required string Username { get; init; }
-    public required string Password { get; init; }
     public Guid MachineId { get; set; }
     #endregion
 
