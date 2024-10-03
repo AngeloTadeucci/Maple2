@@ -46,7 +46,7 @@ public partial class GameStorage {
 
             return Context.TrySaveChanges();
         }
-        
+
         public (Account?, IList<Character>?) ListCharacters(long accountId) {
             Model.Account? model = Context.Account
                 .Include(account => account.Characters)

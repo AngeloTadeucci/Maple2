@@ -84,7 +84,7 @@ public partial class GlobalService : Global.GlobalBase {
         }
 
         if (account.MachineId == default) {
-            db.UpdateMachineId(account.Id, machineId);;
+            db.UpdateMachineId(account.Id, machineId); ;
         }
 
         return Task.FromResult(new LoginResponse { AccountId = account.Id });
