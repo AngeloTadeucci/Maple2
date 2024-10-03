@@ -29,8 +29,11 @@ public partial class FieldManager {
         private readonly CancellationTokenSource cancel;
         private readonly Thread thread;
 
+        private readonly SemaphoreSlim semaphore;
+
         public Factory(IComponentContext context) {
             this.context = context;
+            semaphore = new SemaphoreSlim(initialCount: 1, maxCount: 1);
 
             fields = new Fields();
             cancel = new CancellationTokenSource();
@@ -42,21 +45,25 @@ public partial class FieldManager {
         /// Get player home map field or any player owned map. If not found, create a new field.
         /// </summary>
         public FieldManager? Get(int mapId, long ownerId = 0, int instanceId = 0) {
-            if (ownerId == 0 && instanceId == 0) {
-                return Create(mapId);
+            semaphore.Wait();
+            try {
+                if (ownerId == 0 && instanceId == 0) {
+                    return Create(mapId);
+                }
+
+                if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
+                    return Create(mapId, ownerId: ownerId, instanceId: instanceId);
+                }
+
+                if (!ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields)) {
+                    return Create(mapId, ownerId: ownerId, instanceId: instanceId);
+                }
+
+                return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                    Create(mapId, ownerId: ownerId, instanceId: instanceId);
+            } finally {
+                semaphore.Release();
             }
-
-            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
-                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
-            }
-
-            if (!ownerFields.TryGetValue(ownerId, out InstancedFields? instancedFields)) {
-                return Create(mapId, ownerId: ownerId, instanceId: instanceId);
-            }
-
-            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
-                Create(mapId, ownerId: ownerId, instanceId: instanceId);
-
         }
 
         /// <summary>
@@ -64,16 +71,21 @@ public partial class FieldManager {
         /// Else, it will return the first instance found if no instanceId is provided.
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId) {
-            if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
-                return Create(mapId, ownerId: 0, instanceId: instanceId);
-            }
+            semaphore.Wait();
+            try {
+                if (!fields.TryGetValue(mapId, out OwnerFields? ownerFields)) {
+                    return Create(mapId, ownerId: 0, instanceId: instanceId);
+                }
 
-            if (!ownerFields.TryGetValue(0, out InstancedFields? instancedFields)) {
-                return Create(mapId, ownerId: 0, instanceId: instanceId);
-            }
+                if (!ownerFields.TryGetValue(0, out InstancedFields? instancedFields)) {
+                    return Create(mapId, ownerId: 0, instanceId: instanceId);
+                }
 
-            return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
-                Create(mapId, ownerId: 0, instanceId: instanceId);
+                return instancedFields.TryGetValue(instanceId, out FieldManager? field) ? field :
+                    Create(mapId, ownerId: 0, instanceId: instanceId);
+            } finally {
+                semaphore.Release();
+            }
         }
 
         /// <summary>
