@@ -47,6 +47,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                         Password = pass,
                         MachineId = machineId.ToString(),
                     });
+
                     if (response.Code != LoginResponse.Types.Code.Ok) {
                         session.Send(LoginResultPacket.Error((byte) response.Code, response.Message, response.AccountId));
                         session.Disconnect();

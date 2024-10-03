@@ -114,7 +114,7 @@ internal class Account {
         builder.HasKey(account => account.Id);
         builder.Property(account => account.Username).IsRequired();
         builder.HasIndex(account => account.Username).IsUnique();
-        builder.Property(account => account.Password).HasMaxLength(255).HasColumnType("varchar(255)");
+        builder.Property(account => account.Password).IsRequired().HasMaxLength(255).HasColumnType("varchar(255)");
         builder.Property(account => account.MaxCharacters).HasDefaultValue(Constant.DefaultMaxCharacters);
         builder.HasMany(account => account.Characters);
         builder.Property(account => account.Currency).HasJsonConversion().IsRequired();
