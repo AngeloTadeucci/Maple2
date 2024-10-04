@@ -23,14 +23,14 @@ public partial class GlobalService : Global.GlobalBase {
         if (string.IsNullOrWhiteSpace(request.Username)) {
             return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorId,
-                Message = "Invalid Id"
+                Message = "Invalid Id",
             });
         }
-        
+
         if (string.IsNullOrWhiteSpace(request.Password)) {
             return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorPassword,
-                Message = "Invalid Password."
+                Message = "Invalid Password.",
             });
         }
 #endif
@@ -69,7 +69,7 @@ public partial class GlobalService : Global.GlobalBase {
         if (!isPasswordValid) {
             return Task.FromResult(new LoginResponse {
                 Code = LoginResponse.Types.Code.ErrorPassword,
-                Message = "Incorrect Password."
+                Message = "Incorrect Password.",
             });
         }
 
@@ -78,13 +78,13 @@ public partial class GlobalService : Global.GlobalBase {
             if (Constant.BlockLoginWithMismatchedMachineId) {
                 return Task.FromResult(new LoginResponse {
                     Code = LoginResponse.Types.Code.BlockNexonSn,
-                    Message = "MachineId mismatch"
+                    Message = "MachineId mismatch",
                 });
             }
         }
 
         if (account.MachineId == default) {
-            db.UpdateMachineId(account.Id, machineId); ;
+            db.UpdateMachineId(account.Id, machineId);
         }
 
         return Task.FromResult(new LoginResponse { AccountId = account.Id });
