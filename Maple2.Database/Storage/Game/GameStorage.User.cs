@@ -269,6 +269,12 @@ public partial class GameStorage {
                 StarPoint = player.Currency.StarPoint,
             };
 
+            Model.Account? dbAccount = Context.Account.Find(account.Id);
+            if (dbAccount == null) {
+                return false;
+            }
+            account.Password = dbAccount.Password;
+
             Context.Update(account);
             Context.Update(character);
 
