@@ -99,6 +99,8 @@ public sealed partial class FieldManager : IDisposable {
             return;
         }
 
+        initialized = true;
+
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
@@ -214,7 +216,6 @@ public sealed partial class FieldManager : IDisposable {
             slot.Active = true;
         }
 
-        initialized = true;
         Scheduler.Start();
         thread.Start();
         DebugRenderer = DebugGraphicsContext.FieldAdded(this);

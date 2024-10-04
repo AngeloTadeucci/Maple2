@@ -45,6 +45,7 @@ public partial class FieldManager {
         /// </summary>
         public FieldManager? Get(int mapId, long ownerId = 0, int instanceId = 0) {
             SemaphoreSlim mapLock = GetMapLock(mapId);
+            mapLock.Wait();
             FieldManager? field;
             try {
                 field = GetInternal(mapId, ownerId, instanceId);
@@ -62,6 +63,7 @@ public partial class FieldManager {
         /// </summary>
         public FieldManager? Get(int mapId, int instanceId) {
             SemaphoreSlim mapLock = GetMapLock(mapId);
+            mapLock.Wait();
             FieldManager? field;
             try {
                 field = GetInternal(mapId, instanceId);
