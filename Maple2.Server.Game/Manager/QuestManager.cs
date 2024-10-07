@@ -5,6 +5,7 @@ using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -47,6 +48,10 @@ public sealed class QuestManager {
 
     private void Initialize(GameStorage.Request db) {
         IEnumerable<QuestMetadata> quests = session.QuestMetadata.GetQuests();
+        IList<QuestTag> events = session.FindEvent(GameEventType.QuestTag)
+            .Where(gameEvent => gameEvent.Metadata.Data is QuestTag)
+            .Select(gameEvent => (QuestTag) gameEvent.Metadata.Data)
+            .ToList();
         foreach (QuestMetadata metadata in quests) {
             if (!metadata.Basic.AutoStart ||
                 metadata.Basic.Type == QuestType.FieldMission) {
@@ -65,8 +70,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            // TODO: figure out event handling for quests?
-            if (metadata.Basic.EventTag != string.Empty) {
+            if (metadata.Basic.EventTag != string.Empty && events.Any(gameEvent => gameEvent.Tag != metadata.Basic.EventTag)) {
                 continue;
             }
 
@@ -377,6 +381,33 @@ public sealed class QuestManager {
         }
 
         return results;
+    }
+
+    public void Expired(IList<int> questIds) {
+        List<int> questIdsFound = [];
+
+        IList<QuestTag> events = session.FindEvent(GameEventType.QuestTag)
+            .Where(gameEvent => gameEvent.Metadata.Data is QuestTag)
+            .Select(gameEvent => (QuestTag) gameEvent.Metadata.Data)
+            .ToList();
+
+        foreach (int questId in questIds) {
+            if (!session.Quest.TryGetQuest(questId, out Quest? quest)) {
+                continue;
+            }
+
+            if (quest.Metadata.Basic.EventTag != string.Empty) {
+                if (events.Any(gameEvent => gameEvent.Tag == quest.Metadata.Basic.EventTag)) {
+                    // Event is active, do not remove quest
+                    continue;
+                }
+
+                // We're not checking if the quest is completed, because we want to remove it regardless if the event is re-enabled in the future.
+                questIdsFound.Add(questId);
+                session.Quest.Remove(quest);
+            }
+        }
+        session.Send(QuestPacket.Expired(questIdsFound));
     }
 
     public bool Remove(Quest quest) {

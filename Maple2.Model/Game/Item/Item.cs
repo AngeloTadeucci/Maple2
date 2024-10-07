@@ -181,14 +181,18 @@ public class Item : IByteSerializable, IByteDeserializable {
     }
 
     private long GetExpiryTime() {
-        long expirationTime = 0;
-
         if (Metadata.Life.ExpirationTimestamp > 0) {
-            expirationTime = Metadata.Life.ExpirationTimestamp;
-        } else if (Metadata.Life.ExpirationDuration > 0) {
-            expirationTime = (long) (DateTime.Now.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds + Metadata.Life.ExpirationDuration;
+#if DEBUG
+            return (long) (DateTime.Now.AddYears(1).ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
+#else
+            return expirationTime = Metadata.Life.ExpirationTimestamp;
+#endif
         }
-        return expirationTime;
+
+        if (Metadata.Life.ExpirationDuration > 0) {
+            return (long) (DateTime.Now.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds + Metadata.Life.ExpirationDuration;
+        }
+        return 0;
     }
 
     public void WriteTo(IByteWriter writer) {

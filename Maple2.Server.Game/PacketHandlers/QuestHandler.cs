@@ -19,6 +19,7 @@ public class QuestHandler : PacketHandler<GameSession> {
         Accept = 2,
         Complete = 4,
         Abandon = 6,
+        Expired = 7,
         Exploration = 8,
         Tracking = 9,
         GoToNpc = 12,
@@ -48,6 +49,9 @@ public class QuestHandler : PacketHandler<GameSession> {
                 break;
             case Command.Abandon:
                 HandleForfeit(session, packet);
+                break;
+            case Command.Expired:
+                HandleExpired(session, packet);
                 break;
             case Command.Exploration:
                 HandleAddExplorationQuests(session, packet);
@@ -128,6 +132,16 @@ public class QuestHandler : PacketHandler<GameSession> {
         if (session.Quest.Remove(quest)) {
             session.Send(QuestPacket.Abandon(quest.Id));
         }
+    }
+
+    private static void HandleExpired(GameSession session, IByteReader packet) {
+        int listSize = packet.ReadInt();
+        List<int> questIds = [];
+        for (int i = 0; i < listSize; i++) {
+            questIds.Add(packet.ReadInt());
+        }
+
+        session.Quest.Expired(questIds);
     }
 
     private static void HandleAddExplorationQuests(GameSession session, IByteReader packet) {

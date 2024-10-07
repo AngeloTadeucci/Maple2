@@ -104,8 +104,8 @@ public class GameServer : Server<GameSession> {
         return fieldFactory.Get(mapId, instanceId);
     }
 
-    public GameEvent? FindEvent(GameEventType type) {
-        return eventCache.Values.FirstOrDefault(gameEvent => gameEvent.Metadata.Type == type && gameEvent.IsActive());
+    public IList<GameEvent> FindEvent(GameEventType type) {
+        return eventCache.Values.Where(gameEvent => gameEvent.Metadata.Type == type && gameEvent.IsActive()).ToList();
     }
 
     public GameEvent? FindEvent(int eventId) {

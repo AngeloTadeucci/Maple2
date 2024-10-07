@@ -735,8 +735,12 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 EndTime: endTime,
                 StartPartTime: partTimeStart,
                 EndPartTime: partTimeEnd,
-                ActiveDays: data.dayOfWeek.Length == 0 ? Array.Empty<DayOfWeek>() : data.dayOfWeek.Select(ParseDayOfWeek).ToArray(),
-                Data: eventData));
+                ActiveDays: data.dayOfWeek.Length == 0 ? [] : data.dayOfWeek.Select(ParseDayOfWeek).ToArray(),
+                Data: eventData,
+                Value1: data.value1,
+                Value2: data.value2,
+                Value3: data.value3,
+                Value4: data.value4));
         }
         return new GameEventTable(results);
 
@@ -1026,6 +1030,38 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 return new FieldEffect(
                     MapIds: value1.Split(',').Select(int.Parse).ToArray(),
                     Effect: value2);
+            case GameEventType.DTReward:
+                string[] itemStrings = value1.Split(';');
+
+                List<DTReward.Entry> items = [];
+                foreach (string itemString in itemStrings) {
+                    int[] itemData = itemString.Split(',').Select(int.Parse).ToArray();
+                    items.Add(new DTReward.Entry(
+                        StartDuration: itemData[0],
+                        EndDuration: itemData[1],
+                        MailContentId: itemData[2],
+                        Item: new RewardItem(
+                            itemId: itemData[3],
+                            amount: itemData[4],
+                            rarity: (short) itemData[5])));
+                }
+
+                return new DTReward(
+                    Entries: items.ToArray());
+            case GameEventType.ConstructShowItem:
+                return new ConstructShowItem(
+                    CategoryId: int.TryParse(value1, out int categoryId) ? categoryId : 0,
+                    CategoryName: value2,
+                    ItemIds: value4.Split(',').Select(int.Parse).ToArray());
+            case GameEventType.MassiveConstructionEvent:
+                return new MassiveConstructionEvent(
+                    MapIds: value1.Split(',').Select(int.Parse).ToArray());
+            case GameEventType.UGCMapContractSale:
+                return new UGCMapContractSale(
+                    DiscountAmount: int.TryParse(value1, out int contractSaleAmount) ? contractSaleAmount : 0);
+            case GameEventType.UGCMapExtensionSale:
+                return new UGCMapExtensionSale(
+                    DiscountAmount: int.TryParse(value1, out int extensionSaleAmount) ? extensionSaleAmount : 0);
             default:
                 return null;
         }
