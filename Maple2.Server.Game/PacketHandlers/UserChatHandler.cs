@@ -4,7 +4,6 @@ using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -12,7 +11,6 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Server.Game.Util;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -180,7 +178,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert | NoticePacket.Flags.Message, StringCode.s_worldchat_use_coupon));
         } else {
             int meretCost = Constant.MeretConsumeWorldChat;
-            if (session.FindEvent(GameEventType.SaleChat)?.Metadata.Data is SaleChat gameEvent) {
+            if (session.FindEvent(GameEventType.SaleChat).FirstOrDefault()?.Metadata.Data is SaleChat gameEvent) {
                 meretCost -= (int) (meretCost * Convert.ToSingle(gameEvent.WorldChatDiscount) / 10000);
             }
 
@@ -215,7 +213,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert | NoticePacket.Flags.Message, StringCode.s_channelchat_use_coupon));
         } else {
             int meretCost = Constant.MeretConsumeChannelChat;
-            if (session.FindEvent(GameEventType.SaleChat)?.Metadata.Data is SaleChat gameEvent) {
+            if (session.FindEvent(GameEventType.SaleChat).FirstOrDefault()?.Metadata.Data is SaleChat gameEvent) {
                 meretCost -= (int) (meretCost * Convert.ToSingle(gameEvent.ChannelChatDiscount) / 10000);
             }
 

@@ -19,7 +19,7 @@ public static class QuestPacket {
         Complete = 4,
         Unknown5 = 5,
         Abandon = 6,
-        Conditions = 7,
+        Expired = 7,
         SetTracking = 9,
         Unknown18 = 18,
         ExplorationProgress = 21,
@@ -108,12 +108,12 @@ public static class QuestPacket {
         return pWriter;
     }
 
-    public static ByteWriter Conditions(ICollection<int> conditions) {
+    public static ByteWriter Expired(ICollection<int> questIds) {
         var pWriter = Packet.Of(SendOp.Quest);
-        pWriter.Write<Command>(Command.Conditions);
-        pWriter.WriteInt(conditions.Count);
-        foreach (int condition in conditions) {
-            pWriter.WriteInt(condition);
+        pWriter.Write<Command>(Command.Expired);
+        pWriter.WriteInt(questIds.Count);
+        foreach (int questId in questIds) {
+            pWriter.WriteInt(questId);
         }
 
         return pWriter;

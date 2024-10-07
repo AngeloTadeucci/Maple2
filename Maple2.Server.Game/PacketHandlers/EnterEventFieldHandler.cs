@@ -22,7 +22,7 @@ public class EnterEventFieldHandler : PacketHandler<GameSession> {
 
     public override void Handle(GameSession session, IByteReader packet) {
         using GameStorage.Request db = GameStorage.Context();
-        GameEvent? gameEvent = session.FindEvent(GameEventType.EventFieldPopup);
+        GameEvent? gameEvent = session.FindEvent(GameEventType.EventFieldPopup).FirstOrDefault();
         if (gameEvent?.Metadata.Data is not EventFieldPopup fieldPopup) {
             session.Send(ChatPacket.Alert(StringCode.s_err_timeevent_move_field));
             return;
