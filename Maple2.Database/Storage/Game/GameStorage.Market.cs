@@ -184,7 +184,7 @@ public partial class GameStorage {
         public ICollection<UgcMarketItem> GetUgcMarketNewItems() {
             ICollection<UgcMarketItem> items = Context.UgcMarketItem
                 .Where(item => item.ListingEndTime > DateTime.Now)
-                .OrderBy(item => item.CreationTime)
+                .OrderByDescending(item => item.CreationTime)
                 .Take(6)
                 .AsEnumerable()
                 .Select(ToMarketEntry)

@@ -9,29 +9,45 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public Dictionary<int, Dictionary<GameEventUserValueType, GameEventUserValue>> GetEventUserValues(long characterId) {
-            var results = new Dictionary<int, Dictionary<GameEventUserValueType, GameEventUserValue>>();
-            foreach (GameEventUserValue value in Context.GameEventUserValue.Where(model => model.CharacterId == characterId)) {
-                if (results.TryGetValue(value.EventId, out Dictionary<GameEventUserValueType, GameEventUserValue>? result)) {
-                    result.Add(value.Type, value);
-                } else {
-                    results.Add(value.EventId, new Dictionary<GameEventUserValueType, GameEventUserValue> {
-                        {value.Type, value}
-                    });
-                }
+        public IList<GameEventUserValue> GetEventUserValues(long characterId) {
+            return Context.GameEventUserValue.Where(model => model.CharacterId == characterId)
+                .Select<Model.GameEventUserValue, GameEventUserValue>(userValue => userValue)
+                .ToList();
+        }
+
+        public void RemoveGameEventUserValue(long characterId, int eventId) {
+            List<Model.GameEventUserValue> list = Context.GameEventUserValue
+                .Where(model => model.CharacterId == characterId && model.EventId == eventId)
+                .ToList();
+
+            foreach (Model.GameEventUserValue model in list) {
+                Context.GameEventUserValue.Remove(model);
             }
-            return results;
+        }
+
+        public bool RemoveGameEventUserValue(GameEventUserValue userValue, long characterId) {
+            Model.GameEventUserValue model = userValue;
+            model.CharacterId = characterId;
+            Context.GameEventUserValue.Remove(model);
+            return Context.TrySaveChanges();
         }
 
         public bool SaveGameEventUserValues(long characterId, IList<GameEventUserValue> values) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-            var existing = Context.GameEventUserValue.Where(model => model.CharacterId == characterId)
-                .ToDictionary(model => model.Type, model => model);
+            Dictionary<int, Dictionary<GameEventUserValueType, Model.GameEventUserValue>> existing = Context.GameEventUserValue
+                .Where(model => model.CharacterId == characterId)
+                .GroupBy(model => model.EventId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.ToDictionary(model => model.Type, model => model)
+                );
 
             foreach (GameEventUserValue value in values) {
-                if (existing.TryGetValue(value.Type, out Model.GameEventUserValue? model)) {
+                if (existing.TryGetValue(value.EventId, out Dictionary<GameEventUserValueType, Model.GameEventUserValue>? modelDictionary) &&
+                    modelDictionary.TryGetValue(value.Type, out Model.GameEventUserValue? model)) {
                     model.Value = value.Value;
+                    model.ExpirationTime = value.ExpirationTime;
                     Context.GameEventUserValue.Update(model);
                 } else {
                     model = value;

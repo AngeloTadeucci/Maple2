@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
+using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Event;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
@@ -127,6 +130,8 @@ public class FieldPlayer : Actor<Player> {
                 Session.Send(StatsPacket.Update(this, attribute));
             }
         }
+
+        Session.GameEvent.Update(tickCount);
 
         base.Update(tickCount);
     }

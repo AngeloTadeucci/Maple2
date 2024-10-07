@@ -10,6 +10,12 @@ public enum GameEventUserValueType {
     AttendanceEarlyParticipationRemaining = 103,
     AttendanceAccumulatedTime = 106,
 
+    // DTReward
+    DTRewardStartTime = 700, // start time
+    DTRewardCurrentTime = 701, // current item accumulated time
+    DTRewardRewardIndex = 702, // unk value seen is "1"
+    DTRewardTotalTime = 703, // TOTAL accumulated time
+
     // Blue Marble / Mapleopoly
     MapleopolyTotalSlotCount = 800,
     MapleopolyFreeRollAmount = 801,

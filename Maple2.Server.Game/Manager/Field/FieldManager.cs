@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -35,6 +36,7 @@ public sealed partial class FieldManager : IDisposable {
     public GameStorage GameStorage { get; init; } = null!;
     public ItemMetadataStorage ItemMetadata { get; init; } = null!;
     public MapMetadataStorage MapMetadata { get; init; } = null!;
+    public MapDataStorage MapData { get; init; } = null!;
     public NpcMetadataStorage NpcMetadata { get; init; } = null!;
     public AiMetadataStorage AiMetadata { get; init; } = null!;
     public SkillMetadataStorage SkillMetadata { get; init; } = null!;
@@ -96,6 +98,8 @@ public sealed partial class FieldManager : IDisposable {
         if (initialized) {
             return;
         }
+
+        initialized = true;
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
@@ -212,7 +216,6 @@ public sealed partial class FieldManager : IDisposable {
             slot.Active = true;
         }
 
-        initialized = true;
         Scheduler.Start();
         thread.Start();
         DebugRenderer = DebugGraphicsContext.FieldAdded(this);
