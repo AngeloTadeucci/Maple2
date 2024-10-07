@@ -95,7 +95,6 @@ public sealed class GameEventManager {
                     Type = MailType.System,
                     ReceiverId = session.CharacterId,
                     SenderId = session.CharacterId,
-                    //Content = 18051001.ToString(),
                     Content = entry.MailContentId.ToString(),
                 };
 
