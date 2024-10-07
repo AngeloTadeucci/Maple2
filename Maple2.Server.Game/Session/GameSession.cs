@@ -470,7 +470,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public IList<GameEvent> FindEvent(GameEventType type) => server.FindEvent(type);
 
     public GameEvent? FindEvent(int id) => server.FindEvent(id);
-    public IEnumerable<GameEvent> GetEvents => server.GetEvents();
+    public IEnumerable<GameEvent> Events => server.GetEvents();
 
     public IEnumerable<PremiumMarketItem> GetPremiumMarketItems(params int[] tabIds) => server.GetPremiumMarketItems(tabIds);
 

@@ -10,7 +10,6 @@ namespace Maple2.Database.Storage;
 public partial class GameStorage {
     public partial class Request {
         public IList<GameEventUserValue> GetEventUserValues(long characterId) {
-            var results = new Dictionary<int, Dictionary<GameEventUserValueType, GameEventUserValue>>();
             return Context.GameEventUserValue.Where(model => model.CharacterId == characterId)
                 .Select<Model.GameEventUserValue, GameEventUserValue>(userValue => userValue)
                 .ToList();
@@ -36,12 +35,19 @@ public partial class GameStorage {
         public bool SaveGameEventUserValues(long characterId, IList<GameEventUserValue> values) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-            Dictionary<GameEventUserValueType, Model.GameEventUserValue> existing = Context.GameEventUserValue.Where(model => model.CharacterId == characterId)
-                .ToDictionary(model => model.Type, model => model);
+            Dictionary<int, Dictionary<GameEventUserValueType, Model.GameEventUserValue>> existing = Context.GameEventUserValue
+                .Where(model => model.CharacterId == characterId)
+                .GroupBy(model => model.EventId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.ToDictionary(model => model.Type, model => model)
+                );
 
             foreach (GameEventUserValue value in values) {
-                if (existing.TryGetValue(value.Type, out Model.GameEventUserValue? model)) {
+                if (existing.TryGetValue(value.EventId, out Dictionary<GameEventUserValueType, Model.GameEventUserValue>? modelDictionary) &&
+                    modelDictionary.TryGetValue(value.Type, out Model.GameEventUserValue? model)) {
                     model.Value = value.Value;
+                    model.ExpirationTime = value.ExpirationTime;
                     Context.GameEventUserValue.Update(model);
                 } else {
                     model = value;

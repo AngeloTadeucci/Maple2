@@ -129,7 +129,8 @@ public record ConstructShowItem(
     int[] ItemIds) : GameEventData;
 
 /// <summary>
-/// Enables building on the specified maps. Still need to add player account ID to the list of participants. Check packet.
+/// Enables building on the specified maps.
+/// TODO: Still need to add player account ID to the list of participants. Check packet.
 /// </summary>
 public record MassiveConstructionEvent(
     int[] MapIds) : GameEventData;

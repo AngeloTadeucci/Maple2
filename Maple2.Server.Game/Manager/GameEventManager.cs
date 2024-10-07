@@ -37,7 +37,7 @@ public sealed class GameEventManager {
     }
 
     private void GetUserValues() {
-        IList<GameEvent> events = session.GetEvents.ToList();
+        IList<GameEvent> events = session.Events.ToList();
 
         using GameStorage.Request db = session.GameStorage.Context();
         IList<GameEventUserValue> values = db.GetEventUserValues(session.CharacterId);
@@ -67,19 +67,19 @@ public sealed class GameEventManager {
 
         foreach (GameEvent gameEvent in events) {
             if (gameEvent.Metadata.Data is not DTReward dtReward) {
-                return;
+                continue;
             }
             DateTime now = DateTime.Now;
 
-            GameEventUserValue rewardIndexValue = Get(GameEventUserValueType.DTRewardRewardIndex, gameEvent.Id, new DateTime(now.Year, now.Month, now.Day + 1).ToEpochSeconds());
+            GameEventUserValue rewardIndexValue = Get(GameEventUserValueType.DTRewardRewardIndex, gameEvent.Id, now.AddDays(1).ToEpochSeconds());
 
             if (dtReward.Entries.Length <= rewardIndexValue.Int()) {
                 continue;
             }
 
-            GameEventUserValue userValue = Get(GameEventUserValueType.DTRewardStartTime, gameEvent.Id, new DateTime(now.Year, now.Month, now.Day + 1).ToEpochSeconds());
+            GameEventUserValue userValue = Get(GameEventUserValueType.DTRewardStartTime, gameEvent.Id, now.AddDays(1).ToEpochSeconds());
             Set(gameEvent.Id, GameEventUserValueType.DTRewardStartTime, DateTime.Now.ToEpochSeconds());
-            userValue = Get(GameEventUserValueType.DTRewardCurrentTime, gameEvent.Id, new DateTime(now.Year, now.Month, now.Day + 1).ToEpochSeconds());
+            userValue = Get(GameEventUserValueType.DTRewardCurrentTime, gameEvent.Id, now.AddDays(1).ToEpochSeconds());
             Set(gameEvent.Id, GameEventUserValueType.DTRewardCurrentTime, userValue.Long() + 1);
 
             // Give reward
@@ -118,7 +118,7 @@ public sealed class GameEventManager {
                 Set(gameEvent.Id, GameEventUserValueType.DTRewardCurrentTime, entry.StartDuration);
             }
 
-            userValue = Get(GameEventUserValueType.DTRewardTotalTime, gameEvent.Id, new DateTime(now.Year, now.Month, now.Day + 1).ToEpochSeconds());
+            userValue = Get(GameEventUserValueType.DTRewardTotalTime, gameEvent.Id, now.AddDays(1).ToEpochSeconds());
             Set(gameEvent.Id, GameEventUserValueType.DTRewardTotalTime, userValue.Long() + 1);
         }
     }

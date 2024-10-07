@@ -54,7 +54,7 @@ public class AttendanceHandler : PacketHandler<GameSession> {
 
         foreach (GameEvent gameEvent in gameEvents) {
             if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
-                return;
+                continue;
             }
 
             // Verify that the player meets the time requirements of event

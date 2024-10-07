@@ -172,12 +172,12 @@ public class GameEvent : IByteSerializable {
                 foreach (int mapId in massiveConstructionEvent.MapIds) {
                     writer.WriteInt(mapId);
                 }
-                writer.WriteInt(1); // this is a certain state. 1 = active, 0 = inactive ?
+                writer.WriteInt(); // this is a certain state. 1 = active, 0 = inactive ?
                 writer.WriteInt(); // account ids enabled to build in the specified maps
-                // foreach (int accountId in accountIds) {
-                //    writer.WriteLong(accountId);
-                // }
-            break;
+                /* foreach (int accountId in accountIds) {
+                    writer.WriteLong(accountId);
+                } */
+                break;
             case UGCMapContractSale ugcMapContractSale:
                 writer.WriteInt(Id);
                 writer.WriteInt(ugcMapContractSale.DiscountAmount);
