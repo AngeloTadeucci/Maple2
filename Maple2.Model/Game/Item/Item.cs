@@ -185,7 +185,7 @@ public class Item : IByteSerializable, IByteDeserializable {
 #if DEBUG
             return (long) (DateTime.Now.AddYears(1).ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
 #else
-            return expirationTime = Metadata.Life.ExpirationTimestamp;
+            return Metadata.Life.ExpirationTimestamp;
 #endif
         }
 
