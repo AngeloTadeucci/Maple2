@@ -17,7 +17,7 @@ public class ItemBoxHandler : PacketHandler<GameSession> {
         short unk = packet.ReadShort();
         int count = packet.ReadInt();
 
-        Item ? item = session.Item.Inventory.Find(itemId).FirstOrDefault();
+        Item? item = session.Item.Inventory.Find(itemId).FirstOrDefault();
         if (item == null) {
             return;
         }
