@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Error;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -15,12 +16,13 @@ public class ItemBoxHandler : PacketHandler<GameSession> {
         int itemId = packet.ReadInt();
         short unk = packet.ReadShort();
         int count = packet.ReadInt();
-        if (!int.TryParse(packet.ReadUnicodeString(), out int index)) {
-            return;
-        }
 
         Item? item = session.Item.Inventory.Find(itemId).FirstOrDefault();
         if (item == null) {
+            return;
+        }
+
+        if (!int.TryParse(packet.ReadUnicodeString(), out int index) && item.Metadata?.Function?.Type == ItemFunction.SelectItemBox) {
             return;
         }
 
