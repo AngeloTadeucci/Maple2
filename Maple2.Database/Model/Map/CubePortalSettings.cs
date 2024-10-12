@@ -7,6 +7,7 @@ namespace Maple2.Database.Model;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
 [JsonDerivedType(typeof(CubePortalSettings), typeDiscriminator: "cube-portal")]
+[JsonDerivedType(typeof(InteractCube), typeDiscriminator: "interact-cube")]
 internal abstract record CubeSettings;
 
 internal record CubePortalSettings(
@@ -14,6 +15,7 @@ internal record CubePortalSettings(
     PortalActionType Method,
     CubePortalDestination Destination,
     string DestinationTarget) : CubeSettings {
+
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator CubePortalSettings?(Maple2.Model.Game.CubePortalSettings? other) {
         return other == null ? null : new CubePortalSettings(
@@ -31,5 +33,22 @@ internal record CubePortalSettings(
             Destination = other.Destination,
             DestinationTarget = other.DestinationTarget,
         };
+    }
+}
+
+internal record InteractCube(
+    string Id,
+    InteractCubeState DefaultState) : CubeSettings {
+
+    [return: NotNullIfNotNull(nameof(other))]
+    public static implicit operator InteractCube?(Maple2.Model.Game.InteractCube? other) {
+        return other == null ? null : new InteractCube(
+            other.Id,
+            other.DefaultState);
+    }
+
+    [return: NotNullIfNotNull(nameof(other))]
+    public static implicit operator Maple2.Model.Game.InteractCube?(InteractCube? other) {
+        return other == null ? null : new Maple2.Model.Game.InteractCube(other.Id, other.DefaultState);
     }
 }

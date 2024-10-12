@@ -15,6 +15,8 @@ public static class NifParserHelper {
     public static List<NxsMeshMetadata> nxsMeshes { get; private set; } = [];
 
     public static void ParseNif(List<PrefixedM2dReader> modelReaders) {
+        Console.WriteLine("Parsing NIF files...");
+
         NifParser nifParser = new(modelReaders);
 
         Parallel.ForEach(nifParser.Parse(), (item) => {

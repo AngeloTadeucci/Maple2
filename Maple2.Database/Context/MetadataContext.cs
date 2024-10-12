@@ -242,5 +242,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.ToTable("function-cube");
         builder.HasKey(cube => cube.Id);
         builder.Property(cube => cube.AutoStateChange).HasJsonConversion();
+        builder.Property(cube => cube.Nurturing).HasJsonConversion();
     }
 }
