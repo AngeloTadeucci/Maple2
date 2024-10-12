@@ -4,7 +4,9 @@ public enum MaritalStatus : short {
     Single = 0,
     Engaged = 1,
     Married = 2,
-    Divorce = 3,
+    ConsentualDivorce = 3,
+    ForceDivorce = 4,
+    DivorceCoolOff = 5,
 }
 
 public enum MarriageExpType : short {
@@ -25,8 +27,15 @@ public enum MarriageExpLimit {
     month,
 }
 
-public enum ProposalResponse : short {
-    Accept = 1,
-    Decline = 2,
-    Timeout = 6,
+[Flags]
+public enum WeddingHallEntryType {
+    Guest = 1,
+    Bride = 2,
+    Groom = 4,
+    GroomBride = Groom | Bride,
+}
+
+public enum WeddingHallState {
+    weddingComplete,
+
 }

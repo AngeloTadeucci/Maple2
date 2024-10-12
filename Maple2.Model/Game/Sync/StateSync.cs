@@ -15,7 +15,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
         Flag1 = 1,
         Flag2 = 2,
         Flag3 = 4,
-        Flag4 = 8,
+        Animation = 8,
         Flag5 = 16,
         Flag6 = 32,
     }
@@ -50,8 +50,8 @@ public class StateSync : IByteSerializable, IByteDeserializable {
     public string? Flag3Unknown2;
     #endregion
 
-    #region Flag4
-    public string? Flag4Animation;
+    #region AnimationFlag
+    public string? AnimationName;
     #endregion
 
     #region Flag5
@@ -98,8 +98,8 @@ public class StateSync : IByteSerializable, IByteDeserializable {
             writer.WriteInt(Flag3Unknown1);
             writer.WriteUnicodeString(Flag3Unknown2 ?? "");
         }
-        if (Flags.HasFlag(Flag.Flag4)) {
-            writer.WriteUnicodeString(Flag4Animation ?? "");
+        if (Flags.HasFlag(Flag.Animation)) {
+            writer.WriteUnicodeString(AnimationName ?? "");
         }
         if (Flags.HasFlag(Flag.Flag5)) {
             writer.WriteInt(Flag5Unknown1);
@@ -146,8 +146,8 @@ public class StateSync : IByteSerializable, IByteDeserializable {
             Flag3Unknown1 = reader.ReadInt();
             Flag3Unknown2 = reader.ReadUnicodeString();
         }
-        if (Flags.HasFlag(Flag.Flag4)) {
-            Flag4Animation = reader.ReadUnicodeString();
+        if (Flags.HasFlag(Flag.Animation)) {
+            AnimationName = reader.ReadUnicodeString();
         }
         if (Flags.HasFlag(Flag.Flag5)) {
             Flag5Unknown1 = reader.ReadInt();
@@ -178,8 +178,8 @@ public class StateSync : IByteSerializable, IByteDeserializable {
         if (Flags.HasFlag(Flag.Flag3)) {
             builder.Append($"Flag3: {Flag3Unknown1}, {Flag3Unknown2}");
         }
-        if (Flags.HasFlag(Flag.Flag4)) {
-            builder.Append($"Flag4: {Flag4Animation}");
+        if (Flags.HasFlag(Flag.Animation)) {
+            builder.Append($"Flag4: {AnimationName}");
         }
         if (Flags.HasFlag(Flag.Flag5)) {
             builder.Append($"Flag5: {Flag5Unknown1}, {Flag5Unknown2}");

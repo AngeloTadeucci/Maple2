@@ -42,6 +42,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<HomeLayout> HomeLayout { get; set; } = null!;
     internal DbSet<HomeLayoutCube> UgcCubeLayout { get; set; } = null!;
     internal DbSet<Marriage> Marriage { get; set; } = null!;
+    internal DbSet<WeddingHall> WeddingHall { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -74,6 +75,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<HomeLayout>(Maple2.Database.Model.HomeLayout.Configure);
         modelBuilder.Entity<HomeLayoutCube>(Maple2.Database.Model.HomeLayoutCube.Configure);
         modelBuilder.Entity<Marriage>(Maple2.Database.Model.Marriage.Configure);
+        modelBuilder.Entity<WeddingHall>(Maple2.Database.Model.WeddingHall.Configure);
 
         modelBuilder.Entity<MesoListing>(MesoListing.Configure);
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);

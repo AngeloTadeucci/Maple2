@@ -39,7 +39,9 @@ public class UserSyncHandler : PacketHandler<GameSession> {
             stateSyncs[i] = stateSync;
 
             packet.ReadInt(); // ClientTicks
-            packet.ReadInt(); // ServerTicks
+            if (playerState != ActorState.WeddingEmotion) {
+                packet.ReadInt(); // ServerTicks
+            }
         }
 
         using (var buffer = new PoolByteWriter()) {

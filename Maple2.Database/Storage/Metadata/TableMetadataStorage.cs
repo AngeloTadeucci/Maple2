@@ -45,6 +45,7 @@ public class TableMetadataStorage {
     private readonly Lazy<WorldMapTable> worldMapTable;
     private readonly Lazy<SurvivalSkinInfoTable> survivalSkinInfoTable;
     private readonly Lazy<BannerTable> bannerTable;
+    private readonly Lazy<WeddingTable> weddingTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -102,6 +103,7 @@ public class TableMetadataStorage {
     public WorldMapTable WorldMapTable => worldMapTable.Value;
     public SurvivalSkinInfoTable SurvivalSkinInfoTable => survivalSkinInfoTable.Value;
     public BannerTable BannerTable => bannerTable.Value;
+    public WeddingTable WeddingTable => weddingTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -160,6 +162,7 @@ public class TableMetadataStorage {
         worldMapTable = Retrieve<WorldMapTable>(context, "newworldmap.xml");
         survivalSkinInfoTable = Retrieve<SurvivalSkinInfoTable>(context, "maplesurvivalskininfo.xml");
         bannerTable = Retrieve<BannerTable>(context, "banner.xml");
+        weddingTable = Retrieve<WeddingTable>(context, "wedding*.xml");
         enchantScrollTable = Retrieve<EnchantScrollTable>(context, "enchantscroll.xml");
         itemRemakeScrollTable = Retrieve<ItemRemakeScrollTable>(context, "itemremakescroll.xml");
         itemRepackingScrollTable = Retrieve<ItemRepackingScrollTable>(context, "itemrepackingscroll.xml");

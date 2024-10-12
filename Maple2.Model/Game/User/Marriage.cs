@@ -27,9 +27,9 @@ public class Marriage : IByteSerializable {
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteLong(Id);
-        writer.Write<MaritalStatus>(Status);
+        writer.WriteByte((byte) Status);
         writer.WriteLong(CreationTime);
-        writer.WriteLong(CreationTime);
+        writer.WriteLong(); // wedding time ?
         writer.WriteClass<MarriagePartner>(Partner1);
         writer.WriteClass<MarriagePartner>(Partner2);
         writer.WriteLong(Exp);
@@ -63,11 +63,13 @@ public class MarriagePartner : IByteSerializable, IDisposable {
     public long CharacterId => Info?.CharacterId ?? 0;
     public string Name => Info?.Name ?? string.Empty;
     public string Message { get; set; } = string.Empty;
+    public bool IsOnline => Info?.Online ?? false;
     public CancellationTokenSource? TokenSource;
     public void WriteTo(IByteWriter writer) {
-        writer.WriteLong(AccountId);
         writer.WriteLong(CharacterId);
+        writer.WriteLong(AccountId);
         writer.WriteUnicodeString(Name);
+        writer.WriteBool(!IsOnline);
     }
 
     public void Dispose() {

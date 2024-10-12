@@ -25,6 +25,8 @@ using JobTable = Maple2.Model.Metadata.JobTable;
 using MagicPath = Maple2.Model.Metadata.MagicPath;
 using MasteryType = Maple2.Model.Enum.MasteryType;
 using MeretMarketCategory = Maple2.File.Parser.Xml.Table.MeretMarketCategory;
+using WeddingHall = Maple2.File.Parser.Xml.Table.WeddingHall;
+using WeddingPackage = Maple2.Model.Metadata.WeddingPackage;
 using WeddingReward = Maple2.Model.Metadata.WeddingReward;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -74,7 +76,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
 
         // Marriage/Wedding
-        yield return new TableMetadata { Name = "weddingreward.xml", Table = ParseWeddingReward() };
+        yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
 
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
@@ -1507,15 +1509,51 @@ public class TableMapper : TypeMapper<TableMetadata> {
         return new BannerTable(results);
     }
 
-    private WeddingRewardTable ParseWeddingReward() {
-        var results = new Dictionary<MarriageExpType, WeddingReward>();
+    private WeddingTable ParseWeddingTable() {
+        var rewardsResults = new Dictionary<MarriageExpType, WeddingReward>();
         foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward? reward) in parser.ParseWeddingReward()) {
-            results.Add((MarriageExpType) type, new WeddingReward(
+            rewardsResults.Add((MarriageExpType) type, new WeddingReward(
                 Type: (MarriageExpType) type,
                 Amount: reward.rewardExp,
                 Limit: (MarriageExpLimit) reward.rewardLimit));
         }
 
-        return new WeddingRewardTable(results);
+        var packageResults = new Dictionary<int, WeddingPackage>();
+        foreach ((int id, Parser.Xml.Table.WeddingPackage package) in parser.ParseWeddingPackage()) {
+            var hallDataDic = new Dictionary<int, WeddingPackage.HallData>();
+            foreach (WeddingHall hall in package.weddingHall) {
+                List<WeddingPackage.HallData.Item> hallItems = [];
+                foreach (WeddingItem item in hall.weddingItem) {
+                    hallItems.Add(new WeddingPackage.HallData.Item(
+                        ItemId: item.itemID,
+                        Amount: item.count,
+                        Rarity: item.grade,
+                        NightOnly: item.nightReward));
+                }
+
+                List<WeddingPackage.HallData.Item> completeHallItems = [];
+                foreach (WeddingItem item in hall.weddingCompleteItem) {
+                    completeHallItems.Add(new WeddingPackage.HallData.Item(
+                        ItemId: item.itemID,
+                        Amount: item.count,
+                        Rarity: item.grade,
+                        NightOnly: item.nightReward));
+                }
+
+                hallDataDic.Add(hall.id, new WeddingPackage.HallData(
+                    Id: hall.id,
+                    MapId: hall.fieldID,
+                    NightMapId: hall.nightFieldID,
+                    Tier: hall.grade,
+                    MeretCost: hall.merat,
+                    Items: hallItems,
+                    CompleteItems: completeHallItems));
+            }
+            packageResults.Add(id, new WeddingPackage(
+                Id: id,
+                PlannerId: package.planner,
+                Halls: hallDataDic));
+        }
+        return new WeddingTable(rewardsResults, packageResults);
     }
 }

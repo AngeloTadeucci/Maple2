@@ -88,19 +88,19 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             foreach ((int scriptId, NpcScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questStarted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var questsCompleted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_complete) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var items = new List<KeyValuePair<ItemComponent, bool>>();
                 for (int i = 0; i < scriptCondition.item.Length; i++) {
-                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    KeyValuePair<int, bool> parsedItem = ParseToIntKeyValuePair(scriptCondition.item[i]);
                     string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
                     if (!int.TryParse(itemCount, out int itemAmount)) {
                         itemAmount = 1;
@@ -113,21 +113,29 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Id: npcId,
                     ScriptId: scriptId,
                     Type: ScriptType.Npc,
-                    MaidAuthority: scriptCondition.maid_auth,
-                    MaidExpired: scriptCondition.maid_expired != "!1",
-                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
-                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
-                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
-                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
-                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    Maid: new ScriptConditionMetadata.MaidData(
+                        Authority: scriptCondition.maid_auth,
+                        Expired: scriptCondition.maid_expired != "!1",
+                        ReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                        ClosenessRank: scriptCondition.maid_affinity_grade,
+                        ClosenessTime: ParseToIntKeyValuePair(scriptCondition.maid_affinity_time),
+                        MoodTime: ParseToIntKeyValuePair(scriptCondition.maid_mood_time),
+                        DaysBeforeExpired: ParseToIntKeyValuePair(scriptCondition.maid_day_before_expired)
+                    ),
+                    Wedding: new ScriptConditionMetadata.WeddingData(
+                        HasReservation: scriptCondition.weddingHallBooking < 0 ? null : scriptCondition.weddingHallBooking == 1,
+                        MarriageDays: scriptCondition.marriageDate,
+                        UserState: scriptCondition.weddingState < 0 ? null : (MaritalStatus) scriptCondition.weddingState,
+                        HallState: ParseToStringKeyValuePair(scriptCondition.weddingHallState),
+                        CoolingOff: scriptCondition.coolingOff),
                     JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
-                    Buff: ParseToKeyValuePair(scriptCondition.buff),
-                    Meso: ParseToKeyValuePair(scriptCondition.meso),
-                    Level: ParseToKeyValuePair(scriptCondition.level),
-                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    Buff: ParseToIntKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToIntKeyValuePair(scriptCondition.meso),
+                    Level: ParseToIntKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
                     InGuild: scriptCondition.guild
                 ));
             }
@@ -142,19 +150,19 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             foreach ((int scriptId, QuestScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questStarted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var questsCompleted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_complete) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var items = new List<KeyValuePair<ItemComponent, bool>>();
                 for (int i = 0; i < scriptCondition.item.Length; i++) {
-                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    KeyValuePair<int, bool> parsedItem = ParseToIntKeyValuePair(scriptCondition.item[i]);
                     string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
                     if (!int.TryParse(itemCount, out int itemAmount)) {
                         itemAmount = 1;
@@ -167,21 +175,29 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Id: questId,
                     ScriptId: scriptId,
                     Type: ScriptType.Quest,
-                    MaidAuthority: scriptCondition.maid_auth,
-                    MaidExpired: scriptCondition.maid_expired != "!1",
-                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
-                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
-                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
-                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
-                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    Maid: new ScriptConditionMetadata.MaidData(
+                        Authority: scriptCondition.maid_auth,
+                        Expired: scriptCondition.maid_expired != "!1",
+                        ReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                        ClosenessRank: scriptCondition.maid_affinity_grade,
+                        ClosenessTime: ParseToIntKeyValuePair(scriptCondition.maid_affinity_time),
+                        MoodTime: ParseToIntKeyValuePair(scriptCondition.maid_mood_time),
+                        DaysBeforeExpired: ParseToIntKeyValuePair(scriptCondition.maid_day_before_expired)
+                    ),
+                    Wedding: new ScriptConditionMetadata.WeddingData(
+                        HasReservation: scriptCondition.weddingHallBooking < 0 ? null : scriptCondition.weddingHallBooking == 1,
+                        MarriageDays: scriptCondition.marriageDate,
+                        UserState: scriptCondition.weddingState < 0 ? null : (MaritalStatus) scriptCondition.weddingState,
+                        HallState: ParseToStringKeyValuePair(scriptCondition.weddingHallState),
+                        CoolingOff: scriptCondition.coolingOff),
                     JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
-                    Buff: ParseToKeyValuePair(scriptCondition.buff),
-                    Meso: ParseToKeyValuePair(scriptCondition.meso),
-                    Level: ParseToKeyValuePair(scriptCondition.level),
-                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    Buff: ParseToIntKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToIntKeyValuePair(scriptCondition.meso),
+                    Level: ParseToIntKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
                     InGuild: scriptCondition.guild
                 ));
             }
@@ -190,7 +206,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private static KeyValuePair<int, bool> ParseToKeyValuePair(string input) {
+    private static KeyValuePair<int, bool> ParseToIntKeyValuePair(string input) {
         bool value = !input.StartsWith("!");
 
         if (!value) {
@@ -201,6 +217,15 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             key = 0;
         }
         return new KeyValuePair<int, bool>(key, value);
+    }
+
+    private static KeyValuePair<string, bool> ParseToStringKeyValuePair(string input) {
+        bool value = !input.StartsWith("!");
+
+        if (!value) {
+            input = input.Replace("!", "");
+        }
+        return new KeyValuePair<string, bool>(input, value);
     }
 
     private ScriptFunctionTable ParseScriptFunction() {

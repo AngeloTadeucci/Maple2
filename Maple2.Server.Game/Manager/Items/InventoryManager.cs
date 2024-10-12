@@ -531,8 +531,21 @@ public class InventoryManager {
             foreach (Item item in items) {
                 if (item.Id != id) continue;
                 if (rarity != -1 && item.Rarity != rarity) continue;
+                if (item.IsExpired()) continue;
 
                 yield return item;
+            }
+        }
+    }
+
+    public IEnumerable<Item> Find(ItemTag itemTag) {
+        lock (session.Item) {
+            foreach ((InventoryType type, ItemCollection items) in tabs) {
+                foreach (Item item in items) {
+                    if (item.IsExpired()) continue;
+                    if (item.Metadata.Property.Tag != itemTag) continue;
+                    yield return item;
+                }
             }
         }
     }

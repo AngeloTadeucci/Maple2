@@ -242,3 +242,19 @@ message ClubInfoRequest {
 message ClubInfoResponse {
   repeated ClubInfo clubs = 1;
 }
+
+message MarriageRequest {
+  message RemoveMarriage { }
+  message RemoveWeddingHall { }
+
+  int64 id = 1;
+  int64 receiver_id = 2;
+  oneof marriage {
+    RemoveMarriage remove_marriage = 3;
+    RemoveWeddingHall remove_wedding_hall = 4;
+  }
+}
+
+message MarriageResponse {
+  int32 error = 1;
+}
