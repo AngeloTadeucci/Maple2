@@ -234,7 +234,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                         return;
                     }
 
-                    if (plotCube.Interact?.Nurturing is not null) {
+                    if (plotCube.Interact.Nurturing is not null) {
                         using GameStorage.Request db = session.GameStorage.Context();
                         Nurturing? nurturing = db.GetNurturing(session.AccountId, plotCube.ItemId);
                         if (nurturing is null) {
@@ -246,7 +246,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                         }
                         plotCube.Interact.Nurturing = nurturing;
                     }
-                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
                 }
 
                 if (plot.IsPlanner) {

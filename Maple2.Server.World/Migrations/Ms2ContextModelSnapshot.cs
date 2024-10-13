@@ -1059,10 +1059,10 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("Exp")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime?>("LastFeedTime")
+                    b.Property<DateTime>("LastFeedTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("PetBy")
+                    b.Property<string>("PlayedBy")
                         .IsRequired()
                         .HasColumnType("json");
 

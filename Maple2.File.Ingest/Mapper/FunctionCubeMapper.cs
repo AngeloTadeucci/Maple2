@@ -2,7 +2,9 @@
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.Object;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Nurturing = Maple2.File.Parser.Xml.Object.Nurturing;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -30,15 +32,15 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
             return null;
         }
         return new FunctionCubeMetadata.NurturingData(
-            Feed: new FunctionCubeMetadata.NurturingData.Item(
-                Id: functionCubeNurturing.rewardItem[0],
-                Rarity: functionCubeNurturing.rewardItem[1],
-                Amount: functionCubeNurturing.rewardItem[2]
+            Feed: new RewardItem(
+                itemId: functionCubeNurturing.rewardItem[0],
+                rarity: (short) functionCubeNurturing.rewardItem[1],
+                amount: functionCubeNurturing.rewardItem[2]
             ),
-            RewardFeed: new FunctionCubeMetadata.NurturingData.Item(
-                Id: functionCubeNurturing.rewardItemByFeeding[0],
-                Rarity: functionCubeNurturing.rewardItemByFeeding[1],
-                Amount: functionCubeNurturing.rewardItemByFeeding[2]
+            RewardFeed: new RewardItem(
+                itemId: functionCubeNurturing.rewardItemByFeeding[0],
+                rarity: (short) functionCubeNurturing.rewardItemByFeeding[1],
+                amount: functionCubeNurturing.rewardItemByFeeding[2]
             ),
             RequiredGrowth: ParseRequiredGrowth(functionCubeNurturing),
             QuestTag: functionCubeNurturing.nurturingQuestTag
@@ -50,10 +52,10 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
                 result.Add(new FunctionCubeMetadata.NurturingData.Growth(
                     Exp: nurturing.requiredGrowth[i / 3],
                     Stage: (short) (i / 3 + 1),
-                    Reward: new FunctionCubeMetadata.NurturingData.Item(
-                        Id: nurturing.rewardItemByGrowth[i],
-                        Rarity: nurturing.rewardItemByGrowth[i + 1],
-                        Amount: nurturing.rewardItemByGrowth[i + 2]
+                    Reward: new RewardItem(
+                        itemId: nurturing.rewardItemByGrowth[i],
+                        rarity: (short) nurturing.rewardItemByGrowth[i + 1],
+                        amount: nurturing.rewardItemByGrowth[i + 2]
                     )
                 ));
             }

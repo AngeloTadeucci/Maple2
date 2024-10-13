@@ -16,8 +16,8 @@ namespace Maple2.Server.World.Migrations {
                     Exp = table.Column<long>(type: "bigint", nullable: false),
                     ClaimedGiftForStage = table.Column<short>(type: "smallint", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    LastFeedTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    PetBy = table.Column<string>(type: "json", nullable: false)
+                    LastFeedTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    PlayedBy = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table => {

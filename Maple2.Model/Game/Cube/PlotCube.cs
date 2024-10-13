@@ -42,7 +42,7 @@ public class InteractCube : IByteSerializable {
     public Nurturing? Nurturing { get; set; }
 
     public InteractCube(Vector3B position, FunctionCubeMetadata metadata) {
-        Id = $"4_{AsHexadecimal(position)}";
+        Id = $"4_{position.ConvertToInt()}";
         DefaultState = metadata.DefaultState;
         State = metadata.DefaultState;
 
@@ -65,26 +65,15 @@ public class InteractCube : IByteSerializable {
         }
         writer.WriteByte();
     }
-
-    /// <summary>
-    /// Get the cube coord, transform to hexa, reverse and then transform to long;
-    /// Example: (-1, -1, 1);
-    /// Reverse and transform to hexadecimal as string: '1FFFF';
-    /// Convert the string above to long: 65535.
-    /// </summary>
-    private long AsHexadecimal(Vector3B position) {
-        string coordRevertedAsString = $"{position.Z:X2}{position.Y:X2}{position.X:X2}";
-        return Convert.ToInt64(coordRevertedAsString, 16);
-    }
 }
 
 public class Nurturing : IByteSerializable {
     public long Exp { get; set; }
-    public DateTimeOffset? LastFeedTime { get; set; }
+    public DateTimeOffset LastFeedTime { get; set; }
 
     public short Stage { get; private set; }
     public short ClaimedGiftForStage { get; set; }
-    public List<long> PetBy { get; set; }
+    public List<long> PlayedBy { get; set; }
     private DateTimeOffset CreationTime { get; set; }
 
     public readonly FunctionCubeMetadata.NurturingData NurturingMetadata;
@@ -94,16 +83,16 @@ public class Nurturing : IByteSerializable {
         NurturingMetadata = metadata;
         Stage = 1;
         ClaimedGiftForStage = 1;
-        PetBy = [];
+        PlayedBy = [];
     }
 
-    public Nurturing(long exp, short claimedGiftForStage, long[] petBy, DateTimeOffset creationTime, DateTimeOffset? lastFeedTime, FunctionCubeMetadata.NurturingData? metadata) {
+    public Nurturing(long exp, short claimedGiftForStage, long[] playedBy, DateTimeOffset creationTime, DateTimeOffset lastFeedTime, FunctionCubeMetadata.NurturingData? metadata) {
         NurturingMetadata = metadata ?? throw new ArgumentException("FunctionCubeMetadata does not have a Nurturing metadata.");
 
         Exp = exp;
         Stage = 1;
         ClaimedGiftForStage = claimedGiftForStage;
-        PetBy = petBy.ToList();
+        PlayedBy = playedBy.ToList();
         CreationTime = creationTime;
         LastFeedTime = lastFeedTime;
 
@@ -135,15 +124,15 @@ public class Nurturing : IByteSerializable {
     }
 
     public bool Play(long accountId) {
-        if (PetBy.Count >= Constant.NurturingPlayMaxCount) {
+        if (PlayedBy.Count >= Constant.NurturingPlayMaxCount) {
             return false;
         }
 
-        if (PetBy.Contains(accountId)) {
+        if (PlayedBy.Contains(accountId)) {
             return false;
         }
 
-        PetBy.Add(accountId);
+        PlayedBy.Add(accountId);
         Feed();
         return true;
     }
@@ -154,6 +143,6 @@ public class Nurturing : IByteSerializable {
         writer.WriteShort(Stage);
         writer.WriteShort(ClaimedGiftForStage);
         writer.WriteShort(); // Unknown
-        writer.WriteLong(LastFeedTime?.ToUnixTimeSeconds() ?? 0);
+        writer.WriteLong(LastFeedTime.ToUnixTimeSeconds());
     }
 }

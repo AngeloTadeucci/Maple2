@@ -28,48 +28,48 @@ public static class FunctionCubePacket {
         return pWriter;
     }
 
-    public static ByteWriter AddFunctionCube(PlotCube cube) {
+    public static ByteWriter AddFunctionCube(InteractCube interactCube) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.Add);
-        pWriter.WriteClass<InteractCube>(cube.Interact!);
+        pWriter.WriteClass<InteractCube>(interactCube);
         return pWriter;
     }
 
-    public static ByteWriter UseFurniture(long characterId, PlotCube cube) {
+    public static ByteWriter UseFurniture(long characterId, InteractCube interactCube) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.Furniture);
         pWriter.WriteLong(characterId);
-        pWriter.WriteUnicodeString(cube.Interact!.Id);
-        pWriter.WriteBool(cube.Interact.State is InteractCubeState.InUse);
+        pWriter.WriteUnicodeString(interactCube.Id);
+        pWriter.WriteBool(interactCube.State is InteractCubeState.InUse);
         return pWriter;
     }
 
-    public static ByteWriter SuccessLifeSkill(long characterId, PlotCube cube) {
+    public static ByteWriter SuccessLifeSkill(long characterId, InteractCube interactCube) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.SuccessLifeSkill);
         pWriter.WriteLong(characterId);
-        pWriter.WriteUnicodeString(cube.Interact!.Id);
+        pWriter.WriteUnicodeString(interactCube.Id);
         pWriter.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-        pWriter.Write<InteractCubeState>(cube.Interact.State);
+        pWriter.Write<InteractCubeState>(interactCube.State);
         return pWriter;
     }
 
-    public static ByteWriter FailLifeSkill(long characterId, PlotCube cube) {
+    public static ByteWriter FailLifeSkill(long characterId, InteractCube interactCube) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.FailLifeSkill);
         pWriter.WriteLong(characterId);
-        pWriter.WriteUnicodeString(cube.Interact!.Id);
+        pWriter.WriteUnicodeString(interactCube.Id);
         pWriter.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         return pWriter;
     }
 
-    public static ByteWriter Feed(long itemUid, PlotCube cube) {
+    public static ByteWriter Feed(long itemUid, long cubeId, InteractCube cube) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.Feed);
         pWriter.WriteLong(itemUid);
-        pWriter.WriteUnicodeString(cube.Interact!.Id);
-        pWriter.Write<InteractCubeState>(cube.Interact.State);
-        pWriter.WriteLong(cube.Id);
+        pWriter.WriteUnicodeString(cube.Id);
+        pWriter.Write<InteractCubeState>(cube.State);
+        pWriter.WriteLong(cubeId);
         pWriter.WriteInt(); // idk
         return pWriter;
     }

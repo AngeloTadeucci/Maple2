@@ -564,8 +564,8 @@ public class HousingManager {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
-            if (plotCube.ItemType.IsInteractFurnishing) {
-                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+            if (plotCube.ItemType.IsInteractFurnishing && plotCube.Interact is not null) {
+                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
             }
 
             if (cube.CubePortalSettings is not null) {

@@ -29,7 +29,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
-        Command command = packet.Read<Command>();
+        var command = packet.Read<Command>();
         switch (command) {
             case Command.Use:
                 HandleUseCube(session, packet);
@@ -41,19 +41,23 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         string interactId = packet.ReadUnicodeString();
         byte unk = packet.ReadByte();
 
+        if (!interactId.Contains('_')) {
+            Logger.Error("Unexpected interactId {0}", interactId);
+            return;
+        }
+
         // Can this happen outside a housing plot?
         Plot? plot = session.Housing.GetFieldPlot();
         if (plot is null) {
             return;
         }
 
-        string positionHex = long.Parse(interactId.Split('_')[1]).ToString("X6");
+        if (!int.TryParse(interactId.Split('_')[1], out int positionInt)) {
+            Logger.Error("Failed to parse position from interactId {0}", interactId);
+            return;
+        }
 
-        var position = new Vector3B(
-            (sbyte) Convert.ToByte(positionHex[4..], 16),
-            (sbyte) Convert.ToByte(positionHex.Substring(2, 2), 16),
-            (sbyte) Convert.ToByte(positionHex[..2], 16)
-        );
+        Vector3B position = Vector3B.ConvertFromInt(positionInt);
 
         if (!plot.Cubes.TryGetValue(position, out PlotCube? cube)) {
             return;
@@ -95,7 +99,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         if (nurturing.Exp >= requiredGrowth.Exp) {
             nurturing.ClaimedGiftForStage++;
 
-            Item? rewardStageItem = session.Field.ItemDrop.CreateItem(requiredGrowth.Reward.Id, rarity: requiredGrowth.Reward.Rarity, amount: requiredGrowth.Reward.Amount);
+            Item? rewardStageItem = session.Field.ItemDrop.CreateItem(requiredGrowth.Reward.ItemId, rarity: requiredGrowth.Reward.Rarity, amount: requiredGrowth.Reward.Amount);
             if (rewardStageItem is null) {
                 Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
                 return;
@@ -106,12 +110,12 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
             db.UpdateNurturing(session.AccountId, cube);
 
-            session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube));
+            session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
             return;
         }
 
-        FunctionCubeMetadata.NurturingData.Item feedItem = nurturing.NurturingMetadata.Feed;
-        Item? hasItem = session.Item.Inventory.Find(feedItem.Id, feedItem.Rarity).FirstOrDefault();
+        RewardItem feedItem = nurturing.NurturingMetadata.Feed;
+        Item? hasItem = session.Item.Inventory.Find(feedItem.ItemId, feedItem.Rarity).FirstOrDefault();
         if (hasItem is null) {
             session.Send(NoticePacket.Message("You don't have the required item to feed this pet.  TODO: Find correct string id")); // TODO: Find correct string id
             return;
@@ -119,8 +123,8 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
         session.Item.Inventory.Consume(hasItem.Uid, amount: 1);
 
-        FunctionCubeMetadata.NurturingData.Item rewardFeedItem = nurturing.NurturingMetadata.RewardFeed;
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardFeedItem.Id, rarity: rewardFeedItem.Rarity, amount: rewardFeedItem.Amount);
+        RewardItem rewardFeedItem = nurturing.NurturingMetadata.RewardFeed;
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardFeedItem.ItemId, rarity: rewardFeedItem.Rarity, amount: rewardFeedItem.Amount);
         if (rewardItem is null) {
             Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
             return;
@@ -132,12 +136,12 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         nurturing.Feed();
         db.UpdateNurturing(session.AccountId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube));
-        session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, cube));
+        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+        session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, cube.Id, cube.Interact));
     }
 
     private void HandlePlayNurturing(GameSession session, Plot plot, PlotCube cube, Nurturing nurturing, GameStorage.Request db) {
-        if (nurturing.PetBy.Contains(session.AccountId)) {
+        if (nurturing.PlayedBy.Contains(session.AccountId)) {
             session.Send(NoticePacket.Message("You already played with this pet today. TODO: Find correct string id")); // TODO: Find correct string id
             return;
         }
@@ -151,8 +155,8 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        FunctionCubeMetadata.NurturingData.Item rewardPlay = nurturing.NurturingMetadata.Feed;
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.Id, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
+        RewardItem rewardPlay = nurturing.NurturingMetadata.Feed;
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
         if (rewardItem is null) {
             Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
             return;
@@ -164,7 +168,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
         db.UpdateNurturing(plot.OwnerId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube));
+        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact!));
 
         // Uncomment when issue https://github.com/AngeloTadeucci/Maple2/issues/280 is resolved
         // Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);

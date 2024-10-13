@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20241008175031_Nurturing")]
+    [Migration("20241013181858_Nurturing")]
     partial class Nurturing
     {
         /// <inheritdoc />
@@ -1062,10 +1062,10 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("Exp")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime?>("LastFeedTime")
+                    b.Property<DateTime>("LastFeedTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("PetBy")
+                    b.Property<string>("PlayedBy")
                         .IsRequired()
                         .HasColumnType("json");
 

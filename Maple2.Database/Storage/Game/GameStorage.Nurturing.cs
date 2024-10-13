@@ -13,7 +13,7 @@ public partial class GameStorage {
                 return null;
             }
 
-            return new Maple2.Model.Game.Nurturing(result.Exp, result.ClaimedGiftForStage, result.PetBy, result.CreationTime, result.LastFeedTime, metadata.Nurturing);
+            return new Maple2.Model.Game.Nurturing(result.Exp, result.ClaimedGiftForStage, result.PlayedBy, result.CreationTime, result.LastFeedTime, metadata.Nurturing);
         }
 
         public Maple2.Model.Game.Nurturing? CreateNurturing(long accountId, PlotCube plotCube) {
@@ -23,16 +23,15 @@ public partial class GameStorage {
                 Exp = 0,
                 ClaimedGiftForStage = 1,
                 CreationTime = DateTime.Now,
-                LastFeedTime = null,
-                PetBy = [],
+                LastFeedTime = DateTime.MinValue,
+                PlayedBy = [],
             };
             Context.Nurturing.Add(nurturing);
-            bool success = Context.TrySaveChanges();
-            if (!success) {
+            if (!Context.TrySaveChanges()) {
                 return null;
             }
 
-            return new Maple2.Model.Game.Nurturing(nurturing.Exp, nurturing.ClaimedGiftForStage, nurturing.PetBy, nurturing.CreationTime, nurturing.LastFeedTime, plotCube.Interact!.Nurturing!.NurturingMetadata);
+            return new Maple2.Model.Game.Nurturing(nurturing.Exp, nurturing.ClaimedGiftForStage, nurturing.PlayedBy, nurturing.CreationTime, nurturing.LastFeedTime, plotCube.Interact!.Nurturing!.NurturingMetadata);
         }
 
         public void UpdateNurturing(long accountId, PlotCube plotCube) {
@@ -46,17 +45,16 @@ public partial class GameStorage {
             }
             result.Exp = interactNurturing.Exp;
             result.ClaimedGiftForStage = interactNurturing.ClaimedGiftForStage;
-            result.PetBy = interactNurturing.PetBy.ToArray();
-            if (interactNurturing.LastFeedTime is not null) {
-                result.LastFeedTime = interactNurturing.LastFeedTime.Value.DateTime;
-            }
+            result.PlayedBy = interactNurturing.PlayedBy.ToArray();
+            result.LastFeedTime = interactNurturing.LastFeedTime.DateTime;
+
             Context.Nurturing.Update(result);
             Context.TrySaveChanges();
         }
 
         // Count the number of nurturing items for the given account ID in petBy
         public int CountNurturingForAccount(int itemId, long accountId) {
-            return Context.Nurturing.AsEnumerable().Count(x => x.ItemId == itemId && x.PetBy.Contains(accountId));
+            return Context.Nurturing.AsEnumerable().Count(x => x.ItemId == itemId && x.PlayedBy.Contains(accountId));
         }
     }
 }

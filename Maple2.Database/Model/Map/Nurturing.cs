@@ -10,8 +10,8 @@ internal class Nurturing {
     public long Exp { get; set; }
     public short ClaimedGiftForStage { get; set; }
     public DateTime CreationTime { get; set; }
-    public DateTime? LastFeedTime { get; set; }
-    public long[] PetBy { get; set; }
+    public DateTime LastFeedTime { get; set; }
+    public long[] PlayedBy { get; set; }
 
     public static void Configure(EntityTypeBuilder<Nurturing> builder) {
         builder.ToTable("nurturing");
@@ -20,6 +20,6 @@ internal class Nurturing {
             nurturing.ItemId,
         });
 
-        builder.Property(nurturing => nurturing.PetBy).HasJsonConversion();
+        builder.Property(nurturing => nurturing.PlayedBy).HasJsonConversion();
     }
 }
