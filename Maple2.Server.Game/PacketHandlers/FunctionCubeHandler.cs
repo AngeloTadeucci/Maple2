@@ -101,7 +101,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
             Item? rewardStageItem = session.Field.ItemDrop.CreateItem(requiredGrowth.Reward.ItemId, rarity: requiredGrowth.Reward.Rarity, amount: requiredGrowth.Reward.Amount);
             if (rewardStageItem is null) {
-                Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
+                Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
                 return;
             }
 
@@ -126,7 +126,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         RewardItem rewardFeedItem = nurturing.NurturingMetadata.RewardFeed;
         Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardFeedItem.ItemId, rarity: rewardFeedItem.Rarity, amount: rewardFeedItem.Amount);
         if (rewardItem is null) {
-            Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
             return;
         }
 
@@ -158,7 +158,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         RewardItem rewardPlay = nurturing.NurturingMetadata.Feed;
         Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
         if (rewardItem is null) {
-            Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
             return;
         }
 
@@ -174,7 +174,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         // Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
         //
         // if (mail == null) {
-        //     Logger.Error("Failed to create mail for character {0} and item {1}", session.AccountId, cube.ItemId);
+        //     Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
         //     return;
         // }
         //
@@ -217,7 +217,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
     //     FunctionCubeMetadata.NurturingData.Item rewardPlay = nurturing.Feed;
     //     Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.Id, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
     //     if (rewardItem is null) {
-    //         Logger.Error("Failed to create the reward item for character {0} and item {1}", session.AccountId, rewardPlay.Id);
+    //         Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.Id);
     //         return null;
     //     }
     //
