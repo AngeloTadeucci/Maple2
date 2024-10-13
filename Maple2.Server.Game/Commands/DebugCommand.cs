@@ -115,8 +115,8 @@ public class DebugCommand : Command {
             }
 
             // If packet is less than 4 bytes, it's invalid
-            if (packet.Length < 2) {
-                ctx.Console.Error.WriteLine("Invalid packet. Must be at least 4 bytes.");
+            if (packet.Length < 4) {
+                ctx.Console.Error.WriteLine("Invalid packet. Must be at least 4 bytes (8 characters).");
                 return;
             }
 

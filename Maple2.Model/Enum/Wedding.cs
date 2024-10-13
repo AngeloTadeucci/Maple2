@@ -4,7 +4,7 @@ public enum MaritalStatus : short {
     Single = 0,
     Engaged = 1,
     Married = 2,
-    ConsentualDivorce = 3,
+    ConsensualDivorce = 3,
     ForceDivorce = 4,
     DivorceCoolOff = 5,
 }

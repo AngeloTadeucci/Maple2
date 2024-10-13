@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using MaidData = Maple2.Model.Metadata.ScriptConditionMetadata.MaidData;
+using WeddingData = Maple2.Model.Metadata.ScriptConditionMetadata.WeddingData;
 
 namespace Maple2.Model.Metadata;
 
@@ -10,8 +11,8 @@ public record ScriptConditionMetadata(
     int Id, // QuestId or NpcId
     int ScriptId,
     ScriptType Type,
-    ScriptConditionMetadata.MaidData Maid,
-    ScriptConditionMetadata.WeddingData Wedding,
+    MaidData Maid,
+    WeddingData Wedding,
     IReadOnlyList<JobCode> JobCode,
     IReadOnlyDictionary<int, bool> QuestStarted,
     IReadOnlyDictionary<int, bool> QuestCompleted,

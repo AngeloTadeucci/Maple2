@@ -13,15 +13,15 @@ public record WeddingReward(
 public record WeddingPackage(
     int Id,
     int PlannerId,
-    Dictionary<int, WeddingPackage.HallData> Halls) {
+    IReadOnlyDictionary<int, WeddingPackage.HallData> Halls) {
     public record HallData(
         int Id,
         int MapId,
         int NightMapId,
         int Tier,
         int MeretCost,
-        IList<HallData.Item> Items,
-        IList<HallData.Item> CompleteItems) {
+        IReadOnlyList<HallData.Item> Items,
+        IReadOnlyList<HallData.Item> CompleteItems) {
 
         public record Item(
             int ItemId,

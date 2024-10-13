@@ -179,7 +179,7 @@ public class StateSync : IByteSerializable, IByteDeserializable {
             builder.Append($"Flag3: {Flag3Unknown1}, {Flag3Unknown2}");
         }
         if (Flags.HasFlag(Flag.Animation)) {
-            builder.Append($"Flag4: {AnimationName}");
+            builder.Append($"Animation: {AnimationName}");
         }
         if (Flags.HasFlag(Flag.Flag5)) {
             builder.Append($"Flag5: {Flag5Unknown1}, {Flag5Unknown2}");

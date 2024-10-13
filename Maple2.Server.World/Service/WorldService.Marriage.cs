@@ -19,7 +19,7 @@ public partial class WorldService {
         try {
             return Task.FromResult(channelClient.Marriage(request));
         } catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-            logger.Information("{CharacterId} not found...", request.ReceiverId);
+            logger.Information("{ReceiverId} not found...", request.ReceiverId);
             return Task.FromResult(new MarriageResponse());
         }
     }

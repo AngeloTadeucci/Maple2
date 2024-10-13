@@ -123,7 +123,7 @@ public class WeddingHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Marriage.WeddingHall.CreationTime > DateTime.Now.ToEpochSeconds()) {
+        if (session.Marriage.WeddingHall.Id != 0) {
             session.Send(WeddingPacket.Error(WeddingError.s_wedding_result_already_reservation));
             return;
         }

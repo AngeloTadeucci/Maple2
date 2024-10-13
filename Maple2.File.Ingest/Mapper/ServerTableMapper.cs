@@ -223,7 +223,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         bool value = !input.StartsWith("!");
 
         if (!value) {
-            input = input.Replace("!", "");
+            input = input.Substring(1);
         }
         return new KeyValuePair<string, bool>(input, value);
     }

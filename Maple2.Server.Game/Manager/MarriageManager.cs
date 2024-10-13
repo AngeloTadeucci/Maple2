@@ -379,14 +379,8 @@ public sealed class MarriageManager {
             return;
         }
 
-        // If wedding is about to start, cannot cancel
+        // If the wedding is about to start or has started, cannot cancel
         if (DateTime.Now >= WeddingHall.CeremonyTime.FromEpochSeconds().AddMinutes(-5)) {
-            session.Send(WeddingPacket.Error(WeddingError.s_wedding_result_late_wedding_reserve_modify_time));
-            return;
-        }
-
-        // If the wedding already started, cannot cancel
-        if (DateTime.Now > WeddingHall.CeremonyTime.FromEpochSeconds()) {
             session.Send(WeddingPacket.Error(WeddingError.s_wedding_result_late_wedding_reserve_modify_time));
             return;
         }
