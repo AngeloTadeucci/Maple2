@@ -46,6 +46,8 @@ service World {
   rpc TimeEvent(TimeEventRequest) returns (TimeEventResponse);
   // Add channel
   rpc AddChannel(AddChannelRequest) returns (AddChannelResponse);
+  // Marriage
+  rpc Marriage(maple2.MarriageRequest) returns (maple2.MarriageResponse);
 }
 
 enum Server {

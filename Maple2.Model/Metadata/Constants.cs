@@ -102,6 +102,9 @@ public static class Constant {
     public const int EmpowermentNpc = 11003416;
     public const int InteriorPortalCubeId = 50400158;
     public const int PortalEntryId = 50400190;
+    public const int Grade1WeddingCouponItemId = 20303166;
+    public const int Grade2WeddingCouponItemId = 20303167;
+    public const int Grade3WeddingCouponItemId = 20303168;
 
     public const long FurnishingBaseId = 2870000000000000000;
     public const bool AllowWaterOnGround = false;
@@ -169,6 +172,7 @@ public static class Constant {
     public const float UGCShopProfitFee = 0.25f;
     public const int UGCShopProfitDelayDays = 10;
     public const int PartyFinderListingsPageCount = 12;
+    public const int ProposalItemId = 11600482;
     #endregion
 
     #region table/constants.xml
