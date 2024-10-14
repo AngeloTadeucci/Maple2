@@ -18,6 +18,7 @@ internal class Mail {
     public string SenderName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public string WeddingInvite { get; set; } = string.Empty;
 
     // List is used here to preserve order
     public IList<string> TitleArgs { get; set; } = Array.Empty<string>();
@@ -41,6 +42,7 @@ internal class Mail {
             Content = other.Content,
             TitleArgs = other.TitleArgs.Select(entry => $"{entry.Key}={entry.Value}").ToArray(),
             ContentArgs = other.ContentArgs.Select(entry => $"{entry.Key}={entry.Value}").ToArray(),
+            WeddingInvite = other.WeddingInvite,
             Currency = new MailCurrency {
                 Meso = other.Meso,
                 MesoCollectTime = other.MesoCollectTime,
@@ -72,6 +74,7 @@ internal class Mail {
                 string[] split = arg.Split("=", 2);
                 return split.Length > 1 ? (split[0], split[1]) : ("key", split[0]);
             }).ToArray(),
+            WeddingInvite = other.WeddingInvite,
             Meso = other.Currency.Meso,
             MesoCollectTime = other.Currency.MesoCollectTime,
             Meret = other.Currency.Meret,

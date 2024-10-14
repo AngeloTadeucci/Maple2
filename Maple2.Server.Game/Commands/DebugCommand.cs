@@ -115,6 +115,19 @@ public class DebugCommand : Command {
         }
 
         private void Handle(InvocationContext ctx, string[] packet) {
+            // Ensure packet is a valid hex string
+            if (packet.Any(x => x.Length % 2 != 0)) {
+                ctx.Console.Error.WriteLine("Invalid packet. Each byte must be represented by 2 characters.");
+                return;
+            }
+
+            // If packet is less than 4 bytes, it's invalid
+            if (packet.Length < 4) {
+                ctx.Console.Error.WriteLine("Invalid packet. Must be at least 4 bytes (8 characters).");
+                return;
+            }
+
+
             byte[] bytes = packet.Select(x => byte.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
 
             session.Send(bytes);

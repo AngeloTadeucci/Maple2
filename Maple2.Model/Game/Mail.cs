@@ -19,6 +19,7 @@ public class Mail : IByteSerializable {
     public string SenderName = string.Empty;
     public string Title = string.Empty;
     public string Content = string.Empty;
+    public string WeddingInvite = string.Empty;
     public IList<(string Key, string Value)> TitleArgs { get; init; }
     public IList<(string Key, string Value)> ContentArgs { get; init; }
 
@@ -69,6 +70,10 @@ public class Mail : IByteSerializable {
 
     public void SetContent(StringCode content) {
         Content = $"""<ms2><v key="{content.ToString()}" /></ms2>""";
+    }
+
+    public void SetWeddingInvite(WeddingHall hall) {
+        WeddingInvite = $"""<ms2><wedding groom="{hall.ReserverName}" bride="{hall.PartnerName}" date="{hall.CeremonyTime}" package="{hall.PackageId}" hall="{hall.PackageHallId}"/></ms2>""";
     }
 
     public bool MesoCollected() {
@@ -147,8 +152,7 @@ public class Mail : IByteSerializable {
         writer.WriteLong(ReadTime);
         writer.WriteLong(ExpiryTime);
         writer.WriteLong(SendTime);
-        writer.WriteUnicodeString(); // wedding invite information. example:
-        // <ms2><wedding groom="{reservation.GroomName}" bride="{reservation.BrideName}" date="{reservation.CeremonyTime}" package="{reservation.PackageId}" hall="{reservation.HallId}"/></ms2> //
+        writer.WriteUnicodeString(WeddingInvite);
     }
 
     private static string FormatArgs(ICollection<(string Key, string Value)> args) {

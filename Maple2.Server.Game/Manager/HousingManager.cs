@@ -110,7 +110,7 @@ public class HousingManager {
         }
 
         Plot? plot;
-        if (session.AccountId == session.Field.OwnerId && session.Field.MapId == Home.Indoor.MapId) {
+        if (session.Field.MapId == Home.Indoor.MapId) {
             session.Field.Plots.TryGetValue(Home.Indoor.Number, out plot);
             return plot;
         }
@@ -386,6 +386,8 @@ public class HousingManager {
             return false;
         }
 
+        session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+
         if (plot.IsPlanner) {
             result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
@@ -394,29 +396,28 @@ public class HousingManager {
             };
 
             result.CubePortalSettings?.SetName(position);
-
-            if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
-                result.InteractState = functionCubeMetadata.DefaultState;
+            if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+                result.Interact = new InteractCube(position, functionCubeMetadata);
             }
 
             plot.Cubes.Add(position, result);
             return true;
         }
 
-        tableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
-        if (shopEntry is null) {
-            session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
-            return false;
-        }
-
-        if (!session.Item.Furnishing.PurchaseCube(shopEntry)) {
-            return false;
-        }
-
         if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
             long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
             if (itemUid == 0) {
                 session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_for_sale));
+                return false;
+            }
+
+            tableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
+            if (shopEntry is null) {
+                session.Send(CubePacket.Error(UgcMapError.s_err_cannot_buy_limited_item_more));
+                return false;
+            }
+
+            if (!session.Item.Furnishing.PurchaseCube(shopEntry)) {
                 return false;
             }
 
@@ -432,8 +433,8 @@ public class HousingManager {
         result.Rotation = rotation;
         result.HousingCategory = itemMetadata.Housing.HousingCategory;
         result.CubePortalSettings?.SetName(position);
-        if (result.ItemType.IsInteractFurnishing && session.FunctionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata2)) {
-            result.InteractState = functionCubeMetadata2.DefaultState;
+        if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+            result.Interact = new InteractCube(position, functionCubeMetadata);
         }
         plot.Cubes.Add(position, result);
         return true;
@@ -563,8 +564,8 @@ public class HousingManager {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
-            if (plotCube.ItemType.IsInteractFurnishing) {
-                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+            if (plotCube.ItemType.IsInteractFurnishing && plotCube.Interact is not null) {
+                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
             }
 
             if (cube.CubePortalSettings is not null) {

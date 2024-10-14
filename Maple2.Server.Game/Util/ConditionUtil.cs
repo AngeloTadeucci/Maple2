@@ -136,6 +136,10 @@ public static class ConditionUtil {
             case ConditionType.extend_house:
             case ConditionType.exp:
             case ConditionType.item_merge_success:
+            case ConditionType.wedding_propose:
+            case ConditionType.wedding_propose_decline:
+            case ConditionType.wedding_propose_declined:
+            case ConditionType.wedding_hall_cancel:
                 return true;
         }
         return false;
@@ -253,6 +257,10 @@ public static class ConditionUtil {
             case ConditionType.extend_house:
             case ConditionType.exp:
             case ConditionType.item_merge_success:
+            case ConditionType.wedding_propose:
+            case ConditionType.wedding_propose_decline:
+            case ConditionType.wedding_propose_declined:
+            case ConditionType.wedding_hall_cancel:
                 return true;
         }
         return false;

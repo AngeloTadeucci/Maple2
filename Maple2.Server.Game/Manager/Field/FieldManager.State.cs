@@ -613,7 +613,7 @@ public partial class FieldManager {
         }
         if (MapId is Constant.DefaultHomeMapId) {
             List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching)
+                .Where(x => x.ItemType.IsInteractFurnishing)
                 .ToList();
             added.Session.Send(FunctionCubePacket.SendCubes(lifeSkillCubes));
         }

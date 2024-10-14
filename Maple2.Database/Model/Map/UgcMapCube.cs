@@ -31,6 +31,7 @@ internal class UgcMapCube {
             Rotation = other.Rotation,
             HousingCategory = other.HousingCategory,
             CubePortalSettings = other.CubeSettings is CubePortalSettings portalSettings ? portalSettings : null,
+            Interact = other.CubeSettings is InteractCube interactCube ? interactCube : null,
         };
     }
 
