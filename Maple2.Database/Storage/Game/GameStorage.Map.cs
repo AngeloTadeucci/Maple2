@@ -27,6 +27,7 @@ public partial class GameStorage {
             }
 
             return query.AsEnumerable()
+                .ToList() // ToList before Select so 'This MySqlConnection is already in use.' exception doesn't occur.
                 .Select(ToPlot)
                 .ToList()!;
         }
@@ -38,9 +39,14 @@ public partial class GameStorage {
                 .Select<UgcMapCube, PlotCube>(cube => cube)
                 .ToList();
             foreach (PlotCube cube in plotCubes) {
-                if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
-                    cube.InteractState = functionCubeMetadata.DefaultState;
-                }
+                if (!cube.ItemType.IsInteractFurnishing) continue;
+                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                if (itemMetadata?.Install is null) continue;
+
+                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                if (functionCubeMetadata?.Nurturing is null) continue;
+
+                cube.Interact!.Nurturing = GetNurturing(ownerId, cube.ItemId);
             }
 
             return plotCubes;
@@ -169,9 +175,14 @@ public partial class GameStorage {
 
             PlotCube[] plotCubes = results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
             foreach (PlotCube cube in plotCubes) {
-                if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
-                    cube.InteractState = functionCubeMetadata.DefaultState;
-                }
+                if (!cube.ItemType.IsInteractFurnishing) continue;
+                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                if (itemMetadata?.Install is null) continue;
+
+                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                if (functionCubeMetadata?.Nurturing is null) continue;
+
+                cube.Interact!.Nurturing = GetNurturing(plotInfo.OwnerId, cube.ItemId);
             }
 
             return plotCubes;
@@ -218,13 +229,20 @@ public partial class GameStorage {
                 ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
 
-            if (ugcMap.Cubes != null) {
-                foreach (PlotCube cube in ugcMap.Cubes) {
-                    if (cube.ItemType.IsInteractFurnishing && game.functionCubeMetadata.TryGet(cube.ItemId, out FunctionCubeMetadata? functionCubeMetadata)) {
-                        cube.InteractState = functionCubeMetadata.DefaultState;
+            if (ugcMap.Cubes == null) return plot;
+
+            foreach (PlotCube cube in ugcMap.Cubes) {
+                if (cube.ItemType.IsInteractFurnishing) {
+                    game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                    if (itemMetadata?.Install is not null) {
+                        game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                        if (functionCubeMetadata?.Nurturing is not null) {
+                            cube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId);
+                        }
                     }
-                    plot.Cubes.Add(cube.Position, cube);
                 }
+
+                plot.Cubes.Add(cube.Position, cube);
             }
 
             return plot;

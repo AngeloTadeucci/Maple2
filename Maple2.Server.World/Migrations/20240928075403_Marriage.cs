@@ -4,18 +4,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class Marriage : Migration
-    {
+    public partial class Marriage : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "marriage",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Partner1Id = table.Column<long>(type: "bigint", nullable: false),
@@ -32,8 +28,7 @@ namespace Maple2.Server.World.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_marriage", x => x.Id);
                     table.ForeignKey(
                         name: "FK_marriage_character_Partner1Id",
@@ -62,8 +57,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "marriage");
         }

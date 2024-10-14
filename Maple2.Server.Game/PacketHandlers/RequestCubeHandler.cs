@@ -229,7 +229,24 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
 
                 if (plotCube.ItemType.IsInteractFurnishing) {
-                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube));
+                    if (plotCube.Interact is null) {
+                        Logger.Error("Cube {CubeId} is InteractFurnishing but Interact is null", plotCube.Id);
+                        return;
+                    }
+
+                    if (plotCube.Interact.Nurturing is not null) {
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        Nurturing? nurturing = db.GetNurturing(session.AccountId, plotCube.ItemId);
+                        if (nurturing is null) {
+                            nurturing = db.CreateNurturing(session.AccountId, plotCube);
+                            if (nurturing is null) {
+                                Logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
+                                return;
+                            }
+                        }
+                        plotCube.Interact.Nurturing = nurturing;
+                    }
+                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
                 }
 
                 if (plot.IsPlanner) {
