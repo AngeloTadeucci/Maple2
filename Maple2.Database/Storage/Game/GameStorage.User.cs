@@ -31,13 +31,25 @@ public partial class GameStorage {
                 .FirstOrDefault(account => account.Username == username);
         }
 
-        public bool UpdateAccount(Account account, bool commit = false) {
-            Context.Account.Update(account);
-            if (commit) {
-                return Context.TrySaveChanges();
+        public bool VerifyPassword(long accountId, string password) {
+            Model.Account? account = Context.Account.Find(accountId);
+#if DEBUG
+            if (string.IsNullOrEmpty(account?.Password)) {
+                return true;
             }
+#endif
+            return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
+        }
 
-            return true;
+        public bool UpdateMachineId(long accountId, Guid machineId) {
+            Model.Account? account = Context.Account.Find(accountId);
+            if (account == null) {
+                return false;
+            }
+            account.MachineId = machineId;
+            Context.Account.Update(account);
+
+            return Context.TrySaveChanges();
         }
 
         public (Account?, IList<Character>?) ListCharacters(long accountId) {
@@ -257,6 +269,12 @@ public partial class GameStorage {
                 StarPoint = player.Currency.StarPoint,
             };
 
+            Model.Account? dbAccount = Context.Account.Find(account.Id);
+            if (dbAccount == null) {
+                return false;
+            }
+            account.Password = dbAccount.Password;
+
             Context.Update(account);
             Context.Update(character);
 
@@ -390,9 +408,10 @@ public partial class GameStorage {
         }
 
         #region Create
-        public Account CreateAccount(Account account) {
+        public Account CreateAccount(Account account, string password) {
             Model.Account model = account;
             model.Id = 0;
+            model.Password = BCrypt.Net.BCrypt.HashPassword(password, 13);
 #if DEBUG
             model.Currency = new AccountCurrency {
                 Meret = 99999

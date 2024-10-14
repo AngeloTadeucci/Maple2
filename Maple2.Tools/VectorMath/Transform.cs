@@ -89,9 +89,9 @@ public class Transform {
             float scale = Scale;
 
             // Normalize each axis before scaling to prevent floating point drift.
-            RightAxis = Vector3.Normalize(RightAxis) * (value / scale);
-            UpAxis = Vector3.Normalize(UpAxis) * (value / scale);
-            FrontAxis = Vector3.Normalize(FrontAxis) * (value / scale);
+            RightAxis = Vector3.Normalize(RightAxis) * value;
+            UpAxis = Vector3.Normalize(UpAxis) * value;
+            FrontAxis = Vector3.Normalize(FrontAxis) * value;
         }
     }
 

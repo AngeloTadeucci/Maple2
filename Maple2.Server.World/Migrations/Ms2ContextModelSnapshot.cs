@@ -56,6 +56,11 @@ namespace Maple2.Server.World.Migrations
                     b.Property<bool>("Online")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("PremiumRewardsClaimed")
                         .IsRequired()
                         .HasColumnType("json");
@@ -1039,6 +1044,35 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("CharacterId");
 
                     b.ToTable("meso-market", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Nurturing", b =>
+                {
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<short>("ClaimedGiftForStage")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Exp")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("LastFeedTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PlayedBy")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.HasKey("AccountId", "ItemId");
+
+                    b.ToTable("nurturing", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.PetConfig", b =>

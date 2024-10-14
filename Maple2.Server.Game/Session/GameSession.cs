@@ -84,7 +84,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ItemMergeManager ItemMerge { get; set; } = null!;
     public ItemBoxManager ItemBox { get; set; } = null!;
     public BeautyManager Beauty { get; set; } = null!;
-    public GameEventUserValueManager GameEventUserValue { get; set; } = null!;
+    public GameEventManager GameEvent { get; set; } = null!;
     public ExperienceManager Exp { get; set; } = null!;
     public AchievementManager Achievement { get; set; } = null!;
     public QuestManager Quest { get; set; } = null!;
@@ -154,7 +154,7 @@ public sealed partial class GameSession : Core.Network.Session {
         ItemMerge = new ItemMergeManager(this);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
-        GameEventUserValue = new GameEventUserValueManager(this);
+        GameEvent = new GameEventManager(this);
         Exp = new ExperienceManager(this, Lua);
         Achievement = new AchievementManager(this);
         Quest = new QuestManager(this);
@@ -283,7 +283,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadKeyTable();
         Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
-        GameEventUserValue.Load();
+        GameEvent.Load();
         Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         // RoomDungeon
@@ -467,8 +467,10 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest.Update(conditionType, counter, targetString, targetLong, codeString, codeLong);
     }
 
-    public GameEvent? FindEvent(GameEventType type) => server.FindEvent(type);
+    public IList<GameEvent> FindEvent(GameEventType type) => server.FindEvent(type);
+
     public GameEvent? FindEvent(int id) => server.FindEvent(id);
+    public IEnumerable<GameEvent> Events => server.GetEvents();
 
     public IEnumerable<PremiumMarketItem> GetPremiumMarketItems(params int[] tabIds) => server.GetPremiumMarketItems(tabIds);
 
@@ -593,7 +595,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 Item.Save(db);
                 Survival.Save(db);
                 Housing.Save(db);
-                GameEventUserValue.Save(db);
+                GameEvent.Save(db);
                 Achievement.Save(db);
                 Quest.Save(db);
             }

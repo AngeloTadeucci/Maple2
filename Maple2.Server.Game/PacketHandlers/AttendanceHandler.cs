@@ -47,43 +47,51 @@ public class AttendanceHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClaim(GameSession session) {
-        GameEvent? gameEvent = session.FindEvent(GameEventType.AttendGift);
-        if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
+        IList<GameEvent> gameEvents = session.FindEvent(GameEventType.AttendGift);
+        if (gameEvents.Count == 0) {
             return;
         }
 
-        // Verify that the player meets the time requirements of event
-        long accumulatedTimeValue = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).Long();
-        if ((DateTime.Now.AddSeconds(accumulatedTimeValue) - session.Player.Value.Character.LastModified).TotalSeconds < attendGift.RequiredPlaySeconds) {
-            return;
-        }
+        foreach (GameEvent gameEvent in gameEvents) {
+            if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
+                continue;
+            }
 
-        DateTime completeTime = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceCompletedTimestamp, gameEvent.Id, gameEvent.EndTime).Long().FromEpochSeconds();
-        if (DateTime.Now < completeTime || completeTime.Date == DateTime.Now.Date) {
-            session.Send(AttendancePacket.Error(AttendanceError.s_attendGift_item_attend_already_used));
-            return;
-        }
+            // Verify that the player meets the time requirements of event
+            long accumulatedTimeValue = session.GameEvent.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).Long();
+            if ((DateTime.Now.AddSeconds(accumulatedTimeValue) - session.Player.Value.Character.LastModified).TotalSeconds < attendGift.RequiredPlaySeconds) {
+                return;
+            }
 
-        GetRewards(session, attendGift, gameEvent);
-        session.GameEventUserValue.Set(gameEvent.Id, GameEventUserValueType.AttendanceCompletedTimestamp, DateTime.Now.ToEpochSeconds());
+            DateTime completeTime = session.GameEvent.Get(GameEventUserValueType.AttendanceCompletedTimestamp, gameEvent.Id, gameEvent.EndTime).Long().FromEpochSeconds();
+            if (DateTime.Now < completeTime || completeTime.Date == DateTime.Now.Date) {
+                session.Send(AttendancePacket.Error(AttendanceError.s_attendGift_item_attend_already_used));
+                return;
+            }
+
+            GetRewards(session, attendGift, gameEvent);
+            session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceCompletedTimestamp, DateTime.Now.ToEpochSeconds());
+        }
     }
 
     private void HandleBeginTimer(GameSession session) {
-        GameEvent? gameEvent = session.FindEvent(GameEventType.AttendGift);
-        if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
+        IList<GameEvent> gameEvents = session.FindEvent(GameEventType.AttendGift);
+        if (gameEvents.Count == 0) {
             return;
         }
 
-        long expirationTime = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).ExpirationTime;
-        if (expirationTime < DateTime.Now.ToEpochSeconds()) {
-            session.GameEventUserValue.Set(gameEvent.Id, GameEventUserValueType.AttendanceAccumulatedTime, 0);
+        foreach (GameEvent gameEvent in gameEvents) {
+            long expirationTime = session.GameEvent.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).ExpirationTime;
+            if (expirationTime < DateTime.Now.ToEpochSeconds()) {
+                session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceAccumulatedTime, 0);
+            }
         }
     }
 
     private void GetRewards(GameSession session, AttendGift attendGift, GameEvent gameEvent) {
-        int rewardsClaimed = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceRewardsClaimed, gameEvent.Id, gameEvent.EndTime).Int();
+        int rewardsClaimed = session.GameEvent.Get(GameEventUserValueType.AttendanceRewardsClaimed, gameEvent.Id, gameEvent.EndTime).Int();
         rewardsClaimed++;
-        session.GameEventUserValue.Set(gameEvent.Id, GameEventUserValueType.AttendanceRewardsClaimed, rewardsClaimed);
+        session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceRewardsClaimed, rewardsClaimed);
 
         RewardItem reward = attendGift.Items.ElementAtOrDefault(rewardsClaimed);
         if (default(RewardItem).Equals(reward)) {

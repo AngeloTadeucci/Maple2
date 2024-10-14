@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Maple2.Model.Game;
+﻿namespace Maple2.Model.Game;
 
 public class Account {
     #region Immutable
@@ -29,7 +26,6 @@ public class Account {
     public int SurvivalSilverLevelRewardClaimed { get; set; }
     public int SurvivalGoldLevelRewardClaimed { get; set; }
     public bool ActiveGoldPass { get; set; }
-
     public bool Online { get; set; }
 
     public Account() {

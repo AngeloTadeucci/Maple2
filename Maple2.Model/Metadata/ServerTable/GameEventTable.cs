@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+// ReSharper disable InconsistentNaming
 
 namespace Maple2.Model.Metadata;
 
@@ -16,7 +17,11 @@ public record GameEventMetadata(
     TimeSpan StartPartTime,
     TimeSpan EndPartTime,
     DayOfWeek[] ActiveDays,
-    GameEventData Data
+    GameEventData Data,
+    string Value1,
+    string Value2,
+    string Value3,
+    string Value4
 );
 
 public record StringBoard(
@@ -96,6 +101,54 @@ public record FieldEffect(
     int[] MapIds,
     string Effect) : GameEventData;
 
+/// <summary>
+/// Enables quests with eventTag to be enabled/active.
+/// </summary>
+public record QuestTag(
+    string Tag) : GameEventData;
+
+/// <summary>
+/// Attendance-like event. Gives rewards for the specified duration a user is logged in.
+/// </summary>
+public record DTReward(
+    DTReward.Entry[] Entries
+) : GameEventData {
+    public record Entry(
+        int StartDuration,
+        int EndDuration,
+        int MailContentId,
+        RewardItem Item);
+}
+
+/// <summary>
+/// Enables the specified items to be shown/bought in the building menu
+/// </summary>
+public record ConstructShowItem(
+    int CategoryId,
+    string CategoryName,
+    int[] ItemIds) : GameEventData;
+
+/// <summary>
+/// Enables building on the specified maps.
+/// TODO: Still need to add player account ID to the list of participants. Check packet.
+/// </summary>
+public record MassiveConstructionEvent(
+    int[] MapIds) : GameEventData;
+
+/// <summary>
+/// Discount amount for buying new UGC plots.
+/// </summary>
+/// <param name="DiscountAmount">Discount amount in a whole int. ex. 9000 = 90% discount.</param>
+public record UGCMapContractSale(
+    int DiscountAmount) : GameEventData;
+
+/// <summary>
+/// Discount amount for extending UGC plots.
+/// </summary>
+/// <param name="DiscountAmount">Discount amount in a whole int. ex. 9000 = 90% discount.</param>
+public record UGCMapExtensionSale(
+    int DiscountAmount) : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -112,4 +165,10 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(ReturnUser), "ReturnUser")]
 [JsonDerivedType(typeof(LoginNotice), "LoginNotice")]
 [JsonDerivedType(typeof(FieldEffect), "FieldEffect")]
+[JsonDerivedType(typeof(QuestTag), "QuestTag")]
+[JsonDerivedType(typeof(DTReward), "DTReward")]
+[JsonDerivedType(typeof(ConstructShowItem), "ConstructShowItem")]
+[JsonDerivedType(typeof(MassiveConstructionEvent), "MassiveConstructionEvent")]
+[JsonDerivedType(typeof(UGCMapContractSale), "UGCMapContractSale")]
+[JsonDerivedType(typeof(UGCMapExtensionSale), "UGCMapExtensionSale")]
 public abstract record GameEventData;

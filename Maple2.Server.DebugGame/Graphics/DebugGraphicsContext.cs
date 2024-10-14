@@ -18,6 +18,7 @@ namespace Maple2.Server.DebugGame.Graphics {
         public static readonly bool ForceDXVK = false;
         public static readonly Vector2D<int> DefaultWindowSize = new Vector2D<int>(800, 600);
         public static readonly float[] WindowClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+        public static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
 
         public readonly Dictionary<FieldManager, DebugFieldRenderer> Fields;
 
@@ -42,11 +43,18 @@ namespace Maple2.Server.DebugGame.Graphics {
         private string resourceRootPath = "";
 
         private List<DebugFieldRenderer> fieldRenderers = new();
-        public IReadOnlyList<DebugFieldRenderer> FieldRenderers { get => fieldRenderers; }
-        private DebugFieldRenderer? selectedRenderer = null;
+        private Mutex fieldRendererMutex = new();
+        public DebugFieldRenderer[] FieldRenderers {
+            get {
+                fieldRendererMutex.WaitOne();
+                DebugFieldRenderer[] renderers = fieldRenderers.ToArray();
+                fieldRendererMutex.ReleaseMutex();
+
+                return renderers;
+            }
+        }
         public IReadOnlyList<DebugFieldWindow> FieldWindows { get => fieldWindows; }
         private List<DebugFieldWindow> fieldWindows = new();
-        private DebugFieldWindow? selectedWindow = null;
         private HashSet<FieldManager> updatedFields = new();
         private int deltaIndex = 0;
         private List<int> deltaTimes = new();
@@ -151,19 +159,19 @@ namespace Maple2.Server.DebugGame.Graphics {
             DebuggerWindow.Load += OnLoad;
             DebuggerWindow.Closing += OnClose;
 
-            Log.Information("Creating window");
+            Logger.Information("Creating window");
 
             new Thread(RunDebugger).Start();
         }
 
         public static unsafe void DxLog(Message message) {
             if (message.PDescription is null) {
-                Log.Information("Null DirectX error");
+                Logger.Error("Null DirectX error");
 
                 return;
             }
 
-            Log.Information(SilkMarshal.PtrToString((nint) message.PDescription) ?? "Unknown DirectX error");
+            Logger.Error(SilkMarshal.PtrToString((nint) message.PDescription) ?? "Unknown DirectX error");
         }
 
         private void OnClose() {
@@ -249,7 +257,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
             this.CoreModels = new CoreModels(this);
 
-            Log.Information("Graphics context initialized");
+            Logger.Information("Graphics context initialized");
 
             SampleTexture = new Texture(this);
             SampleTexture.Load("sample_derp_wave.png");
@@ -286,7 +294,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                     DxSwapChain = default;
                     Input = default;
 
-                    Log.Information("Graphics context cleaning up");
+                    Logger.Information("Graphics context cleaning up");
                 }
             }
 
@@ -295,7 +303,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
                 DebuggerWindow = default;
 
-                Log.Information("Window cleaning up");
+                Logger.Information("Window cleaning up");
             }
         }
 
@@ -320,11 +328,13 @@ namespace Maple2.Server.DebugGame.Graphics {
         }
 
         public IFieldRenderer FieldAdded(FieldManager field) {
-            Log.Information("Field added {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
+            Logger.Information("Field added {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
 
             DebugFieldRenderer renderer = new DebugFieldRenderer(this, field);
 
+            fieldRendererMutex.WaitOne();
             int index = fieldRenderers.AddSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
+            fieldRendererMutex.ReleaseMutex();
 
             return renderer;
         }
@@ -334,11 +344,13 @@ namespace Maple2.Server.DebugGame.Graphics {
                 return;
             }
 
-            Log.Information("Field removed {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
+            Logger.Information("Field removed {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
 
             renderer.CleanUp();
 
+            fieldRendererMutex.WaitOne();
             fieldRenderers.RemoveSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
+            fieldRendererMutex.ReleaseMutex();
 
             Fields.Remove(field);
         }

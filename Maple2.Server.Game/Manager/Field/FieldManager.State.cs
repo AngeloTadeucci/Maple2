@@ -451,6 +451,7 @@ public partial class FieldManager {
         int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
         MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
         FieldManager? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
+        bonusMap?.Init();
         Console.WriteLine($"Creating bonus map {bonusMapMetadata.Id} at {spawn.Position} in {delay} ms.");
         if (bonusMap == null) {
             return;
@@ -612,7 +613,7 @@ public partial class FieldManager {
         }
         if (MapId is Constant.DefaultHomeMapId) {
             List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching)
+                .Where(x => x.ItemType.IsInteractFurnishing)
                 .ToList();
             added.Session.Send(FunctionCubePacket.SendCubes(lifeSkillCubes));
         }

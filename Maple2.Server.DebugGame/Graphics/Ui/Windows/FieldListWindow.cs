@@ -1,10 +1,7 @@
 ﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.UI;
-using Maple2.Server.Game.DebugGraphics;
-using Maple2.Server.Game.Manager.Field;
 using System.Numerics;
 
-namespace Maple2.Server.DebugGame.Graphics.Ui;
+namespace Maple2.Server.DebugGame.Graphics.Ui.Windows;
 
 public class FieldListWindow : IUiWindow {
     public bool AllowMainWindow { get => true; }

@@ -143,6 +143,49 @@ public class GameEvent : IByteSerializable {
                     writer.WriteInt(mapId);
                 }
                 break;
+            case QuestTag questTag:
+                writer.WriteInt(Id);
+                writer.WriteUnicodeString(questTag.Tag);
+                writer.WriteLong(StartTime);
+                writer.WriteLong(EndTime);
+                break;
+            case DTReward dtReward:
+                writer.WriteInt(Id);
+                writer.WriteUnicodeString(Metadata.Value1);
+                writer.WriteUnicodeString(Metadata.Value2);
+                writer.WriteUnicodeString(Metadata.Value3);
+                writer.WriteUnicodeString(Metadata.Value4);
+                break;
+            case ConstructShowItem constructShowItem:
+                writer.WriteInt(Id);
+                writer.WriteInt(constructShowItem.CategoryId);
+                writer.WriteUnicodeString(constructShowItem.CategoryName);
+                writer.WriteShort(); // likely value3 but unknown what it means
+                writer.WriteShort((short) constructShowItem.ItemIds.Length);
+                foreach (int itemId in constructShowItem.ItemIds) {
+                    writer.WriteInt(itemId);
+                }
+                break;
+            case MassiveConstructionEvent massiveConstructionEvent:
+                writer.WriteInt(Id);
+                writer.WriteInt(massiveConstructionEvent.MapIds.Length);
+                foreach (int mapId in massiveConstructionEvent.MapIds) {
+                    writer.WriteInt(mapId);
+                }
+                writer.WriteInt(); // this is a certain state. 1 = active, 0 = inactive ?
+                writer.WriteInt(); // account ids enabled to build in the specified maps
+                /* foreach (int accountId in accountIds) {
+                    writer.WriteLong(accountId);
+                } */
+                break;
+            case UGCMapContractSale ugcMapContractSale:
+                writer.WriteInt(Id);
+                writer.WriteInt(ugcMapContractSale.DiscountAmount);
+                break;
+            case UGCMapExtensionSale ugcMapExtensionSale:
+                writer.WriteInt(Id);
+                writer.WriteInt(ugcMapExtensionSale.DiscountAmount);
+                break;
         }
     }
 }

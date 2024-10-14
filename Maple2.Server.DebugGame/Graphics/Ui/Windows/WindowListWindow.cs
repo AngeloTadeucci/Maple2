@@ -1,8 +1,7 @@
 ﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.UI;
 using System.Numerics;
 
-namespace Maple2.Server.DebugGame.Graphics.Ui;
+namespace Maple2.Server.DebugGame.Graphics.Ui.Windows;
 
 public class WindowListWindow : IUiWindow {
     public bool AllowMainWindow { get => true; }
