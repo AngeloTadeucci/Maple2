@@ -34,3 +34,11 @@ public enum QuestDispatchType {
     DirectAccept,
     DirectComplete,
 }
+
+public enum QuestEventMissionType {
+    none,
+    gallery,
+    levelup_package,
+    stamp,
+    timerun
+}

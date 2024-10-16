@@ -149,6 +149,19 @@ public record UGCMapContractSale(
 public record UGCMapExtensionSale(
     int DiscountAmount) : GameEventData;
 
+/// <summary>
+/// Schwanda's Gallery event
+/// </summary>
+/// <param name="QuestIds">Quest Ids</param>
+/// <param name="RewardItems"></param>
+/// <param name="RevealDayLimit"></param>
+/// <param name="Image"></param>
+public record Gallery(
+    int[] QuestIds,
+    RewardItem[] RewardItems,
+    int RevealDayLimit,
+    string Image) : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -171,4 +184,5 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(MassiveConstructionEvent), "MassiveConstructionEvent")]
 [JsonDerivedType(typeof(UGCMapContractSale), "UGCMapContractSale")]
 [JsonDerivedType(typeof(UGCMapExtensionSale), "UGCMapExtensionSale")]
+[JsonDerivedType(typeof(Gallery), "Gallery")]
 public abstract record GameEventData;

@@ -186,6 +186,20 @@ public class GameEvent : IByteSerializable {
                 writer.WriteInt(Id);
                 writer.WriteInt(ugcMapExtensionSale.DiscountAmount);
                 break;
+            case Gallery gallery:
+                writer.WriteInt(Id);
+                writer.WriteShort((short) gallery.QuestIds.Length);
+                foreach (int questId in gallery.QuestIds) {
+                    writer.WriteInt(questId);
+                }
+                writer.WriteShort((short) gallery.RewardItems.Length);
+                foreach (RewardItem rewardItem in gallery.RewardItems) {
+                    writer.Write<RewardItem>(rewardItem);
+                }
+                writer.WriteInt(gallery.RevealDayLimit);
+                writer.WriteUnicodeString(gallery.Image);
+                writer.WriteLong(EndTime);
+                break;
         }
     }
 }

@@ -21,6 +21,10 @@ public enum GameEventUserValueType {
     MapleopolyFreeRollAmount = 801,
     MapleopolyTotalTrips = 802, // unsure
 
+    // Gallery Event
+    GalleryCardFlipCount = 1600,
+    GalleryClaimReward = 1601,
+
     // Rock Paper Scissors Event
     RPSDailyMatches = 1800,
     RPSRewardsClaimed = 1801,

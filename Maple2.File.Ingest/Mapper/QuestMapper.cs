@@ -80,6 +80,7 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                     PortalId: data.dispatch.portal,
                     Script: data.dispatch.script
                 ),
+                EventMissionType: Enum.TryParse(data.eventMission.@event, true, out QuestEventMissionType eventMissionType) ? eventMissionType : QuestEventMissionType.none,
                 Conditions: data.condition.Select(condition => new ConditionMetadata(
                     Type: (ConditionType) condition.type,
                     Value: condition.value == 0 ? 1 : condition.value,

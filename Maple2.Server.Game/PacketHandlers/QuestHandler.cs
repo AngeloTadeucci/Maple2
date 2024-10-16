@@ -154,6 +154,14 @@ public class QuestHandler : PacketHandler<GameSession> {
                 continue;
             }
 
+            if (!session.QuestMetadata.TryGet(questId, out QuestMetadata? metadata)) {
+                continue;
+            }
+
+            if (metadata.EventMissionType != QuestEventMissionType.none) {
+                continue;
+            }
+
             session.Quest.Start(questId);
         }
     }

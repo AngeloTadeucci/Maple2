@@ -261,7 +261,7 @@ public sealed class NpcScriptManager {
             _ => 0,
         };
 
-        if (quest != null && session.Quest.CanStart(quest.Metadata.Require)) {
+        if (quest != null && session.Quest.CanStart(quest.Metadata)) {
             stateId = NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300);
         }
 
