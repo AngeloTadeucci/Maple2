@@ -50,15 +50,19 @@ public class EventRewardHandler : PacketHandler<GameSession> {
 
         int questId = gallery.QuestIds[index];
 
-        QuestError error = session.Quest.Start(questId);
-        if (error != QuestError.none) {
-            session.Send(QuestPacket.Error(error));
+        // Check flip limit before starting the quest
+        GameEventUserValue userValue = session.GameEvent.Get(
+            GameEventUserValueType.GalleryCardFlipCount,
+            gameEvent.Id,
+            DateTime.Today.AddDays(1).ToEpochSeconds());
+        int value = userValue.Int();
+        if (value >= gallery.RevealDayLimit) {
             return;
         }
 
-        GameEventUserValue userValue = session.GameEvent.Get(GameEventUserValueType.GalleryCardFlipCount, gameEvent.Id, new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day + 1, 0, 0, 0).ToEpochSeconds());
-        int value = userValue.Int();
-        if (value >= gallery.RevealDayLimit) {
+        QuestError error = session.Quest.Start(questId);
+        if (error != QuestError.none) {
+            session.Send(QuestPacket.Error(error));
             return;
         }
 
@@ -74,11 +78,11 @@ public class EventRewardHandler : PacketHandler<GameSession> {
             return;
         }
 
-        foreach (int questId in gallery.QuestIds) {
-            if (!session.Quest.TryGetQuest(questId, out Quest? quest) || quest.State != QuestState.Completed) {
-                // All quests need to be completed.
-                return;
-            }
+        bool allQuestsCompleted = gallery.QuestIds.All(questId =>
+            session.Quest.TryGetQuest(questId, out Quest? quest) && quest.State == QuestState.Completed);
+        if (!allQuestsCompleted) {
+            // All quests need to be completed.
+            return;
         }
 
         GameEventUserValue userValue = session.GameEvent.Get(GameEventUserValueType.GalleryClaimReward, gameEvent.Id, gameEvent.EndTime);
