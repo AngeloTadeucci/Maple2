@@ -15,6 +15,7 @@ public record QuestMetadata(
     QuestMetadataGoToNpc GoToNpc,
     QuestMetadataGoToDungeon GoToDungeon,
     QuestDispatch? Dispatch,
+    QuestEventMissionType EventMissionType,
     ConditionMetadata[] Conditions) : ISearchResult;
 
 public record QuestMetadataBasic(

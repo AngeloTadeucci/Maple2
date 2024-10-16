@@ -1087,6 +1087,46 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             case GameEventType.UGCMapExtensionSale:
                 return new UGCMapExtensionSale(
                     DiscountAmount: int.TryParse(value1, out int extensionSaleAmount) ? extensionSaleAmount : 0);
+            case GameEventType.Gallery:
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not { Name: "cards" }) {
+                    return null;
+                }
+
+                var questIds = new List<int>();
+                foreach (XmlNode valueNode in value1Xml.FirstChild) {
+                    if (!int.TryParse(valueNode.Attributes?["quest"]?.Value, out int questId)) {
+                        continue;
+                    }
+                    questIds.Add(questId);
+                }
+
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not { Name: "items" }) {
+                    return null;
+                }
+
+                var galleryRewards = new List<RewardItem>();
+                foreach (XmlNode itemNode in value2Xml.FirstChild) {
+                    if (!int.TryParse(itemNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                        continue;
+                    }
+
+                    if (!short.TryParse(itemNode.Attributes?["grade"]?.Value, out short grade)) {
+                        grade = 1;
+                    }
+
+                    if (!int.TryParse(itemNode.Attributes?["count"]?.Value, out int count)) {
+                        count = 1;
+                    }
+
+                    galleryRewards.Add(new RewardItem(itemId, grade, count));
+                }
+                return new Gallery(
+                    QuestIds: questIds.ToArray(),
+                    RewardItems: galleryRewards.ToArray(),
+                    RevealDayLimit: int.TryParse(value3, out int revealDayLimit) ? revealDayLimit : 1,
+                    Image: value4);
             default:
                 return null;
         }
