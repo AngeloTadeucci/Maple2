@@ -58,7 +58,7 @@ internal enum FieldEntityMembers : byte {
  * - Spawns: Captures all mob spawn candidates in a sphere.
  * - Fluids: Captures all fluids within a bounding box.
  * - VibrateObjects: Captures all vibrate objects within a bounding box.
-*/
+ */
 public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable {
     public const int AXIS_TRIM_ENTITY_COUNT = 10;
     public const float BLOCK_SIZE = (float) Constant.BlockSize;
@@ -92,7 +92,6 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     #region QueryApi
-
     public void QueryCells(Vector3 min, Vector3 max, Action<FieldEntity> callback) {
         Vector3S minIndex = PointToCell(min) - MinIndex;
         Vector3S maxIndex = PointToCell(max) - MinIndex;
@@ -191,6 +190,25 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
+    /// <summary>
+    /// Finds the first sellable tile at the specified position that matches the predicate.
+    /// </summary>
+    /// <param name="position">The position to search for the sellable tile.</param>
+    /// <param name="predicate">A function to test each sellable tile for a condition.</param>
+    /// <returns>The first sellable tile that matches the predicate, or null if no such tile is found.</returns>
+    public FieldSellableTile? FirstSellableTile(Vector3 position, Func<FieldSellableTile, bool> predicate) {
+        Vector3 size = new Vector3(0, 0, 3000); // Only search in same column, we are looking for ground tiles
+        Vector3 min = position - 0.5f * size;
+        Vector3 max = position + 0.5f * size;
+        FieldSellableTile? result = null;
+        QueryCells(min, max, entity => {
+            if (result is not null) return;
+            if (entity is not FieldSellableTile tile || !predicate(tile)) return;
+            result = tile;
+        });
+        return result;
+    }
+
     public void QuerySellableTilesCenter(Vector3 center, Vector3 size, Action<FieldSellableTile> callback) {
         QuerySellableTiles(center - 0.5f * size, center + 0.5f * size, callback);
     }
@@ -254,11 +272,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
         return vibrateObjects;
     }
-
     #endregion
 
     #region Initialization
-
     // used to guarantee deterministic output when parsing maps
     private void SortEntityList(List<FieldEntity> entityList) {
         if (entityList.Count <= 1) {
@@ -652,11 +668,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             WriteTo(entity, writer);
         }
     }
-
     #endregion
 
     #region Serialization
-
     private Vector3S GetWorldGridIndex(Vector3 position) {
         int x = (int) Math.Round(position.X) / Constant.BlockSize;
         int y = (int) Math.Round(position.Y) / Constant.BlockSize;
@@ -955,7 +969,6 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 throw new InvalidDataException($"Reading unhandled field entity type: {type}");
         }
     }
-
     #endregion
 
 }

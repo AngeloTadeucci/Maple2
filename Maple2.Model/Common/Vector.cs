@@ -15,10 +15,9 @@ public readonly record struct Vector3B(sbyte X, sbyte Y, sbyte Z) {
             throw new ArgumentOutOfRangeException(nameof(value), "Value must be between 0 and 0xFFFFFF");
 
         // Extract each byte and interpret as signed 8-bit values
-        sbyte z = (sbyte) (value >> 16);
-        sbyte y = (sbyte) (value >> 8);
-        sbyte x = (sbyte) value;
-
+        sbyte z = unchecked((sbyte) ((value >> 16) & 0xFF));
+        sbyte y = unchecked((sbyte) ((value >> 8) & 0xFF));
+        sbyte x = unchecked((sbyte) (value & 0xFF));
         return new Vector3B(x, y, z);
     }
 
