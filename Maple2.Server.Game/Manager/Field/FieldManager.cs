@@ -7,6 +7,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Field;
 using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -52,6 +53,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly MapMetadata Metadata;
     public readonly MapEntityMetadata Entities;
     public readonly Navigation Navigation;
+    public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
 
     private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = [];
@@ -100,6 +102,12 @@ public sealed partial class FieldManager : IDisposable {
         }
 
         initialized = true;
+
+        if (MapData.TryGet(Metadata.XBlock, out FieldAccelerationStructure? accelerationStructure)) {
+            AccelerationStructure = accelerationStructure;
+        } else {
+            logger.Error("Failed to load acceleration structure for map {MapId}", MapId);
+        }
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);

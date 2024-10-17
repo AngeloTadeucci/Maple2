@@ -6,7 +6,9 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
@@ -357,8 +359,19 @@ public class HousingManager {
             return false;
         }
 
+        float groundHeight = 0;
+        if (plot.MapId is not Constant.DefaultHomeMapId) {
+            FieldSellableTile? groundTile = session.Field.AccelerationStructure?.FirstSellableTile(position, (x) => x.SellableGroup == plot.Number);
+            if (groundTile is null) {
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
+                return false;
+            }
+
+            groundHeight = groundTile.Position.Z / Constant.BlockSize;
+        }
+
         bool isSolidCube = itemMetadata.Install.IsSolidCube;
-        bool isOnGround = position.Z == 0; // TODO: Handle outside plots
+        bool isOnGround = Math.Abs(position.Z - groundHeight) < 0.1;
         bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
 
         // If the cube is not a solid cube and it's replacing ground, it's not allowed.
@@ -377,11 +390,13 @@ public class HousingManager {
             TryRemoveCube(plot, position, out _);
         }
 
-        //TODO: check outside plot - coords belongs to plot
+        if (plot.MapId is Constant.DefaultHomeMapId && IsCoordOutsideArea(position)) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
+            return false;
+        }
 
-        // TODO: check outside plot bounds
-
-        if (IsCoordOutsideArea(position)) {
+        // Only check height on outside plots since we already check if it's inside the area when getting the ground height
+        if (plot.MapId is not Constant.DefaultHomeMapId && position.Z - groundHeight > plot.Metadata.Limit.Height) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
             return false;
         }
