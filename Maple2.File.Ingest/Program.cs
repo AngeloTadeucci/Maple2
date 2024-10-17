@@ -21,10 +21,16 @@ const string env = "Live";
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 bool runNavmesh = false;
+bool dropData = false;
 
 foreach (string? arg in args) {
-    if (arg == "--run-navmesh") {
-        runNavmesh = true;
+    switch (arg) {
+        case "--run-navmesh":
+            runNavmesh = true;
+            break;
+        case "--drop-data":
+            dropData = true;
+            break;
     }
 }
 
@@ -95,6 +101,10 @@ DbContextOptions options = new DbContextOptionsBuilder()
 Console.WriteLine("Connecting to metadata database...");
 using var metadataContext = new MetadataContext(options);
 
+if (dropData) {
+    Console.WriteLine("Dropping metadata database...");
+    metadataContext.Database.EnsureDeleted();
+}
 Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB
