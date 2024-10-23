@@ -78,10 +78,12 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
 
     private static void LoadPlots(GameSession session, List<PlotCube> plotCubes) {
         lock (session.Field.Plots) {
-            session.Send(LoadCubesPacket.PlotOwners(session.Field.Plots.Values));
+            List<Plot> allPlots = session.Field.Plots.Values.ToList();
+            List<Plot> ownedPlots = allPlots.Where(x => x.State is not PlotState.Open).ToList();
+            session.Send(LoadCubesPacket.PlotOwners(ownedPlots));
             session.Send(LoadCubesPacket.Load(plotCubes));
-            session.Send(LoadCubesPacket.PlotState([.. session.Field.Plots.Values]));
-            session.Send(LoadCubesPacket.PlotExpiry([.. session.Field.Plots.Values]));
+            session.Send(LoadCubesPacket.PlotState(allPlots));
+            session.Send(LoadCubesPacket.PlotExpiry(ownedPlots));
         }
     }
 }
