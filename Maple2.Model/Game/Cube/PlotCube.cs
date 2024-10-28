@@ -65,7 +65,6 @@ public class InteractCube : IByteSerializable {
         if (Nurturing is not null) {
             writer.WriteClass<Nurturing>(Nurturing);
         }
-        writer.WriteByte();
     }
 }
 

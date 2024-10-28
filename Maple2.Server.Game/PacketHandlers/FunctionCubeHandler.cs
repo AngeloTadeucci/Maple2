@@ -63,25 +63,35 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (cube.Interact is null) {
+            return;
+        }
+
         switch (cube.HousingCategory) {
             case HousingCategory.Event:
-                if (cube.Interact?.Nurturing is not null) {
+                if (cube.Interact.Nurturing is not null) {
                     HandleNurturing(session, plot, cube);
                 }
 
                 break;
-            default:
-                if (cube.Interact is null) {
-                    return;
-                }
+            case HousingCategory.Farming:
+            case HousingCategory.Ranching:
+                FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(cube.Interact.Id);
+                if (fieldFunctionInteract?.Cube.Interact is not null) {
+                    fieldFunctionInteract.Use();
+                    session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.Cube.Interact));
 
+                    session.Mastery.Gather(fieldFunctionInteract);
+                }
+                break;
+            default:
                 if (cube.Interact.State is InteractCubeState.InUse && cube.Interact.InteractingCharacterId != session.CharacterId) {
                     return;
                 }
 
                 cube.Interact.State = cube.Interact.State == cube.Interact.DefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
                 cube.Interact.InteractingCharacterId = cube.Interact.State == InteractCubeState.InUse ? session.CharacterId : 0;
-                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+                session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
                 session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
                 break;
         }
@@ -125,7 +135,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
             db.UpdateNurturing(session.AccountId, cube);
 
-            session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+            session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
             return;
         }
 
@@ -151,7 +161,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         nurturing.Feed();
         db.UpdateNurturing(session.AccountId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
         session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, cube.Id, cube.Interact));
     }
 
@@ -183,7 +193,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
         db.UpdateNurturing(plot.OwnerId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact!));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact!));
 
         // Uncomment when issue https://github.com/AngeloTadeucci/Maple2/issues/280 is resolved
         // Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);

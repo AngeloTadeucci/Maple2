@@ -450,6 +450,10 @@ public class HousingManager {
         result.CubePortalSettings?.SetName(position);
         if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
+
+            if (result.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
+                session.Field.AddFieldFunctionInteract(result);
+            }
         }
         plot.Cubes.Add(position, result);
         return true;
@@ -463,6 +467,10 @@ public class HousingManager {
 
         if (cube.ItemId is Constant.InteriorPortalCubeId && cube.CubePortalSettings is not null) {
             session.Field.RemovePortal(cube.CubePortalSettings.PortalObjectId);
+        }
+
+        if (cube.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching && cube.Interact is not null) {
+            session.Field.RemoveFieldFunctionInteract(cube.Interact.Id);
         }
 
         if (plot.IsPlanner) {

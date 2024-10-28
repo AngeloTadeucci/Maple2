@@ -29,6 +29,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<string, FieldBreakable> fieldBreakables = new();
     private readonly ConcurrentDictionary<string, FieldLiftable> fieldLiftables = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldInteracts = new();
+    private readonly ConcurrentDictionary<string, FieldFunctionInteract> fieldFunctionInteracts = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldAdBalloons = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
@@ -511,6 +512,38 @@ public partial class FieldManager {
         Broadcast(PortalPacket.Add(fieldPortal));
         return fieldPortal;
     }
+
+    public FieldFunctionInteract? AddFieldFunctionInteract(PlotCube plotCube) {
+        if (plotCube.Interact is null) {
+            logger.Warning("No Interact found for PlotCube: {PlotCube}", plotCube);
+            return null;
+        }
+
+        if (!ItemMetadata.TryGet(plotCube.ItemId, out ItemMetadata? item) || item.Install is null) {
+            return null;
+        }
+
+        if (!FunctionCubeMetadata.TryGet(item.Install.InteractId, out FunctionCubeMetadata? metadata)) {
+            return null;
+        }
+
+        var fieldInteract = new FieldFunctionInteract(this, NextLocalId(), metadata, plotCube) {
+            Position = plotCube.Position,
+            Rotation = new Vector3(0, 0, plotCube.Rotation),
+        };
+
+        fieldFunctionInteracts[plotCube.Interact.Id] = fieldInteract;
+
+        return fieldInteract;
+    }
+
+    public bool RemoveFieldFunctionInteract(string entityId) {
+        return fieldFunctionInteracts.TryRemove(entityId, out FieldFunctionInteract? _);
+    }
+
+    public FieldFunctionInteract? TryGetFieldFunctionInteract(string entityId) {
+        return fieldFunctionInteracts.TryGetValue(entityId, out FieldFunctionInteract? fieldFunctionInteract) ? fieldFunctionInteract : null;
+    }
     #endregion
 
     #region Remove
@@ -612,10 +645,15 @@ public partial class FieldManager {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
         }
         if (MapId is Constant.DefaultHomeMapId) {
-            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.ItemType.IsInteractFurnishing)
-                .ToList();
-            added.Session.Send(FunctionCubePacket.SendCubes(lifeSkillCubes));
+            IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.ItemType.IsInteractFurnishing && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
+            IEnumerable<PlotCube> lifeSkillsCubes = fieldFunctionInteracts.Values
+                .Select(x => x.Cube);
+
+            List<PlotCube> result = [];
+            result.AddRange(interactCubes);
+            result.AddRange(lifeSkillsCubes);
+            added.Session.Send(FunctionCubePacket.SendCubes(result));
         }
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             added.Session.Send(FieldPacket.AddPlayer(fieldPlayer.Session));

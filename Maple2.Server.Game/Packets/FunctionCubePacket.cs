@@ -24,6 +24,7 @@ public static class FunctionCubePacket {
         pWriter.WriteInt(cubes.Count);
         foreach (PlotCube cube in cubes) {
             pWriter.WriteClass<InteractCube>(cube.Interact!);
+            pWriter.WriteByte();
         }
         return pWriter;
     }
@@ -32,6 +33,15 @@ public static class FunctionCubePacket {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.Add);
         pWriter.WriteClass<InteractCube>(interactCube);
+        pWriter.WriteByte(); // 0 Add, 1 Update
+        return pWriter;
+    }
+
+    public static ByteWriter UpdateFunctionCube(InteractCube interactCube) {
+        var pWriter = Packet.Of(SendOp.FunctionCube);
+        pWriter.Write<Command>(Command.Add);
+        pWriter.WriteClass<InteractCube>(interactCube);
+        pWriter.WriteByte(1); // 0 Add, 1 Update
         return pWriter;
     }
 
