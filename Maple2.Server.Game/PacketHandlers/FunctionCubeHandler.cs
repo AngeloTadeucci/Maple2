@@ -77,8 +77,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             case HousingCategory.Farming:
             case HousingCategory.Ranching:
                 FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(cube.Interact.Id);
-                if (fieldFunctionInteract?.Cube.Interact is not null) {
-                    fieldFunctionInteract.Use();
+                if (fieldFunctionInteract?.Cube.Interact is not null && fieldFunctionInteract.Use()) {
                     session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.Cube.Interact));
 
                     session.Mastery.Gather(fieldFunctionInteract);
@@ -89,8 +88,9 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                     return;
                 }
 
-                cube.Interact.State = cube.Interact.State == cube.Interact.DefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
-                cube.Interact.InteractingCharacterId = cube.Interact.State == InteractCubeState.InUse ? session.CharacterId : 0;
+                bool isInDefaultState = cube.Interact.State == cube.Interact.DefaultState;
+                cube.Interact.State = isInDefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
+                cube.Interact.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
                 session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
                 session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
                 break;

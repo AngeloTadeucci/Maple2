@@ -12,12 +12,16 @@ public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
     private long NextUpdateTick { get; set; }
 
     public FieldFunctionInteract(FieldManager field, int objectId, FunctionCubeMetadata value, PlotCube cube) : base(field, objectId, value) {
+        if (cube.Interact is null) {
+            throw new Exception("Cube.Interact is null");
+        }
+
         Cube = cube;
         NextUpdateTick = Field.FieldTick + Value.AutoStateChangeTime;
     }
 
     public override void Update(long tickCount) {
-        if (Cube.Interact!.State is InteractCubeState.Available or InteractCubeState.None || Cube.Interact.InteractingCharacterId != 0) {
+        if (Cube.Interact!.State is InteractCubeState.Available or InteractCubeState.None) {
             return;
         }
 
@@ -29,8 +33,15 @@ public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
         Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(Cube.Interact));
     }
 
-    public void Use() {
-        Cube.Interact!.State = InteractCubeState.InUse;
-        NextUpdateTick = Field.FieldTick + Value.AutoStateChangeTime;
+    public bool Use() {
+        lock (Cube.Interact!) {
+            if (Cube.Interact.State is not InteractCubeState.Available) {
+                return false;
+            }
+
+            Cube.Interact.State = InteractCubeState.InUse;
+            NextUpdateTick = Field.FieldTick + Value.AutoStateChangeTime;
+            return true;
+        }
     }
 }
