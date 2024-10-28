@@ -22,6 +22,7 @@ public class PlayerCommand : Command {
         AddCommand(new InfoCommand(session));
         AddCommand(new SkillPointCommand(session));
         AddCommand(new CurrencyCommand(session));
+        AddCommand(new DailyResetCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -222,6 +223,7 @@ public class PlayerCommand : Command {
             }
         }
     }
+
     private class CurrencyCommand : Command {
         private readonly GameSession session;
 
@@ -263,6 +265,19 @@ public class PlayerCommand : Command {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
+        }
+    }
+
+    private class DailyResetCommand : Command {
+        private readonly GameSession session;
+
+        public DailyResetCommand(GameSession session) : base("daily-reset", "Force daily reset for this player.") {
+            this.session = session;
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            session.DailyReset();
         }
     }
 }
