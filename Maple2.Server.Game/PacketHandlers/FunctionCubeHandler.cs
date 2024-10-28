@@ -70,8 +70,23 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                 }
 
                 break;
+            default:
+                if (cube.Interact is null) {
+                    return;
+                }
+
+                if (cube.Interact.State is InteractCubeState.InUse && cube.Interact.InteractingCharacterId != session.CharacterId) {
+                    return;
+                }
+
+                cube.Interact.State = cube.Interact.State == cube.Interact.DefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
+                cube.Interact.InteractingCharacterId = cube.Interact.State == InteractCubeState.InUse ? session.CharacterId : 0;
+                session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+                session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
+                break;
         }
     }
+
     private void HandleNurturing(GameSession session, Plot plot, PlotCube cube) {
         using GameStorage.Request db = session.GameStorage.Context();
         Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, cube.ItemId);

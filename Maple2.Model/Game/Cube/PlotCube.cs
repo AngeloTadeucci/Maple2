@@ -41,6 +41,8 @@ public class InteractCube : IByteSerializable {
 
     public Nurturing? Nurturing { get; set; }
 
+    public long InteractingCharacterId { get; set; }
+
     public InteractCube(Vector3B position, FunctionCubeMetadata metadata) {
         Id = $"4_{position.ConvertToInt()}";
         DefaultState = metadata.DefaultState;
