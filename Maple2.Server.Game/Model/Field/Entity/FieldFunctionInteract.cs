@@ -13,7 +13,7 @@ public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
 
     public FieldFunctionInteract(FieldManager field, int objectId, FunctionCubeMetadata value, PlotCube cube) : base(field, objectId, value) {
         if (cube.Interact is null) {
-            throw new Exception("Cube.Interact is null");
+            throw new InvalidOperationException("Cube.Interact is null");
         }
 
         Cube = cube;
