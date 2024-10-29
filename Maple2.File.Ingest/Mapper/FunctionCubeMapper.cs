@@ -19,6 +19,7 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
         foreach ((int id, FunctionCube functionCube) in parser.Parse()) {
             yield return new FunctionCubeMetadata(
                 Id: id,
+                RecipeId: functionCube.receipeID,
                 DefaultState: (InteractCubeState) functionCube.DefaultState,
                 AutoStateChange: functionCube.AutoStateChange,
                 AutoStateChangeTime: functionCube.AutoStateChangeTime,

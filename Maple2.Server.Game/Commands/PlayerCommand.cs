@@ -22,6 +22,8 @@ public class PlayerCommand : Command {
         AddCommand(new InfoCommand(session));
         AddCommand(new SkillPointCommand(session));
         AddCommand(new CurrencyCommand(session));
+        AddCommand(new DailyResetCommand(session));
+        AddCommand(new InventoryCommand(session));
     }
 
     private class LevelCommand : Command {
@@ -222,6 +224,7 @@ public class PlayerCommand : Command {
             }
         }
     }
+
     private class CurrencyCommand : Command {
         private readonly GameSession session;
 
@@ -262,6 +265,54 @@ public class PlayerCommand : Command {
             } catch (SystemException ex) {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
+            }
+        }
+    }
+
+    private class DailyResetCommand : Command {
+        private readonly GameSession session;
+
+        public DailyResetCommand(GameSession session) : base("daily-reset", "Force daily reset for this player.") {
+            this.session = session;
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            session.DailyReset();
+        }
+    }
+
+    private class InventoryCommand : Command {
+        private readonly GameSession session;
+
+        public InventoryCommand(GameSession session) : base("inventory", "Manage player inventory.") {
+            this.session = session;
+
+            AddCommand(new ClearInventoryCommand(session));
+        }
+
+        private class ClearInventoryCommand : Command {
+            private readonly GameSession session;
+
+            public ClearInventoryCommand(GameSession session) : base("clear", "Clear player inventory.") {
+                this.session = session;
+
+                var invTab = new Argument<string>("tab", $"Inventory tab to clear. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+                AddArgument(invTab);
+                this.SetHandler<InvocationContext, string>(Handle, invTab);
+            }
+
+            private void Handle(InvocationContext ctx, string tab) {
+                if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                    ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                session.Item.Inventory.Clear(inventoryType);
+                ctx.Console.Out.WriteLine($"Cleared {inventoryType} inventory.");
+                ctx.ExitCode = 0;
             }
         }
     }

@@ -550,6 +550,20 @@ public class InventoryManager {
         }
     }
 
+    public void Clear(InventoryType tab) {
+        lock (session.Item) {
+            if (!tabs.TryGetValue(tab, out ItemCollection? items)) {
+                session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));
+                return;
+            }
+
+            foreach (Item item in items) {
+                Remove(item.Uid, out _, item.Amount);
+                Discard(item);
+            }
+        }
+    }
+
     #region Internal (No Locks)
     private bool RemoveInternal(long uid, int amount, [NotNullWhen(true)] out Item? removed) {
         ItemCollection? items = tabs.Values.FirstOrDefault(collection => collection.Contains(uid));
