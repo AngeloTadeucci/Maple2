@@ -13,15 +13,7 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
     private readonly ConcurrentDictionary<int, ItemMetadata> petToItem = new();
     private readonly ConcurrentMultiDictionary<int, int, PetMetadata> petLookup = new();
 
-    private readonly FormattableString petQuery;
-
     public ItemMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        string? databaseDataName = Environment.GetEnvironmentVariable("DATA_DB_NAME");
-        if (databaseDataName is null) {
-            throw new ArgumentException("DATA_DB_NAME environment variable was not set");
-        }
-
-        petQuery = $"SELECT * FROM `{databaseDataName}`.item WHERE JSON_EXTRACT(Property, '$.PetId') > 0";
         IndexPets();
 
         foreach (PetMetadata metadata in Context.PetMetadata) {
@@ -81,7 +73,11 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
         petToItem.Clear();
 
         lock (Context) {
-            foreach (ItemMetadata item in Context.ItemMetadata.FromSqlInterpolated(petQuery)) {
+            List<ItemMetadata> result = Context.ItemMetadata
+                .FromSql($"SELECT * FROM `item` WHERE JSON_EXTRACT(Property, '$.PetId') > 0")
+                .ToList();
+
+            foreach (ItemMetadata item in result) {
                 Cache.AddReplace(item.Id, item);
                 petToItem[item.Property.PetId] = item;
             }
