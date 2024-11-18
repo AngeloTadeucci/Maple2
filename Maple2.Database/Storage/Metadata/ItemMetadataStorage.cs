@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Maple2.Database.Context;
 using Maple2.Model.Metadata;
 using Maple2.Tools;
@@ -16,8 +13,17 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
     private readonly ConcurrentDictionary<int, ItemMetadata> petToItem = new();
     private readonly ConcurrentMultiDictionary<int, int, PetMetadata> petLookup = new();
 
+    private readonly FormattableString petQuery;
+
     public ItemMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
         IndexPets();
+
+        string? databaseDataName = Environment.GetEnvironmentVariable("DATA_DB_NAME");
+        if (databaseDataName is null) {
+            throw new ArgumentException("DATA_DB_NAME environment variable was not set");
+        }
+
+        petQuery = $"SELECT * FROM `{databaseDataName}`.item WHERE JSON_EXTRACT(Property, '$.PetId') > 0";
 
         foreach (PetMetadata metadata in Context.PetMetadata) {
             petLookup.TryAdd(metadata.Id, metadata.NpcId, metadata);
@@ -72,7 +78,6 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
         }
     }
 
-    private readonly FormattableString petQuery = $"SELECT * FROM `maple-data`.item WHERE JSON_EXTRACT(Property, '$.PetId') > 0";
     private void IndexPets() {
         petToItem.Clear();
 
