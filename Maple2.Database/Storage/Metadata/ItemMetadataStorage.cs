@@ -16,14 +16,13 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
     private readonly FormattableString petQuery;
 
     public ItemMetadataStorage(MetadataContext context) : base(context, CACHE_SIZE) {
-        IndexPets();
-
         string? databaseDataName = Environment.GetEnvironmentVariable("DATA_DB_NAME");
         if (databaseDataName is null) {
             throw new ArgumentException("DATA_DB_NAME environment variable was not set");
         }
 
         petQuery = $"SELECT * FROM `{databaseDataName}`.item WHERE JSON_EXTRACT(Property, '$.PetId') > 0";
+        IndexPets();
 
         foreach (PetMetadata metadata in Context.PetMetadata) {
             petLookup.TryAdd(metadata.Id, metadata.NpcId, metadata);
