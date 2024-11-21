@@ -17,7 +17,7 @@ namespace Maple2.Server.World.Migrations {
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.Sql(@"UPDATE `game-server`.`character-unlock` SET StickerSets = REPLACE(StickerSets, '[]', '{}')");
+            migrationBuilder.Sql(@"UPDATE `character-unlock` SET StickerSets = REPLACE(StickerSets, '[]', '{}')");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder) {
@@ -30,7 +30,7 @@ namespace Maple2.Server.World.Migrations {
                 table: "character-unlock",
                 newName: "Stamps");
 
-            migrationBuilder.Sql(@"UPDATE `game-server`.`character-unlock` SET Stamps = REPLACE(Stamps, '{}', '[]')");
+            migrationBuilder.Sql(@"UPDATE `character-unlock` SET Stamps = REPLACE(Stamps, '{}', '[]')");
         }
     }
 }

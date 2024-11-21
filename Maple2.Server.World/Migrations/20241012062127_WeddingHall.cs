@@ -4,14 +4,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class WeddingHall : Migration
-    {
+    public partial class WeddingHall : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<string>(
                 name: "WeddingInvite",
                 table: "mail",
@@ -21,8 +18,7 @@ namespace Maple2.Server.World.Migrations
 
             migrationBuilder.CreateTable(
                 name: "wedding-hall",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     MarriageId = table.Column<long>(type: "bigint", nullable: false),
@@ -36,8 +32,7 @@ namespace Maple2.Server.World.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_wedding-hall", x => x.Id);
                     table.ForeignKey(
                         name: "FK_wedding-hall_marriage_MarriageId",
@@ -56,8 +51,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "wedding-hall");
 
