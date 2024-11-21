@@ -57,6 +57,13 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
         return info != null && cache.TryAdd(characterId, info);
     }
 
+    // Try to get a cached player by account id and that's online, since we need a ChannelClient to notify.
+    // If the player is not cached just return false since it was never online.
+    // This is a very specific use case, and should be used with caution, mainly used for account wide mail notifications.
+    public PlayerInfo? TryGetByAccountId(long accountId) {
+        return cache.Values.FirstOrDefault(player => player.AccountId == accountId && player.Online);
+    }
+
     public bool Update(PlayerUpdateRequest request) {
         PlayerInfoUpdateEvent @event = cache.TryGetValue(request.CharacterId, out PlayerInfo? info)
             ? new PlayerInfoUpdateEvent(info, request)

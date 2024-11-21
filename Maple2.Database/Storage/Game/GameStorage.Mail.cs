@@ -9,10 +9,14 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public Mail? GetMail(long mailId, long characterId) {
+        public Mail? GetMail(long mailId, long accountId, long characterId) {
             Model.Mail? model = Context.Mail.Find(characterId, mailId);
             if (model == null) {
-                return null;
+                // Check if mail is account-wide
+                model = Context.Mail.Find(accountId, mailId);
+                if (model == null) {
+                    return null;
+                }
             }
 
             Mail mail = model;
@@ -38,8 +42,8 @@ public partial class GameStorage {
             return mails;
         }
 
-        public ICollection<Mail> GetReceivedMail(long characterId, long minId = 0) {
-            Mail[] mails = Context.Mail.Where(mail => mail.ReceiverId == characterId)
+        public ICollection<Mail> GetAllMail(long accountId, long characterId, long minId = 0) {
+            Mail[] mails = Context.Mail.Where(mail => mail.ReceiverId == characterId || mail.ReceiverId == accountId)
                 .Where(mail => mail.Id > minId)
                 .AsEnumerable()
                 .Select<Model.Mail, Mail>(mail => mail)
@@ -81,11 +85,19 @@ public partial class GameStorage {
             return updatedMail;
         }
 
-        public Mail? MarkMailRead(long mailId, long characterId) {
+        public Mail? MarkMailRead(long mailId, long accountId, long characterId) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             Model.Mail? mail = Context.Mail.Find(characterId, mailId);
-            if (mail == null || mail.ReadTime > DateTime.UnixEpoch) {
+            if (mail == null) {
+                // Check if mail is account-wide
+                mail = Context.Mail.Find(accountId, mailId);
+                if (mail == null) {
+                    return null;
+                }
+            }
+
+            if (mail.ReadTime > DateTime.UnixEpoch) {
                 return null;
             }
 
@@ -94,12 +106,16 @@ public partial class GameStorage {
             return SaveChanges() ? mail : null;
         }
 
-        public bool DeleteMail(long mailId, long characterId) {
+        public bool DeleteMail(long mailId, long accountId, long characterId) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             Model.Mail? mail = Context.Mail.Find(characterId, mailId);
             if (mail == null) {
-                return false;
+                // Check if mail is account-wide
+                mail = Context.Mail.Find(accountId, mailId);
+                if (mail == null) {
+                    return false;
+                }
             }
 
             Context.Mail.Remove(mail);

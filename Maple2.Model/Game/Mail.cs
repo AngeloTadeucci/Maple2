@@ -12,7 +12,7 @@ namespace Maple2.Model.Game;
 public class Mail : IByteSerializable {
     public long Id { get; init; }
     public long SenderId { get; init; }
-    public long ReceiverId { get; init; }
+    public long ReceiverId { get; init; } // Can be either AccountId or CharacterId
 
     public MailType Type;
 

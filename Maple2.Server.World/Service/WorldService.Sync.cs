@@ -68,14 +68,25 @@ public partial class WorldService {
     }
 
     public override Task<MailNotificationResponse> MailNotification(MailNotificationRequest request, ServerCallContext context) {
+        if (request.CharacterId <= 0 && request.AccountId <= 0) {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "AccountId and CharacterId not specified"));
+        }
+
         if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info)) {
-            return Task.FromResult(new MailNotificationResponse());
+            info = playerLookup.TryGetByAccountId(request.AccountId);
+            if (info == null) {
+                return Task.FromResult(new MailNotificationResponse());
+            }
         }
 
         int channel = info.Channel;
         if (!channelClients.TryGetClient(channel, out ChannelClient? channelClient)) {
             logger.Error("No registry for channel: {Channel}", channel);
             return Task.FromResult(new MailNotificationResponse());
+        }
+
+        if (request.CharacterId <= 0) {
+            request.CharacterId = info.CharacterId;
         }
 
         try {
