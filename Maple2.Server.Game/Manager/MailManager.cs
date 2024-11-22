@@ -49,7 +49,7 @@ public sealed class MailManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        if (!db.DeleteMail(mailId, session.AccountId, session.CharacterId)) {
+        if (!db.DeleteMail(mailId, session.CharacterId)) {
             return false;
         }
 
@@ -64,7 +64,7 @@ public sealed class MailManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        Mail? mail = db.GetMail(mailId, session.AccountId, session.CharacterId);
+        Mail? mail = db.GetMail(mailId, session.CharacterId);
         if (mail == null) {
             return MailError.mail_not_found;
         }
@@ -84,7 +84,7 @@ public sealed class MailManager {
         }
 
         using GameStorage.Request db = session.GameStorage.Context();
-        Mail? mail = db.GetMail(mailId, session.AccountId, session.CharacterId);
+        Mail? mail = db.GetMail(mailId, session.CharacterId);
         if (mail == null) {
             return MailError.mail_not_found;
         }
@@ -111,7 +111,8 @@ public sealed class MailManager {
 
             bool newMail = false;
             using GameStorage.Request db = session.GameStorage.Context();
-            foreach (Mail mail in db.GetAllMail(accountId, characterId, lastReceivedMail)) {
+            db.BindAccountMailsToCharacter(accountId, characterId);
+            foreach (Mail mail in db.GetAllMail(characterId, lastReceivedMail)) {
                 if (mail.ReadTime == 0) {
                     unreadMail++;
                 }
@@ -137,7 +138,7 @@ public sealed class MailManager {
             return MailError.s_mail_error_alreadyread;
         }
 
-        Mail? readMail = db.MarkMailRead(mail.Id, session.AccountId, session.CharacterId);
+        Mail? readMail = db.MarkMailRead(mail.Id, session.CharacterId);
         if (readMail == null) {
             return MailError.s_mail_error;
         }
