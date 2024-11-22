@@ -30,7 +30,8 @@ message ClubUpdate {
 // Requests
 message MailNotificationRequest {
   int64 mail_id = 1;
-  int64 character_id = 2;
+  optional int64 character_id = 2;
+  optional int64 account_id = 3;
 }
 
 message MailNotificationResponse {

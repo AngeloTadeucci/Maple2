@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Maple2.Database.Model;
 
 internal class Mail {
-    public long ReceiverId { get; set; }
+    public long ReceiverId { get; set; } // Can be either AccountId or CharacterId
     public long Id { get; set; }
     public MailType Type { get; set; }
     public long SenderId { get; set; }
@@ -92,10 +92,7 @@ internal class Mail {
         builder.HasKey(mail => new { mail.ReceiverId, mail.Id });
 
         builder.Property(mail => mail.Id).ValueGeneratedOnAdd();
-        builder.HasOne<Character>()
-            .WithMany()
-            .HasForeignKey(mail => mail.ReceiverId)
-            .IsRequired();
+        builder.Property(mail => mail.ReceiverId).IsRequired();
         builder.Property(mail => mail.TitleArgs).HasJsonConversion().IsRequired();
         builder.Property(mail => mail.ContentArgs).HasJsonConversion().IsRequired();
         builder.Property(mail => mail.Currency).HasJsonConversion();

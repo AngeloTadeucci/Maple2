@@ -195,64 +195,63 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
         session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact!));
 
-        // Uncomment when issue https://github.com/AngeloTadeucci/Maple2/issues/280 is resolved
-        // Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
-        //
-        // if (mail == null) {
-        //     Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
-        //     return;
-        // }
-        //
-        // try {
-        //     session.World.MailNotification(new MailNotificationRequest {
-        //         AccountId = ownerId,
-        //         MailId = mail.Id,
-        //     });
-        // } catch { /* ignored */
-        // }
+        Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
+
+        if (mail == null) {
+            Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
+            return;
+        }
+
+        try {
+            session.World.MailNotification(new MailNotificationRequest {
+                AccountId = plot.OwnerId,
+                MailId = mail.Id,
+            });
+        } catch { /* ignored */
+        }
     }
 
-    // private Mail? CreateOwnerMail(GameSession session, long ownerId, FunctionCubeMetadata.NurturingData nurturing) {
-    //     using GameStorage.Request db = session.GameStorage.Context();
-    //
-    //     string contentId = nurturing.QuestTag switch {
-    //         "NurturingPumpkinDevil" => "18101804",
-    //         "NurturingGhostCats" => "19101804",
-    //         _ => "",
-    //     };
-    //
-    //     if (string.IsNullOrEmpty(contentId)) {
-    //         Logger.Warning("Unknown event tag {0} for nurturing mail", nurturing.QuestTag);
-    //         return null;
-    //     }
-    //
-    //     var mail = new Mail {
-    //         AccountId = ownerId,
-    //         Type = MailType.System,
-    //         Content = contentId,
-    //         SenderName = session.PlayerName,
-    //     };
-    //
-    //     mail = db.CreateMail(mail);
-    //     if (mail is null) {
-    //         Logger.Error("Failed to create mail for account {0}", session.AccountId);
-    //         return null;
-    //     }
-    //
-    //     FunctionCubeMetadata.NurturingData.Item rewardPlay = nurturing.Feed;
-    //     Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.Id, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
-    //     if (rewardItem is null) {
-    //         Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.Id);
-    //         return null;
-    //     }
-    //
-    //     Item? item = db.CreateItem(mail.Id, rewardItem);
-    //     if (item is null) {
-    //         Logger.Error("Failed to create item for mail {0} and item {1}", mail.Id, rewardPlay.Id);
-    //         return null;
-    //     }
-    //
-    //     mail.Items.Add(item);
-    //     return mail;
-    // }
+    private Mail? CreateOwnerMail(GameSession session, long ownerId, FunctionCubeMetadata.NurturingData nurturing) {
+        using GameStorage.Request db = session.GameStorage.Context();
+
+        string contentId = nurturing.QuestTag switch {
+            "NurturingPumpkinDevil" => "18101804",
+            "NurturingGhostCats" => "19101804",
+            _ => "",
+        };
+
+        if (string.IsNullOrEmpty(contentId)) {
+            Logger.Warning("Unknown event tag {0} for nurturing mail", nurturing.QuestTag);
+            return null;
+        }
+
+        var mail = new Mail {
+            ReceiverId = ownerId,
+            Type = MailType.System,
+            Content = contentId,
+            SenderName = session.PlayerName,
+        };
+
+        mail = db.CreateMail(mail);
+        if (mail is null) {
+            Logger.Error("Failed to create mail for account {0}", session.AccountId);
+            return null;
+        }
+
+        RewardItem rewardPlay = nurturing.RewardFeed;
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
+        if (rewardItem is null) {
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.ItemId);
+            return null;
+        }
+
+        Item? item = db.CreateItem(mail.Id, rewardItem);
+        if (item is null) {
+            Logger.Error("Failed to create item for mail {0} and item {1}", mail.Id, rewardPlay.ItemId);
+            return null;
+        }
+
+        mail.Items.Add(item);
+        return mail;
+    }
 }
