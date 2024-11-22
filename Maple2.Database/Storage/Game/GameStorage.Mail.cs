@@ -41,22 +41,26 @@ public partial class GameStorage {
         // Binds all mails from an account to the first character that access them
         public void BindAccountMailsToCharacter(long accountId, long characterId) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            BeginTransaction();
 
             List<Model.Mail> mails = Context.Mail.Where(mail => mail.ReceiverId == accountId).ToList();
             if (mails.Count == 0) {
+                Commit();
                 return;
             }
 
             foreach (Model.Mail mail in mails) {
                 Context.Mail.Remove(mail);
             }
-            SaveChanges();
 
             foreach (Model.Mail mail in mails) {
                 mail.ReceiverId = characterId;
                 Context.Mail.Add(mail);
             }
-            SaveChanges();
+
+            if (!Commit()) {
+                throw new Exception("Failed to bind account mails to character");
+            }
         }
 
         public ICollection<Mail> GetAllMail(long characterId, long minId = 0) {
