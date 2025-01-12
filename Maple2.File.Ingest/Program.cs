@@ -72,6 +72,21 @@ if (server == null || port == null || database == null || user == null || passwo
 
 string worldServerDir = Path.Combine(Paths.SOLUTION_DIR, "Maple2.Server.World");
 
+// check if dotnet ef is installed
+Process processCheck;
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+    processCheck = Process.Start("CMD.exe", "/C dotnet ef");
+} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+    processCheck = Process.Start("bash", "-c \"dotnet ef\"");
+} else {
+    throw new PlatformNotSupportedException("Unsupported OS platform");
+}
+processCheck.WaitForExit();
+
+if (processCheck.ExitCode != 0) {
+    throw new Exception("dotnet ef is not installed. Please install it by running 'dotnet tool install --global dotnet-ef'");
+}
+
 string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
 
 Console.WriteLine("Migrating game database...");
