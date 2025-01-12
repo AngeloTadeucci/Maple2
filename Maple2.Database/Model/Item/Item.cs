@@ -160,8 +160,5 @@ internal class Item {
 
         builder.Property(item => item.CreationTime).ValueGeneratedOnAdd();
         builder.Property(item => item.LastModified).ValueGeneratedOnAdd();
-        IMutableProperty creationTime = builder.Property(item => item.CreationTime)
-            .ValueGeneratedOnAdd().Metadata;
-        creationTime.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
     }
 }
