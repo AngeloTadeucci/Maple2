@@ -91,7 +91,7 @@ public sealed class AchievementManager {
     /// <param name="achievement">Trophy entry from player</param>
     /// <param name="count">Count amount to increment on for the trophy.</param>
     /// <returns>False if there is no rank up possible or condition value has not been met.</returns>
-    private bool RankUp(Achievement achievement, long count = 1) {
+    public bool RankUp(Achievement achievement, long count = 1) {
         achievement.Counter += count;
 
         if (!achievement.Metadata.Grades.TryGetValue(achievement.CurrentGrade, out AchievementMetadataGrade? grade)) {
@@ -244,4 +244,20 @@ public sealed class AchievementManager {
         db.SaveAchievements(session.AccountId, accountValues.Values.ToList());
         db.SaveAchievements(session.CharacterId, characterValues.Values.ToList());
     }
+
+    public void SaveNewAchievement(Achievement achievement, bool isAccountWide) {
+        var ownerId = isAccountWide ? session.AccountId : session.CharacterId;
+
+        using var db = session.GameStorage.Context();
+        db.CreateAchievement(ownerId, achievement);
+
+        if (isAccountWide) {
+            accountValues[achievement.Id] = achievement;
+        } else {
+            characterValues[achievement.Id] = achievement;
+        }
+
+        session.Send(AchievementPacket.Update(achievement));
+    }
+
 }

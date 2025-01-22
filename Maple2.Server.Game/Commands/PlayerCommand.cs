@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
+using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -14,7 +15,7 @@ public class PlayerCommand : Command {
     private const string NAME = "player";
     private const string DESCRIPTION = "Player management.";
 
-    public PlayerCommand(GameSession session) : base(NAME, DESCRIPTION) {
+    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(NAME, DESCRIPTION) {
         AddCommand(new LevelCommand(session));
         AddCommand(new PrestigeCommand(session));
         AddCommand(new ExpCommand(session));
@@ -24,6 +25,7 @@ public class PlayerCommand : Command {
         AddCommand(new CurrencyCommand(session));
         AddCommand(new DailyResetCommand(session));
         AddCommand(new InventoryCommand(session));
+        AddCommand(new TrophyCommand(session, achievementMetadataStorage));
     }
 
     private class LevelCommand : Command {
@@ -314,6 +316,111 @@ public class PlayerCommand : Command {
                 ctx.Console.Out.WriteLine($"Cleared {inventoryType} inventory.");
                 ctx.ExitCode = 0;
             }
+        }
+    }
+
+    private class TrophyCommand : Command {
+        private readonly GameSession session;
+        private readonly AchievementMetadataStorage achievementMetadataStorage;
+
+        public TrophyCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage)
+            : base("trophy", "Add trophy to player.") {
+            this.session = session;
+            this.achievementMetadataStorage = achievementMetadataStorage;
+
+            var trophyId = new Argument<string>("id", "ID of the trophy to add to the player. Use 'all' to unlock all trophies.");
+            var gradeOption = new Option<short>(new[] { "--grade", "-g" }, () => 0, "Grade of the trophy to claim. Defaults to the maximum grade available.");
+
+            AddArgument(trophyId);
+            AddOption(gradeOption);
+            this.SetHandler<InvocationContext, string, short>(Handle, trophyId, gradeOption);
+        }
+
+        private void Handle(InvocationContext ctx, string trophyId, short grade) {
+            try {
+                if (trophyId.ToLower() == "all") {
+                    UnlockAllTrophies(ctx);
+                    return;
+                }
+
+                if (!int.TryParse(trophyId, out int trophyIdInt)) {
+                    ctx.Console.Error.WriteLine($"Invalid trophy ID: {trophyId}. Use a valid ID or 'all'.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                UnlockSingleTrophy(ctx, trophyIdInt, grade);
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to process trophy command: {ex.Message}");
+                ctx.ExitCode = 1;
+            }
+        }
+
+        private void UnlockAllTrophies(InvocationContext ctx) {
+            try {
+                foreach (var metadata in achievementMetadataStorage.GetAll()) {
+                    int trophyId = metadata.Id;
+                    short maxGrade = (short) metadata.Grades.Keys.Max();
+
+                    if (!session.Achievement.TryGetAchievement(trophyId, out var achievement)) {
+                        achievement = new Achievement(metadata) {
+                            CurrentGrade = 1,
+                            RewardGrade = 1,
+                        };
+                        session.Achievement.SaveNewAchievement(achievement, metadata.AccountWide);
+                    }
+
+                    long maxValue = metadata.Grades[maxGrade].Condition.Value;
+                    long remainingProgress = Math.Max(0, maxValue - achievement.Counter);
+
+                    session.Achievement.RankUp(achievement, count: remainingProgress);
+                }
+
+                ctx.Console.Out.WriteLine("All trophies have been successfully unlocked to their maximum grades.");
+                ctx.ExitCode = 0;
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to unlock all trophies: {ex.Message}");
+                ctx.ExitCode = 1;
+            }
+        }
+
+        private void UnlockSingleTrophy(InvocationContext ctx, int trophyId, short grade) {
+            if (!achievementMetadataStorage.TryGet(trophyId, out AchievementMetadata? achievementMetadata)) {
+                ctx.Console.Error.WriteLine($"Trophy ID {trophyId} is invalid or does not exist.");
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            short maxGrade = (short) achievementMetadata.Grades.Keys.Max();
+            if (grade == 0) {
+                grade = maxGrade;
+            }
+
+            if (grade < 1 || grade > maxGrade) {
+                ctx.Console.Error.WriteLine($"Invalid grade {grade} for Trophy ID {trophyId}. Available grades are between 1 and {maxGrade}.");
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            if (!session.Achievement.TryGetAchievement(trophyId, out var achievement)) {
+                achievement = new Achievement(achievementMetadata) {
+                    CurrentGrade = 1,
+                    RewardGrade = 1,
+                };
+                session.Achievement.SaveNewAchievement(achievement, achievementMetadata.AccountWide);
+            }
+
+            long targetValue = achievementMetadata.Grades[grade].Condition.Value;
+            long remainingProgress = Math.Max(0, targetValue - achievement.Counter);
+
+            bool rankedUp = session.Achievement.RankUp(achievement, count: remainingProgress);
+            if (rankedUp) {
+                ctx.Console.Out.WriteLine($"Trophy ID {trophyId} with grade {grade} has been successfully updated.");
+            } else {
+                ctx.Console.Out.WriteLine($"Trophy ID {trophyId} was not updated, as no rank-up was possible.");
+            }
+
+            ctx.ExitCode = 0;
         }
     }
 }
