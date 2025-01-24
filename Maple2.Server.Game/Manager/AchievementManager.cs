@@ -23,6 +23,9 @@ public sealed class AchievementManager {
 
     private readonly ILogger logger = Log.Logger.ForContext<AchievementManager>();
 
+    public IReadOnlyDictionary<int, Achievement> AccountValues => (IReadOnlyDictionary<int, Achievement>) accountValues;
+    public IReadOnlyDictionary<int, Achievement> CharacterValues => (IReadOnlyDictionary<int, Achievement>) characterValues;
+
     public AchievementManager(GameSession session) {
         this.session = session;
 
@@ -244,20 +247,4 @@ public sealed class AchievementManager {
         db.SaveAchievements(session.AccountId, accountValues.Values.ToList());
         db.SaveAchievements(session.CharacterId, characterValues.Values.ToList());
     }
-
-    public void SaveNewAchievement(Achievement achievement, bool isAccountWide) {
-        var ownerId = isAccountWide ? session.AccountId : session.CharacterId;
-
-        using var db = session.GameStorage.Context();
-        db.CreateAchievement(ownerId, achievement);
-
-        if (isAccountWide) {
-            accountValues[achievement.Id] = achievement;
-        } else {
-            characterValues[achievement.Id] = achievement;
-        }
-
-        session.Send(AchievementPacket.Update(achievement));
-    }
-
 }

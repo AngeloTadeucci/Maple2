@@ -358,16 +358,30 @@ public class PlayerCommand : Command {
 
         private void UnlockAllTrophies(InvocationContext ctx) {
             try {
-                foreach (var metadata in achievementMetadataStorage.GetAll()) {
+                ICollection<AchievementMetadata> achievementMetadataCollection = achievementMetadataStorage.GetAll();
+                foreach (AchievementMetadata metadata in achievementMetadataCollection) {
                     int trophyId = metadata.Id;
-                    short maxGrade = (short) metadata.Grades.Keys.Max();
+                    int maxGrade = metadata.Grades.Keys.Max();
 
-                    if (!session.Achievement.TryGetAchievement(trophyId, out var achievement)) {
+                    if (!session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
                         achievement = new Achievement(metadata) {
                             CurrentGrade = 1,
                             RewardGrade = 1,
                         };
-                        session.Achievement.SaveNewAchievement(achievement, metadata.AccountWide);
+
+                        // Save the achievement in the database
+                        long ownerId = metadata.AccountWide ? session.AccountId : session.CharacterId;
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        db.CreateAchievement(ownerId, achievement);
+
+                        // Add the achievement to the appropriate dictionary
+                        if (metadata.AccountWide) {
+                            ((IDictionary<int, Achievement>) session.Achievement.AccountValues)[achievement.Id] = achievement;
+                        } else {
+                            ((IDictionary<int, Achievement>) session.Achievement.CharacterValues)[achievement.Id] = achievement;
+                        }
+
+                        session.Send(AchievementPacket.Update(achievement));
                     }
 
                     long maxValue = metadata.Grades[maxGrade].Condition.Value;
@@ -385,42 +399,60 @@ public class PlayerCommand : Command {
         }
 
         private void UnlockSingleTrophy(InvocationContext ctx, int trophyId, short grade) {
-            if (!achievementMetadataStorage.TryGet(trophyId, out AchievementMetadata? achievementMetadata)) {
-                ctx.Console.Error.WriteLine($"Trophy ID {trophyId} is invalid or does not exist.");
+            try {
+                if (!achievementMetadataStorage.TryGet(trophyId, out AchievementMetadata? achievementMetadata)) {
+                    ctx.Console.Error.WriteLine($"Trophy ID {trophyId} is invalid or does not exist.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                int maxGrade = achievementMetadata.Grades.Keys.Max();
+                if (grade == 0) {
+                    grade = (short) maxGrade;
+                }
+
+                if (grade < 1 || grade > maxGrade) {
+                    ctx.Console.Error.WriteLine($"Invalid grade {grade} for Trophy ID {trophyId}. Available grades are between 1 and {maxGrade}.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                if (!session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
+                    achievement = new Achievement(achievementMetadata) {
+                        CurrentGrade = 1,
+                        RewardGrade = 1,
+                    };
+
+                    // Save the achievement in the database
+                    long ownerId = achievementMetadata.AccountWide ? session.AccountId : session.CharacterId;
+                    using GameStorage.Request db = session.GameStorage.Context();
+                    db.CreateAchievement(ownerId, achievement);
+
+                    // Add the achievement to the appropriate dictionary
+                    if (achievementMetadata.AccountWide) {
+                        ((IDictionary<int, Achievement>) session.Achievement.AccountValues)[achievement.Id] = achievement;
+                    } else {
+                        ((IDictionary<int, Achievement>) session.Achievement.CharacterValues)[achievement.Id] = achievement;
+                    }
+
+                    session.Send(AchievementPacket.Update(achievement));
+                }
+
+                long targetValue = achievementMetadata.Grades[grade].Condition.Value;
+                long remainingProgress = Math.Max(0, targetValue - achievement.Counter);
+
+                bool rankedUp = session.Achievement.RankUp(achievement, count: remainingProgress);
+                if (rankedUp) {
+                    ctx.Console.Out.WriteLine($"Trophy ID {trophyId} with grade {grade} has been successfully updated.");
+                } else {
+                    ctx.Console.Out.WriteLine($"Trophy ID {trophyId} was not updated, as no rank-up was possible.");
+                }
+
+                ctx.ExitCode = 0;
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to unlock trophy ID {trophyId} with grade {grade}: {ex.Message}");
                 ctx.ExitCode = 1;
-                return;
             }
-
-            short maxGrade = (short) achievementMetadata.Grades.Keys.Max();
-            if (grade == 0) {
-                grade = maxGrade;
-            }
-
-            if (grade < 1 || grade > maxGrade) {
-                ctx.Console.Error.WriteLine($"Invalid grade {grade} for Trophy ID {trophyId}. Available grades are between 1 and {maxGrade}.");
-                ctx.ExitCode = 1;
-                return;
-            }
-
-            if (!session.Achievement.TryGetAchievement(trophyId, out var achievement)) {
-                achievement = new Achievement(achievementMetadata) {
-                    CurrentGrade = 1,
-                    RewardGrade = 1,
-                };
-                session.Achievement.SaveNewAchievement(achievement, achievementMetadata.AccountWide);
-            }
-
-            long targetValue = achievementMetadata.Grades[grade].Condition.Value;
-            long remainingProgress = Math.Max(0, targetValue - achievement.Counter);
-
-            bool rankedUp = session.Achievement.RankUp(achievement, count: remainingProgress);
-            if (rankedUp) {
-                ctx.Console.Out.WriteLine($"Trophy ID {trophyId} with grade {grade} has been successfully updated.");
-            } else {
-                ctx.Console.Out.WriteLine($"Trophy ID {trophyId} was not updated, as no rank-up was possible.");
-            }
-
-            ctx.ExitCode = 0;
         }
     }
 }
