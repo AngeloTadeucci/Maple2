@@ -21,6 +21,8 @@ using Maple2.File.IO;
 using Maple2.File.IO.Nif;
 using Maple2.File.Parser.Flat;
 using Maple2.File.Parser.MapXBlock;
+using Maple2.Model.Game.Field;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Tools;
 using Maple2.Tools.DotRecast;
 using Maple2.Tools.VectorMath;
@@ -34,8 +36,7 @@ public class NavMeshMapper {
 
     private readonly List<string> fileLines = []; // used for debugging
 
-    private readonly List<Vector3> vertexBuffer =
-    [
+    private readonly List<Vector3> vertexBuffer = [
         new Vector3(-0.75f, 0.75f, 0.0f),
         new Vector3(-0.75f, -0.75f, 0.0f),
         new Vector3(-0.75f, -0.75f, 1.5f),
@@ -109,7 +110,7 @@ public class NavMeshMapper {
     }
 
     private void Map() {
-        // string xblock = "02000147_bf";
+        // string xblock = "63000016_cs";
         // string xblock = "02000001_tw_tria";
         // string xblock = "82000012_survival";
         // mapParser.ParseMap(xblock, (entities) => GenerateNavMesh(xblock, entities));
@@ -137,24 +138,14 @@ public class NavMeshMapper {
         List<int> tris = [];
         List<int> areas = [];
         foreach (IMapEntity entity in entities) {
-            if (entity is not IMesh mesh || string.IsNullOrEmpty(mesh.NifAsset)) {
-                continue;
-            }
-
             // Only consider entities with 'doesMakeTOK: true'
             if (entity is not IMS2PathEngineTOK { doesMakeTOK: true }) {
                 continue;
             }
 
-            if (!mesh.NifAsset.StartsWith("urn:llid")) {
-                Console.WriteLine($"Invalid asset: {mesh.NifAsset} for {mesh.ModelName}");
-                continue;
-            }
-
-            uint llid = Convert.ToUInt32(mesh.NifAsset.Substring(mesh.NifAsset.LastIndexOf(':') + 1, 8), 16);
-            if (!NifParserHelper.nifDocuments.TryGetValue(llid, out NifDocument? document)) {
-                Console.WriteLine($"Failed to find asset: {mesh.NifAsset} for {mesh.ModelName}");
-                continue;
+            NifDocument? document = null;
+            if (entity is IMesh mesh) {
+                document = GetMeshNifDocument(mesh);
             }
 
             if (entity is not IPlaceable placeable) {
@@ -179,7 +170,7 @@ public class NavMeshMapper {
                 GenerateCube(mapProperties, transform, verts, tris, areas);
             }
 
-            foreach (NiPhysXProp prop in document.PhysXProps) {
+            foreach (NiPhysXProp prop in document?.PhysXProps ?? []) {
                 if (prop.Snapshot == null) continue;
 
                 foreach (NiPhysXActorDesc actor in prop.Snapshot.Actors) {
@@ -270,6 +261,23 @@ public class NavMeshMapper {
             return;
         }
     }
+    private NifDocument? GetMeshNifDocument(IMesh mesh) {
+        if (string.IsNullOrEmpty(mesh.NifAsset)) {
+            return null;
+        }
+
+        if (!mesh.NifAsset.StartsWith("urn:llid")) {
+            Console.WriteLine($"Invalid asset: {mesh.NifAsset} for {mesh.ModelName}");
+            return null;
+        }
+
+        uint llid = Convert.ToUInt32(mesh.NifAsset.Substring(mesh.NifAsset.LastIndexOf(':') + 1, 8), 16);
+        if (!NifParserHelper.nifDocuments.TryGetValue(llid, out NifDocument? document)) {
+            Console.WriteLine($"Failed to find asset: {mesh.NifAsset} for {mesh.ModelName}");
+        }
+
+        return document;
+    }
 
     private static RcConfig CreateRcConfig(RcNavMeshBuildSettings settings, RcAreaModification walkableAreaMod) {
         return new RcConfig(
@@ -336,8 +344,8 @@ public class NavMeshMapper {
         return array;
     }
 
-    public static DtMeshData? BuildMeshData(IInputGeomProvider geom, float cellSize, float cellHeight, float agentHeight,
-           float agentRadius, float agentMaxClimb, RcBuilderResult result) {
+    private static DtMeshData? BuildMeshData(InputGeomProvider geom, float cellSize, float cellHeight, float agentHeight,
+                                             float agentRadius, float agentMaxClimb, RcBuilderResult result) {
         int x = result.TileX;
         int z = result.TileZ;
         RcPolyMesh pmesh = result.Mesh;
@@ -371,7 +379,7 @@ public class NavMeshMapper {
         option.ch = cellHeight;
         option.buildBvTree = true;
 
-        var offMeshConnections = geom.GetOffMeshConnections();
+        List<RcOffMeshConnection>? offMeshConnections = geom.GetOffMeshConnections();
         option.offMeshConCount = offMeshConnections.Count;
         option.offMeshConVerts = new float[option.offMeshConCount * 6];
         option.offMeshConRad = new float[option.offMeshConCount];
@@ -393,7 +401,7 @@ public class NavMeshMapper {
 
         option.tileX = x;
         option.tileZ = z;
-        var dtMeshData = DtNavMeshBuilder.CreateNavMeshData(option);
+        DtMeshData? dtMeshData = DtNavMeshBuilder.CreateNavMeshData(option);
         if (dtMeshData != null) {
             return DemoNavMeshBuilder.UpdateAreaAndFlags(dtMeshData);
         }
@@ -401,10 +409,9 @@ public class NavMeshMapper {
         return null;
     }
 
-    public static DtNavMesh? BuildNavMesh(DtMeshData meshData, int vertsPerPoly) {
-
+    private static DtNavMesh? BuildNavMesh(DtMeshData meshData, int vertsPerPoly) {
         DtNavMesh navMesh = new();
-        var status = navMesh.Init(meshData, vertsPerPoly, 0);
+        DtStatus status = navMesh.Init(meshData, vertsPerPoly, 0);
         if (status.Failed()) {
             return null;
         }
@@ -438,7 +445,7 @@ public class NavMeshMapper {
             return;
         }
 
-        Vector3 generatePhysXDimension = mapProperties.GeneratePhysXDimension;
+        Vector3 generatePhysXDimension = mapProperties.GeneratePhysXDimension * (1 / 1.5f);
         if (generatePhysXDimension == Vector3.Zero) {
             generatePhysXDimension = new Vector3(100f, 100f, 100f);
         }
