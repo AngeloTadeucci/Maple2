@@ -329,7 +329,10 @@ public class PlayerCommand : Command {
             this.achievementMetadataStorage = achievementMetadataStorage;
 
             var trophyId = new Argument<string>("id", "ID of the trophy to add to the player. Use 'all' to unlock all trophies.");
-            var gradeOption = new Option<short>(new[] { "--grade", "-g" }, () => 0, "Grade of the trophy to claim. Defaults to the maximum grade available.");
+            var gradeOption = new Option<short>([
+                "--grade",
+                "-g",
+            ], () => 0, "Grade of the trophy to claim. Defaults to the maximum grade available.");
 
             AddArgument(trophyId);
             AddOption(gradeOption);
@@ -338,7 +341,7 @@ public class PlayerCommand : Command {
 
         private void Handle(InvocationContext ctx, string trophyId, short grade) {
             try {
-                if (trophyId.ToLower() == "all") {
+                if (trophyId.Equals("all", StringComparison.CurrentCultureIgnoreCase)) {
                     UnlockAllTrophies(ctx);
                     return;
                 }
@@ -363,31 +366,7 @@ public class PlayerCommand : Command {
                     int trophyId = metadata.Id;
                     int maxGrade = metadata.Grades.Keys.Max();
 
-                    if (!session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
-                        achievement = new Achievement(metadata) {
-                            CurrentGrade = 1,
-                            RewardGrade = 1,
-                        };
-
-                        // Save the achievement in the database
-                        long ownerId = metadata.AccountWide ? session.AccountId : session.CharacterId;
-                        using GameStorage.Request db = session.GameStorage.Context();
-                        db.CreateAchievement(ownerId, achievement);
-
-                        // Add the achievement to the appropriate dictionary
-                        if (metadata.AccountWide) {
-                            ((IDictionary<int, Achievement>) session.Achievement.AccountValues)[achievement.Id] = achievement;
-                        } else {
-                            ((IDictionary<int, Achievement>) session.Achievement.CharacterValues)[achievement.Id] = achievement;
-                        }
-
-                        session.Send(AchievementPacket.Update(achievement));
-                    }
-
-                    long maxValue = metadata.Grades[maxGrade].Condition.Value;
-                    long remainingProgress = Math.Max(0, maxValue - achievement.Counter);
-
-                    session.Achievement.RankUp(achievement, count: remainingProgress);
+                    UnlockTrophy(trophyId, metadata, maxGrade);
                 }
 
                 ctx.Console.Out.WriteLine("All trophies have been successfully unlocked to their maximum grades.");
@@ -417,42 +396,78 @@ public class PlayerCommand : Command {
                     return;
                 }
 
-                if (!session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
-                    achievement = new Achievement(achievementMetadata) {
-                        CurrentGrade = 1,
-                        RewardGrade = 1,
-                    };
-
-                    // Save the achievement in the database
-                    long ownerId = achievementMetadata.AccountWide ? session.AccountId : session.CharacterId;
-                    using GameStorage.Request db = session.GameStorage.Context();
-                    db.CreateAchievement(ownerId, achievement);
-
-                    // Add the achievement to the appropriate dictionary
-                    if (achievementMetadata.AccountWide) {
-                        ((IDictionary<int, Achievement>) session.Achievement.AccountValues)[achievement.Id] = achievement;
-                    } else {
-                        ((IDictionary<int, Achievement>) session.Achievement.CharacterValues)[achievement.Id] = achievement;
-                    }
-
-                    session.Send(AchievementPacket.Update(achievement));
-                }
-
-                long targetValue = achievementMetadata.Grades[grade].Condition.Value;
-                long remainingProgress = Math.Max(0, targetValue - achievement.Counter);
-
-                bool rankedUp = session.Achievement.RankUp(achievement, count: remainingProgress);
-                if (rankedUp) {
-                    ctx.Console.Out.WriteLine($"Trophy ID {trophyId} with grade {grade} has been successfully updated.");
-                } else {
-                    ctx.Console.Out.WriteLine($"Trophy ID {trophyId} was not updated, as no rank-up was possible.");
-                }
-
+                UnlockTrophy(trophyId, achievementMetadata, maxGrade);
                 ctx.ExitCode = 0;
             } catch (Exception ex) {
                 ctx.Console.Error.WriteLine($"Failed to unlock trophy ID {trophyId} with grade {grade}: {ex.Message}");
                 ctx.ExitCode = 1;
             }
+        }
+        private void UnlockTrophy(int trophyId, AchievementMetadata achievementMetadata, int maxGrade) {
+            ConditionMetadata conditionMetadata = achievementMetadata.Grades[maxGrade].Condition;
+
+            long targetValue = conditionMetadata.Value;
+            long remainingProgress = targetValue;
+
+            if (session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
+                remainingProgress = Math.Max(0, targetValue - achievement.Counter);
+            }
+
+            ConditionType conditionType = conditionMetadata.Type;
+
+            if (conditionMetadata.Codes?.Integers is not null) {
+                UpdateAchievementWithCodes(conditionMetadata.Codes.Integers, conditionMetadata.Target, remainingProgress, conditionType);
+            } else if (conditionMetadata.Codes?.Strings is not null) {
+                UpdateAchievementWithCodes(conditionMetadata.Codes.Strings, conditionMetadata.Target, remainingProgress, conditionType);
+            } else if (conditionMetadata.Codes?.Range is not null) {
+                UpdateAchievementWithCode(conditionMetadata.Codes.Range.Value.Min, conditionMetadata.Target, remainingProgress, conditionType);
+            } else {
+                UpdateAchievementWithoutCodes(conditionMetadata.Target, remainingProgress, conditionType);
+            }
+        }
+
+        private void UpdateAchievementWithCodes<T>(IEnumerable<T> codes, ConditionMetadata.Parameters? target, long remainingProgress, ConditionType conditionType) where T : notnull {
+            foreach (T code in codes) {
+                if (target?.Integers is not null) {
+                    foreach (int targetValue in target.Integers) {
+                        UpdateAchievementWithCode(code, targetValue, remainingProgress, conditionType);
+                    }
+                } else if (target?.Strings is not null) {
+                    foreach (string targetValue in target.Strings) {
+                        UpdateAchievementWithCode(code, targetValue, remainingProgress, conditionType);
+                    }
+                } else if (target?.Range is not null) {
+                    UpdateAchievementWithCode(code, target.Range.Value.Min, remainingProgress, conditionType);
+                } else {
+                    UpdateAchievementWithCode(code, null, remainingProgress, conditionType);
+                }
+            }
+        }
+
+        private void UpdateAchievementWithoutCodes(ConditionMetadata.Parameters? target, long remainingProgress, ConditionType conditionType) {
+            if (target?.Integers is not null) {
+                foreach (int targetValue in target.Integers) {
+                    session.Achievement.Update(conditionType, count: remainingProgress, targetLong: targetValue);
+                }
+            } else if (target?.Strings is not null) {
+                foreach (string targetValue in target.Strings) {
+                    session.Achievement.Update(conditionType, count: remainingProgress, targetString: targetValue);
+                }
+            } else if (target?.Range is not null) {
+                session.Achievement.Update(conditionType, count: remainingProgress, targetLong: target.Range.Value.Min);
+            } else {
+                session.Achievement.Update(conditionType, count: remainingProgress);
+            }
+        }
+
+        private void UpdateAchievementWithCode(object? code, object? targetValue, long remainingProgress, ConditionType conditionType) {
+            long codeLong = code switch {
+                long l => l,
+                int i => i,
+                _ => 0,
+            };
+
+            session.Achievement.Update(conditionType, count: remainingProgress, codeLong: codeLong, codeString: code as string ?? "", targetLong: targetValue as int? ?? 0, targetString: targetValue as string ?? "");
         }
     }
 }
