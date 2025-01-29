@@ -20,8 +20,8 @@
 
     <ItemGroup>
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.51.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.51.0" />
+        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.67.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
         <PackageReference Include="IronPython" Version="3.4.1" />
         <PackageReference Include="IronPython.StdLib" Version="3.4.1">
 <!--            <ExcludeAssets>contentFiles</ExcludeAssets>-->
