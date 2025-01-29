@@ -403,6 +403,7 @@ public class PlayerCommand : Command {
                 ctx.ExitCode = 1;
             }
         }
+
         private void UnlockTrophy(int trophyId, AchievementMetadata achievementMetadata, int maxGrade) {
             ConditionMetadata conditionMetadata = achievementMetadata.Grades[maxGrade].Condition;
 
