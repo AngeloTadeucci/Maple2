@@ -23,9 +23,6 @@ public sealed class AchievementManager {
 
     private readonly ILogger logger = Log.Logger.ForContext<AchievementManager>();
 
-    public IReadOnlyDictionary<int, Achievement> AccountValues => (IReadOnlyDictionary<int, Achievement>) accountValues;
-    public IReadOnlyDictionary<int, Achievement> CharacterValues => (IReadOnlyDictionary<int, Achievement>) characterValues;
-
     public AchievementManager(GameSession session) {
         this.session = session;
 
@@ -94,7 +91,7 @@ public sealed class AchievementManager {
     /// <param name="achievement">Trophy entry from player</param>
     /// <param name="count">Count amount to increment on for the trophy.</param>
     /// <returns>False if there is no rank up possible or condition value has not been met.</returns>
-    public bool RankUp(Achievement achievement, long count = 1) {
+    private bool RankUp(Achievement achievement, long count = 1) {
         achievement.Counter += count;
 
         if (!achievement.Metadata.Grades.TryGetValue(achievement.CurrentGrade, out AchievementMetadataGrade? grade)) {
