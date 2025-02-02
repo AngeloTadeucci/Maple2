@@ -29,6 +29,26 @@ public class DebugCommand : Command {
         AddCommand(new ResolvePacketCommand(session));
         AddCommand(new DebugQueryCommand(session, mapDataStorage));
         AddCommand(new LogoutCommand(session));
+        AddCommand(new ReloadCommandsCommand(session));
+    }
+
+    private class ReloadCommandsCommand : Command {
+        private readonly GameSession session;
+
+        public ReloadCommandsCommand(GameSession session) : base("reloadcommands", "Reloads all registered commands.") {
+            this.session = session;
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            try {
+                session.CommandHandler.RegisterCommands();
+
+                ctx.Console.Out.WriteLine("Commands reloaded successfully.");
+            } catch (Exception e) {
+                ctx.Console.Error.WriteLine($"Failed to reload commands: {e.Message}");
+            }
+        }
     }
 
     private class DebugNpcAiCommand : Command {
