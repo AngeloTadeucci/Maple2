@@ -10,9 +10,10 @@ namespace Maple2.Server.Game.Commands;
 
 public class CommandRouter {
     private readonly GameSession session;
-    private readonly ImmutableList<Command> commands;
-    private readonly ImmutableDictionary<string, Command> aliasLookup;
+    private ImmutableList<Command> commands;
+    private ImmutableDictionary<string, Command> aliasLookup;
     private readonly IConsole console;
+    private readonly IComponentContext context;
 
     public CommandRouter(GameSession session, IComponentContext context) {
         var listBuilder = ImmutableList.CreateBuilder<Command>();
@@ -25,9 +26,24 @@ public class CommandRouter {
         }
 
         this.session = session;
+        this.context = context;
         this.commands = listBuilder.ToImmutable();
         this.aliasLookup = dictionaryBuilder.ToImmutable();
         this.console = new GameConsole(session);
+    }
+
+    public void RegisterCommands() {
+        var listBuilder = ImmutableList.CreateBuilder<Command>();
+        var dictionaryBuilder = ImmutableDictionary.CreateBuilder<string, Command>();
+        foreach (Command command in context.Resolve<IEnumerable<Command>>(new NamedParameter("session", session))) {
+            listBuilder.Add(command);
+            foreach (string alias in command.Aliases) {
+                dictionaryBuilder.Add(alias, command);
+            }
+        }
+
+        commands = listBuilder.ToImmutable();
+        aliasLookup = dictionaryBuilder.ToImmutable();
     }
 
     public int Invoke(string commandLine) {
