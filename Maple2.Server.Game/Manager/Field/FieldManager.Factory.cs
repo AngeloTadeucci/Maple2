@@ -1,9 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using Autofac;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
@@ -115,6 +118,19 @@ public partial class FieldManager {
                 foreach (FieldManager fieldManager in fields.AllFields) {
                     if (!fieldManager.Players.IsEmpty) {
                         logger.Verbose("Field {MapId} {InstanceId} has players", fieldManager.MapId, fieldManager.InstanceId);
+                        fieldManager.fieldEmptySince = null;
+                        continue;
+                    }
+
+                    bool hasAdBalloons = false;
+                    foreach (FieldInteract fieldInteract in fieldManager.fieldAdBalloons.Values) {
+                        if (fieldInteract.Object is not InteractBillBoardObject billboard || DateTime.Now.ToEpochSeconds() >= billboard.ExpirationTime) continue;
+                        hasAdBalloons = true;
+                        break;
+                    }
+
+                    if (hasAdBalloons) {
+                        logger.Verbose("Field {MapId} {InstanceId} has ad balloons", fieldManager.MapId, fieldManager.InstanceId);
                         fieldManager.fieldEmptySince = null;
                         continue;
                     }
