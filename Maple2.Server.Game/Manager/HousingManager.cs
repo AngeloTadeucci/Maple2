@@ -319,18 +319,30 @@ public class HousingManager {
 
         List<PlotCube> plotCubes = [];
         foreach (ExportedUgcMapMetadata.Cube cube in template.Cubes) {
+            if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null || itemMetadata.Housing is null) {
+                logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
+                continue;
+            }
+
             long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
             if (itemUid == 0) {
                 logger.Error("Failed to add cube {cubeId} to storage.", cube.ItemId);
                 continue;
             }
+
             session.Item.Furnishing.TryPlaceCube(itemUid, out PlotCube? plotCube);
             if (plotCube is null) {
                 logger.Error("Failed to place cube {cubeId}.", cube.ItemId);
                 continue;
             }
+
+            session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
+            if (plotCube.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+                plotCube.Interact = new InteractCube(plotCube.Position, functionCubeMetadata);
+            }
             plotCubes.Add(plotCube);
         }
 
