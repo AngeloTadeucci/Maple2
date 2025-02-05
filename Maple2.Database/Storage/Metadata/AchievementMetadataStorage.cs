@@ -43,6 +43,12 @@ public class AchievementMetadataStorage(MetadataContext context) : MetadataStora
         }
     }
 
+    public ICollection<AchievementMetadata> GetAll() {
+        lock (Context) {
+            return Context.AchievementMetadata.ToList();
+        }
+    }
+
     public List<AchievementMetadata> Search(string name) {
         lock (Context) {
             return Context.AchievementMetadata

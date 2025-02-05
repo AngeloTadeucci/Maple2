@@ -21,10 +21,16 @@ const string env = "Live";
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 bool runNavmesh = false;
+bool dropData = false;
 
 foreach (string? arg in args) {
-    if (arg == "--run-navmesh") {
-        runNavmesh = true;
+    switch (arg) {
+        case "--run-navmesh":
+            runNavmesh = true;
+            break;
+        case "--drop-data":
+            dropData = true;
+            break;
     }
 }
 
@@ -66,6 +72,21 @@ if (server == null || port == null || database == null || user == null || passwo
 
 string worldServerDir = Path.Combine(Paths.SOLUTION_DIR, "Maple2.Server.World");
 
+// check if dotnet ef is installed
+Process processCheck;
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+    processCheck = Process.Start("CMD.exe", "/C dotnet ef");
+} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+    processCheck = Process.Start("bash", "-c \"dotnet ef\"");
+} else {
+    throw new PlatformNotSupportedException("Unsupported OS platform");
+}
+processCheck.WaitForExit();
+
+if (processCheck.ExitCode != 0) {
+    throw new Exception("dotnet ef is not installed. Please install it by running 'dotnet tool install --global dotnet-ef'");
+}
+
 string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
 
 Console.WriteLine("Migrating game database...");
@@ -95,6 +116,10 @@ DbContextOptions options = new DbContextOptionsBuilder()
 Console.WriteLine("Connecting to metadata database...");
 using var metadataContext = new MetadataContext(options);
 
+if (dropData) {
+    Console.WriteLine("Dropping metadata database...");
+    metadataContext.Database.EnsureDeleted();
+}
 Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB

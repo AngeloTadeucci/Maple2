@@ -63,15 +63,40 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (cube.Interact is null) {
+            return;
+        }
+
         switch (cube.HousingCategory) {
             case HousingCategory.Event:
-                if (cube.Interact?.Nurturing is not null) {
+                if (cube.Interact.Nurturing is not null) {
                     HandleNurturing(session, plot, cube);
                 }
 
                 break;
+            case HousingCategory.Farming:
+            case HousingCategory.Ranching:
+                FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(cube.Interact.Id);
+                if (fieldFunctionInteract?.Cube.Interact is not null && fieldFunctionInteract.Use()) {
+                    session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.Cube.Interact));
+
+                    session.Mastery.Gather(fieldFunctionInteract);
+                }
+                break;
+            default:
+                if (cube.Interact.State is InteractCubeState.InUse && cube.Interact.InteractingCharacterId != session.CharacterId) {
+                    return;
+                }
+
+                bool isInDefaultState = cube.Interact.State == cube.Interact.DefaultState;
+                cube.Interact.State = isInDefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
+                cube.Interact.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
+                session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
+                session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
+                break;
         }
     }
+
     private void HandleNurturing(GameSession session, Plot plot, PlotCube cube) {
         using GameStorage.Request db = session.GameStorage.Context();
         Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, cube.ItemId);
@@ -110,7 +135,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
             db.UpdateNurturing(session.AccountId, cube);
 
-            session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+            session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
             return;
         }
 
@@ -136,7 +161,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         nurturing.Feed();
         db.UpdateNurturing(session.AccountId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
         session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, cube.Id, cube.Interact));
     }
 
@@ -168,66 +193,65 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
         db.UpdateNurturing(plot.OwnerId, cube);
 
-        session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact!));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact!));
 
-        // Uncomment when issue https://github.com/AngeloTadeucci/Maple2/issues/280 is resolved
-        // Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
-        //
-        // if (mail == null) {
-        //     Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
-        //     return;
-        // }
-        //
-        // try {
-        //     session.World.MailNotification(new MailNotificationRequest {
-        //         AccountId = ownerId,
-        //         MailId = mail.Id,
-        //     });
-        // } catch { /* ignored */
-        // }
+        Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
+
+        if (mail == null) {
+            Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
+            return;
+        }
+
+        try {
+            session.World.MailNotification(new MailNotificationRequest {
+                AccountId = plot.OwnerId,
+                MailId = mail.Id,
+            });
+        } catch { /* ignored */
+        }
     }
 
-    // private Mail? CreateOwnerMail(GameSession session, long ownerId, FunctionCubeMetadata.NurturingData nurturing) {
-    //     using GameStorage.Request db = session.GameStorage.Context();
-    //
-    //     string contentId = nurturing.QuestTag switch {
-    //         "NurturingPumpkinDevil" => "18101804",
-    //         "NurturingGhostCats" => "19101804",
-    //         _ => "",
-    //     };
-    //
-    //     if (string.IsNullOrEmpty(contentId)) {
-    //         Logger.Warning("Unknown event tag {0} for nurturing mail", nurturing.QuestTag);
-    //         return null;
-    //     }
-    //
-    //     var mail = new Mail {
-    //         AccountId = ownerId,
-    //         Type = MailType.System,
-    //         Content = contentId,
-    //         SenderName = session.PlayerName,
-    //     };
-    //
-    //     mail = db.CreateMail(mail);
-    //     if (mail is null) {
-    //         Logger.Error("Failed to create mail for account {0}", session.AccountId);
-    //         return null;
-    //     }
-    //
-    //     FunctionCubeMetadata.NurturingData.Item rewardPlay = nurturing.Feed;
-    //     Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.Id, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
-    //     if (rewardItem is null) {
-    //         Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.Id);
-    //         return null;
-    //     }
-    //
-    //     Item? item = db.CreateItem(mail.Id, rewardItem);
-    //     if (item is null) {
-    //         Logger.Error("Failed to create item for mail {0} and item {1}", mail.Id, rewardPlay.Id);
-    //         return null;
-    //     }
-    //
-    //     mail.Items.Add(item);
-    //     return mail;
-    // }
+    private Mail? CreateOwnerMail(GameSession session, long ownerId, FunctionCubeMetadata.NurturingData nurturing) {
+        using GameStorage.Request db = session.GameStorage.Context();
+
+        string contentId = nurturing.QuestTag switch {
+            "NurturingPumpkinDevil" => "18101804",
+            "NurturingGhostCats" => "19101804",
+            _ => "",
+        };
+
+        if (string.IsNullOrEmpty(contentId)) {
+            Logger.Warning("Unknown event tag {0} for nurturing mail", nurturing.QuestTag);
+            return null;
+        }
+
+        var mail = new Mail {
+            ReceiverId = ownerId,
+            Type = MailType.System,
+            Content = contentId,
+            SenderName = session.PlayerName,
+        };
+
+        mail = db.CreateMail(mail);
+        if (mail is null) {
+            Logger.Error("Failed to create mail for account {0}", session.AccountId);
+            return null;
+        }
+
+        RewardItem rewardPlay = nurturing.RewardFeed;
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
+        if (rewardItem is null) {
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.ItemId);
+            return null;
+        }
+
+        Item? item = db.CreateItem(mail.Id, rewardItem);
+        if (item is null) {
+            Logger.Error("Failed to create item for mail {0} and item {1}", mail.Id, rewardPlay.ItemId);
+            return null;
+        }
+
+        mail.Items.Add(item);
+        return mail;
+    }
 }

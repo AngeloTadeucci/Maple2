@@ -229,7 +229,7 @@ public static class NpcTalkUtil {
             _ => 0,
         };
 
-        if (quest != null && session.Quest.CanStart(quest.Metadata.Require)) {
+        if (quest != null && session.Quest.CanStart(quest.Metadata)) {
             stateId = GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300);
         }
 

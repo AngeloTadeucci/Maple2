@@ -53,8 +53,6 @@ internal class Item {
             Slot = other.Slot,
             Group = other.Group,
             Amount = other.Amount,
-            CreationTime = other.CreationTime.FromEpochSeconds(),
-            ExpiryTime = other.ExpiryTime.FromEpochSeconds(),
             TimeChangedOption = other.TimeChangedOption,
             RemainUses = other.RemainUses,
             IsLocked = other.IsLocked,
@@ -75,6 +73,14 @@ internal class Item {
             CoupleInfo = other.CoupleInfo,
             Binding = other.Binding,
         };
+
+        if (other.CreationTime != 0) {
+            item.CreationTime = other.CreationTime.FromEpochSeconds();
+        }
+
+        if (other.ExpiryTime != 0) {
+            item.ExpiryTime = other.ExpiryTime.FromEpochSeconds();
+        }
 
         if (other.Template != null && other.Blueprint != null) {
             item.SubType = new ItemUgc(other.Template, other.Blueprint);
@@ -141,8 +147,6 @@ internal class Item {
     public static void Configure(EntityTypeBuilder<Item> builder) {
         builder.ToTable("item");
         builder.HasKey(item => item.Id);
-        builder.Property(character => character.CreationTime)
-            .ValueGeneratedOnAdd();
 
         builder.Property(item => item.Appearance).HasJsonConversion().IsRequired();
         builder.Property(item => item.Stats).HasJsonConversion();
@@ -154,9 +158,7 @@ internal class Item {
         builder.Property(item => item.Binding).HasJsonConversion();
         builder.Property(item => item.SubType).HasJsonConversion();
 
+        builder.Property(item => item.CreationTime).ValueGeneratedOnAdd();
         builder.Property(item => item.LastModified).ValueGeneratedOnAdd();
-        IMutableProperty creationTime = builder.Property(item => item.CreationTime)
-            .ValueGeneratedOnAdd().Metadata;
-        creationTime.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
     }
 }

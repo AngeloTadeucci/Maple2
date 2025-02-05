@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Maple2.Database.Context;
 using Maple2.Model.Metadata;
 using Maple2.Tools;
@@ -72,12 +69,15 @@ public class ItemMetadataStorage : MetadataStorage<int, ItemMetadata>, ISearchab
         }
     }
 
-    private readonly FormattableString petQuery = $"SELECT * FROM `maple-data`.item WHERE JSON_EXTRACT(Property, '$.PetId') > 0";
     private void IndexPets() {
         petToItem.Clear();
 
         lock (Context) {
-            foreach (ItemMetadata item in Context.ItemMetadata.FromSqlInterpolated(petQuery)) {
+            List<ItemMetadata> result = Context.ItemMetadata
+                .FromSql($"SELECT * FROM `item` WHERE JSON_EXTRACT(Property, '$.PetId') > 0")
+                .ToList();
+
+            foreach (ItemMetadata item in result) {
                 Cache.AddReplace(item.Id, item);
                 petToItem[item.Property.PetId] = item;
             }

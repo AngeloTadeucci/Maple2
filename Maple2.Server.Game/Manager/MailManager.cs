@@ -101,6 +101,7 @@ public sealed class MailManager {
     }
 
     private bool Fetch(bool force = false) {
+        long accountId = session.AccountId;
         long characterId = session.CharacterId;
 
         lock (inbox) {
@@ -110,7 +111,8 @@ public sealed class MailManager {
 
             bool newMail = false;
             using GameStorage.Request db = session.GameStorage.Context();
-            foreach (Mail mail in db.GetReceivedMail(characterId, lastReceivedMail)) {
+            db.BindAccountMailsToCharacter(accountId, characterId);
+            foreach (Mail mail in db.GetAllMail(characterId, lastReceivedMail)) {
                 if (mail.ReadTime == 0) {
                     unreadMail++;
                 }

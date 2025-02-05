@@ -28,9 +28,30 @@ public class DebugCommand : Command {
         AddCommand(new SendRawPacketCommand(session));
         AddCommand(new ResolvePacketCommand(session));
         AddCommand(new DebugQueryCommand(session, mapDataStorage));
+        AddCommand(new LogoutCommand(session));
+        AddCommand(new ReloadCommandsCommand(session));
     }
 
-    public class DebugNpcAiCommand : Command {
+    private class ReloadCommandsCommand : Command {
+        private readonly GameSession session;
+
+        public ReloadCommandsCommand(GameSession session) : base("reloadcommands", "Reloads all registered commands.") {
+            this.session = session;
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            try {
+                session.CommandHandler.RegisterCommands();
+
+                ctx.Console.Out.WriteLine("Commands reloaded successfully.");
+            } catch (Exception e) {
+                ctx.Console.Error.WriteLine($"Failed to reload commands: {e.Message}");
+            }
+        }
+    }
+
+    private class DebugNpcAiCommand : Command {
         private readonly GameSession session;
         private readonly NpcMetadataStorage npcStorage;
 
@@ -330,6 +351,20 @@ public class DebugCommand : Command {
                     ctx.Console.Out.WriteLine($"SellableGroupId {sellableTile.SellableGroup} found at {position.X} {position.Y} {position.Z} in cell {toCell.X} {toCell.Y} {toCell.Z}");
                 });
             }
+        }
+    }
+
+    private class LogoutCommand : Command {
+        private readonly GameSession session;
+
+        public LogoutCommand(GameSession session) : base("logout", "Logs out.") {
+            this.session = session;
+
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            session.Disconnect();
         }
     }
 }

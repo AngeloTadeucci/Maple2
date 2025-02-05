@@ -7,6 +7,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Field;
 using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -41,6 +42,7 @@ public sealed partial class FieldManager : IDisposable {
     public AiMetadataStorage AiMetadata { get; init; } = null!;
     public SkillMetadataStorage SkillMetadata { get; init; } = null!;
     public TableMetadataStorage TableMetadata { get; init; } = null!;
+    public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { get; init; } = null!;
@@ -52,6 +54,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly MapMetadata Metadata;
     public readonly MapEntityMetadata Entities;
     public readonly Navigation Navigation;
+    public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
 
     private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = [];
@@ -101,6 +104,12 @@ public sealed partial class FieldManager : IDisposable {
 
         initialized = true;
 
+        if (MapData.TryGet(Metadata.XBlock, out FieldAccelerationStructure? accelerationStructure)) {
+            AccelerationStructure = accelerationStructure;
+        } else {
+            logger.Error("Failed to load acceleration structure for map {MapId}", MapId);
+        }
+
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
@@ -128,6 +137,14 @@ public sealed partial class FieldManager : IDisposable {
 
             foreach (PlotCube cubePortal in cubePortals) {
                 SpawnCubePortal(cubePortal);
+            }
+
+            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
+                .ToList();
+
+            foreach (PlotCube cube in lifeSkillCubes) {
+                AddFieldFunctionInteract(cube);
             }
         }
 
@@ -264,6 +281,7 @@ public sealed partial class FieldManager : IDisposable {
         foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
         foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
         foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
+        foreach (FieldFunctionInteract interact in fieldFunctionInteracts.Values) interact.Update(FieldTick);
         foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
         foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
         foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
