@@ -1,9 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using Autofac;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
@@ -119,6 +122,12 @@ public partial class FieldManager {
                         continue;
                     }
 
+                    if (fieldManager.fieldAdBalloons.Values
+                        .Any(fieldInteract => fieldInteract.Object is InteractBillBoardObject billboard && DateTime.Now.ToEpochSeconds() < billboard.ExpirationTime)) {
+                        logger.Verbose("Field {MapId} {InstanceId} has ad balloons", fieldManager.MapId, fieldManager.InstanceId);
+                        fieldManager.fieldEmptySince = null;
+                        continue;
+                    }
                     Model.RoomTimer? roomTimer = fieldManager.RoomTimer;
                     if (roomTimer is null) {
                         if (fieldManager.fieldEmptySince is null) {

@@ -589,12 +589,17 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveInteract(string entityId) {
-        if (fieldInteracts.TryRemove(entityId, out FieldInteract? fieldInteract)) {
-            return false;
+    public bool RemoveInteract(IInteractObject interactObject) {
+        switch (interactObject) {
+            case InteractBillBoardObject billboard:
+                fieldAdBalloons.TryRemove(billboard.EntityId, out _);
+                break;
+            default:
+                fieldInteracts.TryRemove(interactObject.EntityId, out _);
+                break;
         }
 
-        Broadcast(InteractObjectPacket.Remove(entityId));
+        Broadcast(InteractObjectPacket.Remove(interactObject.EntityId));
         return true;
     }
 
