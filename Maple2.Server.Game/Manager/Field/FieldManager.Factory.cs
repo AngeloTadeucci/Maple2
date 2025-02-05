@@ -122,19 +122,12 @@ public partial class FieldManager {
                         continue;
                     }
 
-                    bool hasAdBalloons = false;
-                    foreach (FieldInteract fieldInteract in fieldManager.fieldAdBalloons.Values) {
-                        if (fieldInteract.Object is not InteractBillBoardObject billboard || DateTime.Now.ToEpochSeconds() >= billboard.ExpirationTime) continue;
-                        hasAdBalloons = true;
-                        break;
-                    }
-
-                    if (hasAdBalloons) {
+                    if (fieldManager.fieldAdBalloons.Values
+                        .Any(fieldInteract => fieldInteract.Object is InteractBillBoardObject billboard && DateTime.Now.ToEpochSeconds() < billboard.ExpirationTime)) {
                         logger.Verbose("Field {MapId} {InstanceId} has ad balloons", fieldManager.MapId, fieldManager.InstanceId);
                         fieldManager.fieldEmptySince = null;
                         continue;
                     }
-
                     Model.RoomTimer? roomTimer = fieldManager.RoomTimer;
                     if (roomTimer is null) {
                         if (fieldManager.fieldEmptySince is null) {
