@@ -110,15 +110,11 @@ public sealed class ItemStatsCalculator {
     }
 
     // TODO: These should technically be weighted towards the lower end.
-    /// <summary>
-    ///
-    /// </summary>
     /// <param name="type">Item Type</param>
     /// <param name="itemOptionMetadata">Item's Random Option Metadata</param>
     /// <param name="itemMetadataOption">Item Metadata Option</param>
     /// <param name="option"></param>
     /// <param name="rollMax">Select the highest possible roll and circumvents the randomness</param>
-    /// <returns></returns>
     public bool RandomizeValues(in ItemType type, ItemOption itemOptionMetadata, ItemMetadataOption itemMetadataOption, ref ItemStats.Option option, bool rollMax = false) {
         ItemEquipVariationTable? table = GetVariationTable(type);
         if (table == null) {
@@ -126,7 +122,6 @@ public sealed class ItemStatsCalculator {
         }
 
         foreach (BasicAttribute attribute in option.Basic.Keys) {
-            int index = Random.Shared.Next(2, 18);
             if (table.Values.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
                 int value = GetValue(itemMetadataOption, itemOptionMetadata, attribute, tableValues: values, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((int) (value * option.MultiplyFactor));
@@ -136,7 +131,6 @@ public sealed class ItemStatsCalculator {
             }
         }
         foreach (SpecialAttribute attribute in option.Special.Keys) {
-            int index = Random.Shared.Next(2, 18);
             if (table.SpecialValues.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
                 int value = GetValue(itemMetadataOption, itemOptionMetadata, specialAttribute: attribute, tableValues: values, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
