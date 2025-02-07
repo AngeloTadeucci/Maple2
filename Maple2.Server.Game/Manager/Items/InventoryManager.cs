@@ -200,8 +200,7 @@ public class InventoryManager {
                 add.Transfer?.Bind(session.Player.Value.Character);
             }
 
-            bool stack = !(add.ExpiryTime > 0);
-            IList<(Item, int Added)> result = items.Add(add, stack);
+            IList<(Item, int Added)> result = items.Add(add, stack: true);
             if (result.Count == 0) {
                 session.Send(ItemInventoryPacket.Error(s_err_inventory));
                 return false;
