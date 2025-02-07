@@ -396,6 +396,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadSkillCooldowns();
         Marriage.Load();
 
+        Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
 
@@ -494,6 +495,9 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
+        // Home
+        Player.Value.Home.DecorationRewardTimestamp = 0;
+        Send(CubePacket.DesignRankReward(Player.Value.Home));
     }
 
     public void MigrateToPlanner(PlotMode plotMode) {

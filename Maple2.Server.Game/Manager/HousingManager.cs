@@ -298,11 +298,7 @@ public class HousingManager {
     }
 
     public void InitNewHome(string characterName, ExportedUgcMapMetadata? template) {
-        Home.Indoor.Name = characterName;
-        Home.Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
-        Home.Message = "Thanks for visiting. Come back soon!";
-        Home.DecorationLevel = 1;
-        Home.Passcode = "*****";
+        Home.NewHomeDefaults(characterName);
 
         using GameStorage.Request db = session.GameStorage.Context();
         if (template is null) {
@@ -340,15 +336,143 @@ public class HousingManager {
 
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
+            plotCube.HousingCategory = itemMetadata.Housing.HousingCategory;
             if (plotCube.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
                 plotCube.Interact = new InteractCube(plotCube.Position, functionCubeMetadata);
             }
+
             plotCubes.Add(plotCube);
         }
 
         db.SaveHome(Home);
         db.SavePlotInfo(Home.Indoor);
         db.SaveCubes(Home.Indoor, plotCubes);
+    }
+
+    private readonly Dictionary<HousingCategory, int> decorationGoal = new() {
+        { HousingCategory.Bed, 1 },
+        { HousingCategory.Table, 1 },
+        { HousingCategory.SofasChairs, 2 },
+        { HousingCategory.Storage, 1 },
+        { HousingCategory.WallDecoration, 1 },
+        { HousingCategory.WallTiles, 3 },
+        { HousingCategory.Bathroom, 1 },
+        { HousingCategory.Lighting, 1 },
+        { HousingCategory.Electronics, 1 },
+        { HousingCategory.Fences, 2 },
+        { HousingCategory.NaturalTerrain, 4 },
+    };
+
+    public void InteriorCheckIn(Plot plot) {
+        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
+            .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
+
+        int decorationScore = 0;
+
+        foreach (KeyValuePair<HousingCategory, int> goal in decorationGoal) {
+            if (!decorationCurrent.TryGetValue(goal.Key, out int current)) {
+                continue;
+            }
+
+            if (current < goal.Value) {
+                continue;
+            }
+
+            switch (goal.Key) {
+                case HousingCategory.Bed:
+                case HousingCategory.SofasChairs:
+                case HousingCategory.WallDecoration:
+                case HousingCategory.WallTiles:
+                case HousingCategory.Bathroom:
+                case HousingCategory.Lighting:
+                case HousingCategory.Fences:
+                case HousingCategory.NaturalTerrain:
+                    decorationScore += 100;
+                    break;
+                case HousingCategory.Table:
+                case HousingCategory.Storage:
+                    decorationScore += 50;
+                    break;
+                case HousingCategory.Electronics:
+                    decorationScore += 200;
+                    break;
+                default:
+                    continue;
+            }
+
+        }
+
+        List<int> defaultRewards = [
+            Constant.ChannelChatVoucherId,
+            Constant.ExpBooster100Id,
+            Constant.AssortedBlockChestId,
+        ];
+
+        switch (decorationScore) {
+            case < 300:
+                defaultRewards.Add(Constant.RedHerbId);
+                break;
+            case < 500:
+                defaultRewards.Add(Constant.OrangeHerbId);
+                break;
+            case < 1100:
+                defaultRewards.Add(Constant.WhiteHerbId);
+                defaultRewards.Add(Constant.FreeRotorsWalkieTalkieId);
+                break;
+            default:
+                defaultRewards.Add(Constant.SpecialRedHerbId);
+                defaultRewards.Add(Constant.FreeRotorsWalkieTalkieId);
+                defaultRewards.Add(Constant.WorldChatVouncherId);
+                break;
+        }
+
+        int rewardId = defaultRewards.OrderBy(_ => Random.Shared.Next()).First();
+
+        Item? item = session.Field.ItemDrop.CreateItem(rewardId);
+        if (item == null) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Add(item, true)) {
+            return;
+        }
+
+        if (decorationScore >= 1100) {
+            Item? cubeFragment = session.Field.ItemDrop.CreateItem(Constant.CubeFragmentId);
+            if (cubeFragment == null) {
+                return;
+            }
+
+            if (!session.Item.Inventory.Add(cubeFragment, true)) {
+                return;
+            }
+        }
+
+        Home.GainExp(decorationScore, tableMetadata.MasteryUgcHousingTable.Entries);
+        session.Send(CubePacket.DesignRankReward(Home));
+    }
+
+    public void InteriorReward(byte rewardId) {
+        if (Home.InteriorRewardsClaimed.Contains(rewardId)) {
+            return;
+        }
+
+        tableMetadata.MasteryUgcHousingTable.Entries.TryGetValue(rewardId, out MasteryUgcHousingTable.Entry? reward);
+        if (reward == null) {
+            return;
+        }
+
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(reward.RewardJobItemId);
+        if (rewardItem == null) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Add(rewardItem, true)) {
+            return;
+        }
+
+        Home.InteriorRewardsClaimed.Add(rewardId);
+        session.Send(CubePacket.DesignRankReward(Home));
     }
 
     #region Helpers

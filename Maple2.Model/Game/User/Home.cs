@@ -67,6 +67,14 @@ public class Home : IByteSerializable {
         Blueprints = [];
     }
 
+    public void NewHomeDefaults(string characterName) {
+        Indoor.Name = characterName;
+        Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+        Message = "Thanks for visiting. Come back soon!";
+        DecorationLevel = 1;
+        Passcode = "*****";
+    }
+
     public bool SetArea(int area) {
         if (Area == area) return false;
         Area = (byte) Math.Clamp(area, Constant.MinHomeArea, Constant.MaxHomeArea);
@@ -144,6 +152,20 @@ public class Home : IByteSerializable {
         height++; // add 1 to height to be on top of the block
         height *= VectorExtensions.BLOCK_SIZE;
         return new Vector3(dimension, dimension, height);
+    }
+
+    public void GainExp(long exp, IReadOnlyDictionary<int, MasteryUgcHousingTable.Entry> masteryTable) {
+        if (exp <= 0 || DecorationLevel >= Constant.HomeDecorationMaxLevel) {
+            return;
+        }
+
+        while (masteryTable.TryGetValue((int) DecorationLevel + 1, out MasteryUgcHousingTable.Entry? entry) && DecorationExp + exp >= entry.Exp) {
+            exp -= entry.Exp - DecorationExp;
+            DecorationLevel++;
+        }
+
+        DecorationRewardTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        DecorationExp += exp;
     }
 
     public void WriteTo(IByteWriter writer) {

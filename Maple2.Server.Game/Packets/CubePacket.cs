@@ -369,6 +369,15 @@ public static class CubePacket {
     public static ByteWriter DesignRankReward(Home home) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.DesignRankReward);
+        pWriter.WriteLong(home.AccountId);
+        pWriter.WriteLong(home.DecorationRewardTimestamp);
+        pWriter.WriteLong(home.DecorationLevel);
+        pWriter.WriteLong(home.DecorationExp);
+        pWriter.WriteInt(home.InteriorRewardsClaimed.Count);
+
+        foreach (int rewardId in home.InteriorRewardsClaimed) {
+            pWriter.WriteInt(rewardId);
+        }
 
         return pWriter;
     }

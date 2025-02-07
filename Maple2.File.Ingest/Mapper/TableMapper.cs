@@ -74,6 +74,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
         yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
         yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
+        yield return new TableMetadata { Name = "masteryugchousing.xml", Table = ParseMasteryUgcHousingTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
@@ -1507,6 +1508,17 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 ));
         }
         return new BannerTable(results);
+    }
+
+    private MasteryUgcHousingTable ParseMasteryUgcHousingTable() {
+        var results = new Dictionary<int, MasteryUgcHousingTable.Entry>();
+        foreach ((int id, MasteryUgcHousing ugcHousing) in parser.ParseMasteryUgcHousing()) {
+            results.Add(id, new MasteryUgcHousingTable.Entry(
+                Level: ugcHousing.grade,
+                Exp: ugcHousing.value,
+                RewardJobItemId: ugcHousing.rewardJobItemID));
+        }
+        return new MasteryUgcHousingTable(results);
     }
 
     private WeddingTable ParseWeddingTable() {
