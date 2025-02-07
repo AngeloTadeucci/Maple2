@@ -123,7 +123,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 StaticId: data.option.@static,
                 StaticType: data.option.staticMakeType,
                 RandomId: data.option.random,
-                RandomType: data.option.randomMakeType,
+                RandomType: (RandomMakeType) data.option.randomMakeType,
                 ConstantId: data.option.constant,
                 ConstantType: data.option.constantMakeType,
                 LevelFactor: levelFactor,

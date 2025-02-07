@@ -460,10 +460,10 @@ public class TableMapper : TypeMapper<TableMetadata> {
     }
 
     private ItemVariationTable ParseItemVariation() {
-        var values = new Dictionary<BasicAttribute, ItemVariationTable.Range<int>>();
-        var rates = new Dictionary<BasicAttribute, ItemVariationTable.Range<float>>();
-        var specialValues = new Dictionary<SpecialAttribute, ItemVariationTable.Range<int>>();
-        var specialRates = new Dictionary<SpecialAttribute, ItemVariationTable.Range<float>>();
+        var values = new Dictionary<BasicAttribute, List<ItemVariationTable.Range<int>>>();
+        var rates = new Dictionary<BasicAttribute, List<ItemVariationTable.Range<float>>>();
+        var specialValues = new Dictionary<SpecialAttribute, List<ItemVariationTable.Range<int>>>();
+        var specialRates = new Dictionary<SpecialAttribute, List<ItemVariationTable.Range<float>>>();
         foreach (ItemOptionVariation.Option option in optionParser.ParseVariation()) {
             string name = option.OptionName;
             if (name.StartsWith("sid")) continue; // Don't know what stat this maps to.
@@ -472,11 +472,19 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 var variation = new ItemVariationTable.Range<int>(
                     Min: option.OptionValueMin,
                     Max: option.OptionValueMax,
-                    Interval: option.OptionValueVariation);
+                    Variation: option.OptionValueVariation);
                 try {
-                    values[name.ToBasicAttribute()] = variation;
+                    if (values.ContainsKey(name.ToBasicAttribute())) {
+                        values[name.ToBasicAttribute()].Add(variation);
+                    } else {
+                        values.Add(name.ToBasicAttribute(), [variation]);
+                    }
                 } catch (ArgumentOutOfRangeException) {
-                    specialValues[name.ToSpecialAttribute()] = variation;
+                    if (specialValues.ContainsKey(name.ToSpecialAttribute())) {
+                        specialValues[name.ToSpecialAttribute()].Add(variation);
+                    } else {
+                        specialValues.Add(name.ToSpecialAttribute(), [variation]);
+                    }
                 }
             } else if (option.OptionRateVariation != 0) {
                 if (name.EndsWith("_rate")) {
@@ -486,30 +494,45 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 var variation = new ItemVariationTable.Range<float>(
                     Min: option.OptionRateMin,
                     Max: option.OptionRateMax,
-                    Interval: option.OptionRateVariation);
+                    Variation: option.OptionRateVariation);
                 try {
-                    rates[name.ToBasicAttribute()] = variation;
+                    if (rates.ContainsKey(name.ToBasicAttribute())) {
+                        rates[name.ToBasicAttribute()].Add(variation);
+                    } else {
+                        rates.Add(name.ToBasicAttribute(), [variation]);
+                    }
                 } catch (ArgumentOutOfRangeException) {
-                    specialRates[name.ToSpecialAttribute()] = variation;
+                    if (specialRates.ContainsKey(name.ToSpecialAttribute())) {
+                        specialRates[name.ToSpecialAttribute()].Add(variation);
+                    } else {
+                        specialRates.Add(name.ToSpecialAttribute(), [variation]);
+                    }
                 }
             }
         }
 
-        return new ItemVariationTable(values, rates, specialValues, specialRates);
+        Dictionary<BasicAttribute, ItemVariationTable.Range<int>[]> valuesArray = values.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<BasicAttribute, ItemVariationTable.Range<float>[]> ratesArray = rates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<SpecialAttribute, ItemVariationTable.Range<int>[]> specialValuesArray = specialValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<SpecialAttribute, ItemVariationTable.Range<float>[]> specialRatesArray = specialRates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+
+        return new ItemVariationTable(valuesArray, ratesArray, specialValuesArray, specialRatesArray);
     }
 
     private IEnumerable<(string Type, ItemEquipVariationTable Table)> ParseItemEquipVariation() {
         foreach ((string type, List<ItemOptionVariationEquip.Option> options) in optionParser.ParseVariationEquip()) {
-            var values = new Dictionary<BasicAttribute, int[]>();
-            var rates = new Dictionary<BasicAttribute, float[]>();
-            var specialValues = new Dictionary<SpecialAttribute, int[]>();
-            var specialRates = new Dictionary<SpecialAttribute, float[]>();
+            var values = new Dictionary<BasicAttribute, ItemEquipVariationTable.Set<int>[]>();
+            var rates = new Dictionary<BasicAttribute, ItemEquipVariationTable.Set<float>[]>();
+            var specialValues = new Dictionary<SpecialAttribute, ItemEquipVariationTable.Set<int>[]>();
+            var specialRates = new Dictionary<SpecialAttribute, ItemEquipVariationTable.Set<float>[]>();
             foreach (ItemOptionVariationEquip.Option option in options) {
                 string name = option.name.ToLower();
                 if (name.EndsWith("value")) {
-                    int[] entries = new int[18];
+                    var entries = new ItemEquipVariationTable.Set<int>[18];
                     for (int i = 0; i < 18; i++) {
-                        entries[i] = (int) option[i];
+                        entries[i] = new ItemEquipVariationTable.Set<int>(
+                            Value: (int) option[i],
+                            Weight: 1); // TODO: Weight
                     }
 
                     name = name[..^"value".Length]; // Remove suffix
@@ -520,9 +543,11 @@ public class TableMapper : TypeMapper<TableMetadata> {
                     }
 
                 } else if (name.EndsWith("rate")) {
-                    float[] entries = new float[18];
+                    var entries = new ItemEquipVariationTable.Set<float>[18];
                     for (int i = 0; i < 18; i++) {
-                        entries[i] = option[i];
+                        entries[i] = new ItemEquipVariationTable.Set<float>(
+                            Value: option[i],
+                            Weight: 1); // TODO: Weight
                     }
 
                     name = name[..^"rate".Length]; // Remove suffix

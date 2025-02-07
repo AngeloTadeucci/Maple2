@@ -6,6 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Tools.Extensions;
 using Maple2.Server.Core.Formulas;
+using Maple2.Tools;
 using Serilog;
 
 namespace Maple2.Server.Game.Util;
@@ -35,8 +36,10 @@ public sealed class ItemStatsCalculator {
             stats[ItemStats.Type.Static] = staticOption;
         }
 
-        if (GetRandomOption(item, out ItemStats.Option? option)) {
-            RandomizeValues(item.Type, ref option, rollMax);
+
+        if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
+            ItemStats.Option option = GetRandomOption(itemOption);
+            RandomizeValues(item.Type, itemOption, item.Metadata.Option, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
 
@@ -77,11 +80,12 @@ public sealed class ItemStatsCalculator {
         }
 
         // Get some random options
-        if (!GetRandomOption(item, out ItemStats.Option? randomOption, option.Count, presets)) {
+        if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             return false;
         }
+        ItemStats.Option randomOption = GetRandomOption(itemOption, option.Count, presets);
 
-        if (!RandomizeValues(item.Type, ref randomOption)) {
+        if (!RandomizeValues(item.Type, itemOption, item.Metadata.Option, ref randomOption)) {
             return false;
         }
 
@@ -106,34 +110,132 @@ public sealed class ItemStatsCalculator {
     }
 
     // TODO: These should technically be weighted towards the lower end.
-    public bool RandomizeValues(in ItemType type, ref ItemStats.Option option, bool rollMax = false) {
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="type">Item Type</param>
+    /// <param name="itemOptionMetadata">Item's Random Option Metadata</param>
+    /// <param name="itemMetadataOption">Item Metadata Option</param>
+    /// <param name="option"></param>
+    /// <param name="rollMax">Select the highest possible roll and circumvents the randomness</param>
+    /// <returns></returns>
+    public bool RandomizeValues(in ItemType type, ItemOption itemOptionMetadata, ItemMetadataOption itemMetadataOption, ref ItemStats.Option option, bool rollMax = false) {
         ItemEquipVariationTable? table = GetVariationTable(type);
         if (table == null) {
             return false;
         }
 
         foreach (BasicAttribute attribute in option.Basic.Keys) {
-            int index = rollMax ? 17 : Random.Shared.Next(2, 18);
-            if (table.Values.TryGetValue(attribute, out int[]? values)) {
-                int value = values.ElementAtOrDefault(index);
+            int index = Random.Shared.Next(2, 18);
+            if (table.Values.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
+                int value = GetValue(itemMetadataOption, itemOptionMetadata, attribute, tableValues: values, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((int) (value * option.MultiplyFactor));
-            } else if (table.Rates.TryGetValue(attribute, out float[]? rates)) {
-                float rate = rates.ElementAtOrDefault(index);
-                option.Basic[attribute] = new BasicOption(rate * option.MultiplyFactor);
+            } else if (table.Rates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
+                int rateInt = GetValue(itemMetadataOption, itemOptionMetadata, attribute, tableRates: rates, rollMax: rollMax);
+                option.Basic[attribute] = new BasicOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
         foreach (SpecialAttribute attribute in option.Special.Keys) {
-            int index = rollMax ? 17 : Random.Shared.Next(2, 18);
-            if (table.SpecialValues.TryGetValue(attribute, out int[]? values)) {
-                int value = values.ElementAtOrDefault(index);
+            int index = Random.Shared.Next(2, 18);
+            if (table.SpecialValues.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
+                int value = GetValue(itemMetadataOption, itemOptionMetadata, specialAttribute: attribute, tableValues: values, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
-            } else if (table.SpecialRates.TryGetValue(attribute, out float[]? rates)) {
-                float rate = rates.ElementAtOrDefault(index);
-                option.Special[attribute] = new SpecialOption(rate * option.MultiplyFactor);
+            } else if (table.SpecialRates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
+                int rateInt = GetValue(itemMetadataOption, itemOptionMetadata, specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
+                option.Special[attribute] = new SpecialOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
 
         return true;
+
+        int GetValue(ItemMetadataOption itemMetadataOption, ItemOption itemOptionMetadata, BasicAttribute? attribute = null, SpecialAttribute? specialAttribute = null, ItemEquipVariationTable.Set<int>[]? tableValues = null, ItemEquipVariationTable.Set<float>[]? tableRates = null, bool rollMax = false) {
+            switch (itemMetadataOption.RandomType) {
+                case RandomMakeType.Range:
+                    var weightedValues = new WeightedSet<int>();
+                    var weightedRates = new WeightedSet<float>();
+                    switch (itemMetadataOption.LevelFactor) {
+                        case < 50:
+                            if (rollMax) {
+                                if (tableValues != null) {
+                                    return tableValues[2].Value;
+                                }
+                                if (tableRates != null) {
+                                    return (int) (tableRates[2].Value * 1000);
+                                }
+                            }
+                            // only gets values from idx 0 to 2
+                            for (int i = 0; i < 3; i++) {
+                                if (tableValues != null) {
+                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                } else if (tableRates != null) {
+                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                }
+                            }
+                            break;
+                        case < 70:
+                            if (rollMax) {
+                                if (tableValues != null) {
+                                    return tableValues[9].Value;
+                                }
+                                if (tableRates != null) {
+                                    return (int) (tableRates[9].Value * 1000);
+                                }
+                            }
+                            // only gets values from idx 2 to 9
+                            for (int i = 2; i < 10; i++) {
+                                if (tableValues != null) {
+                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                } else if (tableRates != null) {
+                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                }
+                            }
+                            break;
+                        case >= 70:
+                            if (rollMax) {
+                                if (tableValues != null) {
+                                    return tableValues[17].Value;
+                                }
+                                if (tableRates != null) {
+                                    return (int) (tableRates[17].Value * 1000);
+                                }
+                            }
+                            // only gets values from idx 10 to 17
+                            for (int i = 10; i < 18; i++) {
+                                if (tableValues != null) {
+                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                } else if (tableRates != null) {
+                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                }
+                            }
+                            break;
+                        }
+                    if (tableValues != null) {
+                        return weightedValues.Get();
+                    }
+                    if (tableRates != null) {
+                        return (int) (weightedRates.Get() * 1000);
+                    }
+                    break;
+                case RandomMakeType.Base:
+                default:
+                    float minRate = 0;
+                    int minValue = 0;
+                    if (attribute != null) {
+                        ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.BasicAttribute == attribute);
+                        minRate = entry.Rates?.Min ?? 0;
+                        minValue = entry.Values?.Min ?? 0;
+                        return GetItemVariationValue(basicAttribute: attribute, value: minValue, rate: minRate);
+                    }
+                    if (specialAttribute != null) {
+                        ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.SpecialAttribute == specialAttribute);
+                        minRate = entry.Rates?.Min ?? 0;
+                        minValue = entry.Values?.Min ?? 0;
+                        return GetItemVariationValue(specialAttribute: specialAttribute, value: minValue, rate: minRate);
+                    }
+                    break;
+            }
+            return 0;
+        }
     }
 
     // Used to calculate the default constant attributes for a given item.
@@ -194,19 +296,8 @@ public sealed class ItemStatsCalculator {
     }
 
     // Used to calculate the default random attributes for a given item.
-    private bool GetRandomOption(Item item, [NotNullWhen(true)] out ItemStats.Option? option, int count = -1, params LockOption[] presets) {
-        if (item.Metadata.Option == null) {
-            option = null;
-            return false;
-        }
-
-        if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
-            option = RandomItemOption(itemOption, count, presets);
-            return true;
-        }
-
-        option = null;
-        return false;
+    private ItemStats.Option GetRandomOption(ItemOption itemOption, int count = -1, params LockOption[] presets) {
+        return RandomItemOption(itemOption, count, presets);
     }
 
     private ItemEquipVariationTable? GetVariationTable(in ItemType type) {
@@ -224,6 +315,44 @@ public sealed class ItemStatsCalculator {
         }
 
         return null;
+    }
+
+    /// <returns>If the expected value is a rate, it will be multiplied by 1000. Conversion needs to be done afterward.</returns>
+    private int GetItemVariationValue(BasicAttribute? basicAttribute = null, SpecialAttribute? specialAttribute = null, int value = 0, float rate = 0) {
+        if (basicAttribute != null) {
+            if (TableMetadata.ItemVariationTable.Values.TryGetValue(basicAttribute.Value, out ItemVariationTable.Range<int>[]? values)) {
+                foreach (ItemVariationTable.Range<int> range in values) {
+                    if (value >= range.Min && value <= range.Max) {
+                        return Random.Shared.Next(value, value + range.Variation + 1);
+                    }
+                }
+            } else if (TableMetadata.ItemVariationTable.Rates.TryGetValue(basicAttribute.Value, out ItemVariationTable.Range<float>[]? rates)) {
+                foreach (ItemVariationTable.Range<float> range in rates) {
+                    if (rate >= range.Min && rate <= range.Max) {
+                        int convertedVariation = (int) range.Variation * 1000;
+                        int convertedRate = (int) rate * 1000;
+                        return Random.Shared.Next(convertedRate, convertedRate + convertedVariation + 1);
+                    }
+                }
+            }
+        } else if (specialAttribute != null) {
+            if (TableMetadata.ItemVariationTable.SpecialValues.TryGetValue(specialAttribute.Value, out ItemVariationTable.Range<int>[]? values)) {
+                foreach (ItemVariationTable.Range<int> range in values) {
+                    if (value >= range.Min && value <= range.Max) {
+                        return Random.Shared.Next(value, value + range.Variation + 1);
+                    }
+                }
+            } else if (TableMetadata.ItemVariationTable.SpecialRates.TryGetValue(specialAttribute.Value, out ItemVariationTable.Range<float>[]? rates)) {
+                foreach (ItemVariationTable.Range<float> range in rates) {
+                    if (rate >= range.Min && rate <= range.Max) {
+                        int convertedVariation = (int) range.Variation * 1000;
+                        int convertedRate = (int) rate * 1000;
+                        return Random.Shared.Next(convertedRate, convertedRate + convertedVariation + 1);
+                    }
+                }
+            }
+        }
+        return 0;
     }
 
     private static ItemStats.Option ConstantItemOption(ItemOptionConstant option) {
