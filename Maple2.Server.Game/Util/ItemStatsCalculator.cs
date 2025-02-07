@@ -208,7 +208,7 @@ public sealed class ItemStatsCalculator {
                                 }
                             }
                             break;
-                        }
+                    }
                     if (tableValues != null) {
                         return weightedValues.Get();
                     }
