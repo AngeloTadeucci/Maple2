@@ -193,88 +193,88 @@ public sealed class ItemStatsCalculator {
                 }
             } else {
                 switch (item.Metadata.Option!.RandomType) {
-                case RandomMakeType.Range:
-                    switch (item.Metadata.Option.LevelFactor) {
-                        case < 50:
-                            if (rollMax) {
-                                if (tableValues != null) {
-                                    return tableValues[2].Value;
+                    case RandomMakeType.Range:
+                        switch (item.Metadata.Option.LevelFactor) {
+                            case < 50:
+                                if (rollMax) {
+                                    if (tableValues != null) {
+                                        return tableValues[2].Value;
+                                    }
+                                    if (tableRates != null) {
+                                        return (int) (tableRates[2].Value * 1000);
+                                    }
                                 }
-                                if (tableRates != null) {
-                                    return (int) (tableRates[2].Value * 1000);
+                                // only gets values from idx 0 to 2
+                                for (int i = 0; i < 3; i++) {
+                                    if (tableValues != null) {
+                                        weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                    } else if (tableRates != null) {
+                                        weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                    }
                                 }
-                            }
-                            // only gets values from idx 0 to 2
-                            for (int i = 0; i < 3; i++) {
-                                if (tableValues != null) {
-                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
-                                } else if (tableRates != null) {
-                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                break;
+                            case < 70:
+                                if (rollMax) {
+                                    if (tableValues != null) {
+                                        return tableValues[9].Value;
+                                    }
+                                    if (tableRates != null) {
+                                        return (int) (tableRates[9].Value * 1000);
+                                    }
                                 }
-                            }
-                            break;
-                        case < 70:
-                            if (rollMax) {
-                                if (tableValues != null) {
-                                    return tableValues[9].Value;
+                                // only gets values from idx 2 to 9
+                                for (int i = 2; i < 10; i++) {
+                                    if (tableValues != null) {
+                                        weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                    } else if (tableRates != null) {
+                                        weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                    }
                                 }
-                                if (tableRates != null) {
-                                    return (int) (tableRates[9].Value * 1000);
+                                break;
+                            case >= 70:
+                                if (rollMax) {
+                                    if (tableValues != null) {
+                                        return tableValues[17].Value;
+                                    }
+                                    if (tableRates != null) {
+                                        return (int) (tableRates[17].Value * 1000);
+                                    }
                                 }
-                            }
-                            // only gets values from idx 2 to 9
-                            for (int i = 2; i < 10; i++) {
-                                if (tableValues != null) {
-                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
-                                } else if (tableRates != null) {
-                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                // only gets values from idx 10 to 17
+                                for (int i = 10; i < 18; i++) {
+                                    if (tableValues != null) {
+                                        weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                                    } else if (tableRates != null) {
+                                        weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                                    }
                                 }
-                            }
-                            break;
-                        case >= 70:
-                            if (rollMax) {
-                                if (tableValues != null) {
-                                    return tableValues[17].Value;
-                                }
-                                if (tableRates != null) {
-                                    return (int) (tableRates[17].Value * 1000);
-                                }
-                            }
-                            // only gets values from idx 10 to 17
-                            for (int i = 10; i < 18; i++) {
-                                if (tableValues != null) {
-                                    weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
-                                } else if (tableRates != null) {
-                                    weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
-                                }
-                            }
-                            break;
-                    }
-                    if (tableValues != null) {
-                        return weightedValues.Get();
-                    }
-                    if (tableRates != null) {
-                        return (int) (weightedRates.Get() * 1000);
-                    }
-                    break;
-                case RandomMakeType.Base:
-                default:
-                    float minRate = 0;
-                    int minValue = 0;
-                    if (attribute != null) {
-                        ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.BasicAttribute == attribute);
-                        minRate = entry.Rates?.Min ?? 0;
-                        minValue = entry.Values?.Min ?? 0;
-                        return GetItemVariationValue(basicAttribute: attribute, value: minValue, rate: minRate);
-                    }
-                    if (specialAttribute != null) {
-                        ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.SpecialAttribute == specialAttribute);
-                        minRate = entry.Rates?.Min ?? 0;
-                        minValue = entry.Values?.Min ?? 0;
-                        return GetItemVariationValue(specialAttribute: specialAttribute, value: minValue, rate: minRate);
-                    }
-                    break;
-            }
+                                break;
+                        }
+                        if (tableValues != null) {
+                            return weightedValues.Get();
+                        }
+                        if (tableRates != null) {
+                            return (int) (weightedRates.Get() * 1000);
+                        }
+                        break;
+                    case RandomMakeType.Base:
+                    default:
+                        float minRate = 0;
+                        int minValue = 0;
+                        if (attribute != null) {
+                            ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.BasicAttribute == attribute);
+                            minRate = entry.Rates?.Min ?? 0;
+                            minValue = entry.Values?.Min ?? 0;
+                            return GetItemVariationValue(basicAttribute: attribute, value: minValue, rate: minRate);
+                        }
+                        if (specialAttribute != null) {
+                            ItemOption.Entry entry = itemOptionMetadata.Entries.FirstOrDefault(optionEntry => optionEntry.SpecialAttribute == specialAttribute);
+                            minRate = entry.Rates?.Min ?? 0;
+                            minValue = entry.Values?.Min ?? 0;
+                            return GetItemVariationValue(specialAttribute: specialAttribute, value: minValue, rate: minRate);
+                        }
+                        break;
+                }
             }
 
             return 0;
