@@ -117,7 +117,7 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
             }
 
             ItemStats.Option changeOption = changeItem.Stats[ItemStats.Type.Random];
-            if (!ItemStatsCalc.RandomizeValues(changeItem.Type, itemOptionMetadata, changeItem.Metadata.Option, ref changeOption)) {
+            if (!ItemStatsCalc.RandomizeValues(changeItem, itemOptionMetadata, ref changeOption)) {
                 session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_remake));
                 return;
             }

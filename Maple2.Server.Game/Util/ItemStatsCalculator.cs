@@ -39,7 +39,7 @@ public sealed class ItemStatsCalculator {
 
         if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             ItemStats.Option option = GetRandomOption(itemOption);
-            RandomizeValues(item.Type, itemOption, item.Metadata.Option, ref option, rollMax);
+            RandomizeValues(item, itemOption, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
 
@@ -85,7 +85,7 @@ public sealed class ItemStatsCalculator {
         }
         ItemStats.Option randomOption = GetRandomOption(itemOption, option.Count, presets);
 
-        if (!RandomizeValues(item.Type, itemOption, item.Metadata.Option, ref randomOption)) {
+        if (!RandomizeValues(item, itemOption, ref randomOption)) {
             return false;
         }
 
@@ -109,45 +109,92 @@ public sealed class ItemStatsCalculator {
         return true;
     }
 
-    // TODO: These should technically be weighted towards the lower end.
-    /// <param name="type">Item Type</param>
+    /// <param name="item">Item</param>
     /// <param name="itemOptionMetadata">Item's Random Option Metadata</param>
-    /// <param name="itemMetadataOption">Item Metadata Option</param>
     /// <param name="option"></param>
     /// <param name="rollMax">Select the highest possible roll and circumvents the randomness</param>
-    public bool RandomizeValues(in ItemType type, ItemOption itemOptionMetadata, ItemMetadataOption itemMetadataOption, ref ItemStats.Option option, bool rollMax = false) {
-        ItemEquipVariationTable? table = GetVariationTable(type);
+    public bool RandomizeValues(Item item, ItemOption itemOptionMetadata, ref ItemStats.Option option, bool rollMax = false) {
+        if (item.Metadata.Option == null) {
+            return false;
+        }
+        ItemEquipVariationTable? table = GetVariationTable(item.Type);
         if (table == null) {
             return false;
         }
 
         foreach (BasicAttribute attribute in option.Basic.Keys) {
             if (table.Values.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
-                int value = GetValue(itemMetadataOption, itemOptionMetadata, attribute, tableValues: values, rollMax: rollMax);
+                int value = GetValue(item, itemOptionMetadata, attribute, tableValues: values, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((int) (value * option.MultiplyFactor));
             } else if (table.Rates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
-                int rateInt = GetValue(itemMetadataOption, itemOptionMetadata, attribute, tableRates: rates, rollMax: rollMax);
+                int rateInt = GetValue(item, itemOptionMetadata, attribute, tableRates: rates, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
         foreach (SpecialAttribute attribute in option.Special.Keys) {
             if (table.SpecialValues.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
-                int value = GetValue(itemMetadataOption, itemOptionMetadata, specialAttribute: attribute, tableValues: values, rollMax: rollMax);
+                int value = GetValue(item, itemOptionMetadata, specialAttribute: attribute, tableValues: values, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
             } else if (table.SpecialRates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
-                int rateInt = GetValue(itemMetadataOption, itemOptionMetadata, specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
+                int rateInt = GetValue(item, itemOptionMetadata, specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
 
         return true;
 
-        int GetValue(ItemMetadataOption itemMetadataOption, ItemOption itemOptionMetadata, BasicAttribute? attribute = null, SpecialAttribute? specialAttribute = null, ItemEquipVariationTable.Set<int>[]? tableValues = null, ItemEquipVariationTable.Set<float>[]? tableRates = null, bool rollMax = false) {
-            switch (itemMetadataOption.RandomType) {
+        int GetValue(Item item, ItemOption itemOptionMetadata, BasicAttribute? attribute = null, SpecialAttribute? specialAttribute = null, ItemEquipVariationTable.Set<int>[]? tableValues = null, ItemEquipVariationTable.Set<float>[]? tableRates = null, bool rollMax = false) {
+            var weightedValues = new WeightedSet<int>();
+            var weightedRates = new WeightedSet<float>();
+            if (item.Type.IsPet) {
+                switch (item.Rarity) {
+                    case < 3:
+                        if (rollMax) {
+                            if (tableValues != null) {
+                                return tableValues[4].Value;
+                            }
+                            if (tableRates != null) {
+                                return (int) (tableRates[4].Value * 1000);
+                            }
+                        }
+                        // only gets values from idx 0 to 4
+                        for (int i = 0; i < 5; i++) {
+                            if (tableValues != null) {
+                                weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                            } else if (tableRates != null) {
+                                weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                            }
+                        }
+                        break;
+                    default:
+                        if (rollMax) {
+                            if (tableValues != null) {
+                                return tableValues[17].Value;
+                            }
+                            if (tableRates != null) {
+                                return (int) (tableRates[17].Value * 1000);
+                            }
+                        }
+                        // only gets values from idx 0 to 17 (entire array)
+                        for (int i = 0; i < 18; i++) {
+                            if (tableValues != null) {
+                                weightedValues.Add(tableValues[i].Value, tableValues[i].Weight);
+                            } else if (tableRates != null) {
+                                weightedRates.Add(tableRates[i].Value, tableRates[i].Weight);
+                            }
+                        }
+                        break;
+                }
+                if (tableValues != null) {
+                    return weightedValues.Get();
+                }
+                if (tableRates != null) {
+                    return (int) (weightedRates.Get() * 1000);
+                }
+            } else {
+                switch (item.Metadata.Option!.RandomType) {
                 case RandomMakeType.Range:
-                    var weightedValues = new WeightedSet<int>();
-                    var weightedRates = new WeightedSet<float>();
-                    switch (itemMetadataOption.LevelFactor) {
+                    switch (item.Metadata.Option.LevelFactor) {
                         case < 50:
                             if (rollMax) {
                                 if (tableValues != null) {
@@ -228,6 +275,8 @@ public sealed class ItemStatsCalculator {
                     }
                     break;
             }
+            }
+
             return 0;
         }
     }
