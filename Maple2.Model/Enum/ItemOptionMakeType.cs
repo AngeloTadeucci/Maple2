@@ -1,4 +1,4 @@
-﻿namespace Maple2.Model.Enum;
+namespace Maple2.Model.Enum;
 
 public enum ItemOptionMakeType {
     Base = 0, // uses itemoptionvariation table
