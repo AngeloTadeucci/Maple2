@@ -91,7 +91,7 @@ public record ItemMetadataOption(
     int StaticId,
     int StaticType,
     int RandomId,
-    int RandomType,
+    RandomMakeType RandomType,
     int ConstantId,
     int ConstantType,
     int LevelFactor,
