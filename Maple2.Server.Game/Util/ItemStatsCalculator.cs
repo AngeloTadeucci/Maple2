@@ -21,6 +21,11 @@ public sealed class ItemStatsCalculator {
 
     private const float OFFENSE_LINE_MAX_THRESHOLD = 0.5f; // 50% threshold for offense lines
     private static readonly IList<BasicAttribute> offenseBasicAttributes = [
+        BasicAttribute.Strength,
+        BasicAttribute.Dexterity,
+        BasicAttribute.Intelligence,
+        BasicAttribute.Luck,
+        BasicAttribute.Accuracy,
         BasicAttribute.AttackSpeed,
         BasicAttribute.CriticalRate,
         BasicAttribute.CriticalDamage,
@@ -70,6 +75,14 @@ public sealed class ItemStatsCalculator {
         SpecialAttribute.DarkStreamDamage,
         SpecialAttribute.MaxWeaponAttack,
         SpecialAttribute.ChaosRaidAttack,
+    ];
+    private static readonly IList<SpecialAttribute> elementalDamageAttributes = [
+        SpecialAttribute.IceDamage,
+        SpecialAttribute.FireDamage,
+        SpecialAttribute.DarkDamage,
+        SpecialAttribute.HolyDamage,
+        SpecialAttribute.PoisonDamage,
+        SpecialAttribute.ElectricDamage,
     ];
 
     public ItemStats? GetStats(Item item, bool rollMax = false) {
@@ -496,8 +509,7 @@ public sealed class ItemStatsCalculator {
         while (statResult.Count + specialResult.Count < total) {
             ItemOption.Entry entry = option.Entries.Random();
             if (statsType == ItemStats.Type.Random &&
-                itemType.IsArmor && // Only check armor
-                !IsValidStat(total, statResult, specialResult, entry)) {
+                !IsValidStat(itemType, total, statResult, specialResult, entry)) {
                 continue;
             }
             if (!AddResult(entry, statResult, specialResult)) {
@@ -545,17 +557,29 @@ public sealed class ItemStatsCalculator {
     /// Verifies if the new attribute being added meets the offense line threshold.
     /// </summary>
     /// <returns></returns>
-    private static bool IsValidStat(int statLineCount, IDictionary<BasicAttribute, BasicOption> statDict, IDictionary<SpecialAttribute, SpecialOption> specialDict, ItemOption.Entry entry) {
-        int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
-        offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
-
-        if (entry.BasicAttribute != null && offenseBasicAttributes.Contains((BasicAttribute) entry.BasicAttribute)) {
-            offenseStatCount++;
-        } else if (entry.SpecialAttribute != null && offenseSpecialAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
-            offenseStatCount++;
+    private static bool IsValidStat(ItemType itemType, int statLineCount, IDictionary<BasicAttribute, BasicOption> statDict, IDictionary<SpecialAttribute, SpecialOption> specialDict, ItemOption.Entry entry) {
+        if (itemType.IsAccessory) {
+            int currentElementalStats = specialDict.Keys.Count(stat => elementalDamageAttributes.Contains(stat));
+            if (entry.SpecialAttribute != null && elementalDamageAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
+                currentElementalStats++;
+            }
+            return currentElementalStats < 2;
         }
 
-        return (float) offenseStatCount / statLineCount < OFFENSE_LINE_MAX_THRESHOLD;
+        if (itemType.IsArmor) {
+            int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
+            offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
+
+            if (entry.BasicAttribute != null && offenseBasicAttributes.Contains((BasicAttribute) entry.BasicAttribute)) {
+                offenseStatCount++;
+            } else if (entry.SpecialAttribute != null && offenseSpecialAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
+                offenseStatCount++;
+            }
+
+            return (float) offenseStatCount / statLineCount < OFFENSE_LINE_MAX_THRESHOLD;
+        }
+
+        return true;
     }
 
     private int ConstValue(BasicAttribute attribute, int statValue, int deviation, int type, int job, int levelFactor, int rarity, ushort level) {
