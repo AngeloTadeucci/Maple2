@@ -576,7 +576,7 @@ public sealed class ItemStatsCalculator {
                 offenseStatCount++;
             }
 
-            return (float) offenseStatCount / statLineCount < OFFENSE_LINE_MAX_THRESHOLD;
+            return (float) offenseStatCount / statLineCount <= OFFENSE_LINE_MAX_THRESHOLD;
         }
 
         return true;
