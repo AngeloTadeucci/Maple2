@@ -573,7 +573,7 @@ public sealed class ItemStatsCalculator {
             return damageTypeStatCount < 1;
         }
 
-        if (!itemType.IsCombatPet || !itemType.IsWeapon || !itemType.IsAccessory) {
+        if (itemType is { IsCombatPet: false, IsWeapon: false, IsAccessory: false }) {
             int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
             offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
 
