@@ -127,11 +127,9 @@ public class ItemDropManager {
     }
 
     private IEnumerable<Item> GetSelectedIndividualDropBoxItem(GameSession session, IEnumerable<IndividualDropItemTable.Item> itemEntries, int index) {
-        ICollection<Item> items = new List<Item>();
-
         IndividualDropItemTable.Item? selectedItem = itemEntries.ElementAtOrDefault(index);
         if (selectedItem == null) {
-            return items;
+            return new List<Item>();
         }
 
         // assuming selectedBoxes skip requirements otherwise they wouldn't have seen the item in the item selection.
