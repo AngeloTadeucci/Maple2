@@ -76,13 +76,22 @@ public sealed class ItemStatsCalculator {
         SpecialAttribute.MaxWeaponAttack,
         SpecialAttribute.ChaosRaidAttack,
     ];
-    private static readonly IList<SpecialAttribute> elementalDamageAttributes = [
+    private static readonly IList<SpecialAttribute> damageTypeAttributes = [
         SpecialAttribute.IceDamage,
         SpecialAttribute.FireDamage,
         SpecialAttribute.DarkDamage,
         SpecialAttribute.HolyDamage,
         SpecialAttribute.PoisonDamage,
         SpecialAttribute.ElectricDamage,
+        SpecialAttribute.MeleeDamage,
+        SpecialAttribute.RangedDamage,
+        SpecialAttribute.BossNpcDamage,
+        SpecialAttribute.NormalNpcDamage,
+        SpecialAttribute.LeaderNpcDamage,
+        SpecialAttribute.EliteNpcDamage,
+        SpecialAttribute.TotalDamage,
+        SpecialAttribute.PvpDamage,
+        SpecialAttribute.DarkStreamDamage,
     ];
 
     public ItemStats? GetStats(Item item, bool rollMax = false) {
@@ -558,15 +567,13 @@ public sealed class ItemStatsCalculator {
     /// </summary>
     /// <returns></returns>
     private static bool IsValidStat(ItemType itemType, int statLineCount, IDictionary<BasicAttribute, BasicOption> statDict, IDictionary<SpecialAttribute, SpecialOption> specialDict, ItemOption.Entry entry) {
-        if (itemType.IsAccessory) {
-            int currentElementalStats = specialDict.Keys.Count(stat => elementalDamageAttributes.Contains(stat));
-            if (entry.SpecialAttribute != null && elementalDamageAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
-                currentElementalStats++;
-            }
-            return currentElementalStats < 2;
+        int damageTypeStatCount = specialDict.Keys.Count(stat => damageTypeAttributes.Contains(stat));
+        if (entry.SpecialAttribute != null && damageTypeAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
+            // cannot have more than 1 damage type attribute
+            return damageTypeStatCount < 1;
         }
 
-        if (itemType.IsArmor) {
+        if (!itemType.IsCombatPet || !itemType.IsWeapon || !itemType.IsAccessory) {
             int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
             offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
 
