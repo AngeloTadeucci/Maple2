@@ -19,6 +19,81 @@ public sealed class ItemStatsCalculator {
     // ReSharper restore All
     #endregion
 
+    private const float OFFENSE_LINE_MAX_THRESHOLD = 0.5f; // 50% threshold for offense lines
+    private static readonly IList<BasicAttribute> offenseBasicAttributes = [
+        BasicAttribute.Strength,
+        BasicAttribute.Dexterity,
+        BasicAttribute.Intelligence,
+        BasicAttribute.Luck,
+        BasicAttribute.Accuracy,
+        BasicAttribute.AttackSpeed,
+        BasicAttribute.CriticalRate,
+        BasicAttribute.CriticalDamage,
+        BasicAttribute.PhysicalAtk,
+        BasicAttribute.MagicalAtk,
+        BasicAttribute.MinWeaponAtk,
+        BasicAttribute.MaxWeaponAtk,
+        BasicAttribute.Damage,
+        BasicAttribute.Piercing,
+        BasicAttribute.BonusAtk,
+        BasicAttribute.PetBonusAtk,
+    ];
+    private static readonly IList<SpecialAttribute> offenseSpecialAttributes = [
+        SpecialAttribute.TotalDamage,
+        SpecialAttribute.CriticalDamage,
+        SpecialAttribute.NormalNpcDamage,
+        SpecialAttribute.LeaderNpcDamage,
+        SpecialAttribute.EliteNpcDamage,
+        SpecialAttribute.BossNpcDamage,
+        SpecialAttribute.IceDamage,
+        SpecialAttribute.FireDamage,
+        SpecialAttribute.DarkDamage,
+        SpecialAttribute.HolyDamage,
+        SpecialAttribute.PoisonDamage,
+        SpecialAttribute.ElectricDamage,
+        SpecialAttribute.MeleeDamage,
+        SpecialAttribute.RangedDamage,
+        SpecialAttribute.PhysicalPiercing,
+        SpecialAttribute.MagicalPiercing,
+        SpecialAttribute.MeleeSplashDamage,
+        SpecialAttribute.RangedSplashDamage,
+        SpecialAttribute.PvpDamage,
+        SpecialAttribute.SkillLevelUpTier1,
+        SpecialAttribute.SkillLevelUpTier2,
+        SpecialAttribute.SkillLevelUpTier3,
+        SpecialAttribute.SkillLevelUpTier4,
+        SpecialAttribute.SkillLevelUpTier5,
+        SpecialAttribute.SkillLevelUpTier6,
+        SpecialAttribute.SkillLevelUpTier7,
+        SpecialAttribute.SkillLevelUpTier8,
+        SpecialAttribute.SkillLevelUpTier9,
+        SpecialAttribute.SkillLevelUpTier10,
+        SpecialAttribute.SkillLevelUpTier11,
+        SpecialAttribute.SkillLevelUpTier12,
+        SpecialAttribute.SkillLevelUpTier13,
+        SpecialAttribute.SkillLevelUpTier14,
+        SpecialAttribute.DarkStreamDamage,
+        SpecialAttribute.MaxWeaponAttack,
+        SpecialAttribute.ChaosRaidAttack,
+    ];
+    private static readonly IList<SpecialAttribute> damageTypeAttributes = [
+        SpecialAttribute.IceDamage,
+        SpecialAttribute.FireDamage,
+        SpecialAttribute.DarkDamage,
+        SpecialAttribute.HolyDamage,
+        SpecialAttribute.PoisonDamage,
+        SpecialAttribute.ElectricDamage,
+        SpecialAttribute.MeleeDamage,
+        SpecialAttribute.RangedDamage,
+        SpecialAttribute.BossNpcDamage,
+        SpecialAttribute.NormalNpcDamage,
+        SpecialAttribute.LeaderNpcDamage,
+        SpecialAttribute.EliteNpcDamage,
+        SpecialAttribute.TotalDamage,
+        SpecialAttribute.PvpDamage,
+        SpecialAttribute.DarkStreamDamage,
+    ];
+
     public ItemStats? GetStats(Item item, bool rollMax = false) {
         if (item.Metadata.Option == null) {
             return null;
@@ -32,13 +107,13 @@ public sealed class ItemStatsCalculator {
             stats[ItemStats.Type.Constant] = constantOption;
         }
 
-        if (GetStaticOption(item, job, pick, out ItemStats.Option? staticOption)) {
+        if (GetStaticOption(item, job, ItemStats.Type.Static, pick, out ItemStats.Option? staticOption)) {
             stats[ItemStats.Type.Static] = staticOption;
         }
 
 
         if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
-            ItemStats.Option option = GetRandomOption(itemOption);
+            ItemStats.Option option = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random);
             RandomizeValues(item, itemOption, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
@@ -83,7 +158,7 @@ public sealed class ItemStatsCalculator {
         if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             return false;
         }
-        ItemStats.Option randomOption = GetRandomOption(itemOption, option.Count, presets);
+        ItemStats.Option randomOption = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random, option.Count, presets);
 
         if (!RandomizeValues(item, itemOption, ref randomOption)) {
             return false;
@@ -309,7 +384,7 @@ public sealed class ItemStatsCalculator {
     }
 
     // Used to calculate the default static attributes for a given item.
-    private bool GetStaticOption(Item item, int job, ItemOptionPickTable.Option? pick, [NotNullWhen(true)] out ItemStats.Option? option) {
+    private bool GetStaticOption(Item item, int job, ItemStats.Type statsType, ItemOptionPickTable.Option? pick, [NotNullWhen(true)] out ItemStats.Option? option) {
         option = null;
         if (item.Metadata.Option == null) {
             return false;
@@ -317,7 +392,7 @@ public sealed class ItemStatsCalculator {
 
         if (TableMetadata.ItemOptionStaticTable.Options.TryGetValue(item.Metadata.Option.StaticId, item.Rarity, out ItemOption? itemOption)) {
             // We're using RandomItemOption here considering the logic is the same.
-            option = RandomItemOption(itemOption);
+            option = RandomItemOption(itemOption, item.Type, statsType);
         }
 
         if (item.Metadata.Option.StaticType == ItemOptionMakeType.Lua && pick != null) {
@@ -338,8 +413,8 @@ public sealed class ItemStatsCalculator {
     }
 
     // Used to calculate the default random attributes for a given item.
-    private ItemStats.Option GetRandomOption(ItemOption itemOption, int count = -1, params LockOption[] presets) {
-        return RandomItemOption(itemOption, count, presets);
+    private ItemStats.Option GetRandomOption(ItemOption itemOption, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
+        return RandomItemOption(itemOption, itemType, statsType, count, presets);
     }
 
     private ItemEquipVariationTable? GetVariationTable(in ItemType type) {
@@ -416,7 +491,7 @@ public sealed class ItemStatsCalculator {
         return new ItemStats.Option(statResult, specialResult);
     }
 
-    private static ItemStats.Option RandomItemOption(ItemOption option, int count = -1, params LockOption[] presets) {
+    private static ItemStats.Option RandomItemOption(ItemOption option, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
         var statResult = new Dictionary<BasicAttribute, BasicOption>();
         var specialResult = new Dictionary<SpecialAttribute, SpecialOption>();
 
@@ -442,6 +517,10 @@ public sealed class ItemStatsCalculator {
 
         while (statResult.Count + specialResult.Count < total) {
             ItemOption.Entry entry = option.Entries.Random();
+            if (statsType == ItemStats.Type.Random &&
+                !IsValidStat(itemType, total, statResult, specialResult, entry)) {
+                continue;
+            }
             if (!AddResult(entry, statResult, specialResult)) {
                 Log.Error("Failed to select random item option: {Entry}", entry); // Invalid entry
             }
@@ -481,6 +560,33 @@ public sealed class ItemStatsCalculator {
             }
             return false;
         }
+    }
+
+    /// <summary>
+    /// Verifies if the new attribute being added meets the offense line threshold.
+    /// </summary>
+    /// <returns></returns>
+    private static bool IsValidStat(ItemType itemType, int statLineCount, IDictionary<BasicAttribute, BasicOption> statDict, IDictionary<SpecialAttribute, SpecialOption> specialDict, ItemOption.Entry entry) {
+        int damageTypeStatCount = specialDict.Keys.Count(stat => damageTypeAttributes.Contains(stat));
+        if (entry.SpecialAttribute != null && damageTypeAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
+            // cannot have more than 1 damage type attribute
+            return damageTypeStatCount < 1;
+        }
+
+        if (itemType is { IsCombatPet: false, IsWeapon: false, IsAccessory: false }) {
+            int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
+            offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
+
+            if (entry.BasicAttribute != null && offenseBasicAttributes.Contains((BasicAttribute) entry.BasicAttribute)) {
+                offenseStatCount++;
+            } else if (entry.SpecialAttribute != null && offenseSpecialAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
+                offenseStatCount++;
+            }
+
+            return (float) offenseStatCount / statLineCount <= OFFENSE_LINE_MAX_THRESHOLD;
+        }
+
+        return true;
     }
 
     private int ConstValue(BasicAttribute attribute, int statValue, int deviation, int type, int job, int levelFactor, int rarity, ushort level) {
