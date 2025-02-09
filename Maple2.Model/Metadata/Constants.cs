@@ -109,17 +109,6 @@ public static class Constant {
     public const long FurnishingBaseId = 2870000000000000000;
     public const bool AllowWaterOnGround = false;
 
-    public const int ChannelChatVoucherId = 20300039;
-    public const int WorldChatVouncherId = 20300040;
-    public const int CubeFragmentId = 20300559;
-    public const int ExpBooster100Id = 20000071;
-    public const int FreeRotorsWalkieTalkieId = 20300078;
-    public const int AssortedBlockChestId = 20301018;
-    public const int RedHerbId = 20000028;
-    public const int OrangeHerbId = 20000029;
-    public const int WhiteHerbId = 20000030;
-    public const int SpecialRedHerbId = 20000031;
-
     public const int HomeDecorationMaxLevel = 10;
 
     #region Field

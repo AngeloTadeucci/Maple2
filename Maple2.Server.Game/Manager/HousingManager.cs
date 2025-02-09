@@ -15,6 +15,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools;
 using Serilog;
 using Serilog.Core;
 
@@ -23,15 +24,17 @@ namespace Maple2.Server.Game.Manager;
 public class HousingManager {
     private readonly GameSession session;
     private readonly TableMetadataStorage tableMetadata;
+    private readonly ServerTableMetadataStorage serverTableMetadata;
     private Home Home => session.Player.Value.Home;
 
     private readonly ILogger logger = Log.Logger.ForContext<HousingManager>();
 
     public ItemBlueprint? StagedItemBlueprint = null;
 
-    public HousingManager(GameSession session, TableMetadataStorage tableMetadata) {
+    public HousingManager(GameSession session, TableMetadataStorage tableMetadata, ServerTableMetadataStorage serverTableMetadata) {
         this.session = session;
         this.tableMetadata = tableMetadata;
+        this.serverTableMetadata = serverTableMetadata;
     }
 
     public void SetPlot(PlotInfo? plot) {
@@ -364,6 +367,10 @@ public class HousingManager {
     };
 
     public void InteriorCheckIn(Plot plot) {
+        if (session.Item.Inventory.FreeSlots(InventoryType.Misc) < 1 || session.Item.Inventory.FreeSlots(InventoryType.Fragment) < 1) {
+            return;
+        }
+
         Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
 
@@ -399,37 +406,41 @@ public class HousingManager {
                 default:
                     continue;
             }
-
         }
 
-        List<int> defaultRewards = [
-            Constant.ChannelChatVoucherId,
-            Constant.ExpBooster100Id,
-            Constant.AssortedBlockChestId,
-        ];
+        int housingPoint = decorationScore switch {
+            < 300 => 100,
+            < 500 => 300,
+            < 700 => 500, // 500 and 700 are the same reward for some reason
+            < 1100 => 700,
+            _ => 1100,
+        };
 
-        switch (decorationScore) {
-            case < 300:
-                defaultRewards.Add(Constant.RedHerbId);
-                break;
-            case < 500:
-                defaultRewards.Add(Constant.OrangeHerbId);
-                break;
-            case < 1100:
-                defaultRewards.Add(Constant.WhiteHerbId);
-                defaultRewards.Add(Constant.FreeRotorsWalkieTalkieId);
-                break;
-            default:
-                defaultRewards.Add(Constant.SpecialRedHerbId);
-                defaultRewards.Add(Constant.FreeRotorsWalkieTalkieId);
-                defaultRewards.Add(Constant.WorldChatVouncherId);
-                break;
+        tableMetadata.UgcHousingPointRewardTable.Entries.TryGetValue(housingPoint, out UgcHousingPointRewardTable.Entry? reward);
+        if (reward is null) {
+            logger.Error("Failed to get reward for decoration score {DecorationScore}.", housingPoint);
+            return;
         }
 
-        int rewardId = defaultRewards.OrderBy(_ => Random.Shared.Next()).First();
+        serverTableMetadata.IndividualDropItemTable.Entries.TryGetValue(reward.IndividualDropBoxId, out IDictionary<int, IndividualDropItemTable.Entry>? entry);
+        if (entry is null) {
+            logger.Error("Failed to get individual drop item entry for reward {RewardId}.", reward.IndividualDropBoxId);
+            return;
+        }
 
+        var weightedSet = new WeightedSet<int>();
+        entry.TryGetValue(1, out IndividualDropItemTable.Entry? randomItemsGroup);
+        if (randomItemsGroup is null) {
+            logger.Error("Failed to get random items group for reward {RewardId}.", reward.IndividualDropBoxId);
+            return;
+        }
+        foreach (IndividualDropItemTable.Item dropItem in randomItemsGroup.Items) {
+            weightedSet.Add(dropItem.Ids.First(), dropItem.Weight);
+        }
+
+        int rewardId = weightedSet.Get();
         Item? item = session.Field.ItemDrop.CreateItem(rewardId);
-        if (item == null) {
+        if (item is null) {
             return;
         }
 
@@ -438,8 +449,13 @@ public class HousingManager {
         }
 
         if (decorationScore >= 1100) {
-            Item? cubeFragment = session.Field.ItemDrop.CreateItem(Constant.CubeFragmentId);
-            if (cubeFragment == null) {
+            entry.TryGetValue(2, out IndividualDropItemTable.Entry? fragmentGroup);
+            if (fragmentGroup is null) {
+                logger.Error("Failed to get fragment group for reward {RewardId}.", reward.IndividualDropBoxId);
+                return;
+            }
+            Item? cubeFragment = session.Field.ItemDrop.CreateItem(fragmentGroup.Items.First().Ids.First());
+            if (cubeFragment is null) {
                 return;
             }
 

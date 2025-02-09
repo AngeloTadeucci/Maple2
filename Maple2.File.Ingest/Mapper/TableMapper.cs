@@ -75,6 +75,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
         yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
         yield return new TableMetadata { Name = "masteryugchousing.xml", Table = ParseMasteryUgcHousingTable() };
+        yield return new TableMetadata { Name = "ugchousingpointreward.xml", Table = ParseUgcHousingPointRewardTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
@@ -1519,6 +1520,16 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 RewardJobItemId: ugcHousing.rewardJobItemID));
         }
         return new MasteryUgcHousingTable(results);
+    }
+
+    private UgcHousingPointRewardTable ParseUgcHousingPointRewardTable() {
+        var results = new Dictionary<int, UgcHousingPointRewardTable.Entry>();
+        foreach ((int id, UgcHousingPointReward? ugcHousing) in parser.ParseUgcHousingPointReward()) {
+            results.Add(id, new UgcHousingPointRewardTable.Entry(
+                DecorationScore: ugcHousing.housingPoint,
+                IndividualDropBoxId: ugcHousing.individualDropBoxId));
+        }
+        return new UgcHousingPointRewardTable(results);
     }
 
     private WeddingTable ParseWeddingTable() {

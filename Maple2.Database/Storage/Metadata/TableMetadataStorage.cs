@@ -35,6 +35,7 @@ public class TableMetadataStorage {
     private readonly Lazy<CommonExpTable> commonExpTable;
     private readonly Lazy<UgcDesignTable> ugcDesignTable;
     private readonly Lazy<MasteryUgcHousingTable> masteryUgcHousingTable;
+    private readonly Lazy<UgcHousingPointRewardTable> ugcHousingPointRewardTable;
     private readonly Lazy<LearningQuestTable> learningQuestTable;
     private readonly Lazy<PrestigeLevelAbilityTable> prestigeLevelAbilityTable;
     private readonly Lazy<PrestigeLevelRewardTable> prestigeLevelRewardTable;
@@ -94,6 +95,7 @@ public class TableMetadataStorage {
     public CommonExpTable CommonExpTable => commonExpTable.Value;
     public UgcDesignTable UgcDesignTable => ugcDesignTable.Value;
     public MasteryUgcHousingTable MasteryUgcHousingTable => masteryUgcHousingTable.Value;
+    public UgcHousingPointRewardTable UgcHousingPointRewardTable => ugcHousingPointRewardTable.Value;
     public LearningQuestTable LearningQuestTable => learningQuestTable.Value;
     public PrestigeLevelAbilityTable PrestigeLevelAbilityTable => prestigeLevelAbilityTable.Value;
     public PrestigeLevelRewardTable PrestigeLevelRewardTable => prestigeLevelRewardTable.Value;
@@ -154,6 +156,7 @@ public class TableMetadataStorage {
         commonExpTable = Retrieve<CommonExpTable>(context, "commonexp.xml");
         ugcDesignTable = Retrieve<UgcDesignTable>(context, "ugcdesign.xml");
         masteryUgcHousingTable = Retrieve<MasteryUgcHousingTable>(context, "masteryugchousing.xml");
+        ugcHousingPointRewardTable = Retrieve<UgcHousingPointRewardTable>(context, "ugchousingpointreward.xml");
         learningQuestTable = Retrieve<LearningQuestTable>(context, "learningquest.xml");
         prestigeLevelAbilityTable = Retrieve<PrestigeLevelAbilityTable>(context, "adventurelevelability.xml");
         prestigeLevelRewardTable = Retrieve<PrestigeLevelRewardTable>(context, "adventurelevelreward.xml");
