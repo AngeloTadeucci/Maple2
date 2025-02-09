@@ -17,6 +17,11 @@ internal class Home {
     public int CurrentArchitectScore { get; set; }
     public int ArchitectScore { get; set; }
 
+    public long DecorationLevel { get; set; }
+    public long DecorationExp { get; set; }
+    public long DecorationRewardTimestamp { get; set; }
+    public List<int> InteriorRewardsClaimed { get; set; } = [];
+
     // Interior Settings
     public HomeBackground Background { get; set; }
     public HomeLighting Lighting { get; set; }
@@ -46,6 +51,10 @@ internal class Home {
             Permissions = other.Permissions,
             Layouts = other.Layouts.Select(layout => layout.Uid).ToList(),
             Blueprints = other.Blueprints.Select(layout => layout.Uid).ToList(),
+            DecorationLevel = other.DecorationLevel,
+            DecorationExp = other.DecorationExp,
+            DecorationRewardTimestamp = other.DecorationRewardTimestamp,
+            InteriorRewardsClaimed = other.InteriorRewardsClaimed,
         };
     }
 
@@ -62,6 +71,10 @@ internal class Home {
             ArchitectScore = other.ArchitectScore,
             Passcode = other.Passcode,
             LastModified = other.LastModified.ToEpochSeconds(),
+            DecorationLevel = other.DecorationLevel,
+            DecorationExp = other.DecorationExp,
+            DecorationRewardTimestamp = other.DecorationRewardTimestamp,
+            InteriorRewardsClaimed = other.InteriorRewardsClaimed,
         };
 
         home.SetArea(other.Area);
@@ -90,6 +103,7 @@ internal class Home {
         builder.Property(home => home.Permissions).HasJsonConversion();
         builder.Property(home => home.Layouts).HasJsonConversion();
         builder.Property(home => home.Blueprints).HasJsonConversion();
+        builder.Property(home => home.InteriorRewardsClaimed).HasJsonConversion();
 
         builder.Property(map => map.LastModified)
             .ValueGeneratedOnAddOrUpdate();

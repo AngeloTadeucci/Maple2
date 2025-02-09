@@ -27,7 +27,7 @@ public class WeightedSet<T> : IEnumerable<(T, int)> {
         int random = rng.Next(totalWeight);
         foreach ((T value, int weight) in set) {
             random -= weight;
-            if (random <= 0) {
+            if (random < 0) {
                 return value;
             }
         }

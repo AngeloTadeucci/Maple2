@@ -109,6 +109,8 @@ public static class Constant {
     public const long FurnishingBaseId = 2870000000000000000;
     public const bool AllowWaterOnGround = false;
 
+    public const int HomeDecorationMaxLevel = 10;
+
     #region Field
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
     public static readonly TimeSpan FieldDisposeLoopInterval = TimeSpan.FromMinutes(1);

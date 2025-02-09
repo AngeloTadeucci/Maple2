@@ -15,6 +15,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools;
 using Serilog;
 using Serilog.Core;
 
@@ -298,11 +299,7 @@ public class HousingManager {
     }
 
     public void InitNewHome(string characterName, ExportedUgcMapMetadata? template) {
-        Home.Indoor.Name = characterName;
-        Home.Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
-        Home.Message = "Thanks for visiting. Come back soon!";
-        Home.DecorationLevel = 1;
-        Home.Passcode = "*****";
+        Home.NewHomeDefaults(characterName);
 
         using GameStorage.Request db = session.GameStorage.Context();
         if (template is null) {
@@ -340,15 +337,117 @@ public class HousingManager {
 
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
+            plotCube.HousingCategory = itemMetadata.Housing.HousingCategory;
             if (plotCube.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
                 plotCube.Interact = new InteractCube(plotCube.Position, functionCubeMetadata);
             }
+
             plotCubes.Add(plotCube);
         }
 
         db.SaveHome(Home);
         db.SavePlotInfo(Home.Indoor);
         db.SaveCubes(Home.Indoor, plotCubes);
+    }
+
+    private readonly Dictionary<HousingCategory, int> decorationGoal = new() {
+        { HousingCategory.Bed, 1 },
+        { HousingCategory.Table, 1 },
+        { HousingCategory.SofasChairs, 2 },
+        { HousingCategory.Storage, 1 },
+        { HousingCategory.WallDecoration, 1 },
+        { HousingCategory.WallTiles, 3 },
+        { HousingCategory.Bathroom, 1 },
+        { HousingCategory.Lighting, 1 },
+        { HousingCategory.Electronics, 1 },
+        { HousingCategory.Fences, 2 },
+        { HousingCategory.NaturalTerrain, 4 },
+    };
+
+    public void InteriorCheckIn(Plot plot) {
+        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
+            .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
+
+        int decorationScore = 0;
+
+        foreach (KeyValuePair<HousingCategory, int> goal in decorationGoal) {
+            if (!decorationCurrent.TryGetValue(goal.Key, out int current)) {
+                continue;
+            }
+
+            if (current < goal.Value) {
+                continue;
+            }
+
+            switch (goal.Key) {
+                case HousingCategory.Bed:
+                case HousingCategory.SofasChairs:
+                case HousingCategory.WallDecoration:
+                case HousingCategory.WallTiles:
+                case HousingCategory.Bathroom:
+                case HousingCategory.Lighting:
+                case HousingCategory.Fences:
+                case HousingCategory.NaturalTerrain:
+                    decorationScore += 100;
+                    break;
+                case HousingCategory.Table:
+                case HousingCategory.Storage:
+                    decorationScore += 50;
+                    break;
+                case HousingCategory.Electronics:
+                    decorationScore += 200;
+                    break;
+                default:
+                    continue;
+            }
+        }
+
+        int housingPoint = decorationScore switch {
+            < 300 => 100,
+            < 500 => 300,
+            < 700 => 500,
+            < 1100 => 700,
+            _ => 1100,
+        };
+
+        tableMetadata.UgcHousingPointRewardTable.Entries.TryGetValue(housingPoint, out UgcHousingPointRewardTable.Entry? reward);
+        if (reward is null) {
+            logger.Error("Failed to get reward for decoration score {DecorationScore}.", housingPoint);
+            return;
+        }
+
+        ICollection<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, decorationScore, reward.IndividualDropBoxId);
+        foreach (Item item in items) {
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
+            }
+        }
+
+        Home.GainExp(decorationScore, tableMetadata.MasteryUgcHousingTable.Entries);
+        session.Send(CubePacket.DesignRankReward(Home));
+    }
+
+    public void InteriorReward(byte rewardId) {
+        if (Home.InteriorRewardsClaimed.Contains(rewardId)) {
+            return;
+        }
+
+        tableMetadata.MasteryUgcHousingTable.Entries.TryGetValue(rewardId, out MasteryUgcHousingTable.Entry? reward);
+        if (reward == null) {
+            return;
+        }
+
+        Item? rewardItem = session.Field.ItemDrop.CreateItem(reward.RewardJobItemId);
+        if (rewardItem == null) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Add(rewardItem, true)) {
+            session.Item.MailItem(rewardItem);
+        }
+
+        Home.InteriorRewardsClaimed.Add(rewardId);
+        session.Send(CubePacket.DesignRankReward(Home));
     }
 
     #region Helpers
