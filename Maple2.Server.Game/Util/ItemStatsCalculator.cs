@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
