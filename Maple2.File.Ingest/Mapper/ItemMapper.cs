@@ -121,11 +121,11 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
             ItemMetadataOption? option = !hasOption ? null : new ItemMetadataOption(
                 StaticId: data.option.@static,
-                StaticType: data.option.staticMakeType,
+                StaticType: (ItemOptionMakeType) data.option.staticMakeType,
                 RandomId: data.option.random,
-                RandomType: (RandomMakeType) data.option.randomMakeType,
+                ItemOptionType: (ItemOptionMakeType) data.option.randomMakeType,
                 ConstantId: data.option.constant,
-                ConstantType: data.option.constantMakeType,
+                ConstantType: (ItemOptionMakeType) data.option.constantMakeType,
                 LevelFactor: levelFactor,
                 PickId: data.option.optionID);
             ItemMetadataMusic? music = data.property.type != 12 ? null : new ItemMetadataMusic(

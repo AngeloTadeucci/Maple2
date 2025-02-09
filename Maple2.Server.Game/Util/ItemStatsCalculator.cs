@@ -192,8 +192,8 @@ public sealed class ItemStatsCalculator {
                     return (int) (weightedRates.Get() * 1000);
                 }
             } else {
-                switch (item.Metadata.Option!.RandomType) {
-                    case RandomMakeType.Range:
+                switch (item.Metadata.Option!.ItemOptionType) {
+                    case ItemOptionMakeType.Range:
                         switch (item.Metadata.Option.LevelFactor) {
                             case < 50:
                                 if (rollMax) {
@@ -257,7 +257,7 @@ public sealed class ItemStatsCalculator {
                             return (int) (weightedRates.Get() * 1000);
                         }
                         break;
-                    case RandomMakeType.Base:
+                    case ItemOptionMakeType.Base:
                     default:
                         float minRate = 0;
                         int minValue = 0;
@@ -292,7 +292,7 @@ public sealed class ItemStatsCalculator {
             option = ConstantItemOption(itemOptionConstant);
         }
 
-        if (pick != null) {
+        if (item.Metadata.Option.ConstantType == ItemOptionMakeType.Lua && pick != null) {
             if (option == null) {
                 option = new ItemStats.Option();
             }
@@ -304,7 +304,6 @@ public sealed class ItemStatsCalculator {
                     option.Basic[attribute] = new BasicOption(value);
                 }
             }
-
         }
         return option != null;
     }
@@ -321,10 +320,11 @@ public sealed class ItemStatsCalculator {
             option = RandomItemOption(itemOption);
         }
 
-        if (pick != null) {
+        if (item.Metadata.Option.StaticType == ItemOptionMakeType.Lua && pick != null) {
             if (option == null) {
                 option = new ItemStats.Option();
             }
+
             foreach ((BasicAttribute attribute, int deviation) in pick.StaticValue) {
                 int currentValue = option.Basic.TryGetValue(attribute, out BasicOption basicOption) ? basicOption.Value : 0;
                 int value = StaticValue(attribute, currentValue, deviation, item.Type.Type, job, item.Metadata.Option.LevelFactor, item.Rarity, (ushort) item.Metadata.Limit.Level);
@@ -334,8 +334,7 @@ public sealed class ItemStatsCalculator {
             }
             return true;
         }
-
-        return false;
+        return option != null;
     }
 
     // Used to calculate the default random attributes for a given item.
