@@ -365,10 +365,6 @@ public class HousingManager {
     };
 
     public void InteriorCheckIn(Plot plot) {
-        if (session.Item.Inventory.FreeSlots(InventoryType.Misc) < 1 || session.Item.Inventory.FreeSlots(InventoryType.Fragment) < 1) {
-            return;
-        }
-
         Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
 
@@ -421,9 +417,9 @@ public class HousingManager {
         }
 
         ICollection<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, decorationScore, reward.IndividualDropBoxId);
-        foreach (Item add in items) {
-            if (!session.Item.Inventory.Add(add, true)) {
-                return;
+        foreach (Item item in items) {
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
             }
         }
 
@@ -447,7 +443,7 @@ public class HousingManager {
         }
 
         if (!session.Item.Inventory.Add(rewardItem, true)) {
-            return;
+            session.Item.MailItem(rewardItem);
         }
 
         Home.InteriorRewardsClaimed.Add(rewardId);
