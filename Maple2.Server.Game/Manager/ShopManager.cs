@@ -436,7 +436,7 @@ public sealed class ShopManager {
             }
         }
 
-        if (quantity > shopItem.StockCount - shopItem.StockPurchased) {
+        if (shopItem.StockCount != 0 && quantity > shopItem.StockCount - shopItem.StockPurchased) {
             session.Send(ShopPacket.Error(ShopError.s_err_lack_shopitem));
             return;
         }

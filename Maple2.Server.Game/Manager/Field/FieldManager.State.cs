@@ -31,6 +31,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<string, FieldInteract> fieldInteracts = new();
     private readonly ConcurrentDictionary<string, FieldFunctionInteract> fieldFunctionInteracts = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldAdBalloons = new();
+    private readonly ConcurrentDictionary<int, FieldInstrument> fieldInstruments = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
@@ -499,6 +500,8 @@ public partial class FieldManager {
             Rotation = owner.Rotation,
         };
 
+        fieldInstruments[fieldInstrument.ObjectId] = fieldInstrument;
+
         return fieldInstrument;
     }
 
@@ -637,6 +640,15 @@ public partial class FieldManager {
         Broadcast(PortalPacket.Remove(portal.Value.Id));
         return true;
     }
+
+    public bool RemoveInstrument(int objectId) {
+        if (!fieldInstruments.TryRemove(objectId, out FieldInstrument? instrument)) {
+            return false;
+        }
+
+        Broadcast(InstrumentPacket.StopScore(instrument));
+        return true;
+    }
     #endregion
 
     #region Events
@@ -648,6 +660,11 @@ public partial class FieldManager {
         added.Session.Send(InteractObjectPacket.Load(fieldInteracts.Values));
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
+        }
+        foreach (FieldInstrument fieldInstrument in fieldInstruments.Values) {
+            if (fieldInstrument.Score != null) {
+                added.Session.Send(InstrumentPacket.StartScore(fieldInstrument, fieldInstrument.Score));
+            }
         }
         if (MapId is Constant.DefaultHomeMapId) {
             IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
