@@ -32,6 +32,7 @@ namespace Maple2.Server.World.Migrations {
                 name: "InteriorRewardsClaimed",
                 table: "home",
                 type: "json",
+                defaultValue: "[]",
                 nullable: false)
                 .Annotation("MySql:CharSet", "utf8mb4");
         }

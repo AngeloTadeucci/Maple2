@@ -138,6 +138,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         if (!TryUseInstrument(session, itemUid, Environment.TickCount64, false, out session.Instrument)) {
             return;
         }
+        session.Instrument.Score = score;
 
         score.RemainUses--;
         session.Field.Broadcast(InstrumentPacket.StartScore(session.Instrument, score));
@@ -168,7 +169,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         // Modifier is the number of 500ms ticks that have passed.
         session.Exp.AddExp(expType, (totalTickTime - 500) / 500);
 
-        session.Field.Broadcast(InstrumentPacket.StopScore(session.Instrument));
+        session.Field.RemoveInstrument(session.Instrument.ObjectId);
         session.Instrument = null;
     }
 
@@ -333,7 +334,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        fieldInstrument = session.Field!.SpawnInstrument(session.Player, metadata);
+        fieldInstrument = session.Field.SpawnInstrument(session.Player, metadata);
         fieldInstrument.StartTick = startTick;
         fieldInstrument.Ensemble = ensemble;
         return true;
