@@ -41,7 +41,7 @@ public static class InstrumentPacket {
         pWriter.Write<Command>(Command.Improvise);
         pWriter.WriteInt(instrument.ObjectId);
         pWriter.WriteInt(instrument.OwnerId);
-        pWriter.Write<InstrumentHandler.MidiMessage>(default);
+        pWriter.Write<InstrumentHandler.MidiMessage>(note);
 
         return pWriter;
     }
