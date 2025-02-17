@@ -12,6 +12,9 @@ namespace Maple2.Server.Game.Commands.HomeCommands;
 public class GravityCommand : Command {
     private readonly GameSession session;
 
+    private const float GravityMultiplier = 40f;
+    private const float MaxGravity = 400f;
+
     public GravityCommand(GameSession session) : base("hostgravity", "Change the gravity of the map") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
@@ -34,7 +37,8 @@ public class GravityCommand : Command {
             return;
         }
 
-        gravity = Math.Min(gravity * 40, 400);
+        // Convert user-friendly gravity (0-10) to game units (0-400)
+        gravity = Math.Min(gravity * GravityMultiplier, MaxGravity);
         if (gravity < 0) {
             gravity = 0;
         }

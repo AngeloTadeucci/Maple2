@@ -22,7 +22,7 @@ public class RandomNumberCommand : Command {
     private void Handle(InvocationContext context) {
         Character character = session.Player.Value.Character;
         bool isHome = character.MapId is Constant.DefaultHomeMapId;
-        int rng = Random.Shared.Next(1, 100);
+        int rng = Random.Shared.Next(1, 101);
 
         // TODO: check if message was sent in party chat or if player is in dungeon
         if (isHome) {
