@@ -55,7 +55,37 @@ public class HomeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleInvite(GameSession session, IByteReader packet) {
-        string name = packet.ReadUnicodeString();
+        string playerName = packet.ReadUnicodeString();
+
+        if (string.IsNullOrEmpty(playerName)) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_fail_enterfield_invaliduser));
+            return;
+        }
+
+        if (string.Equals(playerName, session.Player.Value.Character.Name, StringComparison.CurrentCultureIgnoreCase)) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_home_invite_self));
+            return;
+        }
+
+        if (!session.Player.Value.Home.IsHomeSetup) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_invalid_state));
+            return;
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        long characterId = db.GetCharacterId(playerName);
+        if (characterId == 0) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_fail_enterfield_invaliduser));
+            return;
+        }
+
+        session.FindSession(characterId, out GameSession? targetSession);
+        if (targetSession is null) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_fail_enterfield_invaliduser));
+            return;
+        }
+
+        targetSession.Send(HomeInvitePacket.Invite(session.Player.Value.Character));
     }
 
     private void HandleWarp(GameSession session, IByteReader packet) {
@@ -75,8 +105,8 @@ public class HomeHandler : PacketHandler<GameSession> {
         if (string.IsNullOrEmpty(home.Indoor.Name)) {
             int templateId = packet.ReadInt(); // -1 = none
 
-            if (templateId < -1 || templateId > 2) {
-                Logger.Warning("Invalid template id {templateId} for initializing home for {session.Player.Value.Character.Name}");
+            if (templateId is < -1 or > 2) {
+                Logger.Warning("Invalid template id {templateId} for initializing home for {CharacterName}", templateId, session.Player.Value.Character.Name);
                 return;
             }
 
@@ -88,25 +118,6 @@ public class HomeHandler : PacketHandler<GameSession> {
             session.Housing.InitNewHome(session.Player.Value.Character.Name, exportedUgcMap);
         }
 
-        try {
-            var request = new MigrateOutRequest {
-                AccountId = session.AccountId,
-                CharacterId = session.CharacterId,
-                MachineId = session.MachineId.ToString(),
-                Server = Server.World.Service.Server.Game,
-                MapId = homeMapId,
-                OwnerId = home.Indoor.OwnerId,
-            };
-
-            MigrateOutResponse response = World.MigrateOut(request);
-            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            session.Send(MigrationPacket.GameToGame(endpoint, response.Token, homeMapId));
-            session.State = SessionState.ChangeMap;
-        } catch (RpcException ex) {
-            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
-            session.Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
-        } finally {
-            session.Disconnect();
-        }
+        session.MigrateToHome(home);
     }
 }
