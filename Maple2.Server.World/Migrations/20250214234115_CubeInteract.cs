@@ -2,14 +2,11 @@
 
 #nullable disable
 
-namespace Maple2.Server.World.Migrations
-{
+namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class CubeInteract : Migration
-    {
+    public partial class CubeInteract : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.RenameColumn(
                 name: "CubeSettings",
                 table: "ugcmap-cube",
@@ -36,8 +33,7 @@ namespace Maple2.Server.World.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "CubePortalSettings",
                 table: "ugcmap-cube");
