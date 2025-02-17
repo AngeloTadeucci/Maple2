@@ -126,6 +126,7 @@ public static class ConditionUtil {
             case ConditionType.gemstone_putoff:
             case ConditionType.fish_fail:
             case ConditionType.music_play_grade:
+            case ConditionType.music_play_ensemble:
             case ConditionType.breakable_object:
             case ConditionType.change_profile:
             case ConditionType.install_billboard:
@@ -222,6 +223,7 @@ public static class ConditionUtil {
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.music_play_grade:
+            case ConditionType.music_play_ensemble:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
             case ConditionType.beauty_add:

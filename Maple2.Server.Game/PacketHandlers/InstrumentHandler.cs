@@ -13,6 +13,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.Collision;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -212,6 +213,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             memberSession.StagedScoreItem.RemainUses--;
             memberSession.Field.Broadcast(InstrumentPacket.StartScore(memberSession.Instrument, memberSession.StagedScoreItem));
             memberSession.Send(InstrumentPacket.RemainUses(memberSession.StagedScoreItem.Uid, memberSession.StagedScoreItem.RemainUses));
+            memberSession.ConditionUpdate(ConditionType.music_play_ensemble);
         }
     }
 
@@ -263,39 +265,33 @@ public class InstrumentHandler : PacketHandler<GameSession> {
     }
 
     private void HandleStartPerform(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.MapId != Constant.PerformanceMapId) {
             return;
         }
     }
 
     private void HandleEndPerform(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.MapId != Constant.PerformanceMapId) {
             return;
         }
     }
 
     private void HandleEnterExitStage(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.MapId != Constant.PerformanceMapId) {
             return;
         }
 
-        // TODO: MS2TriggerBox: 6a17cfc1708e492b81896a780e2fecf9
-        const float xLo = -3600 - 825;
-        const float xHi = -3600 + 825;
-        const float yLo = 7275 - 600;
-        const float yHi = 7275 + 600;
-        const float zLo = 2475 - 375;
-        const float zHi = 2475 + 375;
-        Vector3 position = session.Player.Position;
-        if (position.X is > xLo and < xHi && position.Y is > yLo and < yHi && position.Z is > zLo and < zHi) {
-            session.Field.MoveToPortal(session, 802);
-        } else {
-            session.Field.MoveToPortal(session, 803);
+        session.Field.TriggerObjects.Boxes.TryGetValue(101, out TriggerBox? triggerBox);
+        if (triggerBox is null) {
+            return;
         }
+
+        bool insideStage = triggerBox.Contains(session.Player.Position);
+        session.Field.MoveToPortal(session, insideStage ? 802 : 803);
     }
 
     private void HandleFireworks(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.MapId != Constant.PerformanceMapId) {
             return;
         }
 
