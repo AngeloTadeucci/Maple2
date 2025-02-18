@@ -13,7 +13,7 @@ public class RoomTimer : IUpdatable {
     public int Duration;
     private bool started;
 
-    private readonly ILogger logger = Log.Logger.ForContext<FieldManager>();
+    private readonly ILogger logger = Log.Logger.ForContext<RoomTimer>();
 
     public RoomTimer(FieldManager field, RoomTimerType type, int duration) {
         this.field = field;
