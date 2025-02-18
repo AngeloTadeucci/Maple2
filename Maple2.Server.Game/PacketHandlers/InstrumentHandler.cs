@@ -113,7 +113,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         }
 
         var note = packet.Read<MidiMessage>();
-        session.Field.Broadcast(InstrumentPacket.Improvise(session.Instrument, note));
+        session.Field.Broadcast(InstrumentPacket.Improvise(session.Instrument, note), session);
     }
 
     private void HandleStopImprovise(GameSession session) {
