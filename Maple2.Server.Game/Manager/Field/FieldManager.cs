@@ -549,12 +549,19 @@ public sealed partial class FieldManager : IDisposable {
             return;
         }
 
+        logger.Debug("Disposing FieldManager {MapId}", MapId);
+
         DebugGraphicsContext.FieldRemoved(this);
-        cancel.Cancel();
+        try {
+            cancel.Cancel();
+        } catch (Exception e) {
+            logger.Error(e, "Failed to cancel FieldManager thread, cancel.Cancel() threw an exception. Disposed: {Disposed}", Disposed);
+        }
         cancel.Dispose();
         thread.Join();
         Navigation.Dispose();
 
         Disposed = true;
+        logger.Debug("Disposed FieldManager {MapId}", MapId);
     }
 }
