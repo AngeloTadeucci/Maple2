@@ -134,14 +134,14 @@ public partial class FieldManager {
                             logger.Verbose("Field {MapId} {InstanceId} is empty, starting timer", fieldManager.MapId, fieldManager.InstanceId);
                             fieldManager.fieldEmptySince = DateTime.UtcNow;
                         } else if (DateTime.UtcNow - fieldManager.fieldEmptySince > Constant.FieldDisposeEmptyTime) {
-                            logger.Verbose("Field {MapId} {InstanceId} has been empty for more than {Time}, disposing", fieldManager.MapId, fieldManager.InstanceId, Constant.FieldDisposeEmptyTime);
+                            logger.Debug("Field {MapId} {InstanceId} has been empty for more than {Time}, disposing", fieldManager.MapId, fieldManager.InstanceId, Constant.FieldDisposeEmptyTime);
                             fieldManager.Dispose();
                         }
                         continue;
                     }
 
                     if (roomTimer.Expired(fieldManager.FieldTick)) {
-                        logger.Verbose("Field {MapId} {InstanceId} room timer expired, disposing", fieldManager.MapId, fieldManager.InstanceId);
+                        logger.Debug("Field {MapId} {InstanceId} room timer expired, disposing", fieldManager.MapId, fieldManager.InstanceId);
                         fieldManager.Dispose();
                     } else {
                         logger.Verbose("Field {MapId} {InstanceId} room timer has not expired", fieldManager.MapId, fieldManager.InstanceId);
@@ -153,7 +153,8 @@ public partial class FieldManager {
                     foreach (long ownerId in fields[mapId].Keys) {
                         foreach (int instanceId in fields[mapId][ownerId].Keys) {
                             if (fields[mapId][ownerId][instanceId].Disposed) {
-                                fields[mapId][ownerId].TryRemove(instanceId, out _);
+                                bool success = fields[mapId][ownerId].TryRemove(instanceId, out _);
+                                logger.Debug("Field {MapId}, OwnerId {OwnerId}, InstanceId {InstanceId}, removed: {Success}", mapId, ownerId, instanceId, success);
                             }
                         }
                     }
