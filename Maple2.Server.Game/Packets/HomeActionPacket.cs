@@ -80,14 +80,14 @@ public static class HomeActionPacket {
         return pWriter;
     }
 
-    public static ByteWriter SurveyAddOption(HomeSurvey survey) {
+    public static ByteWriter SurveyAddOption(HomeSurvey survey, bool success = true) {
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.Survey);
         pWriter.Write<SurveyCommand>(SurveyCommand.AddOption);
         pWriter.WriteUnicodeString(survey.Question);
         pWriter.WriteBool(survey.Public);
         pWriter.WriteUnicodeString(survey.Options.Keys.Last());
-        pWriter.WriteByte(1);
+        pWriter.WriteBool(success);
 
         return pWriter;
     }
