@@ -15,6 +15,7 @@ public static class HomeActionPacket {
         PortalCube = 6,
         Ball = 7,
         Roll = 11,
+        NoticeCube = 12,
     }
 
     private enum SurveyCommand : byte {
@@ -34,17 +35,28 @@ public static class HomeActionPacket {
     }
 
     public static ByteWriter SendCubePortalSettings(PlotCube cube, List<string> otherPortalsNames) {
-        Debug.Assert(cube.CubePortalSettings != null, nameof(cube.CubePortalSettings) + " != null");
+        Debug.Assert(cube.Interact?.PortalSettings != null, nameof(cube.Interact.PortalSettings) + " != null");
 
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.PortalCube);
         pWriter.WriteByte();
         pWriter.Write<Vector3B>(cube.Position);
-        pWriter.WriteClass<CubePortalSettings>(cube.CubePortalSettings);
+        pWriter.WriteClass<CubePortalSettings>(cube.Interact.PortalSettings);
         pWriter.WriteInt(otherPortalsNames.Count);
         foreach (string portalName in otherPortalsNames) {
             pWriter.WriteUnicodeString(portalName);
         }
+
+        return pWriter;
+    }
+
+    public static ByteWriter SendCubeNoticeSettings(PlotCube cube, bool editing = false) {
+        Debug.Assert(cube.Interact?.NoticeSettings != null, nameof(cube.Interact.NoticeSettings) + " != null");
+
+        var pWriter = Packet.Of(SendOp.HomeAction);
+        pWriter.Write<HomeActionCommand>(HomeActionCommand.NoticeCube);
+        pWriter.WriteBool(editing);
+        pWriter.WriteClass<CubeNoticeSettings>(cube.Interact.NoticeSettings);
 
         return pWriter;
     }

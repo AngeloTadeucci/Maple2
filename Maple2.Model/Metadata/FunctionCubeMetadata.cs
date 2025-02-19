@@ -6,6 +6,7 @@ namespace Maple2.Model.Metadata;
 public record FunctionCubeMetadata(
     int Id,
     int RecipeId,
+    ConfigurableCubeType ConfigurableCubeType,
     InteractCubeState DefaultState,
     int[] AutoStateChange,
     int AutoStateChangeTime,
