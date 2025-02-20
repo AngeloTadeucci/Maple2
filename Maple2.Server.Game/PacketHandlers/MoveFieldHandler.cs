@@ -2,6 +2,7 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -77,14 +78,26 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
 
         using GameStorage.Request db = session.GameStorage.Context();
         Home? home = db.GetHome(accountId);
-        if (home == null) {
-            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+        if (home is not { IsHomeSetup: true }) {
+            session.Send(EnterUgcMapPacket.CannotVisitThatCharacterHome());
             return;
         }
 
-        if (home.Passcode != null && home.Passcode != passcode) {
-            session.Send(NoticePacket.MessageBox(StringCode.s_home_password_mismatch));
+        if (session.Field.OwnerId == accountId && session.Field.MapId == Constant.DefaultHomeMapId) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
+        }
+
+        if (!string.IsNullOrEmpty(home.Passcode)) {
+            if (string.IsNullOrEmpty(passcode)) {
+                session.Send(EnterUgcMapPacket.RequestPassword(accountId));
+                return;
+            }
+
+            if (!string.Equals(home.Passcode, passcode, StringComparison.Ordinal)) {
+                session.Send(EnterUgcMapPacket.WrongPassword(accountId));
+                return;
+            }
         }
 
         session.MigrateToHome(home);
