@@ -265,33 +265,21 @@ public class InstrumentHandler : PacketHandler<GameSession> {
     }
 
     private void HandleStartPerform(GameSession session) {
-        if (session.Field.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
     }
 
     private void HandleEndPerform(GameSession session) {
-        if (session.Field.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
     }
 
-    private void HandleEnterExitStage(GameSession session) {
-        if (session.Field.MapId != Constant.PerformanceMapId) {
-            return;
-        }
-
-        session.Field.TriggerObjects.Boxes.TryGetValue(101, out TriggerBox? triggerBox);
-        if (triggerBox is null) {
-            return;
-        }
-
-        bool insideStage = triggerBox.Contains(session.Player.Position);
-        session.Field.MoveToPortal(session, insideStage ? 802 : 803);
-    }
+    private void HandleEnterExitStage(GameSession session) => session.Field.PerformanceStage?.EnterExitStage(session);
 
     private void HandleFireworks(GameSession session) {
-        if (session.Field.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
 
