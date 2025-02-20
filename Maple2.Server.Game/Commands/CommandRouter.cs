@@ -21,7 +21,7 @@ public class CommandRouter {
         foreach (Command command in context.Resolve<IEnumerable<Command>>(new NamedParameter("session", session))) {
             listBuilder.Add(command);
             foreach (string alias in command.Aliases) {
-                dictionaryBuilder.Add(alias, command);
+                dictionaryBuilder.Add(alias.ToLower(), command);
             }
         }
 
@@ -60,12 +60,14 @@ public class CommandRouter {
             return 0;
         }
 
-        if (aliasLookup.TryGetValue(args[0], out Command? command)) {
+        string commandName = args[0].ToLower();
+        if (aliasLookup.TryGetValue(commandName, out Command? command)) {
+            args[0] = commandName; // Ensure the command name is in the correct case so it's filtered by Invoke and doesn't show in the argument list.
             return command.Invoke(args, console);
         }
 
-        if (args[0] != "help") {
-            console.Error.WriteLine($"Unrecognized command '{args[0]}'");
+        if (commandName != "help") {
+            console.Error.WriteLine($"Unrecognized command '{commandName}'");
         }
 
         console.Out.Write(GetCommandList());

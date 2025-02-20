@@ -111,6 +111,9 @@ public static class Constant {
 
     public const int HomeDecorationMaxLevel = 10;
 
+    public const bool EnableRollEverywhere = false;
+    public const bool HideHomeCommands = true;
+
     #region Field
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
     public static readonly TimeSpan FieldDisposeLoopInterval = TimeSpan.FromMinutes(1);

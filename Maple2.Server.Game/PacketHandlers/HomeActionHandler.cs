@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Common;
+﻿using System.Numerics;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -26,6 +27,12 @@ public class HomeActionHandler : PacketHandler<GameSession> {
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
         switch (command) {
+            case Command.Survey:
+                HandleSurvey(session, packet);
+                break;
+            case Command.UpdateBallCoord:
+                HandleUpdateBallCoord(session, packet);
+                break;
             case Command.ChangePortalSettings:
                 HandleChangePortalSettings(session, packet);
                 break;
@@ -34,6 +41,74 @@ public class HomeActionHandler : PacketHandler<GameSession> {
                 break;
         }
     }
+
+    private static void HandleSurvey(GameSession session, IByteReader packet) {
+        packet.ReadByte();
+        packet.ReadLong(); // character id
+        long surveyId = packet.ReadLong();
+        byte responseIndex = packet.ReadByte();
+
+        string playerName = session.PlayerName;
+
+        HomeSurvey? homeSurvey = session.Field.HomeSurvey;
+        if (homeSurvey == null || homeSurvey.Id != surveyId) {
+            return;
+        }
+
+        KeyValuePair<string, List<string>> option = homeSurvey.Options.ElementAtOrDefault(responseIndex);
+        if (option.Key == null) {
+            return;
+        }
+
+        if (!homeSurvey.Started || homeSurvey.Ended || option.Value.Contains(playerName) || !homeSurvey.AvailableCharacters.Contains(playerName)) {
+            return;
+        }
+
+        homeSurvey.AvailableCharacters.Remove(playerName);
+        option.Value.Add(playerName);
+
+        session.Send(HomeActionPacket.SurveyAnswer(playerName));
+        homeSurvey.Answers++;
+
+        if (homeSurvey.Answers < homeSurvey.MaxAnswers) {
+            return;
+        }
+
+        session.Field.Broadcast(HomeActionPacket.SurveyEnd(homeSurvey));
+        homeSurvey.End();
+    }
+
+    private enum BallUpdateCommand : byte {
+        Move = 2,
+        Hit = 3,
+    };
+
+    private void HandleUpdateBallCoord(GameSession session, IByteReader packet) {
+        BallUpdateCommand mode = packet.Read<BallUpdateCommand>();
+        int objectId = packet.ReadInt();
+        Vector3 coord = packet.Read<Vector3>();
+        Vector3 velocity = packet.Read<Vector3>();
+
+        FieldGuideObject? guideObject = session.GuideObject;
+        if (guideObject?.Value is not BallGuideObject || guideObject.ObjectId != objectId) {
+            Logger.Warning("Ball not found");
+            return;
+        }
+
+        guideObject.Position = coord;
+
+        switch (mode) {
+            case BallUpdateCommand.Move:
+                Vector3 velocity2 = packet.Read<Vector3>();
+
+                session.Field.Broadcast(HomeActionPacket.UpdateBall(guideObject, velocity, velocity2), session);
+                break;
+            case BallUpdateCommand.Hit:
+                session.Field.Broadcast(HomeActionPacket.HitBall(guideObject, velocity));
+                break;
+        }
+    }
+
     private void HandleChangePortalSettings(GameSession session, IByteReader packet) {
         packet.ReadByte();
         Vector3B coord = packet.Read<Vector3B>();
