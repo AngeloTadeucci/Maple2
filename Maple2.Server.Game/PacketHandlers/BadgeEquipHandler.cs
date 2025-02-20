@@ -60,10 +60,8 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var transparencyArray = packet.ReadBytes(badgeItem.Badge.Transparency.Length);
-
         for (int i = 0; i < badgeItem.Badge.Transparency.Length; i++) {
-            badgeItem.Badge.Transparency[i] = transparencyArray[i] != 0; // Convert byte to bool
+            badgeItem.Badge.Transparency[i] = packet.ReadBool();
         }
 
         using (var db = session.GameStorage.Context()) {
