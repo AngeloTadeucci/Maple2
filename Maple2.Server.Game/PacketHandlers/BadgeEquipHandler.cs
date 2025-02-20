@@ -4,6 +4,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Packets;
+using Maple2.Model.Game;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -51,19 +52,17 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
     }
 
     private void HandleTransparency(GameSession session, IByteReader packet) {
-        var badgeType = packet.Read<BadgeType>();
+        BadgeType badgeType = packet.Read<BadgeType>();
 
-        var badgeItem = session.Item.Equips.Get(badgeType);
+        Item? badgeItem = session.Item.Equips.Get(badgeType);
 
         if (badgeItem?.Badge == null || badgeItem.Badge.Type != BadgeType.Transparency) {
             session.Disconnect();
             return;
         }
 
-        var transparencyArray = packet.ReadBytes(badgeItem.Badge.Transparency.Length);
-
         for (int i = 0; i < badgeItem.Badge.Transparency.Length; i++) {
-            badgeItem.Badge.Transparency[i] = transparencyArray[i] != 0; // Convert byte to bool
+            badgeItem.Badge.Transparency[i] = packet.ReadBool();
         }
 
         using (var db = session.GameStorage.Context()) {
