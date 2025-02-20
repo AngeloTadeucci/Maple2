@@ -42,7 +42,6 @@ public partial class FieldManager {
 
     public RoomTimer? RoomTimer { get; private set; }
 
-    public HomeSurvey? HomeSurvey { get; private set; }
 
     #region Helpers
     public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
@@ -478,14 +477,6 @@ public partial class FieldManager {
 
     private void SetRoomTimer(RoomTimerType type, int duration) {
         RoomTimer = new RoomTimer(this, type, duration);
-    }
-
-    public void SetHomeSurvey(HomeSurvey survey) {
-        HomeSurvey = survey;
-    }
-
-    public void RemoveHomeSurvey() {
-        HomeSurvey = null;
     }
 
     #region Player Managed
