@@ -52,7 +52,7 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
     }
 
     private void HandleTransparency(GameSession session, IByteReader packet) {
-        BadgeType badgeType = packet.Read<BadgeType>();
+        var badgeType = packet.Read<BadgeType>();
 
         Item? badgeItem = session.Item.Equips.Get(badgeType);
 
