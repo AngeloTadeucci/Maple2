@@ -65,10 +65,6 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
             badgeItem.Badge.Transparency[i] = packet.ReadBool();
         }
 
-        using (var db = session.GameStorage.Context()) {
-            session.Item.Save(db);
-        }
-
         session.Field?.Broadcast(EquipPacket.EquipBadge(session.Player, badgeItem));
     }
 }
