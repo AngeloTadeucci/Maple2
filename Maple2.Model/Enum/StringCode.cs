@@ -2192,8 +2192,11 @@ public enum StringCode {
     s_fittingdoll_Invalid_moveDisable = 2187,
     s_fittingdoll_transform_done_all = 2188,
     s_fittingdoll_transform_done_partially = 2189,
+    [Description("You cannnot use that right now.")]
     s_home_returnable_invalid_state = 2190,
+    [Description("You cannot move to the house from here.")]
     s_home_returnable_forbidden = 2191,
+    [Description("You're already there!")]
     s_home_returnable_forbidden_to_sameplace = 2192,
     s_home_returnable_homeless = 2193,
     s_home_returnable_samefield = 2194,
@@ -2216,6 +2219,7 @@ public enum StringCode {
     s_home_invite_logout = 2211,
     s_home_invite_denybyauto = 2212,
     s_home_invite_timeout = 2213,
+    [Description("You cannot invite yourself.")]
     s_home_invite_self = 2214,
     s_home_invite_cant_invite_now = 2215,
     s_tutorial_shortcutkey_limit = 2216,
@@ -2223,6 +2227,7 @@ public enum StringCode {
     s_tutorial_itemdrop_limit = 2218,
     s_tutorial_dialog_limit = 2219,
     s_tutorial_skip_movie = 2220,
+    [Description("Invalid character.")]
     s_fail_enterfield_invaliduser = 2221,
     s_fail_enterfield_userfull = 2222,
     s_fail_enterfield_event_already_start = 2224,

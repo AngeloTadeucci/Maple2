@@ -42,6 +42,7 @@ public partial class FieldManager {
 
     public RoomTimer? RoomTimer { get; private set; }
 
+
     #region Helpers
     public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
     public IReadOnlyDictionary<int, FieldPlayer> GetPlayers() {

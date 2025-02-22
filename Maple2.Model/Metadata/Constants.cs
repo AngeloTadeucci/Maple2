@@ -13,8 +13,8 @@ public static class Constant {
 
     public const int ServerMaxCharacters = 8;
     public const int CharacterNameLengthMax = 12;
-    public const long MaxMeret = 99999;
-    public const long MaxMeso = 999999999;
+    public const long MaxMeret = long.MaxValue;
+    public const long MaxMeso = long.MaxValue;
     public const long StarPointMax = 999999;
     public const long MesoTokenMax = 100000;
     public const int MaxSkillTabCount = 3;
@@ -110,6 +110,9 @@ public static class Constant {
     public const bool AllowWaterOnGround = false;
 
     public const int HomeDecorationMaxLevel = 10;
+
+    public const bool EnableRollEverywhere = false;
+    public const bool HideHomeCommands = true;
 
     #region Field
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);

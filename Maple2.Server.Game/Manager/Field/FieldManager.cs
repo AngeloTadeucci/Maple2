@@ -54,6 +54,7 @@ public sealed partial class FieldManager : IDisposable {
     public readonly MapMetadata Metadata;
     public readonly MapEntityMetadata Entities;
     public readonly Navigation Navigation;
+    public readonly PerformanceStageManager? PerformanceStage;
     public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
 
@@ -71,7 +72,6 @@ public sealed partial class FieldManager : IDisposable {
     public ItemDropManager ItemDrop { get; }
 
     public int MapId => Metadata.Id;
-    public readonly long OwnerId;
     public readonly int InstanceId;
     public FieldInstance FieldInstance = FieldInstance.Default;
     public readonly AiManager Ai;
@@ -94,6 +94,10 @@ public sealed partial class FieldManager : IDisposable {
         ItemDrop = new ItemDropManager(this);
 
         Navigation = new Navigation(metadata.XBlock);
+
+        if (MapId is Constant.PerformanceMapId) {
+            PerformanceStage = new PerformanceStageManager(this);
+        }
     }
 
     // Init is separate from constructor to allow properties to be injected first.

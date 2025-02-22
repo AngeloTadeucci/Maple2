@@ -3,6 +3,8 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Packets;
+using Maple2.Model.Game;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -12,6 +14,7 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
     private enum Command : byte {
         Equip = 0,
         Unequip = 1,
+        Transparency = 3,
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
@@ -22,6 +25,9 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
                 return;
             case Command.Unequip:
                 HandleUnequip(session, packet);
+                return;
+            case Command.Transparency:
+                HandleTransparency(session, packet);
                 return;
         }
     }
@@ -43,5 +49,22 @@ public class BadgeEquipHandler : PacketHandler<GameSession> {
         if (!session.Item.Equips.UnequipBadge(slot)) {
             session.Disconnect();
         }
+    }
+
+    private void HandleTransparency(GameSession session, IByteReader packet) {
+        var badgeType = packet.Read<BadgeType>();
+
+        Item? badgeItem = session.Item.Equips.Get(badgeType);
+
+        if (badgeItem?.Badge == null || badgeItem.Badge.Type != BadgeType.Transparency) {
+            session.Disconnect();
+            return;
+        }
+
+        for (int i = 0; i < badgeItem.Badge.Transparency.Length; i++) {
+            badgeItem.Badge.Transparency[i] = packet.ReadBool();
+        }
+
+        session.Field?.Broadcast(EquipPacket.EquipBadge(session.Player, badgeItem));
     }
 }
