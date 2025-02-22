@@ -521,7 +521,6 @@ public class HousingManager {
                 HousingCategory = itemMetadata.Housing.HousingCategory,
             };
 
-            result.CubePortalSettings?.SetName(position);
             if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
                 result.Interact = new InteractCube(position, functionCubeMetadata);
             }
@@ -558,7 +557,6 @@ public class HousingManager {
         result.Position = position;
         result.Rotation = rotation;
         result.HousingCategory = itemMetadata.Housing.HousingCategory;
-        result.CubePortalSettings?.SetName(position);
         if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
 
@@ -576,8 +574,8 @@ public class HousingManager {
             return false;
         }
 
-        if (cube.ItemId is Constant.InteriorPortalCubeId && cube.CubePortalSettings is not null) {
-            session.Field.RemovePortal(cube.CubePortalSettings.PortalObjectId);
+        if (cube.Interact?.PortalSettings is not null) {
+            session.Field.RemovePortal(cube.Interact.PortalSettings.PortalObjectId);
         }
 
         if (cube.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching && cube.Interact is not null) {
@@ -699,22 +697,25 @@ public class HousingManager {
             }
 
             if (plotCube.ItemType.IsInteractFurnishing && plotCube.Interact is not null) {
+                if (cube.Interact?.PortalSettings is not null) {
+                    plotCube.Interact.PortalSettings = cube.Interact.PortalSettings;
+                }
                 session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
             }
 
-            if (cube.CubePortalSettings is not null) {
-                plotCube.CubePortalSettings = cube.CubePortalSettings;
-            }
 
             session.Field.Broadcast(sendPacket);
         }
 
         List<PlotCube> cubePortals = plot.Cubes.Values
-            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
+            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.Interact?.PortalSettings is not null)
             .ToList();
 
         foreach (PlotCube cubePortal in cubePortals) {
-            FieldPortal fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            FieldPortal? fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            if (fieldPortal is null) {
+                continue;
+            }
             session.Field.Broadcast(PortalPacket.Add(fieldPortal));
         }
 

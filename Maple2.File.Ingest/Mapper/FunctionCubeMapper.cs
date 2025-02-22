@@ -16,10 +16,13 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
     }
 
     protected override IEnumerable<FunctionCubeMetadata> Map() {
-        foreach ((int id, FunctionCube functionCube) in parser.Parse()) {
+        foreach ((int id, FunctionCubeRoot functionCubeRoot) in parser.Parse()) {
+            FunctionCube functionCube = functionCubeRoot.FunctionCube;
+            ConfigurableCube? configurableCube = functionCubeRoot.ConfigurableCube;
             yield return new FunctionCubeMetadata(
                 Id: id,
                 RecipeId: functionCube.receipeID,
+                ConfigurableCubeType: configurableCube is not null ? (ConfigurableCubeType) configurableCube.id : ConfigurableCubeType.None,
                 DefaultState: (InteractCubeState) functionCube.DefaultState,
                 AutoStateChange: functionCube.AutoStateChange,
                 AutoStateChangeTime: functionCube.AutoStateChangeTime,

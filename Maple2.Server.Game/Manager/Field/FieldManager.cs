@@ -136,7 +136,7 @@ public sealed partial class FieldManager : IDisposable {
 
         if (MapId is Constant.DefaultHomeMapId) {
             List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
+                .Where(x => x.Interact?.PortalSettings is not null)
                 .ToList();
 
             foreach (PlotCube cubePortal in cubePortals) {
@@ -411,14 +411,14 @@ public sealed partial class FieldManager : IDisposable {
         // MoveByPortal (same map)
         Portal srcPortal = fieldPortal;
         if (srcPortal.Type is PortalType.InHome) {
-            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.CubePortalSettings is not null && x.CubePortalSettings.PortalObjectId == fieldPortal.ObjectId);
+            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
             if (cubePortal is null) {
                 return false;
             }
 
-            switch (cubePortal.CubePortalSettings!.Destination) {
+            switch (cubePortal.Interact!.PortalSettings!.Destination) {
                 case CubePortalDestination.PortalInHome:
-                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.CubePortalSettings is not null && x.CubePortalSettings.PortalName == cubePortal.CubePortalSettings.DestinationTarget);
+                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
                     if (destinationCube is null) {
                         return false;
                     }

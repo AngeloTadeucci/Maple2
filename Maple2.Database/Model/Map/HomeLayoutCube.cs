@@ -19,19 +19,24 @@ internal class HomeLayoutCube {
 
     public int ItemId { get; set; }
     public HousingCategory HousingCategory { get; set; }
-    public CubePortalSettings? CubePortalSettings { get; set; }
     public InteractCube? Interact { get; set; }
     public UgcItemLook? Template { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator PlotCube?(HomeLayoutCube? other) {
-        return other == null ? null : new PlotCube(other.ItemId, other.Id, other.Template) {
+        if (other == null) return null;
+
+        var plotCube = new PlotCube(other.ItemId, other.Id, other.Template) {
             Position = new Vector3B(other.X, other.Y, other.Z),
             Rotation = other.Rotation,
             HousingCategory = other.HousingCategory,
-            CubePortalSettings = other.CubePortalSettings,
             Interact = other.Interact,
         };
+
+        if (plotCube.Interact?.NoticeSettings is not null) {
+            plotCube.Interact.NoticeSettings.Position = plotCube.Position;
+        }
+        return plotCube;
     }
 
     [return: NotNullIfNotNull(nameof(other))]
@@ -44,7 +49,6 @@ internal class HomeLayoutCube {
             ItemId = other.ItemId,
             Template = other.Template,
             HousingCategory = other.HousingCategory,
-            CubePortalSettings = other.CubePortalSettings,
             Interact = other.Interact,
         };
     }
@@ -58,7 +62,6 @@ internal class HomeLayoutCube {
             .HasForeignKey(cube => cube.HomeLayoutId);
 
         builder.Property(cube => cube.Template).HasJsonConversion();
-        builder.Property(cube => cube.CubePortalSettings).HasJsonConversion();
         builder.Property(cube => cube.Interact).HasJsonConversion();
     }
 }

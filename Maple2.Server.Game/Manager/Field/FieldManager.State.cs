@@ -167,27 +167,32 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
-    public FieldPortal SpawnCubePortal(PlotCube plotCube) {
+    public FieldPortal? SpawnCubePortal(PlotCube plotCube) {
         int targetMapId = MapId;
         long targetHomeAccountId = 0;
-        if (!string.IsNullOrEmpty(plotCube.CubePortalSettings!.DestinationTarget)) {
-            switch (plotCube.CubePortalSettings.Destination) {
+        CubePortalSettings? cubePortalSettings = plotCube.Interact?.PortalSettings;
+        if (cubePortalSettings is null) {
+            return null;
+        }
+
+        if (!string.IsNullOrEmpty(cubePortalSettings.DestinationTarget)) {
+            switch (cubePortalSettings.Destination) {
                 case CubePortalDestination.PortalInHome:
                     targetMapId = Constant.DefaultHomeMapId;
                     break;
                 case CubePortalDestination.SelectedMap:
-                    targetMapId = int.Parse(plotCube.CubePortalSettings.DestinationTarget);
+                    targetMapId = int.Parse(cubePortalSettings.DestinationTarget);
                     break;
                 case CubePortalDestination.FriendHome:
                     targetMapId = Constant.DefaultHomeMapId;
-                    targetHomeAccountId = long.Parse(plotCube.CubePortalSettings.DestinationTarget);
+                    targetHomeAccountId = long.Parse(cubePortalSettings.DestinationTarget);
                     break;
             }
         }
-        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, plotCube.CubePortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, cubePortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
         FieldPortal fieldPortal = SpawnPortal(portal);
         fieldPortal.HomeId = targetHomeAccountId;
-        plotCube.CubePortalSettings.PortalObjectId = fieldPortal.ObjectId;
+        cubePortalSettings.PortalObjectId = fieldPortal.ObjectId;
 
         return fieldPortal;
     }
@@ -678,6 +683,15 @@ public partial class FieldManager {
             result.AddRange(lifeSkillsCubes);
             added.Session.Send(FunctionCubePacket.SendCubes(result));
         }
+
+        foreach (Plot plot in Plots.Values) {
+            foreach (PlotCube plotCube in plot.Cubes.Values) {
+                if (plotCube.Interact?.NoticeSettings is not null) {
+                    added.Session.Send(HomeActionPacket.SendCubeNoticeSettings(plotCube));
+                }
+            }
+        }
+
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             added.Session.Send(FieldPacket.AddPlayer(fieldPlayer.Session));
             if (fieldPlayer.Session.GuideObject != null) {

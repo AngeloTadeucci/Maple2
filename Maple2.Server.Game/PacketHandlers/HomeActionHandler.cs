@@ -21,7 +21,8 @@ public class HomeActionHandler : PacketHandler<GameSession> {
         Survey = 5,
         ChangePortalSettings = 6,
         UpdateBallCoord = 7,
-        SendPortalSettings = 13,
+        ChangeNoticeSettings = 12,
+        SendConfigurableSettings = 13,
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
@@ -36,8 +37,11 @@ public class HomeActionHandler : PacketHandler<GameSession> {
             case Command.ChangePortalSettings:
                 HandleChangePortalSettings(session, packet);
                 break;
-            case Command.SendPortalSettings:
-                HandleSendPortalSettings(session, packet);
+            case Command.ChangeNoticeSettings:
+                HandleChangeNoticeSettings(session, packet);
+                break;
+            case Command.SendConfigurableSettings:
+                HandleConfigurableSettings(session, packet);
                 break;
         }
     }
@@ -123,38 +127,62 @@ public class HomeActionHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (cube.ItemId is not Constant.InteriorPortalCubeId) {
-            Logger.Warning("Cube is not a portal cube at {0}", coord);
-            return;
-        }
-
-        if (cube.CubePortalSettings is null) {
+        if (cube.Interact?.PortalSettings is null) {
             Logger.Warning("Cube does not have portal settings at {0}", coord);
             return;
         }
 
-        cube.CubePortalSettings.PortalName = packet.ReadUnicodeString();
-        cube.CubePortalSettings.Method = (PortalActionType) packet.ReadByte();
-        cube.CubePortalSettings.Destination = (CubePortalDestination) packet.ReadByte();
-        cube.CubePortalSettings.DestinationTarget = packet.ReadUnicodeString();
+        cube.Interact.PortalSettings.PortalName = packet.ReadUnicodeString();
+        cube.Interact.PortalSettings.Method = (PortalActionType) packet.ReadByte();
+        cube.Interact.PortalSettings.Destination = (CubePortalDestination) packet.ReadByte();
+        cube.Interact.PortalSettings.DestinationTarget = packet.ReadUnicodeString();
 
         foreach (FieldPortal portal in session.Field.GetPortals()) {
             session.Field.RemovePortal(portal.ObjectId);
         }
 
         List<PlotCube> cubePortals = plot.Cubes.Values
-            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.CubePortalSettings is not null)
+            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.Interact?.PortalSettings is not null)
             .ToList();
 
         foreach (PlotCube cubePortal in cubePortals) {
-            FieldPortal fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            FieldPortal? fieldPortal = session.Field.SpawnCubePortal(cubePortal);
+            if (fieldPortal == null) {
+                continue;
+            }
             session.Field.Broadcast(PortalPacket.Add(fieldPortal));
         }
 
         session.Housing.SaveHome();
     }
 
-    private void HandleSendPortalSettings(GameSession session, IByteReader packet) {
+    private void HandleChangeNoticeSettings(GameSession session, IByteReader packet) {
+        bool editing = packet.ReadBool();
+        Vector3B coord = packet.Read<Vector3B>();
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot == null) {
+            return;
+        }
+
+        if (!plot.Cubes.TryGetValue(coord, out PlotCube? cube)) {
+            Logger.Warning("Cube not found at {0}", coord);
+            return;
+        }
+
+        if (cube.Interact?.NoticeSettings is null) {
+            Logger.Warning("Cube does not have notice settings at {0}", coord);
+            return;
+        }
+
+        cube.Interact.NoticeSettings.Notice = packet.ReadUnicodeString();
+        cube.Interact.NoticeSettings.Distance = packet.ReadByte();
+
+        session.Field.Broadcast(HomeActionPacket.SendCubeNoticeSettings(cube, editing: false));
+        session.Housing.SaveHome();
+    }
+
+    private void HandleConfigurableSettings(GameSession session, IByteReader packet) {
         var coord = packet.Read<Vector3B>();
 
         Plot? plot = session.Housing.GetFieldPlot();
@@ -167,16 +195,17 @@ public class HomeActionHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (cube.ItemId is not Constant.InteriorPortalCubeId) {
-            Logger.Warning("Cube is not a portal cube at {0}", coord);
-            return;
+        if (cube.Interact?.PortalSettings is not null) {
+            List<string> otherPortalsNames = plot.Cubes.Values
+                .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.Id != cube.Id)
+                .Select(x => x.Interact!.PortalSettings?.PortalName ?? string.Empty)
+                .ToList();
+
+            session.Send(HomeActionPacket.SendCubePortalSettings(cube, otherPortalsNames));
+        } else if (cube.Interact?.NoticeSettings is not null) {
+            session.Send(HomeActionPacket.SendCubeNoticeSettings(cube, editing: true));
+        } else {
+            Logger.Warning("Cube is not configurable at {0}", coord);
         }
-
-        List<string> otherPortalsNames = plot.Cubes.Values
-            .Where(x => x.ItemId is Constant.InteriorPortalCubeId && x.Id != cube.Id)
-            .Select(x => x.CubePortalSettings?.PortalName ?? string.Empty)
-            .ToList();
-
-        session.Send(HomeActionPacket.SendCubePortalSettings(cube, otherPortalsNames));
     }
 }
