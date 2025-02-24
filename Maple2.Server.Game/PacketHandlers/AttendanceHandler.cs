@@ -4,6 +4,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -46,47 +47,53 @@ public class AttendanceHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClaim(GameSession session) {
-        GameEvent? gameEvent = session.FindEvent<AttendGift>();
-        if (gameEvent == null) {
+        IList<GameEvent> gameEvents = session.FindEvent(GameEventType.AttendGift);
+        if (gameEvents.Count == 0) {
             return;
         }
 
-        AttendGift attendGift = (AttendGift) gameEvent.EventInfo;
+        foreach (GameEvent gameEvent in gameEvents) {
+            if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
+                continue;
+            }
 
-        // Verify that the player meets the time requirements of event
-        long accumulatedTimeValue = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).Long();
-        if ((DateTime.Now.AddSeconds(accumulatedTimeValue) - session.Player.Value.Character.LastModified).TotalSeconds < attendGift.TimeRequired) {
-            return;
+            // Verify that the player meets the time requirements of event
+            long accumulatedTimeValue = session.GameEvent.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).Long();
+            if ((DateTime.Now.AddSeconds(accumulatedTimeValue) - session.Player.Value.Character.LastModified).TotalSeconds < attendGift.RequiredPlaySeconds) {
+                return;
+            }
+
+            DateTime completeTime = session.GameEvent.Get(GameEventUserValueType.AttendanceCompletedTimestamp, gameEvent.Id, gameEvent.EndTime).Long().FromEpochSeconds();
+            if (DateTime.Now < completeTime || completeTime.Date == DateTime.Now.Date) {
+                session.Send(AttendancePacket.Error(AttendanceError.s_attendGift_item_attend_already_used));
+                return;
+            }
+
+            GetRewards(session, attendGift, gameEvent);
+            session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceCompletedTimestamp, DateTime.Now.ToEpochSeconds());
         }
-
-        DateTime completeTime = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceCompletedTimestamp, gameEvent.Id, gameEvent.EndTime).Long().FromEpochSeconds();
-        if (DateTime.Now < completeTime || completeTime.Date == DateTime.Now.Date) {
-            session.Send(AttendancePacket.Error(AttendanceError.s_attendGift_item_attend_already_used));
-            return;
-        }
-
-        GetRewards(session, attendGift);
-        session.GameEventUserValue.Set(gameEvent.Id, GameEventUserValueType.AttendanceCompletedTimestamp, DateTime.Now.ToEpochSeconds());
     }
 
     private void HandleBeginTimer(GameSession session) {
-        GameEvent? gameEvent = session.FindEvent<AttendGift>();
-        if (gameEvent == null) {
+        IList<GameEvent> gameEvents = session.FindEvent(GameEventType.AttendGift);
+        if (gameEvents.Count == 0) {
             return;
         }
 
-        long expirationTime = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).ExpirationTime;
-        if (expirationTime < DateTime.Now.ToEpochSeconds()) {
-            session.GameEventUserValue.Set(gameEvent.Id, GameEventUserValueType.AttendanceAccumulatedTime, 0);
+        foreach (GameEvent gameEvent in gameEvents) {
+            long expirationTime = session.GameEvent.Get(GameEventUserValueType.AttendanceAccumulatedTime, gameEvent.Id, DateTime.Now.AddDays(1).Date.ToEpochSeconds()).ExpirationTime;
+            if (expirationTime < DateTime.Now.ToEpochSeconds()) {
+                session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceAccumulatedTime, 0);
+            }
         }
     }
 
-    private void GetRewards(GameSession session, AttendGift attendGift) {
-        int rewardsClaimed = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceRewardsClaimed, attendGift.Id, attendGift.EndTime).Int();
+    private void GetRewards(GameSession session, AttendGift attendGift, GameEvent gameEvent) {
+        int rewardsClaimed = session.GameEvent.Get(GameEventUserValueType.AttendanceRewardsClaimed, gameEvent.Id, gameEvent.EndTime).Int();
         rewardsClaimed++;
-        session.GameEventUserValue.Set(attendGift.Id, GameEventUserValueType.AttendanceRewardsClaimed, rewardsClaimed);
+        session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.AttendanceRewardsClaimed, rewardsClaimed);
 
-        RewardItem reward = attendGift.Rewards.FirstOrDefault(entry => entry.Key == rewardsClaimed).Value;
+        RewardItem reward = attendGift.Items.ElementAtOrDefault(rewardsClaimed);
         if (default(RewardItem).Equals(reward)) {
             return;
         }
@@ -96,13 +103,12 @@ public class AttendanceHandler : PacketHandler<GameSession> {
             return;
         }
 
-        // TODO: Have sender name, title, and body be more configurable
         var receiverMail = new Mail() {
             ReceiverId = session.CharacterId,
             Type = MailType.System,
             SenderName = "MapleStory 2",
-            Title = $"[{attendGift.AttendanceName}] Attendance Reward",
-            Content = "Thanks for testing out the emulator. Here is a token of appreciation.",
+            Title = attendGift.MailTitle,
+            Content = attendGift.MailContent,
         };
 
         using GameStorage.Request db = session.GameStorage.Context();
@@ -129,13 +135,13 @@ public class AttendanceHandler : PacketHandler<GameSession> {
     private void HandleEarlyParticipation(GameSession session, IByteReader packet) {
         int eventId = packet.ReadInt();
         // packet.ReadLong();
-        GameEvent? gameEvent = session.FindEvent<AttendGift>();
-        if (gameEvent == null) {
+        GameEvent? gameEvent = session.FindEvent(eventId);
+        if (gameEvent?.Metadata.Data is not AttendGift attendGift) {
             return;
         }
 
-        AttendGift attendGift = (AttendGift) gameEvent.EventInfo;
-        int skipsTotal = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceEarlyParticipationRemaining, attendGift.Id, attendGift.EndTime).Int();
+        // TODO: Need to interpret how this would be in the xmls. Current xml does not have this information.
+        /*int skipsTotal = session.GameEventUserValue.Get(GameEventUserValueType.AttendanceEarlyParticipationRemaining, attendGift.Id, attendGift.EndTime).Int();
         if (skipsTotal >= attendGift.SkipDaysAllowed) {
             return;
         }
@@ -161,6 +167,6 @@ public class AttendanceHandler : PacketHandler<GameSession> {
         }
 
         session.GameEventUserValue.Set(attendGift.Id, GameEventUserValueType.AttendanceEarlyParticipationRemaining, skipsTotal + 1);
-        GetRewards(session, attendGift);
+        GetRewards(session, attendGift);*/
     }
 }

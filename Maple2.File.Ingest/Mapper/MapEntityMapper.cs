@@ -3,7 +3,6 @@ using Maple2.File.Flat;
 using Maple2.File.Flat.maplestory2library;
 using Maple2.File.Flat.standardmodellibrary;
 using Maple2.File.IO;
-using Maple2.File.Parser.Flat;
 using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -16,11 +15,10 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
     private readonly HashSet<string> xBlocks;
     private readonly XBlockParser parser;
 
-    public MapEntityMapper(MetadataContext db, M2dReader exportedReader) {
+    public MapEntityMapper(MetadataContext db, XBlockParser parser) {
         xBlocks = db.MapMetadata.Select(metadata => metadata.XBlock).ToHashSet();
-        var index = new FlatTypeIndex(exportedReader);
-        // index.CliExplorer();
-        parser = new XBlockParser(exportedReader, index);
+
+        this.parser = parser;
     }
 
     private IEnumerable<MapEntity> ParseMap(string xblock, IEnumerable<IMapEntity> entities) {
@@ -70,7 +68,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 case IPortal portal:
                     if (!FeatureEnabled(portal.feature) || !HasLocale(portal.locale)) continue;
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable)
+                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.RandomDestRadius, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable)
                     };
                     continue;
                 case ISpawnPoint spawn:
@@ -165,6 +163,11 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             Block = new Ms2Bounding(firstBounding.Position, bounding.Position),
                         };
                     }
+                    continue;
+                case IMS2LiftableTargetBox liftableTargetBox:
+                    yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                        Block = new LiftableTargetBox(liftableTargetBox.Position, liftableTargetBox.Rotation, liftableTargetBox.isForceFinish, liftableTargetBox.liftableTarget)
+                    };
                     continue;
                 case IMS2MapProperties mapProperties:
                     switch (mapProperties) {

@@ -26,6 +26,9 @@ service World {
   rpc Party(PartyRequest) returns (PartyResponse);
   rpc PartySearchInfo(PartySearchInfoRequest) returns (PartySearchInfoResponse);
   rpc PartySearch(PartySearchRequest) returns (PartySearchResponse);
+  // Manage club.
+  rpc ClubInfo(maple2.ClubInfoRequest) returns (maple2.ClubInfoResponse);
+  rpc Club(ClubRequest) returns (ClubResponse);
   // Manage group chat.
   rpc GroupChatInfo(GroupChatInfoRequest) returns (GroupChatInfoResponse);
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
@@ -39,6 +42,12 @@ service World {
   rpc GameReset(maple2.GameResetRequest) returns (maple2.GameResetResponse);
   // Black Market
   rpc BlackMarket(BlackMarketRequest) returns (BlackMarketResponse);
+  // Time Events
+  rpc TimeEvent(TimeEventRequest) returns (TimeEventResponse);
+  // Add channel
+  rpc AddChannel(AddChannelRequest) returns (AddChannelResponse);
+  // Marriage
+  rpc Marriage(maple2.MarriageRequest) returns (maple2.MarriageResponse);
 }
 
 enum Server {
@@ -54,6 +63,18 @@ message MigrateOutRequest {
 
   // If channel is not specified, one will be determined by the world server.
   optional int32 channel = 5;
+
+  optional int32 map_id = 6;
+  optional int32 portal_id = 7;
+  optional int64 owner_id = 8;
+  optional int32 instance_id = 9;
+  optional PlotMode plot_mode = 10;
+}
+
+enum PlotMode {
+  NORMAL = 0;
+  DECOR_PLANNER = 1;
+  BLUEPRINT_DESIGNER = 3;
 }
 
 message MigrateOutResponse {
@@ -68,11 +89,18 @@ message MigrateInRequest {
   fixed64 token = 3;
   string machine_id = 4;
   int32 channel = 5;
+  int32 map_id = 6;
+  int64 owner_id = 7;
 }
 
 message MigrateInResponse {
   int64 character_id = 1;
   int32 channel = 2;
+  int32 map_id = 3;
+  int32 portal_id = 4;
+  int64 owner_id = 5;
+  int32 instance_id = 6;
+  PlotMode plot_mode = 7;
 }
 
 message ChannelsRequest {}
@@ -103,6 +131,13 @@ message GuildInfo {
     int32 level = 2;
     int64 expiry_time = 3;
   }
+  message Poster {
+    int32 id = 1;
+    string picture = 2;
+    int64 owner_id = 3;
+    string owner_name = 4;
+    int64 resource_id = 5;
+  }
   message Npc {
     int32 type = 1;
     int32 level = 2;
@@ -123,7 +158,7 @@ message GuildInfo {
   repeated Rank ranks = 12;
   repeated Buff buffs = 13;
   // events
-  // posters
+  repeated Poster posters = 15;
   repeated Npc npcs = 16;
   // bank
 }
@@ -164,6 +199,29 @@ message GuildRequest {
     optional int32 rank = 3;
     optional string message = 4;
   }
+  message CheckIn {
+    int64 guild_id = 1;
+  }
+  message UpdateLeader {
+    int64 guild_id = 1;
+    int64 leader_id = 2;
+  }
+  message UpdateNotice {
+    int64 guild_id = 1;
+    string message = 2;
+  }
+  message UpdateEmblem {
+    int64 guild_id = 1;
+    string emblem = 2;
+  }
+  message UpdatePoster {
+    int64 guild_id = 1;
+    int32 id = 2;
+    string picture = 3;
+    int64 owner_id = 4;
+    string owner_name = 5;
+    int64 resource_id = 6;
+  }
 
   int64 requestor_id = 4;
   oneof guild {
@@ -174,6 +232,11 @@ message GuildRequest {
     Leave leave = 7;
     Expel expel = 8;
     UpdateMember update_member = 9;
+    CheckIn check_in = 10;
+    UpdateLeader update_leader = 11;
+    UpdateNotice update_notice = 12;
+    UpdateEmblem update_emblem = 13;
+    UpdatePoster update_poster = 14;
   }
 }
 
@@ -183,7 +246,7 @@ message GuildResponse {
     GuildInfo guild = 2;
   }
 
-  int32 error = 3;
+  int32 error = 4;
 }
 
 message GroupChatInfoRequest {
@@ -199,7 +262,6 @@ message PartyInfo {
   message Member {
     int64 character_id = 1;
     int64 join_time = 2;
-    int64 login_time = 3;
   }
 
   int32 id = 1;
@@ -291,6 +353,56 @@ message PartyResponse {
   int32 error = 3;
 }
 
+message ClubRequest {
+  message Create {
+    string club_name = 1;
+  }
+
+  message NewClubInvite {
+    int64 club_id = 1;
+    int64 receiver_id = 2;
+    int32 reply = 3;
+  }
+
+  message Leave {
+    int64 club_id = 1;
+  }
+
+  message Invite {
+    int64 club_id = 1;
+    int64 receiver_id = 2;
+  }
+
+  message RespondInvite {
+    int64 club_id = 1;
+    bool accept = 2;
+  }
+
+  message Rename {
+    int64 club_id = 1;
+    string name = 2;
+  }
+
+  int64 requestor_id = 1;
+  oneof club {
+    Create create = 2;
+    NewClubInvite new_club_invite = 3;
+    Leave leave = 4;
+    Invite invite = 5;
+    RespondInvite respond_invite = 6;
+    Rename rename = 7;
+  }
+}
+
+message ClubResponse {
+  oneof Info {
+    int64 club_id = 1;
+    ClubInfo club = 2;
+  }
+
+  int32 error = 3;
+}
+
 message BlackMarketRequest {
   message Add {
     int64 listing_id = 1;
@@ -343,4 +455,45 @@ message BlackMarketResponse {
 message StatOption {
   int32 stat_id = 1;
   int32 value = 2;
+}
+
+message TimeEventRequest {
+  message JoinGlobalPortal {
+    int32 event_id = 1;
+    int32 index = 2;
+  }
+
+  message GetGlobalPortal {}
+
+  oneof TimeEvent {
+    JoinGlobalPortal join_global_portal = 1;
+    GetGlobalPortal get_global_portal = 2;
+  }
+}
+
+message TimeEventResponse {
+  oneof Info {
+    GlobalPortalInfo global_portal_info = 1;
+  }
+  int32 error = 2;
+}
+
+message GlobalPortalInfo {
+  int32 event_id = 1;
+  int32 metadata_id = 2;
+  int32 channel = 3;
+  int32 instance_id = 4;
+  int32 map_id = 5;
+  int32 portal_id = 6;
+}
+
+message AddChannelRequest {
+  string game_ip = 1;
+  string grpc_game_ip = 2;
+}
+
+message AddChannelResponse {
+  int32 game_port = 1;
+  int32 grpc_port = 2;
+  int32 game_channel = 3;
 }

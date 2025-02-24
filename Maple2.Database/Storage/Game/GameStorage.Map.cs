@@ -27,37 +27,32 @@ public partial class GameStorage {
             }
 
             return query.AsEnumerable()
+                .ToList() // ToList before Select so 'This MySqlConnection is already in use.' exception doesn't occur.
                 .Select(ToPlot)
                 .ToList()!;
         }
 
         public IList<PlotCube> LoadCubesForOwner(long ownerId) {
-            return Context.UgcMap.Where(map => map.OwnerId == ownerId)
+            List<PlotCube> plotCubes = Context.UgcMap.Where(map => map.OwnerId == ownerId)
                 .Join(Context.UgcMapCube, ugcMap => ugcMap.Id, cube => cube.UgcMapId, (ugcMap, cube) => cube)
                 .AsEnumerable()
                 .Select<UgcMapCube, PlotCube>(cube => cube)
                 .ToList();
-        }
+            foreach (PlotCube cube in plotCubes) {
+                if (!cube.ItemType.IsInteractFurnishing) continue;
+                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                if (itemMetadata?.Install is null) continue;
 
-        public PlotCube? CreateCube(Item item, int mapId, in Vector3B position = default, float rotation = default) {
-            if (item.Amount <= 0) {
-                return null;
+                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                if (functionCubeMetadata?.Nurturing is null) continue;
+
+                cube.Interact!.Nurturing = GetNurturing(ownerId, cube.ItemId);
             }
 
-            var model = new UgcMapCube {
-                UgcMapId = mapId,
-                X = position.X,
-                Y = position.Y,
-                Z = position.Z,
-                Rotation = rotation,
-                ItemId = item.Id,
-                Template = item.Template,
-            };
-            Context.UgcMapCube.Add(model);
-            return Context.TrySaveChanges() ? model : null;
+            return plotCubes;
         }
 
-        public PlotInfo? BuyPlot(long ownerId, PlotInfo plot, TimeSpan days) {
+        public PlotInfo? BuyPlot(string characterName, long ownerId, PlotInfo plot, TimeSpan days) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             UgcMap? ugcMap = Context.UgcMap.FirstOrDefault(map => map.Id == plot.Id && !map.Indoor);
@@ -72,6 +67,7 @@ public partial class GameStorage {
 
             ugcMap.OwnerId = ownerId;
             ugcMap.ExpiryTime = DateTime.UtcNow + days;
+            ugcMap.Name = characterName;
             Context.UgcMap.Update(ugcMap);
             Context.UgcMapCube.Where(cube => cube.UgcMapId == ugcMap.Id).Delete();
 
@@ -111,7 +107,8 @@ public partial class GameStorage {
             }
 
             model.OwnerId = 0;
-            model.ExpiryTime = DateTime.UtcNow;
+            model.Name = string.Empty;
+            model.ExpiryTime = DateTimeOffset.UtcNow;
             Context.UgcMapCube.Where(cube => cube.UgcMapId == model.Id).Delete();
             Context.UgcMap.Update(model);
 
@@ -141,6 +138,7 @@ public partial class GameStorage {
                 model.Number = plotInfo.Number;
                 model.ApartmentNumber = plotInfo.ApartmentNumber;
                 model.ExpiryTime = plotInfo.ExpiryTime.FromEpochSeconds();
+                model.Name = plotInfo.Name;
                 Context.UgcMap.Update(model);
             }
 
@@ -175,7 +173,19 @@ public partial class GameStorage {
                 return null;
             }
 
-            return results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
+            PlotCube[] plotCubes = results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
+            foreach (PlotCube cube in plotCubes) {
+                if (!cube.ItemType.IsInteractFurnishing) continue;
+                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                if (itemMetadata?.Install is null) continue;
+
+                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                if (functionCubeMetadata?.Nurturing is null) continue;
+
+                cube.Interact!.Nurturing = GetNurturing(plotInfo.OwnerId, cube.ItemId);
+            }
+
+            return plotCubes;
         }
 
         public bool InitUgcMap(IEnumerable<UgcMapMetadata> maps) {
@@ -216,13 +226,23 @@ public partial class GameStorage {
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
 
-            if (ugcMap.Cubes != null) {
-                foreach (PlotCube? cube in ugcMap.Cubes) {
-                    plot.Cubes.Add(cube!.Position, cube);
+            if (ugcMap.Cubes == null) return plot;
+
+            foreach (PlotCube cube in ugcMap.Cubes) {
+                if (cube.ItemType.IsInteractFurnishing) {
+                    game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
+                    if (itemMetadata?.Install is not null) {
+                        game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+                        if (functionCubeMetadata?.Nurturing is not null) {
+                            cube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId);
+                        }
+                    }
                 }
+
+                plot.Cubes.Add(cube.Position, cube);
             }
 
             return plot;
@@ -242,8 +262,9 @@ public partial class GameStorage {
                 OwnerId = ugcMap.OwnerId,
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
+                Name = ugcMap.Name,
                 ApartmentNumber = 0,
-                ExpiryTime = ugcMap.ExpiryTime.ToEpochSeconds(),
+                ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
         }
     }

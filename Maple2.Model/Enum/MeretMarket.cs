@@ -19,7 +19,7 @@ public enum MeretMarketSort : byte {
     TopSeller = 6,
 }
 
-public enum MeretMarketItemLabel : byte {
+public enum MeretMarketItemSaleTag : byte {
     None = 0,
     New = 1,
     Hot = 2,
@@ -41,7 +41,7 @@ public enum MeretMarketCategory {
     Lifestyle = 40600,
 }
 
-public enum MeretMarketBannerLabel {
+public enum MeretMarketBannerTag {
     None = 0,
     PinkGift = 1,
     BlueGift = 2,

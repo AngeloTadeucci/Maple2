@@ -127,11 +127,9 @@ public class ItemDropManager {
     }
 
     private IEnumerable<Item> GetSelectedIndividualDropBoxItem(GameSession session, IEnumerable<IndividualDropItemTable.Item> itemEntries, int index) {
-        ICollection<Item> items = new List<Item>();
-
         IndividualDropItemTable.Item? selectedItem = itemEntries.ElementAtOrDefault(index);
         if (selectedItem == null) {
-            return items;
+            return new List<Item>();
         }
 
         // assuming selectedBoxes skip requirements otherwise they wouldn't have seen the item in the item selection.
@@ -290,7 +288,7 @@ public class ItemDropManager {
         return itemMetadata.Limit.JobRecommends.Contains(job) || itemMetadata.Limit.JobRecommends.Contains(JobCode.None);
     }
 
-    public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
+    public Item? CreateItem(int itemId, int rarity = -1, int amount = 1, bool rollMax = false) {
         if (!field.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
             return null;
         }
@@ -304,7 +302,7 @@ public class ItemDropManager {
         }
 
         var item = new Item(itemMetadata, rarity, amount);
-        item.Stats = field.ItemStatsCalc.GetStats(item);
+        item.Stats = field.ItemStatsCalc.GetStats(item, rollMax);
         item.Socket = field.ItemStatsCalc.GetSockets(item);
 
         if (item.Appearance != null) {

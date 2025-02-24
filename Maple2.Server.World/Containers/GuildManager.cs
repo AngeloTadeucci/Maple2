@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
@@ -17,6 +14,7 @@ namespace Maple2.Server.World.Containers;
 public class GuildManager : IDisposable {
     public required GameStorage GameStorage { get; init; }
     public required ChannelClientLookup ChannelClients { get; init; }
+    public required TableMetadataStorage TableMetadata { get; init; }
 
     public readonly Guild Guild;
     private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites;
@@ -56,7 +54,7 @@ public class GuildManager : IDisposable {
             return GuildError.s_guild_err_null_member;
         }
         GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
-        if (rank == null || rank.Permission.HasFlag(GuildPermission.InviteMembers)) {
+        if (rank == null || !rank.Permission.HasFlag(GuildPermission.InviteMembers)) {
             return GuildError.s_guild_err_no_authority;
         }
         if (Guild.Members.Count >= Guild.Capacity) {
@@ -109,7 +107,6 @@ public class GuildManager : IDisposable {
                 RequestorName = requestorName,
                 Rank = member.Rank,
                 JoinTime = member.JoinTime,
-                LoginTime = member.LoginTime,
             },
         });
         Guild.Members.TryAdd(member.CharacterId, member);
@@ -184,7 +181,8 @@ public class GuildManager : IDisposable {
                 return GuildError.s_guild_err_set_grade_failed;
             }
 
-            if (requestorId != Guild.LeaderCharacterId) {
+            GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
+            if (rank == null || !rank.Permission.HasFlag(GuildPermission.EditRank)) {
                 return GuildError.s_guild_err_no_authority;
             }
             GuildRank? newRank = Guild.Ranks.ElementAtOrDefault((byte) rankId);
@@ -219,6 +217,142 @@ public class GuildManager : IDisposable {
         return GuildError.none;
     }
 
+    public GuildError CheckIn(long requestorId) {
+        const int contribution = 10;
+
+        if (!Guild.Members.TryGetValue(requestorId, out GuildMember? requestor)) {
+            return GuildError.s_guild_err_null_member;
+        }
+
+        requestor.CheckinTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        requestor.WeeklyContribution += contribution;
+        requestor.TotalContribution += contribution;
+
+        GuildTable.Property property = GuildProperty();
+        Guild.Experience += property.CheckInExp;
+        Guild.Funds += property.CheckInFund;
+
+        Broadcast(new GuildRequest {
+            UpdateContribution = new GuildRequest.Types.UpdateContribution {
+                ContributorId = requestor.CharacterId,
+                GuildExp = Guild.Experience,
+                GuildFund = Guild.Funds,
+            },
+        });
+        Broadcast(new GuildRequest {
+            UpdateMember = new GuildRequest.Types.UpdateMember {
+                RequestorId = requestor.CharacterId,
+                CharacterId = requestor.CharacterId,
+                Contribution = contribution,
+                CheckInTime = requestor.CheckinTime,
+            },
+        });
+
+        return GuildError.none;
+    }
+
+    public GuildError UpdateLeader(long requestorId, long newLeaderId) {
+        if (requestorId != Guild.LeaderCharacterId) {
+            return GuildError.s_guild_err_no_master;
+        }
+        if (!Guild.Members.TryGetValue(requestorId, out GuildMember? oldLeader)) {
+            return GuildError.s_guild_err_null_member;
+        }
+        if (!Guild.Members.TryGetValue(newLeaderId, out GuildMember? newLeader)) {
+            return GuildError.s_guild_err_null_member;
+        }
+
+        oldLeader.Rank = 1; // Jr. Master
+        newLeader.Rank = 0; // Master
+        Guild.LeaderCharacterId = newLeader.CharacterId;
+        Guild.LeaderAccountId = newLeader.AccountId;
+        Guild.LeaderName = newLeader.Name;
+
+        Broadcast(new GuildRequest {
+            UpdateLeader = new GuildRequest.Types.UpdateLeader {
+                OldLeaderId = oldLeader.CharacterId,
+                NewLeaderId = newLeader.CharacterId,
+            },
+        });
+
+        return GuildError.none;
+    }
+
+    public GuildError UpdateNotice(long requestorId, string message) {
+        if (!Guild.Members.TryGetValue(requestorId, out GuildMember? requestor)) {
+            return GuildError.s_guild_err_null_member;
+        }
+        GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
+        if (rank == null || !rank.Permission.HasFlag(GuildPermission.EditNotice)) {
+            return GuildError.s_guild_err_no_authority;
+        }
+
+        Guild.Notice = message;
+        Broadcast(new GuildRequest {
+            UpdateNotice = new GuildRequest.Types.UpdateNotice {
+                RequestorName = requestor.Name,
+                Message = Guild.Notice,
+            },
+        });
+
+        return GuildError.none;
+    }
+
+    public GuildError UpdateEmblem(long requestorId, string emblem) {
+        if (!Guild.Members.TryGetValue(requestorId, out GuildMember? requestor)) {
+            return GuildError.s_guild_err_null_member;
+        }
+        GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
+        if (rank == null || !rank.Permission.HasFlag(GuildPermission.EditEmblem)) {
+            return GuildError.s_guild_err_no_authority;
+        }
+
+        Guild.Emblem = emblem;
+        Broadcast(new GuildRequest {
+            UpdateEmblem = new GuildRequest.Types.UpdateEmblem {
+                RequestorName = requestor.Name,
+                Emblem = Guild.Emblem,
+            },
+        });
+
+        return GuildError.none;
+    }
+
+    public GuildError AddOrUpdatePoster(int id, string picture, long ownerId, string ownerName, long resourceId) {
+        if (!Guild.Members.TryGetValue(ownerId, out GuildMember? requestor)) {
+            return GuildError.s_guild_err_null_member;
+        }
+
+        GuildRank? rank = Guild.Ranks.ElementAtOrDefault(requestor.Rank);
+        if (rank == null || !rank.Permission.HasFlag(GuildPermission.EditEmblem)) {
+            return GuildError.s_guild_err_no_authority;
+        }
+
+        GuildPoster? oldPoster = Guild.Posters.FirstOrDefault(poster => poster.Id == id);
+        if (oldPoster != null) {
+            Guild.Posters.Remove(oldPoster);
+        }
+
+        Guild.Posters.Add(new GuildPoster {
+            Id = id,
+            Picture = picture,
+            OwnerId = ownerId,
+            OwnerName = ownerName,
+            ResourceId = resourceId,
+        });
+
+        Broadcast(new GuildRequest {
+            UpdatePoster = new GuildRequest.Types.UpdatePoster {
+                Id = id,
+                Picture = picture,
+                OwnerId = ownerId,
+                OwnerName = ownerName,
+                ResourceId = resourceId,
+            },
+        });
+        return GuildError.none;
+    }
+
     public string ConsumeInvite(long characterId) {
         foreach ((long id, (string name, DateTime expiryTime)) in pendingInvites) {
             // Remove any expired entries while iterating.
@@ -234,5 +368,11 @@ public class GuildManager : IDisposable {
         }
 
         return string.Empty;
+    }
+
+    private GuildTable.Property GuildProperty() {
+        return TableMetadata.GuildTable.Properties
+            .OrderBy(entry => entry.Value.Experience)
+            .MinBy(entry => entry.Value.Experience > Guild.Experience).Value;
     }
 }

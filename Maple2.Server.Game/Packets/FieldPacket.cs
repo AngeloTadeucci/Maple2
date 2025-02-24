@@ -26,7 +26,7 @@ public static class FieldPacket {
         pWriter.Write<Vector3>(session.Player.Position);
         pWriter.Write<Vector3>(session.Player.Rotation);
         pWriter.WriteByte();
-        pWriter.WritePlayerStats(session.Player.Stats);
+        pWriter.WritePlayerStats(session.Player.Stats.Values);
         pWriter.WriteBool(session.Player.InBattle);
 
         #region Unknown Cube Section
@@ -143,7 +143,7 @@ public static class FieldPacket {
             pWriter.WriteString(npc.Value.Metadata.Model.Name);
         }
 
-        pWriter.WriteNpcStats(npc.Stats);
+        pWriter.WriteNpcStats(npc.Stats.Values);
         pWriter.WriteBool(npc.IsDead);
 
         pWriter.WriteShort((short) npc.Buffs.Buffs.Count);
@@ -261,7 +261,7 @@ public static class FieldPacket {
         pWriter.Write<Vector3>(pet.Rotation);
         pWriter.WriteFloat(pet.Scale);
         pWriter.WriteInt(pet.OwnerId);
-        pWriter.WriteNpcStats(pet.Stats);
+        pWriter.WriteNpcStats(pet.Stats.Values);
         pWriter.WriteLong(pet.Pet.Uid);
         pWriter.WriteByte();
         pWriter.WriteShort(pet.Value.Metadata.Basic.Level);
@@ -312,7 +312,15 @@ public static class FieldPacket {
         writer.WriteUnicodeString(character.GuildName);
         writer.WriteUnicodeString(character.Motto);
         writer.WriteUnicodeString(character.Picture);
-        writer.WriteByte(); // Club Count
+        writer.WriteByte((byte) character.ClubIds.Count);
+        foreach (long clubId in character.ClubIds) {
+            bool unk = true;
+            writer.WriteBool(unk);
+            if (unk) {
+                writer.WriteLong(clubId);
+                writer.WriteUnicodeString(); // Club Name
+            }
+        }
         writer.WriteByte(); // PCBang related?
         writer.WriteClass<Mastery>(character.Mastery);
         #region Unknown
@@ -320,7 +328,7 @@ public static class FieldPacket {
         writer.WriteLong();
         #endregion
         writer.WriteInt(); // Unknown Count
-        writer.WriteByte();
+        writer.WriteByte(); // Mentor User Type
         writer.WriteBool(false);
         writer.WriteLong(); // Birthday
         writer.WriteInt(session.SuperChatId);
@@ -328,7 +336,8 @@ public static class FieldPacket {
         writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         writer.WriteInt(account.PrestigeLevel); // PrestigeLevel
         writer.WriteLong(character.LastModified.ToEpochSeconds());
-        writer.WriteInt(); // Unknown Count
+        writer.WriteInt(1); // Unknown Count
+        writer.WriteLong(session.CharacterId);
         writer.WriteInt(); // Unknown Count
         writer.WriteShort(); // Survival related?
         writer.WriteLong();

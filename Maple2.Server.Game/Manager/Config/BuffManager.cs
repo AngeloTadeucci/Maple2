@@ -21,7 +21,7 @@ public class BuffManager : IUpdatable {
     /// <returns>Returns a local ObjectId</returns>
     private int NextLocalId() => Interlocked.Increment(ref idCounter);
     #endregion
-    private readonly IActor actor;
+    public IActor Actor { get; private set; }
     // TODO: Change this to support multiple buffs of the same id, different casters. Possibly also different levels?
     public ConcurrentDictionary<int, Buff> Buffs { get; } = new();
     public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
@@ -31,40 +31,21 @@ public class BuffManager : IUpdatable {
     private readonly ILogger logger = Log.ForContext<BuffManager>();
 
     public BuffManager(IActor actor) {
-        this.actor = actor;
+        Actor = actor;
         Invokes = new ConcurrentDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>>();
         Compulsions = new ConcurrentDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>>();
     }
 
     public void Initialize() {
         // Load buffs that are not broadcasted to the field
-        if (actor is FieldPlayer player) {
+        if (Actor is FieldPlayer player) {
             player.Session.Config.Skill.UpdatePassiveBuffs(false);
-            foreach (Item item in player.Session.Item.Equips.Gear.Values) {
-                foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-                    AddBuff(actor, actor, buff.Id, buff.Level, false);
-                }
-
-                // Check for buffs on gemstones
-                if (item.Socket?.Sockets is not null && item.Socket.Sockets.Length > 0) {
-                    foreach (ItemGemstone? gemstone in item.Socket?.Sockets!) {
-                        if (gemstone == null || !player.Session.ItemMetadata.TryGet(gemstone.ItemId, out ItemMetadata? metadata)) {
-                            continue;
-                        }
-
-                        foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
-                            AddBuff(actor, actor, buff.Id, buff.Level, false);
-                        }
-                    }
-                }
-            }
-
-            foreach (Item item in player.Session.Item.Equips.Badge.Values) {
-                foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-                    AddBuff(actor, actor, buff.Id, buff.Level, false);
-                }
-            }
+            player.Stats.Refresh();
         }
+    }
+
+    public void ResetActor(IActor actor) {
+        Actor = actor;
     }
 
     public void LoadFieldBuffs() {
@@ -72,7 +53,7 @@ public class BuffManager : IUpdatable {
         // Game Events
         // Prestige
         AddMapBuffs();
-        if (actor is FieldPlayer player) {
+        if (Actor is FieldPlayer player) {
             player.Session.Config.RefreshPremiumClubBuffs();
         }
     }
@@ -127,11 +108,10 @@ public class BuffManager : IUpdatable {
         SetShield(buff);
         SetUpdates(buff);
 
-        // TODO: Uncomment this when stats PR is merged.
         // refresh stats if needed
-        //if (buff.Metadata.Status.Values.Any() || buff.Metadata.Status.Rates.Any() || buff.Metadata.Status.SpecialValues.Any() || buff.Metadata.Status.SpecialRates.Any()) {
-        //        actor.Stats.Refresh();
-        //}
+        if (buff.Metadata.Status.Values.Any() || buff.Metadata.Status.Rates.Any() || buff.Metadata.Status.SpecialValues.Any() || buff.Metadata.Status.SpecialRates.Any()) {
+            Actor.Stats.Refresh();
+        }
 
         // Add resistances
         foreach ((BasicAttribute attribute, float value) in additionalEffect.Status.Resistances) {
@@ -139,7 +119,7 @@ public class BuffManager : IUpdatable {
             Resistances[attribute] = existingValue + value;
         }
 
-        if (!additionalEffect.Condition.Check(caster, owner, actor)) {
+        if (!additionalEffect.Condition.Check(caster, owner, Actor)) {
             buff.Disable();
         }
 
@@ -168,7 +148,7 @@ public class BuffManager : IUpdatable {
     }
 
     private void SetReflect(Buff buff) {
-        if (buff.Metadata.Reflect.EffectId == 0 || !actor.Field.SkillMetadata.TryGetEffect(buff.Metadata.Reflect.EffectId, buff.Metadata.Reflect.EffectLevel,
+        if (buff.Metadata.Reflect.EffectId == 0 || !Actor.Field.SkillMetadata.TryGetEffect(buff.Metadata.Reflect.EffectId, buff.Metadata.Reflect.EffectLevel,
                 out AdditionalEffectMetadata? _)) {
             return;
         }
@@ -195,7 +175,7 @@ public class BuffManager : IUpdatable {
                 Invokes.RemoveAll(buff.Id);
 
                 if (!nestedInvokeDic.TryAdd(buff.Id, record)) {
-                    logger.Error("Could not add invoke record from {Id} to {Object}", buff.Id, actor.ObjectId);
+                    logger.Error("Could not add invoke record from {Id} to {Object}", buff.Id, Actor.ObjectId);
                 }
                 continue;
             }
@@ -216,7 +196,7 @@ public class BuffManager : IUpdatable {
             Compulsions.RemoveAll(buff.Id);
 
             if (!nestedCompulsionDic.TryAdd(buff.Id, buff.Metadata.Status.Compulsion)) {
-                logger.Error("Could not add compulsion event from {Id} to {Object}", buff.Id, actor.ObjectId);
+                logger.Error("Could not add compulsion event from {Id} to {Object}", buff.Id, Actor.ObjectId);
             }
             return;
         }
@@ -264,7 +244,7 @@ public class BuffManager : IUpdatable {
         if (buff.Metadata.Shield.HpValue > 0) {
             buff.ShieldHealth = buff.Metadata.Shield.HpValue;
         } else if (buff.Metadata.Shield.HpByTargetMaxHp > 0f) {
-            buff.ShieldHealth = (long) (actor.Stats[BasicAttribute.Health].Total * buff.Metadata.Shield.HpByTargetMaxHp);
+            buff.ShieldHealth = (long) (Actor.Stats.Values[BasicAttribute.Health].Total * buff.Metadata.Shield.HpByTargetMaxHp);
         }
     }
 
@@ -274,7 +254,7 @@ public class BuffManager : IUpdatable {
         }
 
         // Reset skill cooldowns
-        if (buff.Metadata.Update.ResetCooldown.Length > 0 && actor is FieldPlayer player) {
+        if (buff.Metadata.Update.ResetCooldown.Length > 0 && Actor is FieldPlayer player) {
             foreach (int skillId in buff.Metadata.Update.ResetCooldown) {
                 // TODO: Uncomment this when skill cooldown PR is merged
                 //player.Session.Config.SetSkillCooldown(skillId);
@@ -311,7 +291,7 @@ public class BuffManager : IUpdatable {
     }
 
     public void LeaveField() {
-        foreach (MapEntranceBuff buff in actor.Field.Metadata.EntranceBuffs) {
+        foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
             Remove(buff.Id);
         }
         foreach (Buff buff in Buffs.Values) {
@@ -322,11 +302,11 @@ public class BuffManager : IUpdatable {
     }
 
     private void AddMapBuffs() {
-        foreach (MapEntranceBuff buff in actor.Field.Metadata.EntranceBuffs) {
-            AddBuff(actor, actor, buff.Id, buff.Level);
+        foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
+            AddBuff(Actor, Actor, buff.Id, buff.Level);
         }
 
-        if (actor.Field.Metadata.Property.Type == MapType.Pvp) {
+        if (Actor.Field.Metadata.Property.Type == MapType.Pvp) {
             foreach (Buff buff in Buffs.Values) {
                 if (buff.Metadata.Property.RemoveOnPvpZone) {
                     Remove(buff.Id);
@@ -338,21 +318,41 @@ public class BuffManager : IUpdatable {
             }
         }
 
-        if (actor.Field.Metadata.Property.Region == MapRegion.ShadowWorld) {
-            AddBuff(actor, actor, Constant.shadowWorldBuffHpUp, 1);
-            AddBuff(actor, actor, Constant.shadowWorldBuffMoveProtect, 1);
+        if (Actor.Field.Metadata.Property.Region == MapRegion.ShadowWorld) {
+            AddBuff(Actor, Actor, Constant.shadowWorldBuffHpUp, 1);
+            AddBuff(Actor, Actor, Constant.shadowWorldBuffMoveProtect, 1);
         }
     }
 
     public void AddItemBuffs(Item item) {
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-            AddBuff(actor, actor, buff.Id, buff.Level);
+            AddBuff(Actor, Actor, buff.Id, buff.Level);
+        }
+
+        if (item.Socket != null) {
+            foreach (ItemGemstone? gem in item.Socket.Sockets) {
+                if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
+                    foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
+                        AddBuff(Actor, Actor, buff.Id, buff.Level);
+                    }
+                }
+            }
         }
     }
 
     public void RemoveItemBuffs(Item item) {
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
             Remove(buff.Id);
+        }
+
+        if (item.Socket != null) {
+            foreach (ItemGemstone? gem in item.Socket.Sockets) {
+                if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
+                    foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
+                        Remove(buff.Id);
+                    }
+                }
+            }
         }
     }
 
@@ -374,12 +374,12 @@ public class BuffManager : IUpdatable {
         Compulsions.RemoveAll(id);
 
         if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 || buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {
-            if (actor is FieldPlayer player) {
+            if (Actor is FieldPlayer player) {
                 player.Session.Stats.Refresh();
             }
         }
 
-        actor.Field.Broadcast(BuffPacket.Remove(buff));
+        Actor.Field.Broadcast(BuffPacket.Remove(buff));
         return true;
     }
 

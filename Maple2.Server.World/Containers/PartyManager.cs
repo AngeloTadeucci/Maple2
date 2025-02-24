@@ -144,14 +144,12 @@ public class PartyManager : IDisposable {
             PartyId = Party.Id,
             Info = info.Clone(),
             JoinTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            LoginTime = info.UpdateTime,
         };
 
         Broadcast(new PartyRequest {
             AddMember = new PartyRequest.Types.AddMember {
                 CharacterId = member.CharacterId,
                 JoinTime = member.JoinTime,
-                LoginTime = member.LoginTime,
             },
         });
         if (Party.Members.TryAdd(info.CharacterId, member) && Party.Search != null) {

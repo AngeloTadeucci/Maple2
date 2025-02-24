@@ -1,6 +1,8 @@
-﻿using Maple2.Model.Error;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Shop;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -30,22 +32,23 @@ public static class BeautyPacket {
         var pWriter = Packet.Of(SendOp.Beauty);
         pWriter.Write<Command>(Command.BeautyShop);
         pWriter.WriteClass<BeautyShop>(shop);
+        pWriter.WriteBeautyShopItems(shop.Items);
 
         return pWriter;
     }
 
-    public static ByteWriter DyeShop(BeautyShopData shop) {
+    public static ByteWriter DyeShop(BeautyShop shop) {
         var pWriter = Packet.Of(SendOp.Beauty);
         pWriter.Write<Command>(Command.DyeShop);
-        pWriter.WriteClass<BeautyShopData>(shop);
+        pWriter.WriteClass<BeautyShop>(shop);
 
         return pWriter;
     }
 
-    public static ByteWriter SaveShop(BeautyShopData shop) {
+    public static ByteWriter SaveShop(BeautyShop shop) {
         var pWriter = Packet.Of(SendOp.Beauty);
         pWriter.Write<Command>(Command.SaveShop);
-        pWriter.WriteClass<BeautyShopData>(shop);
+        pWriter.WriteClass<BeautyShop>(shop);
 
         return pWriter;
     }
@@ -153,5 +156,19 @@ public static class BeautyPacket {
         pWriter.Write<Command>(Command.ApplySavedHair);
 
         return pWriter;
+    }
+
+    private static void WriteBeautyShopItems(this IByteWriter pWriter, BeautyShopItem[] items) {
+        pWriter.WriteByte(); // Unknown1
+        pWriter.WriteByte(); // Unknown2
+        pWriter.WriteShort((short) items.Length);
+        foreach (BeautyShopItem item in items) {
+            pWriter.WriteInt(item.Id);
+            pWriter.Write<ShopItemLabel>(item.SaleTag);
+            pWriter.WriteShort(item.RequiredLevel);
+            pWriter.WriteInt(item.AchievementId);
+            pWriter.WriteByte(item.AchievementRank);
+            pWriter.WriteClass<BeautyShopCost>(item.Cost);
+        }
     }
 }

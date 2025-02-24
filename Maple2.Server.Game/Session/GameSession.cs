@@ -1,16 +1,17 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
 using Autofac;
 using Grpc.Core;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
-using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -28,6 +29,7 @@ using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
 using Maple2.Tools.Scheduler;
+using PlotMode = Maple2.Model.Enum.PlotMode;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Session;
@@ -46,7 +48,6 @@ public sealed partial class GameSession : Core.Network.Session {
     public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
-    public int Channel;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -61,6 +62,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required AchievementMetadataStorage AchievementMetadata { get; init; }
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
+    public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { private get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
@@ -77,10 +79,12 @@ public sealed partial class GameSession : Core.Network.Session {
     public CurrencyManager Currency { get; set; } = null!;
     public MasteryManager Mastery { get; set; } = null!;
     public StatsManager Stats { get; set; } = null!;
+    public BuffManager Buffs { get; set; } = null!;
     public ItemEnchantManager ItemEnchant { get; set; } = null!;
+    public ItemMergeManager ItemMerge { get; set; } = null!;
     public ItemBoxManager ItemBox { get; set; } = null!;
     public BeautyManager Beauty { get; set; } = null!;
-    public GameEventUserValueManager GameEventUserValue { get; set; } = null!;
+    public GameEventManager GameEvent { get; set; } = null!;
     public ExperienceManager Exp { get; set; } = null!;
     public AchievementManager Achievement { get; set; } = null!;
     public QuestManager Quest { get; set; } = null!;
@@ -91,6 +95,9 @@ public sealed partial class GameSession : Core.Network.Session {
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
+    public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
+    public SurvivalManager Survival { get; set; } = null!;
+    public MarriageManager Marriage { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -99,21 +106,28 @@ public sealed partial class GameSession : Core.Network.Session {
         CommandHandler = context.Resolve<CommandRouter>(new NamedParameter("session", this));
         Scheduler = new EventQueue();
         Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
-        Channel = Target.GameChannel;
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
+        Clubs = new ConcurrentDictionary<long, ClubManager>();
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
         return server.GetSession(characterId, out other);
     }
 
-    public bool EnterServer(long accountId, long characterId, Guid machineId, int channel) {
+    public bool EnterServer(long accountId, Guid machineId, MigrateInResponse migrateResponse) {
+        long characterId = migrateResponse.CharacterId;
+        int channel = migrateResponse.Channel;
+        int mapId = migrateResponse.MapId;
+        int portalId = migrateResponse.PortalId;
+        long ownerId = migrateResponse.OwnerId;
+        int instanceId = migrateResponse.InstanceId;
+        var plotMode = (PlotMode) migrateResponse.PlotMode;
+
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
-        Channel = channel;
 
         State = SessionState.ChangeMap;
         server.OnConnected(this);
@@ -121,7 +135,7 @@ public sealed partial class GameSession : Core.Network.Session {
         using GameStorage.Request db = GameStorage.Context();
         db.BeginTransaction();
         int objectId = FieldManager.NextGlobalId();
-        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, (short) Channel);
+        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
@@ -129,57 +143,71 @@ public sealed partial class GameSession : Core.Network.Session {
         }
         db.Commit();
 
-        Player = new FieldPlayer(this, player, NpcMetadata);
+        Player = new FieldPlayer(this, player);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
-        Stats = new StatsManager(this);
-        Housing = new HousingManager(this);
+        Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
+        Config = new ConfigManager(db, this);
+        Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
         ItemEnchant = new ItemEnchantManager(this, Lua);
+        ItemMerge = new ItemMergeManager(this);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
-        GameEventUserValue = new GameEventUserValueManager(this);
+        GameEvent = new GameEventManager(this);
         Exp = new ExperienceManager(this, Lua);
         Achievement = new AchievementManager(this);
         Quest = new QuestManager(this);
         Shop = new ShopManager(this);
         Guild = new GuildManager(this);
-        Config = new ConfigManager(db, this);
         Buddy = new BuddyManager(db, this);
         Item = new ItemManager(db, this, ItemStatsCalc);
+        Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
         BlackMarket = new BlackMarketManager(this, Lua);
-        Party = new PartyManager(World, this);
+        Survival = new SurvivalManager(this);
+        Marriage = new MarriageManager(this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
         });
 
         foreach (GroupChatInfo groupChatInfo in groupChatInfoRequest.Infos) {
-            GroupChatManager manager = new GroupChatManager(groupChatInfo, this);
+            var manager = new GroupChatManager(groupChatInfo, this);
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (!PrepareField(player.Character.MapId)) {
+        if (plotMode is not PlotMode.Normal) {
+            instanceId = FieldManager.NextGlobalId();
+        }
+
+        int fieldId = mapId == 0 ? player.Character.MapId : mapId;
+        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
+        }
+
+        if (plotMode is not PlotMode.Normal) {
+            player.Home.EnterPlanner(plotMode);
+            fieldManager.Plots.First().Value.SetPlannerMode(plotMode);
         }
 
         var playerUpdate = new PlayerUpdateRequest {
             AccountId = accountId,
             CharacterId = characterId,
+            LastOnlineTime = Player.Value.Character.LastOnlineTime,
         };
         playerUpdate.SetFields(UpdateField.All, player);
-        playerUpdate.Health = new HealthInfo {
-            CurrentHp = Player.Stats[BasicAttribute.Health].Current,
-            TotalHp = Player.Stats[BasicAttribute.Health].Total,
+        playerUpdate.Health = new HealthUpdate {
+            CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+            TotalHp = Stats.Values[BasicAttribute.Health].Total,
         };
         PlayerInfo.SendUpdate(playerUpdate);
 
         //session.Send(Packet.Of(SendOp.REQUEST_SYSTEM_INFO));
         Send(MigrationPacket.MoveResult(MigrationError.ok));
 
-        // Survival
+        Survival.Load();
         // MeretMarket
         // UserConditionEvent
         // PCBangBonus
@@ -187,9 +215,25 @@ public sealed partial class GameSession : Core.Network.Session {
         foreach ((int id, GroupChatManager groupChat) in GroupChats) {
             groupChat.Load();
         }
-        // Club
+
+        ClubInfoResponse clubInfoResponse = World.ClubInfo(new ClubInfoRequest {
+            CharacterId = CharacterId,
+        });
+
+        foreach (ClubInfo clubInfo in clubInfoResponse.Clubs) {
+            var manager = ClubManager.Create(clubInfo, this);
+            if (manager == null) {
+                Logger.Error("Failed to create club manager for club {ClubId}", clubInfo.Id);
+                continue;
+            }
+            if (Clubs.TryAdd(clubInfo.Id, manager)) {
+                manager.Load();
+            }
+        }
+
         Buddy.Load();
-        Party.Load();
+        // We load Party after partyInfo update to properly set the player's online status.
+        Party = new PartyManager(World, this);
 
         Send(SurvivalPacket.UpdateStats(player.Account));
 
@@ -239,14 +283,14 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadKeyTable();
         Send(GuideRecordPacket.Load(Config.GuideRecords));
         // DailyWonder*
-        GameEventUserValue.Load();
-        // Send(GameEventPacket.Load(db.GetEvents()));
+        GameEvent.Load();
+        Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         // RoomDungeon
         // FieldEntrance
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
-        // HomeCommand
+        Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
         Config.LoadChatStickers();
@@ -281,15 +325,26 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out _, portalId, ownerId, instanceId, position, rotation);
+    }
+
+    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, instanceId, position, rotation);
+    }
+
+    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int instanceId, in Vector3 position, in Vector3 rotation) {
         // If entering home without instanceKey set, default to own home.
         if (mapId == Player.Value.Home.Indoor.MapId && ownerId == 0) {
             ownerId = AccountId;
         }
 
-        FieldManager? newField = mapId == Constant.DefaultHomeMapId ?
-            FieldFactory.Get(Constant.DefaultHomeMapId, ownerId) :
-            FieldFactory.Get(mapId);
+        if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+            newField = FieldFactory.Get(mapId, ownerId: ownerId, instanceId: instanceId);
+        } else {
+            newField = FieldFactory.Get(mapId, instanceId);
+        }
+
         if (newField == null) {
             return false;
         }
@@ -305,16 +360,13 @@ public sealed partial class GameSession : Core.Network.Session {
 
         return true;
     }
-
     public bool EnterField() {
         if (Field == null) {
             return false;
         }
 
-        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId)) {
-            ExpType expType = Field.Metadata.Property.IndoorType > 0 ?
-                ExpType.mapHidden :
-                ExpType.mapCommon;
+        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId) && Field.Metadata.Property.ExploreType > 0) {
+            ExpType expType = Field.Metadata.Property.ExploreType == 1 ? ExpType.mapCommon : ExpType.mapHidden;
             Exp.AddExp(expType);
         }
 
@@ -344,24 +396,49 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(EmotePacket.Load(Player.Value.Unlock.Emotes.Select(id => new Emote(id)).ToList()));
         Config.LoadMacros();
         Config.LoadSkillCooldowns();
+        Marriage.Load();
 
+        Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+
         Config.LoadLapenshard();
         Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
         Send(RevivalPacket.Confirm(Player));
         Config.LoadStatAttributes();
         Config.LoadSkillPoints();
         Player.Buffs.LoadFieldBuffs();
+
+        TimeEventResponse globalEventResponse = World.TimeEvent(new TimeEventRequest {
+            GetGlobalPortal = new TimeEventRequest.Types.GetGlobalPortal(),
+        });
+
+        if (globalEventResponse.Error != 0 && globalEventResponse.GlobalPortalInfo != null) {
+            if (ServerTableMetadata.TimeEventTable.GlobalPortal.TryGetValue(globalEventResponse.GlobalPortalInfo.MetadataId, out GlobalPortalMetadata? portal)) {
+                Send(GlobalPortalPacket.Announce(portal, globalEventResponse.GlobalPortalInfo.EventId));
+            }
+        }
+
         Send(PremiumCubPacket.Activate(Player.ObjectId, Player.Value.Account.PremiumTime));
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
         ConditionUpdate(ConditionType.map, codeLong: Player.Value.Character.MapId);
         ConditionUpdate(ConditionType.job_change, codeLong: (int) Player.Value.Character.Job.Code());
+
+        // Update the client with the latest channel list.
+        ChannelsResponse response = World.Channels(new ChannelsRequest());
+        Send(ChannelPacket.Dynamic(response.Channels));
+        Send(ServerListPacket.Load(Target.SERVER_NAME, [new IPEndPoint(Target.LoginIp, Target.LoginPort)], response.Channels));
         return true;
     }
 
     public void ReturnField() {
-        Character character = Player.Value.Character;
+        Player player = Player.Value;
+        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
+            MigrateToPlanner(PlotMode.Normal);
+            return;
+        }
+
+        Character character = player.Character;
         int mapId = character.ReturnMapId;
         Vector3 position = character.ReturnPosition;
 
@@ -393,7 +470,10 @@ public sealed partial class GameSession : Core.Network.Session {
         Quest.Update(conditionType, counter, targetString, targetLong, codeString, codeLong);
     }
 
-    public GameEvent? FindEvent<T>() where T : GameEventInfo => server.FindEvent<T>();
+    public IList<GameEvent> FindEvent(GameEventType type) => server.FindEvent(type);
+
+    public GameEvent? FindEvent(int id) => server.FindEvent(id);
+    public IEnumerable<GameEvent> Events => server.GetEvents();
 
     public IEnumerable<PremiumMarketItem> GetPremiumMarketItems(params int[] tabIds) => server.GetPremiumMarketItems(tabIds);
 
@@ -401,25 +481,6 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public void ChannelBroadcast(ByteWriter packet) {
         server.Broadcast(packet);
-    }
-
-    public Shop? FindShop(int shopId) => server.FindShop(this, shopId);
-
-    public IList<ShopItem> FindShopItems(int shopId) => server.FindShopItems(shopId);
-
-    public bool Temp() {
-        // -> RequestMoveField
-
-        // <- RequestFieldEnter
-        // -> RequestLoadUgcMap
-        //   <- LoadUgcMap
-        //   <- LoadCubes
-        // -> Ugc
-        //   <- Ugc
-        // -> ResponseFieldEnter
-
-
-        return true;
     }
 
     public void DailyReset() {
@@ -436,6 +497,56 @@ public sealed partial class GameSession : Core.Network.Session {
         Player.Value.Account.PrestigeExp = Player.Value.Account.PrestigeCurrentExp;
         Player.Value.Account.PrestigeLevelsGained = 0;
         Send(PrestigePacket.Load(Player.Value.Account));
+        // Home
+        Player.Value.Home.DecorationRewardTimestamp = 0;
+        Send(CubePacket.DesignRankReward(Player.Value.Home));
+    }
+
+    public void MigrateToPlanner(PlotMode plotMode) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = Constant.DefaultHomeMapId,
+                OwnerId = AccountId,
+                PlotMode = (World.Service.PlotMode) plotMode,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
+    }
+
+    public void MigrateToHome(Home home) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                MapId = home.Indoor.MapId,
+                OwnerId = home.Indoor.OwnerId,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, home.Indoor.MapId));
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
     }
 
     #region Dispose
@@ -449,6 +560,7 @@ public sealed partial class GameSession : Core.Network.Session {
             PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = AccountId,
                 CharacterId = CharacterId,
+                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
                 Channel = 0,
                 Async = true,
@@ -476,6 +588,10 @@ public sealed partial class GameSession : Core.Network.Session {
                 groupChat.CheckDisband();
             }
 
+            foreach ((long clubId, ClubManager club) in Clubs) {
+                club.Dispose();
+            }
+
             using (GameStorage.Request db = GameStorage.Context()) {
                 db.BeginTransaction();
                 db.SavePlayer(Player);
@@ -483,8 +599,9 @@ public sealed partial class GameSession : Core.Network.Session {
                 Config.Save(db);
                 Shop.Save(db);
                 Item.Save(db);
+                Survival.Save(db);
                 Housing.Save(db);
-                GameEventUserValue.Save(db);
+                GameEvent.Save(db);
                 Achievement.Save(db);
                 Quest.Save(db);
             }

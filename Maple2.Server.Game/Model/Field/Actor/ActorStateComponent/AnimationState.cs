@@ -69,7 +69,7 @@ public class AnimationState {
     public AnimationState(IActor actor, string modelName) {
         this.actor = actor;
 
-        RigMetadata = actor.NpcMetadata.GetAnimation(modelName);
+        RigMetadata = actor.NpcMetadata?.GetAnimation(modelName);
         MoveSpeed = 1;
         AttackSpeed = 1;
         IsPlayerAnimation = actor is FieldPlayer;
@@ -80,7 +80,13 @@ public class AnimationState {
             return;
         }
 
-        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == "Idle_A").Value.Id;
+        string idleName = "Idle_A";
+        if (actor is FieldNpc npc) {
+            idleName = npc.Value.Metadata.Action.Actions.FirstOrDefault()?.Name ?? idleName;
+            IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key.Contains(idleName)).Value.Id;
+            return;
+        }
+        IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == idleName).Value.Id;
     }
 
     private void ResetSequence() {

@@ -49,17 +49,19 @@ public record ItemOptionPickTable(
 }
 
 public record ItemVariationTable(
-    IReadOnlyDictionary<BasicAttribute, ItemVariationTable.Range<int>> Values,
-    IReadOnlyDictionary<BasicAttribute, ItemVariationTable.Range<float>> Rates,
-    IReadOnlyDictionary<SpecialAttribute, ItemVariationTable.Range<int>> SpecialValues,
-    IReadOnlyDictionary<SpecialAttribute, ItemVariationTable.Range<float>> SpecialRates
+    IReadOnlyDictionary<BasicAttribute, ItemVariationTable.Range<int>[]> Values,
+    IReadOnlyDictionary<BasicAttribute, ItemVariationTable.Range<float>[]> Rates,
+    IReadOnlyDictionary<SpecialAttribute, ItemVariationTable.Range<int>[]> SpecialValues,
+    IReadOnlyDictionary<SpecialAttribute, ItemVariationTable.Range<float>[]> SpecialRates
 ) : Table {
-    public readonly record struct Range<T>(T Min, T Max, T Interval) where T : INumber<T>;
+    public readonly record struct Range<T>(T Min, T Max, T Variation) where T : INumber<T>;
 }
 
 public record ItemEquipVariationTable(
-    IReadOnlyDictionary<BasicAttribute, int[]> Values,
-    IReadOnlyDictionary<BasicAttribute, float[]> Rates,
-    IReadOnlyDictionary<SpecialAttribute, int[]> SpecialValues,
-    IReadOnlyDictionary<SpecialAttribute, float[]> SpecialRates
-) : Table;
+    IReadOnlyDictionary<BasicAttribute, ItemEquipVariationTable.Set<int>[]> Values,
+    IReadOnlyDictionary<BasicAttribute, ItemEquipVariationTable.Set<float>[]> Rates,
+    IReadOnlyDictionary<SpecialAttribute, ItemEquipVariationTable.Set<int>[]> SpecialValues,
+    IReadOnlyDictionary<SpecialAttribute, ItemEquipVariationTable.Set<float>[]> SpecialRates
+) : Table {
+    public record Set<T>(T Value, int Weight) where T : INumber<T>;
+}

@@ -34,7 +34,7 @@ public partial class WorldService {
             case PartyRequest.PartyOneofCase.Kick:
                 return Task.FromResult(KickParty(request.RequestorId, request.Kick));
             case PartyRequest.PartyOneofCase.UpdateLeader:
-                return Task.FromResult(UpdateLeader(request.RequestorId, request.UpdateLeader));
+                return Task.FromResult(UpdatePartyLeader(request.RequestorId, request.UpdateLeader));
             case PartyRequest.PartyOneofCase.ReadyCheck:
                 return Task.FromResult(StartReadyCheck(request.RequestorId, request.ReadyCheck));
             case PartyRequest.PartyOneofCase.VoteReply:
@@ -142,7 +142,7 @@ public partial class WorldService {
         return new PartyResponse { PartyId = kick.PartyId };
     }
 
-    private PartyResponse UpdateLeader(long requestorId, PartyRequest.Types.UpdateLeader update) {
+    private PartyResponse UpdatePartyLeader(long requestorId, PartyRequest.Types.UpdateLeader update) {
         if (!partyLookup.TryGet(update.PartyId, out PartyManager? manager)) {
             return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
         }
@@ -203,7 +203,7 @@ public partial class WorldService {
         }
 
         if (!manager.Party.Search.NoApproval) {
-            return new PartyResponse { Error = (int) PartyError.s_party_err_myself };
+            return new PartyResponse { Error = (int) PartyError.s_party_err_wrong_recruit };
         }
 
         if (manager.Party.Search.Id != joinByPartySearch.PartySearchId) {
@@ -238,7 +238,6 @@ public partial class WorldService {
                 party.Members.Values.Select(member => new PartyInfo.Types.Member {
                     CharacterId = member.CharacterId,
                     JoinTime = member.JoinTime,
-                    LoginTime = member.LoginTime,
                 }),
             },
         };

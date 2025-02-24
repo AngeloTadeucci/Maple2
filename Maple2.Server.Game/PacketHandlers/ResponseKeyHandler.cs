@@ -34,7 +34,7 @@ public class ResponseKeyHandler : PacketHandler<GameSession> {
             };
 
             MigrateInResponse response = World.MigrateIn(request);
-            if (!session.EnterServer(accountId, response.CharacterId, machineId, response.Channel)) {
+            if (!session.EnterServer(accountId, machineId, response)) {
                 throw new InvalidOperationException($"Invalid player: {accountId}, {response.CharacterId}");
             }
 

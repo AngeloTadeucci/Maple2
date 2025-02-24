@@ -1,5 +1,7 @@
 ﻿// ReSharper disable InconsistentNaming, IdentifierTypo
 
+using System.ComponentModel;
+
 namespace Maple2.Model.Enum;
 
 public enum StringCode {
@@ -1795,6 +1797,7 @@ public enum StringCode {
     s_ugcmap_height_level_extended_successfully = 1793,
     s_ugcmap_area_level_shrink_successfully = 1794,
     s_ugcmap_height_level_shrink_successfully = 1795,
+    [Description("You can only use a blueprint while in your home.")]
     s_ugcmap_not_use_blueprint_item = 1796,
     s_ugc_edit_homeless = 1797,
     s_ugc_edit_different_indoorsize = 1798,
@@ -2189,8 +2192,11 @@ public enum StringCode {
     s_fittingdoll_Invalid_moveDisable = 2187,
     s_fittingdoll_transform_done_all = 2188,
     s_fittingdoll_transform_done_partially = 2189,
+    [Description("You cannnot use that right now.")]
     s_home_returnable_invalid_state = 2190,
+    [Description("You cannot move to the house from here.")]
     s_home_returnable_forbidden = 2191,
+    [Description("You're already there!")]
     s_home_returnable_forbidden_to_sameplace = 2192,
     s_home_returnable_homeless = 2193,
     s_home_returnable_samefield = 2194,
@@ -2213,6 +2219,7 @@ public enum StringCode {
     s_home_invite_logout = 2211,
     s_home_invite_denybyauto = 2212,
     s_home_invite_timeout = 2213,
+    [Description("You cannot invite yourself.")]
     s_home_invite_self = 2214,
     s_home_invite_cant_invite_now = 2215,
     s_tutorial_shortcutkey_limit = 2216,
@@ -2220,6 +2227,7 @@ public enum StringCode {
     s_tutorial_itemdrop_limit = 2218,
     s_tutorial_dialog_limit = 2219,
     s_tutorial_skip_movie = 2220,
+    [Description("Invalid character.")]
     s_fail_enterfield_invaliduser = 2221,
     s_fail_enterfield_userfull = 2222,
     s_fail_enterfield_event_already_start = 2224,
@@ -2982,9 +2990,11 @@ public enum StringCode {
     s_function_cube_error_invalid_summon_user = 2981,
     s_err_ugcmap_package_cant_use = 2982,
     s_err_ugcmap_package_cant_use_in_this_map = 2983,
+    [Description("Can only be used in the indoor space of the house.")]
     s_err_ugcmap_package_should_use_in_indoor = 2984,
     s_err_ugcmap_package_not_a_valid_package_item = 2985,
     s_err_ugcmap_package_cant_use_in_others_home = 2986,
+    [Description("You must clear your home of furnishings first.")]
     s_err_ugcmap_package_clear_indoor_first = 2987,
     s_err_ugcmap_package_not_a_valid_indoor = 2988,
     s_err_ugcmap_package_not_a_indoor_for_package_item = 2989,
@@ -2992,7 +3002,9 @@ public enum StringCode {
     s_err_ugcmap_package_failed_to_consume_package_item = 2991,
     s_err_ugcmap_package_automatic_creation_is_in_progress = 2992,
     s_err_ugcmap_package_automatic_removal_is_in_progress = 2993,
+    [Description("'The saved design has been applied.")]
     s_ugcmap_package_automatic_creation_completed = 2994,
+    [Description("The home's interior has been cleared of all furnishings.")]
     s_ugcmap_package_automatic_removal_completed = 2995,
     s_ugcmap_package_automatic_creation_suspended = 2996,
     s_ugcmap_package_automatic_removal_suspended = 2997,

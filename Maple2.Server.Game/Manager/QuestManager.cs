@@ -4,7 +4,9 @@ using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -47,9 +49,18 @@ public sealed class QuestManager {
 
     private void Initialize(GameStorage.Request db) {
         IEnumerable<QuestMetadata> quests = session.QuestMetadata.GetQuests();
+        IList<QuestTag> events = session.FindEvent(GameEventType.QuestTag)
+            .Where(gameEvent => gameEvent.Metadata.Data is QuestTag)
+            .Select(gameEvent => (QuestTag) gameEvent.Metadata.Data)
+            .ToList();
         foreach (QuestMetadata metadata in quests) {
             if (!metadata.Basic.AutoStart ||
                 metadata.Basic.Type == QuestType.FieldMission) {
+                continue;
+            }
+
+            // Event missions should only be started through the event.
+            if (metadata.EventMissionType != QuestEventMissionType.none) {
                 continue;
             }
 
@@ -61,12 +72,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            if (!CanStart(metadata.Require)) {
-                continue;
-            }
-
-            // TODO: figure out event handling for quests?
-            if (metadata.Basic.EventTag != string.Empty) {
+            if (!CanStart(metadata)) {
                 continue;
             }
 
@@ -113,18 +119,18 @@ public sealed class QuestManager {
     /// <summary>
     /// Starts a new quest (or prexisting if repeatable).
     /// </summary>
-    public void Start(int questId, bool bypassRequirements = false) {
+    public QuestError Start(int questId, bool bypassRequirements = false) {
         if (characterValues.ContainsKey(questId) || accountValues.ContainsKey(questId)) {
             // TODO: see if you can start the quest again
-            return;
+            return QuestError.s_quest_error_accept_fail;
         }
 
         if (!session.QuestMetadata.TryGet(questId, out QuestMetadata? metadata)) {
-            return;
+            return QuestError.s_quest_error_accept_fail;
         }
 
-        if (!bypassRequirements && !CanStart(metadata.Require)) {
-            return;
+        if (!bypassRequirements && !CanStart(metadata)) {
+            return QuestError.s_quest_error_accept_fail;
         }
 
         var quest = new Quest(metadata) {
@@ -142,7 +148,7 @@ public sealed class QuestManager {
         quest = db.CreateQuest(ownerId, quest);
         if (quest == null) {
             logger.Error("Failed to create quest entry {questId}", metadata.Id);
-            return;
+            return QuestError.s_quest_error_accept_fail;
         }
         Add(quest);
 
@@ -160,6 +166,7 @@ public sealed class QuestManager {
 
         session.ConditionUpdate(ConditionType.quest_accept, codeLong: quest.Id);
         session.Send(QuestPacket.Start(quest));
+        return QuestError.none;
     }
 
     /// <summary>
@@ -179,6 +186,7 @@ public sealed class QuestManager {
             /*if (quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
                 continue;
             }*/
+
             foreach (Quest.Condition condition in quest.Conditions.Values.Where(condition => condition.Metadata.Type == type)) {
                 // Already meets the requirement and does not need to be updated
                 if (condition.Counter >= condition.Metadata.Value) {
@@ -203,8 +211,18 @@ public sealed class QuestManager {
     /// <summary>
     /// Checks if player can start a quest.
     /// </summary>
-    /// <param name="require">Metadata of the quest with the required values to start.</param>
-    public bool CanStart(QuestMetadataRequire require) {
+    /// <param name="metadata">Metadata of the quest.</param>
+    public bool CanStart(QuestMetadata metadata) {
+        if (metadata.Basic.Disabled) {
+            return false;
+        }
+
+        if (metadata.Basic.EventTag != string.Empty &&
+            !session.FindEvent(GameEventType.QuestTag).Any(gameEvent => gameEvent.Metadata.Data is QuestTag tag && tag.Tag == metadata.Basic.EventTag)) {
+            return false;
+        }
+
+        QuestMetadataRequire require = metadata.Require;
         if (require.Level > 0 && require.Level > session.Player.Value.Character.Level) {
             return false;
         }
@@ -240,7 +258,6 @@ public sealed class QuestManager {
         }
 
         return require.SelectableQuest.Length <= 0 || SelectableQuests(require.SelectableQuest);
-
     }
 
     /// <summary>
@@ -341,15 +358,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            if (metadata.Basic.Disabled) {
-                continue;
-            }
-
-            if (metadata.Basic.EventTag != string.Empty) {
-                continue;
-            }
-
-            if (!session.Quest.CanStart(metadata.Require)) {
+            if (!session.Quest.CanStart(metadata)) {
                 continue;
             }
 
@@ -376,6 +385,19 @@ public sealed class QuestManager {
         }
 
         return results;
+    }
+
+    public void Expired(IList<int> questIds) {
+        foreach (int questId in questIds) {
+            if (!session.Quest.TryGetQuest(questId, out Quest? quest)) {
+                continue;
+            }
+
+            if (quest.Metadata.Basic.EventTag != string.Empty) {
+                session.Quest.Remove(quest);
+            }
+        }
+        session.Send(QuestPacket.Expired(questIds));
     }
 
     public bool Remove(Quest quest) {

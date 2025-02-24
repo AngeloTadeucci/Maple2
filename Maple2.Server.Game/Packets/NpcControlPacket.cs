@@ -75,7 +75,7 @@ public static class NpcControlPacket {
                 buffer.WriteByte(0); //UnknownB;
                 break;
             case ActorState.Spawn:
-                buffer.WriteInt(0);
+                buffer.WriteInt(npc.SpawnPointId);
                 break;
         }
 

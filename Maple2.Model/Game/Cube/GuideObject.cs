@@ -53,3 +53,17 @@ public class SkillMagicControlGuide : IGuideObject {
         // }
     }
 }
+
+public class BallGuideObject : IGuideObject {
+    public GuideObjectType Type => GuideObjectType.Construction;
+
+    private readonly float size;
+
+    public BallGuideObject(float size) {
+        this.size = size;
+    }
+
+    public void WriteTo(IByteWriter writer) {
+        writer.WriteFloat(size);
+    }
+}

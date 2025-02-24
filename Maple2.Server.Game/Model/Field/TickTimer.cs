@@ -6,13 +6,15 @@ public class TickTimer {
     public readonly bool AutoRemove;
     public readonly int VerticalOffset;
     public readonly string Type;
+    public readonly bool Display;
 
-    public TickTimer(int duration, bool autoRemove = true, int vOffset = 0, string type = "") {
+    public TickTimer(int duration, bool autoRemove = true, int vOffset = 0, bool display = false, string type = "") {
         StartTick = Environment.TickCount;
         Duration = duration;
         AutoRemove = autoRemove;
         VerticalOffset = vOffset;
         Type = type;
+        Display = display;
     }
 
     public void Reset() {

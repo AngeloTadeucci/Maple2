@@ -5,77 +5,42 @@ using IronPython.Hosting;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Trigger;
 using Microsoft.Scripting.Hosting;
-using Microsoft.Scripting.Utils;
 using Serilog;
-using Serilog.Core;
 
 namespace Maple2.Server.Game.Scripting.Trigger;
 
-public class TriggerScriptLoader {
+public partial class TriggerScriptLoader {
+    private string rootDir = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Scripts/Trigger/");
+
     private readonly ScriptEngine engine;
-    private readonly ConcurrentDictionary<(string XBlock, string Name), ScriptEntry> scriptSources;
+    private readonly ConcurrentDictionary<string, List<ScriptSource>> scriptSources;
     private readonly ILogger logger = Log.Logger.ForContext<TriggerScriptLoader>();
 
-    private struct ScriptEntry(ScriptSource script, List<ScriptSource> sharedScripts) {
-        public ScriptSource Script { get; set; } = script;
-        public List<ScriptSource> SharedScripts { get; set; } = sharedScripts;
-    };
+    [GeneratedRegex(@"^from\s+(\w.+)\s+import\s+\*\s*$")]
+    private static partial Regex ScriptImportRegex();
 
     public TriggerScriptLoader() {
         engine = Python.CreateEngine();
         ICollection<string> paths = engine.GetSearchPaths();
-        foreach (string dir in Directory.GetDirectories("Scripts/")) {
-            paths.Add(dir);
-        }
+        paths.Add(rootDir);
         engine.SetSearchPaths(paths);
 
-        scriptSources = new ConcurrentDictionary<(string, string), ScriptEntry>();
+        scriptSources = new ConcurrentDictionary<string, List<ScriptSource>>();
     }
 
     // Initializes a script for the specified trigger. If the script has not yet been loaded, also loads it to the cache.
     public bool TryInitScript(TriggerContext context, string xBlock, string name, [NotNullWhen(true)] out TriggerState? state) {
-        string scriptPath = $"Scripts/Trigger/{xBlock}/{name}.py";
-        if (!File.Exists(scriptPath)) {
+        if (!TryGetScript($"{xBlock}/{name}", out List<ScriptSource>? scripts)) {
             state = null;
             return false;
         }
 
-        if (!scriptSources.TryGetValue((xBlock, name), out ScriptEntry scriptEntry)) {
-            scriptEntry = new ScriptEntry(engine.CreateScriptSourceFromFile(scriptPath), new List<ScriptSource>());
-            string code = scriptEntry.Script.GetCode();
-
-            string[] lines = code.Split(["\n", "\r\n"], StringSplitOptions.None);
-
-            bool didUpdate = false;
-            foreach (string line in lines) {
-                // Match "from dungeon_common.checkusercount import *"
-                Match import = Regex.Match(line, @"^from\s+(\w.+)\s+import\s+.*$");
-                if (import.Success) {
-                    string[] parts = import.Groups[1].Value.Split('.');
-                    string path = $"Scripts/Trigger/{string.Join("/", parts)}.py";
-                    if (!File.Exists(path)) {
-                        logger.Error("Invalid shared script import: ", line);
-                        continue;
-                    }
-                    ScriptSource sharedScript = engine.CreateScriptSourceFromFile(path);
-                    scriptEntry.SharedScripts.Add(sharedScript);
-
-                    int index = lines.FindIndex(x => x == line);
-                    lines[index] = string.Empty;
-                    didUpdate = true;
-                }
+        // Script "compilation" needs to be synchronized.
+        lock (engine) {
+            foreach (ScriptSource script in scripts) {
+                script.Execute(context.Scope);
             }
-            if (didUpdate) {
-                scriptEntry.Script = engine.CreateScriptSourceFromString(string.Join("\n", lines));
-            }
-            scriptSources[(xBlock, name)] = scriptEntry;
         }
-
-        foreach (ScriptSource sharedScript in scriptEntry.SharedScripts) {
-            sharedScript.Execute(context.Scope);
-        }
-
-        scriptEntry.Script.Execute(context.Scope);
 
         dynamic? initialStateClass = context.Scope.GetVariable("initial_state");
         if (initialStateClass == null) {
@@ -90,6 +55,49 @@ public class TriggerScriptLoader {
         }
 
         state = new TriggerState(initialState);
+        return true;
+    }
+
+    /// <summary>
+    /// Retrieve a previously cached ScriptSource or build a new one. Imports are also resolved from the cache.
+    /// </summary>
+    /// <param name="key">Path without root directory and file extension.</param>
+    /// <param name="scripts">Resulting scripts (and imports) to execute in order.</param>
+    /// <returns></returns>
+    private bool TryGetScript(string key, [NotNullWhen(true)] out List<ScriptSource>? scripts) {
+        if (scriptSources.TryGetValue(key, out scripts)) {
+            return true;
+        }
+
+        if (!File.Exists($"{rootDir}{key}.py")) {
+            return false;
+        }
+
+        ScriptSource scriptSource = engine.CreateScriptSourceFromFile($"{rootDir}{key}.py");
+        string code = scriptSource.GetCode();
+        string[] lines = code.Split(["\n", "\r\n"], StringSplitOptions.None);
+        scripts = new List<ScriptSource>();
+        for (int i = 0; i < lines.Length; i++) {
+            // Match "from dungeon_common.checkusercount import *"
+            Match import = ScriptImportRegex().Match(lines[i]);
+            if (!import.Success) {
+                continue;
+            }
+
+            string[] parts = import.Groups[1].Value.Split('.');
+            if (!TryGetScript(string.Join("/", parts), out List<ScriptSource>? importScripts)) {
+                logger.Error("Invalid shared script import: L{Num} {Line}", i, lines[i]);
+                continue;
+            }
+
+            scripts.AddRange(importScripts);
+            lines[i] = string.Empty;
+        }
+
+        // If there were any valid imports, we need to regenerate source with them removed.
+        // Otherwise, we can just add the original source.
+        scripts.Add(scripts.Count > 0 ? engine.CreateScriptSourceFromString(string.Join("\n", lines)) : scriptSource);
+        scriptSources[key] = scripts;
         return true;
     }
 

@@ -96,7 +96,7 @@ public static class SkillUtils {
                 }
             }
             foreach ((BasicAttribute stat, long value) in condition.Stat) {
-                if (player.Stats[stat].Total < value) {
+                if (player.Stats.Values[stat].Total < value) {
                     return false;
                 }
             }

@@ -7,7 +7,9 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
+// ReSharper disable RedundantTypeArgumentsOfMethod
 
 namespace Maple2.Server.Game.Packets;
 
@@ -38,7 +40,7 @@ public static class CubePacket {
         // 32
         // 33
         ReturnMap = 34,
-        // 36
+        RequestLayout = 36,
         IncreaseArea = 37,
         DecreaseArea = 38,
         DesignRankReward = 39,
@@ -47,7 +49,7 @@ public static class CubePacket {
         SetPermission = 43,
         IncreaseHeight = 44,
         DecreaseHeight = 45,
-        SaveHome = 46,
+        SaveLayout = 46,
         // 50
         SetBackground = 51,
         SetLighting = 52,
@@ -59,7 +61,11 @@ public static class CubePacket {
         RemoveBuildPermission = 58,
         LoadBuildPermission = 59,
         // Blueprint stuff:
-        // 60, 61, 62, 63, 64, 67, 69
+        // 60, 61, 63, 64, 67, 69
+        UpdateHomeAreaAndHeight = 62,
+        CreateBlueprint = 63,
+        SaveBlueprint = 64,
+        CalculateEstimate = 67,
         FunctionCubeError = 71,
     }
 
@@ -208,17 +214,17 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter ReplaceCube(int objectId, in Vector3B position, float rotation, PlotCube cube) {
+    public static ByteWriter ReplaceCube(int objectId, PlotCube cube) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.ReplaceCube);
         pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
         pWriter.WriteInt(objectId); // Owner
         pWriter.WriteInt(objectId); // Player
-        pWriter.Write<Vector3B>(position);
+        pWriter.Write<Vector3B>(cube.Position);
         pWriter.WriteLong(cube.Id);
-        pWriter.WriteClass<PlotCube>(cube);
+        pWriter.WriteClass<HeldCube>(cube);
         pWriter.WriteBool(false); // Unknown
-        pWriter.WriteFloat(rotation);
+        pWriter.WriteFloat(cube.Rotation);
         pWriter.WriteInt(); // Unknown
 
         return pWriter;
@@ -329,6 +335,19 @@ public static class CubePacket {
         return pWriter;
     }
 
+    public static ByteWriter BuyCubes(Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.RequestLayout);
+        pWriter.WriteByte((byte) cubeCosts.Keys.Count);
+        pWriter.WriteInt(cubeCount);
+        foreach ((FurnishingCurrencyType moneyType, long amount) in cubeCosts) {
+            pWriter.Write<FurnishingCurrencyType>(moneyType);
+            pWriter.WriteLong(amount);
+        }
+
+        return pWriter;
+    }
+
     public static ByteWriter IncreaseArea(byte area) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.IncreaseArea);
@@ -347,9 +366,18 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter DesignRankReward() {
+    public static ByteWriter DesignRankReward(Home home) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.DesignRankReward);
+        pWriter.WriteLong(home.AccountId);
+        pWriter.WriteLong(home.DecorationRewardTimestamp);
+        pWriter.WriteLong(home.DecorationLevel);
+        pWriter.WriteLong(home.DecorationExp);
+        pWriter.WriteInt(home.InteriorRewardsClaimed.Count);
+
+        foreach (int rewardId in home.InteriorRewardsClaimed) {
+            pWriter.WriteInt(rewardId);
+        }
 
         return pWriter;
     }
@@ -390,9 +418,12 @@ public static class CubePacket {
         return pWriter;
     }
 
-    public static ByteWriter SaveHome() {
+    public static ByteWriter SaveLayout(long accountId, HomeLayout layout) {
         var pWriter = Packet.Of(SendOp.ResponseCube);
-        pWriter.Write<Command>(Command.SaveHome);
+        pWriter.Write<Command>(Command.SaveLayout);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteLong(accountId);
+        pWriter.WriteClass<HomeLayout>(layout);
 
         return pWriter;
     }
@@ -455,6 +486,50 @@ public static class CubePacket {
     public static ByteWriter LoadBuildPermission() {
         var pWriter = Packet.Of(SendOp.ResponseCube);
         pWriter.Write<Command>(Command.LoadBuildPermission);
+
+        return pWriter;
+    }
+
+    public static ByteWriter UpdateHomeAreaAndHeight(byte area, byte height) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.UpdateHomeAreaAndHeight);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteByte(area);
+        pWriter.WriteByte(height);
+
+        return pWriter;
+    }
+
+    public static ByteWriter CreateBlueprint(long itemUid, ItemBlueprint blueprint) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.CreateBlueprint);
+        pWriter.Write<UgcMapError>(UgcMapError.s_empty_string);
+        pWriter.WriteLong(itemUid);
+        pWriter.WriteClass<ItemBlueprint>(blueprint);
+
+        return pWriter;
+    }
+
+    public static ByteWriter SaveBlueprint(long accountId, HomeLayout layout) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.SaveBlueprint);
+        pWriter.Write<UgcMapError>(UgcMapError.s_ugcmap_ok);
+        pWriter.WriteLong(accountId);
+        pWriter.WriteClass<HomeLayout>(layout);
+
+        return pWriter;
+    }
+
+    public static ByteWriter CalculateEstimate(Dictionary<FurnishingCurrencyType, long> cubeCosts, int cubeCount) {
+        var pWriter = Packet.Of(SendOp.ResponseCube);
+        pWriter.Write<Command>(Command.CalculateEstimate);
+        pWriter.WriteByte((byte) cubeCosts.Keys.Count);
+        pWriter.WriteInt(cubeCount);
+        foreach ((FurnishingCurrencyType moneyType, long amount) in cubeCosts) {
+            pWriter.Write<FurnishingCurrencyType>(moneyType);
+            pWriter.WriteLong(amount);
+        }
+        pWriter.WriteBool(true); // Always true, if false doesn't show the estimate
 
         return pWriter;
     }

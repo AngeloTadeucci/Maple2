@@ -1,12 +1,10 @@
 ﻿using System.Numerics;
 using Maple2.Tools.Collision;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Maple2.Server.Tests.Tools.Collision;
 
-[TestClass]
 public class RectangleTests {
-    [TestMethod]
+    [Test]
     public void PointsTest() {
         var origin = new Vector2(1, 2);
         const float width = 4;
@@ -22,7 +20,7 @@ public class RectangleTests {
         CollectionAssert.AreEqual(expectedPoints, rectangle.Points);
     }
 
-    [TestMethod]
+    [Test]
     public void PointsWithAngleTest() {
         var origin = new Vector2(1, 2);
         const float width = 4;
@@ -39,15 +37,15 @@ public class RectangleTests {
         CollectionAssert.AreEqual(expectedPoints, rectangle.Points);
     }
 
-    [TestMethod]
+    [Test]
     public void ContainsTest() {
         var rectangle = new Rectangle(new Vector2(1, 1), 2, 3, 45);
 
         var insidePoint = new Vector2(1.5f, 1.5f);
-        Assert.IsTrue(rectangle.Contains(insidePoint));
+        Assert.That(rectangle.Contains(insidePoint), Is.True);
         var edgePoint = new Vector2(2, 2);
-        Assert.IsFalse(rectangle.Contains(edgePoint));
+        Assert.That(rectangle.Contains(edgePoint), Is.False);
         var outsidePoint = new Vector2(2, 2);
-        Assert.IsFalse(rectangle.Contains(outsidePoint));
+        Assert.That(rectangle.Contains(outsidePoint), Is.False);
     }
 }

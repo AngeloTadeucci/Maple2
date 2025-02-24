@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
+using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,6 +10,7 @@ namespace Maple2.Database.Model;
 internal class Account {
     public long Id { get; set; }
     public required string Username { get; set; }
+    public string Password { get; set; }
     public Guid MachineId { get; set; }
     public int MaxCharacters { get; set; }
     public int PrestigeLevel { get; set; }
@@ -111,12 +110,12 @@ internal class Account {
     }
 
     public static void Configure(EntityTypeBuilder<Account> builder) {
+        builder.ToTable("account");
         builder.HasKey(account => account.Id);
         builder.Property(account => account.Username).IsRequired();
-        builder.HasIndex(account => account.Username)
-            .IsUnique();
-        builder.Property(account => account.MaxCharacters)
-            .HasDefaultValue(4);
+        builder.HasIndex(account => account.Username).IsUnique();
+        builder.Property(account => account.Password).IsRequired().HasMaxLength(255).HasColumnType("varchar(255)");
+        builder.Property(account => account.MaxCharacters).HasDefaultValue(Constant.DefaultMaxCharacters);
         builder.HasMany(account => account.Characters);
         builder.Property(account => account.Currency).HasJsonConversion().IsRequired();
         builder.Property(account => account.MarketLimits).HasJsonConversion().IsRequired();

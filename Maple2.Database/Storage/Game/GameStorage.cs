@@ -12,17 +12,23 @@ public partial class GameStorage {
     private readonly MapMetadataStorage mapMetadata;
     private readonly AchievementMetadataStorage achievementMetadata;
     private readonly QuestMetadataStorage questMetadata;
+    private readonly ServerTableMetadataStorage serverTableMetadata;
+    private readonly TableMetadataStorage tableMetadata;
+    private readonly FunctionCubeMetadataStorage functionCubeMetadata;
     private readonly ILogger logger;
     private readonly DbContextOptions options;
 
     public GameStorage(DbContextOptions options, ItemMetadataStorage itemMetadata, MapMetadataStorage mapMetadata, AchievementMetadataStorage achievementMetadata,
-                       QuestMetadataStorage questMetadata, ILogger<GameStorage> logger) {
+                       QuestMetadataStorage questMetadata, TableMetadataStorage tableMetadata, ServerTableMetadataStorage serverTableMetadata, ILogger<GameStorage> logger, FunctionCubeMetadataStorage functionCubeMetadata) {
         this.options = options;
         this.itemMetadata = itemMetadata;
         this.mapMetadata = mapMetadata;
         this.achievementMetadata = achievementMetadata;
         this.questMetadata = questMetadata;
         this.logger = logger;
+        this.functionCubeMetadata = functionCubeMetadata;
+        this.tableMetadata = tableMetadata;
+        this.serverTableMetadata = serverTableMetadata;
     }
 
     public Request Context() {
@@ -40,19 +46,21 @@ public partial class GameStorage {
             this.game = game;
         }
 
-        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long premiumTime) {
+        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long premiumTime, IList<long> clubs) {
             if (outdoor == null) {
-                return new PlayerInfo(character, indoor.Name, achievementInfo) {
+                return new PlayerInfo(character, indoor.Name, achievementInfo, clubs) {
                     PremiumTime = premiumTime,
+                    LastOnlineTime = character.LastModified.ToEpochSeconds(),
                 };
             }
 
-            return new PlayerInfo(character, outdoor.Name, achievementInfo) {
+            return new PlayerInfo(character, outdoor.Name, achievementInfo, clubs) {
                 PlotMapId = outdoor.MapId,
                 PlotNumber = outdoor.Number,
                 PremiumTime = premiumTime,
                 ApartmentNumber = outdoor.ApartmentNumber,
-                PlotExpiryTime = outdoor.ExpiryTime.ToEpochSeconds(),
+                PlotExpiryTime = outdoor.ExpiryTime.ToUnixTimeSeconds(),
+                LastOnlineTime = character.LastModified.ToEpochSeconds(),
             };
         }
     }

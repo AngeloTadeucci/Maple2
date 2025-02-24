@@ -48,7 +48,7 @@ public static class NpcNoticePacket {
     public static ByteWriter SidePopup(NodePopupType type, int duration, string illustration, string voice, string script, string sound = "") {
         var pWriter = Packet.Of(SendOp.NpcNotice);
         pWriter.Write<Command>(Command.SidePopup);
-        pWriter.Write((byte) type);
+        pWriter.Write<NodePopupType>(type);
         pWriter.WriteInt(duration);
         pWriter.WriteString();
         pWriter.WriteString(illustration);

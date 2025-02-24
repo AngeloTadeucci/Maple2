@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -24,6 +23,7 @@ internal class UgcMarketItem {
     public string Description { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
     public UgcItemLook Look { get; set; }
+    public ItemBlueprint Blueprint { get; set; }
     public DateTime CreationTime { get; set; }
 
 
@@ -44,6 +44,7 @@ internal class UgcMarketItem {
             Description = other.Description,
             Tags = other.Tags,
             Look = other.Look,
+            Blueprint = other.Blueprint,
             CreationTime = other.CreationTime.FromEpochSeconds(),
         };
     }
@@ -64,6 +65,7 @@ internal class UgcMarketItem {
             Description = Description,
             Tags = Tags,
             Look = Look,
+            Blueprint = Blueprint,
         };
 
         return entry;
@@ -73,6 +75,7 @@ internal class UgcMarketItem {
         builder.ToTable("ugc-market-item");
         builder.HasKey(entry => entry.Id);
         builder.Property(entry => entry.Look).HasJsonConversion();
+        builder.Property(entry => entry.Blueprint).HasJsonConversion();
         builder.Property(entry => entry.Tags).HasJsonConversion();
         IMutableProperty creationTime = builder.Property(listing => listing.CreationTime)
             .ValueGeneratedOnAdd().Metadata;

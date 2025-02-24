@@ -3,16 +3,18 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
 using Maple2.Model.Game.Shop;
+using Maple2.Model.Metadata;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.DebugGraphics;
 
 namespace Maple2.Server.Game;
 
@@ -21,28 +23,46 @@ public class GameServer : Server<GameSession> {
     private readonly FieldManager.Factory fieldFactory;
     private readonly HashSet<GameSession> connectingSessions;
     private readonly Dictionary<long, GameSession> sessions;
-    private readonly Dictionary<string, GameEvent> eventCache = new();
     private readonly ImmutableList<SystemBanner> bannerCache;
     private readonly ConcurrentDictionary<int, PremiumMarketItem> premiumMarketCache;
-    private Dictionary<int, Shop> shopCache;
-    private Dictionary<int, Dictionary<int, ShopItem>> shopItemCache;
     private readonly GameStorage gameStorage;
+    private readonly IGraphicsContext debugGraphicsContext;
 
-    public int Channel => Target.GameChannel;
+    private readonly ItemMetadataStorage itemMetadataStorage;
 
-    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage)
-            : base(Target.GamePort, router, context) {
+
+    private static short _channel = 0;
+
+    public GameServer(FieldManager.Factory fieldFactory, PacketRouter<GameSession> router, IComponentContext context, GameStorage gameStorage, ItemMetadataStorage itemMetadataStorage, ServerTableMetadataStorage serverTableMetadataStorage, IGraphicsContext debugGraphicsContext, int port, int channel)
+            : base((ushort) port, router, context, serverTableMetadataStorage) {
+        _channel = (short) channel;
         this.fieldFactory = fieldFactory;
         connectingSessions = [];
         sessions = new Dictionary<long, GameSession>();
         this.gameStorage = gameStorage;
+        this.debugGraphicsContext = debugGraphicsContext;
+        this.itemMetadataStorage = itemMetadataStorage;
 
         using GameStorage.Request db = gameStorage.Context();
         bannerCache = db.GetBanners().ToImmutableList();
-        shopCache = db.GetShops().ToDictionary(shop => shop.Id, shop => shop);
-        shopItemCache = db.GetShopItems();
-        premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>(
-            db.GetPremiumMarketItems().Select(item => new KeyValuePair<int, PremiumMarketItem>(item.Id, item)));
+
+        premiumMarketCache = new ConcurrentDictionary<int, PremiumMarketItem>();
+        foreach ((int id, MeretMarketItemMetadata marketItemMetadata) in serverTableMetadataStorage.MeretMarketTable.Entries) {
+            if (marketItemMetadata.ParentId != 0) {
+                if (premiumMarketCache.TryGetValue(marketItemMetadata.ParentId, out PremiumMarketItem? parentItem) &&
+                    itemMetadataStorage.TryGet(parentItem.Metadata.ItemId, out ItemMetadata? subItemMetadata)) {
+                    parentItem.AdditionalQuantities.Add(new PremiumMarketItem(marketItemMetadata, subItemMetadata));
+                }
+                continue;
+            }
+
+            if (!itemMetadataStorage.TryGet(marketItemMetadata.ItemId, out ItemMetadata? itemMetadata)) {
+                continue;
+            }
+            premiumMarketCache.TryAdd(id, new PremiumMarketItem(marketItemMetadata, itemMetadata));
+        }
+
+        debugGraphicsContext.Initialize();
     }
 
     public override void OnConnected(GameSession session) {
@@ -65,6 +85,12 @@ public class GameServer : Server<GameSession> {
         }
     }
 
+    public IEnumerable<GameSession> GetSessions() {
+        lock (mutex) {
+            return sessions.Values;
+        }
+    }
+
     protected override void AddSession(GameSession session) {
         lock (mutex) {
             connectingSessions.Add(session);
@@ -74,68 +100,39 @@ public class GameServer : Server<GameSession> {
         session.Start();
     }
 
-    public GameEvent? FindEvent<T>() where T : GameEventInfo {
-        if (eventCache.TryGetValue(typeof(T).Name, out GameEvent? gameEvent)) {
-            return gameEvent;
-        }
-
-        using GameStorage.Request db = gameStorage.Context();
-        gameEvent = db.FindEvent(typeof(T).Name);
-        if (gameEvent != null) {
-            gameEvent.EventInfo.Id = gameEvent.Id;
-            eventCache[typeof(T).Name] = gameEvent;
-        }
-
-        return gameEvent;
+    public FieldManager? GetField(int mapId, int instanceId = 0) {
+        return fieldFactory.Get(mapId, instanceId);
     }
 
-    public Shop? FindShop(GameSession session, int shopId) {
-        using GameStorage.Request db = gameStorage.Context();
-        if (!shopCache.TryGetValue(shopId, out Shop? shop)) {
-            shop = db.GetShop(shopId);
-            if (shop != null) {
-                shopCache[shopId] = shop;
-            }
-            if (shop?.RestockTime == 0) { // everything else would be player-based shops that would get refreshed
-                if (!shopItemCache.TryGetValue(shopId, out Dictionary<int, ShopItem>? shopItems)) {
-                    shopItems = db.GetShopItems(shopId).ToDictionary(item => item.Id);
-                    shopItemCache[shopId] = shopItems;
-                }
-                foreach ((int shopItemId, ShopItem shopItem) in shopItems) {
-                    Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
-                    if (item == null) {
-                        continue;
-                    }
-                    shopItem.Item = item;
-                    shop.Items[shopItem.Id] = shopItem;
-                }
-            } else {
-                return shop;
-            }
-        }
-
-        if (shop.Items.Count == 0 && shopItemCache.TryGetValue(shop.Id, out Dictionary<int, ShopItem>? items)) {
-            foreach ((int shopItemId, ShopItem shopItem) in items) {
-                Item? item = session.Field.ItemDrop.CreateItem(shopItem.ItemId, shopItem.Rarity, shopItem.Quantity);
-                if (item == null) {
-                    continue;
-                }
-                shopItem.Item = item;
-                shop.Items[shopItem.Id] = shopItem;
-            }
-        }
-
-        return shopCache[shopId];
+    public IList<GameEvent> FindEvent(GameEventType type) {
+        return eventCache.Values.Where(gameEvent => gameEvent.Metadata.Type == type && gameEvent.IsActive()).ToList();
     }
 
-    public IList<ShopItem> FindShopItems(int shopId) {
-        if (shopItemCache.TryGetValue(shopId, out Dictionary<int, ShopItem>? items)) {
-            return items.Values.ToList();
+    public GameEvent? FindEvent(int eventId) {
+        return eventCache.TryGetValue(eventId, out GameEvent? gameEvent) && gameEvent.IsActive() ? gameEvent : null;
+    }
+
+    public void AddEvent(GameEvent gameEvent) {
+        if (!eventCache.TryAdd(gameEvent.Id, gameEvent)) {
+            return;
         }
 
-        using GameStorage.Request db = gameStorage.Context();
-        return db.GetShopItems(shopId);
+        foreach (GameSession session in sessions.Values) {
+            session.Send(GameEventPacket.Add(gameEvent));
+        }
     }
+
+    public void RemoveEvent(int eventId) {
+        if (!eventCache.Remove(eventId, out GameEvent? gameEvent)) {
+            return;
+        }
+
+        foreach (GameSession session in sessions.Values) {
+            session.Send(GameEventPacket.Remove(gameEvent.Id));
+        }
+    }
+
+    public IEnumerable<GameEvent> GetEvents() => eventCache.Values.Where(gameEvent => gameEvent.IsActive());
 
     public IList<SystemBanner> GetSystemBanners() => bannerCache;
 
@@ -162,6 +159,8 @@ public class GameServer : Server<GameSession> {
     }
 
     public override Task StopAsync(CancellationToken cancellationToken) {
+        debugGraphicsContext.CleanUp();
+
         lock (mutex) {
             foreach (GameSession session in connectingSessions) {
                 session.Send(NoticePacket.Disconnect(new InterfaceText("GameServer Maintenance")));
@@ -181,5 +180,9 @@ public class GameServer : Server<GameSession> {
         foreach (GameSession session in sessions.Values) {
             session.Send(packet);
         }
+    }
+
+    public static short GetChannel() {
+        return _channel;
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.IO;
 using System.Net;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -48,10 +47,9 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<WorldServer>();
 
+
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
-    autofac.RegisterType<WorldServer>()
-        .SingleInstance();
     // Database
     autofac.RegisterModule<GameDbModule>();
     autofac.RegisterModule<DataDbModule>();
@@ -68,7 +66,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<PartySearchLookup>()
         .SingleInstance();
+    autofac.RegisterType<ClubLookup>()
+        .SingleInstance();
     autofac.RegisterType<BlackMarketLookup>()
+        .SingleInstance();
+    autofac.RegisterType<GlobalPortalLookup>()
         .SingleInstance();
 });
 
@@ -78,6 +80,14 @@ app.UseRouting();
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client.");
 app.MapGrpcService<WorldService>();
 app.MapGrpcService<GlobalService>();
+
+IHostApplicationLifetime lifetime = app.Lifetime;
+lifetime.ApplicationStopping.Register(() => {
+    Log.Information("WorldServer stopping");
+    WorldServer world = app.Services.GetRequiredService<WorldServer>();
+    world.Stop();
+    lifetime.StopApplication();
+});
 
 
 ILifetimeScope root = app.Services.GetAutofacRoot();

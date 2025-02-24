@@ -4,19 +4,21 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maple2.Database.Model;
 
 internal class Mail {
-    public long ReceiverId { get; set; }
+    public long ReceiverId { get; set; } // Can be either AccountId or CharacterId
     public long Id { get; set; }
     public MailType Type { get; set; }
     public long SenderId { get; set; }
     public string SenderName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public string WeddingInvite { get; set; } = string.Empty;
 
     // List is used here to preserve order
     public IList<string> TitleArgs { get; set; } = Array.Empty<string>();
@@ -40,6 +42,7 @@ internal class Mail {
             Content = other.Content,
             TitleArgs = other.TitleArgs.Select(entry => $"{entry.Key}={entry.Value}").ToArray(),
             ContentArgs = other.ContentArgs.Select(entry => $"{entry.Key}={entry.Value}").ToArray(),
+            WeddingInvite = other.WeddingInvite,
             Currency = new MailCurrency {
                 Meso = other.Meso,
                 MesoCollectTime = other.MesoCollectTime,
@@ -71,6 +74,7 @@ internal class Mail {
                 string[] split = arg.Split("=", 2);
                 return split.Length > 1 ? (split[0], split[1]) : ("key", split[0]);
             }).ToArray(),
+            WeddingInvite = other.WeddingInvite,
             Meso = other.Currency.Meso,
             MesoCollectTime = other.Currency.MesoCollectTime,
             Meret = other.Currency.Meret,
@@ -84,13 +88,11 @@ internal class Mail {
     }
 
     public static void Configure(EntityTypeBuilder<Mail> builder) {
+        builder.ToTable("mail");
         builder.HasKey(mail => new { mail.ReceiverId, mail.Id });
 
         builder.Property(mail => mail.Id).ValueGeneratedOnAdd();
-        builder.HasOne<Character>()
-            .WithMany()
-            .HasForeignKey(mail => mail.ReceiverId)
-            .IsRequired();
+        builder.Property(mail => mail.ReceiverId).IsRequired();
         builder.Property(mail => mail.TitleArgs).HasJsonConversion().IsRequired();
         builder.Property(mail => mail.ContentArgs).HasJsonConversion().IsRequired();
         builder.Property(mail => mail.Currency).HasJsonConversion();

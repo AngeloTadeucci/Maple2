@@ -3,7 +3,9 @@ using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
@@ -11,7 +13,11 @@ namespace Maple2.Server.Game.Trigger;
 public partial class TriggerContext {
     public void CreateWidget(string type) {
         ErrorLog("[CreateWidget] type:{Type}", type);
-        Field.Widgets[type] = new Widget(type);
+        var widget = type switch {
+            "OxQuiz" => new OxQuizWidget(Field),
+            _ => new Widget(Field),
+        };
+        Field.Widgets[type] = widget;
     }
 
     public void GuideEvent(int eventId) {
@@ -64,56 +70,63 @@ public partial class TriggerContext {
         ErrorLog("[ScoreBoardSetScore] score:{Score}", score);
     }
 
-    public void SetEventUi(int type, string arg2, string arg3, string arg4) {
-        // TODO: map to other func
+    public void SetEventUiRound(int[] rounds, int arg3, int vOffset) {
+        DebugLog("[SetEventUIRound] rounds:{Rounds}, arg3:{Arg3}, vOffset:{VOffset}", string.Join(", ", rounds), arg3, vOffset);
+        int round = rounds.ElementAtOrDefault(0, 1);
+        int maxRound = rounds.ElementAtOrDefault(1, 1);
+        int minRound = rounds.ElementAtOrDefault(2, 1);
+        Broadcast(MassiveEventPacket.Round(round, maxRound, minRound, vOffset));
     }
 
-    public void SetEventUi(int type, string script, int duration, int boxId, int notBoxId) {
-        DebugLog("[SetEventUI] type:{Type}, script:{Script}, duration:{Duration}, boxId:{BoxId}, notBoxID:{NotBoxId}", type, script, duration, boxId, notBoxId);
-        Func<ByteWriter> getPacket;
-        switch (type) {
-            case 0:
-                IList<int> list = script.Split(",")
-                    .Select(str => int.TryParse(str, out int result) ? result : 0)
-                    .ToList();
-                int round = list.ElementAtOrDefault(0, 1);
-                int maxRound = list.ElementAtOrDefault(1, 1);
-                int minRound = list.ElementAtOrDefault(2, 1);
+    public void SetEventUiScript(BannerType type, string script, int duration, string[] boxIds) {
+        DebugLog("[SetEventUIScript] type:{Type}, script:{Script}, duration:{Duration}, boxIds:{BoxIds}", type, script, duration, string.Join(", ", boxIds));
+        ByteWriter packet = MassiveEventPacket.Banner(type, script, duration);
 
-                getPacket = () => MassiveEventPacket.Round(round, maxRound, minRound);
-                break;
-            case 1:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.Text, script, duration);
-                break;
-            case 2: // arg3=0,3
-                getPacket = () => MassiveEventPacket.Countdown(script, 0, 3);
-                break;
-            case 3:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.Winner, script, duration);
-                break;
-            case 4:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.Lose, script, duration);
-                break;
-            case 5:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.GameOver, script, duration);
-                break;
-            case 6:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.Bonus, script, duration);
-                break;
-            case 7:
-                getPacket = () => MassiveEventPacket.Banner(BannerType.Success, script, duration);
-                break;
-            default:
-                return;
+        int[] notBoxIdInts = boxIds
+            .Where(id => id.StartsWith("!")).
+            Select(id => int.Parse(id.Substring(1)))
+            .ToArray();
+        int[] boxIdInts = boxIds
+            .Where(id => !id.StartsWith("!"))
+            .Select(int.Parse)
+            .ToArray();
+
+        foreach (int notBoxId in notBoxIdInts) {
+            foreach (FieldPlayer player in PlayersNotInBox(notBoxId)) {
+                player.Session.Send(packet);
+            }
         }
 
-        if (notBoxId > 0) {
-            foreach (FieldPlayer player in PlayersNotInBox(notBoxId)) {
-                player.Session.Send(getPacket());
+        foreach (FieldPlayer player in PlayersInBox(boxIdInts)) {
+            player.Session.Send(packet);
+        }
+    }
+
+    public void SetEventUiCountdown(string script, int[] roundCountdown, string[] boxIds) {
+        DebugLog("[SetEventUICountdown] script:{Script}, roundCountdown:{Countdown}, boxIds:{BoxIds}", script, string.Join(", ", roundCountdown), string.Join(", ", boxIds));
+        if (roundCountdown.Length != 2) {
+            return;
+        }
+
+        ByteWriter packet = MassiveEventPacket.Countdown(script, roundCountdown[0], roundCountdown[1]);
+        foreach (string boxIdString in boxIds) {
+            if (boxIdString.Contains('!')) {
+                if (int.TryParse(boxIdString.Substring(1), out int notBoxId)) {
+                    foreach (FieldPlayer player in PlayersNotInBox(notBoxId)) {
+                        player.Session.Send(packet);
+                    }
+                }
+                continue;
             }
-        } else {
-            foreach (FieldPlayer player in PlayersInBox(boxId)) {
-                player.Session.Send(getPacket());
+
+            if (int.TryParse(boxIdString, out int boxId)) {
+                if (boxId == 0) {
+                    Broadcast(packet);
+                    continue;
+                }
+                foreach (FieldPlayer player in PlayersInBox(boxId)) {
+                    player.Session.Send(packet);
+                }
             }
         }
     }
@@ -166,6 +179,9 @@ public partial class TriggerContext {
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return;
         }
+
+        DebugLog("Calling Action on widget of type {Type}", widget.GetType().Name);
+        widget.Action(func, widgetArgNum, widgetArg);
     }
 
     #region Conditions

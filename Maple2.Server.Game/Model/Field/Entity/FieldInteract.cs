@@ -64,7 +64,7 @@ public class FieldInteract : FieldEntity<InteractObjectMetadata> {
         // TODO: Include treasure chests
         if (Object is InteractBillBoardObject billboard && DateTime.Now.ToEpochSeconds() > billboard.ExpirationTime) {
             SetState(InteractState.Hidden);
-            Field.RemoveInteract(EntityId);
+            Field.RemoveInteract(Object);
             return;
         }
 

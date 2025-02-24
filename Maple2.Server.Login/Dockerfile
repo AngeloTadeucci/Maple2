@@ -1,9 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 # Login Server
 EXPOSE 20001
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Maple2.Server.Login/Maple2.Server.Login.csproj", "Maple2.Server.Login/"]
 COPY ["Maple2.Tools/Maple2.Tools.csproj", "Maple2.Tools/"]
@@ -13,7 +13,6 @@ COPY ["Maple2.Server.Core/Maple2.Server.Core.csproj", "Maple2.Server.Core/"]
 RUN dotnet restore -r win-x64 "Maple2.Server.Login/Maple2.Server.Login.csproj"
 COPY . .
 WORKDIR "/src/Maple2.Server.Login"
-RUN dotnet build -r win-x64 "Maple2.Server.Login.csproj" -c Debug -o /app/build
 
 FROM build AS publish
 RUN dotnet publish -r win-x64 "Maple2.Server.Login.csproj" -c Debug -o /app/publish
@@ -21,4 +20,3 @@ RUN dotnet publish -r win-x64 "Maple2.Server.Login.csproj" -c Debug -o /app/publ
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Maple2.Server.Login.dll"]

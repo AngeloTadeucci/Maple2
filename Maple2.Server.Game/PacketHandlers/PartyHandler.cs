@@ -86,6 +86,13 @@ public class PartyHandler : PacketHandler<GameSession> {
     }
 
     private void HandleInvite(GameSession session, IByteReader packet) {
+        string playerName = packet.ReadUnicodeString();
+
+        if (playerName == session.PlayerName.ToLower()) {
+            session.Send(PartyPacket.Error(PartyError.s_party_err_myself));
+            return;
+        }
+
         if (session.Party.Party == null) {
             // Create new party
             PartyResponse response = World.Party(new PartyRequest {
@@ -99,13 +106,14 @@ public class PartyHandler : PacketHandler<GameSession> {
                 return;
             }
 
-            session.Party.SetParty(response.Party);
+            if (session.Party.SetParty(response.Party)) {
+                session.Send(PartyPacket.Load(session.Party.Party!));
+            }
         } else if (session.Party.Party.LeaderCharacterId != session.CharacterId) {
             session.Send(PartyPacket.Error(PartyError.s_party_err_not_chief));
             return;
         }
 
-        string playerName = packet.ReadUnicodeString();
         using GameStorage.Request db = session.GameStorage.Context();
         long characterId = db.GetCharacterId(playerName);
         if (characterId == 0) {
@@ -156,7 +164,9 @@ public class PartyHandler : PacketHandler<GameSession> {
         }
 
         if (response == PartyInviteResponse.Accept) {
-            session.Party.SetParty(partyResponse.Party);
+            if (session.Party.SetParty(partyResponse.Party)) {
+                session.Send(PartyPacket.Load(session.Party.Party!, true));
+            }
         }
     }
 
@@ -231,7 +241,9 @@ public class PartyHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Party.SetParty(response.Party);
+        if (session.Party.SetParty(response.Party)) {
+            session.Send(PartyPacket.Load(session.Party.Party!, true));
+        }
     }
 
     private void HandleSummonParty(GameSession session) {

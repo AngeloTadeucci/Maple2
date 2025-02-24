@@ -22,6 +22,7 @@ public static class PartyPacket {
         Load = 9,
         Invited = 11,
         UpdateMember = 12,
+        UpdateMember2 = 13,
         //13 - duplicate of 12
         UpdateDungeonInfo = 14,
         Unknown1 = 15,
@@ -109,11 +110,23 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter Load(Party party) {
+    public static ByteWriter Load(Party party, bool joinNotify = false) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.Load);
-        pWriter.WriteClass<Party>(party);
-        pWriter.WriteByte(); // Unknown
+        pWriter.WriteBool(joinNotify);
+        pWriter.WriteInt(party.Id);
+        pWriter.WriteLong(party.LeaderCharacterId);
+        pWriter.WriteByte((byte) party.Members.Count);
+
+        foreach (PartyMember member in party.Members.Values) {
+            pWriter.WriteBool(!member.Info.Online);
+            pWriter.WriteClass<PartyMember>(member);
+            member.WriteDungeonEligibility(pWriter);
+        }
+        pWriter.WriteBool(false); // Is in dungeon?
+        pWriter.WriteInt(); // Dungeon ID for "Enter Dungeon" button
+        pWriter.WriteBool(false);
+        pWriter.WriteByte();
         pWriter.WriteBool(party.Search != null);
         if (party.Search != null) {
             pWriter.WriteClass<PartySearch>(party.Search);
@@ -146,7 +159,7 @@ public static class PartyPacket {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.UpdateDungeonInfo);
 
-        pWriter.Write(member.CharacterId);
+        pWriter.WriteLong(member.CharacterId);
         member.WriteDungeonEligibility(pWriter);
 
         return pWriter;

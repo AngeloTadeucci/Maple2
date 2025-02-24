@@ -4,4 +4,4 @@ This is an open source MapleStory2 server emulation project created in C#. It is
 
 Setup Guide: https://github.com/AngeloTadeucci/Maple2/wiki/Prerequisites
 
-Join the [community discord](https://discord.gg/UzUyy4gUgh)!
+Join the [community discord](https://discord.gg/r78CXkUmuj)! - Updated as of 9/28/2024

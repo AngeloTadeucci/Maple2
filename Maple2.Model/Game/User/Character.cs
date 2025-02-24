@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -15,6 +16,7 @@ public class Character {
     #endregion
 
     public long DeleteTime;
+    public long LastOnlineTime;
 
     public required string Name;
     public Gender Gender;
@@ -44,7 +46,9 @@ public class Character {
     public string GuildName = string.Empty;
     public long GuildId;
     public int PartyId;
+    public List<long> ClubIds = [];
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
+    public MarriageInfo MarriageInfo;
     public long PremiumTime;
 }

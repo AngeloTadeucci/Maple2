@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -137,6 +135,13 @@ public partial class GameStorage {
                 models[i].OwnerId = ownerId;
                 Context.Item.Update(models[i]);
             }
+
+            return Context.TrySaveChanges();
+        }
+
+        public bool UpdateItem(Item item) {
+            Model.Item model = item;
+            Context.Item.Update(model);
 
             return Context.TrySaveChanges();
         }

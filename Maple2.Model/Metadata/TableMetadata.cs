@@ -60,6 +60,7 @@ public class TableMetadata {
 [JsonDerivedType(typeof(DefaultItemsTable), typeDiscriminator: "defaultitems")]
 [JsonDerivedType(typeof(MeretMarketCategoryTable), typeDiscriminator: "meretmarketcategory")]
 [JsonDerivedType(typeof(ShopBeautyCouponTable), typeDiscriminator: "shopbeautycoupon")]
+[JsonDerivedType(typeof(FurnishingShopTable), typeDiscriminator: "na/shop_*")]
 [JsonDerivedType(typeof(GachaInfoTable), typeDiscriminator: "gacha_info")]
 [JsonDerivedType(typeof(InsigniaTable), typeDiscriminator: "nametagsymbol")]
 [JsonDerivedType(typeof(ExpTable), typeDiscriminator: "exp")]
@@ -73,4 +74,10 @@ public class TableMetadata {
 [JsonDerivedType(typeof(ChangeJobTable), typeDiscriminator: "changejob")]
 [JsonDerivedType(typeof(ChapterBookTable), typeDiscriminator: "chapterbook")]
 [JsonDerivedType(typeof(FieldMissionTable), typeDiscriminator: "fieldmission")]
+[JsonDerivedType(typeof(WorldMapTable), typeDiscriminator: "worldmap")]
+[JsonDerivedType(typeof(SurvivalSkinInfoTable), typeDiscriminator: "survivalskininfo")]
+[JsonDerivedType(typeof(BannerTable), typeDiscriminator: "banner")]
+[JsonDerivedType(typeof(WeddingTable), typeDiscriminator: "wedding*")]
+[JsonDerivedType(typeof(MasteryUgcHousingTable), typeDiscriminator: "masteryugchousing")]
+[JsonDerivedType(typeof(UgcHousingPointRewardTable), typeDiscriminator: "ugchousingpointreward")]
 public abstract record Table;

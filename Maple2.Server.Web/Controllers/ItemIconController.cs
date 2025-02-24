@@ -12,7 +12,7 @@ public class ItemIconController : ControllerBase {
     public IResult GetItem(long itemId, string uid) {
         string fullPath = $"{Paths.WEB_DATA_DIR}/itemicon/{itemId}/{uid}.png";
         if (!System.IO.File.Exists(fullPath)) {
-            return Results.BadRequest();
+            return Results.NotFound();
         }
 
         FileStream itemIcon = System.IO.File.OpenRead(fullPath);

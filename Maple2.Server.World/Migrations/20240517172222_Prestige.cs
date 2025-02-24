@@ -9,21 +9,21 @@ namespace Maple2.Server.World.Migrations {
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<long>(
                 name: "PrestigeCurrentExp",
-                table: "Account",
+                table: "account",
                 type: "bigint",
                 nullable: false,
                 defaultValue: 0L);
 
             migrationBuilder.AddColumn<int>(
                 name: "PrestigeLevelsGained",
-                table: "Account",
+                table: "account",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<string>(
                 name: "PrestigeMissions",
-                table: "Account",
+                table: "account",
                 type: "json",
                 defaultValue: "[]",
                 nullable: false)
@@ -31,7 +31,7 @@ namespace Maple2.Server.World.Migrations {
 
             migrationBuilder.AddColumn<string>(
                 name: "PrestigeRewardsClaimed",
-                table: "Account",
+                table: "account",
                 type: "json",
                 defaultValue: "[]",
                 nullable: false)
@@ -42,19 +42,19 @@ namespace Maple2.Server.World.Migrations {
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "PrestigeCurrentExp",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "PrestigeLevelsGained",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "PrestigeMissions",
-                table: "Account");
+                table: "account");
 
             migrationBuilder.DropColumn(
                 name: "PrestigeRewardsClaimed",
-                table: "Account");
+                table: "account");
         }
     }
 }

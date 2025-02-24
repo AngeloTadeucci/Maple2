@@ -60,8 +60,8 @@ public partial class TriggerContext {
     public void MoveNpc(int spawnId, string patrolName) {
         DebugLog("[MoveNpc] spawnId:{SpawnId} patrolName:{PatrolName}", spawnId, patrolName);
 
-        var fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId);
-        if (fieldNpcs.Count() == 0) {
+        IEnumerable<FieldNpc> fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId);
+        if (!fieldNpcs.Any()) {
             return;
         }
 
@@ -246,7 +246,7 @@ public partial class TriggerContext {
 
     private IEnumerable<FieldNpc> NpcsInBox(params int[] boxIds) {
         if (boxIds.Length == 0 || boxIds[0] == 0) {
-            return Field.Mobs.Values;
+            return Field.EnumerateNpcs();
         }
 
         IEnumerable<TriggerBox> boxes = boxIds

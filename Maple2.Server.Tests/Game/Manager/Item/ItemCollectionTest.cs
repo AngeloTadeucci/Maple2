@@ -4,58 +4,56 @@ using System.Linq;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Items;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Maple2.Server.Tests.Game.Manager.Item;
 
-[TestClass]
 public class ItemCollectionTest {
     private static readonly Random Rng = new(123);
 
-    [TestMethod]
+    [Test]
     public void AddSlotWithIndexer() {
         var item = CreateItem(1000);
         var otherItem = CreateItem(1000);
         var collection = new ItemCollection(1) {
             [0] = item,
         };
-        Assert.AreEqual(item, collection[0]);
-        Assert.AreEqual(0, item.Slot);
-        Assert.AreEqual(item, collection.Get(item.Uid));
+        Assert.That(collection[0], Is.EqualTo(item));
+        Assert.That(item.Slot, Is.EqualTo(0));
+        Assert.That(collection.Get(item.Uid), Is.EqualTo(item));
 
         collection[0] = null; // Not allowed, NOP
-        Assert.AreEqual(collection[0], item);
+        Assert.That(item, Is.EqualTo(collection[0]));
         collection[0] = otherItem; // Slot taken, NOP
-        Assert.AreEqual(collection[0], item);
+        Assert.That(item, Is.EqualTo(collection[0]));
 
         // Invalid slots, NOP
         collection[-1] = otherItem;
         collection[short.MaxValue] = otherItem;
     }
 
-    [TestMethod]
+    [Test]
     public void TestAdd() {
         var item = CreateItem(1000, amount: 100);
         var collection = new ItemCollection(6);
         IList<(Model.Game.Item Item, int Added)> results = collection.Add(item);
-        Assert.AreEqual(1, results.Count);
-        Assert.AreEqual(item, results[0].Item);
-        Assert.AreEqual(100, results[0].Added);
+        Assert.That(results.Count, Is.EqualTo(1));
+        Assert.That(results[0].Item, Is.EqualTo(item));
+        Assert.That(results[0].Added, Is.EqualTo(100));
     }
 
-    [TestMethod]
+    [Test]
     public void TestAddNoSlotsFree() {
         var item = CreateItem(1000);
         var otherItem = CreateItem(1000);
         var collection = new ItemCollection(1);
         collection.Add(item);
 
-        Assert.AreEqual(0, collection.OpenSlots);
+        Assert.That(collection.OpenSlots, Is.EqualTo(0));
         var results = collection.Add(otherItem);
-        Assert.AreEqual(0, results.Count);
+        Assert.That(results.Count, Is.EqualTo(0));
     }
 
-    [TestMethod]
+    [Test]
     public void TestAddWithoutStacking() {
         var item = CreateItem(1000);
         var stackItem = CreateItem(1000);
@@ -63,12 +61,12 @@ public class ItemCollectionTest {
         collection.Add(item);
 
         // Item can't stack because called with Add(stack=false)
-        Assert.AreEqual(0, collection.OpenSlots);
+        Assert.That(collection.OpenSlots, Is.EqualTo(0));
         var results = collection.Add(stackItem);
-        Assert.AreEqual(0, results.Count);
+        Assert.That(results.Count, Is.EqualTo(0));
     }
 
-    [TestMethod]
+    [Test]
     public void TestAddWithStacking() {
         var item = CreateItem(1000, amount: 10);
         var stackItem = CreateItem(1000, amount: 50);
@@ -76,19 +74,19 @@ public class ItemCollectionTest {
         collection.Add(item);
 
         // |stackItem| should be fully stackable.
-        Assert.AreEqual(0, collection.GetStackResult(stackItem));
+        Assert.That(collection.GetStackResult(stackItem), Is.EqualTo(0));
 
-        Assert.AreEqual(0, collection.OpenSlots);
+        Assert.That(collection.OpenSlots, Is.EqualTo(0));
         IList<(Model.Game.Item Item, int Added)> results = collection.Add(stackItem, stack: true);
-        Assert.AreEqual(1, results.Count);
-        Assert.AreEqual(item, results[0].Item); // |stackItem| was stacked onto |item|.
-        Assert.AreEqual(50, results[0].Added);
+        Assert.That(results.Count, Is.EqualTo(1));
+        Assert.That(results[0].Item, Is.EqualTo(item)); // |stackItem| was stacked onto |item|.
+        Assert.That(results[0].Added, Is.EqualTo(50));
 
         // |stackItem| should be mutated to have amount=0.
-        Assert.AreEqual(0, stackItem.Amount);
+        Assert.That(stackItem.Amount, Is.EqualTo(0));
     }
 
-    [TestMethod]
+    [Test]
     public void TestAddWithStackingMultipleSlots() {
         var item1 = CreateItem(1000, amount: 90);
         var item2 = CreateItem(1000, amount: 95);
@@ -100,20 +98,20 @@ public class ItemCollectionTest {
         collection.Add(item3);
 
         // |stackItem| should not be fully stackable.
-        Assert.AreEqual(35, collection.GetStackResult(stackItem));
+        Assert.That(collection.GetStackResult(stackItem), Is.EqualTo(35));
 
-        Assert.AreEqual(1, collection.OpenSlots);
+        Assert.That(collection.OpenSlots, Is.EqualTo(1));
         IList<(Model.Game.Item Item, int Added)> results = collection.Add(stackItem, stack: true);
-        Assert.AreEqual(3, results.Count);
-        Assert.AreEqual(item1, results[0].Item);
-        Assert.AreEqual(10, results[0].Added);
-        Assert.AreEqual(item2, results[1].Item);
-        Assert.AreEqual(5, results[1].Added);
-        Assert.AreEqual(stackItem, results[2].Item);
-        Assert.AreEqual(35, results[2].Added);
+        Assert.That(results.Count, Is.EqualTo(3));
+        Assert.That(results[0].Item, Is.EqualTo(item1));
+        Assert.That(results[0].Added, Is.EqualTo(10));
+        Assert.That(results[1].Item, Is.EqualTo(item2));
+        Assert.That(results[1].Added, Is.EqualTo(5));
+        Assert.That(results[2].Item, Is.EqualTo(stackItem));
+        Assert.That(results[2].Added, Is.EqualTo(35));
     }
 
-    [TestMethod]
+    [Test]
     public void TestAddWithStackingDoesNotFit() {
         var item1 = CreateItem(1000, amount: 90);
         var item2 = CreateItem(1000, amount: 95);
@@ -124,18 +122,18 @@ public class ItemCollectionTest {
         collection.Add(item2);
         collection.Add(item3);
 
-        Assert.AreEqual(0, collection.OpenSlots);
+        Assert.That(collection.OpenSlots, Is.EqualTo(0));
         var results = collection.Add(stackItem, stack: true);
-        Assert.AreEqual(0, results.Count);
+        Assert.That(results.Count, Is.EqualTo(0));
 
         // |collection| and |stackItem| are unchanged.
-        Assert.AreEqual(90, collection.Get(item1.Uid)?.Amount);
-        Assert.AreEqual(95, collection.Get(item2.Uid)?.Amount);
-        Assert.AreEqual(100, collection.Get(item3.Uid)?.Amount);
-        Assert.AreEqual(50, stackItem.Amount);
+        Assert.That(collection.Get(item1.Uid)?.Amount, Is.EqualTo(90));
+        Assert.That(collection.Get(item2.Uid)?.Amount, Is.EqualTo(95));
+        Assert.That(collection.Get(item3.Uid)?.Amount, Is.EqualTo(100));
+        Assert.That(stackItem.Amount, Is.EqualTo(50));
     }
 
-    [TestMethod]
+    [Test]
     public void TestRetrieval() {
         var item1 = CreateItem(1000);
         var item2 = CreateItem(2000);
@@ -144,50 +142,50 @@ public class ItemCollectionTest {
             [4] = item2,
         };
 
-        Assert.IsTrue(collection.Contains(item1.Uid));
-        Assert.AreEqual(item1, collection.Get(item1.Uid));
-        Assert.IsTrue(collection.Contains(item2.Uid));
-        Assert.AreEqual(item2, collection.Get(item2.Uid));
-        Assert.IsFalse(collection.Contains(0));
+        Assert.That(collection.Contains(item1.Uid), Is.True);
+        Assert.That(collection.Get(item1.Uid), Is.EqualTo(item1));
+        Assert.That(collection.Contains(item2.Uid), Is.True);
+        Assert.That(collection.Get(item2.Uid), Is.EqualTo(item2));
+        Assert.That(collection.Contains(0), Is.False);
         Assert.IsNull(collection.Get(0));
     }
 
-    [TestMethod]
+    [Test]
     public void TestRemove() {
         var item = CreateItem(1000);
         var collection = new ItemCollection(6);
         collection.Add(item);
-        Assert.AreEqual(collection[0], item);
+        Assert.That(item, Is.EqualTo(collection[0]));
 
         // Remove valid item
-        Assert.IsTrue(collection.Remove(item.Uid, out Model.Game.Item? removed));
-        Assert.AreEqual(item, removed);
+        Assert.That(collection.Remove(item.Uid, out Model.Game.Item? removed), Is.True);
+        Assert.That(removed, Is.EqualTo(item));
         Assert.IsNull(collection[0]);
 
         // Remove invalid item
-        Assert.IsFalse(collection.Remove(-1, out _));
+        Assert.That(collection.Remove(-1, out _), Is.False);
     }
 
-    [TestMethod]
+    [Test]
     public void TestRemoveSlot() {
         var item = CreateItem(1000);
         var collection = new ItemCollection(2);
         collection.Add(item);
-        Assert.AreEqual(collection[0], item);
+        Assert.That(item, Is.EqualTo(collection[0]));
 
         // Remove invalid item
-        Assert.IsFalse(collection.RemoveSlot(1, out _));
+        Assert.That(collection.RemoveSlot(1, out _), Is.False);
 
         // Remove valid item
-        Assert.IsTrue(collection.RemoveSlot(0, out Model.Game.Item? removed));
-        Assert.AreEqual(item, removed);
+        Assert.That(collection.RemoveSlot(0, out Model.Game.Item? removed), Is.True);
+        Assert.That(removed, Is.EqualTo(item));
         Assert.IsNull(collection[2]);
 
         // Remove invalid item
-        Assert.IsFalse(collection.RemoveSlot(0, out _));
+        Assert.That(collection.RemoveSlot(0, out _), Is.False);
     }
 
-    [TestMethod]
+    [Test]
     public void TestSort() {
         var item1 = CreateItem(3000, rarity: 1, amount: 5);
         var item2 = CreateItem(1000, rarity: 3, amount: 10);
@@ -204,32 +202,32 @@ public class ItemCollectionTest {
         collection.Add(item5);
 
         collection.Sort();
-        Assert.AreEqual(collection[0], item3);
-        Assert.AreEqual(collection[1], item4);
-        Assert.AreEqual(collection[2], item2);
-        Assert.AreEqual(collection[3], item5);
-        Assert.AreEqual(collection[4], item1);
+        Assert.That(item3, Is.EqualTo(collection[0]));
+        Assert.That(item4, Is.EqualTo(collection[1]));
+        Assert.That(item2, Is.EqualTo(collection[2]));
+        Assert.That(item5, Is.EqualTo(collection[3]));
+        Assert.That(item1, Is.EqualTo(collection[4]));
         Assert.IsNull(collection[5]);
     }
 
-    [TestMethod]
+    [Test]
     public void TestExpand() {
         var collection = new ItemCollection(1);
-        Assert.AreEqual(1, collection.OpenSlots);
-        Assert.AreEqual(1, collection.Size);
+        Assert.That(collection.OpenSlots, Is.EqualTo(1));
+        Assert.That(collection.Size, Is.EqualTo(1));
 
-        Assert.IsTrue(collection.Expand(2));
-        Assert.AreEqual(2, collection.OpenSlots);
-        Assert.AreEqual(2, collection.Size);
+        Assert.That(collection.Expand(2), Is.True);
+        Assert.That(collection.OpenSlots, Is.EqualTo(2));
+        Assert.That(collection.Size, Is.EqualTo(2));
     }
 
-    [TestMethod]
+    [Test]
     public void TestExpandNegative() {
         var collection = new ItemCollection(1);
-        Assert.IsFalse(collection.Expand(-1));
+        Assert.That(collection.Expand(-1), Is.False);
     }
 
-    [TestMethod]
+    [Test]
     public void TestGetStackResult() {
         var item1 = CreateItem(1000, amount: 90);
         var item2 = CreateItem(1000, amount: 95);
@@ -240,15 +238,15 @@ public class ItemCollectionTest {
         collection.Add(item3);
 
         var stackItem = CreateItem(1000, amount: 50);
-        Assert.AreEqual(35, collection.GetStackResult(stackItem));
-        Assert.AreEqual(35, collection.GetStackResult(stackItem, amount: int.MinValue));
-        Assert.AreEqual(35, collection.GetStackResult(stackItem, amount: int.MaxValue));
-        Assert.AreEqual(0, collection.GetStackResult(stackItem, amount: 0));
-        Assert.AreEqual(0, collection.GetStackResult(stackItem, amount: 10));
-        Assert.AreEqual(5, collection.GetStackResult(stackItem, amount: 20));
+        Assert.That(collection.GetStackResult(stackItem), Is.EqualTo(35));
+        Assert.That(collection.GetStackResult(stackItem, amount: int.MinValue), Is.EqualTo(35));
+        Assert.That(collection.GetStackResult(stackItem, amount: int.MaxValue), Is.EqualTo(35));
+        Assert.That(collection.GetStackResult(stackItem, amount: 0), Is.EqualTo(0));
+        Assert.That(collection.GetStackResult(stackItem, amount: 10), Is.EqualTo(0));
+        Assert.That(collection.GetStackResult(stackItem, amount: 20), Is.EqualTo(5));
     }
 
-    [TestMethod]
+    [Test]
     public void TestEnumeration() {
         var item1 = CreateItem(3000);
         var item2 = CreateItem(1000);
@@ -267,7 +265,7 @@ public class ItemCollectionTest {
         var fakeCustomize = new ItemMetadataCustomize(0, 0);
         var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, Array.Empty<JobCode>(), Array.Empty<JobCode>());
         var fakeLife = new ItemMetadataLife(0, 0);
-        var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null);
+        var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null, null);
         return new Model.Game.Item(fakeMetadata, rarity, amount) { Uid = Rng.NextInt64() };
     }
 }

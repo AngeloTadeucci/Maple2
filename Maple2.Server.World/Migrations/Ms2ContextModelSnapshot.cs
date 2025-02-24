@@ -56,6 +56,11 @@ namespace Maple2.Server.World.Migrations
                     b.Property<bool>("Online")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("PremiumRewardsClaimed")
                         .IsRequired()
                         .HasColumnType("json");
@@ -104,7 +109,7 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Account");
+                    b.ToTable("account", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Achievement", b =>
@@ -139,7 +144,29 @@ namespace Maple2.Server.World.Migrations
 
                     b.HasKey("OwnerId", "Id");
 
-                    b.ToTable("Achievement");
+                    b.ToTable("achievement", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.BannerSlot", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ActivateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("BannerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Template")
+                        .HasColumnType("json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BannerId");
+
+                    b.ToTable("ugc-banner-slot", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.BlackMarketListing", b =>
@@ -207,7 +234,7 @@ namespace Maple2.Server.World.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Buddy");
+                    b.ToTable("buddy", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Character", b =>
@@ -286,7 +313,7 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Character");
+                    b.ToTable("character", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.CharacterConfig", b =>
@@ -420,13 +447,11 @@ namespace Maple2.Server.World.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<int>("BuffId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreationTime")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("LastModified")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)");
 
                     b.Property<long>("LeaderId")
@@ -436,6 +461,12 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<DateTime>("NameChangeCooldown")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("State")
+                        .HasColumnType("tinyint unsigned");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LeaderId");
@@ -443,7 +474,7 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Club");
+                    b.ToTable("club", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.ClubMember", b =>
@@ -465,32 +496,7 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("club-member", (string)null);
                 });
 
-            modelBuilder.Entity("Maple2.Database.Model.Event.GameEvent", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("BeginTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("EventInfo")
-                        .IsRequired()
-                        .HasColumnType("json");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("game-event", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Event.GameEventUserValue", b =>
+            modelBuilder.Entity("Maple2.Database.Model.GameEventUserValue", b =>
                 {
                     b.Property<long>("CharacterId")
                         .HasColumnType("bigint");
@@ -623,9 +629,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<DateTime>("DonationTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("LoginTime")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -663,20 +666,41 @@ namespace Maple2.Server.World.Migrations
                     b.Property<byte>("Background")
                         .HasColumnType("tinyint unsigned");
 
+                    b.Property<string>("Blueprints")
+                        .IsRequired()
+                        .HasColumnType("json");
+
                     b.Property<byte>("Camera")
                         .HasColumnType("tinyint unsigned");
 
                     b.Property<int>("CurrentArchitectScore")
                         .HasColumnType("int");
 
+                    b.Property<long>("DecorationExp")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("DecorationLevel")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("DecorationRewardTimestamp")
+                        .HasColumnType("bigint");
+
                     b.Property<byte>("Height")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint unsigned")
                         .HasDefaultValue((byte)3);
 
+                    b.Property<string>("InteriorRewardsClaimed")
+                        .IsRequired()
+                        .HasColumnType("json");
+
                     b.Property<DateTime>("LastModified")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Layouts")
+                        .IsRequired()
+                        .HasColumnType("json");
 
                     b.Property<byte>("Lighting")
                         .HasColumnType("tinyint unsigned");
@@ -694,7 +718,83 @@ namespace Maple2.Server.World.Migrations
 
                     b.HasKey("AccountId");
 
-                    b.ToTable("Home");
+                    b.ToTable("home", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.HomeLayout", b =>
+                {
+                    b.Property<long>("Uid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<byte>("Area")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Background")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Camera")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Height")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Lighting")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Uid");
+
+                    b.ToTable("home-layout", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.HomeLayoutCube", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HomeLayoutId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("HousingCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Interact")
+                        .HasColumnType("json");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Rotation")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Template")
+                        .HasColumnType("json");
+
+                    b.Property<sbyte>("X")
+                        .HasColumnType("tinyint");
+
+                    b.Property<sbyte>("Y")
+                        .HasColumnType("tinyint");
+
+                    b.Property<sbyte>("Z")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HomeLayoutId");
+
+                    b.ToTable("home-layout-cube", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Item", b =>
@@ -780,7 +880,7 @@ namespace Maple2.Server.World.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Item");
+                    b.ToTable("item", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.ItemStorage", b =>
@@ -848,9 +948,76 @@ namespace Maple2.Server.World.Migrations
                     b.Property<byte>("Type")
                         .HasColumnType("tinyint unsigned");
 
+                    b.Property<string>("WeddingInvite")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.HasKey("ReceiverId", "Id");
 
-                    b.ToTable("Mail");
+                    b.ToTable("mail", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Marriage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ExpHistory")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<long>("Partner1Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Partner1Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("Partner2Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Partner2Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Profile")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Partner1Id");
+
+                    b.HasIndex("Partner2Id");
+
+                    b.ToTable("marriage", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.Medal", b =>
+                {
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExpiryTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<short>("Slot")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("OwnerId", "Id");
+
+                    b.ToTable("medal", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.MesoListing", b =>
@@ -892,6 +1059,35 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("meso-market", (string)null);
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.Nurturing", b =>
+                {
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<short>("ClaimedGiftForStage")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Exp")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("LastFeedTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PlayedBy")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.HasKey("AccountId", "ItemId");
+
+                    b.ToTable("nurturing", (string)null);
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.PetConfig", b =>
                 {
                     b.Property<long>("ItemUid")
@@ -908,100 +1104,6 @@ namespace Maple2.Server.World.Migrations
                     b.HasKey("ItemUid");
 
                     b.ToTable("pet-config", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.PremiumMarketItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("BannerLabel")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BannerName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("BonusQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<byte>("CurrencyType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<bool>("Giftable")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("ItemDuration")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("JobRequirement")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Label")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("ParentId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("PcCafe")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<long>("Price")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("PromoData")
-                        .HasColumnType("json");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Rarity")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RequireAchievementId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RequireAchievementRank")
-                        .HasColumnType("int");
-
-                    b.Property<short>("RequireMaxLevel")
-                        .HasColumnType("smallint");
-
-                    b.Property<short>("RequireMinLevel")
-                        .HasColumnType("smallint");
-
-                    b.Property<bool>("RestockUnavailable")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<long>("SalePrice")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("SalesCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SellBeginTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("SellEndTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<bool>("ShowSaleTime")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("TabId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("premium-market-item", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Quest", b =>
@@ -1033,7 +1135,7 @@ namespace Maple2.Server.World.Migrations
 
                     b.HasKey("OwnerId", "Id");
 
-                    b.ToTable("Quest");
+                    b.ToTable("quest", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.ServerInfo", b =>
@@ -1047,90 +1149,6 @@ namespace Maple2.Server.World.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("server-info", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Category")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RecolorCostAmount")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("RecolorCostCurrencyType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RecolorCostItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ServiceCostAmount")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("ServiceCostCurrencyType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("ServiceCostItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ServiceRewardItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShopSubType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShopType")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Unknown1")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<byte>("Unknown2")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("VoucherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("beauty-shop", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShopEntry", b =>
-                {
-                    b.Property<int>("ShopId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CostAmount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CostItemId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("CostType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<byte>("Label")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RequireAchievementId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("RequireAchievementRank")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<short>("RequireLevel")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("ShopId", "ItemId");
-
-                    b.ToTable("beauty-shop-entry", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Shop.CharacterShopData", b =>
@@ -1160,6 +1178,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("ShopItemId")
                         .HasColumnType("int");
 
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
                     b.Property<long>("OwnerId")
                         .HasColumnType("bigint");
 
@@ -1167,146 +1188,12 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired()
                         .HasColumnType("json");
 
-                    b.Property<int>("ShopId")
-                        .HasColumnType("int");
-
                     b.Property<int>("StockPurchased")
                         .HasColumnType("int");
 
-                    b.HasKey("ShopItemId", "OwnerId");
-
-                    b.HasIndex("ShopId");
+                    b.HasKey("ShopItemId", "ShopId", "OwnerId");
 
                     b.ToTable("character-shop-item-data", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.Shop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("DisableBuyback")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("DisplayNew")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("HideStats")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("HideUnuseable")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<bool>("OpenWallet")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("RandomizeOrder")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("RestockData")
-                        .HasColumnType("json");
-
-                    b.Property<DateTime>("RestockTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<byte>("Skin")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("shop", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.ShopItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<bool>("AutoPreviewEquip")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("CurrencyItemId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("CurrencyType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<string>("IconCode")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("ItemId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Label")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
-
-                    b.Property<short>("Quantity")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Rarity")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RequireAchievementId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RequireAchievementRank")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("RequireChampionshipGrade")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<short>("RequireChampionshipJoinCount")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("RequireFameGrade")
-                        .HasColumnType("int");
-
-                    b.Property<short>("RequireGuildMerchantLevel")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("RequireGuildMerchantType")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("RequireGuildTrophy")
-                        .HasColumnType("int");
-
-                    b.Property<short>("RequireQuestAllianceId")
-                        .HasColumnType("smallint");
-
-                    b.Property<string>("RestrictedBuyData")
-                        .HasColumnType("json");
-
-                    b.Property<int>("SalePrice")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShopId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StockCount")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShopId");
-
-                    b.ToTable("shop-item", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.SkillTab", b =>
@@ -1334,6 +1221,30 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("CharacterId");
 
                     b.ToTable("skill-tab", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.SoldMeretMarketItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CharacterId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MarketId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Price")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("SoldTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("meret-market-sold", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.SoldMesoListing", b =>
@@ -1447,13 +1358,13 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("ApartmentNumber")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ExpiryTime")
+                    b.Property<DateTimeOffset>("ExpiryTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("Indoor")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("LastModified")
+                    b.Property<DateTimeOffset>("LastModified")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)");
@@ -1485,6 +1396,12 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
+
+                    b.Property<int>("HousingCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Interact")
+                        .HasColumnType("json");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
@@ -1522,6 +1439,10 @@ namespace Maple2.Server.World.Migrations
 
                     b.Property<long>("AccountId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Blueprint")
+                        .IsRequired()
+                        .HasColumnType("json");
 
                     b.Property<long>("CharacterId")
                         .HasColumnType("bigint");
@@ -1598,6 +1519,46 @@ namespace Maple2.Server.World.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("ugcresource", (string)null);
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.WeddingHall", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CeremonyTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GuestList")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<long>("MarriageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PackageHallId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PackageId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Public")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MarriageId")
+                        .IsUnique();
+
+                    b.ToTable("wedding-hall", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Buddy", b =>
@@ -1703,7 +1664,7 @@ namespace Maple2.Server.World.Migrations
                     b.Navigation("Character");
                 });
 
-            modelBuilder.Entity("Maple2.Database.Model.Event.GameEventUserValue", b =>
+            modelBuilder.Entity("Maple2.Database.Model.GameEventUserValue", b =>
                 {
                     b.HasOne("Maple2.Database.Model.Character", null)
                         .WithMany()
@@ -1762,6 +1723,15 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.HomeLayoutCube", b =>
+                {
+                    b.HasOne("Maple2.Database.Model.HomeLayout", null)
+                        .WithMany("Cubes")
+                        .HasForeignKey("HomeLayoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.ItemStorage", b =>
                 {
                     b.HasOne("Maple2.Database.Model.Account", null)
@@ -1771,11 +1741,17 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Maple2.Database.Model.Mail", b =>
+            modelBuilder.Entity("Maple2.Database.Model.Marriage", b =>
                 {
                     b.HasOne("Maple2.Database.Model.Character", null)
                         .WithMany()
-                        .HasForeignKey("ReceiverId")
+                        .HasForeignKey("Partner1Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Maple2.Database.Model.Character", null)
+                        .WithMany()
+                        .HasForeignKey("Partner2Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1800,48 +1776,6 @@ namespace Maple2.Server.World.Migrations
                     b.HasOne("Maple2.Database.Model.Item", null)
                         .WithOne()
                         .HasForeignKey("Maple2.Database.Model.PetConfig", "ItemUid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.BeautyShopEntry", b =>
-                {
-                    b.HasOne("Maple2.Database.Model.Shop.BeautyShop", null)
-                        .WithMany()
-                        .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.CharacterShopData", b =>
-                {
-                    b.HasOne("Maple2.Database.Model.Shop.Shop", null)
-                        .WithMany()
-                        .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.CharacterShopItemData", b =>
-                {
-                    b.HasOne("Maple2.Database.Model.Shop.Shop", null)
-                        .WithMany()
-                        .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Maple2.Database.Model.Shop.ShopItem", null)
-                        .WithMany()
-                        .HasForeignKey("ShopItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.Shop.ShopItem", b =>
-                {
-                    b.HasOne("Maple2.Database.Model.Shop.Shop", null)
-                        .WithMany()
-                        .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1873,6 +1807,15 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.WeddingHall", b =>
+                {
+                    b.HasOne("Maple2.Database.Model.Marriage", null)
+                        .WithOne()
+                        .HasForeignKey("Maple2.Database.Model.WeddingHall", "MarriageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.Account", b =>
                 {
                     b.Navigation("Characters");
@@ -1886,6 +1829,11 @@ namespace Maple2.Server.World.Migrations
             modelBuilder.Entity("Maple2.Database.Model.Guild", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("Maple2.Database.Model.HomeLayout", b =>
+                {
+                    b.Navigation("Cubes");
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.UgcMap", b =>

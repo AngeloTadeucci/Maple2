@@ -89,7 +89,6 @@ public partial class ChannelService {
                 PartyId = partyId,
                 Info = info.Clone(),
                 JoinTime = add.JoinTime,
-                LoginTime = add.LoginTime,
             });
         }
 

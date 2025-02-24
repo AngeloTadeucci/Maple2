@@ -1,3 +1,5 @@
 @echo off
 
-wt -d "Maple2.Server.World" dotnet run ; sp -d "Maple2.Server.Login" dotnet run ; sp -d "Maple2.Server.Web" dotnet run
+wt -d "Maple2.Server.World" --title "World Server" dotnet run ; ^
+sp -d "Maple2.Server.Login" --title "Login Server" dotnet run ; ^
+sp -d "Maple2.Server.Web" --title "Web Server" dotnet run

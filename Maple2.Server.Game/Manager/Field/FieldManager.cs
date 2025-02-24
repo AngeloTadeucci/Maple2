@@ -2,15 +2,20 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Field;
+using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -25,26 +30,32 @@ namespace Maple2.Server.Game.Manager.Field;
 public sealed partial class FieldManager : IDisposable {
     private static int _globalIdCounter = 10000000;
     private int localIdCounter = 50000000;
+    private DateTime? fieldEmptySince;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public GameStorage GameStorage { get; init; } = null!;
     public ItemMetadataStorage ItemMetadata { get; init; } = null!;
     public MapMetadataStorage MapMetadata { get; init; } = null!;
+    public MapDataStorage MapData { get; init; } = null!;
     public NpcMetadataStorage NpcMetadata { get; init; } = null!;
     public AiMetadataStorage AiMetadata { get; init; } = null!;
     public SkillMetadataStorage SkillMetadata { get; init; } = null!;
     public TableMetadataStorage TableMetadata { get; init; } = null!;
+    public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
-    public Lua.Lua Lua { private get; init; } = null!;
+    public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
+    public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All
     #endregion
 
     public readonly MapMetadata Metadata;
     public readonly MapEntityMetadata Entities;
     public readonly Navigation Navigation;
+    public readonly PerformanceStageManager? PerformanceStage;
+    public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
 
     private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = [];
@@ -53,16 +64,18 @@ public sealed partial class FieldManager : IDisposable {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
-    private bool initialized = false;
+    private bool initialized;
+    public bool Disposed { get; private set; }
 
     private readonly ILogger logger = Log.Logger.ForContext<FieldManager>();
 
     public ItemDropManager ItemDrop { get; }
 
     public int MapId => Metadata.Id;
-    public readonly long OwnerId;
     public readonly int InstanceId;
+    public FieldInstance FieldInstance = FieldInstance.Default;
     public readonly AiManager Ai;
+    public IFieldRenderer? DebugRenderer { get; private set; }
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0) {
         Metadata = metadata;
@@ -73,20 +86,36 @@ public sealed partial class FieldManager : IDisposable {
         Scheduler = new EventQueue();
         FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
-        thread = new Thread(Update);
+        thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
         OwnerId = ownerId;
         InstanceId = NextGlobalId();
 
         ItemDrop = new ItemDropManager(this);
 
-        Navigation = new Navigation(metadata.XBlock, entities.NavMesh?.Data);
+        Navigation = new Navigation(metadata.XBlock);
+
+        if (MapId is Constant.PerformanceMapId) {
+            PerformanceStage = new PerformanceStageManager(this);
+        }
     }
 
     // Init is separate from constructor to allow properties to be injected first.
     private void Init() {
         if (initialized) {
             return;
+        }
+
+        initialized = true;
+
+        if (MapData.TryGet(Metadata.XBlock, out FieldAccelerationStructure? accelerationStructure)) {
+            AccelerationStructure = accelerationStructure;
+        } else {
+            logger.Error("Failed to load acceleration structure for map {MapId}", MapId);
+        }
+
+        if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
+            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
 
         if (ugcMetadata.Plots.Count > 0) {
@@ -104,6 +133,25 @@ public sealed partial class FieldManager : IDisposable {
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
         }
+
+        if (MapId is Constant.DefaultHomeMapId) {
+            List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.Interact?.PortalSettings is not null)
+                .ToList();
+
+            foreach (PlotCube cubePortal in cubePortals) {
+                SpawnCubePortal(cubePortal);
+            }
+
+            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
+                .ToList();
+
+            foreach (PlotCube cube in lifeSkillCubes) {
+                AddFieldFunctionInteract(cube);
+            }
+        }
+
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);
         }
@@ -168,9 +216,30 @@ public sealed partial class FieldManager : IDisposable {
             AddSkill(skill, regionSkill.Interval, regionSkill.Position, regionSkill.Rotation);
         }
 
-        initialized = true;
+        foreach (BannerTable.Entry entry in TableMetadata.BannerTable.Entries) {
+            if (entry.MapId != MapId) {
+                continue;
+            }
+
+            using GameStorage.Request db = GameStorage.Context();
+
+            FieldUgcBanner ugcBanner = new(this, entry.Id, MapId, db.FindBannerSlotsByBannerId(entry.Id));
+            Banners[entry.Id] = ugcBanner;
+
+            DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
+
+            BannerSlot? slot = ugcBanner.Slots.FirstOrDefault(x => x.ActivateTime.Day == dateTimeOffset.Day && x.ActivateTime.Hour == dateTimeOffset.Hour);
+
+            if (slot is null || slot.Expired || slot.Active) {
+                continue;
+            }
+
+            slot.Active = true;
+        }
+
         Scheduler.Start();
         thread.Start();
+        DebugRenderer = DebugGraphicsContext.FieldAdded(this);
     }
 
     /// <summary>
@@ -188,36 +257,43 @@ public sealed partial class FieldManager : IDisposable {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
-    private void Update() {
+    private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
-            if (Players.IsEmpty) {
-                Thread.Sleep(1000);
-                continue;
+            if (!(DebugRenderer?.IsActive ?? false)) {
+                Update();
             }
-
-            Scheduler.InvokeAll();
-
-            FieldTick = Environment.TickCount64;
-            foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(FieldTick);
-
-            foreach (FieldPlayer player in Players.Values) player.Update(FieldTick);
-            foreach (FieldNpc npc in Npcs.Values) npc.Update(FieldTick);
-            foreach (FieldNpc mob in Mobs.Values) mob.Update(FieldTick);
-            foreach (FieldPet pet in Pets.Values) pet.Update(FieldTick);
-            foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
-            foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
-            foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
-            foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
-            foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
-            foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
-            foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
-            foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
-
-            RoomTimer?.Update(FieldTick);
 
             // Environment.TickCount has ~16ms precision so sleep until next update
             Thread.Sleep(15);
         }
+    }
+
+    public void Update() {
+        if (Players.IsEmpty) {
+            return;
+        }
+
+        Scheduler.InvokeAll();
+
+        FieldTick = Environment.TickCount64;
+        foreach (FieldTrigger trigger in fieldTriggers.Values) trigger.Update(FieldTick);
+
+        foreach (FieldPlayer player in Players.Values) player.Update(FieldTick);
+        foreach (FieldNpc npc in Npcs.Values) npc.Update(FieldTick);
+        foreach (FieldNpc mob in Mobs.Values) mob.Update(FieldTick);
+        foreach (FieldPet pet in Pets.Values) pet.Update(FieldTick);
+        foreach (FieldBreakable breakable in fieldBreakables.Values) breakable.Update(FieldTick);
+        foreach (FieldLiftable liftable in fieldLiftables.Values) liftable.Update(FieldTick);
+        foreach (FieldInteract interact in fieldInteracts.Values) interact.Update(FieldTick);
+        foreach (FieldFunctionInteract interact in fieldFunctionInteracts.Values) interact.Update(FieldTick);
+        foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
+        foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
+        foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
+        foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
+        foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
+        UpdateBanners();
+
+        RoomTimer?.Update(FieldTick);
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {
@@ -268,6 +344,11 @@ public sealed partial class FieldManager : IDisposable {
 
     public bool TryGetPlayer(int objectId, [NotNullWhen(true)] out FieldPlayer? player) {
         return Players.TryGetValue(objectId, out player);
+    }
+
+    public bool TryGetPlayer(string name, [NotNullWhen(true)] out FieldPlayer? player) {
+        player = Players.Values.FirstOrDefault(p => p.Value.Character.Name == name);
+        return player != null;
     }
 
     public bool TryGetPortal(int portalId, [NotNullWhen(true)] out FieldPortal? portal) {
@@ -329,6 +410,41 @@ public sealed partial class FieldManager : IDisposable {
 
         // MoveByPortal (same map)
         Portal srcPortal = fieldPortal;
+        if (srcPortal.Type is PortalType.InHome) {
+            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+            if (cubePortal is null) {
+                return false;
+            }
+
+            switch (cubePortal.Interact!.PortalSettings!.Destination) {
+                case CubePortalDestination.PortalInHome:
+                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
+                    if (destinationCube is null) {
+                        return false;
+                    }
+
+                    session.Player.MoveToPosition(destinationCube.Position, default);
+                    return true;
+                case CubePortalDestination.SelectedMap:
+                    session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
+                        ? FieldEnterPacket.Request(session.Player)
+                        : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                    return true;
+                case CubePortalDestination.FriendHome: {
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        Home? home = db.GetHome(fieldPortal.HomeId);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
+                        }
+
+                        session.MigrateToHome(home);
+                        return true;
+                    }
+            }
+            return false;
+        }
+
         if (srcPortal.TargetMapId == MapId) {
             if (TryGetPortal(srcPortal.TargetPortalId, out FieldPortal? dstPortal)) {
                 session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
@@ -375,6 +491,32 @@ public sealed partial class FieldManager : IDisposable {
         return true;
     }
 
+    public void MovePlayerAlongPath(string pathName) {
+        MS2PatrolData? patrolData = Entities.Patrols.FirstOrDefault(p => p.Name == pathName);
+        if (patrolData is null) {
+            return;
+        }
+
+        foreach (FieldPlayer player in Players.Values) {
+            int dummyNpcId = player.Value.Character.Gender is Gender.Male ? Constant.DummyNpcMale : Constant.DummyNpcFemale;
+
+            if (!NpcMetadata.TryGet(dummyNpcId, out NpcMetadata? npcMetadata)) {
+                continue;
+            }
+
+            FieldNpc? dummyNpc = SpawnNpc(npcMetadata, player.Position, player.Rotation);
+            if (dummyNpc is null) {
+                continue;
+            }
+            Broadcast(FieldPacket.AddNpc(dummyNpc));
+            Broadcast(ProxyObjectPacket.AddNpc(dummyNpc));
+
+            dummyNpc.SetPatrolData(patrolData);
+            dummyNpc.MovementState.CleanupPatrolData();
+            player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
+        }
+    }
+
     #region DebugUtils
     public void BroadcastAiMessage(ByteWriter packet) {
         foreach ((int objectId, FieldPlayer player) in Players) {
@@ -407,9 +549,23 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     public void Dispose() {
-        cancel.Cancel();
+        if (Disposed) {
+            return;
+        }
+
+        logger.Debug("Disposing FieldManager {MapId}", MapId);
+
+        DebugGraphicsContext.FieldRemoved(this);
+        try {
+            cancel.Cancel();
+        } catch (Exception e) {
+            logger.Error(e, "Failed to cancel FieldManager thread, cancel.Cancel() threw an exception. Disposed: {Disposed}", Disposed);
+        }
         cancel.Dispose();
         thread.Join();
         Navigation.Dispose();
+
+        Disposed = true;
+        logger.Debug("Disposed FieldManager {MapId}", MapId);
     }
 }

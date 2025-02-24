@@ -1,4 +1,6 @@
-﻿namespace Maple2.Model.Enum;
+﻿// ReSharper disable InconsistentNaming
+
+namespace Maple2.Model.Enum;
 
 public enum GameEventUserValueType {
     // Attendance Event
@@ -8,10 +10,20 @@ public enum GameEventUserValueType {
     AttendanceEarlyParticipationRemaining = 103,
     AttendanceAccumulatedTime = 106,
 
+    // DTReward
+    DTRewardStartTime = 700, // start time
+    DTRewardCurrentTime = 701, // current item accumulated time
+    DTRewardRewardIndex = 702, // unk value seen is "1"
+    DTRewardTotalTime = 703, // TOTAL accumulated time
+
     // Blue Marble / Mapleopoly
-    MapleopolyTotalTileCount = 800,
+    MapleopolyTotalSlotCount = 800,
     MapleopolyFreeRollAmount = 801,
     MapleopolyTotalTrips = 802, // unsure
+
+    // Gallery Event
+    GalleryCardFlipCount = 1600,
+    GalleryClaimReward = 1601,
 
     // Rock Paper Scissors Event
     RPSDailyMatches = 1800,

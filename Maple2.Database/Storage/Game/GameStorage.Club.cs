@@ -1,64 +1,141 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Club = Maple2.Model.Game.Club;
-using ClubMember = Maple2.Model.Game.ClubMember;
+using Maple2.Tools.Extensions;
+using Z.EntityFramework.Plus;
+using Club = Maple2.Model.Game.Club.Club;
+using ClubMember = Maple2.Model.Game.Club.ClubMember;
 
 namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public Club? GetClub(long clubId) {
-            Model.Club? model = Context.Club.Find(clubId);
-            if (model == null) {
+        public Club? GetClub(IPlayerInfoProvider provider, long clubId) {
+            Club? club = Context.Club.Find(clubId);
+            if (club == null) {
                 return null;
             }
 
-            IList<ClubMember> members = GetClubMembers(clubId);
-            Club club = model;
-            club.Leader = members.First(member => member.Info.CharacterId == model.LeaderId);
-            members.Remove(club.Leader);
-            club.Members = members;
+            List<ClubMember> members = GetClubMembers(provider, clubId);
+            club.Leader = members.First(member => member.Info.CharacterId == club.LeaderId);
+            foreach (ClubMember member in members) {
+                club.Members.TryAdd(member.Info.CharacterId, member);
+            }
             return club;
         }
 
-        public IList<Tuple<long, string>> ListClubs(long characterId) {
+        public bool ClubExists(string clubName) {
+            return Context.Club.Any(club => club.Name == clubName);
+        }
+
+        public bool ClubExists(long clubId) {
+            return Context.Club.Any(club => club.Id == clubId);
+        }
+
+        public IList<long> ListClubs(long characterId) {
             return Context.ClubMember.Where(member => member.CharacterId == characterId)
-                .Join(Context.Club, member => member.ClubId, club => club.Id,
-                    (member, club) => new Tuple<long, string>(club.Id, club.Name)
-                ).ToList();
+                .Select(member => member.ClubId)
+                .ToList();
         }
 
-        public Club? CreateClub(Club club) {
-            Model.Club model = club;
-            model.Id = 0;
-            model.Members = club.Members.Select<ClubMember, Model.ClubMember>(member => member).ToList();
-            model.Members.Add(club.Leader);
+        public Club? CreateClub(IPlayerInfoProvider provider, string name, long leaderId, List<PlayerInfo> members) {
+            BeginTransaction();
+            var club = new Model.Club {
+                Name = name,
+                LeaderId = leaderId,
+                CreationTime = DateTime.UtcNow,
+                State = ClubState.Staged,
+            };
+            Context.Club.Add(club);
+            if (!SaveChanges()) {
+                return null;
+            }
 
-            Context.Club.Add(model);
+            foreach (PlayerInfo info in members) {
+                CreateClubMember(club.Id, info);
+            }
 
-            // I know this is an extra read, but the conversion logic is complicated.
-            return Context.TrySaveChanges() ? GetClub(model.Id) : null;
+            return Commit() ? GetClub(provider, club.Id) : null;
         }
 
-        public IList<ClubMember> GetClubMembers(long clubId) {
-            var results = (from member in Context.ClubMember where member.ClubId == clubId
-                           join account in Context.Account on member.Character.AccountId equals account.Id
-                           join indoor in Context.UgcMap on
-                               new { OwnerId = member.Character.AccountId, Indoor = true } equals new { indoor.OwnerId, indoor.Indoor }
-                           join outdoor in Context.UgcMap on
-                               new { OwnerId = member.Character.AccountId, Indoor = true } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
-                           from outdoor in plot.DefaultIfEmpty()
-                           select new { account, member, indoor, outdoor })
-                .AsEnumerable();
+        public ClubMember? CreateClubMember(long clubId, PlayerInfo info) {
+            var member = new Model.ClubMember {
+                ClubId = clubId,
+                CharacterId = info.CharacterId,
+            };
+            Context.ClubMember.Add(member);
+            if (!SaveChanges()) {
+                return null;
+            }
 
-            return results.Select(result => {
-                AchievementInfo achievementInfo = GetAchievementInfo(result.account.Id, result.member.CharacterId);
-                PlayerInfo playerInfo = BuildPlayerInfo(result.member.Character, result.indoor, result.outdoor, achievementInfo, result.account.PremiumTime);
-                return new ClubMember(playerInfo, result.member.CreationTime.ToEpochSeconds(), result.member.Character.LastModified.ToEpochSeconds());
-            }).ToList();
+            return new ClubMember {
+                ClubId = member.ClubId,
+                Info = info,
+                JoinTime = member.CreationTime.ToEpochSeconds(),
+            };
+        }
+
+        public bool DeleteClub(long clubId) {
+            BeginTransaction();
+
+            int count = Context.Club.Where(club => club.Id == clubId).Delete();
+            if (count == 0) {
+                return false;
+            }
+
+            Context.ClubMember.Where(member => member.ClubId == clubId).Delete();
+
+            return Commit();
+        }
+
+        public bool DeleteClubMember(long clubId, long characterId) {
+            int count = Context.ClubMember.Where(member => member.ClubId == clubId && member.CharacterId == characterId).Delete();
+            return SaveChanges() && count > 0;
+        }
+
+        private List<ClubMember> GetClubMembers(IPlayerInfoProvider provider, long clubId) {
+            return Context.ClubMember.Where(member => member.ClubId == clubId)
+                .AsEnumerable()
+                .Select(member => {
+                    PlayerInfo? info = provider.GetPlayerInfo(member.CharacterId);
+                    return info == null ? null : new ClubMember {
+                        Info = info,
+                        JoinTime = member.CreationTime.ToEpochSeconds(),
+                        ClubId = member.ClubId,
+                    };
+                }).WhereNotNull().ToList();
+        }
+
+        public bool SaveClub(Club club) {
+            BeginTransaction();
+            if (!Context.Club.Any(model => model.Id == club.Id)) {
+                return false;
+            }
+            Context.Club.Update(club);
+
+            // Update club members
+            Dictionary<long, ClubMember> saveMembers = club.Members.Values
+                .ToDictionary(member => member.Info.CharacterId, member => member);
+            IEnumerable<Model.ClubMember> existingMembers = Context.ClubMember
+                .Where(member => member.ClubId == club.Id)
+                .Select(member => new Model.ClubMember {
+                    CharacterId = member.CharacterId,
+                });
+
+            foreach (Model.ClubMember member in existingMembers) {
+                if (saveMembers.Remove(member.CharacterId, out ClubMember? gameMember)) {
+                    Model.ClubMember model = gameMember;
+                    Context.ClubMember.Update(model);
+                } else {
+                    Context.ClubMember.Remove(member);
+                }
+            }
+            Context.ClubMember.AddRange(saveMembers.Values.Select<ClubMember, Model.ClubMember>(member => member));
+
+            if (!SaveChanges()) {
+                return false;
+            }
+            return Commit();
         }
     }
 }

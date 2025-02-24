@@ -1,15 +1,23 @@
 ﻿using System.Globalization;
+using System.Xml;
 using Maple2.Database.Extensions;
+using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Enum;
 using Maple2.File.Parser.Xml.Table.Server;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
+using DayOfWeek = System.DayOfWeek;
 using ExpType = Maple2.Model.Enum.ExpType;
+using GuildNpcType = Maple2.Model.Enum.GuildNpcType;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
+using ScriptType = Maple2.Model.Enum.ScriptType;
+using TimeEventType = Maple2.File.Parser.Enum.TimeEventType;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -30,12 +38,20 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
+        yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
+        yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
+        yield return new ServerTableMetadata { Name = "OxQuiz.xml", Table = ParseOxQuizTable() };
+        yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
+        yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
+        yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
+        yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
+        yield return new ServerTableMetadata { Name = "shop_merat_custom.xml", Table = ParseMeretCustomShop() };
 
     }
 
     private InstanceFieldTable ParseInstanceField() {
         var results = new Dictionary<int, InstanceFieldMetadata>();
-        foreach ((int instanceId, Parser.Xml.Table.Server.InstanceField instanceField) in parser.ParseInstanceField()) {
+        foreach ((int instanceId, InstanceField instanceField) in parser.ParseInstanceField()) {
             foreach (int fieldId in instanceField.fieldIDs) {
 
                 InstanceFieldMetadata instanceFieldMetadata = new(
@@ -67,24 +83,24 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser) {
-        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> scripts) in parser) {
+        foreach ((int npcId, IDictionary<int, NpcScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
-            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptCondition scriptCondition) in scripts) {
+            foreach ((int scriptId, NpcScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questStarted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var questsCompleted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_complete) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var items = new List<KeyValuePair<ItemComponent, bool>>();
                 for (int i = 0; i < scriptCondition.item.Length; i++) {
-                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    KeyValuePair<int, bool> parsedItem = ParseToIntKeyValuePair(scriptCondition.item[i]);
                     string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
                     if (!int.TryParse(itemCount, out int itemAmount)) {
                         itemAmount = 1;
@@ -97,21 +113,29 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Id: npcId,
                     ScriptId: scriptId,
                     Type: ScriptType.Npc,
-                    MaidAuthority: scriptCondition.maid_auth,
-                    MaidExpired: scriptCondition.maid_expired != "!1",
-                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
-                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
-                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
-                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
-                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    Maid: new ScriptConditionMetadata.MaidData(
+                        Authority: scriptCondition.maid_auth,
+                        Expired: scriptCondition.maid_expired != "!1",
+                        ReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                        ClosenessRank: scriptCondition.maid_affinity_grade,
+                        ClosenessTime: ParseToIntKeyValuePair(scriptCondition.maid_affinity_time),
+                        MoodTime: ParseToIntKeyValuePair(scriptCondition.maid_mood_time),
+                        DaysBeforeExpired: ParseToIntKeyValuePair(scriptCondition.maid_day_before_expired)
+                    ),
+                    Wedding: new ScriptConditionMetadata.WeddingData(
+                        HasReservation: scriptCondition.weddingHallBooking < 0 ? null : scriptCondition.weddingHallBooking == 1,
+                        MarriageDays: scriptCondition.marriageDate,
+                        UserState: scriptCondition.weddingState < 0 ? null : (MaritalStatus) scriptCondition.weddingState,
+                        HallState: ParseToStringKeyValuePair(scriptCondition.weddingHallState),
+                        CoolingOff: scriptCondition.coolingOff),
                     JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
-                    Buff: ParseToKeyValuePair(scriptCondition.buff),
-                    Meso: ParseToKeyValuePair(scriptCondition.meso),
-                    Level: ParseToKeyValuePair(scriptCondition.level),
-                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    Buff: ParseToIntKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToIntKeyValuePair(scriptCondition.meso),
+                    Level: ParseToIntKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
                     InGuild: scriptCondition.guild
                 ));
             }
@@ -121,24 +145,24 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> ScriptConditions)> parser) {
-        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> scripts) in parser) {
+        foreach ((int questId, IDictionary<int, QuestScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
-            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptCondition scriptCondition) in scripts) {
+            foreach ((int scriptId, QuestScriptCondition scriptCondition) in scripts) {
                 var questStarted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_start) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questStarted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var questsCompleted = new Dictionary<int, bool>();
                 foreach (string quest in scriptCondition.quest_complete) {
-                    KeyValuePair<int, bool> parsedQuest = ParseToKeyValuePair(quest);
+                    KeyValuePair<int, bool> parsedQuest = ParseToIntKeyValuePair(quest);
                     questsCompleted.Add(parsedQuest.Key, parsedQuest.Value);
                 }
 
                 var items = new List<KeyValuePair<ItemComponent, bool>>();
                 for (int i = 0; i < scriptCondition.item.Length; i++) {
-                    KeyValuePair<int, bool> parsedItem = ParseToKeyValuePair(scriptCondition.item[i]);
+                    KeyValuePair<int, bool> parsedItem = ParseToIntKeyValuePair(scriptCondition.item[i]);
                     string itemCount = scriptCondition.itemCount.ElementAtOrDefault(i) ?? "1";
                     if (!int.TryParse(itemCount, out int itemAmount)) {
                         itemAmount = 1;
@@ -151,21 +175,29 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Id: questId,
                     ScriptId: scriptId,
                     Type: ScriptType.Quest,
-                    MaidAuthority: scriptCondition.maid_auth,
-                    MaidExpired: scriptCondition.maid_expired != "!1",
-                    MaidReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
-                    MaidClosenessRank: scriptCondition.maid_affinity_grade,
-                    MaidClosenessTime: ParseToKeyValuePair(scriptCondition.maid_affinity_time),
-                    MaidMoodTime: ParseToKeyValuePair(scriptCondition.maid_mood_time),
-                    MaidDaysBeforeExpired: ParseToKeyValuePair(scriptCondition.maid_day_before_expired),
+                    Maid: new ScriptConditionMetadata.MaidData(
+                        Authority: scriptCondition.maid_auth,
+                        Expired: scriptCondition.maid_expired != "!1",
+                        ReadyToPay: scriptCondition.maid_ready_to_pay != "!1",
+                        ClosenessRank: scriptCondition.maid_affinity_grade,
+                        ClosenessTime: ParseToIntKeyValuePair(scriptCondition.maid_affinity_time),
+                        MoodTime: ParseToIntKeyValuePair(scriptCondition.maid_mood_time),
+                        DaysBeforeExpired: ParseToIntKeyValuePair(scriptCondition.maid_day_before_expired)
+                    ),
+                    Wedding: new ScriptConditionMetadata.WeddingData(
+                        HasReservation: scriptCondition.weddingHallBooking < 0 ? null : scriptCondition.weddingHallBooking == 1,
+                        MarriageDays: scriptCondition.marriageDate,
+                        UserState: scriptCondition.weddingState < 0 ? null : (MaritalStatus) scriptCondition.weddingState,
+                        HallState: ParseToStringKeyValuePair(scriptCondition.weddingHallState),
+                        CoolingOff: scriptCondition.coolingOff),
                     JobCode: scriptCondition.job?.Select(job => (JobCode) job).ToList() ?? [],
                     QuestStarted: questStarted,
                     QuestCompleted: questsCompleted,
                     Items: items,
-                    Buff: ParseToKeyValuePair(scriptCondition.buff),
-                    Meso: ParseToKeyValuePair(scriptCondition.meso),
-                    Level: ParseToKeyValuePair(scriptCondition.level),
-                    AchieveCompleted: ParseToKeyValuePair(scriptCondition.achieve_complete),
+                    Buff: ParseToIntKeyValuePair(scriptCondition.buff),
+                    Meso: ParseToIntKeyValuePair(scriptCondition.meso),
+                    Level: ParseToIntKeyValuePair(scriptCondition.level),
+                    AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
                     InGuild: scriptCondition.guild
                 ));
             }
@@ -174,7 +206,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private static KeyValuePair<int, bool> ParseToKeyValuePair(string input) {
+    private static KeyValuePair<int, bool> ParseToIntKeyValuePair(string input) {
         bool value = !input.StartsWith("!");
 
         if (!value) {
@@ -187,6 +219,15 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new KeyValuePair<int, bool>(key, value);
     }
 
+    private static KeyValuePair<string, bool> ParseToStringKeyValuePair(string input) {
+        bool value = !input.StartsWith("!");
+
+        if (!value) {
+            input = input.Substring(1);
+        }
+        return new KeyValuePair<string, bool>(input, value);
+    }
+
     private ScriptFunctionTable ParseScriptFunction() {
         var results = new Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>>();
         results = MergeNpcScriptFunctions(results, parser.ParseNpcScriptFunction());
@@ -196,9 +237,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
-        foreach ((int npcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> scripts) in parser) {
+        foreach ((int npcId, IDictionary<int, NpcScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
-            foreach ((int scriptId, Parser.Xml.Table.Server.NpcScriptFunction scriptFunction) in scripts) {
+            foreach ((int scriptId, NpcScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
                     short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
@@ -255,9 +296,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
-        foreach ((int questId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> scripts) in parser) {
+        foreach ((int questId, IDictionary<int, QuestScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
-            foreach ((int scriptId, Parser.Xml.Table.Server.QuestScriptFunction scriptFunction) in scripts) {
+            foreach ((int scriptId, QuestScriptFunction scriptFunction) in scripts) {
                 var presentItems = new List<ItemComponent>();
                 for (int i = 0; i < scriptFunction.presentItemID.Length; i++) {
                     short itemRarity = scriptFunction.presentItemRank.ElementAtOrDefault(i) != default(short) ? scriptFunction.presentItemRank.ElementAtOrDefault(i) : (short) -1;
@@ -506,7 +547,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             var entries = new Dictionary<int, IndividualDropItemTable.Entry>();
 
             foreach (IndividualItemDrop.Group group in dropBox.group) {
-                List<IndividualDropItemTable.Item> items = new();
+                List<IndividualDropItemTable.Item> items = [];
                 foreach (IndividualItemDrop.Group.Item item in group.v) {
                     int minCount = item.minCount <= 0 ? 1 : item.minCount;
                     int maxCount = item.maxCount < item.minCount ? item.minCount : item.maxCount;
@@ -647,6 +688,862 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             AdventureExpType.Exp_KillMonsterElite => ExpType.monsterElite,
             _ => ExpType.none,
         };
+    }
+
+    private TimeEventTable ParseTimeEventTable() {
+        var results = new Dictionary<int, GlobalPortalMetadata>();
+        foreach ((int id, TimeEventData data) in parser.ParseTimeEventData()) {
+            // TODO: Handle other event types
+            if (data.type == TimeEventType.GlobalEvent) {
+                var entries = new GlobalPortalMetadata.Field[3]; // UI only supports 3 fields
+                entries[0] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName1,
+                    MapId: data.eventField1.Length == 0 ? 0 : data.eventField1[0],
+                    PortalId: data.eventField1.Length == 0 ? 0 : data.eventField1[1]);
+                entries[1] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName2,
+                    MapId: data.eventField2.Length == 0 ? 0 : data.eventField2[0],
+                    PortalId: data.eventField2.Length == 0 ? 0 : data.eventField2[1]);
+                entries[2] = new GlobalPortalMetadata.Field(
+                    Name: data.eventName3,
+                    MapId: data.eventField3.Length == 0 ? 0 : data.eventField3[0],
+                    PortalId: data.eventField3.Length == 0 ? 0 : data.eventField3[1]);
+                int[] startTimeArray = ParseTimeToArray(data.startTime);
+                int[] endTimeArray = ParseTimeToArray(data.endTime);
+                int[] cycleArray = ParseTimeToArray(data.cycleTime);
+                int[] randomArray = ParseTimeToArray(data.randomTime);
+                int[] lifeArray = ParseTimeToArray(data.lifeTime);
+                results.Add(id, new GlobalPortalMetadata(
+                    Id: id,
+                    Probability: data.prob,
+                    StartTime: new DateTime(startTimeArray[0], startTimeArray[1], startTimeArray[2], startTimeArray[3], startTimeArray[4], startTimeArray[5]),
+                    EndTime: new DateTime(endTimeArray[0], endTimeArray[1], endTimeArray[2], endTimeArray[3], endTimeArray[4], endTimeArray[5]),
+                    CycleTime: new TimeSpan(cycleArray[2], cycleArray[3], cycleArray[4], cycleArray[5]),
+                    RandomTime: new TimeSpan(randomArray[2], randomArray[3], randomArray[4], randomArray[5]),
+                    LifeTime: new TimeSpan(lifeArray[2], lifeArray[3], lifeArray[4], lifeArray[5]),
+                    PopupMessage: data.popupMessage,
+                    SoundId: data.soundID,
+                    Entries: entries));
+            }
+        }
+        return new TimeEventTable(results);
+
+        int[] ParseTimeToArray(string time) {
+            string[] timeArray = time.Split('-');
+            int[] timeInt = new int[timeArray.Length];
+            for (int i = 0; i < timeArray.Length; i++) {
+                timeInt[i] = int.Parse(timeArray[i]);
+            }
+            return timeInt;
+        }
+    }
+
+    private GameEventTable ParseGameEventTable() {
+        var results = new Dictionary<int, GameEventMetadata>();
+        foreach ((int id, GameEvent data) in parser.ParseGameEvent()) {
+            if (!Enum.TryParse(data.eventType, out GameEventType eventType)) {
+                Console.WriteLine($"Unknown GameEventType: {data.eventType}");
+            }
+
+            GameEventData? eventData = ParseGameEventData(eventType, data.value1, data.value2, data.value3, data.value4);
+            if (eventData == null) {
+                continue;
+            }
+
+            DateTime startTime = DateTime.TryParseExact(data.eventStart, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out startTime) ? startTime : DateTime.MinValue;
+            DateTime endTime = DateTime.TryParseExact(data.eventEnd, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out endTime) ? endTime : DateTime.MinValue;
+            (TimeSpan partTimeStart, TimeSpan partTimeEnd) = ParsePartTime(data.partTime);
+            results.Add(id, new GameEventMetadata(
+                Id: id,
+                Type: eventType,
+                StartTime: startTime,
+                EndTime: endTime,
+                StartPartTime: partTimeStart,
+                EndPartTime: partTimeEnd,
+                ActiveDays: data.dayOfWeek.Length == 0 ? [] : data.dayOfWeek.Select(ParseDayOfWeek).ToArray(),
+                Data: eventData,
+                Value1: data.value1,
+                Value2: data.value2,
+                Value3: data.value3,
+                Value4: data.value4));
+        }
+        return new GameEventTable(results);
+
+        DayOfWeek ParseDayOfWeek(Maple2.File.Parser.Enum.DayOfWeek dayofWeek) {
+            return dayofWeek switch {
+                Maple2.File.Parser.Enum.DayOfWeek.sun => DayOfWeek.Sunday,
+                Maple2.File.Parser.Enum.DayOfWeek.mon => DayOfWeek.Monday,
+                Maple2.File.Parser.Enum.DayOfWeek.tue => DayOfWeek.Tuesday,
+                Maple2.File.Parser.Enum.DayOfWeek.wed => DayOfWeek.Wednesday,
+                Maple2.File.Parser.Enum.DayOfWeek.thu => DayOfWeek.Thursday,
+                Maple2.File.Parser.Enum.DayOfWeek.fri => DayOfWeek.Friday,
+                Maple2.File.Parser.Enum.DayOfWeek.sat => DayOfWeek.Saturday,
+                _ => DayOfWeek.Sunday,
+            };
+        }
+    }
+
+    private (TimeSpan, TimeSpan) ParsePartTime(string partTimeString) {
+        string[] partTimeStringArray = partTimeString.Split("-").ToArray();
+        if (partTimeStringArray.Length != 2) {
+            return (TimeSpan.Zero, TimeSpan.Zero);
+        }
+        TimeSpan startTime = TimeSpan.Parse(partTimeStringArray[0]);
+        TimeSpan endTime = TimeSpan.Parse(partTimeStringArray[1]);
+        return (startTime, endTime);
+    }
+
+    private GameEventData? ParseGameEventData(GameEventType type, string value1, string value2, string value3, string value4) {
+        var value1Xml = new XmlDocument();
+        var value2Xml = new XmlDocument();
+        var value3Xml = new XmlDocument();
+        var value4Xml = new XmlDocument();
+
+        switch (type) {
+            case GameEventType.BlueMarble:
+                if (!string.IsNullOrEmpty(value1)) {
+                    value1Xml.LoadXml(value1);
+                }
+
+                value2Xml.LoadXml(value2);
+                var rounds = new List<BlueMarble.Round>();
+                var requiredItem = new ItemComponent(0, 0, 0, ItemTag.None);
+
+                XmlNode? roundNode = value1Xml.FirstChild;
+                if (roundNode != null) {
+                    if (roundNode.Attributes?["consumeItemID"] != null) {
+                        if (!int.TryParse(roundNode.Attributes?["consumeItemID"]?.Value, out int itemId)) {
+                            itemId = 0;
+                        }
+                        if (!int.TryParse(roundNode.Attributes?["consumeItemCount"]?.Value, out int itemCount)) {
+                            itemCount = 1;
+                        }
+                        requiredItem = new ItemComponent(itemId, -1, itemCount, ItemTag.None);
+                    }
+
+                    foreach (XmlNode vNode in roundNode.ChildNodes) {
+                        if (!int.TryParse(vNode.Attributes?["round"]?.Value, out int round)) {
+                            round = 0;
+                        }
+
+                        if (!int.TryParse(vNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                            itemId = 0;
+                        }
+
+                        if (!int.TryParse(vNode.Attributes?["itemCount"]?.Value, out int itemCount)) {
+                            itemCount = 1;
+                        }
+
+                        rounds.Add(new BlueMarble.Round(
+                            RoundCount: round,
+                            Item: new ItemComponent(
+                                ItemId: itemId,
+                                Rarity: -1,
+                                Amount: itemCount,
+                                Tag: ItemTag.None)));
+                    }
+                }
+
+                XmlNode? slotsNode = value2Xml.FirstChild;
+                if (slotsNode == null) {
+                    return null;
+                }
+
+                var slots = new List<BlueMarble.Slot>();
+                foreach (XmlNode vNode in slotsNode.ChildNodes) {
+                    if (!Enum.TryParse(vNode.Attributes?["type"]?.Value, true, out BlueMarbleSlotType slotType)) {
+                        slotType = BlueMarbleSlotType.Item;
+                    }
+
+                    if (!int.TryParse(vNode.Attributes?["arg1"]?.Value, out int arg1)) {
+                        arg1 = 0;
+                    }
+
+                    if (!int.TryParse(vNode.Attributes?["arg2"]?.Value, out int arg2)) {
+                        arg2 = 0;
+                    }
+
+                    int moveAmount = 0;
+                    if (slotType is BlueMarbleSlotType.Backward or BlueMarbleSlotType.Forward) {
+                        moveAmount = arg1;
+                    }
+
+                    var blueMarbleSlotItem = new ItemComponent(0, 0, 0, ItemTag.None);
+                    if (slotType is BlueMarbleSlotType.Item or BlueMarbleSlotType.Paradise) {
+                        // TODO: Get rarity from item xmls
+                        blueMarbleSlotItem = new ItemComponent(arg1, -1, arg2, ItemTag.None);
+                    }
+
+                    slots.Add(new BlueMarble.Slot(
+                        Type: slotType,
+                        MoveAmount: moveAmount,
+                        Item: blueMarbleSlotItem));
+                }
+                return new BlueMarble(
+                    RequiredItem: requiredItem,
+                    Rounds: rounds.ToArray(),
+                    Slots: slots.ToArray());
+            case GameEventType.StringBoard:
+                return new StringBoard(
+                    Text: value4,
+                    StringId: int.TryParse(value1, out int stringId) ? stringId : 0);
+            case GameEventType.StringBoardLink:
+                return new StringBoardLink(
+                    Link: value1);
+            case GameEventType.TrafficOptimizer:
+                // values are hardcoded seeing as these are not shown in the table.
+                return new TrafficOptimizer(
+                    RideSyncInterval: 100,
+                    UserSyncInterval: 100,
+                    LinearMovementInterval: 100,
+                    GuideObjectSyncInterval: 100);
+            case GameEventType.LobbyMap:
+                return new LobbyMap(
+                    MapId: int.TryParse(value1, out int lobbyMapId) ? lobbyMapId : 0);
+            case GameEventType.EventFieldPopup:
+                return new EventFieldPopup(
+                    MapId: int.TryParse(value1, out int fieldPopupMapId) ? fieldPopupMapId : 0);
+            case GameEventType.SaleChat:
+                return new SaleChat(
+                    WorldChatDiscount: int.TryParse(value1, out int worldChatDiscount) ? worldChatDiscount : 0,
+                    ChannelChatDiscount: int.TryParse(value2, out int channelChatDiscount) ? channelChatDiscount : 0);
+            case GameEventType.AttendGift:
+                value1Xml = new XmlDocument();
+                value1Xml.LoadXml(value1);
+
+                var rewards = new List<RewardItem>();
+                if (value1Xml.FirstChild == null) {
+                    return null;
+                }
+                foreach (XmlNode node in value1Xml.FirstChild.ChildNodes) {
+                    if (!int.TryParse(node.Attributes?["itemID"]?.Value, out int itemId)) {
+                        itemId = 0;
+                    }
+                    if (!int.TryParse(node.Attributes?["count"]?.Value, out int itemCount)) {
+                        itemCount = 1;
+                    }
+                    if (!short.TryParse(node.Attributes?["grade"]?.Value, out short grade)) {
+                        grade = -1;
+                    }
+                    rewards.Add(new RewardItem(itemId, grade, itemCount));
+                }
+
+                value2Xml = new XmlDocument();
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not { Name: "ms2" }) {
+                    return null;
+                }
+
+                XmlNode? stringNode = value2Xml.FirstChild.SelectSingleNode("string");
+                XmlNode? configNode = value2Xml.FirstChild.SelectSingleNode("Config");
+                if (stringNode == null || configNode == null) {
+                    return null;
+                }
+
+                string name = stringNode.Attributes?["name"]?.Value ?? string.Empty;
+                string mailTitle = stringNode.Attributes?["mailTitle"]?.Value ?? string.Empty;
+                string mailContent = stringNode.Attributes?["mailContents"]?.Value ?? string.Empty;
+                string link = stringNode.Attributes?["detailUrl"]?.Value ?? string.Empty;
+
+                if (!int.TryParse(configNode.Attributes?["requirePlaySeconds"]?.Value, out int requiredPlaySeconds)) {
+                    requiredPlaySeconds = 0;
+                }
+
+                AttendGift.Require? giftRequirement = null;
+                if (!string.IsNullOrEmpty(value3)) {
+                    value3Xml.LoadXml(value3);
+                    if (value3Xml.FirstChild is { Name: "ms2" }) {
+                        XmlNode? requirementNode = value3Xml.FirstChild.SelectSingleNode("require");
+                        if (requirementNode != null) {
+                            if (!Enum.TryParse(requirementNode.Attributes?["type"]?.Value, true, out AttendGiftRequirement requirement)) {
+                                requirement = AttendGiftRequirement.None;
+                            }
+
+                            if (!int.TryParse(requirementNode.Attributes?["value1"]?.Value, out int requirementValue1)) {
+                                requirementValue1 = 0;
+                            }
+
+                            if (!int.TryParse(requirementNode.Attributes?["value2"]?.Value, out int requirementValue2)) {
+                                requirementValue2 = 0;
+                            }
+
+                            giftRequirement = new AttendGift.Require(
+                                Type: requirement,
+                                Value1: requirementValue1,
+                                Value2: requirementValue2);
+                        }
+                    }
+                }
+
+                return new AttendGift(
+                    Items: rewards.ToArray(),
+                    Name: name,
+                    MailTitle: mailTitle,
+                    MailContent: mailContent,
+                    Link: link,
+                    RequiredPlaySeconds: requiredPlaySeconds,
+                    Requirement: giftRequirement);
+            case GameEventType.ReturnUser:
+                var requiredTime = DateTimeOffset.MinValue;
+                if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime requiredDateTime)) {
+                    requiredTime = new DateTimeOffset(requiredDateTime);
+                }
+
+                return new ReturnUser(
+                    Season: int.TryParse(value3, out int season) ? season : 0,
+                    RequiredTime: requiredTime,
+                    QuestIds: string.IsNullOrEmpty(value4) ? Array.Empty<int>() : value4.Split(',').Select(int.Parse).ToArray(),
+                    RequiredLevel: int.TryParse(value1, out int levelRequirement) ? levelRequirement : 0,
+                    RequiredUserValue: int.TryParse(value2, out int userValue) ? userValue : 0);
+            case GameEventType.RPS:
+                value1Xml = new XmlDocument();
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not { Name: "ms2" }) {
+                    return null;
+                }
+
+                XmlNode? rpseventNode = value1Xml.FirstChild.SelectSingleNode("rps_event");
+                if (rpseventNode == null) {
+                    return null;
+                }
+
+                int ticketId = 0;
+                var rpsRewards = new List<Rps.RewardData>();
+                foreach (XmlNode childNode in rpseventNode) {
+                    if (childNode.Name == "gameTicket" && int.TryParse(childNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                        ticketId = itemId;
+                    }
+
+                    if (childNode.Name == "rewardData") {
+                        if (!int.TryParse(childNode.Attributes?["condPlayCount"]?.Value, out int playCount)) {
+                            playCount = 1;
+                        }
+
+                        // items
+                        var rpsItems = new List<RewardItem>();
+                        foreach (XmlNode itemNode in childNode.ChildNodes) {
+                            foreach (XmlNode valueNode in itemNode.ChildNodes) {
+                                if (!int.TryParse(valueNode.Attributes?["itemID"]?.Value, out int rpsRewardItemId)) {
+                                    rpsRewardItemId = 0;
+                                }
+
+                                if (!short.TryParse(valueNode.Attributes?["grade"]?.Value, out short rpsRewardGrade)) {
+                                    rpsRewardGrade = 1;
+                                }
+
+                                if (!int.TryParse(valueNode.Attributes?["count"]?.Value, out int rpsRewardCount)) {
+                                    rpsRewardCount = 1;
+                                }
+
+                                rpsItems.Add(new RewardItem(rpsRewardItemId, rpsRewardGrade, rpsRewardCount));
+                            }
+                        }
+
+                        rpsRewards.Add(new Rps.RewardData(
+                            PlayCount: playCount,
+                            Rewards: rpsItems.ToArray()));
+                    }
+                }
+
+                return new Rps(
+                    GameTicketId: ticketId,
+                    Rewards: rpsRewards.ToArray(),
+                    ActionsHtml: value2);
+            case GameEventType.LoginNotice:
+                return new LoginNotice();
+            case GameEventType.FieldEffect:
+                return new FieldEffect(
+                    MapIds: value1.Split(',').Select(int.Parse).ToArray(),
+                    Effect: value2);
+            case GameEventType.DTReward:
+                string[] itemStrings = value1.Split(';');
+
+                List<DTReward.Entry> items = [];
+                foreach (string itemString in itemStrings) {
+                    int[] itemData = itemString.Split(',').Select(int.Parse).ToArray();
+                    items.Add(new DTReward.Entry(
+                        StartDuration: itemData[0],
+                        EndDuration: itemData[1],
+                        MailContentId: itemData[2],
+                        Item: new RewardItem(
+                            itemId: itemData[3],
+                            amount: itemData[4],
+                            rarity: (short) itemData[5])));
+                }
+
+                return new DTReward(
+                    Entries: items.ToArray());
+            case GameEventType.ConstructShowItem:
+                return new ConstructShowItem(
+                    CategoryId: int.TryParse(value1, out int categoryId) ? categoryId : 0,
+                    CategoryName: value2,
+                    ItemIds: value4.Split(',').Select(int.Parse).ToArray());
+            case GameEventType.MassiveConstructionEvent:
+                return new MassiveConstructionEvent(
+                    MapIds: value1.Split(',').Select(int.Parse).ToArray());
+            case GameEventType.UGCMapContractSale:
+                return new UGCMapContractSale(
+                    DiscountAmount: int.TryParse(value1, out int contractSaleAmount) ? contractSaleAmount : 0);
+            case GameEventType.UGCMapExtensionSale:
+                return new UGCMapExtensionSale(
+                    DiscountAmount: int.TryParse(value1, out int extensionSaleAmount) ? extensionSaleAmount : 0);
+            case GameEventType.Gallery:
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not { Name: "cards" }) {
+                    return null;
+                }
+
+                var questIds = new List<int>();
+                foreach (XmlNode valueNode in value1Xml.FirstChild) {
+                    if (!int.TryParse(valueNode.Attributes?["quest"]?.Value, out int questId)) {
+                        continue;
+                    }
+                    questIds.Add(questId);
+                }
+
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not { Name: "items" }) {
+                    return null;
+                }
+
+                var galleryRewards = new List<RewardItem>();
+                foreach (XmlNode itemNode in value2Xml.FirstChild) {
+                    if (!int.TryParse(itemNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                        continue;
+                    }
+
+                    if (!short.TryParse(itemNode.Attributes?["grade"]?.Value, out short grade)) {
+                        grade = 1;
+                    }
+
+                    if (!int.TryParse(itemNode.Attributes?["count"]?.Value, out int count)) {
+                        count = 1;
+                    }
+
+                    galleryRewards.Add(new RewardItem(itemId, grade, count));
+                }
+                return new Gallery(
+                    QuestIds: questIds.ToArray(),
+                    RewardItems: galleryRewards.ToArray(),
+                    RevealDayLimit: int.TryParse(value3, out int revealDayLimit) ? revealDayLimit : 1,
+                    Image: value4);
+            default:
+                return null;
+        }
+    }
+
+    private OxQuizTable ParseOxQuizTable() {
+        var results = new Dictionary<int, OxQuizTable.Entry>();
+        foreach ((int id, OxQuiz quiz) in parser.ParseOxQuiz()) {
+            results.Add(id, new OxQuizTable.Entry(
+                Id: quiz.quizID,
+                CategoryId: quiz.categoryID,
+                Category: quiz.categoryStr,
+                Question: quiz.quizStr,
+                Level: quiz.level,
+                IsTrue: quiz.answer,
+                Answer: quiz.answerStr));
+        }
+        return new OxQuizTable(results);
+    }
+
+    private ItemMergeTable ParseItemMergeOptionTable() {
+        var results = new Dictionary<int, Dictionary<int, ItemMergeTable.Entry>>();
+        foreach ((int id, MergeOption mergeOption) in parser.ParseItemMergeOption()) {
+            var slots = new Dictionary<int, ItemMergeTable.Entry>();
+            foreach (MergeOption.Slot slotEntry in mergeOption.slot) {
+                var ingredients = new List<ItemComponent>();
+
+                ItemComponent? ingredient1 = ParseItemMaterial(slotEntry.itemMaterial1);
+                if (ingredient1 != null) {
+                    ingredients.Add(ingredient1);
+                }
+                ItemComponent? ingredient2 = ParseItemMaterial(slotEntry.itemMaterial2);
+                if (ingredient2 != null) {
+                    ingredients.Add(ingredient2);
+                }
+
+                var basicOptions = new Dictionary<BasicAttribute, ItemMergeTable.Option>();
+                var specialOptions = new Dictionary<SpecialAttribute, ItemMergeTable.Option>();
+
+                foreach (MergeOption.Option mergeOptionEntry in slotEntry.option) {
+                    if (mergeOptionEntry.optionName is "str" or "dex" or "int" or "luk" or "hp" or "hp_rgp" or "hp_inv" or "sp" or "sp_rgp" or "sp_inv" or "ep" or "ep_rgp" or "ep_inv" or "asp" or "msp" or "atp" or "evp" or
+                        "cap" or "cad" or "car" or "ndd" or "abp" or "jmp" or "pap" or "map" or "par" or "mar" or "wapmin" or "wapmax" or "dmg" or "pen" or "rmsp" or "bap" or "bap_pet") {
+                        var basicAttribute = mergeOptionEntry.optionName.ToBasicAttribute();
+                        List<ItemMergeTable.Range<int>> values = [];
+                        List<ItemMergeTable.Range<int>> rates = [];
+                        List<int> weights = [];
+                        int min = mergeOptionEntry.min;
+                        if (basicAttribute is BasicAttribute.Piercing or BasicAttribute.PerfectGuard or
+                            BasicAttribute.JumpHeight) {
+                            // Looping by 10 because that's the max amount of values in the xml
+                            for (int i = 0; i < 10; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                rates.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                values.Add(new ItemMergeTable.Range<int>(0, 0));
+                                weights.Add(weight);
+                                min = value;
+                            }
+                        } else {
+                            for (int i = 0; i < 10; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                values.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                rates.Add(new ItemMergeTable.Range<int>(0, 0));
+                                weights.Add(weight);
+                                min = value;
+                            }
+                        }
+
+                        basicOptions[basicAttribute] = new ItemMergeTable.Option(
+                            Values: values.ToArray(),
+                            Rates: rates.ToArray(),
+                            Weights: weights.ToArray());
+                    } else {
+                        var specialAttribute = mergeOptionEntry.optionName.ToSpecialAttribute();
+                        List<ItemMergeTable.Range<int>> values = [];
+                        List<ItemMergeTable.Range<int>> rates = [];
+                        List<int> weights = [];
+                        int min = mergeOptionEntry.min;
+                        if (specialAttribute is SpecialAttribute.HpOnKill or SpecialAttribute.ReduceCooldown or SpecialAttribute.ReduceKnockBack or SpecialAttribute.MassiveOxSpeed or SpecialAttribute.MassiveTrapMasterSpeed or
+                            SpecialAttribute.MassiveFinalSurvivalSpeed or SpecialAttribute.MassiveCrazyRunnerSpeed or SpecialAttribute.MassiveShCrazyRunnerSpeed or SpecialAttribute.MassiveEscapeSpeed or SpecialAttribute.MassiveSpringBeachSpeed or
+                            SpecialAttribute.MassiveDanceDanceSpeed or SpecialAttribute.DarkStreamEvp or SpecialAttribute.CompleteFieldMissionSpeed or SpecialAttribute.AdditionalEffect95000018 or SpecialAttribute.AdditionalEffect95000012 or
+                            SpecialAttribute.AdditionalEffect95000014 or SpecialAttribute.AdditionalEffect95000020 or SpecialAttribute.AdditionalEffect95000021 or SpecialAttribute.AdditionalEffect95000022 or SpecialAttribute.AdditionalEffect95000023
+                            or SpecialAttribute.AdditionalEffect95000024 or SpecialAttribute.AdditionalEffect95000025 or SpecialAttribute.AdditionalEffect95000026 or SpecialAttribute.AdditionalEffect95000027 or SpecialAttribute.AdditionalEffect95000028 or
+                            SpecialAttribute.AdditionalEffect95000029 or SpecialAttribute.DashDistance or SpecialAttribute.SpiritOnKill or SpecialAttribute.StaminaOnKill or SpecialAttribute.PvpDamage or SpecialAttribute.ReducePvpDamage or SpecialAttribute.SkillLevelUpTier1
+                            or SpecialAttribute.SkillLevelUpTier2 or SpecialAttribute.SkillLevelUpTier3 or SpecialAttribute.SkillLevelUpTier4 or SpecialAttribute.SkillLevelUpTier5 or SpecialAttribute.SkillLevelUpTier6 or SpecialAttribute.SkillLevelUpTier7 or SpecialAttribute.SkillLevelUpTier8
+                            or SpecialAttribute.SkillLevelUpTier9 or SpecialAttribute.SkillLevelUpTier10 or SpecialAttribute.SkillLevelUpTier11 or SpecialAttribute.SkillLevelUpTier12 or SpecialAttribute.SkillLevelUpTier13 or SpecialAttribute.SkillLevelUpTier14 or SpecialAttribute.ChaosRaidAttackSpeed
+                            or SpecialAttribute.ChaosRaidAccuracy or SpecialAttribute.ChaosRaidHp or SpecialAttribute.PetTrapReward) {
+                            for (int i = 0; i < 10; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                values.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                rates.Add(new ItemMergeTable.Range<int>(0, 0));
+                                weights.Add(weight);
+                                min = value;
+                            }
+                        } else {
+                            for (int i = 0; i < 10; i++) {
+                                (int value, int weight) = mergeOptionEntry[i];
+                                if (value == 0) {
+                                    continue;
+                                }
+                                rates.Add(new ItemMergeTable.Range<int>(min + 1, value));
+                                values.Add(new ItemMergeTable.Range<int>(0, 0));
+                                weights.Add(weight);
+                                min = value;
+                            }
+                        }
+
+                        specialOptions[specialAttribute] = new ItemMergeTable.Option(
+                            Values: values.ToArray(),
+                            Rates: rates.ToArray(),
+                            Weights: weights.ToArray());
+                    }
+                }
+                var slot = new ItemMergeTable.Entry(
+                    Slot: slotEntry.part,
+                    MesoCost: slotEntry.consumeMeso,
+                    Materials: ingredients.ToArray(),
+                    BasicOptions: basicOptions,
+                    SpecialOptions: specialOptions
+                );
+
+                slots.Add(slotEntry.part, slot);
+            }
+            results.Add(id, slots);
+        }
+        // Hardcoding values seeing as the missing ids here are utilizing table id 37000055
+        for (int i = 37000056; i < 37000064; i++) {
+            if (results.TryGetValue(37000055, out Dictionary<int, ItemMergeTable.Entry>? dictionary)) {
+                results.Add(i, dictionary);
+            }
+        }
+        return new ItemMergeTable(results);
+
+        ItemComponent? ParseItemMaterial(string[] itemMaterial) {
+            var tag = ItemTag.None;
+            if (itemMaterial.Length > 0) {
+                string[] item = itemMaterial[0].Split(':');
+                if (item.Length == 2) {
+                    tag = Enum.TryParse(item[1], out ItemTag itemTag) ? itemTag : ItemTag.None;
+                }
+                int itemId = int.TryParse(item[0], out int id) ? id : 0;
+                int rarity = int.TryParse(itemMaterial[1], out int r) ? r : 1;
+                int amount = int.TryParse(itemMaterial[2], out int a) ? a : 1;
+                if (tag != ItemTag.None || itemId > 0) {
+                    return new ItemComponent(itemId, rarity, amount, tag);
+                }
+            }
+            return null;
+        }
+    }
+
+    private ShopTable ParseShop() {
+        var results = new Dictionary<int, ShopMetadata>();
+        foreach ((int shopId, ShopGameInfo shopInfo) in parser.ParseShopGameInfo()) {
+            var entry = new ShopMetadata(
+                Id: shopInfo.shopID,
+                CategoryId: shopInfo.categoryID,
+                Name: shopInfo.iconName,
+                FrameType: (ShopFrameType) shopInfo.uiFrameType,
+                DisplayOnlyUsable: shopInfo.showOnlyUsableItem,
+                HideStats: shopInfo.hideOptionInfo,
+                DisplayProbability: shopInfo.showProbInfo,
+                IsOnlySell: shopInfo.isOnlySell,
+                OpenWallet: shopInfo.isOpenTokenPocket,
+                DisplayNew: false, // this isn't present in the table
+                DisableDisplayOrderSort: shopInfo.disableDisplayOrderSort,
+                RestockTime: string.IsNullOrEmpty(shopInfo.resetFixedTime) ? 0 : DateTime.ParseExact(shopInfo.resetFixedTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                EnableReset: shopInfo.resetEnable,
+                RestockData: new ShopRestockData(
+                    ResetType: (ResetType) shopInfo.resetType,
+                    CurrencyType: (ShopCurrencyType) shopInfo.resetPaymentType,
+                    ExcessCurrencyType: (ShopCurrencyType) shopInfo.resetPaymentType, // not present in the table, using resetPaymentType for now
+                    MinItemCount: shopInfo.resetListMin,
+                    MaxItemCount: shopInfo.resetListMax,
+                    Price: shopInfo.resetPrice,
+                    EnablePriceMultiplier: false, // not present in the table
+                    DisableInstantRestock: shopInfo.resetButtonHide,
+                    AccountWide: shopInfo.resetByAccount)
+                );
+            results.Add(shopId, entry);
+        }
+        return new ShopTable(results);
+    }
+
+    private ShopItemTable ParseShopItems() {
+        var results = new Dictionary<int, Dictionary<int, ShopItemMetadata>>();
+        foreach ((int shopId, ShopGame data) in parser.ParseShopGame()) {
+            var shopResults = new Dictionary<int, ShopItemMetadata>();
+            foreach (ShopGame.Item item in data.item) {
+                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? Array.Empty<string>() : item.requireAchieve.Split(",");
+                int achievementId = 0;
+                int achievementRank = 0;
+                if (achievementArray.Length == 2) {
+                    if (!int.TryParse(achievementArray[0], out achievementId)) {
+                        achievementId = 0;
+                    }
+                    if (!int.TryParse(achievementArray[1], out achievementRank)) {
+                        achievementRank = 1;
+                    }
+                }
+
+                byte championshipRank = 0;
+                short championShipJoinCount = 0;
+                if (item.requireChampionshipInfo.Length == 2) {
+                    championshipRank = (byte) item.requireChampionshipInfo[0];
+                    championShipJoinCount = (short) item.requireChampionshipInfo[1];
+                }
+
+                var npcType = GuildNpcType.Unknown;
+                short guildNpcLevel = 0;
+                if (item.requireGuildNpc.Length == 2) {
+                    npcType = item.requireGuildNpc[0] switch {
+                        "goods" => GuildNpcType.Goods,
+                        "equip" => GuildNpcType.Equip,
+                        "gemstone" => GuildNpcType.Gemstone,
+                        "itemMerge" => GuildNpcType.ItemMerge,
+                        "music" => GuildNpcType.Music,
+                        "quest" => GuildNpcType.Quest,
+                        _ => GuildNpcType.Unknown,
+                    };
+                    if (short.TryParse(item.requireGuildNpc[1], out short level)) {
+                        guildNpcLevel = level;
+                    }
+                }
+
+                RestrictedBuyData? restrictedBuyData = null;
+                if (!string.IsNullOrEmpty(item.startDate) && !string.IsNullOrEmpty(item.endDate)) {
+                    var buyTimeOfDays = new List<BuyTimeOfDay>();
+                    foreach (string partTime in item.partTime) {
+                        (TimeSpan startPartTime, TimeSpan endPartTime) = ParsePartTime(partTime);
+                        buyTimeOfDays.Add(new BuyTimeOfDay(startPartTime.Seconds, endPartTime.Seconds));
+                    }
+                    restrictedBuyData = new RestrictedBuyData {
+                        Days = item.dayOfWeek.Length == 0 ? [] : Array.ConvertAll(item.dayOfWeek, day => (ShopBuyDay) day),
+                        TimeRanges = buyTimeOfDays,
+                        StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                        EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds()
+                    };
+                }
+
+                var entry = new ShopItemMetadata(
+                    Id: item.sn,
+                    ShopId: shopId,
+                    ItemId: item.id,
+                    Rarity: (byte) item.grade,
+                    Cost: new ShopCost {
+                        Amount = (int) item.price,
+                        ItemId = item.paymentItemID,
+                        SaleAmount = 0, // ?
+                        Type = (ShopCurrencyType) item.paymentType
+                    },
+                    SellCount: item.sellCount,
+                    Category: item.category,
+                    Requirements: new ShopItemMetadata.Requirement(
+                        GuildTrophy: item.requireGuildTrophy,
+                        Achievement: new ShopItemMetadata.Achievement(
+                            Id: achievementId,
+                            Rank: achievementRank),
+                        Championship: new ShopItemMetadata.Championship(
+                            Rank: championshipRank,
+                            JoinCount: championShipJoinCount),
+                        GuildNpc: new ShopItemMetadata.GuildNpc(
+                            Type: npcType,
+                            Level: guildNpcLevel),
+                        QuestAlliance: new ShopItemMetadata.QuestAlliance(
+                            Type: item.requireAlliance switch {
+                                "MapleUnion" => ReputationType.MapleAlliance,
+                                "TriaRoyalGuard" => ReputationType.RoyalGuard,
+                                "DarkWind" => ReputationType.DarkWind,
+                                "GreenHood" => ReputationType.GreenHood,
+                                "LumiKnight" => ReputationType.Lumiknight,
+                                "MapleUnion_KritiasExped" => ReputationType.KritiasMapleAlliance,
+                                "GreenHood_KritiasExped" => ReputationType.KritiasGreenHood,
+                                "Lumiknight_KritiasExped" => ReputationType.KritiasLumiknight,
+                                "Georg" => ReputationType.Humanitas,
+                                _ => ReputationType.None,
+                            },
+                            Grade: item.requireAllianceGrade)),
+                    RestrictedBuyData: restrictedBuyData,
+                    SellUnit: (short) item.sellUnit,
+                    Label: (ShopItemLabel) item.frameType,
+                    IconTag: item.paymentIconTag,
+                    WearForPreview: item.wearForPreview,
+                    RandomOption: item.randomOption,
+                    Probability: item.prob,
+                    IsPremiumItem: item.premiumItem);
+                shopResults.Add(item.sn, entry);
+            }
+            results.Add(shopId, shopResults);
+        }
+        return new ShopItemTable(results);
+    }
+
+    private BeautyShopTable ParseBeautyShops() {
+        var results = new Dictionary<int, BeautyShopMetadata>();
+        results = MergeBeautyShopData(results, parser.ParseShopBeauty());
+        results = MergeBeautyShopData(results, parser.ParseShopBeautyCoupon());
+        results = MergeBeautyShopData(results, parser.ParseShopBeautySpecialHair());
+        return new BeautyShopTable(results);
+    }
+
+    private Dictionary<int, BeautyShopMetadata> MergeBeautyShopData(Dictionary<int, BeautyShopMetadata> entries, IEnumerable<(int, ShopBeauty)> beautyParser) {
+        foreach ((int shopId, ShopBeauty shop) in beautyParser) {
+            List<BeautyShopItemGroup> itemGroups = [];
+            foreach (ShopBeauty.ItemGroup group in shop.itemGroup) {
+                itemGroups.Add(new BeautyShopItemGroup(
+                    StartTime: string.IsNullOrEmpty(group.saleStartTime) ? 0 : DateTime.ParseExact(group.saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                    Items: ParseBeautyShopItems(group.item).ToArray()));
+            }
+
+            entries.Add(shopId, new BeautyShopMetadata(
+                Id: shop.shopID,
+                Category: (BeautyShopCategory) shop.categoryID,
+                SubType: shop.shopID switch {
+                    // Hardcoding this because I'm not sure where this information is located in the xmls
+                    500 => 16,
+                    501 => 19,
+                    504 => 17,
+                    505 => 28,
+                    506 => 18,
+                    508 => 21,
+                    509 => 0,
+                    510 => 20,
+                    _ => 0,
+                },
+                StyleCostMetadata: new BeautyShopCostMetadata(
+                    CurrencyType: (ShopCurrencyType) shop.stylePaymentType,
+                    Price: shop.stylePrice,
+                    Icon: shop.stylePaymentIconTag,
+                    PaymentItemId: shop.stylePaymentItemID),
+                ColorCostMetadata: new BeautyShopCostMetadata(
+                    CurrencyType: (ShopCurrencyType) shop.colorPaymentType,
+                    Price: shop.colorPrice,
+                    Icon: shop.colorPaymentIconTag,
+                    PaymentItemId: shop.colorPaymentItemID),
+                IsRandom: shop.random,
+                IsByItem: shop.byItem,
+                ReturnCouponId: shop.returnCouponID,
+                CouponId: shop.displayCouponID,
+                CouponTag: Enum.TryParse(shop.couponTag, out ItemTag tag) ? tag : ItemTag.None,
+                Items: ParseBeautyShopItems(shop.item).ToArray(),
+                ItemGroups: itemGroups.ToArray()));
+        }
+        return entries;
+
+        IEnumerable<BeautyShopItem> ParseBeautyShopItems(IList<ShopBeauty.Item> items) {
+            foreach (ShopBeauty.Item item in items) {
+                yield return new BeautyShopItem(
+                    Id: item.id,
+                    Cost: new BeautyShopCostMetadata(
+                        CurrencyType: (ShopCurrencyType) item.paymentType,
+                        Price: item.price,
+                        Icon: item.paymentIconTag,
+                        PaymentItemId: item.paymentItemID),
+                    Weight: item.weight,
+                    AchievementId: item.achieveID,
+                    AchievementRank: (byte) item.achieveGrade,
+                    RequiredLevel: item.requireLevel,
+                    SaleTag: (ShopItemLabel) item.saleTag);
+            }
+        }
+    }
+
+    private MeretMarketTable ParseMeretCustomShop() {
+        var results = new Dictionary<int, MeretMarketItemMetadata>();
+        foreach ((int id, ShopMeretCustom entry) in parser.ParseShopMeretCustom()) {
+            foreach (ShopMeretCustom addQuantity in entry.additionalQuantity) {
+                results.Add(addQuantity.id, ParseMarketItemMetadata(addQuantity, entry));
+            }
+            results.Add(id, ParseMarketItemMetadata(entry));
+        }
+        return new MeretMarketTable(results);
+
+        MeretMarketItemMetadata ParseMarketItemMetadata(ShopMeretCustom item, ShopMeretCustom? parent = null) {
+            string? saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
+            string? saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
+            string? promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
+            string? promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
+            int[] jobRequirement = parent?.jobRequire ?? item.jobRequire;
+            return new MeretMarketItemMetadata(
+                Id: item.id,
+                ParentId: parent?.id ?? 0,
+                TabId: parent?.tabID ?? item.tabID,
+                Banner: item.banner,
+                BannerTag: (MeretMarketBannerTag) item.bannerTag,
+                ItemId: parent?.itemID ?? item.itemID,
+                Rarity: (byte) (parent?.grade ?? item.grade),
+                Quantity: item.quantity,
+                BonusQuantity: item.bonusQuantity,
+                DurationInDays: item.durationDay,
+                SaleTag: (MeretMarketItemSaleTag) item.saleTag,
+                CurrencyType: (MeretMarketCurrencyType) (parent?.paymentType ?? item.paymentType),
+                Price: item.price,
+                SalePrice: item.salePrice == 0 ? item.price : item.salePrice,
+                SaleStartTime: string.IsNullOrEmpty(saleStartTime) ? 0 : DateTime.ParseExact(saleStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                SaleEndTime: string.IsNullOrEmpty(saleEndTime) ? 0 : DateTime.ParseExact(saleEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                JobRequirement: jobRequirement.Select(job => (JobCode) job).AsEnumerable().FilterFlags(),
+                RestockUnavailable: parent?.noRestock ?? item.noRestock,
+                RequireMinLevel: parent?.minLevel ?? item.minLevel,
+                RequireMaxLevel: parent?.maxLevel ?? item.maxLevel,
+                RequireAchievementId: parent?.achieveID ?? item.achieveID,
+                RequireAchievementRank: parent?.achieveGrade ?? item.achieveGrade,
+                PcCafe: parent?.pcCafe ?? item.pcCafe,
+                Giftable: parent?.giftable ?? item.giftable,
+                ShowSaleTime: item.showSaleTime,
+                PromoName: item.promoName,
+                PromoStartTime: string.IsNullOrEmpty(promoStartTime) ? 0 : DateTime.ParseExact(promoStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                PromoEndTime: string.IsNullOrEmpty(promoEndTime) ? 0 : DateTime.ParseExact(promoEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds());
+        }
     }
 }
 

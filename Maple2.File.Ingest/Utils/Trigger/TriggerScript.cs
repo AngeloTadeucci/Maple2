@@ -18,7 +18,7 @@ internal partial class TriggerScript {
                 case "Vector3":
                     writer.WriteLine("from System.Numerics import Vector3");
                     break;
-                case "Align" or "FieldGame" or "Weather" or "Locale":
+                case "Align" or "FieldGame" or "Weather" or "Locale" or "BannerType":
                     enumImports.Add(import);
                     break;
                 default:
@@ -50,13 +50,12 @@ internal partial class TriggerScript {
 
         // No initialization for dungeon_common
         if (!Shared) {
-            if (States.First() is not State state) {
-                if (States.First() is CommentWrapper wrapper) {
-                    state = (State) wrapper.Child;
-                } else {
-                    throw new InvalidOperationException("No initial_state found");
-                }
+            IScriptBlock? block = States.FirstOrDefault(stateEntry => stateEntry is not CommentWrapper);
+            if (block is not State) {
+                throw new InvalidOperationException("No initial_state found");
             }
+
+            var state = (State) block;
 
             writer.WriteLine($"initial_state = {state.Name}");
         }

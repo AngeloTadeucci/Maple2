@@ -116,9 +116,11 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     UnrideOnHit: data.basic.kinds.unrideOnHit,
                     UnrideOnUse: data.basic.kinds.unrideOnUse,
                     ReleaseObjectWeapon: data.basic.kinds.releaseObjectWeapon,
+                    Emotion: data.basic.kinds.emotion,
                     SkillGroup: data.basic.kinds.groupIDs.FirstOrDefault(),
                     MaxLevel: levels.Keys.Max()),
                 State: new SkillMetadataState(
+                    InBattle: data.basic.stateAttr.battle == 1,
                     SuperArmor: data.basic.stateAttr.superArmor),
                 Levels: levels
             );

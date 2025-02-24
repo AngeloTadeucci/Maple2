@@ -34,5 +34,12 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(UserStatTable), typeDiscriminator: "userStat*")]
 [JsonDerivedType(typeof(IndividualDropItemTable), typeDiscriminator: "individualItemDrop")]
 [JsonDerivedType(typeof(PrestigeExpTable), typeDiscriminator: "adventureExpTable")]
-
+[JsonDerivedType(typeof(TimeEventTable), typeDiscriminator: "timeEvent")]
+[JsonDerivedType(typeof(GameEventTable), typeDiscriminator: "gameEvent")]
+[JsonDerivedType(typeof(OxQuizTable), typeDiscriminator: "oxQuiz")]
+[JsonDerivedType(typeof(ItemMergeTable), typeDiscriminator: "itemMerge")]
+[JsonDerivedType(typeof(ShopTable), typeDiscriminator: "shop")]
+[JsonDerivedType(typeof(ShopItemTable), typeDiscriminator: "shopItem")]
+[JsonDerivedType(typeof(BeautyShopTable), typeDiscriminator: "beautyShop")]
+[JsonDerivedType(typeof(MeretMarketTable), typeDiscriminator: "meretMarket")]
 public abstract record ServerTable;

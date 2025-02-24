@@ -5,6 +5,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -98,7 +99,9 @@ public partial class TriggerContext {
     }
 
     public void MoveUserPath(string path) {
-        ErrorLog("[MoveUserPath] path:{Path}", path);
+        DebugLog("[MoveUserPath] path:{Path}", path);
+
+        Field.MovePlayerAlongPath(path);
     }
 
     public void MoveUserToBox(int boxId, int portalId) {
@@ -136,9 +139,9 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetPcEmotionLoop(string sequenceName, float duration, bool arg3) {
-        DebugLog("[SetPcEmotionLoop] sequenceName:{SequenceName}, duration:{Duration}, arg3:{Arg3}", sequenceName, duration, arg3);
-        Broadcast(TriggerPacket.UiEmotionLoop(sequenceName, (int) duration, arg3));
+    public void SetPcEmotionLoop(string sequenceName, float duration, bool loop) {
+        DebugLog("[SetPcEmotionLoop] sequenceName:{SequenceName}, duration:{Duration}, arg3:{Arg3}", sequenceName, duration, loop);
+        Broadcast(TriggerPacket.UiEmotionLoop(sequenceName, (int) duration, loop));
     }
 
     public void SetPcEmotionSequence(string[] sequenceNames) {
@@ -191,8 +194,13 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetState(int triggerId, dynamic[] states, bool randomize) {
+    public void SetState(int triggerId, object[] states, bool randomize) {
         ErrorLog("[SetState] triggerId:{TriggerId}, states:{States}, randomize:{Randomize}", triggerId, string.Join(", ", states), randomize);
+        if (randomize) {
+            Random.Shared.Shuffle(states);
+        }
+
+        Field.States[triggerId] = new List<object>(states);
     }
 
     #region Conditions

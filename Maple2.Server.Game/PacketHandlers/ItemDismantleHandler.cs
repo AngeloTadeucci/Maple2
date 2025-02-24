@@ -177,6 +177,23 @@ public class ItemDismantleHandler : PacketHandler<GameSession> {
                     continue;
                 }
 
+                if (item.IsLocked) {
+                    continue;
+                }
+
+                switch (type) {
+                    case InventoryType.Gear or InventoryType.Gemstone:
+                        if (!item.Metadata.Limit.EnableBreak) {
+                            continue;
+                        }
+                        break;
+                    case InventoryType.Outfit:
+                        if (item.GachaDismantleId == 0) {
+                            continue;
+                        }
+                        break;
+                }
+
                 session.DismantleStaging[slot] = (item.Uid, item.Amount);
                 session.Send(ItemDismantlePacket.Stage(item.Uid, slot, item.Amount));
                 break;

@@ -2,6 +2,7 @@
 using Autofac;
 using Maple2.Database.Context;
 using Maple2.Database.Storage;
+using Maple2.Database.Storage.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Module = Autofac.Module;
 
@@ -36,6 +37,7 @@ public class DataDbModule : Module {
 
         builder.RegisterType<ItemMetadataStorage>().SingleInstance();
         builder.RegisterType<MapEntityStorage>().SingleInstance();
+        builder.RegisterType<MapDataStorage>().SingleInstance();
         builder.RegisterType<MapMetadataStorage>().SingleInstance();
         builder.RegisterType<NpcMetadataStorage>().SingleInstance();
         builder.RegisterType<QuestMetadataStorage>().SingleInstance();
@@ -46,5 +48,6 @@ public class DataDbModule : Module {
         builder.RegisterType<TableMetadataStorage>().SingleInstance();
         builder.RegisterType<ServerTableMetadataStorage>().SingleInstance();
         builder.RegisterType<AiMetadataStorage>().SingleInstance();
+        builder.RegisterType<FunctionCubeMetadataStorage>().SingleInstance();
     }
 }

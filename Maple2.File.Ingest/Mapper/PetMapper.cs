@@ -49,6 +49,7 @@ public class PetMapper : TypeMapper<PetMetadata> {
                 Id: property.code,
                 Name: petNames.GetValueOrDefault(property.code),
                 Type: property.type,
+                AiPresets: property.tamingAiPresets.ToArray(),
                 NpcId: property.npcID,
                 ItemSlots: property.slotNum,
                 EnableExtraction: property.enablePetExtraction,

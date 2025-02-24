@@ -28,11 +28,14 @@ public class TableMetadataStorage {
     private readonly Lazy<ColorPaletteTable> colorPaletteTable;
     private readonly Lazy<MeretMarketCategoryTable> meretMarketCategoryTable;
     private readonly Lazy<ShopBeautyCouponTable> shopBeautyCouponTable;
+    private readonly Lazy<FurnishingShopTable> furnishingShopTable;
     private readonly Lazy<GachaInfoTable> gachaInfoTable;
     private readonly Lazy<InsigniaTable> insigniaTable;
     private readonly Lazy<ExpTable> expTable;
     private readonly Lazy<CommonExpTable> commonExpTable;
     private readonly Lazy<UgcDesignTable> ugcDesignTable;
+    private readonly Lazy<MasteryUgcHousingTable> masteryUgcHousingTable;
+    private readonly Lazy<UgcHousingPointRewardTable> ugcHousingPointRewardTable;
     private readonly Lazy<LearningQuestTable> learningQuestTable;
     private readonly Lazy<PrestigeLevelAbilityTable> prestigeLevelAbilityTable;
     private readonly Lazy<PrestigeLevelRewardTable> prestigeLevelRewardTable;
@@ -41,6 +44,10 @@ public class TableMetadataStorage {
     private readonly Lazy<ChangeJobTable> changeJobTable;
     private readonly Lazy<ChapterBookTable> chapterBookTable;
     private readonly Lazy<FieldMissionTable> fieldMissionTable;
+    private readonly Lazy<WorldMapTable> worldMapTable;
+    private readonly Lazy<SurvivalSkinInfoTable> survivalSkinInfoTable;
+    private readonly Lazy<BannerTable> bannerTable;
+    private readonly Lazy<WeddingTable> weddingTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -81,11 +88,14 @@ public class TableMetadataStorage {
     public ColorPaletteTable ColorPaletteTable => colorPaletteTable.Value;
     public MeretMarketCategoryTable MeretMarketCategoryTable => meretMarketCategoryTable.Value;
     public ShopBeautyCouponTable ShopBeautyCouponTable => shopBeautyCouponTable.Value;
+    public FurnishingShopTable FurnishingShopTable => furnishingShopTable.Value;
     public GachaInfoTable GachaInfoTable => gachaInfoTable.Value;
     public InsigniaTable InsigniaTable => insigniaTable.Value;
     public ExpTable ExpTable => expTable.Value;
     public CommonExpTable CommonExpTable => commonExpTable.Value;
     public UgcDesignTable UgcDesignTable => ugcDesignTable.Value;
+    public MasteryUgcHousingTable MasteryUgcHousingTable => masteryUgcHousingTable.Value;
+    public UgcHousingPointRewardTable UgcHousingPointRewardTable => ugcHousingPointRewardTable.Value;
     public LearningQuestTable LearningQuestTable => learningQuestTable.Value;
     public PrestigeLevelAbilityTable PrestigeLevelAbilityTable => prestigeLevelAbilityTable.Value;
     public PrestigeLevelRewardTable PrestigeLevelRewardTable => prestigeLevelRewardTable.Value;
@@ -94,6 +104,10 @@ public class TableMetadataStorage {
     public ChangeJobTable ChangeJobTable => changeJobTable.Value;
     public ChapterBookTable ChapterBookTable => chapterBookTable.Value;
     public FieldMissionTable FieldMissionTable => fieldMissionTable.Value;
+    public WorldMapTable WorldMapTable => worldMapTable.Value;
+    public SurvivalSkinInfoTable SurvivalSkinInfoTable => survivalSkinInfoTable.Value;
+    public BannerTable BannerTable => bannerTable.Value;
+    public WeddingTable WeddingTable => weddingTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -135,11 +149,14 @@ public class TableMetadataStorage {
         colorPaletteTable = Retrieve<ColorPaletteTable>(context, "colorpalette.xml");
         meretMarketCategoryTable = Retrieve<MeretMarketCategoryTable>(context, "meretmarketcategory.xml");
         shopBeautyCouponTable = Retrieve<ShopBeautyCouponTable>(context, "shop_beautycoupon.xml");
+        furnishingShopTable = Retrieve<FurnishingShopTable>(context, "na/shop_*.xml");
         gachaInfoTable = Retrieve<GachaInfoTable>(context, "gacha_info.xml");
         insigniaTable = Retrieve<InsigniaTable>(context, "nametagsymbol.xml");
         expTable = Retrieve<ExpTable>(context, "exp*.xml");
         commonExpTable = Retrieve<CommonExpTable>(context, "commonexp.xml");
         ugcDesignTable = Retrieve<UgcDesignTable>(context, "ugcdesign.xml");
+        masteryUgcHousingTable = Retrieve<MasteryUgcHousingTable>(context, "masteryugchousing.xml");
+        ugcHousingPointRewardTable = Retrieve<UgcHousingPointRewardTable>(context, "ugchousingpointreward.xml");
         learningQuestTable = Retrieve<LearningQuestTable>(context, "learningquest.xml");
         prestigeLevelAbilityTable = Retrieve<PrestigeLevelAbilityTable>(context, "adventurelevelability.xml");
         prestigeLevelRewardTable = Retrieve<PrestigeLevelRewardTable>(context, "adventurelevelreward.xml");
@@ -148,6 +165,10 @@ public class TableMetadataStorage {
         changeJobTable = Retrieve<ChangeJobTable>(context, "changejob.xml");
         chapterBookTable = Retrieve<ChapterBookTable>(context, "chapterbook.xml");
         fieldMissionTable = Retrieve<FieldMissionTable>(context, "fieldmission.xml");
+        worldMapTable = Retrieve<WorldMapTable>(context, "newworldmap.xml");
+        survivalSkinInfoTable = Retrieve<SurvivalSkinInfoTable>(context, "maplesurvivalskininfo.xml");
+        bannerTable = Retrieve<BannerTable>(context, "banner.xml");
+        weddingTable = Retrieve<WeddingTable>(context, "wedding*.xml");
         enchantScrollTable = Retrieve<EnchantScrollTable>(context, "enchantscroll.xml");
         itemRemakeScrollTable = Retrieve<ItemRemakeScrollTable>(context, "itemremakescroll.xml");
         itemRepackingScrollTable = Retrieve<ItemRepackingScrollTable>(context, "itemrepackingscroll.xml");

@@ -1,5 +1,6 @@
 ﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
+using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,7 +16,6 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<NpcMetadata> NpcMetadata { get; set; } = null!;
     public DbSet<MapMetadata> MapMetadata { get; set; } = null!;
     public DbSet<MapEntity> MapEntity { get; set; } = null!;
-    public DbSet<NavMesh> NavMesh { get; set; } = null!;
     public DbSet<PetMetadata> PetMetadata { get; set; } = null!;
     public DbSet<QuestMetadata> QuestMetadata { get; set; } = null!;
     public DbSet<RideMetadata> RideMetadata { get; set; } = null!;
@@ -24,7 +24,12 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<TableMetadata> TableMetadata { get; set; } = null!;
     public DbSet<AchievementMetadata> AchievementMetadata { get; set; } = null!;
     public DbSet<UgcMapMetadata> UgcMapMetadata { get; set; } = null!;
+    public DbSet<ExportedUgcMapMetadata> ExportedUgcMapMetadata { get; set; } = null!;
     public DbSet<ServerTableMetadata> ServerTableMetadata { get; set; } = null!;
+    public DbSet<NifMetadata> NifMetadata { get; set; } = null!;
+    public DbSet<NxsMeshMetadata> NXSMeshMetadata { get; set; } = null!;
+    public DbSet<FunctionCubeMetadata> FunctionCubeMetadata { get; set; } = null!;
+    public DbSet<MapDataMetadata> MapDataMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -36,7 +41,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NpcMetadata>(ConfigureNpcMetadata);
         modelBuilder.Entity<MapMetadata>(ConfigureMapMetadata);
         modelBuilder.Entity<MapEntity>(ConfigureMapEntity);
-        modelBuilder.Entity<NavMesh>(ConfigureNavMesh);
+        modelBuilder.Entity<MapDataMetadata>(ConfigureMapData);
         modelBuilder.Entity<PetMetadata>(ConfigurePetMetadata);
         modelBuilder.Entity<QuestMetadata>(ConfigureQuestMetadata);
         modelBuilder.Entity<RideMetadata>(ConfigureRideMetadata);
@@ -45,7 +50,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<TableMetadata>(ConfigureTableMetadata);
         modelBuilder.Entity<AchievementMetadata>(ConfigureAchievementMetadata);
         modelBuilder.Entity<UgcMapMetadata>(ConfigureUgcMapMetadata);
+        modelBuilder.Entity<ExportedUgcMapMetadata>(ConfigureExportedUgcMapMetadata);
         modelBuilder.Entity<ServerTableMetadata>(ConfigureServerTableMetadata);
+        modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
+        modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
+        modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -94,6 +103,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(item => item.Option).HasJsonConversion();
         builder.Property(item => item.Music).HasJsonConversion();
         builder.Property(item => item.Housing).HasJsonConversion();
+        builder.Property(item => item.Install).HasJsonConversion();
     }
 
     private static void ConfigureNpcMetadata(EntityTypeBuilder<NpcMetadata> builder) {
@@ -127,15 +137,16 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(entity => entity.Block).HasJsonConversion().IsRequired();
     }
 
-    private static void ConfigureNavMesh(EntityTypeBuilder<NavMesh> builder) {
-        builder.ToTable("nav-mesh");
-        builder.HasKey(navmesh => navmesh.XBlock);
+    private static void ConfigureMapData(EntityTypeBuilder<MapDataMetadata> builder) {
+        builder.ToTable("map-data");
+        builder.HasKey(entity => entity.XBlock);
     }
 
     private static void ConfigurePetMetadata(EntityTypeBuilder<PetMetadata> builder) {
         builder.ToTable("pet");
         builder.HasKey(pet => pet.Id);
         builder.HasIndex(pet => pet.NpcId);
+        builder.Property(pet => pet.AiPresets).HasJsonConversion();
         builder.Property(pet => pet.Skill).HasJsonConversion();
         builder.Property(pet => pet.Effect).HasJsonConversion();
         builder.Property(pet => pet.Distance).HasJsonConversion();
@@ -199,9 +210,38 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(map => map.Plots).HasJsonConversion().IsRequired();
     }
 
+    private static void ConfigureExportedUgcMapMetadata(EntityTypeBuilder<ExportedUgcMapMetadata> builder) {
+        builder.ToTable("exportedugcmap");
+        builder.HasKey(map => map.Id);
+        builder.Property(map => map.BaseCubePosition).HasJsonConversion().IsRequired();
+        builder.Property(map => map.IndoorSize).HasJsonConversion().IsRequired();
+        builder.Property(map => map.Cubes).HasJsonConversion().IsRequired();
+    }
+
     private static void ConfigureServerTableMetadata(EntityTypeBuilder<ServerTableMetadata> builder) {
         builder.ToTable("server-table");
         builder.HasKey(table => table.Name);
         builder.Property(table => table.Table).HasJsonConversion().IsRequired();
+    }
+
+    private static void ConfigureNifMetadata(EntityTypeBuilder<NifMetadata> builder) {
+        builder.ToTable("nif");
+        builder.HasKey(nif => nif.Llid);
+        builder.Property(nif => nif.Blocks).HasJsonConversion();
+        builder.Property(nif => nif.PhysXBounds).HasJsonConversion();
+    }
+
+    private static void ConfigureNXSMeshMetadata(EntityTypeBuilder<NxsMeshMetadata> builder) {
+        builder.ToTable("nxs-mesh");
+        builder.Property(mesh => mesh.Index).ValueGeneratedNever();
+        builder.HasKey(mesh => mesh.Index);
+        builder.Property(nif => nif.Bounds).HasJsonConversion();
+    }
+
+    private static void ConfigureFunctionCubeMetadata(EntityTypeBuilder<FunctionCubeMetadata> builder) {
+        builder.ToTable("function-cube");
+        builder.HasKey(cube => cube.Id);
+        builder.Property(cube => cube.AutoStateChange).HasJsonConversion();
+        builder.Property(cube => cube.Nurturing).HasJsonConversion();
     }
 }

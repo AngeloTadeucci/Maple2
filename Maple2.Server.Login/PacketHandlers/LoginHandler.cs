@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Grpc.Core;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -40,12 +41,13 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     packet.ReadShort(); // 1
                     var machineId = packet.Read<Guid>();
 
-                    Logger.Debug("Logging in with user:{User} pass:{Pass}", user, pass);
+                    Logger.Debug("Logging in with user:{User}", user);
                     LoginResponse response = Global.Login(new LoginRequest {
                         Username = user,
                         Password = pass,
                         MachineId = machineId.ToString(),
                     });
+
                     if (response.Code != LoginResponse.Types.Code.Ok) {
                         session.Send(LoginResultPacket.Error((byte) response.Code, response.Message, response.AccountId));
                         session.Disconnect();
@@ -64,6 +66,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
                     session.Send(UgcPacket.SetEndpoint(Target.WebUri));
 
                     session.ListCharacters();
+                    session.Send(GameEventPacket.Load(session.Server.GetEvents().ToArray()));
                     return;
                 default:
                     Logger.Error("Invalid type: {Type}", command);

@@ -2,6 +2,7 @@
 using Maple2.Model.Error;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
+using Serilog;
 
 namespace Maple2.Server.Game.Model;
 
@@ -11,6 +12,8 @@ public class RoomTimer : IUpdatable {
     public readonly RoomTimerType Type;
     public int Duration;
     private bool started;
+
+    private readonly ILogger logger = Log.Logger.ForContext<RoomTimer>();
 
     public RoomTimer(FieldManager field, RoomTimerType type, int duration) {
         this.field = field;
@@ -39,7 +42,10 @@ public class RoomTimer : IUpdatable {
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
             }
 
+            logger.Debug("Room timer expired, disposing field {FieldId}", field.MapId);
             field.Dispose();
         }
     }
+
+    public bool Expired(long tickCount) => tickCount > StartTick + Duration;
 }

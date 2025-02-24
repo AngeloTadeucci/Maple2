@@ -10,6 +10,7 @@ namespace Maple2.Model.Metadata;
 public class MapEntityMetadata {
     public required IReadOnlyDictionary<Guid, Breakable> Breakables { get; init; }
     public required IReadOnlyDictionary<Guid, Liftable> Liftables { get; init; }
+    public required IReadOnlyDictionary<Vector3B, LiftableTargetBox> LiftableTargetBoxes { get; init; }
     public required IReadOnlyDictionary<Vector3B, ObjectWeapon> ObjectWeapons { get; init; }
     public required IReadOnlyDictionary<int, Portal> Portals { get; init; }
     public required IReadOnlyDictionary<int, SpawnPointPC> PlayerSpawns { get; init; }
@@ -20,7 +21,6 @@ public class MapEntityMetadata {
     public required IReadOnlyDictionary<int, EventSpawnPointItem> EventItemSpawns { get; init; }
     public TaxiStation? Taxi { get; init; }
     public Prism BoundingBox { get; init; }
-    public NavMesh? NavMesh { get; init; }
 
     public required IReadOnlyDictionary<Guid, BreakableActor> BreakableActors { get; init; }
 

@@ -367,11 +367,11 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# IDEA
-.idea/
-
 # Environments
 .env
 
 /PacketStructures
 /Maple2.File.Ingest/Resources
+/Maple2.File.Ingest/Navmeshes/*.navmesh
+.idea/.idea.Maple2/.idea/sqldialects.xml
+.idea/.idea.Maple2/.idea/dataSources.xml

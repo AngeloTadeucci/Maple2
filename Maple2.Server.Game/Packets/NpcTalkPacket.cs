@@ -1,5 +1,6 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -106,12 +107,12 @@ public static class NpcTalkPacket {
         return pWriter;
     }
 
-    public static ByteWriter Update(string text, string voiceId = "", string illustration = "") {
+    public static ByteWriter Update(ScriptContent script) {
         var pWriter = Packet.Of(SendOp.NpcTalk);
         pWriter.Write<Command>(Command.Update);
-        pWriter.WriteUnicodeString(text);
-        pWriter.WriteUnicodeString(voiceId);
-        pWriter.WriteUnicodeString(illustration);
+        pWriter.WriteUnicodeString(script.Text);
+        pWriter.WriteUnicodeString(script.VoiceId);
+        pWriter.WriteUnicodeString(script.Illustration);
 
         return pWriter;
     }

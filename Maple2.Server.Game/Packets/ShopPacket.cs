@@ -50,13 +50,13 @@ public static class ShopPacket {
         return pWriter;
     }
 
-    public static ByteWriter Buy(ShopItem shopItem, int quantity, int price, bool toGuildStorage = false) {
+    public static ByteWriter Buy(ShopItem shopItem, int totalItems, int totalPrice, bool toGuildStorage = false) {
         var pWriter = Packet.Of(SendOp.Shop);
         pWriter.Write<Command>(Command.Buy);
-        pWriter.WriteInt(shopItem.ItemId);
-        pWriter.WriteInt(quantity);
-        pWriter.WriteInt(price * quantity);
-        pWriter.WriteByte(shopItem.Rarity);
+        pWriter.WriteInt(shopItem.Metadata.ItemId);
+        pWriter.WriteInt(totalItems);
+        pWriter.WriteInt(totalPrice);
+        pWriter.WriteByte(shopItem.Metadata.Rarity);
         pWriter.WriteBool(toGuildStorage);
 
         return pWriter;
@@ -101,12 +101,12 @@ public static class ShopPacket {
         return pWriter;
     }
 
-    public static ByteWriter Error(ShopError error, int stringId = 0) {
+    public static ByteWriter Error(ShopError error, byte arg1 = 0, int arg2 = 0) {
         var pWriter = Packet.Of(SendOp.Shop);
         pWriter.Write<Command>(Command.Error);
         pWriter.Write<ShopError>(error);
-        pWriter.WriteByte();
-        pWriter.WriteInt(stringId);
+        pWriter.WriteByte(arg1);
+        pWriter.WriteInt(arg2);
 
         return pWriter;
     }

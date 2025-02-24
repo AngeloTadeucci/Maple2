@@ -143,7 +143,7 @@ public class ItemCollection : IEnumerable<Item> {
         // Prefer item slot if specified
         if (ValidSlot(add.Slot) && this[add.Slot] == null) {
             this[add.Slot] = add;
-            return new[] { (add, add.Amount) };
+            return [(add, add.Amount)];
         }
 
         IList<(Item, int Added)> result = new List<(Item, int)>();
@@ -318,7 +318,8 @@ public class ItemCollection : IEnumerable<Item> {
         return item.Id == stack.Id
                && item.Rarity == stack.Rarity
                && item.Amount < item.Metadata.Property.SlotMax
-               && Equals(item.Transfer, stack.Transfer);
+               && Equals(item.Transfer, stack.Transfer)
+               && item.ExpiryTime / 60 == stack.ExpiryTime / 60; // Expiry time is in seconds, convert to minutes
     }
 
     private static int SortItem(Item? x, Item? y) {

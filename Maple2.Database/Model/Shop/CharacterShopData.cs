@@ -12,7 +12,7 @@ internal class CharacterShopData {
     public long OwnerId { get; set; }
     public DateTime RestockTime { get; set; }
     public int RestockCount { get; set; }
-    public ShopRestockInterval Interval { get; set; }
+    public ResetType Interval { get; set; }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator CharacterShopData?(Maple2.Model.Game.Shop.CharacterShopData? other) {
@@ -37,8 +37,5 @@ internal class CharacterShopData {
     public static void Configure(EntityTypeBuilder<CharacterShopData> builder) {
         builder.ToTable("character-shop-data");
         builder.HasKey(info => new { info.ShopId, info.OwnerId });
-        builder.HasOne<Shop>()
-            .WithMany()
-            .HasForeignKey(shop => shop.ShopId);
     }
 }

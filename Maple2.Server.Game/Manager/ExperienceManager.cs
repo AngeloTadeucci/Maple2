@@ -104,6 +104,7 @@ public sealed class ExperienceManager {
         LevelUp();
         AddPrestigeExp(message.Type());
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
+        session.ConditionUpdate(ConditionType.exp, counter: expGained);
     }
 
     public void AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
@@ -112,7 +113,7 @@ public sealed class ExperienceManager {
             return;
         }
 
-        long expValue = 0;
+        long expValue;
         switch (expType) {
             case ExpType.fishing:
             case ExpType.musicMastery1:
@@ -123,7 +124,7 @@ public sealed class ExperienceManager {
             case ExpType.gathering:
             case ExpType.arcade:
             case ExpType.expDrop:
-                if (!expBase.TryGetValue(session.Player.Value.Character.Level, out expValue)) {
+                if (!expBase.TryGetValue(Level, out expValue)) {
                     return;
                 }
                 break;
@@ -131,7 +132,10 @@ public sealed class ExperienceManager {
             case ExpType.mapCommon:
             case ExpType.mapHidden:
             case ExpType.telescope:
-                if (!expBase.TryGetValue(session.Field.Metadata.Drop.Level, out expValue)) {
+            case ExpType.rareChestFirst:
+                int fieldLevel = session.Field.Metadata.Drop.Level;
+                int correctedLevel = fieldLevel > Level ? Level : fieldLevel;
+                if (!expBase.TryGetValue(correctedLevel, out expValue)) {
                     return;
                 }
                 break;
@@ -141,6 +145,19 @@ public sealed class ExperienceManager {
         }
 
         AddExp((long) ((expValue * modifier) * entry.Factor) + additionalExp, expType.Message());
+    }
+
+    public void AddMobExp(int moblevel, float modifier = 1f, long additionalExp = 0) {
+        if (!session.TableMetadata.ExpTable.ExpBase.TryGetValue(2, out IReadOnlyDictionary<int, long>? expBase)) {
+            return;
+        }
+
+        if (!expBase.TryGetValue(moblevel, out long expValue)) {
+            return;
+        }
+
+
+        AddExp((long) (expValue * modifier) + additionalExp, ExpType.monster.Message());
     }
 
     public bool LevelUp() {
@@ -156,13 +173,15 @@ public sealed class ExperienceManager {
         if (Level > startLevel) {
             session.Player.Flag |= PlayerObjectFlag.Level;
             session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
-            session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: session.Player.Value.Character.Level);
-            session.ConditionUpdate(ConditionType.level, codeLong: session.Player.Value.Character.Level);
+            session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: Level);
+            session.ConditionUpdate(ConditionType.level, codeLong: Level);
+
+            session.Stats.Refresh();
 
             session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = session.AccountId,
                 CharacterId = session.CharacterId,
-                Level = session.Player.Value.Character.Level,
+                Level = Level,
                 Async = true,
             });
         }

@@ -13,6 +13,7 @@ public static class ConditionUtil {
 
     private static bool CheckCode(this ConditionMetadata.Parameters code, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
+            case ConditionType.emotiontime:
             case ConditionType.emotion:
             case ConditionType.trigger:
             case ConditionType.npc_race:
@@ -82,6 +83,9 @@ public static class ConditionUtil {
             case ConditionType.job:
             case ConditionType.job_change:
             case ConditionType.item_move:
+            case ConditionType.install_item:
+            case ConditionType.rotate_cube:
+            case ConditionType.uninstall_item:
             case ConditionType.fall:
             case ConditionType.swim:
             case ConditionType.swimtime:
@@ -122,12 +126,21 @@ public static class ConditionUtil {
             case ConditionType.gemstone_putoff:
             case ConditionType.fish_fail:
             case ConditionType.music_play_grade:
+            case ConditionType.music_play_ensemble:
             case ConditionType.breakable_object:
             case ConditionType.change_profile:
             case ConditionType.install_billboard:
             case ConditionType.buddy_request:
             case ConditionType.fall_survive:
             case ConditionType.fall_die:
+            case ConditionType.buy_house:
+            case ConditionType.extend_house:
+            case ConditionType.exp:
+            case ConditionType.item_merge_success:
+            case ConditionType.wedding_propose:
+            case ConditionType.wedding_propose_decline:
+            case ConditionType.wedding_propose_declined:
+            case ConditionType.wedding_hall_cancel:
                 return true;
         }
         return false;
@@ -135,6 +148,7 @@ public static class ConditionUtil {
 
     private static bool CheckTarget(this ConditionMetadata.Parameters target, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
+            case ConditionType.emotiontime:
             case ConditionType.emotion:
                 if (target.Range != null && target.Range.Value.Min >= session.Player.Value.Character.MapId &&
                     target.Range.Value.Max <= session.Player.Value.Character.MapId) {
@@ -164,6 +178,8 @@ public static class ConditionUtil {
             case ConditionType.level:
             case ConditionType.enchant_result:
             case ConditionType.install_billboard:
+            case ConditionType.item_move:
+            case ConditionType.npc:
                 if (target.Integers != null && target.Integers.Any(value => longValue >= value)) {
                     return true;
                 }
@@ -179,6 +195,7 @@ public static class ConditionUtil {
             case ConditionType.laddertime:
             case ConditionType.holdtime:
             case ConditionType.riding:
+            case ConditionType.skill:
                 if (target.Range != null && target.Range.Value.Min >= longValue &&
                     target.Range.Value.Max <= longValue) {
                     return true;
@@ -206,6 +223,7 @@ public static class ConditionUtil {
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.music_play_grade:
+            case ConditionType.music_play_ensemble:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
             case ConditionType.beauty_add:
@@ -226,17 +244,25 @@ public static class ConditionUtil {
             case ConditionType.quest_clear_by_chapter:
             case ConditionType.quest_clear:
             case ConditionType.buff:
-            case ConditionType.npc:
             case ConditionType.dialogue:
             case ConditionType.talk_in:
             case ConditionType.change_profile:
             case ConditionType.buddy_request:
-            case ConditionType.skill:
             case ConditionType.job:
             case ConditionType.job_change:
-            case ConditionType.item_move:
             case ConditionType.fall_survive:
             case ConditionType.fall_die:
+            case ConditionType.install_item:
+            case ConditionType.rotate_cube:
+            case ConditionType.uninstall_item:
+            case ConditionType.buy_house:
+            case ConditionType.extend_house:
+            case ConditionType.exp:
+            case ConditionType.item_merge_success:
+            case ConditionType.wedding_propose:
+            case ConditionType.wedding_propose_decline:
+            case ConditionType.wedding_propose_declined:
+            case ConditionType.wedding_hall_cancel:
                 return true;
         }
         return false;

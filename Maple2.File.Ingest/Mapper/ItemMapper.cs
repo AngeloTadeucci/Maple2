@@ -121,11 +121,11 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
             ItemMetadataOption? option = !hasOption ? null : new ItemMetadataOption(
                 StaticId: data.option.@static,
-                StaticType: data.option.staticMakeType,
+                StaticType: (ItemOptionMakeType) data.option.staticMakeType,
                 RandomId: data.option.random,
-                RandomType: data.option.randomMakeType,
+                ItemOptionType: (ItemOptionMakeType) data.option.randomMakeType,
                 ConstantId: data.option.constant,
-                ConstantType: data.option.constantMakeType,
+                ConstantType: (ItemOptionMakeType) data.option.constantMakeType,
                 LevelFactor: levelFactor,
                 PickId: data.option.optionID);
             ItemMetadataMusic? music = data.property.type != 12 ? null : new ItemMetadataMusic(
@@ -136,10 +136,21 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 NoteLengthMax: data.MusicScore.noteLengthMax,
                 FileName: data.MusicScore.fileName,
                 PlayTime: data.MusicScore.playTime);
+            var housingCategory = HousingCategory.None;
+            if (!string.IsNullOrEmpty(data.housing.categoryTag)) {
+                string[] tags = data.housing.categoryTag.Split(',');
+                housingCategory = Enum.Parse<HousingCategory>(tags[0]);
+            }
             ItemMetadataHousing? housing = data.property.type != 6 ? null : new ItemMetadataHousing(
                 TrophyId: data.housing.trophyID,
                 TrophyLevel: data.housing.trophyLevel,
-                InteriorLevel: data.housing.interiorLevel);
+                InteriorLevel: data.housing.interiorLevel,
+                HousingCategory: housingCategory,
+                IsNotAllowedInBlueprint: data.housing.doNotInstallBlueprint);
+            ItemMetadataInstall? install = data.property.type != 6 ? null : new ItemMetadataInstall(
+                IsSolidCube: data.install.cubeProp == 1,
+                InteractId: data.install.objCode,
+                MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
             yield return new ItemMetadata(
                 Id: id,
@@ -207,7 +218,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     (skillId, level) => new ItemMetadataAdditionalEffect(skillId, level)).ToArray(),
                 Option: option,
                 Music: music,
-                Housing: housing
+                Housing: housing,
+                Install: install
             );
         }
     }

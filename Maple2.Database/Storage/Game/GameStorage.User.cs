@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -19,6 +16,7 @@ using SkillPoint = Maple2.Model.Game.SkillPoint;
 using Wardrobe = Maple2.Model.Game.Wardrobe;
 using GameEventUserValue = Maple2.Model.Game.GameEventUserValue;
 using Home = Maple2.Model.Game.Home;
+using HomeLayout = Maple2.Database.Model.HomeLayout;
 
 namespace Maple2.Database.Storage;
 
@@ -33,13 +31,25 @@ public partial class GameStorage {
                 .FirstOrDefault(account => account.Username == username);
         }
 
-        public bool UpdateAccount(Account account, bool commit = false) {
-            Context.Account.Update(account);
-            if (commit) {
-                return Context.TrySaveChanges();
+        public bool VerifyPassword(long accountId, string password) {
+            Model.Account? account = Context.Account.Find(accountId);
+#if DEBUG
+            if (string.IsNullOrEmpty(account?.Password)) {
+                return true;
             }
+#endif
+            return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
+        }
 
-            return true;
+        public bool UpdateMachineId(long accountId, Guid machineId) {
+            Model.Account? account = Context.Account.Find(accountId);
+            if (account == null) {
+                return false;
+            }
+            account.MachineId = machineId;
+            Context.Account.Update(account);
+
+            return Context.TrySaveChanges();
         }
 
         public (Account?, IList<Character>?) ListCharacters(long accountId) {
@@ -91,18 +101,36 @@ public partial class GameStorage {
             var result = (from character in Context.Character where character.Id == characterId
                           join account in Context.Account on character.AccountId equals account.Id
                           join indoor in Context.UgcMap on
-                              new { OwnerId = character.AccountId, Indoor = true } equals new { indoor.OwnerId, indoor.Indoor }
+                              new {
+                                  OwnerId = character.AccountId,
+                                  Indoor = true
+                              } equals new {
+                                  indoor.OwnerId,
+                                  indoor.Indoor
+                              }
                           join outdoor in Context.UgcMap on
-                              new { OwnerId = character.AccountId, Indoor = false } equals new { outdoor.OwnerId, outdoor.Indoor } into plot
+                              new {
+                                  OwnerId = character.AccountId,
+                                  Indoor = false
+                              } equals new {
+                                  outdoor.OwnerId,
+                                  outdoor.Indoor
+                              } into plot
                           from outdoor in plot.DefaultIfEmpty()
-                          select new { character, indoor, outdoor, account.PremiumTime })
+                          select new {
+                              character,
+                              indoor,
+                              outdoor,
+                              account.PremiumTime
+                          })
                 .FirstOrDefault();
             if (result == null) {
                 return null;
             }
 
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime);
+            IList<long> clubs = ListClubs(result.character.Id);
+            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime, clubs);
         }
 
         public Home? GetHome(long ownerId) {
@@ -119,6 +147,26 @@ public partial class GameStorage {
             if (indoor == null) {
                 Logger.LogError("Home does not have a indoor entry: {OwnerId}", ownerId);
                 return null;
+            }
+
+            foreach (long layoutUid in model.Layouts) {
+                HomeLayout? layout = GetHomeLayout(layoutUid);
+                if (layout is null) {
+                    Logger.LogError("Home layout not found: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Layouts.Add(layout);
+            }
+
+            foreach (long layoutUid in model.Blueprints) {
+                HomeLayout? layout = GetHomeLayout(layoutUid);
+                if (layout is null) {
+                    Logger.LogError("Home layout not found: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Blueprints.Add(layout);
             }
 
             home.Indoor = indoor;
@@ -154,6 +202,12 @@ public partial class GameStorage {
                     (member, guild) => new Tuple<long, string>(guild.Id, guild.Name))
                 .FirstOrDefault() ?? new Tuple<long, string>(0, string.Empty);
 
+            List<Tuple<long, string>> clubs = Context.ClubMember
+                .Where(member => member.CharacterId == characterId)
+                .Join(Context.Club, member => member.ClubId, club => club.Id,
+                    (member, club) => new Tuple<long, string>(club.Id, club.Name))
+                .ToList();
+
             Home? home = GetHome(accountId);
             if (home == null) {
                 return null;
@@ -182,7 +236,10 @@ public partial class GameStorage {
             player.Character.GuildId = guild.Item1;
             player.Character.GuildName = guild.Item2;
 
+            player.Character.ClubIds = clubs.Select(club => club.Item1).ToList();
+
             player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+            player.Character.MarriageInfo = GetMarriageInfo(characterId);
             player.Character.PremiumTime = account.PremiumTime;
 
             return player;
@@ -211,6 +268,12 @@ public partial class GameStorage {
                 MenteeToken = player.Currency.MenteeToken,
                 StarPoint = player.Currency.StarPoint,
             };
+
+            Model.Account? dbAccount = Context.Account.Find(account.Id);
+            if (dbAccount == null) {
+                return false;
+            }
+            account.Password = dbAccount.Password;
 
             Context.Update(account);
             Context.Update(character);
@@ -245,7 +308,7 @@ public partial class GameStorage {
             };
 
             Dictionary<GameEventUserValueType, GameEventUserValue> eventValues = Context.GameEventUserValue.Where(value => value.CharacterId == characterId)
-                .Select<Model.Event.GameEventUserValue, GameEventUserValue>(value => value)
+                .Select<Model.GameEventUserValue, GameEventUserValue>(value => value)
                 .ToDictionary(value => value.Type, value => value);
 
             var skillPoint = new SkillPoint();
@@ -277,24 +340,24 @@ public partial class GameStorage {
         }
 
         public bool SaveCharacterConfig(
-                long characterId,
-                IList<KeyBind> keyBinds,
-                IList<QuickSlot[]> hotBars,
-                IEnumerable<SkillMacro> skillMacros,
-                IEnumerable<Wardrobe> wardrobes,
-                IList<int> favoriteStickers,
-                IList<long> favoriteDesigners,
-                IDictionary<LapenshardSlot, int> lapenshards,
-                IList<SkillCooldown> skillCooldowns,
-                long deathTick,
-                int deathCount,
-                int explorationProgress,
-                StatAttributes.PointAllocation allocation,
-                StatAttributes.PointSources statSources,
-                SkillPoint skillPoint,
-                IDictionary<int, int> gatheringCounts,
-                IDictionary<int, int> guideRecords,
-                SkillBook skillBook) {
+            long characterId,
+            IList<KeyBind> keyBinds,
+            IList<QuickSlot[]> hotBars,
+            IEnumerable<SkillMacro> skillMacros,
+            IEnumerable<Wardrobe> wardrobes,
+            IList<int> favoriteStickers,
+            IList<long> favoriteDesigners,
+            IDictionary<LapenshardSlot, int> lapenshards,
+            IList<SkillCooldown> skillCooldowns,
+            long deathTick,
+            int deathCount,
+            int explorationProgress,
+            StatAttributes.PointAllocation allocation,
+            StatAttributes.PointSources statSources,
+            SkillPoint skillPoint,
+            IDictionary<int, int> gatheringCounts,
+            IDictionary<int, int> guideRecords,
+            SkillBook skillBook) {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
@@ -309,8 +372,8 @@ public partial class GameStorage {
             config.FavoriteStickers = favoriteStickers;
             config.FavoriteDesigners = favoriteDesigners;
             config.Lapenshards = lapenshards;
-            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64).
-                Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
+            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64)
+                .Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
                 .ToList();
             config.DeathTick = deathTick;
             config.DeathCount = deathCount;
@@ -345,16 +408,21 @@ public partial class GameStorage {
         }
 
         #region Create
-        public Account CreateAccount(Account account) {
+        public Account CreateAccount(Account account, string password) {
             Model.Account model = account;
             model.Id = 0;
+            model.Password = BCrypt.Net.BCrypt.HashPassword(password, 13);
 #if DEBUG
-            model.Currency = new AccountCurrency { Meret = 99999 };
+            model.Currency = new AccountCurrency {
+                Meret = 99999
+            };
 #endif
             Context.Account.Add(model);
             Context.SaveChanges(); // Exception if failed.
 
-            Context.Home.Add(new Home { AccountId = model.Id });
+            Context.Home.Add(new Home {
+                AccountId = model.Id
+            });
             Context.UgcMap.Add(new UgcMap {
                 OwnerId = model.Id,
                 MapId = Constant.DefaultHomeMapId,
@@ -370,7 +438,9 @@ public partial class GameStorage {
             Model.Character model = character;
             model.Id = 0;
 #if DEBUG
-            model.Currency = new CharacterCurrency { Meso = 999999999 };
+            model.Currency = new CharacterCurrency {
+                Meso = 999999999
+            };
 #endif
             Context.Character.Add(model);
             return Context.TrySaveChanges() ? model : null;
@@ -381,7 +451,9 @@ public partial class GameStorage {
             model.CharacterId = characterId;
             Context.CharacterUnlock.Add(model);
 
-            SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") { Id = characterId });
+            SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") {
+                Id = characterId
+            });
             if (defaultTab == null) {
                 return false;
             }

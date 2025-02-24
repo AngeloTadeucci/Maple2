@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Model;
-using Maple2.Database.Model.Event;
 using Maple2.Database.Model.Shop;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,22 +26,24 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
     internal DbSet<Mail> Mail { get; set; } = null!;
     internal DbSet<MesoListing> MesoMarket { get; set; } = null!;
     internal DbSet<SoldMesoListing> MesoMarketSold { get; set; } = null!;
-    internal DbSet<Shop> Shop { get; set; } = null!;
-    internal DbSet<ShopItem> ShopItem { get; set; } = null!;
     internal DbSet<CharacterShopData> CharacterShopData { get; set; } = null!;
     internal DbSet<CharacterShopItemData> CharacterShopItemData { get; set; } = null!;
-    internal DbSet<GameEvent> GameEvent { get; set; } = null!;
     internal DbSet<GameEventUserValue> GameEventUserValue { get; set; } = null!;
     internal DbSet<SystemBanner> SystemBanner { get; set; } = null!;
-    internal DbSet<PremiumMarketItem> PremiumMarketItem { get; set; } = null!;
     internal DbSet<UgcMarketItem> UgcMarketItem { get; set; } = null!;
     internal DbSet<SoldUgcMarketItem> SoldUgcMarketItem { get; set; } = null!;
+    internal DbSet<SoldMeretMarketItem> SoldMeretMarketItem { get; set; } = null!;
     internal DbSet<BlackMarketListing> BlackMarketListing { get; set; } = null!;
-    internal DbSet<BeautyShop> BeautyShop { get; set; } = null!;
-    internal DbSet<BeautyShopEntry> BeautyShopEntry { get; set; } = null!;
     internal DbSet<Achievement> Achievement { get; set; } = null!;
     internal DbSet<Quest> Quest { get; set; } = null!;
     internal DbSet<ServerInfo> ServerInfo { get; set; } = null!;
+    internal DbSet<Medal> Medal { get; set; } = null!;
+    internal DbSet<BannerSlot> BannerSlots { get; set; } = null!;
+    internal DbSet<HomeLayout> HomeLayout { get; set; } = null!;
+    internal DbSet<HomeLayoutCube> UgcCubeLayout { get; set; } = null!;
+    internal DbSet<Marriage> Marriage { get; set; } = null!;
+    internal DbSet<WeddingHall> WeddingHall { get; set; } = null!;
+    internal DbSet<Nurturing> Nurturing { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -66,24 +67,26 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<UgcResource>(Maple2.Database.Model.UgcResource.Configure);
         modelBuilder.Entity<Mail>(Maple2.Database.Model.Mail.Configure);
         modelBuilder.Entity<SystemBanner>(Maple2.Database.Model.SystemBanner.Configure);
-        modelBuilder.Entity<PremiumMarketItem>(Maple2.Database.Model.PremiumMarketItem.Configure);
         modelBuilder.Entity<UgcMarketItem>(Maple2.Database.Model.UgcMarketItem.Configure);
         modelBuilder.Entity<SoldUgcMarketItem>(Maple2.Database.Model.SoldUgcMarketItem.Configure);
         modelBuilder.Entity<Achievement>(Maple2.Database.Model.Achievement.Configure);
         modelBuilder.Entity<Quest>(Maple2.Database.Model.Quest.Configure);
+        modelBuilder.Entity<Medal>(Maple2.Database.Model.Medal.Configure);
+        modelBuilder.Entity<BannerSlot>(Maple2.Database.Model.BannerSlot.Configure);
+        modelBuilder.Entity<HomeLayout>(Maple2.Database.Model.HomeLayout.Configure);
+        modelBuilder.Entity<HomeLayoutCube>(Maple2.Database.Model.HomeLayoutCube.Configure);
+        modelBuilder.Entity<Marriage>(Maple2.Database.Model.Marriage.Configure);
+        modelBuilder.Entity<WeddingHall>(Maple2.Database.Model.WeddingHall.Configure);
+        modelBuilder.Entity<Nurturing>(Maple2.Database.Model.Nurturing.Configure);
 
         modelBuilder.Entity<MesoListing>(MesoListing.Configure);
         modelBuilder.Entity<SoldMesoListing>(SoldMesoListing.Configure);
-        modelBuilder.Entity<Shop>(Maple2.Database.Model.Shop.Shop.Configure);
-        modelBuilder.Entity<ShopItem>(Maple2.Database.Model.Shop.ShopItem.Configure);
+        modelBuilder.Entity<SoldMeretMarketItem>(Maple2.Database.Model.SoldMeretMarketItem.Configure);
         modelBuilder.Entity<CharacterShopData>(Maple2.Database.Model.Shop.CharacterShopData.Configure);
         modelBuilder.Entity<CharacterShopItemData>(Maple2.Database.Model.Shop.CharacterShopItemData.Configure);
-        modelBuilder.Entity<BeautyShop>(Maple2.Database.Model.Shop.BeautyShop.Configure);
-        modelBuilder.Entity<BeautyShopEntry>(Maple2.Database.Model.Shop.BeautyShopEntry.Configure);
         modelBuilder.Entity<BlackMarketListing>(Maple2.Database.Model.BlackMarketListing.Configure);
 
-        modelBuilder.Entity<GameEvent>(Maple2.Database.Model.Event.GameEvent.Configure);
-        modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.Event.GameEventUserValue.Configure);
+        modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.GameEventUserValue.Configure);
 
         modelBuilder.Entity<ServerInfo>(Maple2.Database.Model.ServerInfo.Configure);
     }

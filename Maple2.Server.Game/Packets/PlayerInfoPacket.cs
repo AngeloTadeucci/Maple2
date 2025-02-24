@@ -9,6 +9,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Core.Packets.Helper;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -84,11 +85,11 @@ public static class PlayerInfoPacket {
         // 6 buffers: 280, 280, 280, 140, 720, 720
         #region Stats
         for (int i = 0; i < Stat.TOTAL; i++) {
-            for (int j = 0; j < Stats.TOTAL; j++) {
-                buffer.WriteLong(fieldPlayer.Stats[(BasicAttribute) j][i]);
+            for (int j = 0; j < Stats.BASIC_TOTAL; j++) {
+                buffer.WriteLong(fieldPlayer.Stats.Values[(BasicAttribute) j][i]);
             }
         }
-        for (int i = 0; i < Stats.TOTAL; i++) {
+        for (int i = 0; i < Stats.BASIC_TOTAL; i++) {
             buffer.WriteFloat(0f);
         }
 
@@ -102,7 +103,7 @@ public static class PlayerInfoPacket {
 
         buffer.WriteUnicodeString(player.Character.Picture);
         buffer.WriteUnicodeString(player.Character.Motto);
-        buffer.WriteUnicodeString(); // GuildName
+        buffer.WriteUnicodeString(player.Character.GuildName);
         buffer.WriteUnicodeString(); // GuildRank
 
         buffer.WriteUnicodeString(player.Home.Name);
@@ -117,14 +118,11 @@ public static class PlayerInfoPacket {
         }
 
         buffer.WriteInt(player.Character.AchievementInfo.Total);
-        buffer.WriteInt(fieldPlayer.Stats.GearScore);
+        buffer.WriteInt(fieldPlayer.Stats.Values.GearScore);
         buffer.WriteLong(player.Character.LastModified.ToEpochSeconds()); // Time entered map/logged in
         buffer.WriteInt();
         buffer.WriteInt();
         buffer.Write<SkinColor>(player.Character.SkinColor);
-        buffer.WriteShort(); // Marital Status
-        buffer.WriteUnicodeString(); // Spouse Name 1
-        buffer.WriteUnicodeString(); // Spouse Name 2
-        buffer.WriteLong(); // Proposal Time
+        buffer.WriteClass<MarriageInfo>(player.Character.MarriageInfo);
     }
 }

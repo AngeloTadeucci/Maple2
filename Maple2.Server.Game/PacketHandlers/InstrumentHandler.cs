@@ -13,6 +13,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.Collision;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -113,7 +114,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         }
 
         var note = packet.Read<MidiMessage>();
-        session.Field.Broadcast(InstrumentPacket.Improvise(session.Instrument, note));
+        session.Field.Broadcast(InstrumentPacket.Improvise(session.Instrument, note), session);
     }
 
     private void HandleStopImprovise(GameSession session) {
@@ -138,6 +139,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         if (!TryUseInstrument(session, itemUid, Environment.TickCount64, false, out session.Instrument)) {
             return;
         }
+        session.Instrument.Score = score;
 
         score.RemainUses--;
         session.Field.Broadcast(InstrumentPacket.StartScore(session.Instrument, score));
@@ -168,7 +170,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         // Modifier is the number of 500ms ticks that have passed.
         session.Exp.AddExp(expType, (totalTickTime - 500) / 500);
 
-        session.Field.Broadcast(InstrumentPacket.StopScore(session.Instrument));
+        session.Field.RemoveInstrument(session.Instrument.ObjectId);
         session.Instrument = null;
     }
 
@@ -211,6 +213,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             memberSession.StagedScoreItem.RemainUses--;
             memberSession.Field.Broadcast(InstrumentPacket.StartScore(memberSession.Instrument, memberSession.StagedScoreItem));
             memberSession.Send(InstrumentPacket.RemainUses(memberSession.StagedScoreItem.Uid, memberSession.StagedScoreItem.RemainUses));
+            memberSession.ConditionUpdate(ConditionType.music_play_ensemble);
         }
     }
 
@@ -237,7 +240,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         }
 
         int length = packet.ReadInt();
-        int instrument = packet.ReadInt();
+        var instrument = packet.Read<Instrument>();
         string title = packet.ReadUnicodeString();
         string mml = packet.ReadString();
 
@@ -245,7 +248,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         score.Music.Instrument = instrument;
         score.Music.Title = title;
         score.Music.Author = session.PlayerName;
-        score.Music.AuthorId = session.CharacterId;
+        score.Music.AuthorId = session.AccountId;
         score.Music.Mml = mml;
 
         session.Send(InstrumentPacket.ComposeScore(score));
@@ -262,39 +265,21 @@ public class InstrumentHandler : PacketHandler<GameSession> {
     }
 
     private void HandleStartPerform(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
     }
 
     private void HandleEndPerform(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
     }
 
-    private void HandleEnterExitStage(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
-            return;
-        }
-
-        // TODO: MS2TriggerBox: 6a17cfc1708e492b81896a780e2fecf9
-        const float xLo = -3600 - 825;
-        const float xHi = -3600 + 825;
-        const float yLo = 7275 - 600;
-        const float yHi = 7275 + 600;
-        const float zLo = 2475 - 375;
-        const float zHi = 2475 + 375;
-        Vector3 position = session.Player.Position;
-        if (position.X is > xLo and < xHi && position.Y is > yLo and < yHi && position.Z is > zLo and < zHi) {
-            session.Field.MoveToPortal(session, 802);
-        } else {
-            session.Field.MoveToPortal(session, 803);
-        }
-    }
+    private void HandleEnterExitStage(GameSession session) => session.Field.PerformanceStage?.EnterExitStage(session);
 
     private void HandleFireworks(GameSession session) {
-        if (session.Field?.MapId != Constant.PerformanceMapId) {
+        if (session.Field.PerformanceStage is null) {
             return;
         }
 
@@ -333,7 +318,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        fieldInstrument = session.Field!.SpawnInstrument(session.Player, metadata);
+        fieldInstrument = session.Field.SpawnInstrument(session.Player, metadata);
         fieldInstrument.StartTick = startTick;
         fieldInstrument.Ensemble = ensemble;
         return true;

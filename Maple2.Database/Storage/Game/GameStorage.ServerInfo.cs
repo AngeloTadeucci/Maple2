@@ -25,12 +25,15 @@ public partial class GameStorage {
             lock (Context) {
                 ServerInfo serverInfo = Context.ServerInfo.Find("DailyReset")!;
                 serverInfo.LastModified = DateTime.Now;
+                Context.Update(serverInfo);
                 Context.SaveChanges();
 
                 Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeExp` = `PrestigeCurrentExp`");
                 Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PrestigeLevelsGained` = DEFAULT");
                 Context.Database.ExecuteSqlRaw("UPDATE `account` SET `PremiumRewardsClaimed` = DEFAULT");
                 Context.Database.ExecuteSqlRaw("UPDATE `character-config` SET `GatheringCounts` = DEFAULT");
+                Context.Database.ExecuteSqlRaw("UPDATE `nurturing` SET `PlayedBy` = '[]'");
+                Context.Database.ExecuteSqlRaw("UPDATE `home` SET `DecorationRewardTimestamp` = 0");
                 // TODO: Death counter
             }
         }

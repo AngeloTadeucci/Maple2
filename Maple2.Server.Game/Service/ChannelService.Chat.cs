@@ -35,6 +35,7 @@ public partial class ChannelService {
                 SuperChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Club:
+                ClubChat(request, items);
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Wedding:
                 return Task.FromResult(new ChatResponse());
@@ -95,5 +96,19 @@ public partial class ChannelService {
             server.Broadcast(MessengerBrowserPacket.Link(items.ToArray()));
         }
         server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Super, request.Message, request.Super.ItemId));
+    }
+
+    private void ClubChat(ChatRequest request, List<Item> items) {
+        foreach (long characterId in request.Club.MemberIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            if (items.Count > 0) {
+                session.Send(MessengerBrowserPacket.Link(items.ToArray()));
+            }
+
+            session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Club, request.Message, clubId: request.Club.ClubId));
+        }
     }
 }

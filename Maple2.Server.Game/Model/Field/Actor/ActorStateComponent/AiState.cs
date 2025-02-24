@@ -34,31 +34,21 @@ public class AiState {
         BattleEnd
     }
 
-    public AiState(FieldNpc actor) {
+    public AiState(FieldNpc actor, string aiPath) {
         this.actor = actor;
-    }
-
-    public bool IsProcessingNodes() {
-        return aiStack.Count > 0;
-    }
-
-    // TODO: revisit later & refactor into constructor if no AI is found that needs this kind of context switching
-    [MemberNotNullWhen(true, "AiMetadata")]
-    public bool SetAi(string name) {
-        if (name == string.Empty) {
-            AiMetadata = null;
-
-            return false;
+        if (string.IsNullOrEmpty(aiPath)) {
+            return;
         }
 
-        if (name == "AI_DefaultNew.xml") {
-            name = "AI_Default.xml";
+        if (aiPath == "AI_DefaultNew.xml") {
+            aiPath = Constant.DefaultAiPath;
         }
 
-        AiMetadata? metadata;
-
-        if (!actor.Field.AiMetadata.TryGet(name, out metadata)) {
-            return false;
+        if (!actor.Field.AiMetadata.TryGet(aiPath, out AiMetadata? metadata)) {
+            Logger.Error("{AiPath} could not be found for {ValueId}. setting as default AI", aiPath, actor.Value.Id);
+            if (!actor.Field.AiMetadata.TryGet(Constant.DefaultAiPath, out metadata)) {
+                throw new KeyNotFoundException($"Could not find default AI {Constant.DefaultAiPath} for {actor.Value.Id}");
+            }
         }
 
         AiMetadata = metadata;
@@ -74,8 +64,10 @@ public class AiState {
         if (AiMetadata.Reserved.Length != 0) {
             reservedNodes = AiMetadata.Reserved.Cast<Node>().ToList();
         }
+    }
 
-        return true;
+    public bool IsProcessingNodes() {
+        return aiStack.Count > 0;
     }
 
     public bool IsWaitingOnTask(long tickCount) {
@@ -316,7 +308,7 @@ public class AiState {
     }
 
     private void ProcessNode(TraceNode node) {
-        if (!actor.Field.TryGetActor(actor.BattleState.TargetId, out IActor? target)) {
+        if (!actor.Field.TryGetActor(actor.BattleState.TargetId, out IActor? _)) {
             return;
         }
 
@@ -504,7 +496,7 @@ public class AiState {
     }
 
     private void ProcessNode(MinimumHpNode node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
         float currentHpPercent = ((float) health.Current / (float) health.Total) * 100f;
 
         if (currentHpPercent > node.HpPercent) {
@@ -513,7 +505,7 @@ public class AiState {
 
         // Heal back to node.HpPercent
         long newHp = (long) ((node.HpPercent / 100) * health.Total);
-        actor.Stats[BasicAttribute.Health].Current = Math.Clamp(newHp, 0, health.Total);
+        actor.Stats.Values[BasicAttribute.Health].Current = Math.Clamp(newHp, 0, health.Total);
     }
 
     private void ProcessNode(BuffNode node) {
@@ -590,7 +582,6 @@ public class AiState {
     }
 
     private void ProcessNode(ModifyRoomTimeNode node) {
-
     }
 
     private void ProcessNode(HideVibrateAllNode node) {
@@ -618,7 +609,7 @@ public class AiState {
     }
 
     private void ProcessNode(SuicideNode node) {
-        actor.Stats[BasicAttribute.Health].Current = 0;
+        actor.Stats.Values[BasicAttribute.Health].Current = 0;
     }
 
 
@@ -665,8 +656,18 @@ public class AiState {
     }
 
     private bool ProcessCondition(ExtraDataCondition node) {
-        bool complete = PerformOperation(node.Op, node.Value, actor.AiExtraData.GetValueOrDefault(node.Key, 0));
-        return complete;
+        int value = 0;
+        if (actor is FieldPet pet) {
+            switch (node.Key) {
+                case "tamingPoint":
+                    value = pet.TamingPoint;
+                    break;
+                default: // aiPresets
+                    return pet.Metadata.AiPresets.Contains(node.Key);
+            }
+        }
+
+        return PerformOperation(node.Op, node.Value, actor.AiExtraData.GetValueOrDefault(node.Key, value));
     }
 
     private bool ProcessCondition(SlaveCountCondition node) {
@@ -678,7 +679,7 @@ public class AiState {
     }
 
     private bool ProcessCondition(HpOverCondition node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
 
         return node.Value <= ((float) health.Current / (float) health.Total) * 100f;
     }
@@ -717,7 +718,7 @@ public class AiState {
     }
 
     private bool ProcessCondition(HpLessCondition node) {
-        Stat health = actor.Stats[BasicAttribute.Health];
+        Stat health = actor.Stats.Values[BasicAttribute.Health];
 
         return node.Value >= ((float) health.Current / (float) health.Total) * 100f;
     }

@@ -164,15 +164,15 @@ public class Buff : IUpdatable, IByteSerializable {
         var record = new HealDamageRecord(Caster, Owner, ObjectId, Metadata.Recovery);
         var updated = new List<BasicAttribute>(3);
         if (record.HpAmount != 0) {
-            Owner.Stats[BasicAttribute.Health].Add(record.HpAmount);
+            Owner.Stats.Values[BasicAttribute.Health].Add(record.HpAmount);
             updated.Add(BasicAttribute.Health);
         }
         if (record.SpAmount != 0) {
-            Owner.Stats[BasicAttribute.Spirit].Add(record.SpAmount);
+            Owner.Stats.Values[BasicAttribute.Spirit].Add(record.SpAmount);
             updated.Add(BasicAttribute.Spirit);
         }
         if (record.EpAmount != 0) {
-            Owner.Stats[BasicAttribute.Stamina].Add(record.EpAmount);
+            Owner.Stats.Values[BasicAttribute.Stamina].Add(record.EpAmount);
             updated.Add(BasicAttribute.Stamina);
         }
 
@@ -192,15 +192,15 @@ public class Buff : IUpdatable, IByteSerializable {
         };
         var targetUpdated = new List<BasicAttribute>(3);
         if (record.HpAmount != 0) {
-            Owner.Stats[BasicAttribute.Health].Add(record.HpAmount);
+            Owner.Stats.Values[BasicAttribute.Health].Add(record.HpAmount);
             targetUpdated.Add(BasicAttribute.Health);
         }
         if (record.SpAmount != 0) {
-            Owner.Stats[BasicAttribute.Spirit].Add(record.SpAmount);
+            Owner.Stats.Values[BasicAttribute.Spirit].Add(record.SpAmount);
             targetUpdated.Add(BasicAttribute.Spirit);
         }
         if (record.EpAmount != 0) {
-            Owner.Stats[BasicAttribute.Stamina].Add(record.EpAmount);
+            Owner.Stats.Values[BasicAttribute.Stamina].Add(record.EpAmount);
             targetUpdated.Add(BasicAttribute.Stamina);
         }
 
@@ -211,7 +211,7 @@ public class Buff : IUpdatable, IByteSerializable {
         field.Broadcast(StatsPacket.Update(Owner, targetUpdated.ToArray()));
         field.Broadcast(SkillDamagePacket.DotDamage(record));
         if (record.RecoverHp != 0) {
-            Caster.Stats[BasicAttribute.Health].Add(record.RecoverHp);
+            Caster.Stats.Values[BasicAttribute.Health].Add(record.RecoverHp);
             field.Broadcast(StatsPacket.Update(Caster, BasicAttribute.Health));
         }
     }
@@ -223,9 +223,9 @@ public class Buff : IUpdatable, IByteSerializable {
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
         if (dotBuff.Target == SkillEntity.Target) {
-            Owner.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
         } else {
-            Caster.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
         }
     }
 

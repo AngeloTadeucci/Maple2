@@ -27,7 +27,7 @@ public partial class MovementState {
     private NpcTask? walkTask = null;
 
     private void UpdateMoveSpeed(float speed) {
-        Stat moveSpeed = actor.Stats[BasicAttribute.MovementSpeed];
+        Stat moveSpeed = actor.Stats.Values[BasicAttribute.MovementSpeed];
 
         speedOverride = speed;
         Speed = speed == 0 ? (float) moveSpeed.Current / 100 : speed;
@@ -50,7 +50,7 @@ public partial class MovementState {
             walkSequence = stateSequence;
             walkTask = task;
 
-            SetState(ActorState.Walk, isWalking ? ActorSubState.Walk_Walking : ActorSubState.Walk_Running);
+            SetState(ActorState.Walk);
         } else {
             task.Cancel();
 

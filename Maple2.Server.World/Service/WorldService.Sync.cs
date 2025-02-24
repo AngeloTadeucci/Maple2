@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -30,13 +29,14 @@ public partial class WorldService {
             Level = info.Level,
             GearScore = info.GearScore,
             PremiumTime = info.PremiumTime,
+            LastOnlineTime = info.LastOnlineTime,
             MapId = info.MapId,
             Channel = info.Channel,
-            Health = new HealthInfo {
+            Health = new HealthUpdate {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             },
-            Home = new HomeInfo {
+            Home = new HomeUpdate {
                 Name = info.HomeName,
                 MapId = info.PlotMapId,
                 PlotNumber = info.PlotNumber,
@@ -45,11 +45,12 @@ public partial class WorldService {
                     Seconds = info.PlotExpiryTime,
                 },
             },
-            Trophy = new TrophyInfo {
+            Trophy = new TrophyUpdate {
                 Combat = info.AchievementInfo.Combat,
                 Adventure = info.AchievementInfo.Adventure,
                 Lifestyle = info.AchievementInfo.Lifestyle,
             },
+            Clubs = { info.ClubIds.Select(id => new ClubUpdate { Id = id }) },
         });
     }
 
@@ -67,14 +68,25 @@ public partial class WorldService {
     }
 
     public override Task<MailNotificationResponse> MailNotification(MailNotificationRequest request, ServerCallContext context) {
+        if (request.CharacterId <= 0 && request.AccountId <= 0) {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "AccountId and CharacterId not specified"));
+        }
+
         if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info)) {
-            return Task.FromResult(new MailNotificationResponse());
+            info = playerLookup.TryGetByAccountId(request.AccountId);
+            if (info == null) {
+                return Task.FromResult(new MailNotificationResponse());
+            }
         }
 
         int channel = info.Channel;
         if (!channelClients.TryGetClient(channel, out ChannelClient? channelClient)) {
             logger.Error("No registry for channel: {Channel}", channel);
             return Task.FromResult(new MailNotificationResponse());
+        }
+
+        if (request.CharacterId <= 0) {
+            request.CharacterId = info.CharacterId;
         }
 
         try {

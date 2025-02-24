@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
+using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -14,13 +15,17 @@ public class PlayerCommand : Command {
     private const string NAME = "player";
     private const string DESCRIPTION = "Player management.";
 
-    public PlayerCommand(GameSession session) : base(NAME, DESCRIPTION) {
+    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(NAME, DESCRIPTION) {
         AddCommand(new LevelCommand(session));
         AddCommand(new PrestigeCommand(session));
         AddCommand(new ExpCommand(session));
         AddCommand(new JobCommand(session));
         AddCommand(new InfoCommand(session));
         AddCommand(new SkillPointCommand(session));
+        AddCommand(new CurrencyCommand(session));
+        AddCommand(new DailyResetCommand(session));
+        AddCommand(new InventoryCommand(session));
+        AddCommand(new TrophyCommand(session, achievementMetadataStorage));
     }
 
     private class LevelCommand : Command {
@@ -219,6 +224,251 @@ public class PlayerCommand : Command {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
+        }
+    }
+
+    private class CurrencyCommand : Command {
+        private readonly GameSession session;
+
+        public CurrencyCommand(GameSession session) : base("currency", "Add currency to player.") {
+            this.session = session;
+
+            var currency = new Argument<string>("currency", "Type of currency to add: meso, meret, valortoken, treva, rue, havifruit, reversecoin, mentortoken, menteetoken, starpoint, mesotoken.");
+            var amount = new Argument<long>("amount", "Amount of currency to add.");
+
+            AddArgument(currency);
+            AddArgument(amount);
+            this.SetHandler<InvocationContext, string, long>(Handle, currency, amount);
+        }
+
+        private void Handle(InvocationContext ctx, string currency, long amount) {
+            try {
+                switch (currency.ToLower()) {
+                    // Handling meso and meret separately because they are not in the CurrencyType enum.
+                    case "meso":
+                        session.Currency.Meso += amount;
+                        break;
+                    case "meret":
+                        session.Currency.Meret += amount;
+                        break;
+                    case "gamemeret":
+                        session.Currency.GameMeret += amount;
+                        break;
+                    default:
+                        if (!Enum.TryParse(currency, true, out CurrencyType currencyType)) {
+                            ctx.Console.Error.WriteLine($"Failed to parse currency type: {currency}");
+                            ctx.ExitCode = 1;
+                            return;
+                        }
+                        session.Currency[currencyType] += amount;
+                        break;
+                }
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
+        }
+    }
+
+    private class DailyResetCommand : Command {
+        private readonly GameSession session;
+
+        public DailyResetCommand(GameSession session) : base("daily-reset", "Force daily reset for this player.") {
+            this.session = session;
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            session.DailyReset();
+        }
+    }
+
+    private class InventoryCommand : Command {
+        private readonly GameSession session;
+
+        public InventoryCommand(GameSession session) : base("inventory", "Manage player inventory.") {
+            this.session = session;
+
+            AddCommand(new ClearInventoryCommand(session));
+        }
+
+        private class ClearInventoryCommand : Command {
+            private readonly GameSession session;
+
+            public ClearInventoryCommand(GameSession session) : base("clear", "Clear player inventory.") {
+                this.session = session;
+
+                var invTab = new Argument<string>("tab", $"Inventory tab to clear. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+                AddArgument(invTab);
+                this.SetHandler<InvocationContext, string>(Handle, invTab);
+            }
+
+            private void Handle(InvocationContext ctx, string tab) {
+                if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                    ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                session.Item.Inventory.Clear(inventoryType);
+                ctx.Console.Out.WriteLine($"Cleared {inventoryType} inventory.");
+                ctx.ExitCode = 0;
+            }
+        }
+    }
+
+    private class TrophyCommand : Command {
+        private readonly GameSession session;
+        private readonly AchievementMetadataStorage achievementMetadataStorage;
+
+        public TrophyCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage)
+            : base("trophy", "Add trophy to player.") {
+            this.session = session;
+            this.achievementMetadataStorage = achievementMetadataStorage;
+
+            var trophyId = new Argument<string>("id", "ID of the trophy to add to the player. Use 'all' to unlock all trophies.");
+            var gradeOption = new Option<short>([
+                "--grade",
+                "-g",
+            ], () => 0, "Grade of the trophy to claim. Defaults to the maximum grade available.");
+
+            AddArgument(trophyId);
+            AddOption(gradeOption);
+            this.SetHandler<InvocationContext, string, short>(Handle, trophyId, gradeOption);
+        }
+
+        private void Handle(InvocationContext ctx, string trophyId, short grade) {
+            try {
+                if (trophyId.Equals("all", StringComparison.CurrentCultureIgnoreCase)) {
+                    UnlockAllTrophies(ctx);
+                    return;
+                }
+
+                if (!int.TryParse(trophyId, out int trophyIdInt)) {
+                    ctx.Console.Error.WriteLine($"Invalid trophy ID: {trophyId}. Use a valid ID or 'all'.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                UnlockSingleTrophy(ctx, trophyIdInt, grade);
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to process trophy command: {ex.Message}");
+                ctx.ExitCode = 1;
+            }
+        }
+
+        private void UnlockAllTrophies(InvocationContext ctx) {
+            try {
+                ICollection<AchievementMetadata> achievementMetadataCollection = achievementMetadataStorage.GetAll();
+                foreach (AchievementMetadata metadata in achievementMetadataCollection) {
+                    int trophyId = metadata.Id;
+                    int maxGrade = metadata.Grades.Keys.Max();
+
+                    UnlockTrophy(trophyId, metadata, maxGrade);
+                }
+
+                ctx.Console.Out.WriteLine("All trophies have been successfully unlocked to their maximum grades.");
+                ctx.ExitCode = 0;
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to unlock all trophies: {ex.Message}");
+                ctx.ExitCode = 1;
+            }
+        }
+
+        private void UnlockSingleTrophy(InvocationContext ctx, int trophyId, short grade) {
+            try {
+                if (!achievementMetadataStorage.TryGet(trophyId, out AchievementMetadata? achievementMetadata)) {
+                    ctx.Console.Error.WriteLine($"Trophy ID {trophyId} is invalid or does not exist.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                int maxGrade = achievementMetadata.Grades.Keys.Max();
+                if (grade == 0) {
+                    grade = (short) maxGrade;
+                }
+
+                if (grade < 1 || grade > maxGrade) {
+                    ctx.Console.Error.WriteLine($"Invalid grade {grade} for Trophy ID {trophyId}. Available grades are between 1 and {maxGrade}.");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                UnlockTrophy(trophyId, achievementMetadata, maxGrade);
+                ctx.ExitCode = 0;
+            } catch (Exception ex) {
+                ctx.Console.Error.WriteLine($"Failed to unlock trophy ID {trophyId} with grade {grade}: {ex.Message}");
+                ctx.ExitCode = 1;
+            }
+        }
+
+        private void UnlockTrophy(int trophyId, AchievementMetadata achievementMetadata, int maxGrade) {
+            ConditionMetadata conditionMetadata = achievementMetadata.Grades[maxGrade].Condition;
+
+            long targetValue = conditionMetadata.Value;
+            long remainingProgress = targetValue;
+
+            if (session.Achievement.TryGetAchievement(trophyId, out Achievement? achievement)) {
+                remainingProgress = Math.Max(0, targetValue - achievement.Counter);
+            }
+
+            ConditionType conditionType = conditionMetadata.Type;
+
+            if (conditionMetadata.Codes?.Integers is not null) {
+                UpdateAchievementWithCodes(conditionMetadata.Codes.Integers, conditionMetadata.Target, remainingProgress, conditionType);
+            } else if (conditionMetadata.Codes?.Strings is not null) {
+                UpdateAchievementWithCodes(conditionMetadata.Codes.Strings, conditionMetadata.Target, remainingProgress, conditionType);
+            } else if (conditionMetadata.Codes?.Range is not null) {
+                UpdateAchievementWithCode(conditionMetadata.Codes.Range.Value.Min, conditionMetadata.Target, remainingProgress, conditionType);
+            } else {
+                UpdateAchievementWithoutCodes(conditionMetadata.Target, remainingProgress, conditionType);
+            }
+        }
+
+        private void UpdateAchievementWithCodes<T>(IEnumerable<T> codes, ConditionMetadata.Parameters? target, long remainingProgress, ConditionType conditionType) where T : notnull {
+            foreach (T code in codes) {
+                if (target?.Integers is not null) {
+                    foreach (int targetValue in target.Integers) {
+                        UpdateAchievementWithCode(code, targetValue, remainingProgress, conditionType);
+                    }
+                } else if (target?.Strings is not null) {
+                    foreach (string targetValue in target.Strings) {
+                        UpdateAchievementWithCode(code, targetValue, remainingProgress, conditionType);
+                    }
+                } else if (target?.Range is not null) {
+                    UpdateAchievementWithCode(code, target.Range.Value.Min, remainingProgress, conditionType);
+                } else {
+                    UpdateAchievementWithCode(code, null, remainingProgress, conditionType);
+                }
+            }
+        }
+
+        private void UpdateAchievementWithoutCodes(ConditionMetadata.Parameters? target, long remainingProgress, ConditionType conditionType) {
+            if (target?.Integers is not null) {
+                foreach (int targetValue in target.Integers) {
+                    session.Achievement.Update(conditionType, count: remainingProgress, targetLong: targetValue);
+                }
+            } else if (target?.Strings is not null) {
+                foreach (string targetValue in target.Strings) {
+                    session.Achievement.Update(conditionType, count: remainingProgress, targetString: targetValue);
+                }
+            } else if (target?.Range is not null) {
+                session.Achievement.Update(conditionType, count: remainingProgress, targetLong: target.Range.Value.Min);
+            } else {
+                session.Achievement.Update(conditionType, count: remainingProgress);
+            }
+        }
+
+        private void UpdateAchievementWithCode(object? code, object? targetValue, long remainingProgress, ConditionType conditionType) {
+            long codeLong = code switch {
+                long l => l,
+                int i => i,
+                _ => 0,
+            };
+
+            session.Achievement.Update(conditionType, count: remainingProgress, codeLong: codeLong, codeString: code as string ?? "", targetLong: targetValue as int? ?? 0, targetString: targetValue as string ?? "");
         }
     }
 }

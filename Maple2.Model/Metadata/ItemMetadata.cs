@@ -18,7 +18,8 @@ public record ItemMetadata(
     ItemMetadataAdditionalEffect[] AdditionalEffects,
     ItemMetadataOption? Option,
     ItemMetadataMusic? Music,
-    ItemMetadataHousing? Housing) : ISearchResult;
+    ItemMetadataHousing? Housing,
+    ItemMetadataInstall? Install) : ISearchResult;
 
 public record ItemMetadataLife(
     long ExpirationDuration,
@@ -88,11 +89,11 @@ public record ItemMetadataAdditionalEffect(
 
 public record ItemMetadataOption(
     int StaticId,
-    int StaticType,
+    ItemOptionMakeType StaticType,
     int RandomId,
-    int RandomType,
+    ItemOptionMakeType ItemOptionType,
     int ConstantId,
-    int ConstantType,
+    ItemOptionMakeType ConstantType,
     int LevelFactor,
     int PickId);
 
@@ -108,7 +109,16 @@ public record ItemMetadataMusic(
 public record ItemMetadataHousing(
     int TrophyId,
     int TrophyLevel,
-    int InteriorLevel);
+    int InteriorLevel,
+    HousingCategory HousingCategory,
+    bool IsNotAllowedInBlueprint
+);
+
+public record ItemMetadataInstall(
+    bool IsSolidCube,
+    int InteractId,
+    MapAttribute MapAttribute
+);
 
 public record DefaultHairMetadata(
     Vector3 BackPosition = default,

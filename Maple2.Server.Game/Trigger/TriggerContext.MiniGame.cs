@@ -1,4 +1,5 @@
 ﻿
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
@@ -22,7 +23,26 @@ public partial class TriggerContext {
 
     public void UnsetMiniGameAreaForHack() { }
 
-    public void UseState(int id, bool randomize) { }
+    public void UseState(int id, bool randomize) {
+        if (!Field.States.TryGetValue(id, out List<object>? states)) {
+            return;
+        }
+
+        if (randomize) {
+            // randomize order
+            states = states.OrderBy(_ => Random.Shared.Next()).ToList();
+        }
+
+        // get first state and remove from list
+        object state = states.First();
+        states.RemoveAt(0);
+        Field.States[id] = states;
+
+        TriggerState? triggerState = CreateState(state);
+
+        // They only have OnEnter() method
+        triggerState?.OnEnter();
+    }
 
     #region CathyMart
     public void AddEffectNif(int spawnPointId, string nifPath, bool isOutline, float scale, int rotateZ) { }

@@ -1,5 +1,7 @@
 ﻿using System;
 using Maple2.Database.Context;
+using Maple2.Model.Enum;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Storage;
@@ -14,6 +16,14 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<UserStatTable> userStatTable;
     private readonly Lazy<IndividualDropItemTable> individualDropItemTable;
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
+    private readonly Lazy<TimeEventTable> timeEventTable;
+    private readonly Lazy<GameEventTable> gameEventTable;
+    private readonly Lazy<OxQuizTable> oxQuizTable;
+    private readonly Lazy<ItemMergeTable> itemMergeTable;
+    private readonly Lazy<ShopTable> shopTable;
+    private readonly Lazy<ShopItemTable> shopItemTable;
+    private readonly Lazy<BeautyShopTable> beautyShopTable;
+    private readonly Lazy<MeretMarketTable> meretMarketTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -24,6 +34,14 @@ public class ServerTableMetadataStorage {
     public UserStatTable UserStatTable => userStatTable.Value;
     public IndividualDropItemTable IndividualDropItemTable => individualDropItemTable.Value;
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
+    public TimeEventTable TimeEventTable => timeEventTable.Value;
+    public GameEventTable GameEventTable => gameEventTable.Value;
+    public OxQuizTable OxQuizTable => oxQuizTable.Value;
+    public ItemMergeTable ItemMergeTable => itemMergeTable.Value;
+    public ShopTable ShopTable => shopTable.Value;
+    public ShopItemTable ShopItemTable => shopItemTable.Value;
+    public BeautyShopTable BeautyShopTable => beautyShopTable.Value;
+    public MeretMarketTable MeretMarketTable => meretMarketTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -35,6 +53,24 @@ public class ServerTableMetadataStorage {
         userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
         individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
+        timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
+        gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
+        oxQuizTable = Retrieve<OxQuizTable>(context, "oxQuiz.xml");
+        itemMergeTable = Retrieve<ItemMergeTable>(context, "itemMergeOptionBase.xml");
+        shopTable = Retrieve<ShopTable>(context, "shop_game_info.xml");
+        shopItemTable = Retrieve<ShopItemTable>(context, "shop_game.xml");
+        beautyShopTable = Retrieve<BeautyShopTable>(context, "shop_beauty.xml");
+        meretMarketTable = Retrieve<MeretMarketTable>(context, "shop_merat_custom.xml");
+    }
+
+    public IEnumerable<GameEvent> GetGameEvents() {
+        foreach ((int id, GameEventMetadata gameEvent) in GameEventTable.Entries) {
+            if (gameEvent.EndTime < DateTime.Now) {
+                continue;
+            }
+
+            yield return new GameEvent(gameEvent);
+        }
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : ServerTable {

@@ -137,7 +137,7 @@ public class ConfigManager {
             }
         }
 
-        foreach ((int skillId, SkillInfo.Skill skill) in skills) {
+        foreach ((int skillId, SkillInfo.Skill skill) in skills.Where(skill => skill.Value.Id > 10000000)) {
             if (hotBars[activeHotBar].FindQuickSlotIndex(skillId) == -1) {
                 hotBars[activeHotBar].MoveQuickSlot(-1, new QuickSlot(skillId), false);
             }
@@ -399,13 +399,13 @@ public class ConfigManager {
             case BasicAttribute.Dexterity:
             case BasicAttribute.Intelligence:
             case BasicAttribute.Luck:
-                session.Player.Stats[type].AddTotal(1 * points);
+                session.Player.Stats.Values[type].AddTotal(1 * points);
                 break;
             case BasicAttribute.Health:
-                session.Player.Stats[BasicAttribute.Health].AddTotal(10 * points);
+                session.Player.Stats.Values[BasicAttribute.Health].AddTotal(10 * points);
                 break;
             case BasicAttribute.CriticalRate:
-                session.Player.Stats[BasicAttribute.CriticalRate].AddTotal(3 * points);
+                session.Player.Stats.Values[BasicAttribute.CriticalRate].AddTotal(3 * points);
                 break;
         }
 

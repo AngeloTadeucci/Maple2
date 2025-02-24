@@ -36,9 +36,11 @@ public record SkillMetadataProperty(
     //bool DisableWater, // 10500061,10500065,10500190 (Sharp Eyes)
     //bool HoldAttack, // 10700171,10700252
     int SkillGroup,
-    short MaxLevel);
+    short MaxLevel,
+    string Emotion);
 
 public record SkillMetadataState(
+    bool InBattle,
     int SuperArmor); // 0, 1, 3
 
 public record SkillMetadataLevel(

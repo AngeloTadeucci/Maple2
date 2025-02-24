@@ -17,6 +17,7 @@ public partial class GameSession {
     public readonly (long Uid, int Amount)[] DismantleStaging = new (long, int)[DISMANTLE_MAX_STAGED_ITEMS];
 
     public Item? StagedUgcItem = null;
+    public GuildPoster? StagedGuildPoster = null;
 
     public Item? StagedInstrumentItem = null;
     public Item? StagedScoreItem = null;

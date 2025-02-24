@@ -1,11 +1,12 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 
 namespace Maple2.Server.Game.Scripting.Trigger;
 
 public interface ITriggerContext {
     // Actions
     public void AddBalloonTalk(int spawnId, string msg, int duration, int delayTick, int npcId);
-    public void AddBuff(int[] boxIds, int skillId, int level, bool isPlayer, bool isSkillSet, string feature);
+    public void AddBuff(int[] boxIds, int skillId, int level, bool ignorePlayer, bool isSkillSet, string feature);
     public void AddCinematicTalk(int npcId, string illustId, string msg, int duration, Align align, int delayTick);
     public void AddEffectNif(int spawnId, string nifPath, bool isOutline, float scale, int rotateZ);
     public void AddUserValue(string key, int value);
@@ -109,7 +110,7 @@ public interface ITriggerContext {
     public void PlaySystemSoundInBox(string sound, int[] boxIds);
     public void RandomAdditionalEffect(string target, int boxId, int spawnId, int targetCount, int tick, int waitTick, string targetEffect, int additionalEffectId);
     public void RemoveBalloonTalk(int spawnId);
-    public void RemoveBuff(int boxId, int skillId, bool isPlayer);
+    public void RemoveBuff(int boxId, int skillId, bool ignorePlayer);
     public void RemoveCinematicTalk();
     public void RemoveEffectNif(int spawnId);
     public void ResetCamera(float interpolationTime);
@@ -132,12 +133,14 @@ public interface ITriggerContext {
     public void SetDialogue(int type, int spawnId, string script, int time, int arg5, Align align);
     public void SetDirectionalLight(Vector3 diffuseColor, Vector3 specularColor);
     public void SetEffect(int[] triggerIds, bool visible, int startDelay, int interval);
-    public void SetEventUi(int type, string arg2, string arg3, string arg4);
+    public void SetEventUiRound(int[] rounds, int arg3, int vOffset);
+    public void SetEventUiScript(BannerType type, string script, int duration, string[] boxIds);
+    public void SetEventUiCountdown(string script, int[] roundCountdown, string[] boxIds);
     public void SetGravity(float gravity);
     public void SetInteractObject(int[] triggerIds, int state, bool arg4, bool arg3);
     public void SetLadder(int[] triggerIds, bool visible, bool enable, int fade);
     public void SetLocalCamera(int cameraId, bool enable);
-    public void SetMesh(int[] triggerIds, bool visible, int startDelay, int interval, float fade, string desc);
+    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, float fade, string desc);
     public void SetMeshAnimation(int[] triggerIds, bool visible, int startDelay, int interval);
     public void SetMiniGameAreaForHack(int boxId);
     public void SetNpcDuelHpBar(bool isOpen, int spawnId, int durationTick, int npcHpStep);
@@ -145,7 +148,7 @@ public interface ITriggerContext {
     public void SetNpcEmotionSequence(int spawnId, string sequenceName, int durationTick);
     public void SetNpcRotation(int spawnId, float rotation);
     public void SetOnetimeEffect(int id, bool enable, string path);
-    public void SetPcEmotionLoop(string sequenceName, float duration, bool arg3);
+    public void SetPcEmotionLoop(string sequenceName, float duration, bool loop);
     public void SetPcEmotionSequence(string[] sequenceNames);
     public void SetPcRotation(Vector3 rotation);
     public void SetPhotoStudio(bool isEnable);
@@ -159,9 +162,9 @@ public interface ITriggerContext {
     public void SetSkill(int[] triggerIds, bool enable);
     public void SetSkip(dynamic state);
     public void SetSound(int triggerId, bool enable);
-    public void SetState(int id, dynamic[] states, bool randomize);
+    public void SetState(int id, object[] states, bool randomize);
     public void SetTimeScale(bool enable, float startScale, float endScale, float duration, int interpolator);
-    public void SetTimer(string timerId, int seconds, int startDelay, int interval, int vOffset, string type, string desc);
+    public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc);
     public void SetUserValue(int triggerId, string key, int value);
     public void SetUserValueFromDungeonRewardCount(string key, int dungeonRewardId);
     public void SetUserValueFromGuildVsGameScore(int teamId, string key);

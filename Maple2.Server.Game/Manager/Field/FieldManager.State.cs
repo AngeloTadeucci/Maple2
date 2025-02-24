@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using DotRecast.Detour.Crowd;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PathEngine;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
@@ -29,7 +29,9 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<string, FieldBreakable> fieldBreakables = new();
     private readonly ConcurrentDictionary<string, FieldLiftable> fieldLiftables = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldInteracts = new();
+    private readonly ConcurrentDictionary<string, FieldFunctionInteract> fieldFunctionInteracts = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldAdBalloons = new();
+    private readonly ConcurrentDictionary<int, FieldInstrument> fieldInstruments = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
@@ -40,8 +42,13 @@ public partial class FieldManager {
 
     public RoomTimer? RoomTimer { get; private set; }
 
+
     #region Helpers
     public ICollection<FieldNpc> EnumerateNpcs() => Npcs.Values.Concat(Mobs.Values).ToList();
+    public IReadOnlyDictionary<int, FieldPlayer> GetPlayers() {
+        return Players;
+    }
+    public ICollection<FieldPortal> GetPortals() => fieldPortals.Values;
     #endregion
 
     #region Spawn
@@ -51,14 +58,19 @@ public partial class FieldManager {
         player.Character.InstanceMapId = MapId;
         player.Character.InstanceId = InstanceId;
 
-        var fieldPlayer = new FieldPlayer(session, player, NpcMetadata) {
+        var fieldPlayer = new FieldPlayer(session, player) {
             Position = position,
             Rotation = rotation,
         };
+        session.Stats.ResetActor(fieldPlayer);
+        session.Buffs.ResetActor(fieldPlayer);
 
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {
             fieldPlayer.Position = portal.Position.Offset(portal.FrontOffset, portal.Rotation);
+            if (portal.RandomRadius > 0) {
+                fieldPlayer.Position += new Vector3(Random.Shared.Next(-portal.RandomRadius, portal.RandomRadius), Random.Shared.Next(-portal.RandomRadius, portal.RandomRadius), 0);
+            }
             fieldPlayer.Rotation = portal.Rotation;
         }
 
@@ -88,14 +100,11 @@ public partial class FieldManager {
     }
 
     public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
-        Agent? agent = Navigation.AddAgent(npc, position);
+        DtCrowdAgent agent = Navigation.AddAgent(npc, position);
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = position;
-        if (agent is not null) {
-            spawnPosition = Navigation.FromPosition(agent.getPosition());
-        }
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), spawnPointNpc?.PatrolData) {
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,
@@ -121,20 +130,16 @@ public partial class FieldManager {
             return null;
         }
 
-        Agent? agent = Navigation.AddAgent(npc, position);
-        if (agent == null) {
-            return null;
-        }
+        DtCrowdAgent agent = Navigation.AddAgent(npc, position);
 
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
-        Vector3 spawnPosition = Navigation.FromPosition(agent.getPosition());
-        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, player) {
+        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, Constant.PetFieldAiPath, player) {
             Owner = owner,
-            Position = Navigation.FromPosition(agent.getPosition()),
+            Position = position,
             Rotation = rotation,
-            Origin = owner?.Position ?? spawnPosition,
+            Origin = owner?.Position ?? position,
         };
         Pets[fieldPet.ObjectId] = fieldPet;
 
@@ -158,6 +163,36 @@ public partial class FieldManager {
             InstanceId = instanceId,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
+
+        return fieldPortal;
+    }
+
+    public FieldPortal? SpawnCubePortal(PlotCube plotCube) {
+        int targetMapId = MapId;
+        long targetHomeAccountId = 0;
+        CubePortalSettings? cubePortalSettings = plotCube.Interact?.PortalSettings;
+        if (cubePortalSettings is null) {
+            return null;
+        }
+
+        if (!string.IsNullOrEmpty(cubePortalSettings.DestinationTarget)) {
+            switch (cubePortalSettings.Destination) {
+                case CubePortalDestination.PortalInHome:
+                    targetMapId = Constant.DefaultHomeMapId;
+                    break;
+                case CubePortalDestination.SelectedMap:
+                    targetMapId = int.Parse(cubePortalSettings.DestinationTarget);
+                    break;
+                case CubePortalDestination.FriendHome:
+                    targetMapId = Constant.DefaultHomeMapId;
+                    targetHomeAccountId = long.Parse(cubePortalSettings.DestinationTarget);
+                    break;
+            }
+        }
+        var portal = new Portal(NextLocalId(), targetMapId, -1, PortalType.InHome, cubePortalSettings.Method, plotCube.Position, new Vector3(0, 0, plotCube.Rotation), new Vector3(200, 200, 250), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        FieldPortal fieldPortal = SpawnPortal(portal);
+        fieldPortal.HomeId = targetHomeAccountId;
+        cubePortalSettings.PortalObjectId = fieldPortal.ObjectId;
 
         return fieldPortal;
     }
@@ -424,13 +459,14 @@ public partial class FieldManager {
         int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
         MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
         FieldManager? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
+        bonusMap?.Init();
         Console.WriteLine($"Creating bonus map {bonusMapMetadata.Id} at {spawn.Position} in {delay} ms.");
         if (bonusMap == null) {
             return;
         }
         bonusMap.SetRoomTimer(RoomTimerType.Clock, 90000);
         var portal = new Portal(NextLocalId(), bonusMapMetadata.Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
-            new Vector3(200, 200, 250), 0, true, false, true);
+            new Vector3(200, 200, 250), 0, 0, true, false, true);
         FieldPortal fieldPortal = SpawnPortal(portal, bonusMap.InstanceId);
         fieldPortal.Model = Metadata.Property.Continent switch {
             Continent.VictoriaIsland => "Eff_event_portal_A01",
@@ -470,11 +506,13 @@ public partial class FieldManager {
             Rotation = owner.Rotation,
         };
 
+        fieldInstruments[fieldInstrument.ObjectId] = fieldInstrument;
+
         return fieldInstrument;
     }
 
     public FieldPortal SpawnEventPortal(FieldPlayer player, int fieldId, int portalDurationTick, string password) {
-        var portal = new Portal(NextLocalId(), fieldId, -1, PortalType.Event, PortalActionType.Interact, player.Position, player.Rotation, new Vector3(200, 200, 250), 0, true, false, true);
+        var portal = new Portal(NextLocalId(), fieldId, -1, PortalType.Event, PortalActionType.Interact, player.Position, player.Rotation, new Vector3(200, 200, 250), 0, 0, true, false, true);
         FieldPortal fieldPortal = SpawnPortal(portal);
         fieldPortal.Model = "Eff_Com_Portal_E";
         fieldPortal.Password = password;
@@ -484,6 +522,37 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
+    public FieldFunctionInteract? AddFieldFunctionInteract(PlotCube plotCube) {
+        if (plotCube.Interact is null) {
+            logger.Warning("No Interact found for PlotCube: {PlotCube}", plotCube);
+            return null;
+        }
+
+        if (!ItemMetadata.TryGet(plotCube.ItemId, out ItemMetadata? item) || item.Install is null) {
+            return null;
+        }
+
+        if (!FunctionCubeMetadata.TryGet(item.Install.InteractId, out FunctionCubeMetadata? metadata)) {
+            return null;
+        }
+
+        var fieldInteract = new FieldFunctionInteract(this, NextLocalId(), metadata, plotCube) {
+            Position = plotCube.Position,
+            Rotation = new Vector3(0, 0, plotCube.Rotation),
+        };
+
+        fieldFunctionInteracts[plotCube.Interact.Id] = fieldInteract;
+
+        return fieldInteract;
+    }
+
+    public bool RemoveFieldFunctionInteract(string entityId) {
+        return fieldFunctionInteracts.TryRemove(entityId, out FieldFunctionInteract? _);
+    }
+
+    public FieldFunctionInteract? TryGetFieldFunctionInteract(string entityId) {
+        return fieldFunctionInteracts.TryGetValue(entityId, out FieldFunctionInteract? fieldFunctionInteract) ? fieldFunctionInteract : null;
+    }
     #endregion
 
     #region Remove
@@ -529,12 +598,17 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveInteract(string entityId) {
-        if (fieldInteracts.TryRemove(entityId, out FieldInteract? fieldInteract)) {
-            return false;
+    public bool RemoveInteract(IInteractObject interactObject) {
+        switch (interactObject) {
+            case InteractBillBoardObject billboard:
+                fieldAdBalloons.TryRemove(billboard.EntityId, out _);
+                break;
+            default:
+                fieldInteracts.TryRemove(interactObject.EntityId, out _);
+                break;
         }
 
-        Broadcast(InteractObjectPacket.Remove(entityId));
+        Broadcast(InteractObjectPacket.Remove(interactObject.EntityId));
         return true;
     }
 
@@ -572,6 +646,15 @@ public partial class FieldManager {
         Broadcast(PortalPacket.Remove(portal.Value.Id));
         return true;
     }
+
+    public bool RemoveInstrument(int objectId) {
+        if (!fieldInstruments.TryRemove(objectId, out FieldInstrument? instrument)) {
+            return false;
+        }
+
+        Broadcast(InstrumentPacket.StopScore(instrument));
+        return true;
+    }
     #endregion
 
     #region Events
@@ -584,6 +667,31 @@ public partial class FieldManager {
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
         }
+        foreach (FieldInstrument fieldInstrument in fieldInstruments.Values) {
+            if (fieldInstrument.Score != null) {
+                added.Session.Send(InstrumentPacket.StartScore(fieldInstrument, fieldInstrument.Score));
+            }
+        }
+        if (MapId is Constant.DefaultHomeMapId) {
+            IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.ItemType.IsInteractFurnishing && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
+            IEnumerable<PlotCube> lifeSkillsCubes = fieldFunctionInteracts.Values
+                .Select(x => x.Cube);
+
+            List<PlotCube> result = [];
+            result.AddRange(interactCubes);
+            result.AddRange(lifeSkillsCubes);
+            added.Session.Send(FunctionCubePacket.SendCubes(result));
+        }
+
+        foreach (Plot plot in Plots.Values) {
+            foreach (PlotCube plotCube in plot.Cubes.Values) {
+                if (plotCube.Interact?.NoticeSettings is not null) {
+                    added.Session.Send(HomeActionPacket.SendCubeNoticeSettings(plotCube));
+                }
+            }
+        }
+
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             added.Session.Send(FieldPacket.AddPlayer(fieldPlayer.Session));
             if (fieldPlayer.Session.GuideObject != null) {

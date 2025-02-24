@@ -233,10 +233,10 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetMesh(int[] triggerIds, bool visible, int arg3, int delay, float scale, string desc) {
-        DebugLog("[SetMesh] triggerIds:{Ids}, visible:{Visible}, arg3:{Arg3}, delay:{Delay}, scale:{Scale}",
-            string.Join(", ", triggerIds), visible, arg3, delay, scale);
-        UpdateMesh(triggerIds, visible, arg3, delay, scale);
+    public void SetMesh(int[] triggerIds, bool visible, int delay, int interval, float fade, string desc) {
+        DebugLog("[SetMesh] triggerIds:{Ids}, visible:{Visible}, delay:{Delay}, interval:{Interval}, scale:{Scale}",
+            string.Join(", ", triggerIds), visible, delay, interval, fade);
+        UpdateMesh(triggerIds, visible, delay, interval, (int) fade);
     }
 
     // examples: arg3=200, arg4=3
@@ -281,7 +281,8 @@ public partial class TriggerContext {
         UpdateMesh(new ArraySegment<int>(triggerIds, 0, count), visible, arg4, delay);
     }
 
-    private void UpdateMesh(ArraySegment<int> triggerIds, bool visible, int delay, int interval, float fade = 0) {
+    private void UpdateMesh(ArraySegment<int> triggerIds, bool visible, int delay, int interval, int fade = 0) {
+        int intervalTotal = 0;
         foreach (int triggerId in triggerIds) {
             if (!Objects.Meshes.TryGetValue(triggerId, out TriggerObjectMesh? mesh)) {
                 logger.Warning("Invalid mesh: {Id}", triggerId);
@@ -292,7 +293,8 @@ public partial class TriggerContext {
             }
 
             if (interval > 0) {
-                Events.Schedule(() => UpdateSetMesh(mesh), interval);
+                intervalTotal += interval;
+                Events.Schedule(() => UpdateSetMesh(mesh), intervalTotal + delay);
             } else {
                 UpdateSetMesh(mesh);
             }
@@ -300,7 +302,7 @@ public partial class TriggerContext {
 
         void UpdateSetMesh(TriggerObjectMesh mesh) {
             mesh.Visible = visible;
-            mesh.Fade = (int) fade;
+            mesh.Fade = fade;
             Broadcast(TriggerPacket.Update(mesh));
             // TODO: Should Fade be reset after sending packet?
         }
@@ -348,28 +350,28 @@ public partial class TriggerContext {
         Field.Broadcast(BreakablePacket.Update(updated));
     }
 
-    public void AddBuff(int[] boxIds, int buffId, int level, bool isPlayer, bool isSkillSet, string feature) {
-        DebugLog("[AddBuff] boxIds:{Ids}, buffId:{BuffId}, level:{Level}, isPlayer:{IsPlayer}, isSkillSet:{Arg5}, feature:{Feature}",
-            string.Join(", ", boxIds), buffId, level, isPlayer, isSkillSet, feature);
+    public void AddBuff(int[] boxIds, int buffId, int level, bool ignorePlayer, bool isSkillSet, string feature) {
+        DebugLog("[AddBuff] boxIds:{Ids}, buffId:{BuffId}, level:{Level}, ignorePlayer:{ignorePlayer}, isSkillSet:{Arg5}, feature:{Feature}",
+            string.Join(", ", boxIds), buffId, level, ignorePlayer, isSkillSet, feature);
         if (isSkillSet) {
             logger.Error("[AddBuff] SkillSets not implemented...");
             return;
         }
 
-        if (isPlayer) {
+        if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxIds)) {
-                player.AddBuff(Field.FieldActor, player, buffId, (short) level);
+                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxIds)) {
-                monster.AddBuff(Field.FieldActor, monster, buffId, (short) level);
+                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level);
             }
         }
     }
 
-    public void RemoveBuff(int boxId, int buffId, bool isPlayer) {
-        ErrorLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, isPlayer:{IsPlayer}", boxId, buffId, isPlayer);
-        if (isPlayer) {
+    public void RemoveBuff(int boxId, int buffId, bool ignorePlayer) {
+        ErrorLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
+        if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxId)) {
                 player.Buffs.Remove(buffId);
             }
@@ -443,10 +445,10 @@ public partial class TriggerContext {
         ErrorLog("[StartCombineSpawn] groupIds:{Ids}, isStart:{IsStart}", string.Join(", ", groupIds), isStart);
     }
 
-    public void SetTimer(string timerId, int seconds, int startDelay, int interval, int vOffset, string type, string desc) {
+    public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc) {
         DebugLog("[SetTimer] timerId:{Id}, seconds:{Seconds}", timerId, seconds);
-        Field.Timers[timerId] = new TickTimer(seconds * 1000);
-        if (startDelay > 0) {
+        Field.Timers[timerId] = new TickTimer(seconds * 1000, autoRemove, vOffset, display, type);
+        if (display) {
             Broadcast(TriggerPacket.TimerDialog(Field.Timers[timerId]));
         }
     }
@@ -455,7 +457,9 @@ public partial class TriggerContext {
         DebugLog("[ResetTimer] timerId:{Id}", timerId);
         if (Field.Timers.TryGetValue(timerId, out TickTimer? timer)) {
             timer.Reset();
-            Broadcast(TriggerPacket.TimerDialog(timer));
+            if (timer.Display) {
+                Broadcast(TriggerPacket.TimerDialog(timer));
+            }
         }
     }
 

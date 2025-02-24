@@ -40,7 +40,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_guild_Character_LeaderId",
                         column: x => x.LeaderId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -61,7 +61,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_guild-application_Character_ApplicantId",
                         column: x => x.ApplicantId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -84,7 +84,6 @@ namespace Maple2.Server.World.Migrations {
                     WeeklyContribution = table.Column<int>(type: "int", nullable: false),
                     TotalContribution = table.Column<int>(type: "int", nullable: false),
                     DailyDonationCount = table.Column<int>(type: "int", nullable: false),
-                    LoginTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CheckinTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DonationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -95,7 +94,7 @@ namespace Maple2.Server.World.Migrations {
                     table.ForeignKey(
                         name: "FK_guild-member_Character_CharacterId",
                         column: x => x.CharacterId,
-                        principalTable: "Character",
+                        principalTable: "character",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(

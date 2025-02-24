@@ -5,6 +5,9 @@ using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.AttributeFilters;
+using Grpc.Core;
+using Grpc.Net.Client;
+using Maple2.Database.Storage;
 using Maple2.Lua;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
@@ -12,11 +15,13 @@ using Maple2.Server.Core.Network;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game;
 using Maple2.Server.Game.Commands;
+using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Service;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
+using Maple2.Server.World.Service;
 using Maple2.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,11 +32,26 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 // Force Globalization to en-US because we use periods instead of commas for decimals
 CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
+
+AddChannelResponse? response = null;
+try {
+    GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
+    var worldClient = new WorldClient(channel);
+    response = worldClient.AddChannel(new AddChannelRequest {
+        GameIp = Target.GameIp.ToString(),
+        GrpcGameIp = Target.GrpcGameIp
+    });
+
+} catch (RpcException e) {
+    Log.Error(e, "Failed to get port information from World Server. Is World Server running?");
+    return;
+}
 
 IConfigurationRoot configRoot = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -43,7 +63,7 @@ Log.Logger = new LoggerConfiguration()
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options => {
-    options.Listen(new IPEndPoint(IPAddress.Any, Target.GrpcChannelPort), listen => {
+    options.Listen(new IPEndPoint(IPAddress.Any, response.GrpcPort), listen => {
         listen.Protocols = HttpProtocols.Http2;
     });
 });
@@ -52,9 +72,21 @@ builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = Tim
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(dispose: true);
 
+IGraphicsContext debugGraphicsContext = new HeadlessGraphicsContext();
+
 builder.Services.AddGrpc();
 builder.Services.RegisterModule<WorldClientModule>();
-builder.Services.AddSingleton<GameServer>();
+builder.Services.AddSingleton<GameServer>(provider => new GameServer(
+    provider.GetRequiredService<FieldManager.Factory>(),
+    provider.GetRequiredService<PacketRouter<GameSession>>(),
+    provider.GetRequiredService<IComponentContext>(),
+    provider.GetRequiredService<GameStorage>(),
+    provider.GetRequiredService<ItemMetadataStorage>(),
+    provider.GetRequiredService<ServerTableMetadataStorage>(),
+    debugGraphicsContext,
+    response.GamePort,
+    response.GameChannel
+));
 builder.Services.AddHostedService<GameServer>(provider => provider.GetService<GameServer>()!);
 
 builder.Services.AddGrpcHealthChecks();
@@ -79,6 +111,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()
         .SingleInstance();
+    autofac.RegisterType<WorldMapGraphStorage>()
+        .SingleInstance();
+    autofac.RegisterInstance(debugGraphicsContext);
 
     // Database
     autofac.RegisterModule<GameDbModule>();

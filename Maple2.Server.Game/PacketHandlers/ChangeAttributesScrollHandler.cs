@@ -9,7 +9,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
-using static Maple2.Model.Error.ChangeAttributesScrollError;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -57,21 +57,22 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
         lock (session.Item) {
             Item? scroll = session.Item.Inventory.Get(scrollUid, InventoryType.Misc);
             if (scroll == null || scroll.Metadata.Function?.Type != ItemFunction.ItemRemakeScroll) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_invalid_scroll));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_scroll));
                 return;
             }
 
             Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear);
             if (item == null) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_invalid_target_data));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_target_data));
                 return;
             }
             if (item.Stats == null) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_invalid_target_stat));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_target_stat));
                 return;
             }
+
             ChangeAttributesScrollError error = IsCompatibleScroll(item, scroll);
-            if (error != none) {
+            if (error != ChangeAttributesScrollError.none) {
                 session.Send(ChangeAttributesScrollPacket.Error(error));
                 return;
             }
@@ -81,19 +82,19 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
                 ItemStats.Option itemOption = item.Stats[ItemStats.Type.Random];
                 if (isSpecialAttribute) {
                     if (!itemOption.Special.ContainsKey((SpecialAttribute) attribute)) {
-                        session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_impossible_property));
+                        session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_property));
                         return;
                     }
                 } else {
                     if (!itemOption.Basic.ContainsKey((BasicAttribute) attribute)) {
-                        session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_impossible_property));
+                        session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_property));
                         return;
                     }
                 }
 
                 lockItem = ChangeAttributesHandler.GetLockConsumeItem(session, item);
                 if (lockItem == null) {
-                    session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_error_server_fail_lack_lock_consume_item));
+                    session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_error_server_fail_lack_lock_consume_item));
                     return;
                 }
             }
@@ -101,13 +102,23 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
             // Clone the item so we can preview changes without modifying existing item.
             Item changeItem = item.Clone();
             if (changeItem.Stats == null) { // This should be impossible, but check again to make linter happy.
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_invalid_target_stat));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_target_stat));
+                return;
+            }
+
+            if (changeItem.Metadata.Option == null) { // This should be impossible, but check again to make linter happy.
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_item));
+                return;
+            }
+
+            if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(changeItem.Metadata.Option.RandomId, changeItem.Rarity, out ItemOption? itemOptionMetadata)) {
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_item));
                 return;
             }
 
             ItemStats.Option changeOption = changeItem.Stats[ItemStats.Type.Random];
-            if (!ItemStatsCalc.RandomizeValues(changeItem.Type, ref changeOption)) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_server_fail_remake));
+            if (!ItemStatsCalc.RandomizeValues(changeItem, itemOptionMetadata, ref changeOption)) {
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_remake));
                 return;
             }
 
@@ -124,11 +135,11 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
             }
 
             if (!session.Item.Inventory.Consume(scroll.Uid, 1)) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_server_fail_consume_scroll));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_consume_scroll));
                 return;
             }
             if (lockItem != null && !session.Item.Inventory.Consume(lockItem.Uid, 1)) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_error_server_fail_lack_lock_consume_item));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_error_server_fail_lack_lock_consume_item));
                 return;
             }
 
@@ -140,19 +151,19 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
     private static void HandleSelect(GameSession session, IByteReader packet) {
         long itemUid = packet.ReadLong();
         if (session.ChangeAttributesItem == null || session.ChangeAttributesItem.Uid != itemUid) {
-            session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_server_fail_apply_before_option));
+            session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_apply_before_option));
             return;
         }
 
         lock (session.Item) {
             Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear);
             if (item == null) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_invalid_target_data));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_target_data));
                 return;
             }
 
             if (item.Stats == null || session.ChangeAttributesItem.Stats == null) {
-                session.Send(ChangeAttributesScrollPacket.Error(s_itemremake_scroll_error_server_fail_apply_before_option));
+                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_apply_before_option));
                 return;
             }
 
@@ -164,30 +175,30 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
 
     private ChangeAttributesScrollError IsCompatibleScroll(Item item, Item scroll) {
         if (item.Rarity is < Constant.ChangeAttributesMinRarity or > Constant.ChangeAttributesMaxRarity) {
-            return s_itemremake_scroll_error_impossible_rank;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_rank;
         }
         if (!item.Type.IsWeapon && !item.Type.IsArmor && !item.Type.IsAccessory) {
-            return s_itemremake_scroll_error_impossible_slot;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_slot;
         }
         if (item.Metadata.Limit.Level < Constant.ChangeAttributesMinLevel) {
-            return s_itemremake_scroll_error_impossible_level;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_level;
         }
 
         // Validate scroll conditions
         if (!int.TryParse(scroll.Metadata.Function?.Parameters, out int remakeId)) {
-            return s_itemremake_scroll_error_invalid_scroll_data;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_scroll_data;
         }
         if (!TableMetadata.ItemRemakeScrollTable.Entries.TryGetValue(remakeId, out ItemRemakeScrollMetadata? metadata)) {
-            return s_itemremake_scroll_error_invalid_scroll_data;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_invalid_scroll_data;
         }
 
         if (item.Metadata.Limit.Level < metadata.MinLevel || item.Metadata.Limit.Level > metadata.MaxLevel) {
-            return s_itemremake_scroll_error_impossible_item;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_item;
         }
         if (!metadata.Rarities.Contains(item.Rarity) || !metadata.ItemTypes.Contains(item.Type.Type)) {
-            return s_itemremake_scroll_error_impossible_item;
+            return ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_item;
         }
 
-        return none;
+        return ChangeAttributesScrollError.none;
     }
 }

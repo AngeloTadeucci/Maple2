@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maple2.Database.Model;
@@ -49,6 +50,7 @@ internal class Achievement {
     }
 
     public static void Configure(EntityTypeBuilder<Achievement> builder) {
+        builder.ToTable("achievement");
         builder.HasKey(achieve => new { achieve.OwnerId, achieve.Id });
         builder.Property(achieve => achieve.Grades).HasJsonConversion().IsRequired();
     }

@@ -147,66 +147,22 @@ public class InventoryManager {
     public bool Add(Item add, bool notifyNew = false, bool commit = false) {
         lock (session.Item) {
             if (add.IsCurrency()) {
-                switch (add.Id) {
-                    case 90000001:
-                    case 90000002:
-                    case 90000003:
-                        session.Currency.Meso += add.Amount;
-                        break;
-                    case 90000004: // Meret
-                        // case 90000011: // Meret (Secondary)
-                        // case 90000015: // GameMeret (Secondary)
-                        // case 90000016: // EventMeret (Secondary)
-                        // case 90000020: // RedMeret
-                        session.Currency.Meret += add.Amount;
-                        break;
-                    case 90000006: // ValorToken
-                        session.Currency[CurrencyType.ValorToken] += add.Amount;
-                        break;
-                    case 90000008: // ExperienceOrb
-                        session.Exp.AddExp(ExpType.expDrop, additionalExp: add.Amount);
-                        break;
-                    case 90000009: // SpiritOrb
-                        break;
-                    case 90000010: // StaminaOrb
-                        break;
-                    case 90000013: // Rue
-                        session.Currency[CurrencyType.Rue] += add.Amount;
-                        break;
-                    case 90000014: // HaviFruit
-                        session.Currency[CurrencyType.HaviFruit] += add.Amount;
-                        break;
-                    case 90000017: // Treva
-                        session.Currency[CurrencyType.Treva] += add.Amount;
-                        break;
-                    case 90000027: // MesoToken
-                        session.Currency[CurrencyType.MesoToken] += add.Amount;
-                        break;
-                    // case 90000005: // DungeonKey
-                    // case 90000007: // Karma
-                    // case 90000012: // Unknown (BookIcon)
-                    // case 90000018: // ShadowFragment
-                    // case 90000019: // DistinctPaul
-                    case 90000021: // GuildFunds
-                    case 90000022: // ReverseCoin
-                        session.Currency[CurrencyType.ReverseCoin] += add.Amount;
-                        break;
-                    case 90000023: // MentorPoint
-                        session.Currency[CurrencyType.MentorToken] += add.Amount;
-                        break;
-                    case 90000024: // MenteePoint
-                        session.Currency[CurrencyType.MenteeToken] += add.Amount;
-                        break;
-                    case 90000025: // StarPoint
-                        session.Currency[CurrencyType.StarPoint] += add.Amount;
-                        break;
-                        // case 90000026: // Unknown (Blank)
-
-                }
+                AddCurrency(add);
                 session.Item.Inventory.Discard(add);
                 return true;
             }
 
+            if (add.Type.IsMedal) {
+                session.Survival.AddMedal(add);
+                session.Item.Inventory.Discard(add);
+                return true;
+            }
+
+            if (add.Type.IsFurnishing) {
+                session.Item.Furnishing.AddStorage(add);
+                session.Item.Inventory.Discard(add);
+                return true;
+            }
 
             if (!tabs.TryGetValue(add.Inventory, out ItemCollection? items)) {
                 session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));
@@ -244,8 +200,7 @@ public class InventoryManager {
                 add.Transfer?.Bind(session.Player.Value.Character);
             }
 
-            bool stack = !(add.ExpiryTime > 0);
-            IList<(Item, int Added)> result = items.Add(add, stack);
+            IList<(Item, int Added)> result = items.Add(add, stack: true);
             if (result.Count == 0) {
                 session.Send(ItemInventoryPacket.Error(s_err_inventory));
                 return false;
@@ -272,6 +227,62 @@ public class InventoryManager {
             }
 
             return true;
+        }
+    }
+
+    private void AddCurrency(Item add) {
+        switch (add.Id) {
+            case 90000001 or 90000002 or 90000003:
+                session.Currency.Meso += add.Amount;
+                break;
+            // case 90000011: // Meret (Secondary)
+            // case 90000015: // GameMeret (Secondary)
+            // case 90000016: // EventMeret (Secondary)
+            // case 90000020: // RedMeret
+            case 90000004: // Meret
+                session.Currency.Meret += add.Amount;
+                break;
+            case 90000006: // ValorToken
+                session.Currency[CurrencyType.ValorToken] += add.Amount;
+                break;
+            case 90000008: // ExperienceOrb
+                session.Exp.AddExp(ExpType.expDrop, additionalExp: add.Amount);
+                break;
+            case 90000009: // SpiritOrb
+                break;
+            case 90000010: // StaminaOrb
+                break;
+            case 90000013: // Rue
+                session.Currency[CurrencyType.Rue] += add.Amount;
+                break;
+            case 90000014: // HaviFruit
+                session.Currency[CurrencyType.HaviFruit] += add.Amount;
+                break;
+            case 90000017: // Treva
+                session.Currency[CurrencyType.Treva] += add.Amount;
+                break;
+            case 90000027: // MesoToken
+                session.Currency[CurrencyType.MesoToken] += add.Amount;
+                break;
+            // case 90000005: // DungeonKey
+            // case 90000007: // Karma
+            // case 90000012: // Unknown (BookIcon)
+            // case 90000018: // ShadowFragment
+            // case 90000019: // DistinctPaul
+            case 90000021: // GuildFunds
+            case 90000022: // ReverseCoin
+                session.Currency[CurrencyType.ReverseCoin] += add.Amount;
+                break;
+            case 90000023: // MentorPoint
+                session.Currency[CurrencyType.MentorToken] += add.Amount;
+                break;
+            case 90000024: // MenteePoint
+                session.Currency[CurrencyType.MenteeToken] += add.Amount;
+                break;
+            case 90000025: // StarPoint
+                session.Currency[CurrencyType.StarPoint] += add.Amount;
+                break;
+                // case 90000026: // Unknown (Blank)
         }
     }
 
@@ -519,8 +530,35 @@ public class InventoryManager {
             foreach (Item item in items) {
                 if (item.Id != id) continue;
                 if (rarity != -1 && item.Rarity != rarity) continue;
+                if (item.IsExpired()) continue;
 
                 yield return item;
+            }
+        }
+    }
+
+    public IEnumerable<Item> Find(ItemTag itemTag) {
+        lock (session.Item) {
+            foreach ((InventoryType type, ItemCollection items) in tabs) {
+                foreach (Item item in items) {
+                    if (item.IsExpired()) continue;
+                    if (item.Metadata.Property.Tag != itemTag) continue;
+                    yield return item;
+                }
+            }
+        }
+    }
+
+    public void Clear(InventoryType tab) {
+        lock (session.Item) {
+            if (!tabs.TryGetValue(tab, out ItemCollection? items)) {
+                session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));
+                return;
+            }
+
+            foreach (Item item in items) {
+                Remove(item.Uid, out _, item.Amount);
+                Discard(item);
             }
         }
     }

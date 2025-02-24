@@ -13,8 +13,8 @@ public static class Constant {
 
     public const int ServerMaxCharacters = 8;
     public const int CharacterNameLengthMax = 12;
-    public const long MaxMeret = 99999;
-    public const long MaxMeso = 999999999;
+    public const long MaxMeret = long.MaxValue;
+    public const long MaxMeso = long.MaxValue;
     public const long StarPointMax = 999999;
     public const long MesoTokenMax = 100000;
     public const int MaxSkillTabCount = 3;
@@ -36,6 +36,7 @@ public static class Constant {
     public const int HomeNameMaxLength = 16;
     public const int HomeMessageMaxLength = 100;
     public const int HomePasscodeLength = 6;
+    public const int HomeMaxLayoutSlots = 5;
     public const int PerformanceMapId = 2000064; // Queenstown
     public const int BaseStorageCount = 36;
     public const float MesoMarketTaxRate = 0.1f;
@@ -87,9 +88,68 @@ public static class Constant {
     public const long ClientGraceTimeTick = 500; // max time to allow client to go past loop & sequence end
     public const long MaxNpcControlDelay = 500;
     public const float BlackMarketPremiumClubDiscount = 0.2f;
-
+    public const double PetAttackMultiplier = 0.394;
+    public const double AttackDamageFactor = 4; // Unconfirmed
+    public const double CriticalConstant = 5.3;
+    public const double CriticalPercentageConversion = 0.015;
+    public const double MaxCriticalRate = 0.4;
+    public const int MaxClubMembers = 10;
+    public const string PetFieldAiPath = "Pet/AI_DefaultPetTaming.xml";
+    public const string DefaultAiPath = "AI_Default.xml";
+    public const int GuildCoinId = 30000861;
+    public const int GuildCoinRarity = 4;
+    public const int BlueprintId = 35200000;
+    public const int EmpowermentNpc = 11003416;
+    public const int InteriorPortalCubeId = 50400158;
+    public const int PortalEntryId = 50400190;
+    public const int Grade1WeddingCouponItemId = 20303166;
+    public const int Grade2WeddingCouponItemId = 20303167;
+    public const int Grade3WeddingCouponItemId = 20303168;
 
     public const long FurnishingBaseId = 2870000000000000000;
+    public const bool AllowWaterOnGround = false;
+
+    public const int HomeDecorationMaxLevel = 10;
+
+    public const bool EnableRollEverywhere = false;
+    public const bool HideHomeCommands = true;
+
+    #region Field
+    public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
+    public static readonly TimeSpan FieldDisposeLoopInterval = TimeSpan.FromMinutes(1);
+    public static readonly TimeSpan FieldDisposeEmptyTime = TimeSpan.FromMinutes(10);
+    #endregion
+
+    #region Character
+    public static readonly int[] DefaultEmotes = [
+        90200011, // Greet
+        90200004, // Scheme
+        90200024, // Reject
+        90200041, // Sit
+        90200042, // Ledge Sit
+        90200057, // Possessed Fan Dance
+        90200043, // Epiphany
+        90200022, // Bow
+        90200031, // Cry
+        90200005, // Dejected
+        90200006, // Like
+        90200003, // Pout
+        90200092, // High Five
+        90200077, // Catch of the Day
+        90200073, // Make It Rain
+        90200023, // Surprise
+        90200001, // Anger
+        90200019, // Scissors
+        90200020, // Rock
+        90200021, // Paper
+    ];
+    #endregion
+
+    #region Account
+    public static readonly bool AutoRegister = true;
+    public static readonly bool BlockLoginWithMismatchedMachineId = false;
+    public static readonly int DefaultMaxCharacters = 4;
+    #endregion
 
     #endregion
 
@@ -112,14 +172,12 @@ public static class Constant {
     public const float NorthEast = 90;
     public const float NorthWest = 180;
     public const float SouthWest = 270;
-    public const int MapleopolyTicketItemId = 30001203;
-    public const int MapleopolyTicketCostCount = 2;
-    public const int MapleopolyTicketRarity = 1;
     public const short HairSlotCount = 30;
     public const ShopCurrencyType InitialTierExcessRestockCurrency = ShopCurrencyType.Meso;
     public const float UGCShopProfitFee = 0.25f;
     public const int UGCShopProfitDelayDays = 10;
     public const int PartyFinderListingsPageCount = 12;
+    public const int ProposalItemId = 11600482;
     #endregion
 
     #region table/constants.xml
@@ -802,6 +860,7 @@ public static class Constant {
     public const int TooltipLabelMaxWidth = 408;
     public const int ClubNameLengthMin = 2;
     public const int ClubNameLengthMax = 25;
+    public const int ClubMaxCount = 3;
     public const int UgcNameLengthMin = 3;
     public const int UgcNameLengthMax = 25;
     public const int UgcTagLengthMax = 12;
@@ -833,6 +892,8 @@ public static class Constant {
     public const int PaybackMailPeriodDay = 90;
     public const int PaybackMaxRewardMeret = 10000;
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
+    public const int DummyNpcMale = 2040998;
+    public const int DummyNpcFemale = 2040999;
 
     #endregion
 

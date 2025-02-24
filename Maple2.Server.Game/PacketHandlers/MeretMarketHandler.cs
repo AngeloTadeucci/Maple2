@@ -11,6 +11,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -37,11 +38,13 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         RemoveDesigner = 24,
         LoadDesignerItems = 25,
         OpenShop = 27,
+        BlueprintClear = 28,
         FindItem = 29,
         Purchase = 30,
         Featured = 101,
         OpenUgcShop = 102,
         Search = 104,
+        BlueprintSearch = 105,
         LoadCart = 107, // Just a guess?
     }
 
@@ -99,6 +102,10 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             case Command.Search:
                 HandleSearch(session, packet);
                 return;
+            case Command.BlueprintClear:
+            case Command.BlueprintSearch:
+                HandleBlueprintSearch(session, packet);
+                return;
         }
     }
 
@@ -143,9 +150,11 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             Description = description,
             Tags = tags,
             Look = item.Template,
+            Blueprint = item.Blueprint ?? new ItemBlueprint(),
             Status = UgcMarketListingStatus.Active,
             PromotionEndTime = promote ? DateTime.Now.AddHours(Constant.UGCShopAdHour).ToEpochSeconds() : 0,
             ListingEndTime = DateTime.Now.AddDays(Constant.UGCShopSaleDay).ToEpochSeconds(),
+            CreationTime = DateTime.Now.ToEpochSeconds(),
             Price = Math.Clamp(price, Constant.UGCShopSellMinPrice, Constant.UGCShopSellMaxPrice),
             TabId = tabId,
         };
@@ -245,22 +254,13 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
     }
 
     private void HandleOpenShop(GameSession session, IByteReader packet) {
-        int tabId = packet.ReadInt();
-        var gender = packet.Read<GenderFilterFlag>();
-        var job = packet.Read<JobFilterFlag>();
-        var sortBy = packet.Read<MeretMarketSort>();
-        string searchString = packet.ReadUnicodeString();
-        int startPage = packet.ReadInt();
-        int unknown = packet.ReadInt(); // repeats the startPage value
-        MeretMarketSection section = ToMarketSection(packet.ReadByte());
-        packet.ReadByte();
-        byte itemsPerPage = packet.ReadByte();
+        MeretMarketSearch meretMarketSearch = packet.ReadClass<MeretMarketSearch>();
 
-        ICollection<MarketItem> entries = GetItems(session, section, sortBy, tabId, gender, job, searchString).ToList();
+        ICollection<MarketItem> entries = GetItems(session, meretMarketSearch, MeretMarketSection.All).ToList();
         int totalItems = entries.Count;
-        entries = TakeLimit(entries, startPage, itemsPerPage);
+        entries = TakeLimit(entries, meretMarketSearch.StartPage, meretMarketSearch.ItemsPerPage);
 
-        session.Send(MeretMarketPacket.LoadItems(entries, totalItems, startPage));
+        session.Send(MeretMarketPacket.LoadItems(entries, totalItems, meretMarketSearch.StartPage));
     }
 
     private void HandlePurchase(GameSession session, IByteReader packet) {
@@ -322,39 +322,45 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
         }
 
         // TODO: Find meret market error packets
-        if (entry.SellBeginTime > DateTime.Now.ToEpochSeconds() || entry.SellEndTime < DateTime.Now.ToEpochSeconds()) {
+        if ((entry.Metadata.SaleStartTime != 0 && entry.Metadata.SaleStartTime > DateTime.Now.ToEpochSeconds()) ||
+            (entry.Metadata.SaleEndTime != 0 && entry.Metadata.SaleEndTime < DateTime.Now.ToEpochSeconds())) {
             return null;
         }
 
-        if ((entry.RequireMinLevel > 0 && entry.RequireMinLevel > session.Player.Value.Character.Level) ||
-            (entry.RequireMaxLevel > 0 && entry.RequireMaxLevel < session.Player.Value.Character.Level)) {
+        if ((entry.Metadata.RequireMinLevel > 0 && entry.Metadata.RequireMinLevel > session.Player.Value.Character.Level) ||
+            (entry.Metadata.RequireMaxLevel > 0 && entry.Metadata.RequireMaxLevel < session.Player.Value.Character.Level)) {
             return null;
         }
 
         // If JobRequirement is None, no job is eligible.
-        if ((entry.JobRequirement & session.Player.Value.Character.Job.Code().FilterFlag()) == JobFilterFlag.None) {
+        if ((entry.Metadata.JobRequirement & session.Player.Value.Character.Job.Code().FilterFlag()) == JobFilterFlag.None) {
             return null;
         }
 
-        if (entry.RequireAchievementId > 0 && session.Achievement.HasAchievement(entry.RequireAchievementId, entry.RequireAchievementRank)) {
+        if (entry.Metadata.RequireAchievementId > 0 && session.Achievement.HasAchievement(entry.Metadata.RequireAchievementId, entry.Metadata.RequireAchievementRank)) {
             return null;
         }
 
-        long price = entry.SalePrice > 0 ? entry.SalePrice : entry.Price;
-        StringCode payResult = Pay(session, price, entry.CurrencyType);
+        long price = entry.Metadata.SalePrice > 0 ? entry.Metadata.SalePrice : entry.Price;
+        StringCode payResult = Pay(session, price, entry.Metadata.CurrencyType);
         if (payResult != StringCode.s_empty_string) {
             session.Send(NoticePacket.MessageBox(payResult));
             return null;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Rarity, entry.Quantity + entry.BonusQuantity);
+        Item? item = session.Field.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
         if (item == null) {
-            Logger.Fatal("Failed to create item {ItemId}, {Rarity}, {Quantity}", entry.ItemMetadata.Id, entry.Rarity, entry.Quantity + entry.BonusQuantity);
-            throw new InvalidOperationException($"Fatal: Failed to create item {entry.ItemMetadata.Id}, {entry.Rarity}, {entry.Quantity + entry.BonusQuantity}");
+            Logger.Fatal("Failed to create item {ItemId}, {Rarity}, {Quantity}", entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
+            throw new InvalidOperationException($"Fatal: Failed to create item {entry.ItemMetadata.Id}, {entry.Metadata.Rarity}, {entry.Metadata.Quantity + entry.Metadata.BonusQuantity}");
         }
 
-        if (entry.ItemDuration > 0) {
-            item.ExpiryTime = DateTime.Now.AddDays(entry.ItemDuration).ToEpochSeconds();
+        if (entry.Metadata.DurationInDays > 0) {
+            item.ExpiryTime = DateTime.Now.AddDays(entry.Metadata.DurationInDays).ToEpochSeconds();
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        if (!db.CreateSoldMeretMarketItem(entry, session.CharacterId)) {
+            Logger.Fatal("Failed to create Sold Meret Market Entry for {itemId}", entry.Id);
         }
 
         return item;
@@ -399,6 +405,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             return null;
         }
         item.Template = ugcItem.Look;
+        item.Blueprint = ugcItem.Blueprint;
         return item;
     }
 
@@ -429,40 +436,47 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
 
     private void HandleFindItem(GameSession session, IByteReader packet) {
         bool premium = packet.ReadBool();
-        MarketItem? marketItem;
         if (premium) {
             int premiumId = packet.ReadInt();
-            marketItem = session.GetPremiumMarketItem(premiumId);
-            if (marketItem == null) {
+            MarketItem? marketItem = session.GetPremiumMarketItem(premiumId);
+            if (marketItem is null) {
                 return;
             }
-        } else {
-            long ugcId = packet.ReadLong();
-            // TODO: Implement UGC Items
+            session.Send(MeretMarketPacket.LoadItems([marketItem], 1, 1));
             return;
         }
 
-        session.Send(MeretMarketPacket.LoadItems(new List<MarketItem> { marketItem }, 1, 1));
+        long ugcId = packet.ReadLong();
+        using GameStorage.Request db = session.GameStorage.Context();
+
+        UgcMarketItem? ugcMarketItem = db.GetUgcMarketItem(ugcId);
+        if (ugcMarketItem is null) {
+            return;
+        }
+        session.Send(MeretMarketPacket.LoadBlueprints([ugcMarketItem], 1, 1, 1));
+
     }
 
     private void HandleSearch(GameSession session, IByteReader packet) {
-        packet.ReadInt(); // 1
-        var gender = packet.Read<GenderFilterFlag>();
-        var job = packet.Read<JobFilterFlag>();
-        var sortBy = packet.Read<MeretMarketSort>();
-        string searchString = packet.ReadUnicodeString();
-        int startPage = packet.ReadInt(); // 1
-        packet.ReadInt(); // 1
-        packet.ReadByte();
-        packet.ReadByte();
-        byte itemsPerPage = packet.ReadByte();
+        MeretMarketSearch meretMarketSearch = packet.ReadClass<MeretMarketSearch>();
+
         MeretMarketSection section = ToMarketSection(packet.ReadByte());
 
-        ICollection<MarketItem> entries = GetItems(session, section, sortBy, 0, gender, job, searchString).ToList();
+        ICollection<MarketItem> entries = GetItems(session, meretMarketSearch, section).ToList();
         int totalItems = entries.Count;
-        entries = TakeLimit(entries, startPage, itemsPerPage);
+        entries = TakeLimit(entries, meretMarketSearch.StartPage, meretMarketSearch.ItemsPerPage);
 
-        session.Send(MeretMarketPacket.LoadItems(entries, totalItems, startPage));
+        session.Send(MeretMarketPacket.LoadItems(entries, totalItems, meretMarketSearch.StartPage));
+    }
+
+    private void HandleBlueprintSearch(GameSession session, IByteReader packet) {
+        MeretMarketSearch meretMarketSearch = packet.ReadClass<MeretMarketSearch>();
+
+        ICollection<MarketItem> entries = GetItems(session, meretMarketSearch, MeretMarketSection.Ugc).ToList();
+        int totalItems = entries.Count;
+        entries = TakeLimit(entries, meretMarketSearch.StartPage, meretMarketSearch.ItemsPerPage);
+
+        session.Send(MeretMarketPacket.LoadBlueprints(entries, totalItems, meretMarketSearch.ItemsPerPage, meretMarketSearch.StartPage));
     }
 
     private static MeretMarketSection ToMarketSection(byte section) {
@@ -476,17 +490,17 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
     }
 
     #region Helpers
-    private IEnumerable<MarketItem> GetItems(GameSession session, MeretMarketSection section, MeretMarketSort sortBy, int tabId, GenderFilterFlag genderFilter, JobFilterFlag jobFilter, string searchString) {
-        int[] tabIds = Array.Empty<int>();
+    private IEnumerable<MarketItem> GetItems(GameSession session, MeretMarketSearch meretMarketSearch, MeretMarketSection section) {
+        int[] tabIds = [];
         bool sortGender = false;
         bool sortJob = false;
-        if (tabId > 0) {
-            if (!GetTab(section, tabId, out MeretMarketCategoryTable.Tab? tab)) {
+        if (meretMarketSearch.TabId is not 1) {
+            if (!GetTab(section, meretMarketSearch.TabId, out MeretMarketCategoryTable.Tab? tab)) {
                 return new List<MarketItem>();
             }
             // get any sub tabs
             tabIds = new[] {
-                tabId
+                meretMarketSearch.TabId
             }.Concat(tab.SubTabIds).ToArray();
             sortGender = tab.SortGender;
             sortJob = tab.SortJob;
@@ -498,17 +512,17 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             case MeretMarketSection.All:
                 items = db.GetUgcMarketItems(tabIds);
                 items = items.Concat(session.GetPremiumMarketItems(tabIds));
-                items = Filter(items, genderFilter, jobFilter, searchString);
-                return Sort(items, sortBy, sortJob, sortGender);
+                items = Filter(items, meretMarketSearch.Gender, meretMarketSearch.Job, meretMarketSearch.SearchString);
+                return Sort(items, meretMarketSearch.SortBy, sortJob, sortGender);
             case MeretMarketSection.Premium:
             case MeretMarketSection.RedMeret:
                 items = session.GetPremiumMarketItems(tabIds);
-                items = Filter(items, genderFilter, jobFilter, searchString);
-                return Sort(items, sortBy, sortJob, sortGender);
+                items = Filter(items, meretMarketSearch.Gender, meretMarketSearch.Job, meretMarketSearch.SearchString);
+                return Sort(items, meretMarketSearch.SortBy, sortJob, sortGender);
             case MeretMarketSection.Ugc:
                 items = db.GetUgcMarketItems(tabIds);
-                items = Filter(items, genderFilter, jobFilter, searchString);
-                return Sort(items, sortBy, sortJob, sortGender);
+                items = Filter(items, meretMarketSearch.Gender, meretMarketSearch.Job, meretMarketSearch.SearchString);
+                return Sort(items, meretMarketSearch.SortBy, sortJob, sortGender);
             default:
                 Logger.Warning("Unimplemented Market section {section}", section);
                 return new List<MarketItem>();
@@ -573,20 +587,27 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
 
     private static IEnumerable<MarketItem> FilterByString(IEnumerable<MarketItem> items, string searchString) {
         foreach (MarketItem item in items) {
-            if (item.ItemMetadata.Name != null && item.ItemMetadata.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
-                yield return item;
-                continue;
-            }
             if (item is UgcMarketItem ugc) {
+                if (ugc.Look.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                    yield return ugc;
+                    continue;
+                }
+
                 if (ugc.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
                     yield return ugc;
                     continue;
                 }
+
                 foreach (string tag in ugc.Tags) {
                     if (tag.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
                         yield return ugc;
                     }
                 }
+                continue;
+            }
+
+            if (item.ItemMetadata.Name != null && item.ItemMetadata.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                yield return item;
             }
         }
     }

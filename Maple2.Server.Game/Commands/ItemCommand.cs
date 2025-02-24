@@ -28,18 +28,20 @@ public class ItemCommand : Command {
         var amount = new Option<int>(["--amount", "-a"], () => 1, "Amount of the item.");
         var rarity = new Option<int>(["--rarity", "-r"], () => 1, "Rarity of the item.");
         var drop = new Option<bool>(["--drop"], "Drop item instead of adding to inventory");
+        var rollMax = new Option<bool>(["--roll-max"], () => false, "Max roll stats.");
 
         AddArgument(id);
         AddOption(amount);
         AddOption(rarity);
         AddOption(drop);
-        this.SetHandler<InvocationContext, int, int, int, bool>(Handle, id, amount, rarity, drop);
+        AddOption(rollMax);
+        this.SetHandler<InvocationContext, int, int, int, bool, bool>(Handle, id, amount, rarity, drop, rollMax);
     }
 
-    private void Handle(InvocationContext ctx, int itemId, int amount, int rarity, bool drop) {
+    private void Handle(InvocationContext ctx, int itemId, int amount, int rarity, bool drop, bool rollMax) {
         try {
             rarity = Math.Clamp(rarity, 1, MAX_RARITY);
-            Item? item = session.Field.ItemDrop.CreateItem(itemId, rarity);
+            Item? item = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
             if (item == null) {
                 ctx.Console.Error.WriteLine($"Invalid Item: {itemId}");
                 return;

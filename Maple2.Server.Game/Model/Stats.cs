@@ -1,18 +1,21 @@
 ﻿using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Formulas;
 
 namespace Maple2.Server.Game.Model;
 
 public class Stats {
-    public const int TOTAL = 35;
+    public const int BASIC_TOTAL = 35;
 
-    private readonly Dictionary<BasicAttribute, Stat> values;
+    private readonly Dictionary<BasicAttribute, Stat> basicValues;
+    private readonly Dictionary<SpecialAttribute, Stat> specialValues;
 
-    public int GearScore => 12345;
+    public int GearScore = 0;
 
     public Stats(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
-        values = new Dictionary<BasicAttribute, Stat>();
+        basicValues = new Dictionary<BasicAttribute, Stat>();
+        specialValues = new Dictionary<SpecialAttribute, Stat>();
 
         foreach (BasicAttribute attribute in metadata.Keys) {
             if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
@@ -28,21 +31,16 @@ public class Stats {
         this[BasicAttribute.MagicalAtk].AddBase(AttackStat.MagicalAtk(jobCode, this[BasicAttribute.Intelligence].Base));
     }
 
-    [Obsolete("Use Stats(UserStatMetadata, JobCode) instead.")]
-    public Stats(JobCode jobCode, short level) {
-        values = new Dictionary<BasicAttribute, Stat>();
-        Reset(jobCode, level);
-    }
-
     public Stats(NpcMetadataStat npcStats) {
-        values = new Dictionary<BasicAttribute, Stat>();
+        basicValues = new Dictionary<BasicAttribute, Stat>();
+        specialValues = new Dictionary<SpecialAttribute, Stat>();
         foreach ((BasicAttribute attribute, long value) in npcStats.Stats) {
             this[attribute].AddBase(value);
         }
     }
 
     public void Reset(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
-        values.Clear();
+        basicValues.Clear();
 
         foreach (BasicAttribute attribute in metadata.Keys) {
             if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
@@ -60,7 +58,7 @@ public class Stats {
 
     [Obsolete("Use Reset(UserStatMetadata, JobCode) instead.")]
     public void Reset(JobCode jobCode, short level) {
-        values.Clear();
+        basicValues.Clear();
 
         this[BasicAttribute.Strength].AddBase(BaseStat.Strength(jobCode, level));
         this[BasicAttribute.Dexterity].AddBase(BaseStat.Dexterity(jobCode, level));
@@ -100,15 +98,41 @@ public class Stats {
 #endif
     }
 
+    /// <summary>
+    ///  Apply rate bonus to total value of each stat
+    /// </summary>
+    public void Total() {
+        foreach (Stat stat in basicValues.Values) {
+            long rateBonus = (long) (stat.Rate * (stat.Base + (stat.Total - stat.Base)));
+            stat.AddTotal(rateBonus);
+        }
+
+        foreach (Stat stat in specialValues.Values) {
+            long rateBonus = (long) (stat.Rate * (stat.Base + (stat.Total - stat.Base)));
+            stat.AddTotal(rateBonus);
+        }
+    }
+
     public Stat this[BasicAttribute attribute] {
         get {
-            if (!values.ContainsKey(attribute)) {
-                values[attribute] = new Stat(0, 0, 0);
+            if (!basicValues.ContainsKey(attribute)) {
+                basicValues[attribute] = new Stat(0, 0, 0);
             }
 
-            return values[attribute];
+            return basicValues[attribute];
         }
-        set => values[attribute] = value;
+        set => basicValues[attribute] = value;
+    }
+
+    public Stat this[SpecialAttribute attribute] {
+        get {
+            if (!specialValues.ContainsKey(attribute)) {
+                specialValues[attribute] = new Stat(0, 0, 0);
+            }
+
+            return specialValues[attribute];
+        }
+        set => specialValues[attribute] = value;
     }
 }
 
@@ -118,6 +142,7 @@ public sealed class Stat {
     public long Total { get; set; }
     public long Base { get; set; }
     public long Current { get; set; }
+    public float Rate { get; set; }
 
     public Stat(long value) : this(value, value, value) { }
 
@@ -138,6 +163,20 @@ public sealed class Stat {
         Current += amount;
     }
 
+    public void AddTotal(BasicOption option) {
+        AddTotal(option.Value);
+        Rate += option.Rate;
+    }
+
+    public void AddTotal(SpecialOption option) {
+        AddTotal((int) option.Value);
+        Rate += option.Rate;
+    }
+
+    public void AddRate(float rate) {
+        Rate += rate;
+    }
+
     public void Add(long amount) {
         Current = Math.Clamp(Current + amount, 0, Total);
     }
@@ -151,6 +190,8 @@ public sealed class Stat {
             };
         }
     }
+
+    public double Multiplier() => Total / 1000.0;
 
     public override string ToString() => $"<{Total}|{Base}|{Current}>";
 }

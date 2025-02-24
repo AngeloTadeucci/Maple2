@@ -17,12 +17,15 @@ public enum UpdateField {
     Home = 128,
     Trophy = 256,
     PremiumTime = 512,
+    Clubs = 1024,
 
     // Presets
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
-    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home,
-    GroupChat = Profile | Job | Level | Map,
+    Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs,
+    GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs,
+    Marriage = Profile,
     All = int.MaxValue,
 }
 
@@ -58,7 +61,8 @@ public class PlayerInfoUpdateEvent {
         if (request.HasMapId && player.MapId != request.MapId) {
             Type |= UpdateField.Map;
         }
-        if (request.HasChannel && player.Channel != request.Channel) {
+        if ((request.HasChannel && player.Channel != request.Channel) ||
+            (request.HasLastOnlineTime && player.LastOnlineTime != request.LastOnlineTime)) {
             Type |= UpdateField.Channel;
         }
         if (request.Health != null) {
@@ -94,6 +98,12 @@ public class PlayerInfoUpdateEvent {
         if (request.HasPremiumTime && player.PremiumTime != request.PremiumTime) {
             if (player.PremiumTime != request.PremiumTime) {
                 Type |= UpdateField.PremiumTime;
+            }
+        }
+
+        if (request.Clubs != null) {
+            if (player.ClubIds != request.Clubs.Select(club => club.Id).ToList()) {
+                Type |= UpdateField.Clubs;
             }
         }
     }

@@ -30,9 +30,13 @@ public abstract class LogSendHandler<T> : PacketHandler<T> where T : Session {
                 if (message.Contains("exception")) {
                     // Read remaining string
                     string debug = packet.ReadUnicodeString();
-                    SockExceptionInfo exceptionInfo = ErrorParserHelper.Parse(debug);
-                    Logger.Error("[{message}] [SendOp: {sendOp}] [Offset: {offset}] [Hint: {hint}]",
-                                        message, exceptionInfo.SendOp, exceptionInfo.Offset, exceptionInfo.Hint);
+                    try {
+                        SockExceptionInfo exceptionInfo = ErrorParserHelper.Parse(debug);
+                        Logger.Error("[{message}] [SendOp: {sendOp}] [Offset: {offset}] [Hint: {hint}]",
+                            message, exceptionInfo.SendOp, exceptionInfo.Offset, exceptionInfo.Hint);
+                    } catch (ArgumentException) {
+                        Logger.Error("[{Message}] {Debug}", message, debug);
+                    }
 
                     session.OnError?.Invoke(session, debug);
                     return;

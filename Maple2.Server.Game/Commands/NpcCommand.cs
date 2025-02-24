@@ -21,7 +21,7 @@ public class NpcCommand : Command {
         this.session = session;
         this.npcStorage = npcStorage;
 
-        Argument<int> id = new Argument<int>("id", "Id of npc to spawn.");
+        var id = new Argument<int>("id", "Id of npc to spawn.");
 
         AddArgument(id);
         this.SetHandler<InvocationContext, int>(Handle, id);
@@ -64,34 +64,37 @@ public class AnimateNpcCommand : Command {
         this.session = session;
         this.npcStorage = npcStorage;
 
-        Argument<int?> id = new Argument<int?>("id", () => null, "Id of npc to spawn.");
-        Argument<string?> animation = new Argument<string?>("animation", () => null, "Animation to play.");
+        var id = new Argument<int?>("id", () => null, "Object id of npc to animate.");
+        var animation = new Argument<string?>("animation", () => null, "Animation to play.");
+        var duration = new Option<int>("--duration", () => -1, "Duration of animation in milliseconds.");
 
         AddArgument(id);
         AddArgument(animation);
+        AddOption(duration);
 
-        this.SetHandler<InvocationContext, int?, string?>(Handle, id, animation);
+        this.SetHandler<InvocationContext, int?, string?, int>(Handle, id, animation, duration);
     }
 
-    private void Handle(InvocationContext ctx, int? npcId, string? animation) {
+    private void Handle(InvocationContext ctx, int? objectId, string? animation, int duration) {
         if (session.Field == null) {
             ctx.Console.Error.WriteLine("No field loaded.");
             return;
         }
 
-        if (npcId is null) {
+        if (objectId is null) {
             ctx.Console.Error.WriteLine("Npcs in map:");
             session.Field.Npcs.Values.ToList().ForEach(npc => {
                 int id = npc.Value.Id;
+                int objectId = npc.ObjectId;
                 string? name = npc.Value.Metadata.Name;
-                ctx.Console.Out.WriteLine($"Id: {id}, Name: {name}");
+                ctx.Console.Out.WriteLine($"ObjectId: {objectId}, Id: {id}, Name: {name}");
             });
             return;
         }
 
-        FieldNpc? fieldNpc = session.Field.Npcs.Values.FirstOrDefault(npc => npc.Value.Id == npcId);
+        session.Field.Npcs.TryGetValue(objectId.Value, out FieldNpc? fieldNpc);
         if (fieldNpc is null) {
-            ctx.Console.Error.WriteLine($"Invalid Npc: {npcId}");
+            ctx.Console.Error.WriteLine($"Invalid Npc object id: {objectId}");
             return;
         }
 
@@ -103,7 +106,7 @@ public class AnimateNpcCommand : Command {
             return;
         }
 
-        string? animationKey = fieldNpc.Value.Animations.Keys.FirstOrDefault(anim => anim.ToLower() == animation.ToLower());
+        string? animationKey = fieldNpc.Value.Animations.Keys.FirstOrDefault(anim => anim.Equals(animation, StringComparison.CurrentCultureIgnoreCase));
 
         if (animationKey is null) {
             ctx.Console.Error.WriteLine($"Invalid Animation: {animation}");
@@ -111,8 +114,6 @@ public class AnimateNpcCommand : Command {
             return;
         }
 
-        AnimationSequence? animationSequence = fieldNpc.Value.Animations[animationKey];
-
-        fieldNpc.Animate(animationKey);
+        fieldNpc.Animate(animationKey, duration);
     }
 }

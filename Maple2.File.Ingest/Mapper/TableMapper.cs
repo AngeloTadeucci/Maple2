@@ -25,6 +25,9 @@ using JobTable = Maple2.Model.Metadata.JobTable;
 using MagicPath = Maple2.Model.Metadata.MagicPath;
 using MasteryType = Maple2.Model.Enum.MasteryType;
 using MeretMarketCategory = Maple2.File.Parser.Xml.Table.MeretMarketCategory;
+using WeddingHall = Maple2.File.Parser.Xml.Table.WeddingHall;
+using WeddingPackage = Maple2.Model.Metadata.WeddingPackage;
+using WeddingReward = Maple2.Model.Metadata.WeddingReward;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -57,6 +60,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "colorpalette.xml", Table = ParseColorPaletteTable() };
         yield return new TableMetadata { Name = "meretmarketcategory.xml", Table = ParseMeretMarketCategoryTable() };
         yield return new TableMetadata { Name = "shop_beautycoupon.xml", Table = ParseShopBeautyCouponTable() };
+        yield return new TableMetadata { Name = "na/shop_*.xml", Table = ParseFurnishingShopTable() };
         yield return new TableMetadata { Name = "gacha_info.xml", Table = ParseGachaInfoTable() };
         yield return new TableMetadata { Name = "nametagsymbol.xml", Table = ParseInsigniaTable() };
         yield return new TableMetadata { Name = "exp*.xml", Table = ParseExpTable() };
@@ -67,6 +71,15 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
         yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
         yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
+        yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
+        yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
+        yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
+        yield return new TableMetadata { Name = "masteryugchousing.xml", Table = ParseMasteryUgcHousingTable() };
+        yield return new TableMetadata { Name = "ugchousingpointreward.xml", Table = ParseUgcHousingPointRewardTable() };
+
+        // Marriage/Wedding
+        yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
+
         // Prestige
         yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
@@ -449,10 +462,10 @@ public class TableMapper : TypeMapper<TableMetadata> {
     }
 
     private ItemVariationTable ParseItemVariation() {
-        var values = new Dictionary<BasicAttribute, ItemVariationTable.Range<int>>();
-        var rates = new Dictionary<BasicAttribute, ItemVariationTable.Range<float>>();
-        var specialValues = new Dictionary<SpecialAttribute, ItemVariationTable.Range<int>>();
-        var specialRates = new Dictionary<SpecialAttribute, ItemVariationTable.Range<float>>();
+        var values = new Dictionary<BasicAttribute, List<ItemVariationTable.Range<int>>>();
+        var rates = new Dictionary<BasicAttribute, List<ItemVariationTable.Range<float>>>();
+        var specialValues = new Dictionary<SpecialAttribute, List<ItemVariationTable.Range<int>>>();
+        var specialRates = new Dictionary<SpecialAttribute, List<ItemVariationTable.Range<float>>>();
         foreach (ItemOptionVariation.Option option in optionParser.ParseVariation()) {
             string name = option.OptionName;
             if (name.StartsWith("sid")) continue; // Don't know what stat this maps to.
@@ -461,11 +474,19 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 var variation = new ItemVariationTable.Range<int>(
                     Min: option.OptionValueMin,
                     Max: option.OptionValueMax,
-                    Interval: option.OptionValueVariation);
+                    Variation: option.OptionValueVariation);
                 try {
-                    values[name.ToBasicAttribute()] = variation;
+                    if (values.ContainsKey(name.ToBasicAttribute())) {
+                        values[name.ToBasicAttribute()].Add(variation);
+                    } else {
+                        values.Add(name.ToBasicAttribute(), [variation]);
+                    }
                 } catch (ArgumentOutOfRangeException) {
-                    specialValues[name.ToSpecialAttribute()] = variation;
+                    if (specialValues.ContainsKey(name.ToSpecialAttribute())) {
+                        specialValues[name.ToSpecialAttribute()].Add(variation);
+                    } else {
+                        specialValues.Add(name.ToSpecialAttribute(), [variation]);
+                    }
                 }
             } else if (option.OptionRateVariation != 0) {
                 if (name.EndsWith("_rate")) {
@@ -475,30 +496,45 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 var variation = new ItemVariationTable.Range<float>(
                     Min: option.OptionRateMin,
                     Max: option.OptionRateMax,
-                    Interval: option.OptionRateVariation);
+                    Variation: option.OptionRateVariation);
                 try {
-                    rates[name.ToBasicAttribute()] = variation;
+                    if (rates.ContainsKey(name.ToBasicAttribute())) {
+                        rates[name.ToBasicAttribute()].Add(variation);
+                    } else {
+                        rates.Add(name.ToBasicAttribute(), [variation]);
+                    }
                 } catch (ArgumentOutOfRangeException) {
-                    specialRates[name.ToSpecialAttribute()] = variation;
+                    if (specialRates.ContainsKey(name.ToSpecialAttribute())) {
+                        specialRates[name.ToSpecialAttribute()].Add(variation);
+                    } else {
+                        specialRates.Add(name.ToSpecialAttribute(), [variation]);
+                    }
                 }
             }
         }
 
-        return new ItemVariationTable(values, rates, specialValues, specialRates);
+        Dictionary<BasicAttribute, ItemVariationTable.Range<int>[]> valuesArray = values.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<BasicAttribute, ItemVariationTable.Range<float>[]> ratesArray = rates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<SpecialAttribute, ItemVariationTable.Range<int>[]> specialValuesArray = specialValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        Dictionary<SpecialAttribute, ItemVariationTable.Range<float>[]> specialRatesArray = specialRates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+
+        return new ItemVariationTable(valuesArray, ratesArray, specialValuesArray, specialRatesArray);
     }
 
     private IEnumerable<(string Type, ItemEquipVariationTable Table)> ParseItemEquipVariation() {
         foreach ((string type, List<ItemOptionVariationEquip.Option> options) in optionParser.ParseVariationEquip()) {
-            var values = new Dictionary<BasicAttribute, int[]>();
-            var rates = new Dictionary<BasicAttribute, float[]>();
-            var specialValues = new Dictionary<SpecialAttribute, int[]>();
-            var specialRates = new Dictionary<SpecialAttribute, float[]>();
+            var values = new Dictionary<BasicAttribute, ItemEquipVariationTable.Set<int>[]>();
+            var rates = new Dictionary<BasicAttribute, ItemEquipVariationTable.Set<float>[]>();
+            var specialValues = new Dictionary<SpecialAttribute, ItemEquipVariationTable.Set<int>[]>();
+            var specialRates = new Dictionary<SpecialAttribute, ItemEquipVariationTable.Set<float>[]>();
             foreach (ItemOptionVariationEquip.Option option in options) {
                 string name = option.name.ToLower();
                 if (name.EndsWith("value")) {
-                    int[] entries = new int[18];
+                    var entries = new ItemEquipVariationTable.Set<int>[18];
                     for (int i = 0; i < 18; i++) {
-                        entries[i] = (int) option[i];
+                        entries[i] = new ItemEquipVariationTable.Set<int>(
+                            Value: (int) option[i],
+                            Weight: 1); // TODO: Weight
                     }
 
                     name = name[..^"value".Length]; // Remove suffix
@@ -509,9 +545,11 @@ public class TableMapper : TypeMapper<TableMetadata> {
                     }
 
                 } else if (name.EndsWith("rate")) {
-                    float[] entries = new float[18];
+                    var entries = new ItemEquipVariationTable.Set<float>[18];
                     for (int i = 0; i < 18; i++) {
-                        entries[i] = option[i];
+                        entries[i] = new ItemEquipVariationTable.Set<float>(
+                            Value: option[i],
+                            Weight: 1); // TODO: Weight
                     }
 
                     name = name[..^"rate".Length]; // Remove suffix
@@ -1200,6 +1238,20 @@ public class TableMapper : TypeMapper<TableMetadata> {
         return new GachaInfoTable(results);
     }
 
+    private FurnishingShopTable ParseFurnishingShopTable() {
+        var results = new Dictionary<int, FurnishingShopTable.Entry>();
+        foreach ((int id, ShopFurnishing? shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
+            results.Add(id, new FurnishingShopTable.Entry(
+                ItemId: shop!.id,
+                Buyable: shop.ugcHousingBuy,
+                FurnishingTokenType: (FurnishingCurrencyType) shop.ugcHousingMoneyType,
+                Price: shop.ugcHousingDefaultPrice
+            ));
+        }
+
+        return new FurnishingShopTable(results);
+    }
+
     private InsigniaTable ParseInsigniaTable() {
         var results = new Dictionary<int, InsigniaTable.Entry>();
         foreach ((int id, NameTagSymbol symbol) in parser.ParseNameTagSymbol()) {
@@ -1434,5 +1486,122 @@ public class TableMapper : TypeMapper<TableMetadata> {
             }
         }
         return new FieldMissionTable(results);
+    }
+
+    private WorldMapTable ParseWorldMapTable() {
+        var mapList = new List<WorldMapTable.Map>();
+        foreach ((string feature, var maps) in parser.ParseWorldMap()) {
+            if (feature != "Kritias_2018_12") {
+                continue;
+            }
+            foreach (var map in maps) {
+                if (!map.@public) {
+                    continue;
+                }
+
+                mapList.Add(new WorldMapTable.Map(map.code, map.x, map.y, map.z, map.size));
+            }
+        }
+
+        if (mapList.Count == 0) {
+            throw new InvalidOperationException("No maps ingested for WorldMapTable");
+        }
+        return new WorldMapTable(mapList);
+    }
+
+    private SurvivalSkinInfoTable ParseSurvivalSkinTable() {
+        var results = new Dictionary<int, MedalType>();
+        foreach ((int id, MapleSurvivalSkinInfo skin) in parser.ParseMapleSurvivalSkinInfo()) {
+            MedalType type = skin.type switch {
+                SurvivalSkinType.gliding => MedalType.Gliding,
+                SurvivalSkinType.riding => MedalType.Riding,
+                SurvivalSkinType.effectTail => MedalType.Tail,
+                _ => throw new InvalidOperationException("Unknown SurvivalSkinType"),
+            };
+            results.Add(id, type);
+        }
+
+        return new SurvivalSkinInfoTable(results);
+    }
+
+    private BannerTable ParseBanner() {
+        List<BannerTable.Entry> results = [];
+        foreach ((int id, Banner banner) in parser.ParseBanner()) {
+            results.Add(new BannerTable.Entry(
+                Id: id,
+                MapId: banner.field,
+                Price: banner.price.ToList()
+                ));
+        }
+        return new BannerTable(results);
+    }
+
+    private MasteryUgcHousingTable ParseMasteryUgcHousingTable() {
+        var results = new Dictionary<int, MasteryUgcHousingTable.Entry>();
+        foreach ((int id, MasteryUgcHousing ugcHousing) in parser.ParseMasteryUgcHousing()) {
+            results.Add(id, new MasteryUgcHousingTable.Entry(
+                Level: ugcHousing.grade,
+                Exp: ugcHousing.value,
+                RewardJobItemId: ugcHousing.rewardJobItemID));
+        }
+        return new MasteryUgcHousingTable(results);
+    }
+
+    private UgcHousingPointRewardTable ParseUgcHousingPointRewardTable() {
+        var results = new Dictionary<int, UgcHousingPointRewardTable.Entry>();
+        foreach ((int id, UgcHousingPointReward? ugcHousing) in parser.ParseUgcHousingPointReward()) {
+            results.Add(id, new UgcHousingPointRewardTable.Entry(
+                DecorationScore: ugcHousing.housingPoint,
+                IndividualDropBoxId: ugcHousing.individualDropBoxId));
+        }
+        return new UgcHousingPointRewardTable(results);
+    }
+
+    private WeddingTable ParseWeddingTable() {
+        var rewardsResults = new Dictionary<MarriageExpType, WeddingReward>();
+        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward? reward) in parser.ParseWeddingReward()) {
+            rewardsResults.Add((MarriageExpType) type, new WeddingReward(
+                Type: (MarriageExpType) type,
+                Amount: reward.rewardExp,
+                Limit: (MarriageExpLimit) reward.rewardLimit));
+        }
+
+        var packageResults = new Dictionary<int, WeddingPackage>();
+        foreach ((int id, Parser.Xml.Table.WeddingPackage package) in parser.ParseWeddingPackage()) {
+            var hallDataDic = new Dictionary<int, WeddingPackage.HallData>();
+            foreach (WeddingHall hall in package.weddingHall) {
+                List<WeddingPackage.HallData.Item> hallItems = [];
+                foreach (WeddingItem item in hall.weddingItem) {
+                    hallItems.Add(new WeddingPackage.HallData.Item(
+                        ItemId: item.itemID,
+                        Amount: item.count,
+                        Rarity: item.grade,
+                        NightOnly: item.nightReward));
+                }
+
+                List<WeddingPackage.HallData.Item> completeHallItems = [];
+                foreach (WeddingItem item in hall.weddingCompleteItem) {
+                    completeHallItems.Add(new WeddingPackage.HallData.Item(
+                        ItemId: item.itemID,
+                        Amount: item.count,
+                        Rarity: item.grade,
+                        NightOnly: item.nightReward));
+                }
+
+                hallDataDic.Add(hall.id, new WeddingPackage.HallData(
+                    Id: hall.id,
+                    MapId: hall.fieldID,
+                    NightMapId: hall.nightFieldID,
+                    Tier: hall.grade,
+                    MeretCost: hall.merat,
+                    Items: hallItems,
+                    CompleteItems: completeHallItems));
+            }
+            packageResults.Add(id, new WeddingPackage(
+                Id: id,
+                PlannerId: package.planner,
+                Halls: hallDataDic));
+        }
+        return new WeddingTable(rewardsResults, packageResults);
     }
 }

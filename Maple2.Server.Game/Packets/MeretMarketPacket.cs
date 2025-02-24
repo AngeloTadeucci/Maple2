@@ -23,6 +23,7 @@ public static class MeretMarketPacket {
         RemoveDesigner = 24,
         UpdateProfit = 26, // unconfirmed
         LoadItems = 27,
+        LoadBlueprints = 28,
         Purchase = 30,
         FailPurchase = 31,
         FeaturedPremium = 101,
@@ -172,6 +173,21 @@ public static class MeretMarketPacket {
         return pWriter;
     }
 
+    public static ByteWriter LoadBlueprints(ICollection<MarketItem> marketItems, int totalItems, byte itemsPerPage, int startPage) {
+        var pWriter = Packet.Of(SendOp.MeretMarket);
+        pWriter.Write<Command>(Command.LoadBlueprints);
+        pWriter.WriteInt(marketItems.Count);
+        pWriter.WriteInt(totalItems);
+        pWriter.WriteByte(itemsPerPage);
+        pWriter.WriteInt(startPage);
+        foreach (MarketItem entry in marketItems) {
+            pWriter.WriteBool(true);
+            pWriter.WriteMarketItem(entry);
+        }
+
+        return pWriter;
+    }
+
     public static ByteWriter Purchase(int totalQuantity, int itemIndex, long price, int premiumMarketId, long ugcMarketItemId) {
         var pWriter = Packet.Of(SendOp.MeretMarket);
         pWriter.Write<Command>(Command.Purchase);
@@ -243,7 +259,7 @@ public static class MeretMarketPacket {
                     pWriter.WriteClass<PremiumMarketPromoData>(premium.PromoData);
                 }
                 pWriter.WriteByte();
-                pWriter.WriteBool(premium.ShowSaleTime);
+                pWriter.WriteBool(premium.Metadata.ShowSaleTime);
                 pWriter.WriteInt();
                 pWriter.WriteByte((byte) premium.AdditionalQuantities.Count);
                 foreach (PremiumMarketItem addEntry in premium.AdditionalQuantities) {

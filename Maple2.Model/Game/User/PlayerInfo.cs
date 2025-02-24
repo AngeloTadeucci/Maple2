@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -19,22 +21,24 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public AchievementInfo AchievementInfo { get; set; }
     // Premium
     public long PremiumTime { get; set; }
-
+    public List<long> ClubIds { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
-        return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo) {
+        return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {
             PlotMapId = player.Home.PlotMapId,
             PlotNumber = player.Home.PlotNumber,
             ApartmentNumber = player.Home.ApartmentNumber,
             PlotExpiryTime = player.Home.PlotExpiryTime,
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
+            LastOnlineTime = player.Character.LastOnlineTime,
         };
     }
 
-    public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo) : base(character) {
+    public PlayerInfo(CharacterInfo character, string homeName, AchievementInfo achievementInfo, IList<long> clubsIds) : base(character) {
         HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
         AchievementInfo = achievementInfo;
+        ClubIds = new List<long>(clubsIds);
     }
 
     public PlayerInfo Clone() {
@@ -47,8 +51,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteUnicodeString(Name);
         writer.Write<Gender>(Gender);
         writer.WriteByte(1);
-        writer.WriteLong();
-        writer.WriteInt();
+        writer.WriteLong(AccountId);
+        writer.WriteInt(1);
         writer.WriteInt(MapId);
         writer.WriteInt(MapId);
         writer.WriteInt(PlotMapId);
@@ -60,30 +64,38 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteInt((int) TotalHp);
         writer.WriteShort();
         writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteLong();
-        writer.WriteInt();
-        writer.Write<Vector3>(default);
+        writer.WriteLong(); // Home Storage Access Time
+        writer.WriteLong(); // Home Doctor Access Time
+        writer.WriteInt(); // Outside Map Id
+        writer.Write<Vector3>(default); // Outside Position
         writer.WriteInt(GearScore);
         writer.Write<SkinColor>(default);
         writer.WriteLong();
         writer.Write<AchievementInfo>(default);
-        writer.WriteLong();
-        writer.WriteUnicodeString();
+        writer.WriteLong(); // Guild Id
+        writer.WriteUnicodeString(); // Guild Name
         writer.WriteUnicodeString(Motto);
         writer.WriteUnicodeString(Picture);
-        writer.WriteByte();
+        writer.WriteByte((byte) ClubIds.Count);
+        foreach (long clubId in ClubIds) {
+            bool unk = true;
+            writer.WriteBool(unk);
+            if (unk) {
+                writer.WriteLong(clubId);
+                writer.WriteUnicodeString(); // club name
+            }
+        }
         writer.WriteByte();
         writer.WriteClass<Mastery>(new Mastery());
-        writer.WriteUnicodeString();
-        writer.WriteLong();
+        writer.WriteUnicodeString(); // Login username
+        writer.WriteLong(); // Session Id
         writer.WriteLong();
         writer.WriteLong();
         writer.WriteInt();
         writer.WriteByte();
         writer.WriteBool(false);
-        writer.WriteLong();
-        writer.WriteInt();
+        writer.WriteLong(); // Birthday
+        writer.WriteInt(); // SuperChatId
         writer.WriteInt();
         writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         writer.WriteInt();
@@ -112,6 +124,7 @@ public class CharacterInfo {
     // Location
     public int MapId { get; set; }
     public short Channel { get; set; }
+    public long LastOnlineTime { get; set; }
 
     public long UpdateTime { get; set; }
     public bool Online => Channel != 0;
@@ -138,6 +151,7 @@ public class CharacterInfo {
         Level = other.Level;
         MapId = other.MapId;
         Channel = other.Channel;
+        LastOnlineTime = other.LastOnlineTime;
     }
 
     public static implicit operator CharacterInfo(Player player) {

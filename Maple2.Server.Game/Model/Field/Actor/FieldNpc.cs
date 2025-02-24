@@ -3,9 +3,7 @@ using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PathEngine;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Model.Routine;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Model.State;
 using Maple2.Server.Game.Packets;
@@ -14,11 +12,11 @@ using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Tools.Extensions;
-using Maple2.Database.Storage;
 using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
 using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Core.Packets;
 using Serilog;
+using DotRecast.Detour.Crowd;
 
 namespace Maple2.Server.Game.Model;
 
@@ -84,14 +82,11 @@ public class FieldNpc : Actor<Npc> {
     public readonly BattleState BattleState;
     public readonly TaskState TaskState;
     public readonly SkillMetadata?[] Skills;
-    private NpcRoutine CurrentRoutine { get; set; }
 
     public int SpawnPointId = 0;
 
-    public override Stats Stats { get; }
-
-    private MS2PatrolData? patrolData;
-    private int currentWaypointIndex = 0;
+    public MS2PatrolData? Patrol { get; private set; }
+    private int currentWaypointIndex;
 
     private bool hasBeenBattling = false;
     private NpcTask? idleTask = null;
@@ -99,7 +94,7 @@ public class FieldNpc : Actor<Npc> {
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
-    public FieldNpc(FieldManager field, int objectId, Agent? agent, Npc npc, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
+    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
@@ -112,21 +107,17 @@ public class FieldNpc : Actor<Npc> {
             Navigation = Field.Navigation.ForAgent(this, agent);
 
             if (patrolDataUUID is not null) {
-                patrolData = field.Entities.Patrols.FirstOrDefault(x => x.Uuid == patrolDataUUID);
+                Patrol = field.Entities.Patrols.FirstOrDefault(x => x.Uuid == patrolDataUUID);
             }
         }
-        CurrentRoutine = new WaitRoutine(this, -1, 1f);
-        Stats = new Stats(npc.Metadata.Stat);
-        AiState = new AiState(this);
         MovementState = new MovementState(this);
         BattleState = new BattleState(this);
         TaskState = new TaskState(this);
-
         State = new NpcState();
         SequenceId = -1;
         SequenceCounter = 1;
+        AiState = new AiState(this, aiPath);
 
-        AiState.SetAi(npc.Metadata.AiPath);
 
         Skills = new SkillMetadata[Value.Metadata.Skill.Entries.Length];
 
@@ -137,9 +128,7 @@ public class FieldNpc : Actor<Npc> {
 
     }
 
-    protected override void Dispose(bool disposing) {
-        Navigation?.Dispose();
-    }
+    protected override void Dispose(bool disposing) { }
 
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
 
@@ -222,10 +211,6 @@ public class FieldNpc : Actor<Npc> {
 
         bool hitLimit = idleTaskLimitTick != 0 && tickCount >= idleTaskLimitTick;
 
-        if (!hasBeenBattling && idleTask is MovementState.NpcMoveToTask && idleTask.IsDone) {
-            CheckPatrolSequence();
-        }
-
         if (!hasBeenBattling && (idleTask is null || idleTask.IsDone || hitLimit)) {
             idleTaskLimitTick = 0;
 
@@ -238,50 +223,9 @@ public class FieldNpc : Actor<Npc> {
     }
 
     private NpcTask? NextRoutine(long tickCount) {
-        if (patrolData?.WayPoints.Count > 0 && Navigation is not null) {
-            MS2WayPoint waypoint = patrolData.WayPoints[currentWaypointIndex];
-
-            if (!string.IsNullOrEmpty(waypoint.ArriveAnimation) && CurrentRoutine is not AnimateRoutine) {
-                if (Value.Animations.TryGetValue(waypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
-                    return MovementState.TryEmote(waypoint.ArriveAnimation, false);
-                }
-            }
-
-            if (currentWaypointIndex + 1 > patrolData.WayPoints.Count && !patrolData.IsLoop) {
-                patrolData = null;
-
-                return MovementState.TryStandby(null, true);
-            }
-
-            currentWaypointIndex++;
-
-            if (currentWaypointIndex >= patrolData.WayPoints.Count) {
-                currentWaypointIndex = 0;
-            }
-
-            waypoint = patrolData.WayPoints[currentWaypointIndex];
-
-            NpcTask? approachTask = null;
-
-            if (Navigation.PathTo(waypoint.Position)) {
-                if (Value.Animations.TryGetValue(waypoint.ApproachAnimation, out AnimationSequence? patrolSequence)) {
-                    approachTask = MovementState.TryMoveTo(waypoint.Position, false, waypoint.ApproachAnimation);
-                } else if (WalkSequence is not null) {
-                    approachTask = MovementState.TryMoveTo(waypoint.Position, false, WalkSequence.Name);
-                } else {
-                    Log.Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, patrolData.Uuid);
-                }
-            }
-
-            if ((approachTask?.Status ?? NpcTaskStatus.Cancelled) == NpcTaskStatus.Cancelled) {
-                Log.Logger.Warning("Failed to path to waypoint index({WaypointIndex}) coord {Coord} for npc {NpcId} in patrol {PatrolId}", currentWaypointIndex, waypoint.Position, Value.Metadata.Name, patrolData.Uuid);
-
-                return MovementState.TryStandby(null, true);
-            }
-
-            return approachTask;
+        if (Patrol?.WayPoints.Count > 0 && Navigation is not null) {
+            return NextWaypoint();
         }
-
 
         string routineName = defaultRoutines.Get();
         if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? sequence)) {
@@ -312,6 +256,48 @@ public class FieldNpc : Actor<Npc> {
         return MovementState.TryStandby(null, true);
     }
 
+    private NpcTask? NextWaypoint() {
+        MS2WayPoint currentWaypoint = Patrol!.WayPoints[currentWaypointIndex];
+
+        if (!string.IsNullOrEmpty(currentWaypoint.ArriveAnimation) && idleTask is not MovementState.NpcEmoteTask) {
+            if (Value.Animations.TryGetValue(currentWaypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
+                return MovementState.TryEmote(arriveSequence.Name, false);
+            }
+        }
+
+        NpcTask? approachTask = null;
+
+        if (Navigation!.PathTo(currentWaypoint.Position)) {
+            if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequence? patrolSequence)) {
+                approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, sequence: patrolSequence.Name);
+            } else if (WalkSequence is not null) {
+                approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, WalkSequence.Name);
+            } else {
+                Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, Patrol.Uuid);
+            }
+        } else {
+            Logger.Warning("Failed to path to waypoint id({Id}) coord {Coord} for npc {NpcName} - {NpcId} in patrol {PatrolId}", currentWaypoint.Id, currentWaypoint.Position, Value.Metadata.Name, Value.Metadata.Id, Patrol.Uuid);
+        }
+
+        MS2WayPoint lastWaypoint = Patrol.WayPoints.Last();
+
+        // if we're at the last waypoint and we're not looping, we're done
+        if (currentWaypoint.Id == lastWaypoint.Id && !Patrol.IsLoop) {
+            Patrol = null;
+
+            return approachTask;
+        }
+
+        currentWaypointIndex = (currentWaypointIndex + 1) % Patrol.WayPoints.Count;
+
+        if ((approachTask?.Status ?? NpcTaskStatus.Cancelled) == NpcTaskStatus.Cancelled) {
+            Logger.Warning("Failed to path to waypoint id({Id}) coord {Coord} for npc {NpcName} - {NpcId} in patrol {PatrolId}", currentWaypoint.Id, currentWaypoint.Position, Value.Metadata.Name, Value.Metadata.Id, Patrol.Uuid);
+            return MovementState.TryStandby(null, true);
+        }
+
+        return approachTask;
+    }
+
     protected override void OnDeath() {
         Owner?.Despawn(ObjectId);
         SendControl = false;
@@ -327,7 +313,7 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        CurrentRoutine = new AnimateRoutine(this, sequence, duration);
+        idleTask = MovementState.TryEmote(sequence.Name, false, duration);
     }
 
     public void DropLoot(FieldPlayer firstPlayer) {
@@ -392,11 +378,28 @@ public class FieldNpc : Actor<Npc> {
             }
 
             DropLoot(firstPlayer);
-            player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id);
+            GiveExp(player);
+
+            player.Session.ConditionUpdate(ConditionType.npc, codeLong: Value.Id, targetLong: Field.MapId);
             foreach (string tag in Value.Metadata.Basic.MainTags) {
                 player.Session.ConditionUpdate(ConditionType.npc_race, codeString: tag);
             }
         }
+    }
+
+    private void GiveExp(FieldPlayer player) {
+        // 0 means no exp
+        if (Value.Metadata.Basic.CustomExp == 0) {
+            return;
+        }
+
+        if (Value.Metadata.Basic.CustomExp == -1) {
+            // TODO: this is temporary. We need to know how to split exp between players.
+            player.Session.Exp.AddMobExp(Value.Metadata.Basic.Level);
+            return;
+        }
+
+        player.Session.Exp.AddExp(Value.Metadata.Basic.CustomExp);
     }
 
     public void SendDebugAiInfo(GameSession requester) {
@@ -435,22 +438,24 @@ public class FieldNpc : Actor<Npc> {
     }
 
     public void SetPatrolData(MS2PatrolData newPatrolData) {
-        patrolData = newPatrolData;
+        Patrol = newPatrolData;
         currentWaypointIndex = 0;
     }
 
-    public void CheckPatrolSequence() {
-        if (patrolData is null) {
+    public void ClearPatrolData() {
+        if (Patrol is null) {
             return;
         }
 
+        MS2WayPoint currentWaypoint = Patrol.WayPoints[currentWaypointIndex];
+
         // make sure we're at the last checkpoint in the list
-        if (currentWaypointIndex + 1 < patrolData.WayPoints.Count) {
+        if (currentWaypoint.Id != Patrol.WayPoints.Last().Id) {
             return;
         }
 
         // Clear patrol data
-        patrolData = null;
+        Patrol = null;
         currentWaypointIndex = 0;
     }
 }

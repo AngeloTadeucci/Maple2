@@ -2,12 +2,14 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using PlotMode = Maple2.Model.Enum.PlotMode;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -23,13 +25,6 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
         BlueprintDesigner = 5,
         ModelHome = 6,
     }
-
-    #region Autofac Autowired
-    // ReSharper disable MemberCanBePrivate.Global
-    public required MapMetadataStorage MapMetadata { private get; init; }
-    public required GameStorage GameStorage { private get; init; }
-    // ReSharper restore All
-    #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
@@ -83,19 +78,29 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
 
         using GameStorage.Request db = session.GameStorage.Context();
         Home? home = db.GetHome(accountId);
-        if (home == null) {
-            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+        if (home is not { IsHomeSetup: true }) {
+            session.Send(EnterUgcMapPacket.CannotVisitThatCharacterHome());
             return;
         }
 
-        if (home.Passcode != null && home.Passcode != passcode) {
-            session.Send(NoticePacket.MessageBox(StringCode.s_home_password_mismatch));
+        if (session.Field.OwnerId == accountId && session.Field.MapId == Constant.DefaultHomeMapId) {
+            session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
         }
 
-        session.Send(session.PrepareField(home.Indoor.MapId, ownerId: home.Indoor.OwnerId)
-            ? FieldEnterPacket.Request(session.Player)
-            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+        if (!string.IsNullOrEmpty(home.Passcode)) {
+            if (string.IsNullOrEmpty(passcode)) {
+                session.Send(EnterUgcMapPacket.RequestPassword(accountId));
+                return;
+            }
+
+            if (!string.Equals(home.Passcode, passcode, StringComparison.Ordinal)) {
+                session.Send(EnterUgcMapPacket.WrongPassword(accountId));
+                return;
+            }
+        }
+
+        session.MigrateToHome(home);
     }
 
     private void HandleReturn(GameSession session) {
@@ -103,14 +108,24 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
     }
 
     private void HandleDecorPlanner(GameSession session) {
+        Home home = session.Player.Value.Home;
+        if (!home.IsHomeSetup) {
+            return;
+        }
 
+        session.MigrateToPlanner(PlotMode.DecorPlanner);
     }
 
     private void HandleBlueprintDesigner(GameSession session) {
+        Home home = session.Player.Value.Home;
+        if (!home.IsHomeSetup) {
+            return;
+        }
 
+        session.MigrateToPlanner(PlotMode.BlueprintPlanner);
     }
 
     private void HandleModelHome(GameSession session) {
-
+        session.MigrateToPlanner(PlotMode.ModelHome);
     }
 }

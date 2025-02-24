@@ -13,9 +13,9 @@ internal class TriggerApiScript {
         writer.WriteLine("clr.AddReference(\"Maple2.Server.Game\")");
         writer.WriteBlankLine();
         writer.WriteLine("from typing import List");
-        writer.WriteLine("from System import Array, Int32, String");
+        writer.WriteLine("from System import Array, Int32, String, Object");
         writer.WriteLine("from System.Numerics import Vector3");
-        writer.WriteLine("from Maple2.Server.Game.Scripting.Trigger import Align, FieldGame, Locale, Weather");
+        writer.WriteLine("from Maple2.Server.Game.Scripting.Trigger import Align, FieldGame, Locale, Weather, BannerType");
         writer.WriteBlankLine();
 
         writer.WriteBlankLine();
@@ -107,6 +107,8 @@ internal class TriggerApiScript {
         writer.WriteLine("public enum Locale { ALL, KR, CN, NA, JP, TH, TW }");
         writer.WriteBlankLine();
         writer.WriteLine("public enum Weather { Clear = 0, Snow = 1, HeavySnow = 2, Rain = 3, HeavyRain = 4, SandStorm = 5, CherryBlossom = 6, LeafFall = 7 }");
+        writer.WriteBlankLine();
+        writer.WriteLine("public enum BannerType : byte { Lose = 0, GameOver = 1, Winner = 2, Bonus = 3, Draw = 4, Success = 5, Text = 6, Fail = 7, Countdown = 8, }");
     }
 
     internal class Function : IComparable<Function> {
@@ -238,7 +240,7 @@ internal class TriggerApiScript {
                 return p.Type switch {
                     ScriptType.IntList => $"Array[Int32]({p.Name})",
                     ScriptType.StrList => $"Array[String]({p.Name})",
-                    ScriptType.StateList => $"Array[...]({p.Name})",
+                    ScriptType.StateList => $"Array[Object]({p.Name})",
                     _ => p.Name,
                 };
             }));
@@ -294,6 +296,7 @@ internal class TriggerApiScript {
                     ScriptType.EnumFieldGame => "FieldGame",
                     ScriptType.EnumLocale => "Locale",
                     ScriptType.EnumWeather => "Weather",
+                    ScriptType.EnumBannerType => "BannerType",
                     _ => throw new ArgumentOutOfRangeException($"Invalid parameter type: {scriptType}"),
                 };
             }
