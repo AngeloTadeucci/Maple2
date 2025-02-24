@@ -250,8 +250,6 @@ public class FishingManager {
 
             fishingTick -= rodMetadata.ReduceTime;
             fishingTick = Random.Shared.Next(fishingTick - fishingTick / 3, fishingTick); // Chance for early catch
-            if (fishFightGame) {
-            }
         } else {
             fishingTick = Random.Shared.Next(fishingTick + 1, fishingTick * 2); // If tick is over bore duration, it will fail
         }
