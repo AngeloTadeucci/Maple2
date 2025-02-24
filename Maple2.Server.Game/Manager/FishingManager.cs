@@ -14,12 +14,11 @@ using Serilog;
 namespace Maple2.Server.Game.Manager;
 
 public class FishingManager {
-    private readonly IReadOnlyList<int> fishRarityWeights = [0, 50, 1, 1, 1];
     private readonly GameSession session;
-    private IDictionary<int, FishEntry> fishAlbum => session.Player.Value.Unlock.FishAlbum;
+    private IDictionary<int, FishEntry> FishAlbum => session.Player.Value.Unlock.FishAlbum;
     private readonly TableMetadataStorage tableMetadata;
     private readonly ServerTableMetadataStorage serverTableMetadata;
-    private FieldGuideObject? guideObject {
+    private FieldGuideObject? GuideObject {
         get => session.GuideObject;
         set => session.GuideObject = value;
     }
@@ -38,12 +37,12 @@ public class FishingManager {
     }
 
     public void Reset() {
-        if (guideObject == null) {
+        if (GuideObject == null) {
             return;
         }
         session.Send(FishingPacket.Stop());
-        session.Field.Broadcast(GuideObjectPacket.Remove(guideObject));
-        guideObject = null;
+        session.Field.Broadcast(GuideObjectPacket.Remove(GuideObject));
+        GuideObject = null;
         rod = null;
         fishFightGame = false;
         selectedTile = null;
@@ -211,6 +210,10 @@ public class FishingManager {
             return FishingError.s_fishing_error_system_error;
         }
 
+        if (GuideObject == null) {
+            return FishingError.s_fishing_error_system_error;
+        }
+
         if (rod?.Metadata.Function?.Type != ItemFunction.FishingRod) {
             return FishingError.s_fishing_error_invalid_item;
         }
@@ -299,7 +302,7 @@ public class FishingManager {
         int masteryExp = 0;
         var caughtFishType = CaughtFishType.Default;
 
-        if (fishAlbum.TryGetValue(selectedFish.Id, out FishEntry? fishEntry)) {
+        if (FishAlbum.TryGetValue(selectedFish.Id, out FishEntry? fishEntry)) {
             fishEntry.TotalCaught++;
             fishEntry.LargestSize = Math.Max(fishEntry.LargestSize, fishSize);
 
@@ -314,7 +317,7 @@ public class FishingManager {
                 TotalPrizeFish = prizeFish ? 1 : 0,
                 LargestSize = fishSize,
             };
-            fishAlbum.Add(selectedFish.Id, fishEntry);
+            FishAlbum.Add(selectedFish.Id, fishEntry);
             session.ConditionUpdate(ConditionType.fish_collect, codeLong: selectedFish.Id, targetLong: session.Field.MapId);
             masteryExp = selectedFish.MasteryExp * 2; // double mastery exp if first catch
             caughtFishType = CaughtFishType.FirstKind;
