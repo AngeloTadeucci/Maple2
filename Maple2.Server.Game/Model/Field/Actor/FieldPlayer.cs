@@ -243,11 +243,11 @@ public class FieldPlayer : Actor<Player> {
                 break;
             case ActorState.EmotionIdle:
                 if (UpdateStateSyncTimeTracking()) {
-                    Field.SkillMetadata.TryGet(stateSync.EmotionId, 1, out var emote);
-                    if (emote == null) {
-                        break;
-                    }
-                    Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
+                    // Field.SkillMetadata.TryGet(stateSync.EmotionId, 1, out var emote);
+                    // if (emote == null) {
+                        // break;
+                    // }
+                    // Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
                 }
                 break;
                 // TODO: Any more condition states?
