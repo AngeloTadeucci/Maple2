@@ -62,12 +62,10 @@ public static class Constant {
     public const int ChangeAttributesMinLevel = 50;
     public const int ChangeAttributesMinRarity = 4;
     public const int ChangeAttributesMaxRarity = 6;
-    public const double FishingSuccessChance = 0.90;
-    public const double FishingMiniGameChance = 0.90;
     public const double FishingMasteryAdditionalExpChance = 0.05;
     public const int FishingMasteryIncreaseFactor = 2;
     public const int FishingRewardsMaxCount = 1;
-    public const double FishingItemChance = 0.05;
+    public const double FishingItemChance = 0.03;
     public const float FishingBigFishExpModifier = 1.5f;
     public const int MaxMottoLength = 20;
     public const ItemTag BeautyHairSpecialVoucherTag = ItemTag.beauty_hair_special;
@@ -167,8 +165,8 @@ public static class Constant {
     public const int BlockSize = 150;
     public const float SouthEast = 0;
     public const float NorthEast = 90;
-    public const float NorthWest = 180;
-    public const float SouthWest = 270;
+    public const float NorthWest = -180;
+    public const float SouthWest = -90;
     public const short HairSlotCount = 30;
     public const ShopCurrencyType InitialTierExcessRestockCurrency = ShopCurrencyType.Meso;
     public const float UGCShopProfitFee = 0.25f;
@@ -898,6 +896,7 @@ public static class Constant {
     public const int NextStateTriggerDefaultTick = 100;
     public const int UserRevivalPaneltyTick = 3600000;
     public const int UserRevivalPaneltyMinLevel = 10;
+    public const int FishFightingProp = 3000;
 
     public const float NpcLastSightRadius = 1800;
     public const float NpcLastSightHeightUp = 525;

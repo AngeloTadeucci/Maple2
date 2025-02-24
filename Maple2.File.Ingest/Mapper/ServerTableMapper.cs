@@ -5,6 +5,7 @@ using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Enum;
+using Maple2.File.Parser.Xml.Table;
 using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model;
 using Maple2.Model.Enum;
@@ -13,9 +14,13 @@ using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using DayOfWeek = System.DayOfWeek;
 using ExpType = Maple2.Model.Enum.ExpType;
+using Fish = Maple2.File.Parser.Xml.Table.Server.Fish;
+using FishingSpot = Maple2.File.Parser.Xml.Table.Server.FishingSpot;
 using GuildNpcType = Maple2.Model.Enum.GuildNpcType;
+using IndividualItemDrop = Maple2.File.Parser.Xml.Table.Server.IndividualItemDrop;
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
+using MergeOption = Maple2.File.Parser.Xml.Table.Server.MergeOption;
 using ScriptType = Maple2.Model.Enum.ScriptType;
 using TimeEventType = Maple2.File.Parser.Enum.TimeEventType;
 
@@ -46,6 +51,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
         yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
         yield return new ServerTableMetadata { Name = "shop_merat_custom.xml", Table = ParseMeretCustomShop() };
+        yield return new ServerTableMetadata { Name = "fish*.xml", Table = ParseFish() };
 
     }
 
@@ -1543,6 +1549,96 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 PromoName: item.promoName,
                 PromoStartTime: string.IsNullOrEmpty(promoStartTime) ? 0 : DateTime.ParseExact(promoStartTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
                 PromoEndTime: string.IsNullOrEmpty(promoEndTime) ? 0 : DateTime.ParseExact(promoEndTime, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds());
+        }
+    }
+
+    private FishTable ParseFish() {
+        // Parse Fish
+        var fishes = new Dictionary<int, FishTable.Fish>();
+        foreach ((int id, Fish fish) in parser.ParseFish()) {
+            if (!Enum.TryParse(fish.habitat, out LiquidType liquidType)) {
+                liquidType = LiquidType.all;
+            }
+
+            int[] smallSize = fish.smallSize.Split("-").Select(int.Parse).ToArray();
+            int[] bigSize = fish.bigSize.Split("-").Select(int.Parse).ToArray();
+            fishes.Add(id, new FishTable.Fish(
+                Id: id,
+                FluidHabitat: liquidType,
+                Mastery: fish.fishMastery,
+                Level: fish.lv,
+                Rarity: fish.rank,
+                PointCount: fish.pointCount,
+                MasteryExp: fish.masteryPoint,
+                Exp: fish.exp,
+                FishingTime: fish.fishingTime,
+                CatchProbability: fish.catchProp,
+                BaitProbability: fish.baitProp,
+                SmallSize: new FishTable.Range<int>(smallSize[0], smallSize[1]),
+                BigSize: new FishTable.Range<int>(bigSize[0], bigSize[1]),
+                BaitEffectIds: fish.bait,
+                IndividualDropBoxId: fish.individualDropBoxID,
+                IgnoreSpotMastery: fish.ignoreSpotMastery));
+        }
+
+        // Parse Spots
+        var spots = new Dictionary<int, FishTable.Spot>();
+        foreach ((int mapId, FishingSpot spot) in parser.ParseFishingSpot()) {
+            var liquidTypes = new List<LiquidType>();
+            foreach (string liquidType in spot.liquidType) {
+                if (Enum.TryParse(liquidType, out LiquidType type)) {
+                    liquidTypes.Add(type);
+                }
+            }
+
+            spots.Add(mapId, new FishTable.Spot(
+                Id: mapId,
+                MinMastery: spot.minMastery,
+                MaxMastery: spot.maxMastery,
+                LiquidTypes: liquidTypes,
+                GlobalFishBoxId: spot.globalFishBoxID,
+                IndividualFishBoxId: spot.individualFishBoxID,
+                GlobalDropBoxId: spot.globalDropBoxId,
+                IndividualDropBoxId: spot.individualDropBoxId,
+                SpotLevel: spot.spotLevel,
+                DropRank: spot.spotDropRank ? 1 : 0)); // TODO: Change this from a bool to int
+        }
+
+        // Parse Lure
+        var lures = new Dictionary<int, FishTable.Lure>();
+        foreach ((int id, FishLure lure) in parser.ParseFishLure()) {
+            lures.Add(id, new FishTable.Lure(
+                BuffId: lure.fishCode,
+                BuffLevel: (short) lure.additionalEffectLevel,
+                Catches: lure.catchRank.Select((t, i) => new FishTable.Lure.Catch(Rank: t, Probability: lure.catchProp[i])).ToArray(),
+                Spawns: lure.spawnRank.Select((t, i) => new FishTable.Lure.Spawn(FishId: t, Rate: lure.spawnProp[i])).ToArray(),
+                GlobalDropBoxId: lure.globalDropBoxID,
+                GlobalDropRank: lure.globalDropRank,
+                IndividualDropBoxId: lure.individualDropBoxID,
+                IndividualDropRank: lure.individualDropRank));
+        }
+
+        // Global Fish Boxes
+        Dictionary<int, FishTable.FishBox> globalBoxes = ParseFishBox(parser.ParseGlobalFishBox());
+        Dictionary<int, FishTable.FishBox> individualBoxes = ParseFishBox(parser.ParseIndividualFishBox());
+
+        return new FishTable(fishes, spots, lures, globalBoxes, individualBoxes);
+
+        Dictionary<int, FishTable.FishBox> ParseFishBox(IEnumerable<(int, FishBox)> boxes) {
+            var results = new Dictionary<int, FishTable.FishBox>();
+            foreach ((int id, FishBox box) in boxes) {
+                Dictionary<int, int> fishes = [];
+                foreach (FishBox.Fish data in box.fish) {
+                    fishes[data.fishCode] = data.weight;
+                }
+
+                results.Add(id, new FishTable.FishBox(
+                    Id: id,
+                    Probability: box.probability,
+                    CubeRate: box.cubeRate,
+                    Fishes: fishes));
+            }
+            return results;
         }
     }
 }

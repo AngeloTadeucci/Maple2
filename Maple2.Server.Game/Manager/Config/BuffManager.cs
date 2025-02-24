@@ -133,10 +133,8 @@ public class BuffManager : IUpdatable {
         }
     }
 
-    public bool HasBuff(int effectId, short effectLevel, int overlapCount) {
-        Buff? buff = null;
-
-        if (!Buffs.TryGetValue(effectId, out buff)) {
+    public bool HasBuff(int effectId, short effectLevel = 1, int overlapCount = 0) {
+        if (!Buffs.TryGetValue(effectId, out Buff? buff)) {
             return false;
         }
 
@@ -145,6 +143,10 @@ public class BuffManager : IUpdatable {
         }
 
         return effectLevel == 0 || buff.Level >= effectLevel;
+    }
+
+    public bool HasBuff(BuffEventType eventType) {
+        return Buffs.Values.Any(buff => buff.Metadata.Property.EventType == eventType);
     }
 
     private void SetReflect(Buff buff) {

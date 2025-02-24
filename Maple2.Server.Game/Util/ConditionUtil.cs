@@ -48,7 +48,6 @@ public static class ConditionUtil {
                 break;
             case ConditionType.map:
             case ConditionType.fish:
-            case ConditionType.fish_big:
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.item_add:
@@ -97,6 +96,7 @@ public static class ConditionUtil {
             case ConditionType.laddertime:
             case ConditionType.holdtime:
             case ConditionType.riding:
+            case ConditionType.fish_big:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }

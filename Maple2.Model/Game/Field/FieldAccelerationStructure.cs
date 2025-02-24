@@ -5,6 +5,7 @@ using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Model.Metadata.FieldEntity;
 
@@ -254,7 +255,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldVibrateEntity> QueryVibrateObjectsList(Vector3 min, Vector3 max) {
-        List<FieldVibrateEntity> vibrateObjects = new();
+        List<FieldVibrateEntity> vibrateObjects = [];
 
         QueryVibrateObjects(min, max, vibrateObjects.Add);
 
@@ -266,7 +267,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldVibrateEntity> QueryVibrateObjectsCenterList(Vector3 center, Vector3 size) {
-        List<FieldVibrateEntity> vibrateObjects = new();
+        List<FieldVibrateEntity> vibrateObjects = [];
 
         QueryVibrateObjectsCenter(center, size, vibrateObjects.Add);
 
@@ -276,7 +277,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
     #region Initialization
     // used to guarantee deterministic output when parsing maps
-    private void SortEntityList(List<FieldEntity> entityList) {
+    private static void SortEntityList(List<FieldEntity> entityList) {
         if (entityList.Count <= 1) {
             return;
         }
@@ -292,7 +293,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
-    private void GenerateSpawnLocations(Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities, Vector3S minIndex, Vector3S maxIndex, List<FieldEntity> unalignedEntities) {
+    private static void GenerateSpawnLocations(Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities, Vector3S minIndex, Vector3S maxIndex, List<FieldEntity> unalignedEntities) {
         Dictionary<Vector3S, (bool isOccupied, bool isGround)> occupancyMap = new();
         List<(Vector3S index, FieldSpawnTile tile)> spawnTiles = new();
 
@@ -326,7 +327,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
             for (short x = minCubeIndex.X; x <= maxCubeIndex.X; x++) {
                 for (short y = minCubeIndex.Y; y <= maxCubeIndex.Y; y++) {
                     for (short z = minCubeIndex.Z; z <= maxCubeIndex.Z; z++) {
-                        Vector3S coord = new Vector3S(x, y, z);
+                        var coord = new Vector3S(x, y, z);
 
                         if (!occupancyMap.TryGetValue(coord, out (bool isOccupied, bool isGround) occupancy)) {
                             occupancy = (false, false);
@@ -341,8 +342,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         for (short x = minIndex.X; x <= maxIndex.X; x++) {
             for (short y = minIndex.Y; y <= maxIndex.Y; y++) {
                 for (short z = (short) (minIndex.Z + 1); z <= maxIndex.Z; z++) {
-                    Vector3S coord = new Vector3S(x, y, z);
-                    Vector3S groundCoord = new Vector3S(x, y, (short) (z - 1));
+                    var coord = new Vector3S(x, y, z);
+                    var groundCoord = new Vector3S(x, y, (short) (z - 1));
 
                     if (!occupancyMap.TryGetValue(coord, out (bool isOccupied, bool isGround) occupancy)) {
                         occupancy = (false, false);
@@ -354,18 +355,18 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
                     if (!occupancy.isGround && !occupancy.isOccupied && groundOccupancy.isGround) {
                         if (!gridAlignedEntities.TryGetValue(coord, out List<FieldEntity>? entities)) {
-                            entities = new();
+                            entities = [];
 
                             gridAlignedEntities.Add(coord, entities);
                         }
 
                         Vector3 cellPosition = BLOCK_SIZE * coord.Vector3;
-                        BoundingBox3 bounds = new BoundingBox3(cellPosition - new Vector3(HALF_BLOCK, HALF_BLOCK, 0), cellPosition + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
+                        var bounds = new BoundingBox3(cellPosition - new Vector3(HALF_BLOCK, HALF_BLOCK, 0), cellPosition + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
 
                         entities.Add(new FieldSpawnTile(
                             Id: new FieldEntityId(0, 0),
                             Position: cellPosition,
-                            Rotation: new Vector3(0, 0, 0),
+                            Rotation: Vector3.Zero,
                             Scale: 1,
                             Bounds: bounds));
                     }
@@ -383,6 +384,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                                     Position: fluid.Position,
                                     Rotation: fluid.Rotation,
                                     Scale: fluid.Scale,
+                                    LiquidType: fluid.LiquidType,
                                     Bounds: fluid.Bounds,
                                     MeshLlid: fluid.MeshLlid,
                                     IsShallow: isShallow,
@@ -769,6 +771,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     writer.Write(meshCollider.MeshLlid);
                 }
                 if (entity is FieldFluidEntity fluid) {
+                    writer.Write(fluid.LiquidType);
                     writer.Write(fluid.IsShallow);
                     writer.Write(fluid.IsSurface);
                 }
@@ -854,12 +857,12 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public FieldEntity ReadEntity(IByteReader reader) {
-        FieldEntityType type = reader.Read<FieldEntityType>();
-        FieldEntityMembers memberFlags = reader.Read<FieldEntityMembers>();
+        var type = reader.Read<FieldEntityType>();
+        var memberFlags = reader.Read<FieldEntityMembers>();
 
-        FieldEntityId id = new FieldEntityId(0, 0);
+        var id = new FieldEntityId(0, 0);
         Vector3 position;
-        Vector3 rotation = new Vector3(0, 0, 0);
+        var rotation = new Vector3(0, 0, 0);
         float scale = 1;
         BoundingBox3 bounds;
         uint llid = 0;
@@ -940,6 +943,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Position: position,
                     Rotation: rotation,
                     Scale: scale,
+                    LiquidType: reader.Read<LiquidType>(),
                     Bounds: bounds,
                     MeshLlid: llid,
                     IsShallow: reader.Read<bool>(),

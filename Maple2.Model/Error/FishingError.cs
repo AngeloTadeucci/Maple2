@@ -5,6 +5,7 @@ using System.ComponentModel;
 namespace Maple2.Model.Error;
 
 public enum FishingError : short {
+    none = 0,
     [Description("You can only fish near swimmable water.")]
     s_fishing_error_notexist_water = 1,
     [Description("The fishing pole is not valid.")]

@@ -9,6 +9,7 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
+using Microsoft.Scripting.Utils;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;
@@ -619,14 +620,28 @@ public sealed class ShopManager {
     }
 
     public void Save(GameStorage.Request db) {
-        foreach (BuyBackItem item in buyBackItems.Values) {
-            session.Item.Inventory.Discard(item.Item);
-        }
+        db.SaveItems(0, buyBackItems.Values.Select(item => item.Item).ToArray());
 
-        db.SaveCharacterShopData(session.AccountId, accountShopData.Values.Where(value => value.Interval != ResetType.Default).ToList());
-        db.SaveCharacterShopData(session.CharacterId, characterShopData.Values.Where(value => value.Interval != ResetType.Default).ToList());
-        db.SaveCharacterShopItemData(session.AccountId, accountShopItemData.Values.SelectMany(value => value.Values).ToList());
-        db.SaveCharacterShopItemData(session.CharacterId, characterShopItemData.Values.SelectMany(value => value.Values).ToList());
+        Dictionary<int, CharacterShopData> saveAccountShops = accountShopData.Values
+            .Where(data => data.Interval != ResetType.Default)
+            .ToDictionary(data => data.ShopId);
+
+        Dictionary<int, CharacterShopData> saveCharacterShops = characterShopData.Values
+            .Where(data => data.Interval != ResetType.Default)
+            .ToDictionary(data => data.ShopId);
+
+        db.SaveCharacterShopData(session.AccountId, saveAccountShops.Values.ToList());
+        db.SaveCharacterShopData(session.CharacterId, saveCharacterShops.Values.ToList());
+
+        db.SaveCharacterShopItemData(session.AccountId, accountShopItemData
+            .Where(kvp => saveAccountShops.ContainsKey(kvp.Key))
+            .SelectMany(kvp => kvp.Value.Values)
+            .ToList());
+
+        db.SaveCharacterShopItemData(session.CharacterId, characterShopItemData
+            .Where(kvp => saveCharacterShops.ContainsKey(kvp.Key))
+            .SelectMany(kvp => kvp.Value.Values)
+            .ToList());
     }
 
     private ShopBuyDay ToShopBuyDay(DayOfWeek dayOfWeek) {

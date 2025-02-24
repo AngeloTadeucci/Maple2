@@ -98,6 +98,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ConcurrentDictionary<long, ClubManager> Clubs { get; set; }
     public SurvivalManager Survival { get; set; } = null!;
     public MarriageManager Marriage { get; set; } = null!;
+    public FishingManager Fishing { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -167,6 +168,7 @@ public sealed partial class GameSession : Core.Network.Session {
         BlackMarket = new BlackMarketManager(this, Lua);
         Survival = new SurvivalManager(this);
         Marriage = new MarriageManager(this);
+        Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -240,7 +242,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(TimeSyncPacket.Reset(DateTimeOffset.UtcNow));
         Send(TimeSyncPacket.Set(DateTimeOffset.UtcNow));
 
-        Send(StatsPacket.Init(Player));
+        Stats.Refresh();
 
         Send(RequestPacket.TickSync(Environment.TickCount));
 
