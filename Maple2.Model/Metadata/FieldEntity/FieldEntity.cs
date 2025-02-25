@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Tools.VectorMath;
 
 namespace Maple2.Model.Metadata.FieldEntity;
@@ -72,6 +73,7 @@ public record FieldFluidEntity(
     Vector3 Position,
     Vector3 Rotation,
     float Scale,
+    LiquidType LiquidType,
     BoundingBox3 Bounds,
     uint MeshLlid,
     bool IsShallow,

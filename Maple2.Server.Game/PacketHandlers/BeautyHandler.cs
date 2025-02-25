@@ -325,6 +325,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return;
         }
         newHair.Appearance = hairAppearance;
+        newHair.Group = ItemGroup.Outfit;
 
         using GameStorage.Request db = session.GameStorage.Context();
         newHair = db.CreateItem(session.CharacterId, newHair);
@@ -374,6 +375,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             Item? voucher = session.Field.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
             if (voucher != null && !session.Item.Inventory.Add(voucher, true)) {
                 session.Item.MailItem(voucher);
+                voucherItemId = voucher.Id;
             }
         }
 

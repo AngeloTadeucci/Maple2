@@ -32,9 +32,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Json\FishingRewards.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="Utils\ai_translate.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

@@ -42,7 +42,6 @@ public partial class GameSession {
 
     public BeautyShop? BeautyShop;
 
-    public bool FishingMiniGameActive;
     public int BonusGameId;
 
     public int SuperChatId;

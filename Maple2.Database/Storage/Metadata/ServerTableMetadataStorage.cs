@@ -24,6 +24,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<ShopItemTable> shopItemTable;
     private readonly Lazy<BeautyShopTable> beautyShopTable;
     private readonly Lazy<MeretMarketTable> meretMarketTable;
+    private readonly Lazy<FishTable> fishTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
@@ -42,6 +43,7 @@ public class ServerTableMetadataStorage {
     public ShopItemTable ShopItemTable => shopItemTable.Value;
     public BeautyShopTable BeautyShopTable => beautyShopTable.Value;
     public MeretMarketTable MeretMarketTable => meretMarketTable.Value;
+    public FishTable FishTable => fishTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
@@ -61,6 +63,7 @@ public class ServerTableMetadataStorage {
         shopItemTable = Retrieve<ShopItemTable>(context, "shop_game.xml");
         beautyShopTable = Retrieve<BeautyShopTable>(context, "shop_beauty.xml");
         meretMarketTable = Retrieve<MeretMarketTable>(context, "shop_merat_custom.xml");
+        fishTable = Retrieve<FishTable>(context, "fish*.xml");
     }
 
     public IEnumerable<GameEvent> GetGameEvents() {
