@@ -9,6 +9,7 @@ public enum PortalType : byte {
     DungeonEnter = 9,
     InHome = 11,
     LeaveDungeon = 13,
+    ContentsGuide = 15,
 }
 
 public enum PortalActionType {

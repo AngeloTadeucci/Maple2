@@ -87,12 +87,8 @@ public partial class FieldManager {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
-        if (Metadata.Property.EnterReturnId != 0 &&
-            Metadata.Property.Type != MapType.Arcade &&
-            Metadata.Property.Type != MapType.PocketRealm &&
-            Metadata.Property.Type != MapType.Dungeon &&
-            Metadata.Property.Type != MapType.Event &&
-            Metadata.Property.Type != MapType.Event2) {
+        if (Metadata.Property.EnterReturnId != 0 && FieldInstance.InstanceType == InstanceType.none) {
+            // TODO: Probably need to figure out homes and dungeon maps.
             player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
         }
 
