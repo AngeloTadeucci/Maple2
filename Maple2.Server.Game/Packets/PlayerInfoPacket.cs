@@ -53,9 +53,9 @@ public static class PlayerInfoPacket {
             buffer.WriteLong();
             // Outfit2
             buffer.WriteByte(); // Skin Count
-            // for (int i = 0; i < 0; i++) {
+            for (int i = 0; i < 0; i++) {
                 // buffer.WriteEquip();
-            // }
+            }
 
             pWriter.WriteInt(buffer.Length);
             pWriter.WriteBytes(buffer.Buffer, 0, buffer.Length);
