@@ -46,12 +46,16 @@ public static class PlayerInfoPacket {
             foreach (Item item in session.Item.Equips.Outfit.Values) {
                 buffer.WriteEquip(item);
             }
-            // Don't know...
-            buffer.WriteBool(true);
+
+            // Outfit 2 from KMS2
+            buffer.WriteBool(true); //has Skin
             buffer.WriteLong();
             buffer.WriteLong();
             // Outfit2
-            buffer.WriteByte();
+            buffer.WriteByte(); // Skin Count
+            // for (int i = 0; i < 0; i++) {
+                // buffer.WriteEquip();
+            // }
 
             pWriter.WriteInt(buffer.Length);
             pWriter.WriteBytes(buffer.Buffer, 0, buffer.Length);
@@ -82,7 +86,6 @@ public static class PlayerInfoPacket {
         buffer.WriteInt(player.Account.PrestigeLevel);
         buffer.WriteByte();
 
-        // 6 buffers: 280, 280, 280, 140, 720, 720
         #region Stats
         for (int i = 0; i < Stat.TOTAL; i++) {
             for (int j = 0; j < Stats.BASIC_TOTAL; j++) {
@@ -90,15 +93,16 @@ public static class PlayerInfoPacket {
             }
         }
         for (int i = 0; i < Stats.BASIC_TOTAL; i++) {
-            buffer.WriteFloat(0f);
+            buffer.WriteFloat(fieldPlayer.Stats.Values[(BasicAttribute) i].Rate);
         }
 
-        // Special stats, probably (Total, Min, Max) float[60]
-        for (int i = 0; i < 180; i++) {
-            buffer.WriteFloat(0f);
+        for (int i = 0; i < Stats.SPECIAL_TOTAL; i++) {
+            buffer.WriteFloat(fieldPlayer.Stats.Values[(SpecialAttribute) i].Rate);
         }
 
-        buffer.WriteBytes(new byte[180 * 4]); // Unknown buffer[180]
+        for (int i = 0; i < Stats.SPECIAL_TOTAL; i++) {
+            buffer.WriteFloat(fieldPlayer.Stats.Values[(SpecialAttribute) i].Base);
+        }
         #endregion
 
         buffer.WriteUnicodeString(player.Character.Picture);
