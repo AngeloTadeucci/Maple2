@@ -97,9 +97,12 @@ public partial class TriggerContext {
             }
         }
 
-        foreach (FieldPlayer player in PlayersInBox(boxIdInts)) {
-            player.Session.Send(packet);
+        foreach (int boxId in boxIdInts) {
+            foreach (FieldPlayer player in PlayersInBox(boxId)) {
+                player.Session.Send(packet);
+            }
         }
+
     }
 
     public void SetEventUiCountdown(string script, int[] roundCountdown, string[] boxIds) {
