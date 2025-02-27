@@ -34,7 +34,7 @@ public sealed class Navigation : IDisposable {
     }
 
     private DtNavMesh LoadNavMesh() {
-        FileStream fs = new FileStream(System.IO.Path.Combine(Paths.NAVMESH_DIR, $"{Name}.navmesh"), FileMode.Open, FileAccess.Read);
+        FileStream fs = new FileStream(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Navmeshes", $"{Name}.navmesh"), FileMode.Open, FileAccess.Read);
         BinaryReader br = new BinaryReader(fs);
         DtMeshSetReader reader = new DtMeshSetReader();
 
