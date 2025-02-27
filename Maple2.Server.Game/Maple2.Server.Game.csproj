@@ -43,9 +43,9 @@
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2024.2.3"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Remove="Scripting\Scripts\Trigger\**\*.py" Condition="'$(IsDockerBuild)' == 'true'"/>
-        <None Remove="Navmeshes\**\*.navmesh" Condition="'$(IsDockerBuild)' == 'true'"/>
+    <ItemGroup Condition="'$(IsDockerBuild)' == 'true'">
+        <None Remove="Scripting\Scripts\Trigger\**\*.py"/>
+        <None Remove="Navmeshes\**\*.navmesh"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDockerBuild)' != 'true'">
