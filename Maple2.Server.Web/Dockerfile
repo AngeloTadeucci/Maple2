@@ -12,14 +12,15 @@ COPY ["Maple2.Database/Maple2.Database.csproj", "Maple2.Database/"]
 COPY ["Maple2.Server.Core/Maple2.Server.Core.csproj", "Maple2.Server.Core/"]
 COPY ["Maple2.Model/Maple2.Model.csproj", "Maple2.Model/"]
 COPY ["Maple2.Tools/Maple2.Tools.csproj", "Maple2.Tools/"]
-RUN dotnet restore -r win-x64 "Maple2.Server.Web/Maple2.Server.Web.csproj"
+RUN dotnet restore "Maple2.Server.Web/Maple2.Server.Web.csproj"
 COPY . .
 WORKDIR "/src/Maple2.Server.Web"
 
 FROM build AS publish
-RUN dotnet publish -r win-x64 "Maple2.Server.Web.csproj" -c Debug -o /app/publish
+RUN dotnet publish "Maple2.Server.Web.csproj" -c Debug
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /src/Maple2.Server.Web/bin/Debug/net8.0/publish .
+
 ENTRYPOINT ["dotnet", "Maple2.Server.Web.dll"]
