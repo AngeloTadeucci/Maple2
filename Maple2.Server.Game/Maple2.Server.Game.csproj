@@ -63,5 +63,9 @@
         <None Update="appsettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scripting\Scripts\Trigger\trigger_api.py">
+            <TargetPath>Scripts\Trigger\trigger_api.py</TargetPath>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
