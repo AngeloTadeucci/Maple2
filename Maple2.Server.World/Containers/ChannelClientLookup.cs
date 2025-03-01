@@ -67,7 +67,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
             if (activeChannel is null) {
                 continue;
             }
-            if (channels[i].Endpoint.Address.ToString() == gameIp && activeChannel.Status is ChannelStatus.Inactive) {
+            if (activeChannel.Endpoint.Address.ToString() == gameIp && activeChannel.Status is ChannelStatus.Inactive) {
                 return (activeChannel.GamePort, activeChannel.GrpcPort, activeChannel.Id);
             }
         }
