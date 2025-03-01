@@ -450,6 +450,25 @@ public sealed partial class GameSession : Core.Network.Session {
         character.ReturnMapId = 0;
         character.ReturnPosition = default;
 
+        if (character.MapId is Constant.DefaultHomeMapId) {
+            MigrateOutOfInstance(mapId);
+            return;
+        }
+
+        if (Guild.Guild is not null) {
+            TableMetadata.GuildTable.Houses.TryGetValue(Guild.Guild.HouseRank, out IReadOnlyDictionary<int, GuildTable.House>? houseRank);
+
+            if (houseRank is not null) {
+                houseRank.TryGetValue(Guild.Guild.HouseTheme, out GuildTable.House? house);
+
+                if (house?.MapId == character.MapId) {
+                    Console.WriteLine("Returning to guild house map id: {0}", house.MapId);
+                    MigrateOutOfInstance(mapId);
+                    return;
+                }
+            }
+        }
+
         // If returning to a map, pass in the spawn point.
         Send(PrepareField(mapId, position: position)
             ? FieldEnterPacket.Request(Player)
@@ -512,6 +531,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 MapId = Constant.DefaultHomeMapId,
                 OwnerId = AccountId,
                 PlotMode = (World.Service.PlotMode) plotMode,
+                InstancedContent = true,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
@@ -526,20 +546,48 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public void MigrateToHome(Home home) {
+    public void MigrateToInstance(int mapId, long ownerId) {
+        bool instancedContent = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
+
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
                 CharacterId = CharacterId,
                 MachineId = MachineId.ToString(),
                 Server = Server.World.Service.Server.Game,
-                MapId = home.Indoor.MapId,
-                OwnerId = home.Indoor.OwnerId,
+                MapId = mapId,
+                OwnerId = ownerId,
+                InstancedContent = instancedContent,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            Send(MigrationPacket.GameToGame(endpoint, response.Token, home.Indoor.MapId));
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
+            Player.Value.Character.LastChannel = Player.Value.Character.Channel;
+            State = SessionState.ChangeMap;
+        } catch (RpcException ex) {
+            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
+            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
+        } finally {
+            Disconnect();
+        }
+    }
+
+    public void MigrateOutOfInstance(int mapId) {
+        try {
+            var request = new MigrateOutRequest {
+                AccountId = AccountId,
+                CharacterId = CharacterId,
+                MachineId = MachineId.ToString(),
+                Server = Server.World.Service.Server.Game,
+                Channel = Player.Value.Character.LastChannel,
+                MapId = mapId,
+            };
+
+            MigrateOutResponse response = World.MigrateOut(request);
+            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
+            Player.Value.Character.LastChannel = 0;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));

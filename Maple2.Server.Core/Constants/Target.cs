@@ -23,6 +23,8 @@ public static class Target {
 
     public static readonly ushort BaseGrpcChannelPort = 21002;
 
+    public static readonly bool InstancedContent = false;
+
     static Target() {
         if (IPAddress.TryParse(Environment.GetEnvironmentVariable("LOGIN_IP"), out IPAddress? loginIpAddress)) {
             LoginIp = loginIpAddress;
@@ -65,6 +67,10 @@ public static class Target {
 
         if (Uri.TryCreate($"http://{webIP}:{webPort}", UriKind.Absolute, out Uri? webUriOverride)) {
             WebUri = webUriOverride;
+        }
+
+        if (bool.TryParse(Environment.GetEnvironmentVariable("INSTANCED_CONTENT"), out bool instancedOverride)) {
+            InstancedContent = instancedOverride;
         }
     }
 }

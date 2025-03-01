@@ -438,7 +438,7 @@ public sealed partial class FieldManager : IDisposable {
                             return false;
                         }
 
-                        session.MigrateToHome(home);
+                        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
                         return true;
                     }
             }
