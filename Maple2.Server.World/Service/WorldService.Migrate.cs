@@ -14,15 +14,14 @@ public partial class WorldService {
     private static readonly TimeSpan AuthExpiry = TimeSpan.FromSeconds(30);
 
     private readonly IMemoryCache tokenCache;
-    // private readonly PlayerChannelLookup playerChannels = new();
 
     public override Task<MigrateOutResponse> MigrateOut(MigrateOutRequest request, ServerCallContext context) {
         ulong token = UniqueToken();
 
         switch (request.Server) {
             case Server.Login:
-                var longEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0, 0, 0, 0, 0, PlotMode.Normal);
-                tokenCache.Set(token, longEntry, AuthExpiry);
+                var loginEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0, 0, 0, 0, 0, PlotMode.Normal);
+                tokenCache.Set(token, loginEntry, AuthExpiry);
                 return Task.FromResult(new MigrateOutResponse {
                     IpAddress = Target.LoginIp.ToString(),
                     Port = Target.LoginPort,
