@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Grpc.Core;
@@ -46,7 +47,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         }
     }
 
-    private readonly Dictionary<int, Channel> channels = [];
+    private readonly ConcurrentDictionary<int, Channel> channels = [];
 
     private readonly ILogger logger = Log.ForContext<ChannelClientLookup>();
 
@@ -97,7 +98,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public bool ValidChannel(int channel) {
-        return channel >= 0 && channel <= channels.Count;
+        return channel >= 0 && channels.ContainsKey(channel);
     }
 
     public bool TryGetClient(int channel, [NotNullWhen(true)] out ChannelClient? client) {
@@ -148,7 +149,10 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);
         var activeChannel = new Channel(ChannelStatus.Inactive, channelId, instancedContent, gameEndpoint, client, healthClient, (ushort) newGamePort, newGrpcChannelPort);
-        channels.Add(channelId, activeChannel);
+        if (!channels.TryAdd(channelId, activeChannel)) {
+            logger.Error("Failed to add channel {Channel}", channelId);
+            return (0, 0, -1);
+        }
 
         var cancel = new CancellationTokenSource();
         Task.Factory.StartNew(() => MonitorChannel(activeChannel, cancel), cancellationToken: cancel.Token);
@@ -198,7 +202,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
             }
         } while (!cancellationToken.IsCancellationRequested);
         logger.Warning("End monitoring game channel: {Channel} for {EndPoint}", channel.Id, channel.Endpoint);
-        channels.Remove(channel.Id);
+        channels.TryRemove(channel.Id, out _);
     }
 
     public IEnumerator<(int, ChannelClient)> GetEnumerator() {
