@@ -545,16 +545,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleInteriorDesignReward(GameSession session, IByteReader packet) {
-        Plot? plot = session.Housing.GetFieldPlot();
-        if (plot == null) {
-            return;
-        }
-
-        if (plot.OwnerId != session.AccountId) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_dont_have_ownership));
-            return;
-        }
-
         byte rewardId = packet.ReadByte();
         session.Housing.InteriorReward(rewardId);
     }

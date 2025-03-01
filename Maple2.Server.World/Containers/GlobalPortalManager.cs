@@ -14,14 +14,14 @@ public class GlobalPortalManager : IDisposable {
     public readonly GlobalPortal Portal;
     public int Channel;
 
-    public readonly int[] InstanceIds;
+    public readonly int[] RoomIds;
 
 
     public GlobalPortalManager(GlobalPortalMetadata metadata, int id, long endTick) {
         Portal = new GlobalPortal(metadata, id) {
             EndTick = endTick,
         };
-        InstanceIds = new int[metadata.Entries.Length];
+        RoomIds = new int[metadata.Entries.Length];
     }
 
     public void CreateFields() {
@@ -31,18 +31,18 @@ public class GlobalPortalManager : IDisposable {
 
         Channel = ChannelClients.FirstChannel();
 
-        for (int i = 0; i < InstanceIds.Length; i++) {
+        for (int i = 0; i < RoomIds.Length; i++) {
             TimeEventResponse? response = client.TimeEvent(new TimeEventRequest {
                 GetField = new TimeEventRequest.Types.GetField {
                     MapId = Portal.Metadata.Entries[i].MapId,
-                    InstanceId = 0,
+                    RoomId = 0,
                 },
             });
 
             if (response.Field == null) {
                 continue;
             }
-            InstanceIds[i] = response.Field.InstanceId;
+            RoomIds[i] = response.Field.RoomId;
         }
 
         foreach ((int channelId, ChannelClient channelClient) in ChannelClients) {
@@ -65,7 +65,7 @@ public class GlobalPortalManager : IDisposable {
         TimeEventResponse response = client.TimeEvent(new TimeEventRequest {
             GetField = new TimeEventRequest.Types.GetField {
                 MapId = globalPortalMetadata.MapId,
-                InstanceId = InstanceIds[index],
+                RoomId = RoomIds[index],
             },
         });
 
@@ -77,14 +77,14 @@ public class GlobalPortalManager : IDisposable {
             TimeEventResponse? createResponse = client.TimeEvent(new TimeEventRequest {
                 GetField = new TimeEventRequest.Types.GetField {
                     MapId = mapId,
-                    InstanceId = 0,
+                    RoomId = 0,
                 },
             });
 
             if (createResponse.Field == null) {
                 return;
             }
-            InstanceIds[index] = createResponse.Field.InstanceId;
+            RoomIds[index] = createResponse.Field.RoomId;
         }
     }
 

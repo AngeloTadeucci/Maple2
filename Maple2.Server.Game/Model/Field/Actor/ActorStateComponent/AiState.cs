@@ -6,6 +6,7 @@ using Serilog;
 using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Maple2.Server.Game.Manager.Field;
 using static Maple2.Model.Metadata.AiMetadata;
 using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
 

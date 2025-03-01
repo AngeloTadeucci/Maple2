@@ -6,6 +6,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -132,8 +133,8 @@ public class MasteryManager {
         }
 
         int myHome = 1; // For outside gathering, it should be always 1
-        if (session.Field.MapId is Constant.DefaultHomeMapId) {
-            myHome = session.Field.OwnerId == session.AccountId ? 1 : 0;
+        if (session.Field is HomeFieldManager homeField) {
+            myHome = homeField.OwnerId == session.AccountId ? 1 : 0;
         }
         float successRate = lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
 
@@ -168,7 +169,7 @@ public class MasteryManager {
         switch (recipeMetadata.Type) {
             case MasteryType.Breeding:
             case MasteryType.Farming:
-                if (session.Field.Metadata.Property.Type == MapType.Home && session.Field.OwnerId != session.AccountId) {
+                if (session.Field is HomeFieldManager homeField && homeField.OwnerId != session.AccountId) {
                     session.ConditionUpdate(ConditionType.mastery_harvest_otherhouse, counter: gatheringAmount, codeLong: recipeMetadata.Id);
                 }
                 if (recipeMetadata.Type == MasteryType.Farming) {

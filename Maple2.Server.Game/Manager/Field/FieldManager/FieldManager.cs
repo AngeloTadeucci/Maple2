@@ -16,6 +16,7 @@ using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -27,7 +28,7 @@ namespace Maple2.Server.Game.Manager.Field;
 
 // FieldManager is instantiated by Autofac
 // ReSharper disable once ClassNeverInstantiated.Global
-public sealed partial class FieldManager : IDisposable {
+public partial class FieldManager : IField {
     private static int _globalIdCounter = 10000000;
     private int localIdCounter = 50000000;
     private DateTime? fieldEmptySince;
@@ -52,8 +53,8 @@ public sealed partial class FieldManager : IDisposable {
     #endregion
 
     public readonly MapMetadata Metadata;
-    public readonly MapEntityMetadata Entities;
-    public readonly Navigation Navigation;
+    public MapEntityMetadata Entities { get; init; }
+    public Navigation Navigation { get; init; }
     public readonly PerformanceStageManager? PerformanceStage;
     public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
@@ -71,14 +72,15 @@ public sealed partial class FieldManager : IDisposable {
 
     public ItemDropManager ItemDrop { get; }
 
-    public int MapId => Metadata.Id;
-    public readonly int InstanceId;
-    public FieldInstance FieldInstance = FieldInstance.Default;
+    public int MapId { get; init; }
+    public int RoomId { get; init; }
+    public FieldInstance FieldInstance { get; private set; }
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0) {
         Metadata = metadata;
+        MapId = metadata.Id;
         this.ugcMetadata = ugcMetadata;
         this.Entities = entities;
         TriggerObjects = new TriggerCollection(entities);
@@ -88,8 +90,9 @@ public sealed partial class FieldManager : IDisposable {
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
-        OwnerId = ownerId;
-        InstanceId = NextGlobalId();
+        RoomId = NextGlobalId();
+
+        FieldInstance = FieldInstance.Default;
 
         ItemDrop = new ItemDropManager(this);
 
@@ -101,7 +104,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     // Init is separate from constructor to allow properties to be injected first.
-    private void Init() {
+    public virtual void Init() {
         if (initialized) {
             return;
         }
@@ -120,9 +123,7 @@ public sealed partial class FieldManager : IDisposable {
 
         if (ugcMetadata.Plots.Count > 0) {
             using GameStorage.Request db = GameStorage.Context();
-            // Type 3 = 62000000_ugc and 62900000_ugd
-            long plotOwnerId = Metadata.Property.Type == MapType.Home ? OwnerId : -1;
-            foreach (Plot plot in db.LoadPlotsForMap(MapId, plotOwnerId)) {
+            foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
             }
         }

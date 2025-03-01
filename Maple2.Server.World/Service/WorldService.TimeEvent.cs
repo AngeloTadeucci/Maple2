@@ -28,11 +28,11 @@ public partial class WorldService {
         }
 
         manager.Join(fieldMetadata.MapId, portal.Index);
-        int instanceId = manager.InstanceIds[portal.Index];
+        int roomId = manager.RoomIds[portal.Index];
         return new TimeEventResponse {
             GlobalPortalInfo = new GlobalPortalInfo {
                 Channel = manager.Channel,
-                InstanceId = instanceId,
+                RoomId = roomId,
                 MapId = fieldMetadata.MapId,
                 PortalId = fieldMetadata.PortalId,
             }

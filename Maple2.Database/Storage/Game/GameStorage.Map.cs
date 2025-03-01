@@ -16,7 +16,7 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public IList<Plot> LoadPlotsForMap(int mapId, long ownerId) {
+        public IList<Plot> LoadPlotsForMap(int mapId, long ownerId = -1) {
             IQueryable<UgcMap> query;
             if (ownerId >= 0) {
                 query = Context.UgcMap.Include(map => map.Cubes)

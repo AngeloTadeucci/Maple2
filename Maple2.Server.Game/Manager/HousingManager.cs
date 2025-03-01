@@ -13,6 +13,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools;
@@ -127,11 +128,11 @@ public class HousingManager {
     }
 
     public Plot? GetIndoorPlot() {
-        if (session.Field == null) {
+        if (session.Field is not HomeFieldManager homeField) {
             return null;
         }
 
-        if (session.AccountId != session.Field.OwnerId || session.Field.MapId != Home.Indoor.MapId) return null;
+        if (session.AccountId != homeField.OwnerId || session.Field.MapId != Home.Indoor.MapId) return null;
 
         session.Field.Plots.TryGetValue(Home.Indoor.Number, out Plot? plot);
         return plot;

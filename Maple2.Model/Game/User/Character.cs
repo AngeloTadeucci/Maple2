@@ -31,7 +31,7 @@ public class Character {
     public int Title;
     public short Insignia;
 
-    public int InstanceId;
+    public int RoomId;
     public int InstanceMapId;
     public short Channel;
 

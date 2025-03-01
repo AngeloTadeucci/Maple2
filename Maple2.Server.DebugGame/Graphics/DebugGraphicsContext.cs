@@ -316,11 +316,11 @@ namespace Maple2.Server.DebugGame.Graphics {
                 return 1;
             }
 
-            if (item1.Field.InstanceId < item2.Field.InstanceId) {
+            if (item1.Field.RoomId < item2.Field.RoomId) {
                 return -1;
             }
 
-            if (item1.Field.InstanceId > item2.Field.InstanceId) {
+            if (item1.Field.RoomId > item2.Field.RoomId) {
                 return 1;
             }
 

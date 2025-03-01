@@ -123,7 +123,7 @@ public sealed partial class GameSession : Core.Network.Session {
         int mapId = migrateResponse.MapId;
         int portalId = migrateResponse.PortalId;
         long ownerId = migrateResponse.OwnerId;
-        int instanceId = migrateResponse.InstanceId;
+        int roomId = migrateResponse.RoomId;
         var plotMode = (PlotMode) migrateResponse.PlotMode;
 
         AccountId = accountId;
@@ -180,11 +180,11 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         if (plotMode is not PlotMode.Normal) {
-            instanceId = FieldManager.NextGlobalId();
+            roomId = FieldManager.NextGlobalId();
         }
 
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
+        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, roomId: roomId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
@@ -327,25 +327,26 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
-        return PrepareFieldInternal(mapId, out _, portalId, ownerId, instanceId, position, rotation);
+    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int roomId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out _, portalId, ownerId, roomId, position, rotation);
     }
 
-    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
-        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, instanceId, position, rotation);
+    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int roomId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, roomId, position, rotation);
     }
 
-    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int instanceId, in Vector3 position, in Vector3 rotation) {
+    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int roomId, in Vector3 position, in Vector3 rotation) {
         // If entering home without instanceKey set, default to own home.
         if (mapId == Player.Value.Home.Indoor.MapId && ownerId == 0) {
             ownerId = AccountId;
         }
 
-        if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-            newField = FieldFactory.Get(mapId, ownerId: ownerId, instanceId: instanceId);
+        newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
+        /*if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
+            newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
         } else {
-            newField = FieldFactory.Get(mapId, instanceId);
-        }
+            newField = FieldFactory.Get(mapId, roomId);
+        }*/
 
         if (newField == null) {
             return false;

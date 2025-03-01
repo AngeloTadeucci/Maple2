@@ -61,7 +61,7 @@ public class GlobalPortal : PacketHandler<GameSession> {
                 MachineId = session.MachineId.ToString(),
                 Channel = portal.Channel,
                 Server = Server.World.Service.Server.Game,
-                InstanceId = portal.InstanceId,
+                RoomId = portal.RoomId,
                 MapId = portal.MapId,
                 PortalId = portal.PortalId,
             };
