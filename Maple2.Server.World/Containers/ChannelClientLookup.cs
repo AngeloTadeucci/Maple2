@@ -16,58 +16,88 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 #else
     private static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(5);
 #endif
-
-    private record Entry(IPEndPoint Endpoint, ChannelClient Client, Health.HealthClient Health);
-
     private enum ChannelStatus {
         Active,
-        Pending,
         Inactive
     }
 
-    private readonly List<Entry> channels = [];
-    private readonly List<ChannelStatus> activeChannels = [];
+    private class Channel {
+        public ChannelStatus Status { get; set; }
+
+        public readonly int Id;
+        public readonly bool InstancedContent;
+
+        public readonly IPEndPoint Endpoint;
+        public readonly ushort GamePort;
+        public readonly int GrpcPort;
+
+        public readonly ChannelClient Client;
+        public readonly Health.HealthClient Health;
+
+        public Channel(ChannelStatus status, int id, bool instancedContent, IPEndPoint endpoint, ChannelClient client, Health.HealthClient health, ushort gamePort, int grpcPort) {
+            Status = status;
+            Id = id;
+            InstancedContent = instancedContent;
+            Endpoint = endpoint;
+            Client = client;
+            Health = health;
+            GamePort = gamePort;
+            GrpcPort = grpcPort;
+        }
+    }
+
+    private readonly Dictionary<int, Channel> channels = [];
 
     private readonly ILogger logger = Log.ForContext<ChannelClientLookup>();
 
-    public int Count => channels.Count;
+    public int Count => channels.Values.Count(ch => ch is { InstancedContent: false, Status: ChannelStatus.Active });
 
     public IEnumerable<int> Keys {
         get {
-            for (int i = 0; i < activeChannels.Count; i++) {
-                if (activeChannels[i] is ChannelStatus.Active) {
-                    yield return i + 1;
-                }
+            foreach (Channel channel in channels.Values.Where(ch => ch is { InstancedContent: false, Status: ChannelStatus.Active })) {
+                yield return channel.Id;
             }
         }
     }
 
-    public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp, string grpcGameIp) {
+    public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp, string grpcGameIp, bool instancedContent) {
         for (int i = 0; i < channels.Count; i++) {
-            if (channels[i].Endpoint.Address.ToString() == gameIp && activeChannels[i] is ChannelStatus.Inactive) {
-                return ((ushort) (Target.BaseGamePort + i + 1), Target.BaseGrpcChannelPort + i + 1, i + 1);
+            channels.TryGetValue(i, out Channel? activeChannel);
+            if (activeChannel is null) {
+                continue;
+            }
+            if (channels[i].Endpoint.Address.ToString() == gameIp && activeChannel.Status is ChannelStatus.Inactive) {
+                return (activeChannel.GamePort, activeChannel.GrpcPort, activeChannel.Id);
             }
         }
 
-        return AddChannel(gameIp, grpcGameIp);
+        return AddChannel(gameIp, grpcGameIp, instancedContent);
     }
 
+    /// Gets the ID of the first active, non-instanced content channel.
+    /// <returns>
+    /// The channel ID if an active, non-instanced content channel is found; otherwise returns -1.
+    /// </returns>
     public int FirstChannel() {
-        for (int i = 0; i < activeChannels.Count; i++) {
-            if (activeChannels[i] is ChannelStatus.Active) {
-                return i + 1;
-            }
+        foreach (Channel channel in channels.Values.Where(ch => ch.Status is ChannelStatus.Active && !ch.InstancedContent)) {
+            return channel.Id;
         }
 
-        return 0;
+        return -1;
     }
 
-    public bool Contains(int channel) {
-        return ValidChannel(channel) && activeChannels[channel - 1] is ChannelStatus.Active;
+    public bool TryGetInstancedChannelId([NotNullWhen(true)] out int channelId) {
+        foreach (Channel channel in channels.Values.Where(ch => ch.Status is ChannelStatus.Active && ch.InstancedContent)) {
+            channelId = channel.Id;
+            return true;
+        }
+
+        channelId = -1;
+        return false;
     }
 
     public bool ValidChannel(int channel) {
-        return channel > 0 && channel <= activeChannels.Count;
+        return channel >= 0 && channel <= channels.Count;
     }
 
     public bool TryGetClient(int channel, [NotNullWhen(true)] out ChannelClient? client) {
@@ -76,26 +106,28 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
             return false;
         }
 
-        client = channels[channel - 1].Client;
+        client = channels[channel].Client;
         return true;
     }
 
-    public bool TryGetActiveEndpoint(int channel, [NotNullWhen(true)] out IPEndPoint? endpoint) {
-        int i = channel - 1;
-        if (!ValidChannel(channel) || activeChannels[i] is ChannelStatus.Inactive) {
+    public bool TryGetActiveEndpoint(int channelId, [NotNullWhen(true)] out IPEndPoint? endpoint) {
+        if (!ValidChannel(channelId) || !channels.TryGetValue(channelId, out Channel? channel) || channel.Status is ChannelStatus.Inactive) {
             endpoint = null;
             return false;
         }
 
-        endpoint = channels[i].Endpoint;
+        endpoint = channel.Endpoint;
         return true;
     }
 
-    private (ushort gamePort, int grpcPort, int channel) AddChannel(string gameIp, string grpcGameIp) {
-        int channel = channels.Count + 1;
+    private (ushort gamePort, int grpcPort, int channel) AddChannel(string gameIp, string grpcGameIp, bool instancedContent) {
+        int channelId = channels.Count(kvp => !kvp.Value.InstancedContent) + 1;
+        if (instancedContent) {
+            channelId = 0;
+        }
 
-        int newGamePort = Target.BaseGamePort + channel;
-        int newGrpcChannelPort = Target.BaseGrpcChannelPort + channel;
+        int newGamePort = Target.BaseGamePort + channelId;
+        int newGrpcChannelPort = Target.BaseGrpcChannelPort + channelId;
 
         IPAddress ipAddress = IPAddress.Parse(gameIp);
         IPEndPoint gameEndpoint = new IPEndPoint(ipAddress, newGamePort);
@@ -115,58 +147,63 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);
-        channels.Add(new Entry(gameEndpoint, client, healthClient));
-        activeChannels.Add(ChannelStatus.Pending);
+        var activeChannel = new Channel(ChannelStatus.Inactive, channelId, instancedContent, gameEndpoint, client, healthClient, (ushort) newGamePort, newGrpcChannelPort);
+        channels.Add(channelId, activeChannel);
 
-        var cancel = new CancellationToken();
-        Task.Factory.StartNew(() => MonitorChannel(channel, cancel), cancellationToken: cancel);
+        var cancel = new CancellationTokenSource();
+        Task.Factory.StartNew(() => MonitorChannel(activeChannel, cancel), cancellationToken: cancel.Token);
 
-        return ((ushort) newGamePort, newGrpcChannelPort, channel);
+        return ((ushort) newGamePort, newGrpcChannelPort, channelId);
     }
 
-    private async Task MonitorChannel(int channel, CancellationToken cancellationToken) {
-        int i = channel - 1;
-        logger.Information("Begin monitoring game channel: {Channel} for {EndPoint}", channel, channels[i].Endpoint);
+    private async Task MonitorChannel(Channel channel, CancellationTokenSource cancellationTokenSource) {
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        logger.Information("Begin monitoring game channel: {Channel} for {EndPoint}", channel.Id, channel.Endpoint);
+
         do {
             try {
-                HealthCheckResponse response = await channels[i].Health.CheckAsync(new HealthCheckRequest(), deadline: DateTime.UtcNow.AddSeconds(5),
+                HealthCheckResponse response = await channel.Health.CheckAsync(new HealthCheckRequest(), deadline: DateTime.UtcNow.AddSeconds(5),
                     cancellationToken: cancellationToken);
                 switch (response.Status) {
                     case HealthCheckResponse.Types.ServingStatus.Serving:
-                        if (activeChannels[i] is ChannelStatus.Inactive or ChannelStatus.Pending) {
-                            logger.Information("Channel {Channel} has become active", channel);
-                            activeChannels[i] = ChannelStatus.Active;
+                        if (channel.Status is ChannelStatus.Inactive) {
+                            logger.Information("Channel {Channel} has become active", channel.Id);
+                            channel.Status = ChannelStatus.Active;
                         }
                         break;
                     default:
-                        if (activeChannels[i] is ChannelStatus.Active or ChannelStatus.Pending) {
-                            logger.Information("Channel {Channel} has become inactive due to {Status}", channel, response.Status);
-                            activeChannels[i] = ChannelStatus.Inactive;
+                        if (channel.Status is ChannelStatus.Active) {
+                            logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
+                            channel.Status = ChannelStatus.Inactive;
+                            await cancellationTokenSource.CancelAsync();
                         }
                         break;
                 }
             } catch (RpcException ex) {
                 if (ex.Status.StatusCode != StatusCode.Unavailable) {
-                    logger.Warning("{Error} monitoring channel {Channel}", ex.Message, channel);
+                    logger.Warning("{Error} monitoring channel {Channel}", ex.Message, channel.Id);
                 }
-                if (activeChannels[i] is ChannelStatus.Active) {
-                    logger.Information("Channel {Channel} has become inactive", channel);
+                if (channel.Status is ChannelStatus.Active) {
+                    logger.Information("Channel {Channel} has become inactive", channel.Id);
+                    await cancellationTokenSource.CancelAsync();
                 }
-                activeChannels[i] = ChannelStatus.Inactive;
+                channel.Status = ChannelStatus.Inactive;
             }
 
-            await Task.Delay(MonitorInterval, cancellationToken);
+            try {
+                await Task.Delay(MonitorInterval, cancellationToken);
+            } catch (OperationCanceledException) {
+                // Handle cancellation gracefully
+                break;
+            }
         } while (!cancellationToken.IsCancellationRequested);
-        logger.Error("End monitoring game channel: {Channel} for {EndPoint}", channel, channels[i].Endpoint);
+        logger.Warning("End monitoring game channel: {Channel} for {EndPoint}", channel.Id, channel.Endpoint);
+        channels.Remove(channel.Id);
     }
 
     public IEnumerator<(int, ChannelClient)> GetEnumerator() {
-        for (int i = 0; i < channels.Count; i++) {
-            if (activeChannels[i] is ChannelStatus.Inactive) {
-                continue;
-            }
-
-            yield return (i + 1, channels[i].Client);
+        foreach (Channel channel in channels.Values.Where(ch => ch.Status is ChannelStatus.Active)) {
+            yield return (channel.Id, channel.Client);
         }
     }
 

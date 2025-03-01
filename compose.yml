@@ -57,7 +57,7 @@ services:
     environment:
       DB_IP: mysql
 
-  game-main:
+  game-ch1:
     build:
       context: .
       dockerfile: ./Maple2.Server.Game/Dockerfile
@@ -73,10 +73,10 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      GRPC_GAME_IP: game-main
+      GRPC_GAME_IP: game-ch1
       GRPC_WORLD_IP: world
 
-  game-alt:
+  game-ch2:
     build:
       context: .
       dockerfile: ./Maple2.Server.Game/Dockerfile
@@ -92,8 +92,29 @@ services:
       - .env
     environment:
       DB_IP: mysql
-      GRPC_GAME_IP: game-alt
+      GRPC_GAME_IP: game-ch2
       GRPC_WORLD_IP: world
+
+  # Channel 0 is instanced content only
+  game-ch0:
+    build:
+      context: .
+      dockerfile: ./Maple2.Server.Game/Dockerfile
+    image: maple2/game
+    depends_on:
+      - mysql
+      - world
+    # Ports are dynamically assigned from world server, sadly we can't dynamically expose them here. So we have to hardcode them.
+    ports:
+      - 20002:20002
+      - 21002:21002
+    env_file:
+      - .env
+    environment:
+      DB_IP: mysql
+      GRPC_GAME_IP: game-ch0
+      GRPC_WORLD_IP: world
+      INSTANCED_CONTENT: true
 
   web:
     build:

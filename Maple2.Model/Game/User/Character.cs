@@ -34,6 +34,7 @@ public class Character {
     public int InstanceId;
     public int InstanceMapId;
     public short Channel;
+    public short LastChannel;
 
     public long StorageCooldown;
     public long DoctorCooldown;

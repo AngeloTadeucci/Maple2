@@ -1,6 +1,5 @@
 ﻿using Maple2.Database.Storage;
 using Maple2.Model.Enum;
-using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -100,7 +99,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             }
         }
 
-        session.MigrateToHome(home);
+        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
     }
 
     private void HandleReturn(GameSession session) {

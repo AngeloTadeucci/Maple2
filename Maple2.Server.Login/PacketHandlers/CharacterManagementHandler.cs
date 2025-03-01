@@ -98,7 +98,9 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
             session.Send(MigrationPacket.LoginToGameError(s_move_err_member_limit, ex.Message));
         } catch (RpcException ex) {
             session.Send(MigrationPacket.LoginToGameError(s_move_err_default, ex.Message));
-        } finally {
+            session.Disconnect();
+        } catch (Exception ex) {
+            session.Send(MigrationPacket.LoginToGameError(s_move_err_default, ex.Message));
             session.Disconnect();
         }
     }

@@ -33,9 +33,16 @@ public partial class WorldService {
                     throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
-                int channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                int channel;
+
+                if (request.InstancedContent && channelClients.TryGetInstancedChannelId(out int channelId)) {
+                    channel = channelId;
+                } else {
+                    channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                }
+
                 if (!channelClients.TryGetActiveEndpoint(channel, out IPEndPoint? endpoint)) {
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, $"Migrating to invalid game channel: {channel}"));
+                    throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
                 var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.PortalId, request.InstanceId, request.OwnerId, request.PlotMode);
