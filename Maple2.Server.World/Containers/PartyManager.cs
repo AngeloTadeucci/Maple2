@@ -78,7 +78,7 @@ public class PartyManager : IDisposable {
     }
 
     public void FindNewLeader(long characterId) {
-        PartyMember? newLeader = Party.Members.Values.FirstOrDefault(m => m.CharacterId != characterId);
+        PartyMember? newLeader = Party.Members.Values.FirstOrDefault(m => m.CharacterId != characterId && m.Info.Online);
         if (newLeader == null) {
             CheckForDisband();
             return;
@@ -398,6 +398,25 @@ public class PartyManager : IDisposable {
             });
 
             Party.Vote = null;
+        });
+
+        return PartyError.none;
+    }
+
+    public PartyError SetDungeon(long requestorId, int dungeonId, int dungeonRoomId) {
+        if (requestorId != Party.LeaderCharacterId) {
+            return PartyError.s_party_err_not_chief;
+        }
+
+        Party.DungeonId = dungeonId;
+        Party.DungeonLobbyRoomId = dungeonRoomId;
+        Broadcast(new PartyRequest {
+            SetDungeon = new PartyRequest.Types.SetDungeon {
+                PartyId = Party.Id,
+                DungeonId = dungeonId,
+                DungeonRoomId = dungeonRoomId,
+                Set = true,
+            },
         });
 
         return PartyError.none;

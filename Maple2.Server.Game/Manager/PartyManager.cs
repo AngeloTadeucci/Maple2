@@ -4,6 +4,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
 using Maple2.Server.Core.Sync;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util.Sync;
@@ -292,6 +293,16 @@ public class PartyManager : IDisposable {
             VoteTime = Party.LastVoteTime,
         };
         session.Send(PartyPacket.StartVote(Party.Vote));
+    }
+
+    public void SetDungeon(int dungeonId, int dungeonRoomId, bool set) {
+        if (Party == null) {
+            return;
+        }
+        Party.DungeonId = dungeonId;
+        Party.DungeonLobbyRoomId = dungeonRoomId;
+
+        session.Send(PartyPacket.DungeonReset(session.Field, dungeonId));
     }
 
     public void SetPartySearch(PartySearch? partySearch) {

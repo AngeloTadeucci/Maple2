@@ -88,13 +88,10 @@ public partial class FieldManager {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
-        if (Metadata.Property.EnterReturnId != 0 &&
-            Metadata.Property.Type != MapType.Arcade &&
-            Metadata.Property.Type != MapType.PocketRealm &&
-            Metadata.Property.Type != MapType.Dungeon &&
-            Metadata.Property.Type != MapType.Event &&
-            Metadata.Property.Type != MapType.Event2) {
-            player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
+        if (FieldInstance.InstanceType == InstanceType.none) {
+            if (Metadata.Property.EnterReturnId != 0) {
+                player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
+            }
         }
 
         return fieldPlayer;

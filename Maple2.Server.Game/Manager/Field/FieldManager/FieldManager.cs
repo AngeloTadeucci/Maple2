@@ -411,27 +411,28 @@ public partial class FieldManager : IField {
 
         // MoveByPortal (same map)
         Portal srcPortal = fieldPortal;
-        if (srcPortal.Type is PortalType.InHome) {
-            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
-            if (cubePortal is null) {
-                return false;
-            }
+        switch (srcPortal.Type) {
+            case PortalType.InHome:
+                PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+                if (cubePortal is null) {
+                    return false;
+                }
 
-            switch (cubePortal.Interact!.PortalSettings!.Destination) {
-                case CubePortalDestination.PortalInHome:
-                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
-                    if (destinationCube is null) {
-                        return false;
-                    }
+                switch (cubePortal.Interact!.PortalSettings!.Destination) {
+                    case CubePortalDestination.PortalInHome:
+                        PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
+                        if (destinationCube is null) {
+                            return false;
+                        }
 
-                    session.Player.MoveToPosition(destinationCube.Position, default);
-                    return true;
-                case CubePortalDestination.SelectedMap:
-                    session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
-                        ? FieldEnterPacket.Request(session.Player)
-                        : FieldEnterPacket.Error(MigrationError.s_move_err_default));
-                    return true;
-                case CubePortalDestination.FriendHome: {
+                        session.Player.MoveToPosition(destinationCube.Position, default);
+                        return true;
+                    case CubePortalDestination.SelectedMap:
+                        session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
+                            ? FieldEnterPacket.Request(session.Player)
+                            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                        return true;
+                    case CubePortalDestination.FriendHome: {
                         using GameStorage.Request db = session.GameStorage.Context();
                         Home? home = db.GetHome(fieldPortal.HomeId);
                         if (home is null) {
@@ -442,8 +443,24 @@ public partial class FieldManager : IField {
                         session.MigrateToHome(home);
                         return true;
                     }
-            }
-            return false;
+                }
+                return false;
+            case PortalType.LeaveDungeon:
+                //TODO: Migrate back to original channel
+                session.Send(session.PrepareField(session.Player.Value.Character.ReturnMapId)
+                    ? FieldEnterPacket.Request(session.Player)
+                    : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                return true;
+            case PortalType.DungeonReturnToLobby:
+                if (this is not DungeonFieldManager dungeonField || dungeonField.Lobby is null) {
+                    logger.Warning("DungeonReturnToLobby portal used in non-dungeon map {MapId}", MapId);
+                    return false;
+                }
+                session.Send(session.PrepareField(dungeonField.Lobby.MapId, portalId: 2, roomId: dungeonField.Lobby.RoomId)
+                    ? FieldEnterPacket.Request(session.Player)
+                    : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                return true;
+
         }
 
         if (srcPortal.TargetMapId == MapId) {

@@ -308,6 +308,10 @@ public class FishingManager {
                 masteryExp = selectedFish.MasteryExp;
             }
 
+            if (prizeFish) {
+                fishEntry.TotalPrizeFish++;
+            }
+
             session.Send(FishingPacket.CatchFish(selectedFish.Id, fishSize, hasAutoFish, fishEntry));
         } else {
             fishEntry = new FishEntry(selectedFish.Id) {

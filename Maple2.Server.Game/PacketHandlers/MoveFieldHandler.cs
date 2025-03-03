@@ -87,7 +87,6 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
         if (session.Field is HomeFieldManager homeFieldManager && homeFieldManager.OwnerId == accountId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
-
         }
 
         if (!string.IsNullOrEmpty(home.Passcode)) {

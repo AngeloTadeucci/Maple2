@@ -63,7 +63,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
-    public required FieldManager.Factory FieldFactory { private get; init; }
+    public required FieldManager.Factory FieldFactory { get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
@@ -99,6 +99,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public SurvivalManager Survival { get; set; } = null!;
     public MarriageManager Marriage { get; set; } = null!;
     public FishingManager Fishing { get; set; } = null!;
+    public DungeonManager Dungeon { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -169,6 +170,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Survival = new SurvivalManager(this);
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
+        Dungeon = new DungeonManager(this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -342,12 +344,6 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
-        /*if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-            newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
-        } else {
-            newField = FieldFactory.Get(mapId, roomId);
-        }*/
-
         if (newField == null) {
             return false;
         }
@@ -398,6 +394,10 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadMacros();
         Config.LoadSkillCooldowns();
         Marriage.Load();
+
+        if (Party.Party != null && Dungeon.Metadata != null) {
+            Send(PartyPacket.DungeonReset(Field, Dungeon.Metadata.Id));
+        }
 
         Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));

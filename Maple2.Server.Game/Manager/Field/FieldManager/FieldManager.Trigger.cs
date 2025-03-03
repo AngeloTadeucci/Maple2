@@ -17,7 +17,6 @@ public partial class FieldManager {
     public readonly Dictionary<string, Widget> Widgets = new();
     public readonly Dictionary<int, List<object>> States = new();
 
-
     public FieldTrigger? AddTrigger(TriggerModel trigger) {
         try {
             var fieldTrigger = new FieldTrigger(this, NextLocalId(), trigger) {

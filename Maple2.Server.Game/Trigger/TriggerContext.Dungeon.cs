@@ -1,4 +1,6 @@
-﻿namespace Maple2.Server.Game.Trigger;
+﻿using Maple2.Server.Game.Model.Room;
+
+namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void DungeonClear(string uiType) {
@@ -105,8 +107,16 @@ public partial class TriggerContext {
 
     #region Conditions
     public bool CheckDungeonLobbyUserCount() {
-        ErrorLog("[CheckDungeonLobbyUserCount]");
-        return false;
+        if (Field is not DungeonFieldManager dungeonField) {
+            return false;
+        }
+
+        if (dungeonField.Party is null) {
+            return Field.Players.Values.Count >= 1;
+        }
+
+        DebugLog("[CheckDungeonLobbyUserCount]");
+        return dungeonField.Party.Members.Count == Field.Players.Values.Count;
     }
 
     public bool DungeonTimeout() {
@@ -115,7 +125,14 @@ public partial class TriggerContext {
     }
 
     public bool IsDungeonRoom() {
-        ErrorLog("[IsDungeonRoom]");
+        if (Field is not DungeonFieldManager dungeonField) {
+            return false;
+        }
+
+        if (dungeonField.Party is not null) {
+            return true;
+        }
+        DebugLog("[IsDungeonRoom]");
         return false;
     }
 

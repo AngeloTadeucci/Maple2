@@ -4,10 +4,14 @@ using Autofac;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Room;
+using Maple2.Server.World.Service;
 using Serilog;
+using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Manager.Field;
 
@@ -16,6 +20,7 @@ public partial class FieldManager {
         #region Autofac Autowired
         // ReSharper disable MemberCanBePrivate.Global
         public GameStorage GameStorage { get; init; } = null!;
+        public required WorldClient World { get; init; }
         public required MapMetadataStorage MapMetadata { private get; init; }
         public required MapEntityStorage MapEntities { private get; init; }
         public required MapDataStorage MapData { private get; init; }
@@ -34,9 +39,10 @@ public partial class FieldManager {
 
         private readonly ConcurrentDictionary<int, SemaphoreSlim> mapLocks;
 
-        private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>> fields = [];
-        private readonly ConcurrentDictionary<long, HomeFieldManager> homes = [];
-        private readonly ConcurrentDictionary<long, DungeonFieldManager> dungeons = [];
+        private readonly ConcurrentDictionary<int, ConcurrentDictionary<int, FieldManager>> fields = []; // Key MapId, RoomId
+        private readonly ConcurrentDictionary<long, HomeFieldManager> homes = []; // Key: OwnerId
+        private readonly ConcurrentDictionary<int, DungeonFieldManager> dungeons = []; // Key: RoomId
+        private readonly ConcurrentDictionary<int, DungeonFieldManager> subDungeonFields = []; // Key: RoomId. This is for rooms created by the dungeon lobby.
 
         public Factory(IComponentContext context) {
             this.context = context;
@@ -51,12 +57,7 @@ public partial class FieldManager {
         /// <summary>
         /// Get player home map field or any player owned map. If not found, create a new field.
         /// </summary>
-        public FieldManager? Get(int mapId, long ownerId = 0, int roomId = 0) {
-            if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-                if (ownerId == 0 && roomId == 0) {
-                    return Create(mapId);
-                }
-            }
+        public FieldManager? Get(int mapId = 0, long ownerId = 0, int roomId = 0) {
             SemaphoreSlim mapLock = GetMapLock(mapId);
             mapLock.Wait();
             FieldManager? field;
@@ -75,7 +76,7 @@ public partial class FieldManager {
         /// If no ownerId is provided, it belongs to the "server".
         /// roomId can be used to create a new instance of the map.
         /// </summary>
-        public FieldManager? Create(int mapId, long ownerId = 0, int roomId = 0) {
+        public FieldManager? Create(int mapId, long ownerId = 0, int roomId = 0, InstanceFieldMetadata? instanceFieldMetadata = null) {
             var sw = new Stopwatch();
             sw.Start();
             if (!MapMetadata.TryGet(mapId, out MapMetadata? metadata)) {
@@ -92,10 +93,16 @@ public partial class FieldManager {
                 throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
             }
 
-            if (Constant.DefaultHomeMapId == mapId) {
-                HomeFieldManager homeField = CreateHome(ownerId, metadata, ugcMetadata, entities, NpcMetadata);
-                logger.Debug("Home Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
-                return homeField;
+
+            switch (instanceFieldMetadata?.Type) {
+                case InstanceType.ugcMap:
+                    HomeFieldManager homeField = CreateHome(ownerId, metadata, ugcMetadata, entities, NpcMetadata);
+                    logger.Debug("Home Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
+                    return homeField;
+                /*case InstanceType.DungeonLobby:
+                    DungeonFieldManager? dungeonField = CreateDungeon(ServerTableMetadata.InstanceFieldTable.DungeonRooms[roomId], ownerId);
+                    logger.Debug("Dungeon Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
+                    return dungeonField;*/
             }
 
             var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata);
@@ -128,7 +135,7 @@ public partial class FieldManager {
             return field;
         }
 
-        public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata) {
+        public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata, long ownerId, Party? party = null) {
             var sw = new Stopwatch();
             sw.Start();
 
@@ -145,7 +152,7 @@ public partial class FieldManager {
             if (entities == null) {
                 throw new InvalidOperationException($"Failed to load entities for map: {dungeonMetadata.LobbyFieldId}");
             }
-            var lobbyField = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata);
+            var lobbyField = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata, ownerId, party);
             context.InjectProperties(lobbyField);
 
             foreach (int fieldId in dungeonMetadata.FieldIds) {
@@ -162,11 +169,17 @@ public partial class FieldManager {
                 if (entities == null) {
                     throw new InvalidOperationException($"Failed to load entities for map: {fieldId}");
                 }
-                var field = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata);
+                var field = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata) {
+                    Lobby = lobbyField,
+                };
                 context.InjectProperties(field);
+                field.Init();
 
                 lobbyField.RoomFields.TryAdd(fieldId, field);
+                subDungeonFields.TryAdd(field.RoomId, field);
             }
+
+            dungeons.TryAdd(lobbyField.RoomId, lobbyField);
 
             return lobbyField;
         }
@@ -222,10 +235,52 @@ public partial class FieldManager {
                     }
                 }
 
+                foreach (HomeFieldManager homeField in homes.Values) {
+                    if (homeField.fieldEmptySince is null) {
+                        logger.Verbose("Home Field {MapId} Owner: {OwnerId} is empty, starting timer", homeField.MapId, homeField.OwnerId);
+                        homeField.fieldEmptySince = DateTime.UtcNow;
+                    } else if (DateTime.UtcNow - homeField.fieldEmptySince > Constant.FieldDisposeEmptyTime) {
+                        logger.Debug("Field {MapId} {OwnerId} has been empty for more than {Time}, disposing", homeField.MapId, homeField.OwnerId, Constant.FieldDisposeEmptyTime);
+                        homeField.Dispose();
+                    }
+                }
+
                 foreach (long ownerId in homes.Keys) {
                     if (homes[ownerId].Disposed) {
                         bool success = homes.TryRemove(ownerId, out _);
                         logger.Debug("Home {OwnerId} removed: {Success}", ownerId, success);
+                    }
+                }
+
+                foreach (DungeonFieldManager dungeonField in dungeons.Values) {
+                    int playerCount = dungeonField.Players.Values.Count + dungeonField.RoomFields.Values.Sum(x => x.Players.Values.Count);
+                    if (playerCount > 0) {
+                        continue;
+                    }
+                    if (dungeonField.Party != null) {
+                        // Check if party still exists
+                        PartyInfoResponse response = World.PartyInfo(new PartyInfoRequest {
+                            PartyId = dungeonField.Party.Id,
+                        });
+                        if (response.Party == null) {
+                            logger.Debug("Dungeon {DungeonId} party {PartyId} does not exist, disposing", dungeonField.DungeonId, dungeonField.Party.Id);
+                            dungeonField.Dispose();
+                        }
+                        continue;
+                    }
+
+                    dungeonField.Dispose();
+                }
+
+                foreach (int roomId in dungeons.Keys) {
+                    if (dungeons[roomId].Disposed) {
+                        List<int> roomIds = dungeons[roomId].RoomFields.Values.Select(x => x.RoomId).ToList();
+                        foreach (DungeonFieldManager roomField in dungeons[roomId].RoomFields.Values) {
+                            roomField.Dispose();
+                            subDungeonFields.TryRemove(roomField.RoomId, out _);
+                        }
+                        dungeons.TryRemove(roomId, out _);
+                        logger.Debug("Dungeon disposed room Ids: {roomIds}", string.Join(",", roomIds));
                     }
                 }
 
@@ -245,6 +300,14 @@ public partial class FieldManager {
                 }
             }
 
+            foreach (DungeonFieldManager dungeon in dungeons.Values) {
+                dungeon.Dispose();
+            }
+
+            foreach (DungeonFieldManager subDungeon in subDungeonFields.Values) {
+                subDungeon.Dispose();
+            }
+
             foreach (HomeFieldManager home in homes.Values) {
                 home.Dispose();
             }
@@ -256,6 +319,7 @@ public partial class FieldManager {
             fields.Clear();
             homes.Clear();
             dungeons.Clear();
+            subDungeonFields.Clear();
             cancel.Cancel();
             thread.Join();
         }
@@ -265,12 +329,26 @@ public partial class FieldManager {
         }
 
         private FieldManager? GetInternal(int mapId, long ownerId = 0, int roomId = 0) {
-            if (mapId == Constant.DefaultHomeMapId) {
-                if (!homes.TryGetValue(ownerId, out HomeFieldManager? homeField)) {
-                    return Create(mapId, ownerId: ownerId, roomId: roomId);
+            if (roomId != 0) { // Specified room
+                FieldManager? foundField = FindRoom(mapId, roomId);
+                if (foundField != null) {
+                    return foundField;
                 }
+            }
 
-                return homeField;
+            if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? metadata)) {
+                if (ownerId == 0 && roomId == 0) {
+                    return Create(mapId);
+                }
+                switch (metadata.Type) {
+                    case InstanceType.ugcMap: // this is both homes and UGD. Currently just doing homes.
+                        if (!homes.TryGetValue(ownerId, out HomeFieldManager? homeField)) {
+                            return Create(mapId, ownerId: ownerId, roomId: roomId, instanceFieldMetadata: metadata);
+                        }
+                        return homeField;
+                    case InstanceType.DungeonLobby:
+                        return Create(mapId, ownerId: ownerId, roomId: roomId); // TODO: this should never happen.
+                }
             }
 
             if (!fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? mapFields)) {
@@ -279,6 +357,18 @@ public partial class FieldManager {
 
             return mapFields.TryGetValue(roomId, out FieldManager? field) ? field :
                 Create(mapId, ownerId: ownerId, roomId: roomId);
+
+            FieldManager? FindRoom(int mapId, int roomId) {
+                if (fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? roomFields) && roomFields.TryGetValue(roomId, out FieldManager? field)) {
+                    return field;
+                }
+
+                if (subDungeonFields.TryGetValue(roomId, out DungeonFieldManager? subDungeonField)) {
+                    return subDungeonField;
+                }
+
+                return dungeons.TryGetValue(roomId, out DungeonFieldManager? dungeonField) ? dungeonField : null;
+            }
         }
     }
 }

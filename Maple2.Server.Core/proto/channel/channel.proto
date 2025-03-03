@@ -157,6 +157,12 @@ message PartyRequest {
     int32 party_id = 1;
     PartySearchInfo party_search = 2;
   }
+  message SetDungeon {
+    int32 party_id = 1;
+    int32 dungeon_id = 2;
+    int32 dungeon_room_id = 3;
+    bool set = 4;
+  }
 
   int32 party_id = 1;
   repeated int64 receiver_ids = 2;
@@ -173,6 +179,7 @@ message PartyRequest {
     ExpiredVote expired_vote = 12;
     StartVoteKick start_vote_kick = 13;
     CreateSearch create_search = 14;
+    SetDungeon set_dungeon = 15;
   }
 }
 

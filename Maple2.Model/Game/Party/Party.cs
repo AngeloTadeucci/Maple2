@@ -23,6 +23,7 @@ public class Party : IByteSerializable {
     public required string LeaderName;
     public long CreationTime;
     public int DungeonId = 0;
+    public int DungeonLobbyRoomId = 0;
     public readonly ConcurrentDictionary<long, PartyMember> Members;
     public PartyVote? Vote;
     public PartySearch? Search;
