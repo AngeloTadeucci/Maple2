@@ -4,11 +4,11 @@
 
 namespace Maple2.Server.World.Migrations {
     /// <inheritdoc />
-    public partial class CharacterLastChannel : Migration {
+    public partial class CharacterReturnChannel : Migration {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<short>(
-                name: "LastChannel",
+                name: "ReturnChannel",
                 table: "character",
                 type: "smallint",
                 nullable: false,
@@ -18,7 +18,7 @@ namespace Maple2.Server.World.Migrations {
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
-                name: "LastChannel",
+                name: "ReturnChannel",
                 table: "character");
         }
     }

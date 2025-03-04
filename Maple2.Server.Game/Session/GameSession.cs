@@ -563,7 +563,7 @@ public sealed partial class GameSession : Core.Network.Session {
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
-            Player.Value.Character.LastChannel = Player.Value.Character.Channel;
+            Player.Value.Character.ReturnChannel = Player.Value.Character.Channel;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
@@ -580,14 +580,14 @@ public sealed partial class GameSession : Core.Network.Session {
                 CharacterId = CharacterId,
                 MachineId = MachineId.ToString(),
                 Server = Server.World.Service.Server.Game,
-                Channel = Player.Value.Character.LastChannel,
+                Channel = Player.Value.Character.ReturnChannel,
                 MapId = mapId,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
-            Player.Value.Character.LastChannel = 0;
+            Player.Value.Character.ReturnChannel = 0;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));

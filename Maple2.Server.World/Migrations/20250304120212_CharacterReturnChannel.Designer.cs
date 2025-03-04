@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    [Migration("20250301155429_CharacterLastChannel")]
-    partial class CharacterLastChannel
+    [Migration("20250304120212_CharacterReturnChannel")]
+    partial class CharacterReturnChannel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -277,9 +277,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("Job")
                         .HasColumnType("int");
 
-                    b.Property<short>("LastChannel")
-                        .HasColumnType("smallint");
-
                     b.Property<DateTime>("LastModified")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -304,6 +301,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<string>("Profile")
                         .IsRequired()
                         .HasColumnType("json");
+
+                    b.Property<short>("ReturnChannel")
+                        .HasColumnType("smallint");
 
                     b.Property<int>("ReturnMapId")
                         .HasColumnType("int");

@@ -274,9 +274,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("Job")
                         .HasColumnType("int");
 
-                    b.Property<short>("LastChannel")
-                        .HasColumnType("smallint");
-
                     b.Property<DateTime>("LastModified")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -301,6 +298,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<string>("Profile")
                         .IsRequired()
                         .HasColumnType("json");
+
+                    b.Property<short>("ReturnChannel")
+                        .HasColumnType("smallint");
 
                     b.Property<int>("ReturnMapId")
                         .HasColumnType("int");
