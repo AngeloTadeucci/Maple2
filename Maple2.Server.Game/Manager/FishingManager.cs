@@ -195,7 +195,7 @@ public class FishingManager {
                     continue;
                 }
 
-                if (spot.MinMastery > fish.Mastery || spot.MaxMastery < fish.Mastery) {
+                if (!fish.IgnoreSpotMastery && (spot.MinMastery > fish.Mastery || spot.MaxMastery < fish.Mastery)) {
                     continue;
                 }
 
