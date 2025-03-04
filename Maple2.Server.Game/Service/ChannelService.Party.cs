@@ -223,7 +223,7 @@ public partial class ChannelService {
                 continue;
             }
 
-            session.Party.SetDungeon(setDungeon.DungeonId, setDungeon.DungeonRoomId, setDungeon.Set);
+            session.Party.SetDungeon(setDungeon.DungeonId, setDungeon.DungeonRoomId);
         }
 
         return new PartyResponse();

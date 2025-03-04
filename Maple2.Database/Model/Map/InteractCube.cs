@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 
 namespace Maple2.Database.Model;
 
 internal record InteractCube(
     string Id,
-    InteractCubeState DefaultState,
+    int ObjectCode,
     CubePortalSettings? PortalSettings,
     CubeNoticeSettings? NoticeSettings) {
 
@@ -13,14 +14,14 @@ internal record InteractCube(
     public static implicit operator InteractCube?(Maple2.Model.Game.InteractCube? other) {
         return other == null ? null : new InteractCube(
             other.Id,
-            other.DefaultState,
+            other.ObjectCode,
             other.PortalSettings,
             other.NoticeSettings);
     }
 
-    [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator Maple2.Model.Game.InteractCube?(InteractCube? other) {
-        return other == null ? null : new Maple2.Model.Game.InteractCube(other.Id, other.DefaultState, other.PortalSettings, other.NoticeSettings);
+    // Use explicit Convert() here because we need metadata to construct InteractCube.
+    public Maple2.Model.Game.InteractCube Convert(FunctionCubeMetadata metadata, CubeNoticeSettings? noticeSettings, CubePortalSettings? portalSettings) {
+        return new Maple2.Model.Game.InteractCube(Id, metadata, portalSettings, noticeSettings);
     }
 }
 

@@ -68,13 +68,14 @@ message MigrateOutRequest {
   optional int32 portal_id = 7;
   optional int64 owner_id = 8;
   optional int32 room_id = 9;
-  optional PlotMode plot_mode = 10;
+  optional MigrationType type = 10;
 }
 
-enum PlotMode {
+enum MigrationType {
   NORMAL = 0;
   DECOR_PLANNER = 1;
   BLUEPRINT_DESIGNER = 3;
+  DUNGEON = 4;
 }
 
 message MigrateOutResponse {
@@ -100,7 +101,7 @@ message MigrateInResponse {
   int32 portal_id = 4;
   int64 owner_id = 5;
   int32 room_id = 6;
-  PlotMode plot_mode = 7;
+  MigrationType type = 7;
 }
 
 message ChannelsRequest {}
@@ -332,7 +333,6 @@ message PartyRequest {
     int32 party_id = 1;
     int32 dungeon_id = 2;
     int32 dungeon_room_id = 3;
-    bool set = 4;
   }
 
   int64 requestor_id = 1;

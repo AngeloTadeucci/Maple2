@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Common;
@@ -10,7 +7,8 @@ using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
 using Home = Maple2.Model.Game.Home;
-using Item = Maple2.Model.Game.Item;
+using InteractCube = Maple2.Model.Game.InteractCube;
+using HomeLayout = Maple2.Model.Game.HomeLayout;
 
 namespace Maple2.Database.Storage;
 
@@ -36,17 +34,13 @@ public partial class GameStorage {
             List<PlotCube> plotCubes = Context.UgcMap.Where(map => map.OwnerId == ownerId)
                 .Join(Context.UgcMapCube, ugcMap => ugcMap.Id, cube => cube.UgcMapId, (ugcMap, cube) => cube)
                 .AsEnumerable()
-                .Select<UgcMapCube, PlotCube>(cube => cube)
-                .ToList();
+                .Select(ToPlotCube)
+                .Where(cube => cube != null)
+                .ToList()!;
             foreach (PlotCube cube in plotCubes) {
-                if (!cube.ItemType.IsInteractFurnishing) continue;
-                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
-                if (itemMetadata?.Install is null) continue;
+                if (cube.Interact?.Metadata.Nurturing is null) continue;
 
-                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
-                if (functionCubeMetadata?.Nurturing is null) continue;
-
-                cube.Interact!.Nurturing = GetNurturing(ownerId, cube.ItemId);
+                cube.Interact!.Nurturing = GetNurturing(ownerId, cube.ItemId, cube.Interact.Metadata.Nurturing);
             }
 
             return plotCubes;
@@ -173,16 +167,14 @@ public partial class GameStorage {
                 return null;
             }
 
-            PlotCube[] plotCubes = results.Select<UgcMapCube, PlotCube>(cube => cube).ToArray();
+            PlotCube[] plotCubes = results
+                .Select(ToPlotCube)
+                .Where(cube => cube != null)
+                .ToArray()!;
             foreach (PlotCube cube in plotCubes) {
-                if (!cube.ItemType.IsInteractFurnishing) continue;
-                game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
-                if (itemMetadata?.Install is null) continue;
+                if (cube.Interact?.Metadata.Nurturing is null) continue;
 
-                game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
-                if (functionCubeMetadata?.Nurturing is null) continue;
-
-                cube.Interact!.Nurturing = GetNurturing(plotInfo.OwnerId, cube.ItemId);
+                cube.Interact!.Nurturing = GetNurturing(plotInfo.OwnerId, cube.ItemId, cube.Interact.Metadata.Nurturing);
             }
 
             return plotCubes;
@@ -231,18 +223,17 @@ public partial class GameStorage {
 
             if (ugcMap.Cubes == null) return plot;
 
-            foreach (PlotCube cube in ugcMap.Cubes) {
-                if (cube.ItemType.IsInteractFurnishing) {
-                    game.itemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata);
-                    if (itemMetadata?.Install is not null) {
-                        game.functionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
-                        if (functionCubeMetadata?.Nurturing is not null) {
-                            cube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId);
-                        }
-                    }
+            foreach (UgcMapCube cube in ugcMap.Cubes) {
+                PlotCube? plotCube = ToPlotCube(cube);
+                if (plotCube == null) {
+                    continue;
                 }
 
-                plot.Cubes.Add(cube.Position, cube);
+                if (plotCube.Interact != null && plotCube.Interact?.Metadata.Nurturing is not null) {
+                    plotCube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId, plotCube.Interact.Metadata.Nurturing);
+                }
+
+                plot.Cubes.Add(plotCube.Position, plotCube);
             }
 
             return plot;
@@ -265,6 +256,53 @@ public partial class GameStorage {
                 Name = ugcMap.Name,
                 ApartmentNumber = 0,
                 ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
+            };
+        }
+
+        private HomeLayout? ToHomeLayout(Model.HomeLayout? model) {
+            if (model == null) {
+                return null;
+            }
+
+            List<PlotCube> cubes = model.Cubes.Select(ToPlotCube)
+                .Where(cube => cube != null)
+                .ToList()!;
+
+            return new HomeLayout(model.Uid, model.Id, model.Name, model.Area, model.Height, model.Timestamp, cubes);
+        }
+
+        // Converts model to interact cube if possible, otherwise returns null.
+        private InteractCube? ToInteractCube(Model.InteractCube? model) {
+            if (model == null) {
+                return null;
+            }
+
+            return game.functionCubeMetadata.TryGet(model.ObjectCode, out FunctionCubeMetadata? metadata) ? model.Convert(metadata, model.NoticeSettings, model.PortalSettings) : null;
+        }
+
+        private PlotCube? ToPlotCube(Model.HomeLayoutCube? model) {
+            if (model == null) {
+                return null;
+            }
+
+            return new PlotCube(model.ItemId, model.Id, model.Template) {
+                Position = new Vector3B(model.X, model.Y, model.Z),
+                Rotation = model.Rotation,
+                HousingCategory = model.HousingCategory,
+                Interact = ToInteractCube(model.Interact),
+            };
+        }
+
+        private PlotCube? ToPlotCube(UgcMapCube? model) {
+            if (model == null) {
+                return null;
+            }
+
+            return new PlotCube(model.ItemId, model.Id, model.Template) {
+                Position = new Vector3B(model.X, model.Y, model.Z),
+                Rotation = model.Rotation,
+                HousingCategory = model.HousingCategory,
+                Interact = ToInteractCube(model.Interact),
             };
         }
     }

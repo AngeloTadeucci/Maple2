@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Storage;
 using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;

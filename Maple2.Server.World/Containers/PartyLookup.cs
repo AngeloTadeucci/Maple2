@@ -59,6 +59,7 @@ public class PartyLookup : IDisposable {
         var party = new Party(partyId, leaderInfo.AccountId, leaderInfo.CharacterId, leaderInfo.Name);
         var manager = new PartyManager(party) {
             ChannelClients = channelClients,
+            PartyLookup = this,
         };
 
         if (!parties.TryAdd(partyId, manager)) {

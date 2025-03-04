@@ -530,7 +530,7 @@ public partial class FieldManager {
             return null;
         }
 
-        if (!FunctionCubeMetadata.TryGet(item.Install.InteractId, out FunctionCubeMetadata? metadata)) {
+        if (!FunctionCubeMetadata.TryGet(item.Install.ObjectCubeId, out FunctionCubeMetadata? metadata)) {
             return null;
         }
 
@@ -672,7 +672,7 @@ public partial class FieldManager {
         }
         if (MapId is Constant.DefaultHomeMapId) {
             IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.ItemType.IsInteractFurnishing && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
+                .Where(x => x.Interact != null && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
             IEnumerable<PlotCube> lifeSkillsCubes = fieldFunctionInteracts.Values
                 .Select(x => x.Cube);
 

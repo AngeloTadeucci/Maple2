@@ -7,13 +7,9 @@ namespace Maple2.Database.Storage;
 
 public partial class GameStorage {
     public partial class Request {
-        public Maple2.Model.Game.Nurturing? GetNurturing(long characterId, int itemId) {
+        public Maple2.Model.Game.Nurturing? GetNurturing(long characterId, int itemId, FunctionCubeMetadata.NurturingData metadata) {
             Nurturing? result = Context.Nurturing.Find(characterId, itemId);
-            if (result is null || !game.itemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata) || !game.functionCubeMetadata.TryGet(itemMetadata.Install!.InteractId, out FunctionCubeMetadata? metadata)) {
-                return null;
-            }
-
-            return new Maple2.Model.Game.Nurturing(result.Exp, result.ClaimedGiftForStage, result.PlayedBy, result.CreationTime, result.LastFeedTime, metadata.Nurturing);
+            return result is null ? null : new Maple2.Model.Game.Nurturing(result.Exp, result.ClaimedGiftForStage, result.PlayedBy, result.CreationTime, result.LastFeedTime, metadata);
         }
 
         public Maple2.Model.Game.Nurturing? CreateNurturing(long accountId, PlotCube plotCube) {

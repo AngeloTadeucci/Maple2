@@ -7,6 +7,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -107,7 +108,7 @@ public class PartyHandler : PacketHandler<GameSession> {
             }
 
             if (session.Party.SetParty(response.Party)) {
-                session.Send(PartyPacket.Load(session.Party.Party!));
+                session.Send(PartyPacket.Load(session.Party.Party!, quickEnter: session.Field is not DungeonFieldManager));
             }
         } else if (session.Party.Party.LeaderCharacterId != session.CharacterId) {
             session.Send(PartyPacket.Error(PartyError.s_party_err_not_chief));
@@ -165,7 +166,7 @@ public class PartyHandler : PacketHandler<GameSession> {
 
         if (response == PartyInviteResponse.Accept) {
             if (session.Party.SetParty(partyResponse.Party)) {
-                session.Send(PartyPacket.Load(session.Party.Party!, true));
+                session.Send(PartyPacket.Load(session.Party.Party!, true, quickEnter: session.Field is not DungeonFieldManager));
             }
         }
     }
@@ -242,7 +243,7 @@ public class PartyHandler : PacketHandler<GameSession> {
         }
 
         if (session.Party.SetParty(response.Party)) {
-            session.Send(PartyPacket.Load(session.Party.Party!, true));
+            session.Send(PartyPacket.Load(session.Party.Party!, true, quickEnter: session.Field is not DungeonFieldManager));
         }
     }
 

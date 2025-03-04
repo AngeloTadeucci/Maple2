@@ -110,7 +110,7 @@ public class PartyManager : IDisposable {
             party.Members.TryAdd(member.CharacterId, member);
         }
 
-        session.Send(PartyPacket.Load(Party));
+        session.Send(PartyPacket.Load(Party, quickEnter: session.Field is not DungeonFieldManager));
 
         // Listening happens after loading the party
         foreach (PartyMember member in party.Members.Values) {
@@ -295,12 +295,13 @@ public class PartyManager : IDisposable {
         session.Send(PartyPacket.StartVote(Party.Vote));
     }
 
-    public void SetDungeon(int dungeonId, int dungeonRoomId, bool set) {
+    public void SetDungeon(int dungeonId, int dungeonRoomId) {
         if (Party == null) {
             return;
         }
         Party.DungeonId = dungeonId;
         Party.DungeonLobbyRoomId = dungeonRoomId;
+        session.Dungeon.SetDungeon(dungeonId, dungeonRoomId);
 
         session.Send(PartyPacket.DungeonReset(session.Field, dungeonId));
     }

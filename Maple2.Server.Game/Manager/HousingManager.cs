@@ -334,12 +334,12 @@ public class HousingManager {
                 continue;
             }
 
-            session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
-
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
             plotCube.HousingCategory = itemMetadata.Housing.HousingCategory;
-            if (plotCube.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+
+            session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
+            if (functionCubeMetadata is not null) {
                 plotCube.Interact = new InteractCube(plotCube.Position, functionCubeMetadata);
             }
 
@@ -513,7 +513,7 @@ public class HousingManager {
             return false;
         }
 
-        session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+        session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
 
         if (plot.IsPlanner) {
             result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
@@ -522,7 +522,7 @@ public class HousingManager {
                 HousingCategory = itemMetadata.Housing.HousingCategory,
             };
 
-            if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+            if (functionCubeMetadata is not null) {
                 result.Interact = new InteractCube(position, functionCubeMetadata);
             }
 
@@ -558,7 +558,7 @@ public class HousingManager {
         result.Position = position;
         result.Rotation = rotation;
         result.HousingCategory = itemMetadata.Housing.HousingCategory;
-        if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+        if (functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
 
             if (result.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
@@ -697,7 +697,7 @@ public class HousingManager {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
-            if (plotCube.ItemType.IsInteractFurnishing && plotCube.Interact is not null) {
+            if (plotCube.Interact is not null) {
                 if (cube.Interact?.PortalSettings is not null) {
                     plotCube.Interact.PortalSettings = cube.Interact.PortalSettings;
                 }

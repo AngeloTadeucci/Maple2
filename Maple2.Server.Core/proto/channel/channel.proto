@@ -161,7 +161,6 @@ message PartyRequest {
     int32 party_id = 1;
     int32 dungeon_id = 2;
     int32 dungeon_room_id = 3;
-    bool set = 4;
   }
 
   int32 party_id = 1;

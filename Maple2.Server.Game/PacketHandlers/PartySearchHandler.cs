@@ -4,6 +4,7 @@ using Maple2.Model.Game.Party;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -56,7 +57,7 @@ public class PartySearchHandler : PacketHandler<GameSession> {
             }
 
             if (session.Party.SetParty(partyResponse.Party)) {
-                session.Send(PartyPacket.Load(session.Party.Party!));
+                session.Send(PartyPacket.Load(session.Party.Party!, quickEnter: session.Field is not DungeonFieldManager));
             }
         }
 

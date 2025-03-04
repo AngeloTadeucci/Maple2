@@ -17,6 +17,7 @@ namespace Maple2.Server.World.Containers;
 
 public class PartyManager : IDisposable {
     public required ChannelClientLookup ChannelClients { get; init; }
+    public required PartyLookup PartyLookup { get; init; }
     public readonly Party Party;
     private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites;
 
@@ -88,7 +89,7 @@ public class PartyManager : IDisposable {
 
     public bool CheckForDisband() {
         if (Party.Members.Count <= 2) {
-            Dispose();
+            PartyLookup.Disband(Party.Id);
             return true;
         }
         return false;
@@ -415,7 +416,6 @@ public class PartyManager : IDisposable {
                 PartyId = Party.Id,
                 DungeonId = dungeonId,
                 DungeonRoomId = dungeonRoomId,
-                Set = true,
             },
         });
 

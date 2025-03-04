@@ -93,11 +93,16 @@ public partial class FieldManager {
                 throw new InvalidOperationException($"Failed to load entities for map: {mapId}");
             }
 
-
             switch (instanceFieldMetadata?.Type) {
                 case InstanceType.ugcMap:
-                    HomeFieldManager homeField = CreateHome(ownerId, metadata, ugcMetadata, entities, NpcMetadata);
+                    HomeFieldManager homeField = CreateHome(ownerId, metadata, ugcMetadata, entities, NpcMetadata, roomId);
                     logger.Debug("Home Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
+
+                    if (roomId < 0) { // Decor Planner or Blueprint Designer
+                        AddField(homeField);
+                    } else {
+                        homes.TryAdd(ownerId, homeField);
+                    }
                     return homeField;
                 /*case InstanceType.DungeonLobby:
                     DungeonFieldManager? dungeonField = CreateDungeon(ServerTableMetadata.InstanceFieldTable.DungeonRooms[roomId], ownerId);
@@ -109,19 +114,23 @@ public partial class FieldManager {
             context.InjectProperties(field);
 
             // Add to fields
-            fields.AddOrUpdate(
-                mapId,
-                _ => new ConcurrentDictionary<int, FieldManager>([new KeyValuePair<int, FieldManager>(roomId, field)]),
-                (_, existingOwnerFields) => {
-                    existingOwnerFields.AddOrUpdate(roomId, field, (_, __) => field);
-                    return existingOwnerFields;
-                });
+            AddField(field);
 
             logger.Debug("Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, field.RoomId, sw.ElapsedMilliseconds);
             return field;
+
+            void AddField(FieldManager field) {
+                fields.AddOrUpdate(
+                    mapId,
+                    _ => new ConcurrentDictionary<int, FieldManager>([new KeyValuePair<int, FieldManager>(roomId, field)]),
+                    (_, existingOwnerFields) => {
+                        existingOwnerFields.AddOrUpdate(roomId, field, (_, __) => field);
+                        return existingOwnerFields;
+                    });
+            }
         }
 
-        private HomeFieldManager CreateHome(long ownerId, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata) {
+        private HomeFieldManager CreateHome(long ownerId, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, int roomId) {
             using GameStorage.Request db = GameStorage.Context();
             Home? home = db.GetHome(ownerId);
             if (home == null) {
@@ -131,7 +140,7 @@ public partial class FieldManager {
 
             var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata);
             context.InjectProperties(field);
-            homes.TryAdd(ownerId, field);
+
             return field;
         }
 
@@ -342,6 +351,9 @@ public partial class FieldManager {
                 }
                 switch (metadata.Type) {
                     case InstanceType.ugcMap: // this is both homes and UGD. Currently just doing homes.
+                        if (roomId != 0) { // User wants to go into decorplanner or blueprint designer
+                            return Create(mapId, ownerId: ownerId, roomId: roomId, instanceFieldMetadata: metadata);
+                        }
                         if (!homes.TryGetValue(ownerId, out HomeFieldManager? homeField)) {
                             return Create(mapId, ownerId: ownerId, roomId: roomId, instanceFieldMetadata: metadata);
                         }

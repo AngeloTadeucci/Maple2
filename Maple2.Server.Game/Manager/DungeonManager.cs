@@ -12,6 +12,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
 using Serilog;
+using MigrationType = Maple2.Server.World.Service.MigrationType;
 
 namespace Maple2.Server.Game.Manager;
 
@@ -61,6 +62,7 @@ public class DungeonManager : IDisposable {
             session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_dungeon_NotAllowTime));
             return;
         }
+        LobbyRoomId = dungeonField.RoomId;
 
         SetDungeon(dungeonField);
 
@@ -71,7 +73,6 @@ public class DungeonManager : IDisposable {
                     PartyId = Party!.Id,
                     DungeonId = dungeonId,
                     DungeonRoomId = dungeonField.RoomId,
-                    Set = true,
                 },
             };
 
@@ -134,6 +135,7 @@ public class DungeonManager : IDisposable {
                 Server = Server.World.Service.Server.Game,
                 MapId = Metadata.LobbyFieldId,
                 RoomId = LobbyRoomId,
+                Type = MigrationType.Dungeon,
             };
 
             MigrateOutResponse response = session.World.MigrateOut(request);

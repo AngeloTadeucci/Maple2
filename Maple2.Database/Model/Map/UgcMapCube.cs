@@ -3,6 +3,7 @@ using Maple2.Database.Extensions;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,23 +24,6 @@ internal class UgcMapCube {
     public InteractCube? Interact { get; set; }
 
     public UgcItemLook? Template { get; set; }
-
-    [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator PlotCube?(UgcMapCube? other) {
-        if (other == null) return null;
-
-        var plotCube = new PlotCube(other.ItemId, other.Id, other.Template) {
-            Position = new Vector3B(other.X, other.Y, other.Z),
-            Rotation = other.Rotation,
-            HousingCategory = other.HousingCategory,
-            Interact = other.Interact,
-        };
-
-        if (plotCube.Interact?.NoticeSettings is not null) {
-            plotCube.Interact.NoticeSettings.Position = plotCube.Position;
-        }
-        return plotCube;
-    }
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator UgcMapCube?(PlotCube? other) {

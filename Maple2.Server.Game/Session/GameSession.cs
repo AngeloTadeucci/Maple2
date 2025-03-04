@@ -24,12 +24,13 @@ using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
 using Maple2.Tools.Scheduler;
-using PlotMode = Maple2.Model.Enum.PlotMode;
+using MigrationType = Maple2.Model.Enum.MigrationType;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Session;
@@ -125,7 +126,7 @@ public sealed partial class GameSession : Core.Network.Session {
         int portalId = migrateResponse.PortalId;
         long ownerId = migrateResponse.OwnerId;
         int roomId = migrateResponse.RoomId;
-        var plotMode = (PlotMode) migrateResponse.PlotMode;
+        var migrationType = (MigrationType) migrateResponse.Type;
 
         AccountId = accountId;
         CharacterId = characterId;
@@ -181,19 +182,28 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (plotMode is not PlotMode.Normal) {
-            roomId = FieldManager.NextGlobalId();
-        }
-
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
         if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, roomId: roomId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
-
-        if (plotMode is not PlotMode.Normal) {
-            player.Home.EnterPlanner(plotMode);
-            fieldManager.Plots.First().Value.SetPlannerMode(plotMode);
+        switch (migrationType) {
+            case MigrationType.DecorPlanner:
+            case MigrationType.BlueprintDesigner:
+                player.Home.EnterPlanner((PlotMode) migrationType);
+                fieldManager.Plots.First().Value.SetPlannerMode((PlotMode) migrationType);
+                break;
+            case MigrationType.Dungeon:
+                if (fieldManager is not DungeonFieldManager dungeonField) {
+                    Logger.Error("Failed to load dungeon field for dungeon migration");
+                    Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
+                    return false;
+                }
+                Dungeon.SetDungeon(dungeonField);
+                break;
+            case MigrationType.Normal:
+            default:
+                break;
         }
 
         var playerUpdate = new PlayerUpdateRequest {
@@ -397,6 +407,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         if (Party.Party != null && Dungeon.Metadata != null) {
             Send(PartyPacket.DungeonReset(Field, Dungeon.Metadata.Id));
+            Dungeon.SetDungeon(Party.Party.DungeonId, Party.Party.DungeonLobbyRoomId);
         }
 
         Send(CubePacket.DesignRankReward(Player.Value.Home));
@@ -512,7 +523,8 @@ public sealed partial class GameSession : Core.Network.Session {
                 Server = Server.World.Service.Server.Game,
                 MapId = Constant.DefaultHomeMapId,
                 OwnerId = AccountId,
-                PlotMode = (World.Service.PlotMode) plotMode,
+                Type = (World.Service.MigrationType) plotMode,
+                RoomId = -1,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
