@@ -104,10 +104,10 @@ public partial class FieldManager {
                         homes.TryAdd(ownerId, homeField);
                     }
                     return homeField;
-                /*case InstanceType.DungeonLobby:
-                    DungeonFieldManager? dungeonField = CreateDungeon(ServerTableMetadata.InstanceFieldTable.DungeonRooms[roomId], ownerId);
-                    logger.Debug("Dungeon Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
-                    return dungeonField;*/
+                    /*case InstanceType.DungeonLobby:
+                        DungeonFieldManager? dungeonField = CreateDungeon(ServerTableMetadata.InstanceFieldTable.DungeonRooms[roomId], ownerId);
+                        logger.Debug("Dungeon Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", mapId, ownerId, roomId, sw.ElapsedMilliseconds);
+                        return dungeonField;*/
             }
 
             var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata);

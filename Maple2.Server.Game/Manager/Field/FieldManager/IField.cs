@@ -57,7 +57,7 @@ public interface IField : IDisposable {
 
     public int MapId { get; init; }
     public long FieldTick { get; }
-    public virtual void Init() {}
+    public virtual void Init() { }
 
     public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default);
     public void AddSkill(SkillRecord record);

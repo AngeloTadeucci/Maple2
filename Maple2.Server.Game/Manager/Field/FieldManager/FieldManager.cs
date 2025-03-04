@@ -433,16 +433,16 @@ public partial class FieldManager : IField {
                             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
                         return true;
                     case CubePortalDestination.FriendHome: {
-                        using GameStorage.Request db = session.GameStorage.Context();
-                        Home? home = db.GetHome(fieldPortal.HomeId);
-                        if (home is null) {
-                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
-                            return false;
-                        }
+                            using GameStorage.Request db = session.GameStorage.Context();
+                            Home? home = db.GetHome(fieldPortal.HomeId);
+                            if (home is null) {
+                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                                return false;
+                            }
 
-                        session.MigrateToHome(home);
-                        return true;
-                    }
+                            session.MigrateToHome(home);
+                            return true;
+                        }
                 }
                 return false;
             case PortalType.LeaveDungeon:
