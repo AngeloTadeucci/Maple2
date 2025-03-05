@@ -593,7 +593,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            Send(MigrationPacket.GameToGame(endpoint, response.Token, Constant.DefaultHomeMapId));
+            Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
             Player.Value.Character.ReturnChannel = 0;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
