@@ -469,7 +469,6 @@ public sealed partial class GameSession : Core.Network.Session {
                 houseRank.TryGetValue(Guild.Guild.HouseTheme, out GuildTable.House? house);
 
                 if (house?.MapId == character.MapId) {
-                    Console.WriteLine("Returning to guild house map id: {0}", house.MapId);
                     MigrateOutOfInstance(mapId);
                     return;
                 }
