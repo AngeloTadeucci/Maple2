@@ -110,6 +110,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
         //Dungeon
         yield return new TableMetadata { Name = "dungeonroom.xml", Table = ParseDungeonRoom() };
+        yield return new TableMetadata { Name = "dungeonrankreward.xml", Table = ParseDungeonRankReward() };
     }
 
     private ChatStickerTable ParseChatSticker() {
@@ -1575,6 +1576,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                     VipOnly: dungeon.limitVIP,
                     DayOfWeeks: dungeon.limitDayOfWeeks.Length == 0 ? [] : dungeon.limitDayOfWeeks.Select(ParseDayOfWeek).ToArray(),
                     ClearDungeonIds: dungeon.limitClearDungeon,
+                    Buffs: dungeon.limitAdditionalEffects,
                     DisableMeretRevival: dungeon.limitMeratRevival,
                     EquippedRecommendedWeapon: dungeon.limitRecommendWeapon,
                     PartyOnly: dungeon.isPartyOnly,
@@ -1607,5 +1609,24 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 _ => DayOfWeek.Sunday,
             };
         }
+    }
+
+    private DungeonRankRewardTable ParseDungeonRankReward() {
+        var results = new Dictionary<int, DungeonRankRewardTable.Entry>();
+        foreach ((int id, DungeonRankReward reward) in parser.ParseDungeonRankReward()) {
+            List<DungeonRankRewardTable.Entry.Item> rewards = [];
+            foreach (DungeonRankRewardEntry item in reward.v) {
+                rewards.Add(new DungeonRankRewardTable.Entry.Item(
+                    Rank: item.rank,
+                    ItemId: item.itemID,
+                    SystemMailId: item.systemMailID));
+            }
+
+            results.Add(id, new DungeonRankRewardTable.Entry(
+                Id: id,
+                Items: rewards.ToArray()));
+        }
+
+        return new DungeonRankRewardTable(results);
     }
 }

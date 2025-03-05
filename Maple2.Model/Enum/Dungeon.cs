@@ -50,3 +50,15 @@ public enum DungeonRequireRole {
     Support = 1,
     Tank = 2,
 }
+
+public enum DungeonEnterLimit : byte {
+    Unknown = 0,
+    None = 1,
+    MinLevel = 12,
+    Achievement = 13,
+    Vip = 14,
+    Gearscore = 15,
+    DungeonClear = 16,
+    Buff = 17,
+    RecommendedWeapon = 18,
+}

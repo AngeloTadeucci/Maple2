@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
@@ -22,11 +23,10 @@ public class PartyMember : IByteSerializable, IDisposable {
     }
 
     public void WriteDungeonEligibility(IByteWriter writer) {
-        var Count = 0;
-        writer.WriteInt(Count);
-        for (var i = 0; i < Count; i++) {
-            writer.WriteInt();
-            writer.WriteByte();
+        writer.WriteInt(Info.DungeonEligibility.Count);
+        foreach ((int dungeonId, DungeonEnterLimit limit) in Info.DungeonEligibility) {
+            writer.WriteInt(dungeonId);
+            writer.Write<DungeonEnterLimit>(limit);
         }
     }
 
