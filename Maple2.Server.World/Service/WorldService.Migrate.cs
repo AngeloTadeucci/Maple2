@@ -14,15 +14,14 @@ public partial class WorldService {
     private static readonly TimeSpan AuthExpiry = TimeSpan.FromSeconds(30);
 
     private readonly IMemoryCache tokenCache;
-    // private readonly PlayerChannelLookup playerChannels = new();
 
     public override Task<MigrateOutResponse> MigrateOut(MigrateOutRequest request, ServerCallContext context) {
         ulong token = UniqueToken();
 
         switch (request.Server) {
             case Server.Login:
-                var longEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0, 0, 0, 0, 0, MigrationType.Normal);
-                tokenCache.Set(token, longEntry, AuthExpiry);
+                var loginEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), 0, 0, 0, 0, 0, MigrationType.Normal);
+                tokenCache.Set(token, loginEntry, AuthExpiry);
                 return Task.FromResult(new MigrateOutResponse {
                     IpAddress = Target.LoginIp.ToString(),
                     Port = Target.LoginPort,
@@ -33,9 +32,16 @@ public partial class WorldService {
                     throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
-                int channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                int channel;
+
+                if (request.InstancedContent && channelClients.TryGetInstancedChannelId(out int channelId)) {
+                    channel = channelId;
+                } else {
+                    channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                }
+
                 if (!channelClients.TryGetActiveEndpoint(channel, out IPEndPoint? endpoint)) {
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, $"Migrating to invalid game channel: {channel}"));
+                    throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
                 var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.PortalId, request.RoomId, request.OwnerId, request.Type);
