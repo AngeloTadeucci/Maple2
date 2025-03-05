@@ -108,7 +108,7 @@ public class PartyHandler : PacketHandler<GameSession> {
             }
 
             if (session.Party.SetParty(response.Party)) {
-                session.Send(PartyPacket.Load(session.Party.Party!, quickEnter: session.Field is not DungeonFieldManager));
+                session.Send(PartyPacket.Load(session.Party.Party!));
             }
         } else if (session.Party.Party.LeaderCharacterId != session.CharacterId) {
             session.Send(PartyPacket.Error(PartyError.s_party_err_not_chief));
@@ -166,7 +166,7 @@ public class PartyHandler : PacketHandler<GameSession> {
 
         if (response == PartyInviteResponse.Accept) {
             if (session.Party.SetParty(partyResponse.Party)) {
-                session.Send(PartyPacket.Load(session.Party.Party!, true, quickEnter: session.Field is not DungeonFieldManager));
+                session.Send(PartyPacket.Load(session.Party.Party!, true));
             }
         }
     }
@@ -243,7 +243,7 @@ public class PartyHandler : PacketHandler<GameSession> {
         }
 
         if (session.Party.SetParty(response.Party)) {
-            session.Send(PartyPacket.Load(session.Party.Party!, true, quickEnter: session.Field is not DungeonFieldManager));
+            session.Send(PartyPacket.Load(session.Party.Party!, true));
         }
     }
 

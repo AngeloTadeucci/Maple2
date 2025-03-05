@@ -231,7 +231,7 @@ public partial class WorldService {
             return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
         }
 
-        manager.SetDungeon(requestorId, setDungeon.DungeonId, setDungeon.DungeonRoomId);
+        manager.SetDungeon(requestorId, setDungeon.DungeonId, setDungeon.Set, setDungeon.DungeonRoomId);
 
         return new PartyResponse();
     }
@@ -245,6 +245,7 @@ public partial class WorldService {
             LeaderName = party.LeaderName,
             DungeonId = party.DungeonId,
             DungeonRoomId = party.DungeonLobbyRoomId,
+            DungeonSet = party.DungeonSet,
             Members = {
                 party.Members.Values.Select(member => new PartyInfo.Types.Member {
                     CharacterId = member.CharacterId,

@@ -22,6 +22,7 @@ public class Party : IByteSerializable {
     public required long LeaderCharacterId;
     public required string LeaderName;
     public long CreationTime;
+    public bool DungeonSet;
     public int DungeonId = 0;
     public int DungeonLobbyRoomId = 0;
     public readonly ConcurrentDictionary<long, PartyMember> Members;
@@ -55,7 +56,7 @@ public class Party : IByteSerializable {
             member.WriteDungeonEligibility(writer);
         }
 
-        writer.WriteBool(false); // unk bool
+        writer.WriteBool(DungeonSet);
         writer.WriteInt(DungeonId);
         writer.WriteBool(false); // unk bool
     }

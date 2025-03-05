@@ -404,7 +404,7 @@ public class PartyManager : IDisposable {
         return PartyError.none;
     }
 
-    public PartyError SetDungeon(long requestorId, int dungeonId, int dungeonRoomId) {
+    public PartyError SetDungeon(long requestorId, int dungeonId, bool set, int dungeonRoomId = 0) {
         if (requestorId != Party.LeaderCharacterId) {
             return PartyError.s_party_err_not_chief;
         }
@@ -416,6 +416,7 @@ public class PartyManager : IDisposable {
                 PartyId = Party.Id,
                 DungeonId = dungeonId,
                 DungeonRoomId = dungeonRoomId,
+                Set = set,
             },
         });
 

@@ -270,14 +270,15 @@ message PartyInfo {
   int64 leader_character_id = 3;
   string leader_name = 4;
   int64 creation_time = 5;
-  optional int32 dungeon_id = 6;
-  optional int32 dungeon_room_id = 7;
-  optional string match_party_name = 8;
-  optional int32 match_party_id = 9;
-  optional bool is_matching = 10;
-  optional bool require_approval = 11;
-  repeated Member members = 12;
-  optional PartySearchInfo party_search = 13;
+  optional bool dungeon_set = 6;
+  optional int32 dungeon_id = 7;
+  optional int32 dungeon_room_id = 8;
+  optional string match_party_name = 9;
+  optional int32 match_party_id = 10;
+  optional bool is_matching = 11;
+  optional bool require_approval = 12;
+  repeated Member members = 13;
+  optional PartySearchInfo party_search = 14;
 }
 
 message PartyInfoRequest {
@@ -333,6 +334,7 @@ message PartyRequest {
     int32 party_id = 1;
     int32 dungeon_id = 2;
     int32 dungeon_room_id = 3;
+    bool set = 4;
   }
 
   int64 requestor_id = 1;

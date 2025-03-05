@@ -73,6 +73,7 @@ public class DungeonManager : IDisposable {
                     PartyId = Party!.Id,
                     DungeonId = dungeonId,
                     DungeonRoomId = dungeonField.RoomId,
+                    Set = true,
                 },
             };
 
@@ -112,14 +113,20 @@ public class DungeonManager : IDisposable {
             FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 
-    public void SetDungeon(int dungeonId, int roomId) {
-        if (!session.TableMetadata.DungeonRoomTable.Entries.TryGetValue(dungeonId, out DungeonRoomTable.DungeonRoomMetadata? metadata)) {
-            logger.Error("Dungeon metadata not found for dungeonId {dungeonId}", dungeonId);
-            return;
-        }
+    public void SetDungeon(int dungeonId, int roomId, bool set) {
+        if (set) {
+            if (!session.TableMetadata.DungeonRoomTable.Entries.TryGetValue(dungeonId, out DungeonRoomTable.DungeonRoomMetadata? metadata)) {
+                logger.Error("Dungeon metadata not found for dungeonId {dungeonId}", dungeonId);
+                return;
+            }
 
-        Metadata = metadata;
-        LobbyRoomId = roomId;
+            Metadata = metadata;
+            LobbyRoomId = roomId;
+        } else {
+            Metadata = null;
+            Field = null;
+            LobbyRoomId = 0;
+        }
     }
 
     private void MigrateToDungeon() {

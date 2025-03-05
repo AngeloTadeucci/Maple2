@@ -112,7 +112,7 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter Load(Party party, bool joinNotify = false, bool quickEnter = false) {
+    public static ByteWriter Load(Party party, bool joinNotify = false) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.Load);
         pWriter.WriteBool(joinNotify);
@@ -125,7 +125,7 @@ public static class PartyPacket {
             pWriter.WriteClass<PartyMember>(member);
             member.WriteDungeonEligibility(pWriter);
         }
-        pWriter.WriteBool(quickEnter);
+        pWriter.WriteBool(party.DungeonSet);
         pWriter.WriteInt(party.DungeonId);
         pWriter.WriteBool(false);
         pWriter.WriteByte();
@@ -221,10 +221,10 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter DungeonReset(FieldManager field, int dungeonId = 0) {
+    public static ByteWriter DungeonReset(bool dungeonSet, int dungeonId) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.DungeonReset);
-        pWriter.WriteBool(field is not DungeonFieldManager);
+        pWriter.WriteBool(dungeonSet);
         pWriter.WriteInt(dungeonId);
 
         return pWriter;

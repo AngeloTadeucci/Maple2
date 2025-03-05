@@ -405,11 +405,6 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.LoadSkillCooldowns();
         Marriage.Load();
 
-        if (Party.Party != null && Dungeon.Metadata != null) {
-            Send(PartyPacket.DungeonReset(Field, Dungeon.Metadata.Id));
-            Dungeon.SetDungeon(Party.Party.DungeonId, Party.Party.DungeonLobbyRoomId);
-        }
-
         Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));

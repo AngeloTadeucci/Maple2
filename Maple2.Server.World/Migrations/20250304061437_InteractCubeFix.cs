@@ -10,8 +10,8 @@ namespace Maple2.Server.World.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Add the SQL statement here
             migrationBuilder.Sql("DELETE FROM `game-server`.`ugcmap-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
+            migrationBuilder.Sql("DELETE FROM `game-server`.`home-layout-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
         }
 
         /// <inheritdoc />
