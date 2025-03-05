@@ -67,14 +67,15 @@ message MigrateOutRequest {
   optional int32 map_id = 6;
   optional int32 portal_id = 7;
   optional int64 owner_id = 8;
-  optional int32 instance_id = 9;
-  optional PlotMode plot_mode = 10;
+  optional int32 room_id = 9;
+  optional MigrationType type = 10;
 }
 
-enum PlotMode {
+enum MigrationType {
   NORMAL = 0;
   DECOR_PLANNER = 1;
   BLUEPRINT_DESIGNER = 3;
+  DUNGEON = 4;
 }
 
 message MigrateOutResponse {
@@ -99,8 +100,8 @@ message MigrateInResponse {
   int32 map_id = 3;
   int32 portal_id = 4;
   int64 owner_id = 5;
-  int32 instance_id = 6;
-  PlotMode plot_mode = 7;
+  int32 room_id = 6;
+  MigrationType type = 7;
 }
 
 message ChannelsRequest {}
@@ -269,13 +270,15 @@ message PartyInfo {
   int64 leader_character_id = 3;
   string leader_name = 4;
   int64 creation_time = 5;
-  optional int32 dungeon_id = 6;
-  optional string match_party_name = 7;
-  optional int32 match_party_id = 8;
-  optional bool is_matching = 9;
-  optional bool require_approval = 10;
-  repeated Member members = 11;
-  optional PartySearchInfo party_search = 12;
+  optional bool dungeon_set = 6;
+  optional int32 dungeon_id = 7;
+  optional int32 dungeon_room_id = 8;
+  optional string match_party_name = 9;
+  optional int32 match_party_id = 10;
+  optional bool is_matching = 11;
+  optional bool require_approval = 12;
+  repeated Member members = 13;
+  optional PartySearchInfo party_search = 14;
 }
 
 message PartyInfoRequest {
@@ -327,6 +330,12 @@ message PartyRequest {
     int64 party_search_id = 1;
     int32 party_id = 2;
   }
+  message SetDungeon {
+    int32 party_id = 1;
+    int32 dungeon_id = 2;
+    int32 dungeon_room_id = 3;
+    bool set = 4;
+  }
 
   int64 requestor_id = 1;
   oneof party {
@@ -341,6 +350,7 @@ message PartyRequest {
     VoteReply vote_reply = 10;
     VoteKick vote_kick = 11;
     JoinByPartySearch join_by_party_search = 12;
+    SetDungeon set_dungeon = 13;
   }
 }
 
@@ -482,7 +492,7 @@ message GlobalPortalInfo {
   int32 event_id = 1;
   int32 metadata_id = 2;
   int32 channel = 3;
-  int32 instance_id = 4;
+  int32 room_id = 4;
   int32 map_id = 5;
   int32 portal_id = 6;
 }

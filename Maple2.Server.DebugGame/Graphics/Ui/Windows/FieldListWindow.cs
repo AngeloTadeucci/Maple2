@@ -98,7 +98,7 @@ public class FieldListWindow : IUiWindow {
                 ImGui.TableSetColumnIndex(1);
                 nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 1", renderer.Field.Metadata.Name, index), selected);
                 ImGui.TableSetColumnIndex(2);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 2", renderer.Field.InstanceId, index), selected);
+                nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 2", renderer.Field.RoomId, index), selected);
 
                 if (selectFieldDisabled) {
                     ImGui.EndDisabled();

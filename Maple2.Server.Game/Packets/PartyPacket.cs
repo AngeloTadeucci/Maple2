@@ -6,6 +6,8 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Tools.Extensions;
 using Maple2.Model.Game.Party;
+using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Model.Room;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -123,8 +125,8 @@ public static class PartyPacket {
             pWriter.WriteClass<PartyMember>(member);
             member.WriteDungeonEligibility(pWriter);
         }
-        pWriter.WriteBool(false); // Is in dungeon?
-        pWriter.WriteInt(); // Dungeon ID for "Enter Dungeon" button
+        pWriter.WriteBool(party.DungeonSet);
+        pWriter.WriteInt(party.DungeonId);
         pWriter.WriteBool(false);
         pWriter.WriteByte();
         pWriter.WriteBool(party.Search != null);
@@ -219,11 +221,11 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter DungeonReset() {
+    public static ByteWriter DungeonReset(bool dungeonSet, int dungeonId) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.DungeonReset);
-        pWriter.WriteBool(false); // started dungeon
-        pWriter.WriteInt(); // dungeon id
+        pWriter.WriteBool(dungeonSet);
+        pWriter.WriteInt(dungeonId);
 
         return pWriter;
     }
@@ -242,7 +244,7 @@ public static class PartyPacket {
     public static ByteWriter PartySearch(byte type, bool searching) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.PartySearch);
-        /**
+        /*
             if type == 1:
                 dungeon_message(1) # s_enum_dungeon_group_normal
             elif type == 2:
@@ -253,7 +255,7 @@ public static class PartyPacket {
                 dungeon_message(5) # s_enum_dungeon_group_lapenta
             else:
                 dungeon_message(0)
-        **/
+        */
         pWriter.WriteByte(type); // Type
         pWriter.WriteBool(searching); // Searching
         pWriter.WriteBool(true); // always true?

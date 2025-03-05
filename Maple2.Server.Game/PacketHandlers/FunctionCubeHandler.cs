@@ -88,8 +88,8 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                     return;
                 }
 
-                bool isInDefaultState = cube.Interact.State == cube.Interact.DefaultState;
-                cube.Interact.State = isInDefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
+                bool isInDefaultState = cube.Interact.State == cube.Interact.Metadata.DefaultState;
+                cube.Interact.State = isInDefaultState ? InteractCubeState.InUse : cube.Interact.Metadata.DefaultState;
                 cube.Interact.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
                 session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
                 session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
@@ -98,8 +98,11 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleNurturing(GameSession session, Plot plot, PlotCube cube) {
+        if (cube.Interact?.Metadata.Nurturing is null) {
+            return;
+        }
         using GameStorage.Request db = session.GameStorage.Context();
-        Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, cube.ItemId);
+        Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, cube.ItemId, cube.Interact.Metadata.Nurturing);
         if (dbNurturing is null) {
             Logger.Error("Nurturing not found for account id {0} and item {1}", session.AccountId, cube.ItemId);
             return;

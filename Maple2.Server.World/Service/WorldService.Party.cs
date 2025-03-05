@@ -1,6 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -43,6 +41,8 @@ public partial class WorldService {
                 return Task.FromResult(VoteKick(request.RequestorId, request.VoteKick));
             case PartyRequest.PartyOneofCase.JoinByPartySearch:
                 return Task.FromResult(JoinByPartySearch(request.RequestorId, request.JoinByPartySearch));
+            case PartyRequest.PartyOneofCase.SetDungeon:
+                return Task.FromResult(SetDungeon(request.RequestorId, request.SetDungeon));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.none });
         }
@@ -226,6 +226,16 @@ public partial class WorldService {
         return new PartyResponse { Party = ToPartyInfo(manager.Party) };
     }
 
+    private PartyResponse SetDungeon(long requestorId, PartyRequest.Types.SetDungeon setDungeon) {
+        if (!partyLookup.TryGet(setDungeon.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
+        }
+
+        manager.SetDungeon(requestorId, setDungeon.DungeonId, setDungeon.Set, setDungeon.DungeonRoomId);
+
+        return new PartyResponse();
+    }
+
     private static PartyInfo ToPartyInfo(Party party) {
         return new PartyInfo {
             Id = party.Id,
@@ -234,6 +244,8 @@ public partial class WorldService {
             LeaderCharacterId = party.LeaderCharacterId,
             LeaderName = party.LeaderName,
             DungeonId = party.DungeonId,
+            DungeonRoomId = party.DungeonLobbyRoomId,
+            DungeonSet = party.DungeonSet,
             Members = {
                 party.Members.Values.Select(member => new PartyInfo.Types.Member {
                     CharacterId = member.CharacterId,

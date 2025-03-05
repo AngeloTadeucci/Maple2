@@ -16,6 +16,7 @@ using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -27,7 +28,7 @@ namespace Maple2.Server.Game.Manager.Field;
 
 // FieldManager is instantiated by Autofac
 // ReSharper disable once ClassNeverInstantiated.Global
-public sealed partial class FieldManager : IDisposable {
+public partial class FieldManager : IField {
     private static int _globalIdCounter = 10000000;
     private int localIdCounter = 50000000;
     private DateTime? fieldEmptySince;
@@ -52,8 +53,8 @@ public sealed partial class FieldManager : IDisposable {
     #endregion
 
     public readonly MapMetadata Metadata;
-    public readonly MapEntityMetadata Entities;
-    public readonly Navigation Navigation;
+    public MapEntityMetadata Entities { get; init; }
+    public Navigation Navigation { get; init; }
     public readonly PerformanceStageManager? PerformanceStage;
     public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
@@ -71,14 +72,15 @@ public sealed partial class FieldManager : IDisposable {
 
     public ItemDropManager ItemDrop { get; }
 
-    public int MapId => Metadata.Id;
-    public readonly int InstanceId;
-    public FieldInstance FieldInstance = FieldInstance.Default;
+    public int MapId { get; init; }
+    public int RoomId { get; init; }
+    public FieldInstance FieldInstance { get; private set; }
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
     public FieldManager(MapMetadata metadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0) {
         Metadata = metadata;
+        MapId = metadata.Id;
         this.ugcMetadata = ugcMetadata;
         this.Entities = entities;
         TriggerObjects = new TriggerCollection(entities);
@@ -88,8 +90,9 @@ public sealed partial class FieldManager : IDisposable {
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
-        OwnerId = ownerId;
-        InstanceId = NextGlobalId();
+        RoomId = NextGlobalId();
+
+        FieldInstance = FieldInstance.Default;
 
         ItemDrop = new ItemDropManager(this);
 
@@ -101,7 +104,7 @@ public sealed partial class FieldManager : IDisposable {
     }
 
     // Init is separate from constructor to allow properties to be injected first.
-    private void Init() {
+    public virtual void Init() {
         if (initialized) {
             return;
         }
@@ -120,9 +123,7 @@ public sealed partial class FieldManager : IDisposable {
 
         if (ugcMetadata.Plots.Count > 0) {
             using GameStorage.Request db = GameStorage.Context();
-            // Type 3 = 62000000_ugc and 62900000_ugd
-            long plotOwnerId = Metadata.Property.Type == MapType.Home ? OwnerId : -1;
-            foreach (Plot plot in db.LoadPlotsForMap(MapId, plotOwnerId)) {
+            foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
             }
         }
@@ -410,39 +411,56 @@ public sealed partial class FieldManager : IDisposable {
 
         // MoveByPortal (same map)
         Portal srcPortal = fieldPortal;
-        if (srcPortal.Type is PortalType.InHome) {
-            PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
-            if (cubePortal is null) {
-                return false;
-            }
+        switch (srcPortal.Type) {
+            case PortalType.InHome:
+                PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+                if (cubePortal is null) {
+                    return false;
+                }
 
-            switch (cubePortal.Interact!.PortalSettings!.Destination) {
-                case CubePortalDestination.PortalInHome:
-                    PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
-                    if (destinationCube is null) {
-                        return false;
-                    }
-
-                    session.Player.MoveToPosition(destinationCube.Position, default);
-                    return true;
-                case CubePortalDestination.SelectedMap:
-                    session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
-                        ? FieldEnterPacket.Request(session.Player)
-                        : FieldEnterPacket.Error(MigrationError.s_move_err_default));
-                    return true;
-                case CubePortalDestination.FriendHome: {
-                        using GameStorage.Request db = session.GameStorage.Context();
-                        Home? home = db.GetHome(fieldPortal.HomeId);
-                        if (home is null) {
-                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                switch (cubePortal.Interact!.PortalSettings!.Destination) {
+                    case CubePortalDestination.PortalInHome:
+                        PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
+                        if (destinationCube is null) {
                             return false;
                         }
 
-                        session.MigrateToHome(home);
+                        session.Player.MoveToPosition(destinationCube.Position, default);
                         return true;
-                    }
-            }
-            return false;
+                    case CubePortalDestination.SelectedMap:
+                        session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
+                            ? FieldEnterPacket.Request(session.Player)
+                            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                        return true;
+                    case CubePortalDestination.FriendHome: {
+                            using GameStorage.Request db = session.GameStorage.Context();
+                            Home? home = db.GetHome(fieldPortal.HomeId);
+                            if (home is null) {
+                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                                return false;
+                            }
+
+                            session.MigrateToHome(home);
+                            return true;
+                        }
+                }
+                return false;
+            case PortalType.LeaveDungeon:
+                //TODO: Migrate back to original channel
+                session.Send(session.PrepareField(session.Player.Value.Character.ReturnMapId)
+                    ? FieldEnterPacket.Request(session.Player)
+                    : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                return true;
+            case PortalType.DungeonReturnToLobby:
+                if (this is not DungeonFieldManager dungeonField || dungeonField.Lobby is null) {
+                    logger.Warning("DungeonReturnToLobby portal used in non-dungeon map {MapId}", MapId);
+                    return false;
+                }
+                session.Send(session.PrepareField(dungeonField.Lobby.MapId, portalId: 2, roomId: dungeonField.Lobby.RoomId)
+                    ? FieldEnterPacket.Request(session.Player)
+                    : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                return true;
+
         }
 
         if (srcPortal.TargetMapId == MapId) {

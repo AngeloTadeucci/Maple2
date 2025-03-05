@@ -7,6 +7,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using PlotMode = Maple2.Model.Enum.PlotMode;
@@ -83,7 +84,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Field.OwnerId == accountId && session.Field.MapId == Constant.DefaultHomeMapId) {
+        if (session.Field is HomeFieldManager homeFieldManager && homeFieldManager.OwnerId == accountId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
         }

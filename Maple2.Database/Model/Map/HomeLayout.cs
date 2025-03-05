@@ -34,19 +34,6 @@ internal class HomeLayout {
         };
     }
 
-    [return: NotNullIfNotNull(nameof(other))]
-    public static implicit operator Maple2.Model.Game.HomeLayout?(HomeLayout? other) {
-        if (other == null) {
-            return null;
-        }
-
-        return new Maple2.Model.Game.HomeLayout(other.Uid, other.Id, other.Name, other.Area, other.Height, other.Timestamp, other.Cubes.ConvertAll(cube => (PlotCube) cube)) {
-            Background = other.Background,
-            Lighting = other.Lighting,
-            Camera = other.Camera,
-        };
-    }
-
     public static void Configure(EntityTypeBuilder<HomeLayout> builder) {
         builder.ToTable("home-layout");
         builder.HasKey(layout => layout.Uid);

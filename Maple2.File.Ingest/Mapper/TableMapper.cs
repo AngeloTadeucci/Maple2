@@ -13,7 +13,11 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Tools.Extensions;
+using DayOfWeek = System.DayOfWeek;
 using ChatSticker = Maple2.File.Parser.Xml.Table.ChatSticker;
+using DungeonCooldownType = Maple2.Model.Enum.DungeonCooldownType;
+using DungeonGroupType = Maple2.Model.Enum.DungeonGroupType;
+using DungeonPlayType = Maple2.Model.Enum.DungeonPlayType;
 using ExpType = Maple2.Model.Enum.ExpType;
 using GuildBuff = Maple2.File.Parser.Xml.Table.GuildBuff;
 using GuildNpc = Maple2.File.Parser.Xml.Table.GuildNpc;
@@ -103,6 +107,9 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
         // SetItemOption
         yield return new TableMetadata { Name = "setitem*.xml", Table = ParseSetItem() };
+
+        //Dungeon
+        yield return new TableMetadata { Name = "dungeonroom.xml", Table = ParseDungeonRoom() };
     }
 
     private ChatStickerTable ParseChatSticker() {
@@ -1532,5 +1539,73 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 Halls: hallDataDic));
         }
         return new WeddingTable(rewardsResults, packageResults);
+    }
+
+    private DungeonRoomTable ParseDungeonRoom() {
+        var dungeons = new Dictionary<int, DungeonRoomTable.DungeonRoomMetadata>();
+        foreach ((int id, DungeonRoom dungeon) in parser.ParseDungeonRoom()) {
+            dungeons.Add(id, new DungeonRoomTable.DungeonRoomMetadata(
+                Id: dungeon.dungeonRoomID,
+                Level: dungeon.dungeonLevel,
+                PlayType: (DungeonPlayType) dungeon.playType,
+                GroupType: (DungeonGroupType) dungeon.groupType,
+                CooldownType: (DungeonCooldownType) dungeon.cooldownType,
+                CooldownValue: dungeon.cooldownValue,
+                DurationTick: dungeon.durationTick,
+                LobbyFieldId: dungeon.lobbyFieldID,
+                FieldIds: dungeon.fieldIDs,
+                Reward: new DungeonRoomReward(
+                    AccountWide: dungeon.isAccountReward,
+                    Count: dungeon.rewardCount,
+                    SubRewardCount: dungeon.subRewardCount,
+                    Exp: dungeon.rewardExp,
+                    ExpRate: dungeon.rewardExpRate,
+                    Meso: dungeon.rewardMeso,
+                    LimitedDropBoxIds: dungeon.rewardLimitedDropBoxIds,
+                    UnlimitedDropBoxIds: dungeon.rewardUnlimitedDropBoxIds,
+                    UnionRewardId: dungeon.unionRewardID,
+                    SeasonRankRewardId: dungeon.seasonRankRewardID,
+                    ScoreBonusId: dungeon.scoreBonusId),
+                Limit: new DungeonRoomLimit(
+                    MinUserCount: dungeon.minUserCount,
+                    MaxUserCount: dungeon.maxUserCount,
+                    GearScore: dungeon.gearScore,
+                    MinLevel: dungeon.limitPlayerLevel,
+                    RequiredAchievementId: dungeon.limitAchieveID,
+                    VipOnly: dungeon.limitVIP,
+                    DayOfWeeks: dungeon.limitDayOfWeeks.Length == 0 ? [] : dungeon.limitDayOfWeeks.Select(ParseDayOfWeek).ToArray(),
+                    ClearDungeonIds: dungeon.limitClearDungeon,
+                    DisableMeretRevival: dungeon.limitMeratRevival,
+                    EquippedRecommendedWeapon: dungeon.limitRecommendWeapon,
+                    PartyOnly: dungeon.isPartyOnly,
+                    ChangeMaxUsers: dungeon.isChangeMaxUser,
+                    DisableMesoRevival: dungeon.limitMesoRevival,
+                    MaxRevivalCount: dungeon.defaultRevivalLimitCount),
+                PlayerCountFactorId: dungeon.playerCountFactorID,
+                CustomMonsterLevel: dungeon.customMonsterLevel,
+                HelperRequireClearCount: dungeon.dungeonHelperRequireClearCount,
+                DisabledFindHelper: dungeon.isDisableFindHelper,
+                RankTableId: dungeon.rankTableID,
+                LeaveAfterCloseReward: dungeon.isLeaveAfterCloseReward,
+                PartyMissions: dungeon.partyMissions,
+                UserMissions: dungeon.userMissions,
+                MoveToBackupField: dungeon.isMoveOutToBackupField
+                ));
+        }
+
+        return new DungeonRoomTable(dungeons);
+
+        DayOfWeek ParseDayOfWeek(Maple2.File.Parser.Enum.DayOfWeek dayofWeek) {
+            return dayofWeek switch {
+                Maple2.File.Parser.Enum.DayOfWeek.sun => DayOfWeek.Sunday,
+                Maple2.File.Parser.Enum.DayOfWeek.mon => DayOfWeek.Monday,
+                Maple2.File.Parser.Enum.DayOfWeek.tue => DayOfWeek.Tuesday,
+                Maple2.File.Parser.Enum.DayOfWeek.wed => DayOfWeek.Wednesday,
+                Maple2.File.Parser.Enum.DayOfWeek.thu => DayOfWeek.Thursday,
+                Maple2.File.Parser.Enum.DayOfWeek.fri => DayOfWeek.Friday,
+                Maple2.File.Parser.Enum.DayOfWeek.sat => DayOfWeek.Saturday,
+                _ => DayOfWeek.Sunday,
+            };
+        }
     }
 }

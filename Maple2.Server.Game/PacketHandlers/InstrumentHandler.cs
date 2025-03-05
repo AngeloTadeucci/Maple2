@@ -202,7 +202,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
                 memberSession.StagedInstrumentItem == null ||
                 memberSession.StagedScoreItem == null ||
                 memberSession.Player.Value.Character.MapId != session.Player.Value.Character.MapId ||
-                memberSession.Player.Value.Character.InstanceId != session.Player.Value.Character.InstanceId) {
+                memberSession.Player.Value.Character.RoomId != session.Player.Value.Character.RoomId) {
                 continue;
             }
 

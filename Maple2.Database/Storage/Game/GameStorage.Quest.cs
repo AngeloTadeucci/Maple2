@@ -48,7 +48,7 @@ public partial class GameStorage {
             return Context.TrySaveChanges();
         }
 
-        // Converts model to item if possible, otherwise returns null.
+        // Converts model to quest if possible, otherwise returns null.
         private Quest? ToQuest(Model.Quest? model) {
             if (model == null) {
                 return null;

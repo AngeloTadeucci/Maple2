@@ -100,8 +100,8 @@ public class GameServer : Server<GameSession> {
         session.Start();
     }
 
-    public FieldManager? GetField(int mapId, int instanceId = 0) {
-        return fieldFactory.Get(mapId, instanceId);
+    public FieldManager? GetField(int mapId, int roomId = 0) {
+        return fieldFactory.Get(mapId, roomId: roomId);
     }
 
     public IList<GameEvent> FindEvent(GameEventType type) {

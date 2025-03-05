@@ -24,12 +24,13 @@ using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
 using Maple2.Tools.Scheduler;
-using PlotMode = Maple2.Model.Enum.PlotMode;
+using MigrationType = Maple2.Model.Enum.MigrationType;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.Session;
@@ -63,7 +64,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
-    public required FieldManager.Factory FieldFactory { private get; init; }
+    public required FieldManager.Factory FieldFactory { get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
@@ -99,6 +100,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public SurvivalManager Survival { get; set; } = null!;
     public MarriageManager Marriage { get; set; } = null!;
     public FishingManager Fishing { get; set; } = null!;
+    public DungeonManager Dungeon { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -123,8 +125,8 @@ public sealed partial class GameSession : Core.Network.Session {
         int mapId = migrateResponse.MapId;
         int portalId = migrateResponse.PortalId;
         long ownerId = migrateResponse.OwnerId;
-        int instanceId = migrateResponse.InstanceId;
-        var plotMode = (PlotMode) migrateResponse.PlotMode;
+        int roomId = migrateResponse.RoomId;
+        var migrationType = (MigrationType) migrateResponse.Type;
 
         AccountId = accountId;
         CharacterId = characterId;
@@ -169,6 +171,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Survival = new SurvivalManager(this);
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
+        Dungeon = new DungeonManager(this);
 
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -179,19 +182,28 @@ public sealed partial class GameSession : Core.Network.Session {
             GroupChats.TryAdd(groupChatInfo.Id, manager);
         }
 
-        if (plotMode is not PlotMode.Normal) {
-            instanceId = FieldManager.NextGlobalId();
-        }
-
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, instanceId: instanceId)) {
+        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, roomId: roomId)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
-
-        if (plotMode is not PlotMode.Normal) {
-            player.Home.EnterPlanner(plotMode);
-            fieldManager.Plots.First().Value.SetPlannerMode(plotMode);
+        switch (migrationType) {
+            case MigrationType.DecorPlanner:
+            case MigrationType.BlueprintDesigner:
+                player.Home.EnterPlanner((PlotMode) migrationType);
+                fieldManager.Plots.First().Value.SetPlannerMode((PlotMode) migrationType);
+                break;
+            case MigrationType.Dungeon:
+                if (fieldManager is not DungeonFieldManager dungeonField) {
+                    Logger.Error("Failed to load dungeon field for dungeon migration");
+                    Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
+                    return false;
+                }
+                Dungeon.SetDungeon(dungeonField);
+                break;
+            case MigrationType.Normal:
+            default:
+                break;
         }
 
         var playerUpdate = new PlayerUpdateRequest {
@@ -327,26 +339,21 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
-        return PrepareFieldInternal(mapId, out _, portalId, ownerId, instanceId, position, rotation);
+    public bool PrepareField(int mapId, int portalId = -1, long ownerId = 0, int roomId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out _, portalId, ownerId, roomId, position, rotation);
     }
 
-    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int instanceId = 0, in Vector3 position = default, in Vector3 rotation = default) {
-        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, instanceId, position, rotation);
+    public bool PrepareField(int mapId, [NotNullWhen(true)] out FieldManager? newField, int portalId = -1, long ownerId = 0, int roomId = 0, in Vector3 position = default, in Vector3 rotation = default) {
+        return PrepareFieldInternal(mapId, out newField, portalId, ownerId, roomId, position, rotation);
     }
 
-    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int instanceId, in Vector3 position, in Vector3 rotation) {
+    private bool PrepareFieldInternal(int mapId, out FieldManager? newField, int portalId, long ownerId, int roomId, in Vector3 position, in Vector3 rotation) {
         // If entering home without instanceKey set, default to own home.
         if (mapId == Player.Value.Home.Indoor.MapId && ownerId == 0) {
             ownerId = AccountId;
         }
 
-        if (ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId)) {
-            newField = FieldFactory.Get(mapId, ownerId: ownerId, instanceId: instanceId);
-        } else {
-            newField = FieldFactory.Get(mapId, instanceId);
-        }
-
+        newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
         if (newField == null) {
             return false;
         }
@@ -511,7 +518,8 @@ public sealed partial class GameSession : Core.Network.Session {
                 Server = Server.World.Service.Server.Game,
                 MapId = Constant.DefaultHomeMapId,
                 OwnerId = AccountId,
-                PlotMode = (World.Service.PlotMode) plotMode,
+                Type = (World.Service.MigrationType) plotMode,
+                RoomId = -1,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);

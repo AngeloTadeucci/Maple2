@@ -7,6 +7,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -20,10 +21,10 @@ namespace Maple2.Server.Game.Manager.Field;
 
 public partial class FieldManager {
     // Actors
-    internal readonly ConcurrentDictionary<int, FieldPlayer> Players = new();
-    internal readonly ConcurrentDictionary<int, FieldNpc> Npcs = new();
-    internal readonly ConcurrentDictionary<int, FieldNpc> Mobs = new();
-    internal readonly ConcurrentDictionary<int, FieldPet> Pets = new();
+    public ConcurrentDictionary<int, FieldPlayer> Players { get; } = [];
+    public ConcurrentDictionary<int, FieldNpc> Npcs { get; } = [];
+    public ConcurrentDictionary<int, FieldNpc> Mobs { get; } = [];
+    public ConcurrentDictionary<int, FieldPet> Pets { get; } = [];
 
     // Entities
     private readonly ConcurrentDictionary<string, FieldBreakable> fieldBreakables = new();
@@ -56,7 +57,7 @@ public partial class FieldManager {
         // TODO: Not sure what the difference is between instance ids.
         player.Character.MapId = MapId;
         player.Character.InstanceMapId = MapId;
-        player.Character.InstanceId = InstanceId;
+        player.Character.RoomId = RoomId;
 
         var fieldPlayer = new FieldPlayer(session, player) {
             Position = position,
@@ -87,9 +88,10 @@ public partial class FieldManager {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
-        if (Metadata.Property.EnterReturnId != 0 && FieldInstance.InstanceType == InstanceType.none) {
-            // TODO: Probably need to figure out homes and dungeon maps.
-            player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
+        if (FieldInstance.InstanceType == InstanceType.none) {
+            if (Metadata.Property.EnterReturnId != 0) {
+                player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
+            }
         }
 
         return fieldPlayer;
@@ -152,11 +154,11 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
-    public FieldPortal SpawnPortal(Portal portal, int instanceId, Vector3 position = default, Vector3 rotation = default) {
+    public FieldPortal SpawnPortal(Portal portal, int roomId, Vector3 position = default, Vector3 rotation = default) {
         var fieldPortal = new FieldPortal(this, NextLocalId(), portal) {
             Position = position != default ? position : portal.Position,
             Rotation = rotation != default ? rotation : portal.Rotation,
-            InstanceId = instanceId,
+            RoomId = roomId,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
 
@@ -454,7 +456,7 @@ public partial class FieldManager {
         // Spawn a hat within a random range of 5 min to 8 hours
         int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
         MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
-        FieldManager? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
+        IField? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
         bonusMap?.Init();
         Console.WriteLine($"Creating bonus map {bonusMapMetadata.Id} at {spawn.Position} in {delay} ms.");
         if (bonusMap == null) {
@@ -463,7 +465,7 @@ public partial class FieldManager {
         bonusMap.SetRoomTimer(RoomTimerType.Clock, 90000);
         var portal = new Portal(NextLocalId(), bonusMapMetadata.Id, -1, PortalType.Event, PortalActionType.Interact, spawn.Position, spawn.Rotation,
             new Vector3(200, 200, 250), 0, 0, true, false, true);
-        FieldPortal fieldPortal = SpawnPortal(portal, bonusMap.InstanceId);
+        FieldPortal fieldPortal = SpawnPortal(portal, bonusMap.RoomId);
         fieldPortal.Model = Metadata.Property.Continent switch {
             Continent.VictoriaIsland => "Eff_event_portal_A01",
             Continent.KarkarIsland => "Eff_kr_sandswirl_01",
@@ -476,7 +478,7 @@ public partial class FieldManager {
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
     }
 
-    private void SetRoomTimer(RoomTimerType type, int duration) {
+    public void SetRoomTimer(RoomTimerType type, int duration) {
         RoomTimer = new RoomTimer(this, type, duration);
     }
 
@@ -528,7 +530,7 @@ public partial class FieldManager {
             return null;
         }
 
-        if (!FunctionCubeMetadata.TryGet(item.Install.InteractId, out FunctionCubeMetadata? metadata)) {
+        if (!FunctionCubeMetadata.TryGet(item.Install.ObjectCubeId, out FunctionCubeMetadata? metadata)) {
             return null;
         }
 
@@ -552,7 +554,7 @@ public partial class FieldManager {
     #endregion
 
     #region Remove
-    public bool RemovePlayer(int objectId, [NotNullWhen(true)] out FieldPlayer? fieldPlayer) {
+    public virtual bool RemovePlayer(int objectId, [NotNullWhen(true)] out FieldPlayer? fieldPlayer) {
         if (Players.TryRemove(objectId, out fieldPlayer)) {
             CommitPlot(fieldPlayer.Session);
             Broadcast(FieldPacket.RemovePlayer(objectId));
@@ -670,7 +672,7 @@ public partial class FieldManager {
         }
         if (MapId is Constant.DefaultHomeMapId) {
             IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.ItemType.IsInteractFurnishing && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
+                .Where(x => x.Interact != null && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
             IEnumerable<PlotCube> lifeSkillsCubes = fieldFunctionInteracts.Values
                 .Select(x => x.Cube);
 

@@ -17,6 +17,7 @@ namespace Maple2.Server.World.Containers;
 
 public class PartyManager : IDisposable {
     public required ChannelClientLookup ChannelClients { get; init; }
+    public required PartyLookup PartyLookup { get; init; }
     public readonly Party Party;
     private readonly ConcurrentDictionary<long, (string, DateTime)> pendingInvites;
 
@@ -78,7 +79,7 @@ public class PartyManager : IDisposable {
     }
 
     public void FindNewLeader(long characterId) {
-        PartyMember? newLeader = Party.Members.Values.FirstOrDefault(m => m.CharacterId != characterId);
+        PartyMember? newLeader = Party.Members.Values.FirstOrDefault(m => m.CharacterId != characterId && m.Info.Online);
         if (newLeader == null) {
             CheckForDisband();
             return;
@@ -88,7 +89,7 @@ public class PartyManager : IDisposable {
 
     public bool CheckForDisband() {
         if (Party.Members.Count <= 2) {
-            Dispose();
+            PartyLookup.Disband(Party.Id);
             return true;
         }
         return false;
@@ -398,6 +399,25 @@ public class PartyManager : IDisposable {
             });
 
             Party.Vote = null;
+        });
+
+        return PartyError.none;
+    }
+
+    public PartyError SetDungeon(long requestorId, int dungeonId, bool set, int dungeonRoomId = 0) {
+        if (requestorId != Party.LeaderCharacterId) {
+            return PartyError.s_party_err_not_chief;
+        }
+
+        Party.DungeonId = dungeonId;
+        Party.DungeonLobbyRoomId = dungeonRoomId;
+        Broadcast(new PartyRequest {
+            SetDungeon = new PartyRequest.Types.SetDungeon {
+                PartyId = Party.Id,
+                DungeonId = dungeonId,
+                DungeonRoomId = dungeonRoomId,
+                Set = set,
+            },
         });
 
         return PartyError.none;
