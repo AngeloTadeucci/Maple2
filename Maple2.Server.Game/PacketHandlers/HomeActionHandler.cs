@@ -7,6 +7,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -47,6 +48,9 @@ public class HomeActionHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleSurvey(GameSession session, IByteReader packet) {
+        if (session.Field is not HomeFieldManager homeField) {
+            return;
+        }
         packet.ReadByte();
         packet.ReadLong(); // character id
         long surveyId = packet.ReadLong();
@@ -54,7 +58,7 @@ public class HomeActionHandler : PacketHandler<GameSession> {
 
         string playerName = session.PlayerName;
 
-        HomeSurvey? homeSurvey = session.Field.HomeSurvey;
+        HomeSurvey? homeSurvey = homeField.HomeSurvey;
         if (homeSurvey == null || homeSurvey.Id != surveyId) {
             return;
         }

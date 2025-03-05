@@ -147,7 +147,7 @@ public static class CharacterListPacket {
         writer.WriteInt();
         writer.WriteInt(character.MapId);
         writer.WriteInt(character.InstanceMapId);
-        writer.WriteInt(character.InstanceId);
+        writer.WriteInt(character.RoomId);
         writer.WriteShort(character.Level);
         writer.WriteShort(character.Channel);
         writer.WriteInt((int) character.Job.Code());

@@ -29,7 +29,8 @@ public class FieldCommand : Command {
             return;
         }
 
-        ctx.Console.Out.WriteLine($"Map: {session.Field.MapId}, OwnerId: {session.Field.OwnerId}, InstanceId: {session.Field.InstanceId}, ({session.Field.Metadata.XBlock})");
+        ctx.Console.Out.WriteLine($"Map: {session.Field.MapId}, Channel: {session.Player.Value.Character.Channel} RoomId: {session.Field.RoomId}, \n"
+                                  + $"XBlock:({session.Field.Metadata.XBlock})");
     }
 
     private class EntityInfoCommand : Command {

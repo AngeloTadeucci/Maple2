@@ -12,7 +12,7 @@ public class FieldPortal : FieldEntity<Portal> {
     public long HomeId;
     public string OwnerName = "";
     public string Password = "";
-    public int InstanceId;
+    public int RoomId;
 
     public FieldPortal(FieldManager field, int objectId, Portal value) : base(field, objectId, value) {
         Visible = value.Visible;

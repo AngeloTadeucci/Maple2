@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -25,7 +26,7 @@ public class SurveyCommand : Command {
 
     private void Handle(InvocationContext context, string[] options) {
         Character character = session.Player.Value.Character;
-        if (character.MapId is not Constant.DefaultHomeMapId) {
+        if (session.Field is not HomeFieldManager field) {
             return;
         }
 
@@ -56,12 +57,12 @@ public class SurveyCommand : Command {
 
                     var survey = new HomeSurvey(FieldManager.NextGlobalId(), question, firstOption == "open");
 
-                    session.Field.SetHomeSurvey(survey);
+                    field.SetHomeSurvey(survey);
                     session.Send(HomeActionPacket.SurveyQuestion(survey));
                     return;
                 }
             case "add": {
-                    HomeSurvey? survey = session.Field.HomeSurvey;
+                    HomeSurvey? survey = field.HomeSurvey;
                     if (survey is null || survey.Ended) {
                         session.Send(HomeActionPacket.SurveyMessage());
                         return;
@@ -84,7 +85,7 @@ public class SurveyCommand : Command {
                 }
 
             case "start": {
-                    HomeSurvey? survey = session.Field.HomeSurvey;
+                    HomeSurvey? survey = field.HomeSurvey;
                     if (survey is null || survey.Started || survey.Ended) {
                         session.Send(HomeActionPacket.SurveyMessage());
                         return;
@@ -95,7 +96,7 @@ public class SurveyCommand : Command {
                     return;
                 }
             case "end": {
-                    HomeSurvey? survey = session.Field.HomeSurvey;
+                    HomeSurvey? survey = field.HomeSurvey;
                     if (survey is null || survey.Ended) {
                         session.Send(HomeActionPacket.SurveyMessage());
                         return;
@@ -103,7 +104,7 @@ public class SurveyCommand : Command {
 
                     session.Field.Broadcast(HomeActionPacket.SurveyEnd(survey));
                     survey.End();
-                    session.Field.RemoveHomeSurvey();
+                    field.RemoveHomeSurvey();
                     return;
                 }
         }

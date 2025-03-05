@@ -116,7 +116,8 @@ public record ItemMetadataHousing(
 
 public record ItemMetadataInstall(
     bool IsSolidCube,
-    int InteractId,
+    int FunctionId,
+    int ObjectCubeId,
     MapAttribute MapAttribute
 );
 

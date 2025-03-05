@@ -1,4 +1,5 @@
 ﻿using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Model.Room;
 
 namespace Maple2.Server.Game.Model;
 

@@ -9,9 +9,9 @@ namespace Maple2.Model.Game;
 
 public class InteractCube : IByteSerializable {
     public string Id { get; set; }
+    public int ObjectCode { get; init; }
+    public readonly FunctionCubeMetadata Metadata;
     public InteractCubeState State { get; set; }
-
-    public readonly InteractCubeState DefaultState;
 
     public Nurturing? Nurturing { get; set; }
     public CubePortalSettings? PortalSettings { get; set; }
@@ -21,7 +21,8 @@ public class InteractCube : IByteSerializable {
 
     public InteractCube(Vector3B position, FunctionCubeMetadata metadata) {
         Id = $"4_{position.ConvertToInt()}";
-        DefaultState = metadata.DefaultState;
+        Metadata = metadata;
+        ObjectCode = metadata.Id;
         State = metadata.DefaultState;
 
         if (metadata.Nurturing is not null) {
@@ -35,10 +36,11 @@ public class InteractCube : IByteSerializable {
         }
     }
 
-    public InteractCube(string id, InteractCubeState defaultState, CubePortalSettings? portalSettings, CubeNoticeSettings? noticeSettings) {
+    public InteractCube(string id, FunctionCubeMetadata metadata, CubePortalSettings? portalSettings, CubeNoticeSettings? noticeSettings) {
         Id = id;
-        DefaultState = defaultState;
-        State = defaultState;
+        Metadata = metadata;
+        ObjectCode = metadata.Id;
+        State = metadata.DefaultState;
         PortalSettings = portalSettings;
         NoticeSettings = noticeSettings;
     }

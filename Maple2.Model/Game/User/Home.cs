@@ -72,7 +72,7 @@ public class Home : IByteSerializable {
         Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
         Message = "Thanks for visiting. Come back soon!";
         DecorationLevel = 1;
-        Passcode = "*****";
+        Passcode = string.Empty;
     }
 
     public bool SetArea(int area) {

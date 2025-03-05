@@ -86,7 +86,6 @@ public readonly record struct ItemType(byte Group, byte Type) {
     public bool IsFloorFurnishing => Group is 5 && Type is 1;
     public bool IsDisplayFurnishing => Group is 5 && Type is 2;
     public bool IsSkillFurnishing => Group is 5 && Type is 3;
-    public bool IsInteractFurnishing => Group is 5 && Type is 4;
     public bool IsMonsterBox => Group is 5 && Type is 5;
     public bool IsGroundMount => Group is 5 && Type is 6;
     public bool IsSouvenir => Group is 5 && Type is 7;

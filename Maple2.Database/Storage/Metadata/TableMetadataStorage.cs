@@ -62,6 +62,8 @@ public class TableMetadataStorage {
     private readonly Lazy<ItemEquipVariationTable> petVariationTable;
     private readonly Lazy<ItemEquipVariationTable> weaponVariationTable;
 
+    private readonly Lazy<DungeonRoomTable> dungeonRoomTable;
+
     public ChatStickerTable ChatStickerTable => chatStickerTable.Value;
     public DefaultItemsTable DefaultItemsTable => defaultItemsTable.Value;
     public ItemBreakTable ItemBreakTable => itemBreakTable.Value;
@@ -119,6 +121,8 @@ public class TableMetadataStorage {
     public ItemEquipVariationTable PetVariationTable => petVariationTable.Value;
     public ItemEquipVariationTable WeaponVariationTable => weaponVariationTable.Value;
 
+    public DungeonRoomTable DungeonRoomTable => dungeonRoomTable.Value;
+
     public TableMetadataStorage(MetadataContext context) {
         chatStickerTable = Retrieve<ChatStickerTable>(context, "chatemoticon.xml");
         defaultItemsTable = Retrieve<DefaultItemsTable>(context, "defaultitems.xml");
@@ -174,6 +178,7 @@ public class TableMetadataStorage {
         armorVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_armor.xml");
         petVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_pet.xml");
         weaponVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_weapon.xml");
+        dungeonRoomTable = Retrieve<DungeonRoomTable>(context, "dungeonroom.xml");
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : Table {

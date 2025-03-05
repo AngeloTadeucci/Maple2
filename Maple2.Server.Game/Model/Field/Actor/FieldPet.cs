@@ -5,6 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 

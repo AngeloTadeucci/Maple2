@@ -47,9 +47,9 @@ public class FieldPropertiesWindow : IUiWindow {
             ImGui.TableNextRow();
 
             ImGui.TableSetColumnIndex(0);
-            ImGui.Text("Instance Id");
+            ImGui.Text("Room Id");
             ImGui.TableSetColumnIndex(1);
-            ImGui.Text(FieldWindow!.ActiveRenderer?.Field.InstanceId.ToString() ?? "");
+            ImGui.Text(FieldWindow!.ActiveRenderer?.Field.RoomId.ToString() ?? "");
 
             ImGui.EndTable();
         }
