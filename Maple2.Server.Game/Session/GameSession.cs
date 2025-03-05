@@ -300,8 +300,7 @@ public sealed partial class GameSession : Core.Network.Session {
         GameEvent.Load();
         Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
-        // RoomDungeon
-        // FieldEntrance
+        Dungeon.Load();
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
         Send(HomeCommandPacket.LoadHome(AccountId));

@@ -172,6 +172,7 @@ public sealed class ExperienceManager {
         }
         if (Level > startLevel) {
             session.Player.Flag |= PlayerObjectFlag.Level;
+            session.Dungeon.UpdateDungeonEnterLimit();
             session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
             session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: Level);
             session.ConditionUpdate(ConditionType.level, targetLong: Level);
