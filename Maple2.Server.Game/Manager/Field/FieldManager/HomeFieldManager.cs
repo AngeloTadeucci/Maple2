@@ -23,6 +23,12 @@ public class HomeFieldManager : FieldManager {
         foreach (Plot plot in db.LoadPlotsForMap(MapId, OwnerId)) {
             Plots[plot.Number] = plot;
         }
+
+        Plots.Values
+            .SelectMany(c => c.Cubes.Values)
+            .Where(p => p.Interact?.PortalSettings is not null)
+            .ToList()
+            .ForEach(cubePortal => SpawnCubePortal(cubePortal));
     }
 
 

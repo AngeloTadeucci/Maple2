@@ -135,12 +135,6 @@ public partial class FieldManager : IField {
         }
 
         Plots.Values
-            .SelectMany(c => c.Cubes.Values)
-            .Where(p => p.Interact?.PortalSettings is not null)
-            .ToList()
-            .ForEach(cubePortal => SpawnCubePortal(cubePortal));
-
-        Plots.Values
             .SelectMany(plot => plot.Cubes.Values)
             .Where(plotCube => plotCube.Interact != null)
             .ToList()
