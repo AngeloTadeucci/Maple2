@@ -285,10 +285,13 @@ public partial class GameStorage {
                 return null;
             }
 
-            return new PlotCube(model.ItemId, model.Id, model.Template) {
+            if (!game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? itemMetadata)) {
+                return null;
+            }
+
+            return new PlotCube(itemMetadata, model.Id, model.Template) {
                 Position = new Vector3B(model.X, model.Y, model.Z),
                 Rotation = model.Rotation,
-                HousingCategory = model.HousingCategory,
                 Interact = ToInteractCube(model.Interact),
             };
         }
@@ -298,10 +301,13 @@ public partial class GameStorage {
                 return null;
             }
 
-            return new PlotCube(model.ItemId, model.Id, model.Template) {
+            if (!game.itemMetadata.TryGet(model.ItemId, out ItemMetadata? itemMetadata)) {
+                return null;
+            }
+
+            return new PlotCube(itemMetadata, model.Id, model.Template) {
                 Position = new Vector3B(model.X, model.Y, model.Z),
                 Rotation = model.Rotation,
-                HousingCategory = model.HousingCategory,
                 Interact = ToInteractCube(model.Interact),
             };
         }

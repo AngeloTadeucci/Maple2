@@ -1,4 +1,5 @@
 ﻿using Maple2.Database.Storage;
+using Maple2.Model.Common;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 

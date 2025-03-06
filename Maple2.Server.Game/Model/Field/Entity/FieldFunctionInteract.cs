@@ -7,39 +7,39 @@ using Maple2.Server.Game.Packets;
 namespace Maple2.Server.Game.Model;
 
 public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
-    public PlotCube Cube { get; }
+   public readonly InteractCube InteractCube;
+   public readonly long CubeId;
 
     private long NextUpdateTick { get; set; }
 
-    public FieldFunctionInteract(FieldManager field, int objectId, FunctionCubeMetadata value, PlotCube cube) : base(field, objectId, value) {
-        if (cube.Interact is null) {
-            throw new InvalidOperationException("Cube.Interact is null");
-        }
-
-        Cube = cube;
+    public FieldFunctionInteract(FieldManager field, int objectId, InteractCube interactCube, long cubeId) : base(field, objectId, interactCube.Metadata) {
+        InteractCube = interactCube;
         NextUpdateTick = Field.FieldTick + Value.AutoStateChangeTime;
+        CubeId = cubeId;
     }
 
     public override void Update(long tickCount) {
-        if (Cube.Interact!.State is InteractCubeState.Available or InteractCubeState.None) {
-            return;
-        }
+        lock (InteractCube) {
+            if (InteractCube.State is InteractCubeState.Available or InteractCubeState.None) {
+                return;
+            }
 
-        if (tickCount < NextUpdateTick) {
-            return;
-        }
+            if (tickCount < NextUpdateTick) {
+                return;
+            }
 
-        Cube.Interact.State = InteractCubeState.Available;
-        Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(Cube.Interact));
+            InteractCube.State = InteractCubeState.Available;
+            Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(InteractCube));
+        }
     }
 
     public bool Use() {
-        lock (Cube.Interact!) {
-            if (Cube.Interact.State is not InteractCubeState.Available) {
+        lock (InteractCube) {
+            if (InteractCube.State is not InteractCubeState.Available) {
                 return false;
             }
 
-            Cube.Interact.State = InteractCubeState.InUse;
+            InteractCube.State = InteractCubeState.InUse;
             NextUpdateTick = Field.FieldTick + Value.AutoStateChangeTime;
             return true;
         }

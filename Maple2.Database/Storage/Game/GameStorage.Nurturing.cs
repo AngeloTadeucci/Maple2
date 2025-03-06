@@ -12,10 +12,10 @@ public partial class GameStorage {
             return result is null ? null : new Maple2.Model.Game.Nurturing(result.Exp, result.ClaimedGiftForStage, result.PlayedBy, result.CreationTime, result.LastFeedTime, metadata);
         }
 
-        public Maple2.Model.Game.Nurturing? CreateNurturing(long accountId, PlotCube plotCube) {
+        public Maple2.Model.Game.Nurturing? CreateNurturing(long accountId, FunctionCubeMetadata.NurturingData metadata, int interactId) {
             var nurturing = new Nurturing {
                 AccountId = accountId,
-                ItemId = plotCube.ItemId,
+                InteractId = interactId,
                 Exp = 0,
                 ClaimedGiftForStage = 1,
                 CreationTime = DateTime.Now,
@@ -27,15 +27,15 @@ public partial class GameStorage {
                 return null;
             }
 
-            return new Maple2.Model.Game.Nurturing(nurturing.Exp, nurturing.ClaimedGiftForStage, nurturing.PlayedBy, nurturing.CreationTime, nurturing.LastFeedTime, plotCube.Interact!.Nurturing!.NurturingMetadata);
+            return new Maple2.Model.Game.Nurturing(nurturing.Exp, nurturing.ClaimedGiftForStage, nurturing.PlayedBy, nurturing.CreationTime, nurturing.LastFeedTime, metadata);
         }
 
-        public void UpdateNurturing(long accountId, PlotCube plotCube) {
-            Nurturing? result = Context.Nurturing.Find(accountId, plotCube.ItemId);
+        public void UpdateNurturing(long accountId, InteractCube cube) {
+            Nurturing? result = Context.Nurturing.Find(accountId, cube.Metadata.Id);
             if (result is null) {
                 return;
             }
-            Maple2.Model.Game.Nurturing? interactNurturing = plotCube.Interact?.Nurturing;
+            Maple2.Model.Game.Nurturing? interactNurturing = cube.Nurturing;
             if (interactNurturing is null) {
                 return;
             }
@@ -50,7 +50,7 @@ public partial class GameStorage {
 
         // Count the number of nurturing items for the given account ID in petBy
         public int CountNurturingForAccount(int itemId, long accountId) {
-            return Context.Nurturing.AsEnumerable().Count(x => x.ItemId == itemId && x.PlayedBy.Contains(accountId));
+            return Context.Nurturing.AsEnumerable().Count(x => x.InteractId == itemId && x.PlayedBy.Contains(accountId));
         }
     }
 }

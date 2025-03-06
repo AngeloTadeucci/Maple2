@@ -6,7 +6,7 @@ namespace Maple2.Database.Model;
 
 internal class Nurturing {
     public long AccountId { get; set; }
-    public int ItemId { get; set; }
+    public int InteractId { get; set; }
     public long Exp { get; set; }
     public short ClaimedGiftForStage { get; set; }
     public DateTime CreationTime { get; set; }
@@ -17,7 +17,7 @@ internal class Nurturing {
         builder.ToTable("nurturing");
         builder.HasKey(nurturing => new {
             nurturing.AccountId,
-            nurturing.ItemId,
+            InteractId = nurturing.InteractId,
         });
 
         builder.Property(nurturing => nurturing.PlayedBy).HasJsonConversion();
