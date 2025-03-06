@@ -372,9 +372,15 @@ public sealed partial class GameSession : Core.Network.Session {
             return false;
         }
 
-        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId) && Field.Metadata.Property.ExploreType > 0) {
-            ExpType expType = Field.Metadata.Property.ExploreType == 1 ? ExpType.mapCommon : ExpType.mapHidden;
-            Exp.AddExp(expType);
+        if (!Player.Value.Unlock.Maps.Contains(Player.Value.Character.MapId)) {
+            if (Field.Metadata.Property.ExploreType > 0) {
+                ExpType expType = Field.Metadata.Property.ExploreType == 1 ? ExpType.mapCommon : ExpType.mapHidden;
+                Exp.AddExp(expType);
+            }
+
+            ConditionUpdate(ConditionType.explore_continent, codeLong: (int) Field.Metadata.Property.Continent);
+            ConditionUpdate(ConditionType.continent, codeLong: (int) Field.Metadata.Property.Continent);
+            ConditionUpdate(ConditionType.explore, codeLong: Field.MapId);
         }
 
         Player.Value.Unlock.Maps.Add(Player.Value.Character.MapId);

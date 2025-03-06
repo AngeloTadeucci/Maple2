@@ -49,6 +49,10 @@ public class PlayerInfoUpdateEvent {
             Type |= UpdateField.Profile;
         } else if (request.HasGender && player.Gender != (Gender) request.Gender) {
             Type |= UpdateField.Profile;
+        } else if (request.HasGuildId && player.GuildId != request.GuildId) {
+            Type |= UpdateField.Profile;
+        } else if (request.HasGuildName && player.GuildName != request.GuildName) {
+            Type |= UpdateField.Profile;
         }
         if (request.HasJob && player.Job != (Job) request.Job) {
             Type |= UpdateField.Job;

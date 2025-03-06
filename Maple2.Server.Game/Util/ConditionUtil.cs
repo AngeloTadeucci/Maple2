@@ -6,6 +6,17 @@ namespace Maple2.Server.Game.Util;
 
 public static class ConditionUtil {
     public static bool Check(this ConditionMetadata condition, GameSession session, string targetString = "", long targetLong = 0, string codeString = "", long codeLong = 0) {
+        if (condition.PartyCount > 0) {
+            if (session.Party.Party == null || session.Party.Party.Members.Count < condition.PartyCount) {
+                return false;
+            }
+        }
+
+        if (condition.GuildPartyCount > 0) {
+            if (session.Party.Party == null || session.Party.GuildMemberCount() < condition.GuildPartyCount) {
+                return false;
+            }
+        }
         bool code = condition.Codes == null || condition.Codes.CheckCode(session, condition.Type, codeString, codeLong);
         bool target = condition.Target == null || condition.Target.CheckTarget(session, condition.Type, targetString, targetLong);
         return target && code;
@@ -97,6 +108,12 @@ public static class ConditionUtil {
             case ConditionType.holdtime:
             case ConditionType.riding:
             case ConditionType.fish_big:
+            case ConditionType.music_play_instrument_time:
+            case ConditionType.music_play_ensemble_in:
+            case ConditionType.music_play_score:
+            case ConditionType.explore_continent:
+            case ConditionType.continent:
+            case ConditionType.explore:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -141,6 +158,7 @@ public static class ConditionUtil {
             case ConditionType.wedding_propose_decline:
             case ConditionType.wedding_propose_declined:
             case ConditionType.wedding_hall_cancel:
+            case ConditionType.item_gear_score:
                 return true;
         }
         return false;
@@ -196,6 +214,9 @@ public static class ConditionUtil {
             case ConditionType.holdtime:
             case ConditionType.riding:
             case ConditionType.skill:
+            case ConditionType.music_play_instrument_time:
+            case ConditionType.music_play_score:
+            case ConditionType.music_play_ensemble_in:
                 if (target.Range != null && target.Range.Value.Min >= longValue &&
                     target.Range.Value.Max <= longValue) {
                     return true;
@@ -263,6 +284,10 @@ public static class ConditionUtil {
             case ConditionType.wedding_propose_decline:
             case ConditionType.wedding_propose_declined:
             case ConditionType.wedding_hall_cancel:
+            case ConditionType.explore_continent:
+            case ConditionType.continent:
+            case ConditionType.explore:
+            case ConditionType.item_gear_score:
                 return true;
         }
         return false;
