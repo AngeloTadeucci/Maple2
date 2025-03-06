@@ -137,6 +137,7 @@ public sealed class AchievementManager {
             return false;
         }
 
+        session.Dungeon.UpdateDungeonEnterLimit();
         return true;
     }
 

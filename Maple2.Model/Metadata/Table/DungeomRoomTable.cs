@@ -50,6 +50,7 @@ public record DungeonRoomLimit(
     bool VipOnly,
     DayOfWeek[] DayOfWeeks,
     int[] ClearDungeonIds,
+    int[] Buffs,
     bool EquippedRecommendedWeapon,
     bool PartyOnly,
     bool ChangeMaxUsers,

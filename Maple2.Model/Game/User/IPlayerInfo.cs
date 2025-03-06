@@ -31,6 +31,8 @@ public interface IPlayerInfo {
     public long PlotExpiryTime { get; set; }
     // Trophy
     public AchievementInfo AchievementInfo { get; set; }
+    // Dungeon
+    public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
 
     // Timestamp
     public long UpdateTime { get; set; }

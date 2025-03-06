@@ -360,12 +360,18 @@ public class PartyManager : IDisposable {
         }
 
         bool wasOnline = member.Info.Online;
+        var previousDungeonLimits = new Dictionary<int, DungeonEnterLimit>(member.Info.DungeonEnterLimits);
+
         member.Info.Update(type, info);
 
         if (type == UpdateField.Health || type == UpdateField.Level) {
             session.Send(PartyPacket.UpdateStats(member));
         } else {
             session.Send(PartyPacket.Update(member));
+        }
+
+        if (previousDungeonLimits != member.Info.DungeonEnterLimits) {
+            session.Send(PartyPacket.UpdateDungeonInfo(member));
         }
 
         if (session.CharacterId != member.CharacterId && member.Info.Online != wasOnline) {

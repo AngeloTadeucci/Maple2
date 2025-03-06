@@ -22,6 +22,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     // Premium
     public long PremiumTime { get; set; }
     public List<long> ClubIds { get; set; }
+    public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {
@@ -32,6 +33,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
             LastOnlineTime = player.Character.LastOnlineTime,
+            DungeonEnterLimits = [],
         };
     }
 
@@ -39,6 +41,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
         AchievementInfo = achievementInfo;
         ClubIds = new List<long>(clubsIds);
+        DungeonEnterLimits = [];
     }
 
     public PlayerInfo Clone() {

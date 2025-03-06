@@ -1,4 +1,6 @@
-﻿namespace Maple2.Model.Enum;
+﻿using System.ComponentModel;
+
+namespace Maple2.Model.Enum;
 
 public enum DungeonPlayType {
     none = 0,
@@ -49,4 +51,27 @@ public enum DungeonRequireRole {
     None = 0,
     Support = 1,
     Tank = 2,
+}
+
+public enum DungeonEnterLimit : byte {
+    Unknown = 0,
+    None = 1,
+    MinLevel = 12,
+    Achievement = 13,
+    Vip = 14,
+    Gearscore = 15,
+    DungeonClear = 16,
+    Buff = 17,
+    RecommendedWeapon = 18,
+}
+
+public enum DungeonRoomModify : byte {
+    [Description("s_room_dungeon_give_reward - You got your dungeon rewards.")]
+    GiveReward = 1,
+    [Description("s_room_dungeon_give_dungeonHelperReward - You got a Dungeon Helper reward.")]
+    GiveDungeonHelperReward = 2,
+    [Description("s_room_dungeon_reward_addExtraCount - The number of rewards has increased.")]
+    AddExtraCount = 3,
+    [Description("s_room_dungeon_record_notify_change_expert - You're now a veteran in {0}. Collect Dungeon Helper rewards by clearing the dungeon with rookies!")]
+    ChangeToExpert = 4,
 }

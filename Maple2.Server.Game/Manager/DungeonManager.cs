@@ -1,8 +1,11 @@
 ﻿using System.Net;
 using Grpc.Core;
+using Maple2.Database.Storage;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Dungeon;
 using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
@@ -16,8 +19,12 @@ using MigrationType = Maple2.Server.World.Service.MigrationType;
 
 namespace Maple2.Server.Game.Manager;
 
-public class DungeonManager : IDisposable {
+public class DungeonManager {
     private readonly GameSession session;
+
+    public IDictionary<int, DungeonRecord> Records { get; set; }
+    private IDictionary<int, DungeonEnterLimit> EnterLimits => session.Player.Value.Character.DungeonEnterLimits;
+    private IDictionary<int, DungeonRankReward> RankRewards => session.Player.Value.Unlock.DungeonRankRewards;
 
     public DungeonFieldManager? Field { get; set; }
     public DungeonRoomTable.DungeonRoomMetadata? Metadata;
@@ -25,13 +32,157 @@ public class DungeonManager : IDisposable {
 
     private Party? Party => session.Party.Party;
 
-    private readonly CancellationTokenSource tokenSource;
-
     private readonly ILogger logger = Log.Logger.ForContext<DungeonManager>();
 
     public DungeonManager(GameSession session) {
         this.session = session;
-        tokenSource = new CancellationTokenSource();
+        Records = new Dictionary<int, DungeonRecord>();
+        Init();
+    }
+
+    private void Init() {
+        using GameStorage.Request db = session.GameStorage.Context();
+        Records = db.GetDungeonRecords(session.CharacterId);
+    }
+
+    public void Load() {
+        using GameStorage.Request db = session.GameStorage.Context();
+        foreach (DungeonRoomTable.DungeonRoomMetadata metadata in session.TableMetadata.DungeonRoomTable.Entries.Values) {
+            if (!Records.TryGetValue(metadata.Id, out DungeonRecord? record)) {
+                record = new DungeonRecord(metadata.Id);
+                record = db.CreateDungeonRecord(record, session.CharacterId);
+                if (record == null) {
+                    logger.Error("Failed to create dungeon record for dungeonId {dungeonId}", metadata.Id);
+                    continue;
+                }
+                Records.Add(metadata.Id, record);
+            }
+
+            DungeonEnterLimit limit = GetEnterLimit(metadata.Limit);
+            EnterLimits[metadata.Id] = limit;
+        }
+
+        session.Send(DungeonRoomPacket.Load(Records));
+        session.Send(DungeonRoomPacket.RankRewards(RankRewards));
+        session.Send(FieldEntrancePacket.Load(EnterLimits));
+    }
+
+    public void UpdateDungeonEnterLimit() {
+        bool updated = false;
+        foreach (int dungeonId in EnterLimits.Keys) {
+            if (!session.TableMetadata.DungeonRoomTable.Entries.TryGetValue(dungeonId, out DungeonRoomTable.DungeonRoomMetadata? metadata)) {
+                continue;
+            }
+
+            DungeonEnterLimit newLimit = GetEnterLimit(metadata.Limit);
+            if (EnterLimits[dungeonId] != newLimit) {
+                EnterLimits[dungeonId] = newLimit;
+                updated = true;
+            }
+        }
+
+        if (updated) {
+            session.Send(FieldEntrancePacket.Load(EnterLimits));
+        }
+    }
+
+    private DungeonEnterLimit GetEnterLimit(DungeonRoomLimit metadata) {
+        if (metadata.MinLevel > session.Player.Value.Character.Level) {
+            return DungeonEnterLimit.MinLevel;
+        }
+
+        if (metadata.RequiredAchievementId > 0 && !session.Achievement.HasAchievement(metadata.RequiredAchievementId)) {
+            return DungeonEnterLimit.Achievement;
+        }
+
+        if (metadata.VipOnly && !session.Config.IsPremiumClubActive()) {
+            return DungeonEnterLimit.Vip;
+        }
+
+        if (metadata.GearScore > 0 && session.Stats.Values.GearScore < metadata.GearScore) {
+            return DungeonEnterLimit.Gearscore;
+        }
+
+        if (metadata.ClearDungeonIds.Length > 0) {
+            foreach (int dungeonId in metadata.ClearDungeonIds) {
+                if (!Records.TryGetValue(dungeonId, out DungeonRecord? record) || record.ClearTimestamp == 0) {
+                    return DungeonEnterLimit.DungeonClear;
+                }
+            }
+        }
+
+        if (metadata.Buffs.Length > 0 && metadata.Buffs.Any(buffId => !session.Buffs.HasBuff(buffId))) {
+            return DungeonEnterLimit.Buff;
+        }
+
+        if (metadata.EquippedRecommendedWeapon) {
+            if (!session.Item.Equips.Gear.TryGetValue(EquipSlot.LH, out Item? item)) {
+                return DungeonEnterLimit.RecommendedWeapon;
+            }
+            switch (session.Player.Value.Character.Job.Code()) {
+                case JobCode.Newbie:
+                    if (!item.Type.IsBludgeon) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Knight:
+                    if (!item.Type.IsLongsword) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Berserker:
+                    if (!item.Type.IsGreatsword) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Wizard:
+                    if (!item.Type.IsStaff) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Priest:
+                    if (!item.Type.IsScepter) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Archer:
+                    if (!item.Type.IsBow) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.HeavyGunner:
+                    if (!item.Type.IsCannon) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Assassin:
+                    if (!item.Type.IsThrowingStar) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Thief:
+                    if (!item.Type.IsDagger) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.RuneBlader:
+                    if (!item.Type.IsBlade) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.Striker:
+                    if (!item.Type.IsKnuckle) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+                case JobCode.SoulBinder:
+                    if (!item.Type.IsOrb) {
+                        return DungeonEnterLimit.RecommendedWeapon;
+                    }
+                    break;
+            }
+        }
+        return DungeonEnterLimit.None;
     }
 
     public void SetDungeon(DungeonFieldManager field) {
@@ -45,6 +196,11 @@ public class DungeonManager : IDisposable {
             return;
         }
 
+        if (EnterLimits.TryGetValue(dungeonId, out DungeonEnterLimit limit) && limit != DungeonEnterLimit.None) {
+            session.Send(FieldEntrancePacket.Error(dungeonId, limit));
+            return;
+        }
+
         if (withParty) {
             if (Party == null) {
                 session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_dungeon_error_invalidPartyOID));
@@ -53,6 +209,13 @@ public class DungeonManager : IDisposable {
             if (Party.LeaderCharacterId != session.CharacterId) {
                 session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_party_err_not_chief));
                 return;
+            }
+
+            foreach (PartyMember member in Party.Members.Values) {
+                if (!member.Info.DungeonEnterLimits.TryGetValue(dungeonId, out DungeonEnterLimit enterLimit) || enterLimit != DungeonEnterLimit.None) {
+                    //session.Send(DungeonRoomPacket.Error(DungeonRoomError));
+                    return;
+                }
             }
         }
 
@@ -157,9 +320,7 @@ public class DungeonManager : IDisposable {
         }
     }
 
-
-    public void Dispose() {
-        session.Dispose();
-        tokenSource.Dispose();
+    public void Save(GameStorage.Request db) {
+        db.SaveDungeonRecords(session.CharacterId, Records.Values.ToArray());
     }
 }

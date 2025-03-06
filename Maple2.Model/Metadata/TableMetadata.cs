@@ -78,4 +78,5 @@ public class TableMetadata {
 [JsonDerivedType(typeof(MasteryUgcHousingTable), typeDiscriminator: "masteryugchousing")]
 [JsonDerivedType(typeof(UgcHousingPointRewardTable), typeDiscriminator: "ugchousingpointreward")]
 [JsonDerivedType(typeof(DungeonRoomTable), typeDiscriminator: "dungeonroom")]
+[JsonDerivedType(typeof(DungeonRankRewardTable), typeDiscriminator: "dungeonrankreward")]
 public abstract record Table;

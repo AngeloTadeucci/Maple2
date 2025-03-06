@@ -51,5 +51,6 @@ public class Character {
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
     public MarriageInfo MarriageInfo;
+    public readonly Dictionary<int, DungeonEnterLimit> DungeonEnterLimits = [];
     public long PremiumTime;
 }

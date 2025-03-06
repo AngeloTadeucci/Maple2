@@ -127,6 +127,7 @@ public class BuffManager : IUpdatable {
         // Logger.Information("> {Data}", additionalEffect.Property);
         if (owner is FieldPlayer player) {
             player.Session.ConditionUpdate(ConditionType.buff, codeLong: buff.Id);
+            player.Session.Dungeon.UpdateDungeonEnterLimit();
         }
         if (notifyField) {
             owner.Field.Broadcast(BuffPacket.Add(buff));
