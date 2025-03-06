@@ -51,6 +51,10 @@ public partial class WorldService {
                 Lifestyle = info.AchievementInfo.Lifestyle,
             },
             Clubs = { info.ClubIds.Select(id => new ClubUpdate { Id = id }) },
+            DungeonEnterLimits = { info.DungeonEnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
+                DungeonId = dungeon.Key,
+                Limit = (int) dungeon.Value,
+            }) },
         });
     }
 

@@ -611,6 +611,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 GameEvent.Save(db);
                 Achievement.Save(db);
                 Quest.Save(db);
+                Dungeon.Save(db);
             }
 
             base.Dispose(disposing);

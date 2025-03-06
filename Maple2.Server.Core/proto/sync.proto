@@ -27,6 +27,11 @@ message ClubUpdate {
   int64 id = 1;
 }
 
+message DungeonEnterLimitUpdate {
+  int32 dungeon_id = 1;
+  int32 limit = 2;
+}
+
 // Requests
 message MailNotificationRequest {
   int64 mail_id = 1;
@@ -57,6 +62,7 @@ message PlayerUpdateRequest {
   optional HomeUpdate home = 16;
   optional TrophyUpdate trophy = 17;
   repeated ClubUpdate clubs = 18;
+  repeated DungeonEnterLimitUpdate dungeon_enter_limits = 19;
 
   // Batch updates in a queue rather than immediately forwarding.
   bool async = 20;
@@ -89,4 +95,5 @@ message PlayerInfoResponse {
   HomeUpdate home = 16;
   TrophyUpdate trophy = 17;
   repeated ClubUpdate clubs = 18;
+  repeated DungeonEnterLimitUpdate dungeon_enter_limits = 19;
 }

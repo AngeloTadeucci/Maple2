@@ -59,6 +59,11 @@ public static class PlayerInfoUpdateExtensions {
         if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
             info.ClubIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
         }
+        if (update.Type.HasFlag(UpdateField.Dungeon) && update.Request.DungeonEnterLimits != null) {
+            foreach (DungeonEnterLimitUpdate dungeonLimit in update.Request.DungeonEnterLimits) {
+                info.DungeonEnterLimits[dungeonLimit.DungeonId] = (DungeonEnterLimit) dungeonLimit.Limit;
+            }
+        }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
@@ -104,6 +109,10 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Clubs)) {
             self.ClubIds = other.ClubIds;
+        }
+
+        if (type.HasFlag(UpdateField.Dungeon)) {
+            self.DungeonEnterLimits = other.DungeonEnterLimits;
         }
 
         self.UpdateTime = other.UpdateTime;
@@ -159,6 +168,12 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Clubs)) {
             request.Clubs.AddRange(info.ClubIds.Select(id => new ClubUpdate { Id = id }));
+        }
+        if (type.HasFlag(UpdateField.Dungeon)) {
+            request.DungeonEnterLimits.AddRange(info.DungeonEnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
+                DungeonId = dungeon.Key,
+                Limit = (int) dungeon.Value,
+            }));
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Error;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game.Dungeon;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -11,8 +12,9 @@ public static class DungeonRoomPacket {
     private enum Command : byte {
         Load = 5,
         Update = 6,
+        Modify = 7,
         Error = 18,
-        RankRewards = 19,
+        RankRewards = 20,
     }
 
     public static ByteWriter Load(IDictionary<int, DungeonRecord> records) {
@@ -31,6 +33,15 @@ public static class DungeonRoomPacket {
         var pWriter = Packet.Of(SendOp.RoomDungeon);
         pWriter.Write<Command>(Command.Update);
         pWriter.WriteClass<DungeonRecord>(record);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Modify(DungeonRoomModify modifyType, int dungeonId = 0) {
+        var pWriter = Packet.Of(SendOp.RoomDungeon);
+        pWriter.Write<Command>(Command.Modify);
+        pWriter.Write<DungeonRoomModify>(modifyType);
+        pWriter.WriteInt(dungeonId);
 
         return pWriter;
     }
