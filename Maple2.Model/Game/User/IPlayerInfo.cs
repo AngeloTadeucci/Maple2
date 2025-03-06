@@ -33,6 +33,9 @@ public interface IPlayerInfo {
     public AchievementInfo AchievementInfo { get; set; }
     // Dungeon
     public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
+    // Guild
+    public long GuildId { get; set; }
+    public string GuildName { get; set; }
 
     // Timestamp
     public long UpdateTime { get; set; }

@@ -183,9 +183,10 @@ public sealed class QuestManager {
             .Concat(accountValues.Values.Where(quest => quest.State != QuestState.Completed));
         foreach (Quest quest in quests) {
             // TODO: Not sure if ProgressMap really means that only progress counts in this map. It doesn't make sense for some quests.
-            /*if (quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
+            // Testing only on FieldMission for now.
+            if (quest.Metadata.Basic.Type == QuestType.FieldMission && quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
                 continue;
-            }*/
+            }
 
             foreach (Quest.Condition condition in quest.Conditions.Values.Where(condition => condition.Metadata.Type == type)) {
                 // Already meets the requirement and does not need to be updated

@@ -141,6 +141,8 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         }
         session.Instrument.Score = score;
 
+        session.ConditionUpdate(ConditionType.music_play_score, codeLong: score.Id, targetLong: session.Field.MapId);
+
         score.RemainUses--;
         session.Field.Broadcast(InstrumentPacket.StartScore(session.Instrument, score));
         session.Send(InstrumentPacket.RemainUses(score.Uid, score.RemainUses));
@@ -169,6 +171,11 @@ public class InstrumentHandler : PacketHandler<GameSession> {
         // Subtracting 500ms to account for the delay between the client and server and exp abuse.
         // Modifier is the number of 500ms ticks that have passed.
         session.Exp.AddExp(expType, (totalTickTime - 500) / 500);
+
+        session.ConditionUpdate(ConditionType.music_play_instrument_time, counter: totalTickTime / 1000, targetLong: session.Field.MapId, codeLong: session.Instrument.Value.Id);
+        if (session.Instrument.Ensemble) {
+            session.ConditionUpdate(ConditionType.play_ensenble_time, counter: totalTickTime / 1000, targetLong: session.Field.MapId);
+        }
 
         session.Field.RemoveInstrument(session.Instrument.ObjectId);
         session.Instrument = null;
@@ -214,6 +221,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             memberSession.Field.Broadcast(InstrumentPacket.StartScore(memberSession.Instrument, memberSession.StagedScoreItem));
             memberSession.Send(InstrumentPacket.RemainUses(memberSession.StagedScoreItem.Uid, memberSession.StagedScoreItem.RemainUses));
             memberSession.ConditionUpdate(ConditionType.music_play_ensemble);
+            memberSession.ConditionUpdate(ConditionType.music_play_ensemble_in, codeLong: memberSession.Field.MapId, targetLong: memberSession.Field.MapId);
         }
     }
 

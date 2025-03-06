@@ -306,6 +306,10 @@ public class PartyManager : IDisposable {
         session.Send(PartyPacket.DungeonReset(set, dungeonId));
     }
 
+    public int GuildMemberCount() {
+        return Party?.Members.Values.Count(member => member.Info.GuildId == session.Player.Value.Character.GuildId) ?? 0;
+    }
+
     public void SetPartySearch(PartySearch? partySearch) {
         if (Party == null) {
             return;

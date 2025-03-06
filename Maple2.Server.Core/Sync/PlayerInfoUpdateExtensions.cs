@@ -73,6 +73,8 @@ public static class PlayerInfoUpdateExtensions {
             self.Name = other.Name;
             self.Motto = other.Motto;
             self.Picture = other.Picture;
+            self.GuildId = other.GuildId;
+            self.GuildName = other.GuildName;
         }
         if (type.HasFlag(UpdateField.Job)) {
             self.Job = other.Job;
@@ -124,6 +126,8 @@ public static class PlayerInfoUpdateExtensions {
             request.Motto = info.Motto;
             request.Picture = info.Picture;
             request.LastOnlineTime = info.LastOnlineTime;
+            request.GuildId = info.GuildId;
+            request.GuildName = info.GuildName;
         }
         if (type.HasFlag(UpdateField.Job)) {
             request.Job = (int) info.Job;
