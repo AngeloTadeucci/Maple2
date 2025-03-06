@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Model.Room;
 using Maple2.Tools.VectorMath;
 
 namespace Maple2.Server.Game.Model;

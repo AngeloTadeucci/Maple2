@@ -8,7 +8,6 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
-using Maple2.Server.Game.Model.Room;
 using Maple2.Server.World.Service;
 using Serilog;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;

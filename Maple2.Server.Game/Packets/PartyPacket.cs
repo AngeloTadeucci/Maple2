@@ -7,7 +7,6 @@ using Maple2.Server.Core.Packets;
 using Maple2.Tools.Extensions;
 using Maple2.Model.Game.Party;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Model.Room;
 
 namespace Maple2.Server.Game.Packets;
 

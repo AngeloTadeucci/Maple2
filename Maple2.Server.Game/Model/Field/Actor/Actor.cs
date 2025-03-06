@@ -14,7 +14,6 @@ using Serilog;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Database.Storage;
 using Maple2.Server.Game.Manager;
-using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Model;
