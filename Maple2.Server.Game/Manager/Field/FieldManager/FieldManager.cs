@@ -427,9 +427,7 @@ public partial class FieldManager : IField {
                         session.Player.MoveToPosition(destinationCube.Position, default);
                         return true;
                     case CubePortalDestination.SelectedMap:
-                        session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
-                            ? FieldEnterPacket.Request(session.Player)
-                            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                        session.MigrateOutOfInstance(srcPortal.TargetMapId);
                         return true;
                     case CubePortalDestination.FriendHome: {
                             using GameStorage.Request db = session.GameStorage.Context();

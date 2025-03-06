@@ -179,7 +179,9 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                         if (channel.Status is ChannelStatus.Active) {
                             logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
                             channel.Status = ChannelStatus.Inactive;
+#if !DEBUG
                             await cancellationTokenSource.CancelAsync();
+#endif
                         }
                         break;
                 }
@@ -189,7 +191,9 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 }
                 if (channel.Status is ChannelStatus.Active) {
                     logger.Information("Channel {Channel} has become inactive", channel.Id);
+#if !DEBUG
                     await cancellationTokenSource.CancelAsync();
+#endif
                 }
                 channel.Status = ChannelStatus.Inactive;
             }

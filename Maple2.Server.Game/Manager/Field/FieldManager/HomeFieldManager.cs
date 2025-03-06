@@ -24,7 +24,6 @@ public class HomeFieldManager : FieldManager {
         }
     }
 
-
     public void SetHomeSurvey(HomeSurvey survey) {
         HomeSurvey = survey;
     }
