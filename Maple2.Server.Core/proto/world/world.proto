@@ -63,12 +63,13 @@ message MigrateOutRequest {
 
   // If channel is not specified, one will be determined by the world server.
   optional int32 channel = 5;
+  optional bool instanced_content = 6;
 
-  optional int32 map_id = 6;
-  optional int32 portal_id = 7;
-  optional int64 owner_id = 8;
-  optional int32 room_id = 9;
-  optional MigrationType type = 10;
+  optional int32 map_id = 7;
+  optional int32 portal_id = 8;
+  optional int64 owner_id = 9;
+  optional int32 room_id = 10;
+  optional MigrationType type = 11;
 }
 
 enum MigrationType {
@@ -500,6 +501,7 @@ message GlobalPortalInfo {
 message AddChannelRequest {
   string game_ip = 1;
   string grpc_game_ip = 2;
+  bool instanced_content = 3;
 }
 
 message AddChannelResponse {

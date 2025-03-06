@@ -440,7 +440,7 @@ public partial class FieldManager : IField {
                                 return false;
                             }
 
-                            session.MigrateToHome(home);
+                            session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
                             return true;
                         }
                 }
