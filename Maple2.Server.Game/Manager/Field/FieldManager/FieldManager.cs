@@ -134,20 +134,22 @@ public partial class FieldManager : IField {
             SpawnPortal(portal);
         }
 
-        List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
-            .Where(x => x.Interact?.PortalSettings is not null)
-            .ToList();
+        if (MapId is Constant.DefaultHomeMapId) {
+            List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.Interact?.PortalSettings is not null)
+                .ToList();
 
-        foreach (PlotCube cubePortal in cubePortals) {
-            SpawnCubePortal(cubePortal);
-        }
+            foreach (PlotCube cubePortal in cubePortals) {
+                SpawnCubePortal(cubePortal);
+            }
 
-        List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-            .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
-            .ToList();
+            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+                .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
+                .ToList();
 
-        foreach (PlotCube cube in lifeSkillCubes) {
-            AddFieldFunctionInteract(cube);
+            foreach (PlotCube cube in lifeSkillCubes) {
+                AddFieldFunctionInteract(cube);
+            }
         }
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
@@ -428,16 +430,16 @@ public partial class FieldManager : IField {
                         session.MigrateOutOfInstance(srcPortal.TargetMapId);
                         return true;
                     case CubePortalDestination.FriendHome: {
-                            using GameStorage.Request db = session.GameStorage.Context();
-                            Home? home = db.GetHome(fieldPortal.HomeId);
-                            if (home is null) {
-                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
-                                return false;
-                            }
-
-                            session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
-                            return true;
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        Home? home = db.GetHome(fieldPortal.HomeId);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
                         }
+
+                        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
+                        return true;
+                    }
                 }
                 return false;
             case PortalType.LeaveDungeon:
