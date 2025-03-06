@@ -816,9 +816,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("HomeLayoutId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("HousingCategory")
-                        .HasColumnType("int");
-
                     b.Property<string>("Interact")
                         .HasColumnType("json");
 
@@ -1114,7 +1111,7 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("AccountId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("ItemId")
+                    b.Property<int>("InteractId")
                         .HasColumnType("int");
 
                     b.Property<short>("ClaimedGiftForStage")
@@ -1133,7 +1130,7 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired()
                         .HasColumnType("json");
 
-                    b.HasKey("AccountId", "ItemId");
+                    b.HasKey("AccountId", "InteractId");
 
                     b.ToTable("nurturing", (string)null);
                 });
@@ -1446,9 +1443,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
-
-                    b.Property<int>("HousingCategory")
-                        .HasColumnType("int");
 
                     b.Property<string>("Interact")
                         .HasColumnType("json");
