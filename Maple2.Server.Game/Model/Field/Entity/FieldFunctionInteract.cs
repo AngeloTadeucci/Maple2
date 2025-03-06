@@ -7,8 +7,8 @@ using Maple2.Server.Game.Packets;
 namespace Maple2.Server.Game.Model;
 
 public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
-   public readonly InteractCube InteractCube;
-   public readonly long CubeId;
+    public readonly InteractCube InteractCube;
+    public readonly long CubeId;
 
     private long NextUpdateTick { get; set; }
 
