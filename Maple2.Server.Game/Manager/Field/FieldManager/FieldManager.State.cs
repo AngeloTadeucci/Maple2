@@ -525,7 +525,7 @@ public partial class FieldManager {
         }
         var fieldInteract = new FieldFunctionInteract(this, NextLocalId(), cube.Interact, cube.Id) {
             Position = cube.Position,
-            Rotation = cube.Position
+            Rotation = new Vector3(0, 0, cube.Rotation),
         };
 
         fieldFunctionInteracts[cube.Interact.Id] = fieldInteract;
