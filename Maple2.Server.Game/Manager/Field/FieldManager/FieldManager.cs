@@ -120,7 +120,7 @@ public partial class FieldManager : IField {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
 
-        if (ugcMetadata.Plots.Count > 0) {
+        if (ugcMetadata.Plots.Count > 0 && this is not HomeFieldManager) {
             using GameStorage.Request db = GameStorage.Context();
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
@@ -132,24 +132,6 @@ public partial class FieldManager : IField {
         }
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
-        }
-
-        if (MapId is Constant.DefaultHomeMapId) {
-            List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.Interact?.PortalSettings is not null)
-                .ToList();
-
-            foreach (PlotCube cubePortal in cubePortals) {
-                SpawnCubePortal(cubePortal);
-            }
-
-            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
-                .ToList();
-
-            foreach (PlotCube cube in lifeSkillCubes) {
-                AddFieldFunctionInteract(cube);
-            }
         }
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
@@ -427,9 +409,7 @@ public partial class FieldManager : IField {
                         session.Player.MoveToPosition(destinationCube.Position, default);
                         return true;
                     case CubePortalDestination.SelectedMap:
-                        session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
-                            ? FieldEnterPacket.Request(session.Player)
-                            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+                        session.MigrateOutOfInstance(srcPortal.TargetMapId);
                         return true;
                     case CubePortalDestination.FriendHome: {
                             using GameStorage.Request db = session.GameStorage.Context();

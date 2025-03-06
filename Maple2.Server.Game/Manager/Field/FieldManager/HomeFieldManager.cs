@@ -1,4 +1,5 @@
 ﻿using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 
@@ -22,8 +23,23 @@ public class HomeFieldManager : FieldManager {
         foreach (Plot plot in db.LoadPlotsForMap(MapId, OwnerId)) {
             Plots[plot.Number] = plot;
         }
-    }
 
+        List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
+            .Where(x => x.Interact?.PortalSettings is not null)
+            .ToList();
+
+        foreach (PlotCube cubePortal in cubePortals) {
+            SpawnCubePortal(cubePortal);
+        }
+
+        List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+            .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
+            .ToList();
+
+        foreach (PlotCube cube in lifeSkillCubes) {
+            AddFieldFunctionInteract(cube);
+        }
+    }
 
     public void SetHomeSurvey(HomeSurvey survey) {
         HomeSurvey = survey;
