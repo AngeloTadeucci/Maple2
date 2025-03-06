@@ -8,6 +8,7 @@ public record FunctionCubeMetadata(
     int RecipeId,
     ConfigurableCubeType ConfigurableCubeType,
     InteractCubeState DefaultState,
+    InteractCubeControlType ControlType,
     int[] AutoStateChange,
     int AutoStateChangeTime,
     FunctionCubeMetadata.NurturingData? Nurturing

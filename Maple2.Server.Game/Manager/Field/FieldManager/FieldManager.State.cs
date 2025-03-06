@@ -519,26 +519,16 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
-    public FieldFunctionInteract? AddFieldFunctionInteract(PlotCube plotCube) {
-        if (plotCube.Interact is null) {
-            logger.Warning("No Interact found for PlotCube: {PlotCube}", plotCube);
+    public FieldFunctionInteract? AddFieldFunctionInteract(PlotCube cube) {
+        if (cube.Interact == null) {
             return null;
         }
-
-        if (!ItemMetadata.TryGet(plotCube.ItemId, out ItemMetadata? item) || item.Install is null) {
-            return null;
-        }
-
-        if (!FunctionCubeMetadata.TryGet(item.Install.ObjectCubeId, out FunctionCubeMetadata? metadata)) {
-            return null;
-        }
-
-        var fieldInteract = new FieldFunctionInteract(this, NextLocalId(), metadata, plotCube) {
-            Position = plotCube.Position,
-            Rotation = new Vector3(0, 0, plotCube.Rotation),
+        var fieldInteract = new FieldFunctionInteract(this, NextLocalId(), cube.Interact, cube.Id) {
+            Position = cube.Position,
+            Rotation = new Vector3(0, 0, cube.Rotation),
         };
 
-        fieldFunctionInteracts[plotCube.Interact.Id] = fieldInteract;
+        fieldFunctionInteracts[cube.Interact.Id] = fieldInteract;
 
         return fieldInteract;
     }
@@ -669,17 +659,8 @@ public partial class FieldManager {
                 added.Session.Send(InstrumentPacket.StartScore(fieldInstrument, fieldInstrument.Score));
             }
         }
-        if (MapId is Constant.DefaultHomeMapId) {
-            IEnumerable<PlotCube> interactCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.Interact != null && x.HousingCategory is not HousingCategory.Ranching and not HousingCategory.Farming);
-            IEnumerable<PlotCube> lifeSkillsCubes = fieldFunctionInteracts.Values
-                .Select(x => x.Cube);
 
-            List<PlotCube> result = [];
-            result.AddRange(interactCubes);
-            result.AddRange(lifeSkillsCubes);
-            added.Session.Send(FunctionCubePacket.SendCubes(result));
-        }
+        added.Session.Send(FunctionCubePacket.SendCubes(fieldFunctionInteracts.Values.ToList()));
 
         foreach (Plot plot in Plots.Values) {
             foreach (PlotCube plotCube in plot.Cubes.Values) {

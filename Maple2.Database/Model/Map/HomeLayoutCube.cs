@@ -17,7 +17,6 @@ internal class HomeLayoutCube {
     public float Rotation { get; set; }
 
     public int ItemId { get; set; }
-    public HousingCategory HousingCategory { get; set; }
     public InteractCube? Interact { get; set; }
     public UgcItemLook? Template { get; set; }
 
@@ -30,7 +29,6 @@ internal class HomeLayoutCube {
             Rotation = other.Rotation,
             ItemId = other.ItemId,
             Template = other.Template,
-            HousingCategory = other.HousingCategory,
             Interact = other.Interact,
         };
     }

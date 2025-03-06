@@ -6,7 +6,6 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
@@ -16,9 +15,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools;
 using Serilog;
-using Serilog.Core;
 
 namespace Maple2.Server.Game.Manager;
 
@@ -336,7 +333,6 @@ public class HousingManager {
 
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
-            plotCube.HousingCategory = itemMetadata.Housing.HousingCategory;
 
             session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
             if (functionCubeMetadata is not null) {
@@ -366,7 +362,9 @@ public class HousingManager {
     };
 
     public void InteriorCheckIn(Plot plot) {
-        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
+        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values
+            .Where(plotCube => plotCube.Metadata.Housing != null)
+            .GroupBy(plotCube => plotCube.Metadata.Housing!.HousingCategory)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
 
         int decorationScore = 0;
@@ -516,10 +514,9 @@ public class HousingManager {
         session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
 
         if (plot.IsPlanner) {
-            result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
+            result = new PlotCube(itemMetadata, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
                 Rotation = rotation,
-                HousingCategory = itemMetadata.Housing.HousingCategory,
             };
 
             if (functionCubeMetadata is not null) {
@@ -557,13 +554,9 @@ public class HousingManager {
 
         result.Position = position;
         result.Rotation = rotation;
-        result.HousingCategory = itemMetadata.Housing.HousingCategory;
         if (functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
-
-            if (result.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
-                session.Field.AddFieldFunctionInteract(result);
-            }
+            session.Field.AddFieldFunctionInteract(result);
         }
         plot.Cubes.Add(position, result);
         return true;
@@ -579,7 +572,7 @@ public class HousingManager {
             session.Field.RemovePortal(cube.Interact.PortalSettings.PortalObjectId);
         }
 
-        if (cube.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching && cube.Interact is not null) {
+        if (cube.Interact is not null) {
             session.Field.RemoveFieldFunctionInteract(cube.Interact.Id);
         }
 

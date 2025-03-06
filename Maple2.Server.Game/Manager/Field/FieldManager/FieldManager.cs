@@ -134,23 +134,11 @@ public partial class FieldManager : IField {
             SpawnPortal(portal);
         }
 
-        if (MapId is Constant.DefaultHomeMapId) {
-            List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.Interact?.PortalSettings is not null)
-                .ToList();
-
-            foreach (PlotCube cubePortal in cubePortals) {
-                SpawnCubePortal(cubePortal);
-            }
-
-            List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
-                .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
-                .ToList();
-
-            foreach (PlotCube cube in lifeSkillCubes) {
-                AddFieldFunctionInteract(cube);
-            }
-        }
+        Plots.Values
+            .SelectMany(plot => plot.Cubes.Values)
+            .Where(plotCube => plotCube.Interact != null)
+            .ToList()
+            .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);

@@ -20,7 +20,6 @@ internal class UgcMapCube {
     public float Rotation { get; set; }
 
     public int ItemId { get; set; }
-    public HousingCategory HousingCategory { get; set; }
     public InteractCube? Interact { get; set; }
 
     public UgcItemLook? Template { get; set; }
@@ -35,7 +34,6 @@ internal class UgcMapCube {
             Rotation = other.Rotation,
             ItemId = other.ItemId,
             Template = other.Template,
-            HousingCategory = other.HousingCategory,
             Interact = other.Interact,
         };
     }

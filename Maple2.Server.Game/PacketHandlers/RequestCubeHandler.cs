@@ -233,12 +233,11 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
                 session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
 
                 if (plotCube.Interact is not null) {
-
                     if (plotCube.Interact.Nurturing is not null && plotCube.Interact.Metadata.Nurturing is not null) {
                         using GameStorage.Request db = session.GameStorage.Context();
                         Nurturing? nurturing = db.GetNurturing(session.AccountId, plotCube.ItemId, plotCube.Interact.Metadata.Nurturing);
                         if (nurturing is null) {
-                            nurturing = db.CreateNurturing(session.AccountId, plotCube);
+                            nurturing = db.CreateNurturing(session.AccountId, plotCube.Interact.Metadata.Nurturing, plotCube.Interact.Metadata.Id);
                             if (nurturing is null) {
                                 Logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
                                 return;
