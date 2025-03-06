@@ -520,7 +520,6 @@ public partial class FieldManager {
     }
 
     public FieldFunctionInteract? AddFieldFunctionInteract(PlotCube cube) {
-        Console.WriteLine($"Adding FieldFunctionInteract for {cube.Interact?.Id}");
         if (cube.Interact == null) {
             return null;
         }
