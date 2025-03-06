@@ -1,4 +1,4 @@
-﻿using Maple2.Server.Game.Model.Room;
+﻿using Maple2.Server.Game.Manager.Field;
 
 namespace Maple2.Server.Game.Trigger;
 

@@ -4,7 +4,6 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
 using Maple2.Server.Core.Sync;
-using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util.Sync;

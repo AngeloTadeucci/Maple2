@@ -24,7 +24,6 @@ using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Model.Room;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;

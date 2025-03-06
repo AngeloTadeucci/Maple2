@@ -2,9 +2,8 @@
 using Maple2.Database.Storage;
 using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
-using Maple2.Server.Game.Manager.Field;
 
-namespace Maple2.Server.Game.Model.Room;
+namespace Maple2.Server.Game.Manager.Field;
 
 public class DungeonFieldManager : FieldManager {
     public DungeonRoomTable.DungeonRoomMetadata Metadata { get; private set; }

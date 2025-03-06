@@ -6,18 +6,17 @@ using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.DebugGraphics;
-using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
 using Maple2.Tools.Collision;
 
-namespace Maple2.Server.Game.Model.Room;
+namespace Maple2.Server.Game.Manager.Field;
 
 public interface IField : IDisposable {
     public int RoomId { get; }
