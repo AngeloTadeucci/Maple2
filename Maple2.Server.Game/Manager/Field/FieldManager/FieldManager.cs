@@ -120,7 +120,7 @@ public partial class FieldManager : IField {
             FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
         }
 
-        if (ugcMetadata.Plots.Count > 0 && this is not HomeFieldManager) {
+        if (ugcMetadata.Plots.Count > 0) {
             using GameStorage.Request db = GameStorage.Context();
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
@@ -132,6 +132,22 @@ public partial class FieldManager : IField {
         }
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
+        }
+
+        List<PlotCube> cubePortals = Plots.FirstOrDefault().Value.Cubes.Values
+            .Where(x => x.Interact?.PortalSettings is not null)
+            .ToList();
+
+        foreach (PlotCube cubePortal in cubePortals) {
+            SpawnCubePortal(cubePortal);
+        }
+
+        List<PlotCube> lifeSkillCubes = Plots.FirstOrDefault().Value.Cubes.Values
+            .Where(x => x.HousingCategory is HousingCategory.Ranching or HousingCategory.Farming)
+            .ToList();
+
+        foreach (PlotCube cube in lifeSkillCubes) {
+            AddFieldFunctionInteract(cube);
         }
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
