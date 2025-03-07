@@ -38,6 +38,8 @@ if ($dotnetVersion -lt "8.0") {
     exit
 }
 
+dotnet tool install --global dotnet-ef
+
 # Create a copy of .env.example and rename it to .env
 if (Test-Path .env) {
     Write-Host ".env file already exists. Skipping." -ForegroundColor Blue
@@ -134,23 +136,21 @@ if ($answer -eq "y") {
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Initializing project..." -ForegroundColor Blue
 
-# Ask if they want to skip navmesh generation
-Write-Host "You need navmeshes to run the server, you can either generate them or download them from the discord server. Link in README.md." -ForegroundColor Yellow
-Write-Host "Navmesh generation can take up to an hour depending on your system." -ForegroundColor Yellow
-
 # Set the working directory to the Maple2.File.Ingest project
 Set-Location -Path "Maple2.File.Ingest"
 
-$answer = Read-Host "Do you want to skip navmesh generation? (y/n)"
-
-# if starts with y, add argument --skip-navmesh to the dotnet run command
-if ($answer -eq "y") {
-    Invoke-Dotnet -Command "run" -Arguments "--skip-navmesh"
-} else {
-    Invoke-Dotnet -Command "run" -Arguments "--init"
-}
+# Run ingest
+dotnet run
 
 Set-Location -Path ".."
+
+Write-Host "====================================" -ForegroundColor Cyan
+Write-Host "Downloading customized server files..."
+
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2d" -OutFile (Join-Path $dataPath "Server.m2d")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2h" -OutFile (Join-Path $dataPath "Server.m2h")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2d" -OutFile (Join-Path $dataPath "Xml.m2d")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2h" -OutFile (Join-Path $dataPath "Xml.m2h")
 
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Done! Happy Mapling!" -ForegroundColor Green
