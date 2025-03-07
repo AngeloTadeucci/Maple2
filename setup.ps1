@@ -134,6 +134,14 @@ if ($answer -eq "y") {
 }
 
 Write-Host "====================================" -ForegroundColor Cyan
+Write-Host "Downloading customized server files..."
+
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2d" -OutFile (Join-Path $dataPath "Server.m2d")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2h" -OutFile (Join-Path $dataPath "Server.m2h")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2d" -OutFile (Join-Path $dataPath "Xml.m2d")
+Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2h" -OutFile (Join-Path $dataPath "Xml.m2h")
+
+Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Initializing project..." -ForegroundColor Blue
 
 # Set the working directory to the Maple2.File.Ingest project
@@ -143,14 +151,6 @@ Set-Location -Path "Maple2.File.Ingest"
 dotnet run
 
 Set-Location -Path ".."
-
-Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "Downloading customized server files..."
-
-Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2d" -OutFile (Join-Path $dataPath "Server.m2d")
-Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Server.m2h" -OutFile (Join-Path $dataPath "Server.m2h")
-Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2d" -OutFile (Join-Path $dataPath "Xml.m2d")
-Invoke-WebRequest -Uri "https://github.com/Zintixx/MapleStory2-XML/releases/latest/download/Xml.m2h" -OutFile (Join-Path $dataPath "Xml.m2h")
 
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Done! Happy Mapling!" -ForegroundColor Green
