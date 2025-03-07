@@ -16,6 +16,12 @@ public static class PlayerInfoUpdateExtensions {
             if (update.Request.HasPicture) {
                 info.Picture = update.Request.Picture;
             }
+            if (update.Request.HasGuildId) {
+                info.GuildId = update.Request.GuildId;
+            }
+            if (update.Request.HasGuildName) {
+                info.GuildName = update.Request.GuildName;
+            }
         }
         if (update.Type.HasFlag(UpdateField.PremiumTime) && update.Request.HasPremiumTime) {
             info.PremiumTime = update.Request.PremiumTime;
