@@ -7,7 +7,7 @@ public static class DotEnv {
         string dotenv = Path.Combine(Paths.SOLUTION_DIR, ".env");
 
         if (!File.Exists(dotenv)) {
-            Console.WriteLine("No .env file found");
+            Console.WriteLine($"No .env file found at path: {dotenv}");
             return;
         }
 
