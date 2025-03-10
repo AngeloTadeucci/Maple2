@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using DotRecast.Detour.Crowd;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -14,6 +15,7 @@ using Maple2.Server.Game.Util;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
 using Maple2.Tools.Extensions;
+using Maple2.Tools.VectorMath;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
@@ -31,9 +33,12 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<string, FieldInteract> fieldInteracts = new();
     private readonly ConcurrentDictionary<string, FieldFunctionInteract> fieldFunctionInteracts = new();
     private readonly ConcurrentDictionary<string, FieldInteract> fieldAdBalloons = new();
+    private readonly ConcurrentDictionary<string, FieldInteract> fieldChests = new();
     private readonly ConcurrentDictionary<int, FieldInstrument> fieldInstruments = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
+    private readonly ConcurrentDictionary<int, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
+    private readonly ConcurrentDictionary<int, FieldSpawnGroup> fieldSpawnGroups = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
     private readonly ConcurrentDictionary<int, FieldPortal> fieldPortals = new();
 
@@ -106,7 +111,7 @@ public partial class FieldManager {
             Position = spawnPosition,
             Rotation = rotation,
             Origin = owner?.Position ?? spawnPosition,
-            SpawnPointId = owner?.Value.Id ?? NextGlobalId(),
+            SpawnPointId = owner?.Value.Id ?? 0,
         };
 
         if (npc.Basic.Friendly > 0) {
@@ -118,7 +123,7 @@ public partial class FieldManager {
         return fieldNpc;
     }
 
-    private FieldNpc? SpawnNpc(NpcMetadata npc, SpawnPointNPC spawnPointNpc) {
+    public FieldNpc? SpawnNpc(NpcMetadata npc, SpawnPointNPC spawnPointNpc) {
         return SpawnNpc(npc, spawnPointNpc.Position, spawnPointNpc.Rotation, null, spawnPointNpc);
     }
 
@@ -346,6 +351,61 @@ public partial class FieldManager {
         return fieldMobSpawn;
     }
 
+    public FieldSpawnPointNpc AddSpawnPointNpc(SpawnPointNPC metadata) {
+        var fieldSpawnPointNpc = new FieldSpawnPointNpc(this, NextLocalId(), metadata) {
+            Position = metadata.Position,
+            Rotation = metadata.Rotation,
+        };
+
+        fieldSpawnPointNpcs[metadata.Id] = fieldSpawnPointNpc;
+        fieldSpawnPointNpc.SpawnOnCreate();
+        return fieldSpawnPointNpc;
+    }
+
+    public void ToggleCombineSpawn(SpawnGroupMetadata metadata, bool enable) {
+        if (!fieldSpawnGroups.TryGetValue(metadata.GroupId, out FieldSpawnGroup? fieldSpawnGroup)) {
+            fieldSpawnGroup = new FieldSpawnGroup(this, NextLocalId(), metadata);
+            fieldSpawnGroups[metadata.GroupId] = fieldSpawnGroup;
+        }
+
+        fieldSpawnGroup.ToggleActive(enable);
+    }
+
+    public void ToggleNpcSpawnPoint(int spawnId) {
+        if (!fieldSpawnPointNpcs.TryGetValue(spawnId, out FieldSpawnPointNpc? fieldSpawnGroup)) {
+            return;
+        }
+
+        fieldSpawnGroup.TriggerSpawn();
+    }
+
+    public void SpawnInteractObject(SpawnInteractObjectMetadata metadata) {
+        if (!Entities.BoxRegionSpawns.TryGetValue(metadata.RegionSpawnId, out Ms2RegionBoxSpawn? boxSpawn) ||
+            !TableMetadata.InteractObjectTable.Entries.TryGetValue(metadata.InteractId, out InteractObjectMetadata? interactObjectMetadata)) {
+            return;
+        }
+        Vector3B position = boxSpawn.Position;
+
+        var interactObject = new InteractMeshObject($"EventCreate_{position.ConvertToInt()}", new Ms2InteractMesh(
+            metadata.InteractId, boxSpawn.Position, boxSpawn.Rotation)) {
+            Asset = metadata.Asset,
+            Model = metadata.Model,
+            NormalState = metadata.Normal,
+            Reactable = metadata.Reactable,
+            Scale = metadata.Scale,
+        };
+
+        var fieldInteract = new FieldInteract(this, NextLocalId(), interactObject.EntityId, interactObjectMetadata, interactObject) {
+            Transform = new Transform {
+                Position = boxSpawn.Position,
+                RotationAnglesDegrees = boxSpawn.Rotation,
+            },
+            SpawnId = boxSpawn.Id,
+        };
+        fieldChests[interactObject.EntityId] = fieldInteract;
+        Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
+    }
+
     public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default) {
         var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, metadata, interval, position) {
             Position = position,
@@ -444,6 +504,15 @@ public partial class FieldManager {
     public void RemoveFieldProperty(FieldProperty fieldProperty) {
         fieldProperties.Remove(fieldProperty, out _);
         Broadcast(FieldPropertyPacket.Remove(fieldProperty));
+    }
+
+    public IFieldProperty GetFieldProperty(FieldProperty type) {
+        if (fieldProperties.TryGetValue(type, out IFieldProperty? fieldProperty)) {
+            return fieldProperty;
+        }
+        fieldProperty = new FieldPropertySightRange();
+        AddFieldProperty(fieldProperty);
+        return fieldProperty;
     }
 
     public void SetBackground(string ddsPath) {
@@ -585,26 +654,37 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveInteract(IInteractObject interactObject) {
-        switch (interactObject) {
-            case InteractBillBoardObject billboard:
-                fieldAdBalloons.TryRemove(billboard.EntityId, out _);
-                break;
-            default:
-                fieldInteracts.TryRemove(interactObject.EntityId, out _);
-                break;
-        }
-
-        Broadcast(InteractObjectPacket.Remove(interactObject.EntityId));
-        return true;
-    }
-
-    public bool RemoveNpc(int objectId, int removeDelay = 0) {
-        if (!Mobs.TryRemove(objectId, out FieldNpc? npc) && !Npcs.TryRemove(objectId, out npc)) {
+    public bool RemoveInteract(IInteractObject interactObject, int removeDelay = 0) {
+        if (!fieldAdBalloons.ContainsKey(interactObject.EntityId) && !fieldInteracts.ContainsKey(interactObject.EntityId)) {
             return false;
         }
 
         Scheduler.Schedule(() => {
+            switch (interactObject) {
+                case InteractBillBoardObject billboard:
+                    fieldAdBalloons.TryRemove(billboard.EntityId, out _);
+                    break;
+                default:
+                    fieldInteracts.TryRemove(interactObject.EntityId, out _);
+                    fieldAdBalloons.TryRemove(interactObject.EntityId, out _);
+                    break;
+            }
+
+            Broadcast(InteractObjectPacket.Remove(interactObject.EntityId));
+        }, removeDelay);
+        return true;
+    }
+
+    public bool RemoveNpc(int objectId, int removeDelay = 0) {
+        if (!Mobs.TryGetValue(objectId, out FieldNpc? npc) && !Npcs.TryGetValue(objectId, out npc)) {
+            return false;
+        }
+
+        Scheduler.Schedule(() => {
+            if (!Mobs.TryRemove(objectId, out FieldNpc? npc) && !Npcs.TryRemove(objectId, out npc)) {
+                // Already removed
+                return;
+            }
             Broadcast(FieldPacket.RemoveNpc(objectId));
             Broadcast(ProxyObjectPacket.RemoveNpc(objectId));
             npc.Dispose();
@@ -652,6 +732,9 @@ public partial class FieldManager {
         added.Session.Send(BreakablePacket.Update(fieldBreakables.Values));
         added.Session.Send(InteractObjectPacket.Load(fieldInteracts.Values));
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {
+            added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
+        }
+        foreach (FieldInteract fieldInteract in fieldChests.Values) {
             added.Session.Send(InteractObjectPacket.Add(fieldInteract.Object));
         }
         foreach (FieldInstrument fieldInstrument in fieldInstruments.Values) {
@@ -718,6 +801,10 @@ public partial class FieldManager {
             added.Session.Send(FieldPropertyPacket.Background(background));
         }
         added.Session.Send(FieldPropertyPacket.Load(fieldProperties.Values));
+
+        foreach (TickTimer timer in Timers.Values.Where(timer => timer.Display)) {
+            Broadcast(TriggerPacket.TimerDialog(timer));
+        }
     }
     #endregion Events
 }
