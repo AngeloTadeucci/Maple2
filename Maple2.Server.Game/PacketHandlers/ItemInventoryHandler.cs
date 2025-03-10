@@ -108,11 +108,12 @@ public class ItemInventoryHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (drop.Transfer == null || drop.IsExpired() || !drop.Transfer.Flag.HasFlag(TransferFlag.Trade) || !drop.Transfer.Flag.HasFlag(TransferFlag.Split)) {
+        if (drop.Transfer == null || drop.IsExpired() || !drop.Transfer.Flag.HasFlag(TransferFlag.Trade) || !drop.Transfer.Flag.HasFlag(TransferFlag.Split) || drop.Transfer.Flag.HasFlag(TransferFlag.Bind)) {
             session.Item.Inventory.Discard(drop);
             return;
         }
 
+        session.Item.Inventory.AddItemToDelete(drop);
         FieldItem fieldItem = session.Field!.SpawnItem(session.Player, drop);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
     }

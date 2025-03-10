@@ -82,10 +82,10 @@ public class MasteryHandler : PacketHandler<GameSession> {
         }
 
         foreach (int questId in entry.RequiredQuests) {
-            if (!session.Quest.TryGetQuest(questId, out Quest? quest) || quest.State != QuestState.Completed) {
-                session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_lack_quest));
-                return;
-            }
+            if (session.Quest.TryGetQuest(questId, out _)) continue;
+
+            session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_lack_quest));
+            return;
         }
 
         if (session.Mastery[entry.Type] < entry.RequiredMastery) {

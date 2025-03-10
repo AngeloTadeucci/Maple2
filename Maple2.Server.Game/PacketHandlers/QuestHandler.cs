@@ -201,6 +201,11 @@ public class QuestHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (metadata.GoToMapId is Constant.DefaultHomeMapId) {
+            session.MigrateToInstance(Constant.DefaultHomeMapId, session.AccountId);
+            return;
+        }
+
         session.Send(session.PrepareField(metadata.GoToMapId, metadata.GoToPortalId, session.CharacterId)
             ? FieldEnterPacket.Request(session.Player)
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));

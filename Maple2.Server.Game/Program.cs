@@ -39,6 +39,9 @@ CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
 
+// Check for the --instanced parameter
+bool overrideInstanced = args.Contains("--instanced");
+
 AddChannelResponse? response = null;
 try {
     GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
@@ -46,9 +49,8 @@ try {
     response = worldClient.AddChannel(new AddChannelRequest {
         GameIp = Target.GameIp.ToString(),
         GrpcGameIp = Target.GrpcGameIp,
-        InstancedContent = Target.InstancedContent,
+        InstancedContent = overrideInstanced || Target.InstancedContent,
     });
-
 } catch (RpcException e) {
     Log.Error(e, "Failed to get port information from World Server. Is World Server running?");
     return;
