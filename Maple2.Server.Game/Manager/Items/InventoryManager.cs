@@ -650,10 +650,6 @@ public class InventoryManager {
         }
     }
 
-    public void AddItemToDelete(Item item) {
-        delete.Add(item);
-    }
-
     public void Save(GameStorage.Request db) {
         lock (session.Item) {
             db.SaveItems(0, delete.ToArray());

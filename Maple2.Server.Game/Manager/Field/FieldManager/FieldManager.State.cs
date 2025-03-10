@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using DotRecast.Detour.Crowd;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -195,6 +196,11 @@ public partial class FieldManager {
     }
 
     public FieldItem SpawnItem(IActor owner, Item item) {
+        lock (item) {
+            using GameStorage.Request db = GameStorage.Context();
+            db.SaveItems(0, item);
+        }
+
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
             Owner = owner,
             Position = owner.Position,
