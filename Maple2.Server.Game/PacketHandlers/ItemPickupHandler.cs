@@ -1,6 +1,7 @@
 ﻿using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -51,6 +52,14 @@ public class ItemPickupHandler : PacketHandler<GameSession> {
             }
 
             session.ConditionUpdate(ConditionType.item_pickup, counter: item.Amount, codeLong: item.Id);
+
+            // Items with Pick up effects are not added to player inventory.
+            if (item.Metadata.AdditionalEffects.Any(buff => buff.PickUpEffect)) {
+                foreach (ItemMetadataAdditionalEffect additionalEffect in item.Metadata.AdditionalEffects.Where(buff => buff.PickUpEffect)) {
+                    session.Player.Buffs.AddBuff(session.Player, session.Player, additionalEffect.Id, additionalEffect.Level);
+                }
+                return;
+            }
 
             item.Slot = -1;
             if (session.Item.Inventory.Add(item, true) && item.Metadata.Limit.TransferType == TransferType.BindOnLoot) {
