@@ -52,6 +52,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
         yield return new ServerTableMetadata { Name = "shop_merat_custom.xml", Table = ParseMeretCustomShop() };
         yield return new ServerTableMetadata { Name = "fish*.xml", Table = ParseFish() };
+        yield return new ServerTableMetadata { Name = "combineSpawn*.xml", Table = ParseCombineSpawn() };
 
     }
 
@@ -1640,6 +1641,67 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             }
             return results;
         }
+    }
+
+    private CombineSpawnTable ParseCombineSpawn() {
+        var groupDict = new Dictionary<int, Dictionary<int, SpawnGroupMetadata>>();
+        var npcDict = new Dictionary<int, Dictionary<int, SpawnNpcMetadata>>();
+        var objectDict = new Dictionary<int, Dictionary<int, SpawnInteractObjectMetadata>>();
+
+        foreach ((int id, SpawnGroup spawnGroup) in parser.ParseSpawnGroup()) {
+            var groupMetadata = new SpawnGroupMetadata(
+                GroupId: spawnGroup.groupId,
+                Type: Enum.TryParse(spawnGroup.groupType, out CombineSpawnGroupType type) ? type : CombineSpawnGroupType.none,
+                TotalCount: spawnGroup.combineCount,
+                ResetTick: spawnGroup.resetTick,
+                MapId: spawnGroup.fieldId);
+
+            if (!groupDict.TryGetValue(spawnGroup.fieldId, out Dictionary<int, SpawnGroupMetadata>? value)) {
+                value = new Dictionary<int, SpawnGroupMetadata>();
+                groupDict[spawnGroup.fieldId] = value;
+            }
+
+            value[spawnGroup.groupId] = groupMetadata;
+        }
+
+        foreach ((int id, SpawnNpc spawn) in parser.ParseSpawnNpc()) {
+            var spawnMetadata = new SpawnNpcMetadata(
+                CombineId: spawn.combineId,
+                GroupId: spawn.groupId,
+                Weight: spawn.weight,
+                SpawnId: spawn.spawnId);
+
+            if (!npcDict.TryGetValue(spawn.groupId, out Dictionary<int, SpawnNpcMetadata>? value)) {
+                value = new Dictionary<int, SpawnNpcMetadata>();
+                npcDict[spawn.groupId] = value;
+            }
+
+            value[spawn.combineId] = spawnMetadata;
+        }
+
+        foreach ((int id, SpawnInteractObject interactObject) in parser.ParseSpawnInteractObject()) {
+            var objectMetadata = new SpawnInteractObjectMetadata(
+                CombineId: interactObject.combineId,
+                GroupId: interactObject.groupId,
+                Weight: interactObject.weight,
+                RegionSpawnId: interactObject.regionSpawnId,
+                InteractId: interactObject.interactId,
+                Model: interactObject.model,
+                Asset: interactObject.asset,
+                Normal: interactObject.normal,
+                Reactable: interactObject.reactable,
+                Scale: interactObject.scale,
+                KeepAnimate: interactObject.isKeepAnimate);
+
+            if (!objectDict.TryGetValue(interactObject.groupId, out Dictionary<int, SpawnInteractObjectMetadata>? value)) {
+                value = new Dictionary<int, SpawnInteractObjectMetadata>();
+                objectDict[interactObject.groupId] = value;
+            }
+
+            value[interactObject.combineId] = objectMetadata;
+        }
+
+        return new CombineSpawnTable(groupDict, npcDict, objectDict);
     }
 }
 

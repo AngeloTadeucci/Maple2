@@ -85,7 +85,8 @@ public record ItemMetadataFunction(
 
 public record ItemMetadataAdditionalEffect(
     int Id,
-    short Level);
+    short Level,
+    bool PickUpEffect);
 
 public record ItemMetadataOption(
     int StaticId,

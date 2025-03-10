@@ -57,4 +57,5 @@ public class MapEntity {
 [JsonDerivedType(typeof(TriggerModel), 1436346081)]
 [JsonDerivedType(typeof(Ms2Bounding), 1539875768)]
 [JsonDerivedType(typeof(MS2PatrolData), 250722994)]
+[JsonDerivedType(typeof(Ms2RegionBoxSpawn), 465193598)]
 public abstract record MapBlock;

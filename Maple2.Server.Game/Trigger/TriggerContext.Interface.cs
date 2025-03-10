@@ -135,7 +135,8 @@ public partial class TriggerContext {
     }
 
     public void SetVisibleUi(string[] uiNames, bool visible) {
-        ErrorLog("[SetVisibleUI] uiNames:{UiNames}, visible:{Visible}", string.Join(", ", uiNames), visible);
+        DebugLog("[SetVisibleUI] uiNames:{UiNames}, visible:{Visible}", string.Join(", ", uiNames), visible);
+        Broadcast(TriggerPacket.SetVisibleUi(visible, string.Join(",", uiNames)));
     }
 
     public void ShowCountUi(string text, int stage, int count, int soundType) {
@@ -159,26 +160,28 @@ public partial class TriggerContext {
     }
 
     public void SideNpcTalk(int npcId, string illust, int duration, string script, string voice) {
-        WarnLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}, voice:{Voice}",
+        DebugLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}, voice:{Voice}",
             npcId, illust, duration, script, voice);
-        Broadcast(TriggerPacket.SidePopupTalk(duration, illust, voice, script));
+        Broadcast(TriggerPacket.SidePopupTalk(SideNpcTalkType.Default, duration, illust, voice, script));
     }
 
     public void SideNpcTalkBottom(int npcId, string illust, int duration, string script) {
-        WarnLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}", npcId, illust, duration, script);
+        DebugLog("[SideNpcTalkBottom] npcId:{NpcId}, illust:{Illustration}, duration:{Duration}, script:{Script}", npcId, illust, duration, script);
+        Broadcast(TriggerPacket.SidePopupTalk(SideNpcTalkType.TalkBottom, duration, illust, string.Empty, script));
     }
 
     public void SideNpcMovie(string usm, int duration) {
-        WarnLog("[SideNpcMovie] usm:{Usm}, duration:{Duration}", usm, duration);
+        DebugLog("[SideNpcMovie] usm:{Usm}, duration:{Duration}", usm, duration);
+        Broadcast(TriggerPacket.SidePopupTalk(SideNpcTalkType.Movie, duration, usm: usm));
     }
 
     public void SideNpcCutin(string illust, int duration) {
-        WarnLog("[SideNpcMovie] illust:{Illustration}, duration:{Duration}", illust, duration);
-        Broadcast(TriggerPacket.SidePopupCutIn(duration, illust));
+        DebugLog("[SideNpcMovie] illust:{Illustration}, duration:{Duration}", illust, duration);
+        Broadcast(TriggerPacket.SidePopupTalk(SideNpcTalkType.CutIn, duration, illust));
     }
 
     public void WidgetAction(string type, string func, string widgetArg, string desc, int widgetArgNum) {
-        ErrorLog("[WidgetAction] type:{Type}, func:{Func}, widgetArg:{Args}, desc:{Desc}, widgetArgNum:{ArgNum}", type, func, widgetArg, desc, widgetArgNum);
+        DebugLog("[WidgetAction] type:{Type}, func:{Func}, widgetArg:{Args}, desc:{Desc}, widgetArgNum:{ArgNum}", type, func, widgetArg, desc, widgetArgNum);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return;
         }

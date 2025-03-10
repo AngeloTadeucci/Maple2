@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Storage;
+﻿using System.Numerics;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -99,6 +100,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
                 break;
             case ItemFunction.OpenMassive:
                 HandleOpenMassive(session, packet, item);
+                break;
+            case ItemFunction.DefenseGuard:
+                HandleDefenseGuard(session, packet, item);
                 break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
@@ -479,5 +483,31 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         session.Send(PlayerHostPacket.StartMiniGame(session.PlayerName, fieldId));
         FieldPortal portal = session.Field.SpawnEventPortal(session.Player, fieldId, portalDurationTick, password);
         session.Field.UsePortal(session, portal.Value.Id, password);
+    }
+
+    private static void HandleDefenseGuard(GameSession session, IByteReader packet, Item item) {
+        int[] npcParameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
+        if (npcParameters.Length < 3) {
+            return;
+        }
+
+        int npcId = npcParameters[0];
+        int lifeSpanSeconds = npcParameters[1];
+        int distance = npcParameters[2];
+
+        if (!session.NpcMetadata.TryGet(npcId, out NpcMetadata? npcMetadata)) {
+            return;
+        }
+
+        Vector3 position = session.Player.Transform.Position + session.Player.Transform.FrontAxis * distance;
+        // TODO: Do we check Z?
+        FieldNpc? fieldNpc = session.Field.SpawnNpc(npcMetadata, position, session.Player.Rotation);
+        if (fieldNpc == null) {
+            return;
+        }
+        session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
+        session.Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
+        session.Field.RemoveNpc(fieldNpc.ObjectId, (int) TimeSpan.FromSeconds(lifeSpanSeconds).TotalMilliseconds);
+        session.Item.Inventory.Consume(item.Uid, 1);
     }
 }

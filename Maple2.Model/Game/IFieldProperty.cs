@@ -74,20 +74,18 @@ public class FieldPropertyUserTagSymbol : IFieldProperty {
 public class FieldPropertySightRange : IFieldProperty {
     public FieldProperty Type => FieldProperty.SightRange;
 
-    public float Range { get; init; }
-    public float Fade1 { get; init; }
-    public float Fade2 { get; init; }
-    public float Fade3 { get; init; }
-    public bool Unknown { get; init; }
-    public byte Opacity { get; init; }
-    public bool Opaque { get; init; } = true;
+    public float Range { get; set; } = 450;
+    public float[] Fades { get; init; } = new float[3];
+    public bool Unknown { get; set; }
+    public byte Opacity { get; set; }
+    public bool Opaque { get; set; } = false;
 
     public void WriteTo(IByteWriter writer) {
         writer.Write<FieldProperty>(Type);
         writer.WriteFloat(Range);
-        writer.WriteFloat(Fade1);
-        writer.WriteFloat(Fade2);
-        writer.WriteFloat(Fade3);
+        foreach (float fade in Fades) {
+            writer.WriteFloat(fade);
+        }
         writer.WriteBool(Unknown);
         writer.WriteByte(Opacity);
         writer.WriteBool(Opaque);
