@@ -51,11 +51,12 @@ public class FieldSpawnGroup : FieldEntity<SpawnGroupMetadata> {
     public void ToggleActive(bool active) {
         this.active = active;
 
-        if (!active) {
-            spawnIds.Clear();
-        } else {
+        if (active) {
             InitializeSpawns();
+            return;
         }
+
+        spawnIds.Clear();
     }
 
     private void InitializeSpawns() {
@@ -85,6 +86,7 @@ public class FieldSpawnGroup : FieldEntity<SpawnGroupMetadata> {
             spawnIds.Remove(spawnId);
         }
 
+        int totalCount = Math.Clamp(Value.TotalCount, 0, npcs.Count);
         do {
             SpawnNpcMetadata npc = npcs.Get();
             if (spawnIds.Contains(npc.SpawnId)) {
@@ -92,7 +94,7 @@ public class FieldSpawnGroup : FieldEntity<SpawnGroupMetadata> {
             }
             Field.ToggleNpcSpawnPoint(npc.SpawnId);
             spawnIds.Add(npc.SpawnId);
-        } while (Value.TotalCount > spawnIds.Count);
+        } while (totalCount > spawnIds.Count);
     }
 
     private void SpawnInteractObjects() {
@@ -107,6 +109,7 @@ public class FieldSpawnGroup : FieldEntity<SpawnGroupMetadata> {
             spawnIds.Remove(spawnId);
         }
 
+        int totalCount = Math.Clamp(Value.TotalCount, 0, interactObjects.Count);
         do {
             SpawnInteractObjectMetadata interactObject = interactObjects.Get();
             if (spawnIds.Contains(interactObject.RegionSpawnId)) {
@@ -114,7 +117,7 @@ public class FieldSpawnGroup : FieldEntity<SpawnGroupMetadata> {
             }
             Field.SpawnInteractObject(interactObject);
             spawnIds.Add(interactObject.RegionSpawnId);
-        } while (Value.TotalCount > spawnIds.Count);
+        } while (totalCount > spawnIds.Count);
     }
 
     public override void Update(long tickCount) {

@@ -4,6 +4,8 @@ using System.Reflection;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Tools;
+using Serilog;
+using Serilog.Core;
 
 namespace Maple2.Server.Game.Model.Widget;
 
@@ -13,12 +15,24 @@ public class SurvivalContentsWidget : Widget, IByteSerializable {
 
     public SurvivalContentsWidget(FieldManager field) : base(field) {
         Conditions = new ConcurrentDictionary<string, int>();
+        StormCenter = new Vector3(0, 0, 0);
+        SafeZoneCenter = new Vector3(0, 0, 0);
     }
 
     public override void Action(string function, int numericArg, string stringArg) {
-        MethodInfo? method = GetType().GetMethod(function, BindingFlags.NonPublic | BindingFlags.Instance);
-        if (method != null) {
-            method.Invoke(this, [stringArg, numericArg]);
+        switch (function) {
+            case "StormData":
+                StormData(stringArg);
+                break;
+            case "EnterStep":
+                EnterStep(stringArg);
+                break;
+            case "ExitStep":
+                ExitStep(stringArg);
+                break;
+            default:
+                Log.Logger.Warning($"Unknown function called on SurvivalContentsWidget: {function}");
+                break;
         }
     }
 

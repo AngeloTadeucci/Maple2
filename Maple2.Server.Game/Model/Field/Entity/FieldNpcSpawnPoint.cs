@@ -7,14 +7,12 @@ namespace Maple2.Server.Game.Model;
 
 public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
     private readonly List<int> spawnedMobs;
-    private readonly List<int> spawnedPets;
     private int SpawnId => Value.Id;
 
     private bool active;
 
     public FieldSpawnPointNpc(FieldManager field, int objectId, SpawnPointNPC metadata) : base(field, objectId, metadata) {
         spawnedMobs = [];
-        spawnedPets = [];
         if (metadata.RegenCheckTime > 0) {
             active = true;
         }

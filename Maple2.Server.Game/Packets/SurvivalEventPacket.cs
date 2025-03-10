@@ -7,10 +7,7 @@ using Maple2.Tools.Extensions;
 namespace Maple2.Server.Game.Packets;
 
 public static class SurvivalEventPacket {
-    private enum Command : byte {
-    }
-
-    public static ByteWriter Test(SurvivalContentsWidget widget) {
+    public static ByteWriter Update(SurvivalContentsWidget widget) {
         var pWriter = Packet.Of(SendOp.SurvivalEvent);
         pWriter.WriteByte(0); // bool lto enable?
         pWriter.WriteClass<SurvivalContentsWidget>(widget);

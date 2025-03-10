@@ -400,6 +400,7 @@ public partial class FieldManager {
                 Position = boxSpawn.Position,
                 RotationAnglesDegrees = boxSpawn.Rotation,
             },
+            SpawnId = boxSpawn.Id,
         };
         fieldChests[interactObject.EntityId] = fieldInteract;
         Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
@@ -665,6 +666,7 @@ public partial class FieldManager {
                     break;
                 default:
                     fieldInteracts.TryRemove(interactObject.EntityId, out _);
+                    fieldAdBalloons.TryRemove(interactObject.EntityId, out _);
                     break;
             }
 
@@ -799,6 +801,10 @@ public partial class FieldManager {
             added.Session.Send(FieldPropertyPacket.Background(background));
         }
         added.Session.Send(FieldPropertyPacket.Load(fieldProperties.Values));
+
+        foreach (TickTimer timer in Timers.Values.Where(timer => timer.Display)) {
+            Broadcast(TriggerPacket.TimerDialog(timer));
+        }
     }
     #endregion Events
 }
