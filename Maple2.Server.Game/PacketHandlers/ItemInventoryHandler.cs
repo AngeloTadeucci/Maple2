@@ -108,7 +108,7 @@ public class ItemInventoryHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (drop.Transfer == null || drop.IsExpired() || !drop.Transfer.Flag.HasFlag(TransferFlag.Trade) || !drop.Transfer.Flag.HasFlag(TransferFlag.Split)) {
+        if (drop.Transfer == null || drop.IsExpired() || !drop.Transfer.Flag.HasFlag(TransferFlag.Trade) || !drop.Transfer.Flag.HasFlag(TransferFlag.Split) || drop.Transfer.Flag.HasFlag(TransferFlag.Bind)) {
             session.Item.Inventory.Discard(drop);
             return;
         }
