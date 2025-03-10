@@ -113,6 +113,7 @@ public class ItemInventoryHandler : PacketHandler<GameSession> {
             return;
         }
 
+        session.Item.Inventory.AddItemToDelete(drop);
         FieldItem fieldItem = session.Field!.SpawnItem(session.Player, drop);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
     }
