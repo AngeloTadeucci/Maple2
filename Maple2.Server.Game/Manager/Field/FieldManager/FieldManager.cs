@@ -58,8 +58,6 @@ public partial class FieldManager : IField {
     public FieldAccelerationStructure? AccelerationStructure { get; private set; }
     private readonly UgcMapMetadata ugcMetadata;
 
-    private readonly ConcurrentBag<SpawnPointNPC> npcSpawns = [];
-
     internal readonly EventQueue Scheduler;
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
@@ -151,22 +149,7 @@ public partial class FieldManager : IField {
         }
 
         foreach (SpawnPointNPC spawnPointNpc in Entities.NpcSpawns) {
-            if (spawnPointNpc.RegenCheckTime > 0) {
-                npcSpawns.Add(spawnPointNpc);
-            }
-
-            if (spawnPointNpc.SpawnOnFieldCreate) {
-                foreach (SpawnPointNPCListEntry spawn in spawnPointNpc.NpcList) {
-                    if (!NpcMetadata.TryGet(spawn.NpcId, out NpcMetadata? npcMetadata)) {
-                        logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, MapId);
-                        continue;
-                    }
-
-                    for (int i = 0; i < spawn.Count; i++) {
-                        SpawnNpc(npcMetadata, spawnPointNpc);
-                    }
-                }
-            }
+            AddSpawnPointNpc(spawnPointNpc);
         }
 
         IList<MapMetadata> bonusMaps = MapMetadata.GetMapsByType(Metadata.Property.Continent, MapType.PocketRealm);
@@ -330,6 +313,26 @@ public partial class FieldManager : IField {
         return false;
     }
 
+    public IEnumerable<IActor> GetActorsBySpawnId(int spawnId) {
+        foreach (FieldNpc npc in Npcs.Values) {
+            if (npc.SpawnPointId == spawnId) {
+                yield return npc;
+            }
+        }
+
+        foreach (FieldNpc mob in Mobs.Values) {
+            if (mob.SpawnPointId == spawnId) {
+                yield return mob;
+            }
+        }
+
+        foreach (FieldPet pet in Pets.Values) {
+            if (pet.SpawnPointId == spawnId) {
+                yield return pet;
+            }
+        }
+    }
+
     public bool TryGetPlayer(int objectId, [NotNullWhen(true)] out FieldPlayer? player) {
         return Players.TryGetValue(objectId, out player);
     }
@@ -363,7 +366,13 @@ public partial class FieldManager : IField {
     public ICollection<FieldInteract> EnumerateInteract() => fieldInteracts.Values;
     public ICollection<FieldLiftable> EnumerateLiftables() => fieldLiftables.Values;
     public bool TryGetInteract(string entityId, [NotNullWhen(true)] out FieldInteract? fieldInteract) {
-        return fieldInteracts.TryGetValue(entityId, out fieldInteract) || fieldAdBalloons.TryGetValue(entityId, out fieldInteract);
+        return fieldInteracts.TryGetValue(entityId, out fieldInteract) || fieldAdBalloons.TryGetValue(entityId, out fieldInteract) || fieldChests.TryGetValue(entityId, out fieldInteract);
+    }
+
+    public IEnumerable<FieldInteract> GetInteractObjectsBySpawnId(int spawnId) {
+        return fieldInteracts.Values.Where(interact => interact.SpawnId == spawnId)
+            .Concat(fieldAdBalloons.Values.Where(interact => interact.SpawnId == spawnId))
+            .Concat(fieldChests.Values.Where(interact => interact.SpawnId == spawnId));
     }
 
     public bool MoveToPortal(GameSession session, int portalId) {

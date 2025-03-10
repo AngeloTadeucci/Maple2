@@ -5,6 +5,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
@@ -22,7 +23,7 @@ public static class TriggerPacket {
         AddEffect = 16,
         RemoveEffect = 17,
         SidePopup = 18,
-        Unknown19 = 19,
+        SetVisibleUi = 19,
         DuelHpBar = 20,
         ResetScript = 21,
         Effect1 = 22,
@@ -107,39 +108,25 @@ public static class TriggerPacket {
         return pWriter;
     }
 
-    public static ByteWriter SidePopupTalk(int duration, string illustration, string voice, string script, string sound = "") {
+    public static ByteWriter SidePopupTalk(SideNpcTalkType type = SideNpcTalkType.Default, int duration = 0, string illustration = "", string voice = "", string script = "", string sound = "", string usm = "") {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.SidePopup);
-        pWriter.WriteInt(1); // Talk
+        pWriter.Write<SideNpcTalkType>(type);
         pWriter.WriteInt(duration);
-        pWriter.WriteString();
+        pWriter.WriteString(usm);
         pWriter.WriteString(illustration);
         pWriter.WriteString(voice);
-        pWriter.WriteString(sound); // sound?
+        pWriter.WriteString(sound);
         pWriter.WriteUnicodeString(script);
 
         return pWriter;
     }
 
-    public static ByteWriter SidePopupCutIn(int duration, string illustration) {
+    public static ByteWriter SetVisibleUi(bool visible, string uiNames) {
         var pWriter = Packet.Of(SendOp.Trigger);
-        pWriter.Write<Command>(Command.SidePopup);
-        pWriter.WriteInt(2); // CutIn
-        pWriter.WriteInt(duration);
-        pWriter.WriteString();
-        pWriter.WriteString(illustration);
-        pWriter.WriteString();
-        pWriter.WriteString(); // sound?
-        pWriter.WriteUnicodeString();
-
-        return pWriter;
-    }
-
-    public static ByteWriter Unknown19() {
-        var pWriter = Packet.Of(SendOp.Trigger);
-        pWriter.Write<Command>(Command.Unknown19);
-        pWriter.WriteByte();
-        pWriter.WriteString(); // comma delimited
+        pWriter.Write<Command>(Command.SetVisibleUi);
+        pWriter.WriteBool(visible);
+        pWriter.WriteString(uiNames);
 
         return pWriter;
     }

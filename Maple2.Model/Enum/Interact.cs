@@ -65,4 +65,9 @@ public enum InteractCubeControlType {
     OpenWeb,
     Sensor,
     FunctionUI,
+    Notice,
+    InstallNPC,
+    Portal,
+    SpawnPoint,
+    PVP
 }

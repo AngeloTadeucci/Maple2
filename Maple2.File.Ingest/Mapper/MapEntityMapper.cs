@@ -119,6 +119,11 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             continue;
                     }
                     continue;
+                case IMS2RegionBoxSpawn boxSpawn:
+                    yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                        Block = new Ms2RegionBoxSpawn(boxSpawn.SpawnPointID, (int) boxSpawn.SpawnTypeID, boxSpawn.Scale, boxSpawn.Position, boxSpawn.Rotation)
+                    };
+                    continue;
                 case IMS2RegionSpawnBase spawn:
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
                         Block = new Ms2RegionSpawn(spawn.SpawnPointID, spawn.UseRotAsSpawnDir, spawn.Position, spawn.Rotation)
