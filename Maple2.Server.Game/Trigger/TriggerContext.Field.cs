@@ -457,10 +457,10 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetTimer(string timerId, int seconds, bool disableUi, bool autoRemove, int vOffset, string type, string desc) {
+    public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc) {
         DebugLog("[SetTimer] timerId:{Id}, seconds:{Seconds}", timerId, seconds);
-        Field.Timers[timerId] = new TickTimer(seconds * 1000, autoRemove, vOffset, !disableUi, type);
-        if (!disableUi) {
+        Field.Timers[timerId] = new TickTimer(seconds * 1000, autoRemove, vOffset, display, type);
+        if (display) {
             Broadcast(TriggerPacket.TimerDialog(Field.Timers[timerId]));
         }
     }
