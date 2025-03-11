@@ -11,8 +11,8 @@ public class HomeBankHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.RequestHomeBank;
 
     private enum Command : byte {
-        Home = 0,
-        Premium = 1,
+        Home = 1,
+        Premium = 2,
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
@@ -28,12 +28,12 @@ public class HomeBankHandler : PacketHandler<GameSession> {
                 session.Send(HomeBank(time));
                 return;
             case Command.Premium:
-                session.Send(HomeBank(DateTimeOffset.UtcNow.ToUnixTimeSeconds()));
+                session.Send(HomeBank());
                 return;
         }
     }
 
-    private static ByteWriter HomeBank(long time) {
+    private static ByteWriter HomeBank(long time = 0) {
         var pWriter = Packet.Of(SendOp.HomeBank);
         pWriter.WriteLong(time);
 

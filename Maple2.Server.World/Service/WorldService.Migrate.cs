@@ -3,6 +3,7 @@ using System.Net;
 using System.Security.Cryptography;
 using Grpc.Core;
 using Maple2.Server.Core.Constants;
+using Maple2.Server.Core.Helpers;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Maple2.Server.World.Service;
@@ -32,16 +33,23 @@ public partial class WorldService {
                     throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
-                int channel;
-
-                if (request.InstancedContent && channelClients.TryGetInstancedChannelId(out int channelId)) {
-                    channel = channelId;
+                // Try to use requested channel or instanced channel
+                if (request.InstancedContent && channelClients.TryGetInstancedChannelId(out int channel)) {
+                    if (!channelClients.TryGetActiveEndpoint(channel, out _)) {
+                        throw new RpcException(new Status(StatusCode.Unavailable, "No available instanced game channel"));
+                    }
+                } else if (request.HasChannel && channelClients.TryGetActiveEndpoint(request.Channel, out _)) {
+                    channel = request.Channel;
                 } else {
-                    channel = request.HasChannel ? request.Channel : channelClients.FirstChannel();
+                    // Fall back to first available channel
+                    channel = channelClients.FirstChannel();
+                    if (channel == -1) {
+                        throw new RpcException(new Status(StatusCode.Unavailable, "No available game channels"));
+                    }
                 }
 
                 if (!channelClients.TryGetActiveEndpoint(channel, out IPEndPoint? endpoint)) {
-                    throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
+                    throw new RpcException(new Status(StatusCode.Unavailable, $"Channel {channel} not found"));
                 }
 
                 var gameEntry = new TokenEntry(request.Server, request.AccountId, request.CharacterId, new Guid(request.MachineId), channel, request.MapId, request.PortalId, request.RoomId, request.OwnerId, request.Type);
