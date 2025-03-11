@@ -11,7 +11,13 @@ namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void EnableSpawnPointPc(int spawnPointId, bool enabled) {
-        ErrorLog("[EnableSpawnPointPc] spawnPointId:{Type}, enabled:{Enabled}", spawnPointId, enabled);
+        DebugLog("[EnableSpawnPointPc] spawnPointId:{Type}, enabled:{Enabled}", spawnPointId, enabled);
+        if (!Field.TryGetPlayerSpawn(spawnPointId, out FieldPlayerSpawnPoint? fieldPlayerSpawn)) {
+            logger.Error("[EnableSpawnPointPc] Invalid Player Spawn Point ID: {spawnPointId} in Map ID: {mapId}", spawnPointId, Field.MapId);
+            return;
+        }
+
+        fieldPlayerSpawn.Enable = enabled;
     }
 
     public void GiveExp(int boxId, float expRate, bool arg3) {

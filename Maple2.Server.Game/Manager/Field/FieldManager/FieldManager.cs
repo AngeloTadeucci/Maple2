@@ -152,6 +152,10 @@ public partial class FieldManager : IField {
             AddSpawnPointNpc(spawnPointNpc);
         }
 
+        foreach ((int id, SpawnPointPC spawnPoint) in Entities.PlayerSpawns) {
+            fieldPlayerSpawnPoints[id] = new FieldPlayerSpawnPoint(this, NextLocalId(), spawnPoint);
+        }
+
         IList<MapMetadata> bonusMaps = MapMetadata.GetMapsByType(Metadata.Property.Continent, MapType.PocketRealm);
         foreach (MapMetadataSpawn spawn in Metadata.Spawns) {
             if (!Entities.RegionSpawns.TryGetValue(spawn.Id, out Ms2RegionSpawn? regionSpawn)) {
@@ -345,6 +349,10 @@ public partial class FieldManager : IField {
     public bool TryGetPortal(int portalId, [NotNullWhen(true)] out FieldPortal? portal) {
         portal = fieldPortals.Values.FirstOrDefault(p => p.Value.Id == portalId);
         return portal != null;
+    }
+
+    public bool TryGetPlayerSpawn(int id, [NotNullWhen(true)] out FieldPlayerSpawnPoint? playerSpawnPoint) {
+        return fieldPlayerSpawnPoints.TryGetValue(id, out playerSpawnPoint);
     }
 
     public bool TryGetItem(int objectId, [NotNullWhen(true)] out FieldItem? fieldItem) {

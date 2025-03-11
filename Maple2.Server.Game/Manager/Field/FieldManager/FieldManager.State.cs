@@ -39,6 +39,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
     private readonly ConcurrentDictionary<int, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
+    private readonly ConcurrentDictionary<int, FieldPlayerSpawnPoint> fieldPlayerSpawnPoints = new();
     private readonly ConcurrentDictionary<int, FieldSpawnGroup> fieldSpawnGroups = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
     private readonly ConcurrentDictionary<int, FieldPortal> fieldPortals = new();
@@ -82,7 +83,7 @@ public partial class FieldManager {
 
         // Use SpawnPoint if needed.
         if (fieldPlayer.Position == default) {
-            SpawnPointPC? spawn = Entities.PlayerSpawns.Values.FirstOrDefault(spawn => spawn.Enable);
+            FieldPlayerSpawnPoint? spawn = fieldPlayerSpawnPoints.Values.FirstOrDefault(spawn => spawn.Enable);
             if (spawn != null) {
                 fieldPlayer.Position = spawn.Position + new Vector3(0, 0, 25);
                 fieldPlayer.Rotation = spawn.Rotation;
@@ -386,7 +387,7 @@ public partial class FieldManager {
     }
 
     public void SpawnInteractObject(SpawnInteractObjectMetadata metadata) {
-        if (!Entities.BoxRegionSpawns.TryGetValue(metadata.RegionSpawnId, out Ms2RegionBoxSpawn? boxSpawn) ||
+        if (!Entities.RegionSpawns.TryGetValue(metadata.RegionSpawnId, out Ms2RegionSpawn? boxSpawn) ||
             !TableMetadata.InteractObjectTable.Entries.TryGetValue(metadata.InteractId, out InteractObjectMetadata? interactObjectMetadata)) {
             return;
         }
@@ -749,7 +750,7 @@ public partial class FieldManager {
             }
         }
 
-        added.Session.Send(FunctionCubePacket.SendCubes(fieldFunctionInteracts.Values.ToList()));
+        added.Session.Send(FunctionCubePacket.SendCubes(fieldFunctionInteracts.Values));
 
         foreach (Plot plot in Plots.Values) {
             foreach (PlotCube plotCube in plot.Cubes.Values) {
