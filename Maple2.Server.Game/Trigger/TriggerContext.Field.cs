@@ -85,7 +85,8 @@ public partial class TriggerContext {
         for (int i = 0; i < range; i++) {
             sightRange.Fades[i] = rangeZ;
         }
-        sightRange.Opacity = (byte) (100 - border);
+
+        sightRange.Opacity = (byte) border;
         sightRange.Opaque = false;
         sightRange.Unknown = enabled;
         Broadcast(FieldPropertyPacket.Add(sightRange));

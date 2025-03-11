@@ -38,7 +38,6 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
             var playerSpawns = new Dictionary<int, SpawnPointPC>();
             var npcSpawns = new List<SpawnPointNPC>();
             var regionSpawns = new Dictionary<int, Ms2RegionSpawn>();
-            var boxRegionSpawns = new Dictionary<int, Ms2RegionBoxSpawn>();
             var regionSkills = new List<Ms2RegionSkill>();
             var eventNpcSpawns = new Dictionary<int, EventSpawnPointNPC>();
             var eventItemSpawns = new Dictionary<int, EventSpawnPointItem>();
@@ -131,7 +130,6 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                 EventNpcSpawns = eventNpcSpawns,
                 EventItemSpawns = eventItemSpawns,
                 RegionSpawns = regionSpawns,
-                BoxRegionSpawns = boxRegionSpawns,
                 RegionSkills = regionSkills,
                 Taxi = taxi,
                 BoundingBox = bounding ?? LargeBoundingBox,
