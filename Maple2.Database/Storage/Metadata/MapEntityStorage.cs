@@ -68,9 +68,6 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                     case Portal portal:
                         portals[portal.Id] = portal;
                         break;
-                    case Ms2RegionBoxSpawn boxRegionSpawn:
-                        boxRegionSpawns[boxRegionSpawn.Id] = boxRegionSpawn;
-                        break;
                     case Ms2RegionSpawn regionSpawn:
                         regionSpawns[regionSpawn.Id] = regionSpawn;
                         break;
