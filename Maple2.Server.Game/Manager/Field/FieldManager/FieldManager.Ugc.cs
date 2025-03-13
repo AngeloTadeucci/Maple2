@@ -99,6 +99,7 @@ public partial class FieldManager {
             case PlotCube _:
                 if (itemMetadata.Install is null || itemMetadata.Housing is null) {
                     logger.Error($"Item {cubeItem.ItemId} is not a housing item.");
+                    return;
                 }
                 plot = session.Housing.GetFieldPlot();
                 if (plot == null) {
