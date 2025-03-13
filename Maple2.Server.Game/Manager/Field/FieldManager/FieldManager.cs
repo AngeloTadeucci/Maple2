@@ -125,6 +125,9 @@ public partial class FieldManager : IField {
             }
         }
 
+        // Create default to place liftable cubes
+        Plots[0] = Plot.Default;
+
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
             AddTrigger(trigger);
         }

@@ -20,14 +20,14 @@ public static class LiftablePacket {
         pWriter.WriteInt(liftables.Count);
         foreach (FieldLiftable liftable in liftables) {
             pWriter.WriteString(liftable.EntityId);
-            pWriter.WriteByte();
+            pWriter.WriteByte(1);
             pWriter.WriteInt(liftable.Count);
             pWriter.Write<LiftableState>(liftable.State);
             pWriter.WriteUnicodeString(liftable.Value.MaskQuestId);
             pWriter.WriteUnicodeString(liftable.Value.MaskQuestState);
             pWriter.WriteUnicodeString(liftable.Value.EffectQuestId);
             pWriter.WriteUnicodeString(liftable.Value.EffectQuestState);
-            pWriter.WriteBool(true);
+            pWriter.WriteBool(liftable.Value.ReactEffect);
         }
 
         return pWriter;
@@ -37,7 +37,7 @@ public static class LiftablePacket {
         var pWriter = Packet.Of(SendOp.Liftable);
         pWriter.Write<Command>(Command.Update);
         pWriter.WriteString(liftable.EntityId);
-        pWriter.WriteByte();
+        pWriter.WriteByte(1);
         pWriter.WriteInt(liftable.Count);
         pWriter.Write<LiftableState>(liftable.State);
 
@@ -53,7 +53,7 @@ public static class LiftablePacket {
         pWriter.WriteUnicodeString(liftable.Value.MaskQuestState);
         pWriter.WriteUnicodeString(liftable.Value.EffectQuestId);
         pWriter.WriteUnicodeString(liftable.Value.EffectQuestState);
-        pWriter.WriteBool(true); // UseEffect
+        pWriter.WriteBool(liftable.Value.ReactEffect);
 
         return pWriter;
     }

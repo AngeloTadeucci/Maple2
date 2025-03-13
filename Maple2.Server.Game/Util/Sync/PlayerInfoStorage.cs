@@ -57,6 +57,7 @@ public class PlayerInfoStorage {
                 PlotExpiryTime = response.Home.ExpiryTime.Seconds,
                 PremiumTime = response.PremiumTime,
                 LastOnlineTime = response.LastOnlineTime,
+                DungeonEnterLimits = response.DungeonEnterLimits.ToDictionary(limit => limit.DungeonId, limit => (DungeonEnterLimit) limit.Limit),
             };
 
             cache[characterId] = info;

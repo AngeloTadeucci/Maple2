@@ -110,7 +110,7 @@ public partial class GameStorage {
             Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
             Model.Mail? mail = Context.Mail.Find(characterId, mailId);
-            if (mail == null || mail.ReadTime > DateTime.UnixEpoch) {
+            if (mail == null || mail.ReadTime > DateTime.Now) {
                 return null;
             }
 

@@ -656,7 +656,10 @@ public partial class FieldManager {
             return false;
         }
 
-        Broadcast(CubePacket.RemoveCube(fieldLiftable.ObjectId, fieldLiftable.Position));
+        if (Plots[0].Cubes.Remove(fieldLiftable.Position)) {
+            Broadcast(CubePacket.RemoveCube(fieldLiftable.ObjectId, fieldLiftable.Position));
+        }
+
         Broadcast(LiftablePacket.Remove(entityId));
         return true;
     }
@@ -735,7 +738,10 @@ public partial class FieldManager {
     public void OnAddPlayer(FieldPlayer added) {
         Players[added.ObjectId] = added;
         // LOAD:
-        added.Session.Send(LiftablePacket.Update(fieldLiftables.Values));
+        foreach (FieldLiftable liftable in fieldLiftables.Values.Where(liftable => liftable.FinishTick > 0)) {
+            added.Session.Send(LiftablePacket.Add(liftable));
+        }
+        added.Session.Send(LiftablePacket.Update(fieldLiftables.Values.Where(liftable => liftable.FinishTick == 0).ToList()));
         added.Session.Send(BreakablePacket.Update(fieldBreakables.Values));
         added.Session.Send(InteractObjectPacket.Load(fieldInteracts.Values));
         foreach (FieldInteract fieldInteract in fieldAdBalloons.Values) {

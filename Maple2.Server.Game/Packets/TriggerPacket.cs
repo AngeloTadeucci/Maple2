@@ -280,7 +280,7 @@ public static class TriggerPacket {
         pWriter.Write<Command>(Command.Ui);
         pWriter.Write<UiCommand>(UiCommand.FaceEmotion);
         pWriter.WriteInt(objectId);
-        pWriter.WriteUnicodeString(emotionName);
+        pWriter.WriteString(emotionName);
 
         return pWriter;
     }

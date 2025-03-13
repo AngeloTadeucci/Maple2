@@ -104,7 +104,9 @@ public class FurnishingManager {
                 ? FurnishingStoragePacket.Update(item.Uid, item.Amount)
                 : FurnishingStoragePacket.Remove(item.Uid));
 
-            cube = new PlotCube(item.Metadata, NextCubeId(), item.Template);
+            cube = new PlotCube(item.Metadata, NextCubeId(), item.Template) {
+                Type = PlotCube.CubeType.Construction,
+            };
             if (!AddInventory(cube)) {
                 logger.Fatal("Failed to add cube: {CubeId} to inventory", cube.Id);
                 throw new InvalidOperationException($"Failed to add cube: {cube.Id} to inventory");

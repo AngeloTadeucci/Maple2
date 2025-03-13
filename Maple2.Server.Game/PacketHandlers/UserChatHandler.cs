@@ -299,7 +299,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
         } catch (RpcException) { }
     }
 
-    private ICollection<long> LinkedItemUids(GameSession session, string message) {
+    private static ICollection<long> LinkedItemUids(GameSession session, string message) {
         List<long> itemUids = [];
 
         MatchCollection matches = Regex.Matches(message, "<A HREF=\"event:[^\"]+\">[^<]+</A>");

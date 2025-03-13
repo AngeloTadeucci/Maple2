@@ -10,7 +10,7 @@ public class PlotCube : HeldCube {
 
     public Vector3B Position { get; set; }
     public float Rotation { get; set; }
-    public CubeType Type { get; set; }
+    public required CubeType Type { get; set; }
 
     public int PlotId { get; set; }
 

@@ -450,15 +450,10 @@ public class HousingManager {
     }
 
     #region Helpers
-    public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
+    public bool TryPlaceCube(HeldCube cube, Plot plot, ItemMetadata itemMetadata, in Vector3B position, float rotation,
                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
-        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null || itemMetadata.Housing is null) {
-            logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
-            return false;
-        }
-
-        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing.IsNotAllowedInBlueprint) {
+        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing!.IsNotAllowedInBlueprint) {
             if (itemMetadata.Housing.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
                 session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_nurturing_in_design_home));
             } else if (cube.ItemId is Constant.InteriorPortalCubeId) {
@@ -480,7 +475,7 @@ public class HousingManager {
             groundHeight = groundTile.Position.Z / Constant.BlockSize;
         }
 
-        bool isSolidCube = itemMetadata.Install.IsSolidCube;
+        bool isSolidCube = itemMetadata.Install!.IsSolidCube;
         bool isOnGround = Math.Abs(position.Z - groundHeight) < 0.1;
         bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
 
@@ -517,6 +512,7 @@ public class HousingManager {
             result = new PlotCube(itemMetadata, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
                 Rotation = rotation,
+                Type = cube is LiftableCube ? PlotCube.CubeType.Liftable : PlotCube.CubeType.Construction,
             };
 
             if (functionCubeMetadata is not null) {
@@ -679,7 +675,7 @@ public class HousingManager {
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
             cube.Id = item?.Uid ?? 0;
-            if (!TryPlaceCube(cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+            if (!TryPlaceCube(cube, plot, item!.Metadata, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
                 return;
             }
 

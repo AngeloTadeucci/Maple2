@@ -351,9 +351,13 @@ public sealed partial class GameSession : Core.Network.Session {
             ownerId = AccountId;
         }
 
-        newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
-        if (newField == null) {
-            return false;
+        if (Field is DungeonFieldManager dungeonField && dungeonField.RoomFields.TryGetValue(mapId, out DungeonFieldManager? nextDungeonField)) {
+            newField = nextDungeonField;
+        } else {
+            newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
+            if (newField == null) {
+                return false;
+            }
         }
 
         State = SessionState.ChangeMap;
