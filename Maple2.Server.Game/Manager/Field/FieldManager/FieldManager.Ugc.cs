@@ -151,11 +151,7 @@ public partial class FieldManager {
                 }
 
                 Broadcast(LiftablePacket.Add(fieldLiftable));
-                if (plot.Cubes.TryAdd(position, new PlotCube(itemMetadata, liftable.Id) {
-                        Type = PlotCube.CubeType.Liftable,
-                        Position = position,
-                        Rotation = rotation,
-                    })) {
+                if (plot.Cubes.TryAdd(position, new PlotCube(itemMetadata, liftable.Id) { Type = PlotCube.CubeType.Liftable, Position = position, Rotation = rotation})) {
                     Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
                 }
                 Broadcast(SetCraftModePacket.Stop(session.Player.ObjectId));

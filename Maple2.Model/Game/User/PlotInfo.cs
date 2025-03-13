@@ -56,7 +56,7 @@ public class Plot(UgcMapGroup metadata) : PlotInfo(metadata) {
         0,
         new UgcMapGroup.Cost(0, 0, 0),
         new UgcMapGroup.Cost(0, 0, 0),
-        new UgcMapGroup.Limits(0,0,0,0,0,0)));
+        new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
 
     public void SetPlannerMode(PlotMode mode) {
         PlotMode = mode;
