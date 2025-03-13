@@ -81,6 +81,15 @@ public class DungeonManager {
         }
 
         if (updated) {
+            session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+                AccountId = session.AccountId,
+                CharacterId = session.CharacterId,
+                DungeonEnterLimits = { EnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
+                    DungeonId = dungeon.Key,
+                    Limit = (int) dungeon.Value,
+                })},
+                Async = true,
+            });
             session.Send(FieldEntrancePacket.Load(EnterLimits));
         }
     }
@@ -208,13 +217,6 @@ public class DungeonManager {
             if (Party.LeaderCharacterId != session.CharacterId) {
                 session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_party_err_not_chief));
                 return;
-            }
-
-            foreach (PartyMember member in Party.Members.Values) {
-                if (!member.Info.DungeonEnterLimits.TryGetValue(dungeonId, out DungeonEnterLimit enterLimit) || enterLimit != DungeonEnterLimit.None) {
-                    //session.Send(DungeonRoomPacket.Error(DungeonRoomError));
-                    return;
-                }
             }
         }
 

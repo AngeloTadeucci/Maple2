@@ -12,6 +12,7 @@ public record Liftable(
     string MaskQuestState,
     string EffectQuestId,
     string EffectQuestState,
+    bool ReactEffect,
     Vector3 Position,
     Vector3 Rotation)
 : MapBlock;

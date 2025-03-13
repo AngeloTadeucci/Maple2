@@ -293,6 +293,7 @@ public partial class GameStorage {
                 Position = new Vector3B(model.X, model.Y, model.Z),
                 Rotation = model.Rotation,
                 Interact = ToInteractCube(model.Interact),
+                Type = PlotCube.CubeType.Construction,
             };
         }
 
@@ -309,6 +310,7 @@ public partial class GameStorage {
                 Position = new Vector3B(model.X, model.Y, model.Z),
                 Rotation = model.Rotation,
                 Interact = ToInteractCube(model.Interact),
+                Type = PlotCube.CubeType.Construction,
             };
         }
     }

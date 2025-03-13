@@ -27,7 +27,7 @@ public static class LoadCubesPacket {
             pWriter.WriteClass<PlotCube>(cube);
             pWriter.WriteInt(cube.PlotId);
             pWriter.WriteInt();
-            pWriter.WriteBool(false);
+            pWriter.WriteBool(cube.Type == PlotCube.CubeType.Liftable);
             pWriter.WriteFloat(cube.Rotation);
             pWriter.WriteInt();
             pWriter.WriteBool(false); // Binding?

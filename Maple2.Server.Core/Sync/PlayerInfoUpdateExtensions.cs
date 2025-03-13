@@ -118,7 +118,6 @@ public static class PlayerInfoUpdateExtensions {
         if (type.HasFlag(UpdateField.Clubs)) {
             self.ClubIds = other.ClubIds;
         }
-
         if (type.HasFlag(UpdateField.Dungeon)) {
             self.DungeonEnterLimits = other.DungeonEnterLimits;
         }

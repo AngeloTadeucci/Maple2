@@ -30,7 +30,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
             LastOnlineTime = player.Character.LastOnlineTime,
-            DungeonEnterLimits = [],
+            DungeonEnterLimits = player.Character.DungeonEnterLimits,
             GuildId = player.Character.GuildId,
             GuildName = player.Character.GuildName,
         };

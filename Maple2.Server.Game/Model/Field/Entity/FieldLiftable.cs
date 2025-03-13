@@ -28,14 +28,18 @@ public class FieldLiftable : FieldEntity<Liftable> {
         Count--;
         // Only respawn if we have a regen time
         if (RespawnTick == 0 && Value.RegenCheckTime > 0) {
-            RespawnTick = Environment.TickCount64 + Value.RegenCheckTime;
+            RespawnTick = Field.FieldTick + Value.RegenCheckTime;
         }
 
         if (Count > 0) {
             Field.Broadcast(LiftablePacket.Update(this));
+        } else if (FinishTick > 0) {
+            // This is a temp liftable, so we need to remove it
+            Field.RemoveLiftable(EntityId);
         } else {
-            State = Value.RegenCheckTime > 0 ? LiftableState.Respawning : LiftableState.Removed;
-            Field.Broadcast(LiftablePacket.Remove(EntityId));
+            State = LiftableState.Removed;
+            Field.Broadcast(LiftablePacket.Update(this));
+
             Field.Broadcast(CubePacket.RemoveCube(ObjectId, Position));
         }
 
@@ -43,29 +47,28 @@ public class FieldLiftable : FieldEntity<Liftable> {
     }
 
     public override void Update(long tickCount) {
-        // Handles despawning after being placed
-        if (FinishTick != 0 && tickCount > FinishTick) {
-            Field.RemoveLiftable(EntityId);
-            return;
+        switch (State) {
+            case LiftableState.Removed:
+                if (RespawnTick > tickCount) {
+                    State = LiftableState.Respawning;
+                }
+                break;
+            case LiftableState.Respawning:
+                if (tickCount >= RespawnTick) {
+                    State = LiftableState.Default;
+                    Count = Value.ItemStackCount;
+                    RespawnTick = 0;
+                    Field.Broadcast(LiftablePacket.Update(this));
+                }
+                break;
+            case LiftableState.Default:
+                if (FinishTick != 0 && tickCount > FinishTick) {
+                    Field.RemoveLiftable(EntityId);
+                    return;
+                }
+                break;
+            case LiftableState.Disabled:
+                return;
         }
-
-        if (RespawnTick == 0 || tickCount < RespawnTick) {
-            return;
-        }
-
-        Count++;
-        // Only respawn if we have a regen time
-        if (Count < Value.ItemStackCount && Value.RegenCheckTime > 0) {
-            RespawnTick = tickCount + Value.RegenCheckTime;
-        } else {
-            RespawnTick = 0;
-        }
-
-        if (Count == 1) {
-            State = LiftableState.Default;
-            Field.Broadcast(LiftablePacket.Add(this));
-            Field.Broadcast(CubePacket.PlaceLiftable(ObjectId, new LiftableCube(Value), Position, Rotation.Z));
-        }
-        Field.Broadcast(LiftablePacket.Update(this));
     }
 }

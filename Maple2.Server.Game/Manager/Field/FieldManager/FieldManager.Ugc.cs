@@ -1,8 +1,12 @@
 ﻿using System.Collections.Concurrent;
+using System.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Model.Common;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Ugc;
-using Maple2.Server.Core.Packets;
+using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -83,5 +87,79 @@ public partial class FieldManager {
                 }
             }
         }
+    }
+
+    public void PlaceCube(GameSession session, HeldCube cubeItem, in Vector3B position, float rotation) {
+        Plot? plot = session.Field.Plots[0];
+        if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? itemMetadata)) {
+            logger.Error("Failed to get item metadata for cube {cubeId}.", cubeItem.ItemId);
+            return;
+        }
+        switch (session.HeldCube) {
+            case PlotCube _:
+                if (itemMetadata.Install is null || itemMetadata.Housing is null) {
+                    logger.Error($"Item {cubeItem.ItemId} is not a housing item.");
+                    return;
+                }
+                plot = session.Housing.GetFieldPlot();
+                if (plot == null) {
+                    return;
+                }
+
+                if (!session.Housing.TryPlaceCube(cubeItem, plot, itemMetadata, position, rotation, out PlotCube? plotCube)) {
+                    return;
+                }
+
+                session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
+
+                if (plotCube.Interact is not null) {
+                    if (plotCube.Interact.Nurturing is not null && plotCube.Interact.Metadata.Nurturing is not null) {
+                        using GameStorage.Request db = session.GameStorage.Context();
+                        Nurturing? nurturing = db.GetNurturing(session.AccountId, plotCube.ItemId, plotCube.Interact.Metadata.Nurturing);
+                        if (nurturing is null) {
+                            nurturing = db.CreateNurturing(session.AccountId, plotCube.Interact.Metadata.Nurturing, plotCube.Interact.Metadata.Id);
+                            if (nurturing is null) {
+                                lock (Plots) {
+                                    logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
+                                }
+                                return;
+                            }
+                        }
+                        plotCube.Interact.Nurturing = nurturing;
+                    }
+                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
+                }
+
+                if (plot.IsPlanner) {
+                    return;
+                }
+                break;
+            case LiftableCube liftable:
+                FieldLiftable? fieldLiftable = session.Field.AddLiftable($"4_{position.ConvertToInt()}", liftable.Liftable);
+                if (fieldLiftable == null) {
+                    return;
+                }
+
+                session.HeldCube = null;
+                fieldLiftable.Count = 1;
+                fieldLiftable.State = LiftableState.Default;
+                fieldLiftable.Position = position;
+                fieldLiftable.Rotation = new Vector3(0, 0, rotation);
+                fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.ItemLifetime;
+
+                if (session.Field.Entities.LiftableTargetBoxes.TryGetValue(position, out LiftableTargetBox? liftableTarget)) {
+                    session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId, targetLong: liftableTarget.LiftableTarget);
+                }
+
+                Broadcast(LiftablePacket.Add(fieldLiftable));
+                if (plot.Cubes.TryAdd(position, new PlotCube(itemMetadata, liftable.Id) { Type = PlotCube.CubeType.Liftable, Position = position, Rotation = rotation })) {
+                    Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
+                }
+                Broadcast(SetCraftModePacket.Stop(session.Player.ObjectId));
+                Broadcast(LiftablePacket.Update(fieldLiftable));
+                break;
+        }
+
+        session.ConditionUpdate(ConditionType.install_item, codeLong: cubeItem.ItemId);
     }
 }
