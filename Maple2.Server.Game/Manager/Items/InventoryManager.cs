@@ -230,7 +230,6 @@ public class InventoryManager {
 
             if (add.Amount == 0) {
                 Discard(add, commit);
-                return false;
             }
 
             if (commit && !justCreated) {
