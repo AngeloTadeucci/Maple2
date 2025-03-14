@@ -306,7 +306,7 @@ public class InventoryManager {
             case 90000025: // StarPoint
                 session.Currency[CurrencyType.StarPoint] += add.Amount;
                 break;
-            // case 90000026: // Unknown (Blank)
+                // case 90000026: // Unknown (Blank)
         }
     }
 
