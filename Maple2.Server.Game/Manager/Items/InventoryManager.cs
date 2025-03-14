@@ -22,6 +22,8 @@ public class InventoryManager {
     private readonly Dictionary<InventoryType, ItemCollection> tabs;
     private readonly List<Item> delete;
 
+    private readonly ILogger logger = Log.Logger.ForContext<InventoryManager>();
+
     public InventoryManager(GameStorage.Request db, GameSession session) {
         this.session = session;
         tabs = new Dictionary<InventoryType, ItemCollection>();
@@ -169,47 +171,69 @@ public class InventoryManager {
                 return false;
             }
 
-            // If we are adding an item without a Uid, it may need to be created in db.
-            if (add.Uid == 0) {
-                // Slot MUST be -1 so we don't add directly to a slot.
-                add.Slot = -1;
-                int remainStack = items.GetStackResult(add);
-                if (remainStack > 0) {
-                    if (items.OpenSlots <= 0) {
-                        return false;
-                    }
-
-                    if (add.Metadata.Property.SlotMax == 1 && add.Amount > 1) {
-                        add.Amount--;
-                        if (!Add(add, notifyNew, commit)) {
-                            return false;
-                        }
-                    }
-
-                    using GameStorage.Request db = session.GameStorage.Context();
-                    Item? newAdd = db.CreateItem(session.CharacterId, add);
-                    if (newAdd == null) {
-                        return false;
-                    }
-
-                    add = newAdd;
+            if (add.Metadata.Property.SlotMax == 1 && add.Amount > 1) {
+                if (items.OpenSlots < add.Amount) {
+                    session.Send(ItemInventoryPacket.Error(s_err_inventory));
+                    return false;
                 }
+                int totalAmount = add.Amount;
+                add.Amount = 1;
+
+                if (!Add(add, notifyNew, commit)) {
+                    return false;
+                }
+
+                // Create and add individual copies for remaining items
+                for (int i = 1; i < totalAmount; i++) {
+                    Item? copy = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity);
+                    if (copy is null) {
+                        return false;
+                    }
+
+                    if (!Add(copy, notifyNew, commit)) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             if (add.Metadata.Limit.TransferType is TransferType.BindOnLoot) {
                 add.Transfer?.Bind(session.Player.Value.Character);
             }
 
+            using GameStorage.Request db = session.GameStorage.Context();
+
+            bool justCreated = false;
+
+            // If we are adding an item without a Uid, it needs to be created in db.
+            if (add.Uid == 0) {
+                // Slot MUST be -1 so we don't add directly to a slot.
+                add.Slot = -1;
+
+                Item? newAdd = db.CreateItem(session.CharacterId, add);
+                if (newAdd == null) {
+                    logger.Error("Failed to create item in database");
+                    return false;
+                }
+
+                add = newAdd;
+                justCreated = true;
+            }
+
             IList<(Item, int Added)> result = items.Add(add, stack: true);
             if (result.Count == 0) {
+                Discard(add, commit);
                 session.Send(ItemInventoryPacket.Error(s_err_inventory));
                 return false;
             }
 
             if (add.Amount == 0) {
                 Discard(add, commit);
-            } else if (commit) {
-                using GameStorage.Request db = session.GameStorage.Context();
+                return false;
+            }
+
+            if (commit && !justCreated) {
                 db.SaveItems(session.CharacterId, add);
             }
 
@@ -282,7 +306,7 @@ public class InventoryManager {
             case 90000025: // StarPoint
                 session.Currency[CurrencyType.StarPoint] += add.Amount;
                 break;
-                // case 90000026: // Unknown (Blank)
+            // case 90000026: // Unknown (Blank)
         }
     }
 
@@ -492,6 +516,12 @@ public class InventoryManager {
     public short FreeSlots(InventoryType type) {
         lock (session.Item) {
             return !tabs.TryGetValue(type, out ItemCollection? items) ? (short) 0 : items.OpenSlots;
+        }
+    }
+
+    public short TotalSlots(InventoryType type) {
+        lock (session.Item) {
+            return !tabs.TryGetValue(type, out ItemCollection? items) ? (short) 0 : items.Size;
         }
     }
 

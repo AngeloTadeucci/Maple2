@@ -453,13 +453,6 @@ public class UgcHandler : PacketHandler<GameSession> {
             if (info.Type is UgcType.Furniture) {
                 session.Item.Furnishing.AddCube(item);
             } else {
-                using GameStorage.Request gameRequest = session.GameStorage.Context();
-                item = gameRequest.CreateItem(session.CharacterId, item);
-                if (item == null) {
-                    Logger.Fatal("Failed to create UGC Item {ugcUid}", ugcUid);
-                    throw new InvalidOperationException($"Fatal: UGC Item creation: {ugcUid}");
-                }
-
                 session.Item.Inventory.Add(item, notifyNew: true);
             }
 
