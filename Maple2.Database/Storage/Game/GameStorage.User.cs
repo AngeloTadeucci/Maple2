@@ -156,7 +156,13 @@ public partial class GameStorage {
                     continue;
                 }
 
-                home.Layouts.Add(layout);
+                Maple2.Model.Game.HomeLayout? homeLayoutModel = ToHomeLayout(layout);
+                if (homeLayoutModel == null) {
+                    Logger.LogError("Failed to convert HomeLayout: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Layouts.Add(homeLayoutModel);
             }
 
             foreach (long layoutUid in model.Blueprints) {
@@ -166,7 +172,13 @@ public partial class GameStorage {
                     continue;
                 }
 
-                home.Blueprints.Add(layout);
+                Maple2.Model.Game.HomeLayout? homeLayoutModel = ToHomeLayout(layout);
+                if (homeLayoutModel == null) {
+                    Logger.LogError("Failed to convert HomeLayout: {LayoutUid}", layoutUid);
+                    continue;
+                }
+
+                home.Blueprints.Add(homeLayoutModel);
             }
 
             home.Indoor = indoor;

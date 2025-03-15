@@ -16,6 +16,12 @@ public static class PlayerInfoUpdateExtensions {
             if (update.Request.HasPicture) {
                 info.Picture = update.Request.Picture;
             }
+            if (update.Request.HasGuildId) {
+                info.GuildId = update.Request.GuildId;
+            }
+            if (update.Request.HasGuildName) {
+                info.GuildName = update.Request.GuildName;
+            }
         }
         if (update.Type.HasFlag(UpdateField.PremiumTime) && update.Request.HasPremiumTime) {
             info.PremiumTime = update.Request.PremiumTime;
@@ -59,6 +65,11 @@ public static class PlayerInfoUpdateExtensions {
         if (update.Type.HasFlag(UpdateField.Clubs) && update.Request.Clubs != null) {
             info.ClubIds = new List<long>(update.Request.Clubs.Select(club => club.Id).ToList());
         }
+        if (update.Type.HasFlag(UpdateField.Dungeon) && update.Request.DungeonEnterLimits != null) {
+            foreach (DungeonEnterLimitUpdate dungeonLimit in update.Request.DungeonEnterLimits) {
+                info.DungeonEnterLimits[dungeonLimit.DungeonId] = (DungeonEnterLimit) dungeonLimit.Limit;
+            }
+        }
 
         info.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
@@ -68,6 +79,8 @@ public static class PlayerInfoUpdateExtensions {
             self.Name = other.Name;
             self.Motto = other.Motto;
             self.Picture = other.Picture;
+            self.GuildId = other.GuildId;
+            self.GuildName = other.GuildName;
         }
         if (type.HasFlag(UpdateField.Job)) {
             self.Job = other.Job;
@@ -105,6 +118,9 @@ public static class PlayerInfoUpdateExtensions {
         if (type.HasFlag(UpdateField.Clubs)) {
             self.ClubIds = other.ClubIds;
         }
+        if (type.HasFlag(UpdateField.Dungeon)) {
+            self.DungeonEnterLimits = other.DungeonEnterLimits;
+        }
 
         self.UpdateTime = other.UpdateTime;
     }
@@ -115,6 +131,8 @@ public static class PlayerInfoUpdateExtensions {
             request.Motto = info.Motto;
             request.Picture = info.Picture;
             request.LastOnlineTime = info.LastOnlineTime;
+            request.GuildId = info.GuildId;
+            request.GuildName = info.GuildName;
         }
         if (type.HasFlag(UpdateField.Job)) {
             request.Job = (int) info.Job;
@@ -159,6 +177,12 @@ public static class PlayerInfoUpdateExtensions {
         }
         if (type.HasFlag(UpdateField.Clubs)) {
             request.Clubs.AddRange(info.ClubIds.Select(id => new ClubUpdate { Id = id }));
+        }
+        if (type.HasFlag(UpdateField.Dungeon)) {
+            request.DungeonEnterLimits.AddRange(info.DungeonEnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
+                DungeonId = dungeon.Key,
+                Limit = (int) dungeon.Value,
+            }));
         }
     }
 }

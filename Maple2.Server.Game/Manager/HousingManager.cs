@@ -6,18 +6,16 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools;
 using Serilog;
-using Serilog.Core;
 
 namespace Maple2.Server.Game.Manager;
 
@@ -127,11 +125,11 @@ public class HousingManager {
     }
 
     public Plot? GetIndoorPlot() {
-        if (session.Field == null) {
+        if (session.Field is not HomeFieldManager homeField) {
             return null;
         }
 
-        if (session.AccountId != session.Field.OwnerId || session.Field.MapId != Home.Indoor.MapId) return null;
+        if (session.AccountId != homeField.OwnerId || session.Field.MapId != Home.Indoor.MapId) return null;
 
         session.Field.Plots.TryGetValue(Home.Indoor.Number, out Plot? plot);
         return plot;
@@ -333,12 +331,11 @@ public class HousingManager {
                 continue;
             }
 
-            session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
-
             plotCube.Position = template.BaseCubePosition + cube.OffsetPosition;
             plotCube.Rotation = cube.Rotation;
-            plotCube.HousingCategory = itemMetadata.Housing.HousingCategory;
-            if (plotCube.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+
+            session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
+            if (functionCubeMetadata is not null) {
                 plotCube.Interact = new InteractCube(plotCube.Position, functionCubeMetadata);
             }
 
@@ -365,7 +362,9 @@ public class HousingManager {
     };
 
     public void InteriorCheckIn(Plot plot) {
-        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values.GroupBy(plotCube => plotCube.HousingCategory)
+        Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values
+            .Where(plotCube => plotCube.Metadata.Housing != null)
+            .GroupBy(plotCube => plotCube.Metadata.Housing!.HousingCategory)
             .ToDictionary(grouping => grouping.Key, grouping => grouping.Count());
 
         int decorationScore = 0;
@@ -451,15 +450,10 @@ public class HousingManager {
     }
 
     #region Helpers
-    public bool TryPlaceCube(HeldCube cube, Plot plot, in Vector3B position, float rotation,
+    public bool TryPlaceCube(HeldCube cube, Plot plot, ItemMetadata itemMetadata, in Vector3B position, float rotation,
                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
-        if (!session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? itemMetadata) || itemMetadata.Install is null || itemMetadata.Housing is null) {
-            logger.Error("Failed to get item metadata for cube {cubeId}.", cube.ItemId);
-            return false;
-        }
-
-        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing.IsNotAllowedInBlueprint) {
+        if (plot.PlotMode is PlotMode.BlueprintPlanner && itemMetadata.Housing!.IsNotAllowedInBlueprint) {
             if (itemMetadata.Housing.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
                 session.Send(CubePacket.Error(UgcMapError.s_err_cannot_install_nurturing_in_design_home));
             } else if (cube.ItemId is Constant.InteriorPortalCubeId) {
@@ -481,7 +475,7 @@ public class HousingManager {
             groundHeight = groundTile.Position.Z / Constant.BlockSize;
         }
 
-        bool isSolidCube = itemMetadata.Install.IsSolidCube;
+        bool isSolidCube = itemMetadata.Install!.IsSolidCube;
         bool isOnGround = Math.Abs(position.Z - groundHeight) < 0.1;
         bool allowWaterOnGround = itemMetadata.Install.MapAttribute is MapAttribute.water && Constant.AllowWaterOnGround;
 
@@ -512,16 +506,16 @@ public class HousingManager {
             return false;
         }
 
-        session.FunctionCubeMetadata.TryGet(itemMetadata.Install.InteractId, out FunctionCubeMetadata? functionCubeMetadata);
+        session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
 
         if (plot.IsPlanner) {
-            result = new PlotCube(cube.ItemId, FurnishingManager.NextCubeId(), cube.Template) {
+            result = new PlotCube(itemMetadata, FurnishingManager.NextCubeId(), cube.Template) {
                 Position = position,
                 Rotation = rotation,
-                HousingCategory = itemMetadata.Housing.HousingCategory,
+                Type = cube is LiftableCube ? PlotCube.CubeType.Liftable : PlotCube.CubeType.Construction,
             };
 
-            if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+            if (functionCubeMetadata is not null) {
                 result.Interact = new InteractCube(position, functionCubeMetadata);
             }
 
@@ -556,13 +550,9 @@ public class HousingManager {
 
         result.Position = position;
         result.Rotation = rotation;
-        result.HousingCategory = itemMetadata.Housing.HousingCategory;
-        if (result.ItemType.IsInteractFurnishing && functionCubeMetadata is not null) {
+        if (functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
-
-            if (result.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching) {
-                session.Field.AddFieldFunctionInteract(result);
-            }
+            session.Field.AddFieldFunctionInteract(result);
         }
         plot.Cubes.Add(position, result);
         return true;
@@ -578,7 +568,7 @@ public class HousingManager {
             session.Field.RemovePortal(cube.Interact.PortalSettings.PortalObjectId);
         }
 
-        if (cube.HousingCategory is HousingCategory.Farming or HousingCategory.Ranching && cube.Interact is not null) {
+        if (cube.Interact is not null) {
             session.Field.RemoveFieldFunctionInteract(cube.Interact.Id);
         }
 
@@ -685,7 +675,7 @@ public class HousingManager {
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
             cube.Id = item?.Uid ?? 0;
-            if (!TryPlaceCube(cube, plot, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+            if (!TryPlaceCube(cube, plot, item!.Metadata, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
                 return;
             }
 
@@ -696,7 +686,7 @@ public class HousingManager {
                 sendPacket = CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube);
             }
 
-            if (plotCube.ItemType.IsInteractFurnishing && plotCube.Interact is not null) {
+            if (plotCube.Interact is not null) {
                 if (cube.Interact?.PortalSettings is not null) {
                     plotCube.Interact.PortalSettings = cube.Interact.PortalSettings;
                 }

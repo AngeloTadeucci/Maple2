@@ -33,6 +33,8 @@ public partial class ChannelService {
                 return Task.FromResult(ExpiredVote(request.ReceiverIds, request.ExpiredVote));
             case PartyRequest.PartyOneofCase.StartVoteKick:
                 return Task.FromResult(StartVoteKick(request.ReceiverIds, request.PartyId, request.StartVoteKick));
+            case PartyRequest.PartyOneofCase.SetDungeon:
+                return Task.FromResult(SetDungeon(request.ReceiverIds, request.SetDungeon));
             default:
                 return Task.FromResult(new PartyResponse { Error = (int) PartyError.s_party_err_not_found });
         }
@@ -206,6 +208,22 @@ public partial class ChannelService {
             }
 
             session.Party.StartVoteKick(startVoteKick.CharacterId, startVoteKick.TargetId, startVoteKick.ReceiverIds);
+        }
+
+        return new PartyResponse();
+    }
+
+    private PartyResponse SetDungeon(IEnumerable<long> receiverIds, PartyRequest.Types.SetDungeon setDungeon) {
+        foreach (long characterId in receiverIds) {
+            if (!server.GetSession(characterId, out GameSession? session)) {
+                continue;
+            }
+
+            if (session.Party.Party?.Id != setDungeon.PartyId) {
+                continue;
+            }
+
+            session.Party.SetDungeon(setDungeon.DungeonId, setDungeon.DungeonRoomId, setDungeon.Set);
         }
 
         return new PartyResponse();

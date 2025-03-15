@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
 
@@ -13,12 +14,16 @@ public class FieldCommand : Command {
 
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
+    private readonly MapEntityStorage mapEntities;
 
-    public FieldCommand(GameSession session, MapMetadataStorage mapStorage) : base(NAME, DESCRIPTION) {
+    public FieldCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base(NAME, DESCRIPTION) {
         this.session = session;
         this.mapStorage = mapStorage;
+        this.mapEntities = mapEntities;
 
         AddCommand(new EntityInfoCommand(session));
+        AddCommand(new SpawnPointsCommand(session, mapStorage, mapEntities));
+
         this.SetHandler<InvocationContext>(Handle);
     }
 
@@ -29,7 +34,8 @@ public class FieldCommand : Command {
             return;
         }
 
-        ctx.Console.Out.WriteLine($"Map: {session.Field.MapId}, OwnerId: {session.Field.OwnerId}, InstanceId: {session.Field.InstanceId}, ({session.Field.Metadata.XBlock})");
+        ctx.Console.Out.WriteLine($"Map: {session.Field.MapId}, Channel: {session.Player.Value.Character.Channel} RoomId: {session.Field.RoomId}, \n"
+                                  + $"XBlock:({session.Field.Metadata.XBlock})");
     }
 
     private class EntityInfoCommand : Command {
@@ -60,6 +66,45 @@ public class FieldCommand : Command {
                 ctx.Console.Out.WriteLine($"Mob: {mob.Value.Metadata.Id} ({mob.Value.Metadata.Name})");
                 ctx.Console.Out.WriteLine($"  Position: {mob.Position}");
                 ctx.Console.Out.WriteLine($"  Rotation: {mob.Rotation}");
+            }
+        }
+    }
+
+    private class SpawnPointsCommand : Command {
+        private readonly GameSession session;
+        private readonly MapMetadataStorage mapStorage;
+        private readonly MapEntityStorage mapEntities;
+
+        public SpawnPointsCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base("spawnpoints", "Prints all spawn points in the map.") {
+            this.session = session;
+            this.mapStorage = mapStorage;
+            this.mapEntities = mapEntities;
+
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            if (session.Field == null) {
+                ctx.Console.Error.WriteLine("No active field");
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            if (!mapStorage.TryGet(session.Field.MapId, out MapMetadata? map)) {
+                ctx.Console.Out.WriteLine($"Unknown map: {session.Field.MapId}");
+                return;
+            }
+
+            MapEntityMetadata? mapEntityMetadata = mapEntities.Get(map.XBlock);
+            if (mapEntityMetadata == null) {
+                ctx.Console.Out.WriteLine($"No xblock data found for map: {session.Field.MapId}");
+                return;
+            }
+
+            foreach ((int id, SpawnPointPC spawnPoint) in mapEntityMetadata.PlayerSpawns) {
+                if (session.Field.TryGetPlayerSpawn(id, out FieldPlayerSpawnPoint? fieldPlayerSpawnPoint)) {
+                    ctx.Console.Out.WriteLine($"Id: {id}, Position: {spawnPoint.Position}. Enabled: {fieldPlayerSpawnPoint.Enable}");
+                }
             }
         }
     }

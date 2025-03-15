@@ -42,7 +42,7 @@ public partial class ChannelService {
     }
 
     private TimeEventResponse GetField(TimeEventRequest.Types.GetField field) {
-        FieldManager? manager = server.GetField(field.MapId, field.InstanceId);
+        FieldManager? manager = server.GetField(field.MapId, field.RoomId);
         if (manager == null) {
             return new TimeEventResponse();
         }
@@ -50,8 +50,8 @@ public partial class ChannelService {
         return new TimeEventResponse {
             Field = new FieldInfo {
                 MapId = manager.MapId,
-                InstanceId = manager.InstanceId,
-                OwnerId = manager.OwnerId,
+                RoomId = manager.RoomId,
+                OwnerId = manager is HomeFieldManager homeManager ? homeManager.OwnerId : 0,
                 PlayerIds = {
                     manager.Players.Values.Select(player => player.Value.Character.Id),
                 },

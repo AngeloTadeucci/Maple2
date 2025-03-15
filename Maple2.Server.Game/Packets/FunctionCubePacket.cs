@@ -4,6 +4,7 @@ using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
@@ -18,12 +19,12 @@ public static class FunctionCubePacket {
         Feed = 11,
     }
 
-    public static ByteWriter SendCubes(List<PlotCube> cubes) {
+    public static ByteWriter SendCubes(ICollection<FieldFunctionInteract> cubes) {
         var pWriter = Packet.Of(SendOp.FunctionCube);
         pWriter.Write<Command>(Command.SendCubes);
         pWriter.WriteInt(cubes.Count);
-        foreach (PlotCube cube in cubes) {
-            pWriter.WriteClass<InteractCube>(cube.Interact!);
+        foreach (FieldFunctionInteract cube in cubes) {
+            pWriter.WriteClass<InteractCube>(cube.InteractCube);
             pWriter.WriteByte();
         }
         return pWriter;

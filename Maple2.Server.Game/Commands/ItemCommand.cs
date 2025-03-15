@@ -51,20 +51,9 @@ public class ItemCommand : Command {
                 if (item.Metadata.Property.SlotMax == 0) {
                     ctx.Console.Error.WriteLine($"{itemId} has SlotMax of 0, ignoring...");
                     amount = Math.Clamp(amount, 1, int.MaxValue);
-                } else {
-                    amount = Math.Clamp(amount, 1, item.Metadata.Property.SlotMax);
                 }
             }
             item.Amount = amount;
-
-            using (GameStorage.Request db = session.GameStorage.Context()) {
-                item = db.CreateItem(session.CharacterId, item);
-                if (item == null) {
-                    ctx.Console.Error.WriteLine($"Failed to create item:{itemId} in database");
-                    ctx.ExitCode = 1;
-                    return;
-                }
-            }
 
             if (drop && session.Field != null) {
                 FieldItem fieldItem = session.Field.SpawnItem(session.Player, item);

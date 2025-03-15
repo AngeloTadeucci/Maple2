@@ -210,6 +210,7 @@ public class ConfigManager {
     public void UpdatePremiumTime(long hours) {
         if (session.Player.Value.Account.PremiumTime < DateTime.Now.ToEpochSeconds()) {
             session.Player.Value.Account.PremiumTime = DateTime.Now.AddHours(hours).ToEpochSeconds();
+            session.Dungeon.UpdateDungeonEnterLimit();
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Message | NoticePacket.Flags.Alert, StringCode.s_vip_coupon_new_msg));
         } else {
             session.Player.Value.Account.PremiumTime = Math.Min(session.Player.Value.Account.PremiumTime.FromEpochSeconds().AddHours(hours).ToEpochSeconds(), long.MaxValue);

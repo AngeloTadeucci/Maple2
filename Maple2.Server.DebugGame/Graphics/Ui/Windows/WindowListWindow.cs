@@ -110,7 +110,7 @@ public class WindowListWindow : IUiWindow {
                 ImGui.TableSetColumnIndex(2);
                 nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 2", window.ActiveRenderer?.Field.Metadata.Name ?? "", index), selected);
                 ImGui.TableSetColumnIndex(3);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 3", window.ActiveRenderer?.Field.InstanceId.ToString() ?? "", index), selected);
+                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 3", window.ActiveRenderer?.Field.RoomId.ToString() ?? "", index), selected);
 
                 if (nextSelected) {
                     SelectedWindow = window;

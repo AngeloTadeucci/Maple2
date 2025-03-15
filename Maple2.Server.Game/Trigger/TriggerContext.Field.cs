@@ -81,15 +81,15 @@ public partial class TriggerContext {
 
     public void SightRange(bool enabled, int range, int rangeZ, int border) {
         DebugLog("[SightRange] enabled:{Enabled}, range:{Range}, rangeZ:{RangeZ}, border:{Border}", enabled, range, rangeZ, border);
-        // range seems to be some ID? (3)
-        if (enabled) {
-            Field.AddFieldProperty(new FieldPropertySightRange {
-                Range = rangeZ,
-                Opacity = (byte) border,
-            });
-        } else {
-            Field.RemoveFieldProperty(FieldProperty.SightRange);
+        var sightRange = (Field.GetFieldProperty(FieldProperty.SightRange) as FieldPropertySightRange)!;
+        for (int i = 0; i < range; i++) {
+            sightRange.Fades[i] = rangeZ;
         }
+
+        sightRange.Opacity = (byte) border;
+        sightRange.Opaque = false;
+        sightRange.Unknown = enabled;
+        Broadcast(FieldPropertyPacket.Add(sightRange));
     }
 
     public void SetPvpZone(int boxId, int prepareTime, int matchTime, int additionalEffectId, int type, params int[] boxIds) {
@@ -442,7 +442,19 @@ public partial class TriggerContext {
     }
 
     public void StartCombineSpawn(int[] groupIds, bool isStart) {
-        ErrorLog("[StartCombineSpawn] groupIds:{Ids}, isStart:{IsStart}", string.Join(", ", groupIds), isStart);
+        DebugLog("[StartCombineSpawn] groupIds:{Ids}, isStart:{IsStart}", string.Join(", ", groupIds), isStart);
+        if (!Field.ServerTableMetadata.CombineSpawnTable.Groups.TryGetValue(Field.MapId, out Dictionary<int, SpawnGroupMetadata>? groupDict)) {
+            ErrorLog("[StartCombineSpawn] No group metadata found for map {MapId}", Field.MapId);
+            return;
+        }
+        foreach (int groupId in groupIds) {
+            if (!groupDict.TryGetValue(groupId, out SpawnGroupMetadata? group)) {
+                ErrorLog("[StartCombineSpawn] No group metadata found for group {GroupId}", groupId);
+                continue;
+            }
+
+            Field.ToggleCombineSpawn(group, isStart);
+        }
     }
 
     public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc) {

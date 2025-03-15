@@ -85,7 +85,8 @@ public record ItemMetadataFunction(
 
 public record ItemMetadataAdditionalEffect(
     int Id,
-    short Level);
+    short Level,
+    bool PickUpEffect);
 
 public record ItemMetadataOption(
     int StaticId,
@@ -116,7 +117,8 @@ public record ItemMetadataHousing(
 
 public record ItemMetadataInstall(
     bool IsSolidCube,
-    int InteractId,
+    int FunctionId,
+    int ObjectCubeId,
     MapAttribute MapAttribute
 );
 

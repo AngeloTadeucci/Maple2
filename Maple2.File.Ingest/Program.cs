@@ -49,15 +49,16 @@ string exportedPath = Path.Combine(ms2Root, "Resource/Exported.m2d");
 string serverPath = Path.Combine(ms2Root, "Server.m2d");
 
 if (!File.Exists(xmlPath)) {
-    throw new FileNotFoundException("Could not find Xml.m2d file");
+    throw new FileNotFoundException($"Could not find Xml.m2d file at path: {xmlPath}");
 }
 
 if (!File.Exists(exportedPath)) {
-    throw new FileNotFoundException("Could not find Exported.m2d file");
+    throw new FileNotFoundException($"Could not find Exported.m2d file at path: {exportedPath}");
 }
 
 if (!File.Exists(serverPath)) {
-    throw new FileNotFoundException("Could not find Server.m2d file, check discord for this file. Link in README.md");
+    throw new FileNotFoundException($"Could not find Server.m2d file at path: {serverPath}\n" +
+        "You can download this file from here: https://github.com/Zintixx/MapleStory2-XML/releases/latest");
 }
 
 string? server = Environment.GetEnvironmentVariable("DB_IP");

@@ -127,16 +127,15 @@ public class BuffManager : IUpdatable {
         // Logger.Information("> {Data}", additionalEffect.Property);
         if (owner is FieldPlayer player) {
             player.Session.ConditionUpdate(ConditionType.buff, codeLong: buff.Id);
+            player.Session.Dungeon.UpdateDungeonEnterLimit();
         }
         if (notifyField) {
             owner.Field.Broadcast(BuffPacket.Add(buff));
         }
     }
 
-    public bool HasBuff(int effectId, short effectLevel, int overlapCount) {
-        Buff? buff = null;
-
-        if (!Buffs.TryGetValue(effectId, out buff)) {
+    public bool HasBuff(int effectId, short effectLevel = 1, int overlapCount = 0) {
+        if (!Buffs.TryGetValue(effectId, out Buff? buff)) {
             return false;
         }
 
@@ -145,6 +144,10 @@ public class BuffManager : IUpdatable {
         }
 
         return effectLevel == 0 || buff.Level >= effectLevel;
+    }
+
+    public bool HasBuff(BuffEventType eventType) {
+        return Buffs.Values.Any(buff => buff.Metadata.Property.EventType == eventType);
     }
 
     private void SetReflect(Buff buff) {

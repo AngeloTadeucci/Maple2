@@ -149,7 +149,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 IsNotAllowedInBlueprint: data.housing.doNotInstallBlueprint);
             ItemMetadataInstall? install = data.property.type != 6 ? null : new ItemMetadataInstall(
                 IsSolidCube: data.install.cubeProp == 1,
-                InteractId: data.install.objCode,
+                FunctionId: data.install.funcCode,
+                ObjectCubeId: data.install.objCode,
                 MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
             yield return new ItemMetadata(
@@ -214,8 +215,9 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 ),
                 Skill: skill,
                 Function: function,
-                AdditionalEffects: data.AdditionalEffect.id.Zip(data.AdditionalEffect.level,
-                    (skillId, level) => new ItemMetadataAdditionalEffect(skillId, level)).ToArray(),
+                AdditionalEffects: data.AdditionalEffect.id
+                .Zip(data.AdditionalEffect.level, (skillId, level) => new ItemMetadataAdditionalEffect(skillId, level, data.AdditionalEffect.dropEffect))
+                .ToArray(),
                 Option: option,
                 Music: music,
                 Housing: housing,

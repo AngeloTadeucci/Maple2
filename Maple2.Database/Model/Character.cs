@@ -21,6 +21,7 @@ internal class Character {
     public int MapId { get; set; }
     public int ReturnMapId { get; set; }
     public short Channel { get; set; }
+    public short ReturnChannel { get; set; }
     public required Experience Experience { get; set; }
     public required Profile Profile { get; set; }
     public required Cooldown Cooldown { get; set; }
@@ -73,6 +74,7 @@ internal class Character {
             },
             DeleteTime = other.DeleteTime.FromEpochSeconds(),
             Channel = other.Channel,
+            ReturnChannel = other.ReturnChannel,
         };
     }
 
@@ -102,6 +104,7 @@ internal class Character {
             StorageCooldown = other.Cooldown.Storage,
             DeleteTime = other.DeleteTime.ToEpochSeconds(),
             Channel = other.Channel,
+            ReturnChannel = other.ReturnChannel,
         };
     }
 

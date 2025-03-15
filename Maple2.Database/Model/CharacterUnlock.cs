@@ -17,6 +17,7 @@ internal class CharacterUnlock {
     public required IList<int> Emotes { get; set; }
     public required IDictionary<int, long> StickerSets { get; set; }
     public required IDictionary<int, bool> MasteryRewardsClaimed { get; set; }
+    public required IDictionary<int, DungeonRankReward> DungeonRankRewards { get; set; }
     public required IDictionary<int, short> Pets { get; set; }
     public required IList<FishEntry> FishAlbum { get; set; }
     public required ISet<int> InteractedObjects { get; set; }
@@ -38,6 +39,7 @@ internal class CharacterUnlock {
             Expand = new InventoryExpand(),
             InteractedObjects = new SortedSet<int>(),
             CollectedItems = new Dictionary<int, byte>(),
+            DungeonRankRewards = new Dictionary<int, DungeonRankReward>(),
         } : new CharacterUnlock {
             LastModified = other.LastModified,
             Expand = new InventoryExpand {
@@ -64,6 +66,7 @@ internal class CharacterUnlock {
             Emotes = other.Emotes,
             StickerSets = other.StickerSets,
             MasteryRewardsClaimed = other.MasteryRewardsClaimed,
+            DungeonRankRewards = other.DungeonRankRewards.Values.Select<Maple2.Model.Game.Dungeon.DungeonRankReward, DungeonRankReward>(reward => reward).ToDictionary(reward => reward.Id),
             Pets = other.Pets,
             FishAlbum = other.FishAlbum.Values.Select<Maple2.Model.Game.FishEntry, FishEntry>(fish => fish).ToArray(),
             InteractedObjects = other.InteractedObjects,
@@ -141,6 +144,7 @@ internal class CharacterUnlock {
         builder.Property(unlock => unlock.FishAlbum).HasJsonConversion().IsRequired();
         builder.Property(unlock => unlock.InteractedObjects).HasJsonConversion().IsRequired();
         builder.Property(unlock => unlock.CollectedItems).HasJsonConversion().IsRequired();
+        builder.Property(unlock => unlock.DungeonRankRewards).HasJsonConversion().IsRequired();
 
         builder.Property(unlock => unlock.LastModified).IsRowVersion();
     }

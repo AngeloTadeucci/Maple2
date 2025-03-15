@@ -18,6 +18,7 @@ public class FieldInteract : FieldEntity<InteractObjectMetadata> {
 
     private int reactLimit;
     public InteractState State { get; private set; }
+    public int SpawnId { get; init; }
 
     public FieldInteract(FieldManager field, int objectId, string entityId, InteractObjectMetadata value, IInteractObject interactObject) : base(field, objectId, value) {
         EntityId = entityId;

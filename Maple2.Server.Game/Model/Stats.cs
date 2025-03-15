@@ -7,6 +7,7 @@ namespace Maple2.Server.Game.Model;
 
 public class Stats {
     public const int BASIC_TOTAL = 35;
+    public const int SPECIAL_TOTAL = 180;
 
     private readonly Dictionary<BasicAttribute, Stat> basicValues;
     private readonly Dictionary<SpecialAttribute, Stat> specialValues;
@@ -41,6 +42,7 @@ public class Stats {
 
     public void Reset(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
         basicValues.Clear();
+        specialValues.Clear();
 
         foreach (BasicAttribute attribute in metadata.Keys) {
             if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {

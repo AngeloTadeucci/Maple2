@@ -291,7 +291,7 @@ public static class FieldPacket {
         writer.WriteInt();
         writer.WriteInt(character.ReturnMapId);
         writer.WriteInt(character.MapId);
-        writer.WriteInt(character.InstanceId);
+        writer.WriteInt(character.RoomId);
         writer.WriteShort(character.Level);
         writer.WriteShort(character.Channel);
         writer.WriteInt((int) character.Job.Code());

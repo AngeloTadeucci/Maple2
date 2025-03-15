@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 
@@ -31,9 +29,10 @@ public class Character {
     public int Title;
     public short Insignia;
 
-    public int InstanceId;
+    public int RoomId;
     public int InstanceMapId;
     public short Channel;
+    public short ReturnChannel;
 
     public long StorageCooldown;
     public long DoctorCooldown;
@@ -50,5 +49,6 @@ public class Character {
     public required Mastery Mastery;
     public AchievementInfo AchievementInfo;
     public MarriageInfo MarriageInfo;
+    public readonly Dictionary<int, DungeonEnterLimit> DungeonEnterLimits = [];
     public long PremiumTime;
 }

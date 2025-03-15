@@ -18,12 +18,17 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
     protected override IEnumerable<FunctionCubeMetadata> Map() {
         foreach ((int id, FunctionCubeRoot functionCubeRoot) in parser.Parse()) {
             FunctionCube functionCube = functionCubeRoot.FunctionCube;
+
+            if (!Enum.TryParse(functionCube.ControlType, out InteractCubeControlType controlTypet)) {
+                Console.WriteLine($"Unknown control type: {functionCube.ControlType}");
+            }
             ConfigurableCube? configurableCube = functionCubeRoot.ConfigurableCube;
             yield return new FunctionCubeMetadata(
                 Id: id,
                 RecipeId: functionCube.receipeID,
                 ConfigurableCubeType: configurableCube is not null ? (ConfigurableCubeType) configurableCube.id : ConfigurableCubeType.None,
                 DefaultState: (InteractCubeState) functionCube.DefaultState,
+                ControlType: Enum.TryParse(functionCube.ControlType, out InteractCubeControlType controlType) ? controlType : InteractCubeControlType.None,
                 AutoStateChange: functionCube.AutoStateChange,
                 AutoStateChangeTime: functionCube.AutoStateChangeTime,
                 Nurturing: ParseNurturing(functionCube.nurturing)

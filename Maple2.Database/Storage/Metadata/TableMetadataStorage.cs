@@ -14,10 +14,7 @@ public class TableMetadataStorage {
     private readonly Lazy<MagicPathTable> magicPathTable;
     private readonly Lazy<MasteryRecipeTable> masteryRecipeTable;
     private readonly Lazy<MasteryRewardTable> masteryRewardTable;
-    private readonly Lazy<FishTable> fishTable;
     private readonly Lazy<FishingRodTable> fishingRodTable;
-    private readonly Lazy<FishingSpotTable> fishingSpotTable;
-    private readonly Lazy<FishingRewardTable> fishingRewardTable;
     private readonly Lazy<InstrumentTable> instrumentTable;
     private readonly Lazy<InteractObjectTable> interactObjectTable;
     private readonly Lazy<LapenshardUpgradeTable> lapenshardUpgradeTable;
@@ -65,6 +62,9 @@ public class TableMetadataStorage {
     private readonly Lazy<ItemEquipVariationTable> petVariationTable;
     private readonly Lazy<ItemEquipVariationTable> weaponVariationTable;
 
+    private readonly Lazy<DungeonRoomTable> dungeonRoomTable;
+    private readonly Lazy<DungeonRankRewardTable> dungeonRankRewardTable;
+
     public ChatStickerTable ChatStickerTable => chatStickerTable.Value;
     public DefaultItemsTable DefaultItemsTable => defaultItemsTable.Value;
     public ItemBreakTable ItemBreakTable => itemBreakTable.Value;
@@ -74,10 +74,7 @@ public class TableMetadataStorage {
     public MagicPathTable MagicPathTable => magicPathTable.Value;
     public MasteryRecipeTable MasteryRecipeTable => masteryRecipeTable.Value;
     public MasteryRewardTable MasteryRewardTable => masteryRewardTable.Value;
-    public FishTable FishTable => fishTable.Value;
     public FishingRodTable FishingRodTable => fishingRodTable.Value;
-    public FishingSpotTable FishingSpotTable => fishingSpotTable.Value;
-    public FishingRewardTable FishingRewardTable => fishingRewardTable.Value;
     public InstrumentTable InstrumentTable => instrumentTable.Value;
     public InteractObjectTable InteractObjectTable => interactObjectTable.Value;
     public LapenshardUpgradeTable LapenshardUpgradeTable => lapenshardUpgradeTable.Value;
@@ -125,6 +122,9 @@ public class TableMetadataStorage {
     public ItemEquipVariationTable PetVariationTable => petVariationTable.Value;
     public ItemEquipVariationTable WeaponVariationTable => weaponVariationTable.Value;
 
+    public DungeonRoomTable DungeonRoomTable => dungeonRoomTable.Value;
+    public DungeonRankRewardTable DungeonRankRewardTable => dungeonRankRewardTable.Value;
+
     public TableMetadataStorage(MetadataContext context) {
         chatStickerTable = Retrieve<ChatStickerTable>(context, "chatemoticon.xml");
         defaultItemsTable = Retrieve<DefaultItemsTable>(context, "defaultitems.xml");
@@ -135,10 +135,7 @@ public class TableMetadataStorage {
         magicPathTable = Retrieve<MagicPathTable>(context, "magicpath.xml");
         masteryRecipeTable = Retrieve<MasteryRecipeTable>(context, "masteryreceipe.xml");
         masteryRewardTable = Retrieve<MasteryRewardTable>(context, "mastery.xml");
-        fishTable = Retrieve<FishTable>(context, "fish.xml");
         fishingRodTable = Retrieve<FishingRodTable>(context, "fishingrod.xml");
-        fishingSpotTable = Retrieve<FishingSpotTable>(context, "fishingspot.xml");
-        fishingRewardTable = Retrieve<FishingRewardTable>(context, "fishingreward.json");
         instrumentTable = Retrieve<InstrumentTable>(context, "instrumentcategoryinfo.xml");
         interactObjectTable = Retrieve<InteractObjectTable>(context, "interactobject*.xml");
         lapenshardUpgradeTable = Retrieve<LapenshardUpgradeTable>(context, "itemlapenshardupgrade.xml");
@@ -183,6 +180,8 @@ public class TableMetadataStorage {
         armorVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_armor.xml");
         petVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_pet.xml");
         weaponVariationTable = Retrieve<ItemEquipVariationTable>(context, "itemoptionvariation_weapon.xml");
+        dungeonRoomTable = Retrieve<DungeonRoomTable>(context, "dungeonroom.xml");
+        dungeonRankRewardTable = Retrieve<DungeonRankRewardTable>(context, "dungeonrankreward.xml");
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : Table {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Maple2.Model.Enum;
+using Maple2.Model.Game.Dungeon;
 
 namespace Maple2.Model.Game;
 
@@ -32,6 +33,7 @@ public class Unlock {
     public readonly IList<int> Emotes = new List<int>();
     public readonly IDictionary<int, long> StickerSets = new Dictionary<int, long>();
     public readonly IDictionary<int, bool> MasteryRewardsClaimed = new Dictionary<int, bool>();
+    public readonly IDictionary<int, DungeonRankReward> DungeonRankRewards = new Dictionary<int, DungeonRankReward>();
     public readonly IDictionary<int, short> Pets = new SortedDictionary<int, short>();
     public readonly IDictionary<int, FishEntry> FishAlbum = new Dictionary<int, FishEntry>();
 

@@ -1,12 +1,12 @@
 ﻿using Maple2.Database.Storage;
 using Maple2.Model.Enum;
-using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using PlotMode = Maple2.Model.Enum.PlotMode;
@@ -83,7 +83,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Field.OwnerId == accountId && session.Field.MapId == Constant.DefaultHomeMapId) {
+        if (session.Field is HomeFieldManager homeFieldManager && homeFieldManager.OwnerId == accountId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_home_returnable_forbidden_to_sameplace));
             return;
         }
@@ -100,7 +100,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             }
         }
 
-        session.MigrateToHome(home);
+        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
     }
 
     private void HandleReturn(GameSession session) {

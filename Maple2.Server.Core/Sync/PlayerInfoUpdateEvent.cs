@@ -18,12 +18,13 @@ public enum UpdateField {
     Trophy = 256,
     PremiumTime = 512,
     Clubs = 1024,
+    Dungeon = 2048,
 
     // Presets
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
     Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
     Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs | Dungeon,
     GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs,
     Marriage = Profile,
     All = int.MaxValue,
@@ -47,6 +48,10 @@ public class PlayerInfoUpdateEvent {
         } else if (request.HasMotto && player.Motto != request.Motto) {
             Type |= UpdateField.Profile;
         } else if (request.HasGender && player.Gender != (Gender) request.Gender) {
+            Type |= UpdateField.Profile;
+        } else if (request.HasGuildId && player.GuildId != request.GuildId) {
+            Type |= UpdateField.Profile;
+        } else if (request.HasGuildName && player.GuildName != request.GuildName) {
             Type |= UpdateField.Profile;
         }
         if (request.HasJob && player.Job != (Job) request.Job) {
@@ -104,6 +109,12 @@ public class PlayerInfoUpdateEvent {
         if (request.Clubs != null) {
             if (player.ClubIds != request.Clubs.Select(club => club.Id).ToList()) {
                 Type |= UpdateField.Clubs;
+            }
+        }
+
+        if (request.DungeonEnterLimits != null) {
+            if (player.DungeonEnterLimits != request.DungeonEnterLimits.Select(dungeon => new KeyValuePair<int, DungeonEnterLimit>(dungeon.DungeonId, (DungeonEnterLimit) dungeon.Limit)).ToDictionary()) {
+                Type |= UpdateField.Dungeon;
             }
         }
     }

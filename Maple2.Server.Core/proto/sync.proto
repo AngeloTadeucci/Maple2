@@ -27,6 +27,11 @@ message ClubUpdate {
   int64 id = 1;
 }
 
+message DungeonEnterLimitUpdate {
+  int32 dungeon_id = 1;
+  int32 limit = 2;
+}
+
 // Requests
 message MailNotificationRequest {
   int64 mail_id = 1;
@@ -53,13 +58,16 @@ message PlayerUpdateRequest {
   optional int32 channel = 12;
   optional int64 premium_time = 13;
   optional int64 last_online_time = 14;
-  optional HealthUpdate health = 15;
-  optional HomeUpdate home = 16;
-  optional TrophyUpdate trophy = 17;
-  repeated ClubUpdate clubs = 18;
+  optional int64 guild_id = 15;
+  optional string guild_name = 16;
+  optional HealthUpdate health = 17;
+  optional HomeUpdate home = 18;
+  optional TrophyUpdate trophy = 19;
+  repeated ClubUpdate clubs = 20;
+  repeated DungeonEnterLimitUpdate dungeon_enter_limits = 21;
 
   // Batch updates in a queue rather than immediately forwarding.
-  bool async = 20;
+  bool async = 22;
 }
 
 message PlayerUpdateResponse {
@@ -85,8 +93,11 @@ message PlayerInfoResponse {
   int64 last_online_time = 12;
   int32 map_id = 13;
   int32 channel = 14;
-  HealthUpdate health = 15;
-  HomeUpdate home = 16;
-  TrophyUpdate trophy = 17;
-  repeated ClubUpdate clubs = 18;
+  int64 guild_id = 15;
+  string guild_name = 16;
+  HealthUpdate health = 17;
+  HomeUpdate home = 18;
+  TrophyUpdate trophy = 19;
+  repeated ClubUpdate clubs = 20;
+  repeated DungeonEnterLimitUpdate dungeon_enter_limits = 21;
 }

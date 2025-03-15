@@ -219,69 +219,7 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        switch (session.HeldCube) {
-            case PlotCube _:
-                Plot? plot = session.Housing.GetFieldPlot();
-                if (plot == null) {
-                    return;
-                }
-
-                if (!session.Housing.TryPlaceCube(cubeItem, plot, position, rotation, out PlotCube? plotCube)) {
-                    return;
-                }
-
-                session.Field.Broadcast(CubePacket.PlaceCube(session.Player.ObjectId, plot, plotCube));
-
-                if (plotCube.ItemType.IsInteractFurnishing) {
-                    if (plotCube.Interact is null) {
-                        Logger.Error("Cube {CubeId} is InteractFurnishing but Interact is null", plotCube.Id);
-                        return;
-                    }
-
-                    if (plotCube.Interact.Nurturing is not null) {
-                        using GameStorage.Request db = session.GameStorage.Context();
-                        Nurturing? nurturing = db.GetNurturing(session.AccountId, plotCube.ItemId);
-                        if (nurturing is null) {
-                            nurturing = db.CreateNurturing(session.AccountId, plotCube);
-                            if (nurturing is null) {
-                                Logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
-                                return;
-                            }
-                        }
-                        plotCube.Interact.Nurturing = nurturing;
-                    }
-                    session.Field.Broadcast(FunctionCubePacket.AddFunctionCube(plotCube.Interact));
-                }
-
-                if (plot.IsPlanner) {
-                    return;
-                }
-                break;
-            case LiftableCube liftable:
-                FieldLiftable? fieldLiftable = session.Field.AddLiftable(position.ToString(), liftable.Liftable);
-                if (fieldLiftable == null) {
-                    return;
-                }
-
-                session.HeldCube = null;
-                fieldLiftable.Count = 1;
-                fieldLiftable.State = LiftableState.Disabled;
-                fieldLiftable.Position = position;
-                fieldLiftable.Rotation = new Vector3(0, 0, rotation);
-                fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.FinishTime + fieldLiftable.Value.ItemLifetime;
-
-                if (session.Field.Entities.LiftableTargetBoxes.TryGetValue(position, out LiftableTargetBox? liftableTarget)) {
-                    session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId, targetLong: liftableTarget.LiftableTarget);
-                }
-
-                session.Field.Broadcast(LiftablePacket.Add(fieldLiftable));
-                session.Field.Broadcast(CubePacket.PlaceLiftable(session.Player.ObjectId, liftable, position, rotation));
-                session.Field.Broadcast(SetCraftModePacket.Stop(session.Player.ObjectId));
-                session.Field.Broadcast(LiftablePacket.Update(fieldLiftable));
-                break;
-        }
-
-        session.ConditionUpdate(ConditionType.install_item, codeLong: cubeItem.ItemId);
+        session.Field.PlaceCube(session, cubeItem, position, rotation);
     }
 
     private void HandleRemoveCube(GameSession session, IByteReader packet) {
@@ -342,7 +280,10 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Housing.TryPlaceCube(cubeItem, plot, position, rotation, out PlotCube? placedCube, isReplace: true)) {
+        if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? metdata)) {
+            return;
+        }
+        if (session.Housing.TryPlaceCube(cubeItem, plot, metdata, position, rotation, out PlotCube? placedCube, isReplace: true)) {
             session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
         }
     }
@@ -545,16 +486,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandleInteriorDesignReward(GameSession session, IByteReader packet) {
-        Plot? plot = session.Housing.GetFieldPlot();
-        if (plot == null) {
-            return;
-        }
-
-        if (plot.OwnerId != session.AccountId) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_dont_have_ownership));
-            return;
-        }
-
         byte rewardId = packet.ReadByte();
         session.Housing.InteriorReward(rewardId);
     }
@@ -741,11 +672,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             CharacterId = session.CharacterId,
             CharacterName = session.PlayerName,
         };
-
-        item = db.CreateItem(session.CharacterId, item);
-        if (item == null) {
-            return;
-        }
 
         session.Item.Inventory.Add(item, notifyNew: true);
 

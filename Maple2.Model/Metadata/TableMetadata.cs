@@ -48,10 +48,7 @@ public class TableMetadata {
 [JsonDerivedType(typeof(ChatStickerTable), typeDiscriminator: "chatsticker")]
 [JsonDerivedType(typeof(MasteryRecipeTable), typeDiscriminator: "masteryrecipe")]
 [JsonDerivedType(typeof(MasteryRewardTable), typeDiscriminator: "masteryreward")]
-[JsonDerivedType(typeof(FishTable), typeDiscriminator: "fish")]
-[JsonDerivedType(typeof(FishingSpotTable), typeDiscriminator: "fishingspot")]
 [JsonDerivedType(typeof(FishingRodTable), typeDiscriminator: "fishingrod")]
-[JsonDerivedType(typeof(FishingRewardTable), typeDiscriminator: "fishingreward")]
 [JsonDerivedType(typeof(GuildTable), typeDiscriminator: "guild")]
 [JsonDerivedType(typeof(PremiumClubTable), typeDiscriminator: "vip")]
 [JsonDerivedType(typeof(IndividualItemDropTable), typeDiscriminator: "individualitemdrop")]
@@ -80,4 +77,6 @@ public class TableMetadata {
 [JsonDerivedType(typeof(WeddingTable), typeDiscriminator: "wedding*")]
 [JsonDerivedType(typeof(MasteryUgcHousingTable), typeDiscriminator: "masteryugchousing")]
 [JsonDerivedType(typeof(UgcHousingPointRewardTable), typeDiscriminator: "ugchousingpointreward")]
+[JsonDerivedType(typeof(DungeonRoomTable), typeDiscriminator: "dungeonroom")]
+[JsonDerivedType(typeof(DungeonRankRewardTable), typeDiscriminator: "dungeonrankreward")]
 public abstract record Table;

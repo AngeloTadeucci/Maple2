@@ -3,12 +3,13 @@
 namespace Maple2.Model.Enum;
 
 public enum LiquidType {
-    water = 0,
-    seawater = 1,
-    lava = 2,
-    poison = 3,
-    oil = 4,
-    devilwater = 5,
-    emeraldwater = 6,
-    all = 7,
+    none = 0,
+    water = 1,
+    seawater = 2,
+    lava = 3,
+    poison = 4,
+    oil = 5,
+    devilwater = 6,
+    emeraldwater = 7,
+    all = 8,
 }

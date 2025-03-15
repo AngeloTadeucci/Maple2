@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
@@ -22,6 +19,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     // Premium
     public long PremiumTime { get; set; }
     public List<long> ClubIds { get; set; }
+    public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {
@@ -32,6 +30,9 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             AchievementInfo = player.Character.AchievementInfo,
             PremiumTime = player.Character.PremiumTime,
             LastOnlineTime = player.Character.LastOnlineTime,
+            DungeonEnterLimits = player.Character.DungeonEnterLimits,
+            GuildId = player.Character.GuildId,
+            GuildName = player.Character.GuildName,
         };
     }
 
@@ -39,6 +40,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         HomeName = string.IsNullOrWhiteSpace(homeName) ? "Unknown" : homeName;
         AchievementInfo = achievementInfo;
         ClubIds = new List<long>(clubsIds);
+        DungeonEnterLimits = [];
     }
 
     public PlayerInfo Clone() {
@@ -72,8 +74,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.Write<SkinColor>(default);
         writer.WriteLong();
         writer.Write<AchievementInfo>(default);
-        writer.WriteLong(); // Guild Id
-        writer.WriteUnicodeString(); // Guild Name
+        writer.WriteLong(GuildId);
+        writer.WriteUnicodeString(GuildName);
         writer.WriteUnicodeString(Motto);
         writer.WriteUnicodeString(Picture);
         writer.WriteByte((byte) ClubIds.Count);
@@ -126,6 +128,10 @@ public class CharacterInfo {
     public short Channel { get; set; }
     public long LastOnlineTime { get; set; }
 
+    // Guild
+    public long GuildId { get; set; }
+    public string GuildName { get; set; }
+
     public long UpdateTime { get; set; }
     public bool Online => Channel != 0;
 
@@ -152,6 +158,8 @@ public class CharacterInfo {
         MapId = other.MapId;
         Channel = other.Channel;
         LastOnlineTime = other.LastOnlineTime;
+        GuildId = other.GuildId;
+        GuildName = other.GuildName;
     }
 
     public static implicit operator CharacterInfo(Player player) {
@@ -166,6 +174,8 @@ public class CharacterInfo {
             level: player.Character.Level) {
             MapId = player.Character.MapId,
             Channel = player.Character.Channel,
+            GuildId = player.Character.GuildId,
+            GuildName = player.Character.GuildName,
         };
     }
 }

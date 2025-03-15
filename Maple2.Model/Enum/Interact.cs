@@ -46,3 +46,28 @@ public enum GatherResult : short {
     Success = 0,
     Fail = 1,
 }
+
+public enum InteractCubeState {
+    None = 0,
+    InUse = 1,
+    Available = 2,
+}
+
+public enum InteractCubeControlType {
+    None,
+    Farming,
+    Breeding,
+    Switch,
+    Skill,
+    Nurturing,
+    Ride,
+    SpawnNPC,
+    OpenWeb,
+    Sensor,
+    FunctionUI,
+    Notice,
+    InstallNPC,
+    Portal,
+    SpawnPoint,
+    PVP
+}

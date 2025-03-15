@@ -15,7 +15,7 @@ public partial class GameStorage {
             }
             bool success = Context.TrySaveChanges();
 
-            return success ? homeLayout : null;
+            return success ? ToHomeLayout(homeLayout) : null;
         }
 
         public void RemoveHomeLayout(HomeLayout layout) {
@@ -28,6 +28,7 @@ public partial class GameStorage {
             HomeLayout? layout = Context.HomeLayout
                 .Where(homeLayout => homeLayout.Uid == layoutUid)
                 .Include(homeLayout => homeLayout.Cubes)
+                .Select(ToHomeLayout)
                 .FirstOrDefault();
 
             return layout;

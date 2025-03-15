@@ -46,62 +46,55 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        // Can this happen outside a housing plot?
-        Plot? plot = session.Housing.GetFieldPlot();
-        if (plot is null) {
+        FieldFunctionInteract? fieldInteract = session.Field.TryGetFieldFunctionInteract(interactId);
+        if (fieldInteract is null) {
+            Logger.Error("Interact cube not found for interactId {0}", interactId);
             return;
         }
 
-        if (!int.TryParse(interactId.Split('_')[1], out int positionInt)) {
-            Logger.Error("Failed to parse position from interactId {0}", interactId);
-            return;
-        }
-
-        Vector3B position = Vector3B.ConvertFromInt(positionInt);
-
-        if (!plot.Cubes.TryGetValue(position, out PlotCube? cube)) {
-            return;
-        }
-
-        if (cube.Interact is null) {
-            return;
-        }
-
-        switch (cube.HousingCategory) {
-            case HousingCategory.Event:
-                if (cube.Interact.Nurturing is not null) {
-                    HandleNurturing(session, plot, cube);
+        switch (fieldInteract.Value.ControlType) {
+            case InteractCubeControlType.Nurturing:
+                if (fieldInteract.InteractCube.Nurturing is not null) {
+                    HandleNurturing(session, fieldInteract);
                 }
-
                 break;
-            case HousingCategory.Farming:
-            case HousingCategory.Ranching:
-                FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(cube.Interact.Id);
-                if (fieldFunctionInteract?.Cube.Interact is not null && fieldFunctionInteract.Use()) {
-                    session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.Cube.Interact));
+            case InteractCubeControlType.Farming:
+            case InteractCubeControlType.Breeding:
+                FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(fieldInteract.InteractCube.Id);
+                if (fieldFunctionInteract != null && fieldFunctionInteract.Use()) {
+                    session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.InteractCube));
 
                     session.Mastery.Gather(fieldFunctionInteract);
                 }
                 break;
             default:
-                if (cube.Interact.State is InteractCubeState.InUse && cube.Interact.InteractingCharacterId != session.CharacterId) {
+                if (fieldInteract.InteractCube.State is InteractCubeState.InUse && fieldInteract.InteractCube.InteractingCharacterId != session.CharacterId) {
                     return;
                 }
 
-                bool isInDefaultState = cube.Interact.State == cube.Interact.DefaultState;
-                cube.Interact.State = isInDefaultState ? InteractCubeState.InUse : cube.Interact.DefaultState;
-                cube.Interact.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
-                session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
-                session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, cube.Interact));
+                bool isInDefaultState = fieldInteract.InteractCube.State == fieldInteract.InteractCube.Metadata.DefaultState;
+                fieldInteract.InteractCube.State = isInDefaultState ? InteractCubeState.InUse : fieldInteract.InteractCube.Metadata.DefaultState;
+                fieldInteract.InteractCube.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
+                session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldInteract.InteractCube));
+                session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, fieldInteract.InteractCube));
                 break;
         }
     }
 
-    private void HandleNurturing(GameSession session, Plot plot, PlotCube cube) {
+    private void HandleNurturing(GameSession session, FieldFunctionInteract fieldCube) {
+        if (fieldCube.Value.Nurturing is null) {
+            return;
+        }
+
+        Plot? plot = session.Housing.GetFieldPlot();
+        if (plot is null) {
+            return;
+        }
+
         using GameStorage.Request db = session.GameStorage.Context();
-        Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, cube.ItemId);
+        Nurturing? dbNurturing = db.GetNurturing(plot.OwnerId, fieldCube.Value.Id, fieldCube.Value.Nurturing);
         if (dbNurturing is null) {
-            Logger.Error("Nurturing not found for account id {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Nurturing not found for account id {0} and interact id {1}", session.AccountId, fieldCube.Value.Id);
             return;
         }
 
@@ -111,11 +104,11 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         }
 
         // always update object reference
-        cube.Interact!.Nurturing = dbNurturing;
-        Nurturing? nurturing = cube.Interact.Nurturing;
+        fieldCube.InteractCube.Nurturing = dbNurturing;
+        Nurturing? nurturing = fieldCube.InteractCube.Nurturing;
 
         if (session.AccountId != plot.OwnerId) {
-            HandlePlayNurturing(session, plot, cube, nurturing, db);
+            HandlePlayNurturing(session, plot, fieldCube, nurturing, db);
             return;
         }
 
@@ -126,16 +119,16 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
 
             Item? rewardStageItem = session.Field.ItemDrop.CreateItem(requiredGrowth.Reward.ItemId, rarity: requiredGrowth.Reward.Rarity, amount: requiredGrowth.Reward.Amount);
             if (rewardStageItem is null) {
-                Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
+                Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, fieldCube.InteractCube.Metadata.Id);
                 return;
             }
 
             // drop the item
-            FieldItem fieldRewardStageItem = session.Field.SpawnItem(session.Player, cube.Position, new Vector3(0, 0, cube.Rotation), rewardStageItem, session.CharacterId);
+            FieldItem fieldRewardStageItem = session.Field.SpawnItem(session.Player, fieldCube.Position, fieldCube.Rotation, rewardStageItem, session.CharacterId);
             session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
-            db.UpdateNurturing(session.AccountId, cube);
+            db.UpdateNurturing(session.AccountId, fieldCube.InteractCube);
 
-            session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
+            session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldCube.InteractCube));
             return;
         }
 
@@ -151,27 +144,27 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         RewardItem rewardFeedItem = nurturing.NurturingMetadata.RewardFeed;
         Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardFeedItem.ItemId, rarity: rewardFeedItem.Rarity, amount: rewardFeedItem.Amount);
         if (rewardItem is null) {
-            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, fieldCube.InteractCube.Metadata.Id);
             return;
         }
 
         // drop the item
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, cube.Position, new Vector3(0, 0, cube.Rotation), rewardItem, session.CharacterId);
+        FieldItem fieldItem = session.Field.SpawnItem(session.Player, fieldCube.Position, fieldCube.Rotation, rewardItem, session.CharacterId);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
         nurturing.Feed();
-        db.UpdateNurturing(session.AccountId, cube);
+        db.UpdateNurturing(session.AccountId, fieldCube.InteractCube);
 
-        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact));
-        session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, cube.Id, cube.Interact));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldCube.InteractCube));
+        session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, fieldCube.CubeId, fieldCube.InteractCube));
     }
 
-    private void HandlePlayNurturing(GameSession session, Plot plot, PlotCube cube, Nurturing nurturing, GameStorage.Request db) {
+    private void HandlePlayNurturing(GameSession session, Plot plot, FieldFunctionInteract cube, Nurturing nurturing, GameStorage.Request db) {
         if (nurturing.PlayedBy.Contains(session.AccountId)) {
             session.Send(NoticePacket.Message("You already played with this pet today. TODO: Find correct string id")); // TODO: Find correct string id
             return;
         }
 
-        if (db.CountNurturingForAccount(cube.ItemId, session.AccountId) >= Constant.NurturingPlayMaxCount) {
+        if (db.CountNurturingForAccount(cube.InteractCube.Metadata.Id, session.AccountId) >= Constant.NurturingPlayMaxCount) {
             session.Send(NoticePacket.Message("You have already played with the maximum number of pets today. TODO: Find correct string id")); // TODO: Find correct string id
             return;
         }
@@ -183,22 +176,22 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         RewardItem rewardPlay = nurturing.NurturingMetadata.Feed;
         Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
         if (rewardItem is null) {
-            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, cube.Value.Id);
             return;
         }
 
         // drop the item
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, cube.Position, new Vector3(0, 0, cube.Rotation), rewardItem, session.CharacterId);
+        FieldItem fieldItem = session.Field.SpawnItem(session.Player, cube.Position, cube.Rotation, rewardItem, session.CharacterId);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
 
-        db.UpdateNurturing(plot.OwnerId, cube);
+        db.UpdateNurturing(plot.OwnerId, cube.InteractCube);
 
-        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.Interact!));
+        session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(cube.InteractCube));
 
         Mail? mail = CreateOwnerMail(session, plot.OwnerId, nurturing.NurturingMetadata);
 
         if (mail == null) {
-            Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.ItemId);
+            Logger.Error("Failed to create mail for account {0} and item {1}", session.AccountId, cube.Value.Id);
             return;
         }
 

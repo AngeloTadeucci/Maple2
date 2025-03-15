@@ -5,6 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -101,22 +102,17 @@ public class MasteryManager {
         ByteWriter successPacket = InteractObjectPacket.Interact(fieldInteract, decreaseAmount: 1);
         ByteWriter failPacket = InteractObjectPacket.Interact(fieldInteract, GatherResult.Fail, decreaseAmount: 0);
 
-        GatherCommom(fieldInteract.Value.Item.RecipeId, successPacket, failPacket, fieldInteract.Position, fieldInteract.Rotation);
+        GatherCommon(fieldInteract.Value.Item.RecipeId, successPacket, failPacket, fieldInteract.Position, fieldInteract.Rotation);
     }
 
     public void Gather(FieldFunctionInteract fieldFunctionInteract) {
-        if (fieldFunctionInteract.Cube.Interact is null) {
-            session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_unknown));
-            return;
-        }
+        ByteWriter successPacket = FunctionCubePacket.SuccessLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube);
+        ByteWriter failPacket = FunctionCubePacket.FailLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube);
 
-        ByteWriter successPacket = FunctionCubePacket.SuccessLifeSkill(session.CharacterId, fieldFunctionInteract.Cube.Interact);
-        ByteWriter failPacket = FunctionCubePacket.FailLifeSkill(session.CharacterId, fieldFunctionInteract.Cube.Interact);
-
-        GatherCommom(fieldFunctionInteract.Value.RecipeId, successPacket, failPacket, fieldFunctionInteract.Position, fieldFunctionInteract.Rotation);
+        GatherCommon(fieldFunctionInteract.Value.RecipeId, successPacket, failPacket, fieldFunctionInteract.Position, fieldFunctionInteract.Rotation);
     }
 
-    private void GatherCommom(int recipeId, ByteWriter successPacket, ByteWriter failPacket, Vector3 position, Vector3 rotation) {
+    private void GatherCommon(int recipeId, ByteWriter successPacket, ByteWriter failPacket, Vector3 position, Vector3 rotation) {
         if (!session.TableMetadata.MasteryRecipeTable.Entries.TryGetValue(recipeId, out MasteryRecipeTable.Entry? recipeMetadata)) {
             session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_unknown));
             return;
@@ -132,8 +128,8 @@ public class MasteryManager {
         }
 
         int myHome = 1; // For outside gathering, it should be always 1
-        if (session.Field.MapId is Constant.DefaultHomeMapId) {
-            myHome = session.Field.OwnerId == session.AccountId ? 1 : 0;
+        if (session.Field is HomeFieldManager homeField) {
+            myHome = homeField.OwnerId == session.AccountId ? 1 : 0;
         }
         float successRate = lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
 
@@ -168,7 +164,7 @@ public class MasteryManager {
         switch (recipeMetadata.Type) {
             case MasteryType.Breeding:
             case MasteryType.Farming:
-                if (session.Field.Metadata.Property.Type == MapType.Home && session.Field.OwnerId != session.AccountId) {
+                if (session.Field is HomeFieldManager homeField && homeField.OwnerId != session.AccountId) {
                     session.ConditionUpdate(ConditionType.mastery_harvest_otherhouse, counter: gatheringAmount, codeLong: recipeMetadata.Id);
                 }
                 if (recipeMetadata.Type == MasteryType.Farming) {

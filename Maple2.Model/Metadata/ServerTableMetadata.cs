@@ -42,4 +42,6 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(ShopItemTable), typeDiscriminator: "shopItem")]
 [JsonDerivedType(typeof(BeautyShopTable), typeDiscriminator: "beautyShop")]
 [JsonDerivedType(typeof(MeretMarketTable), typeDiscriminator: "meretMarket")]
+[JsonDerivedType(typeof(FishTable), typeDiscriminator: "fish")]
+[JsonDerivedType(typeof(CombineSpawnTable), typeDiscriminator: "combineSpawn")]
 public abstract record ServerTable;

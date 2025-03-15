@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;
 
@@ -31,6 +29,11 @@ public interface IPlayerInfo {
     public long PlotExpiryTime { get; set; }
     // Trophy
     public AchievementInfo AchievementInfo { get; set; }
+    // Dungeon
+    public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
+    // Guild
+    public long GuildId { get; set; }
+    public string GuildName { get; set; }
 
     // Timestamp
     public long UpdateTime { get; set; }

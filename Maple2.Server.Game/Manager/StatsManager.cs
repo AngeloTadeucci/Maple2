@@ -134,7 +134,10 @@ public class StatsManager {
             if (item.Stats != null) {
                 AddItemStats(item.Stats);
             }
+            Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
             Values.GearScore += player.Field.Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
+            player.Session.Dungeon.UpdateDungeonEnterLimit();
+            player.Session.ConditionUpdate(ConditionType.item_gear_score, counter: Values.GearScore);
 
             if (item.Socket != null) {
                 for (int index = 0; index < item.Socket.UnlockSlots; index++) {

@@ -8,14 +8,17 @@ namespace Maple2.Server.Game.Manager.Field;
 public class PerformanceStageManager {
     private readonly ILogger logger = Log.Logger.ForContext<PerformanceStageManager>();
 
-    private FieldManager Field { get; }
+    private IField Field { get; }
 
-    public PerformanceStageManager(FieldManager field) {
+    public PerformanceStageManager(IField field) {
         Field = field;
     }
 
     public void EnterExitStage(GameSession session) {
-        Field.TriggerObjects.Boxes.TryGetValue(101, out TriggerBox? triggerBox);
+        if (Field is not FieldManager fieldManager) {
+            return;
+        }
+        fieldManager.TriggerObjects.Boxes.TryGetValue(101, out TriggerBox? triggerBox);
         if (triggerBox is null) {
             return;
         }

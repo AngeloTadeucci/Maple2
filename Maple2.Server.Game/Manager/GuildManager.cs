@@ -139,6 +139,8 @@ public class GuildManager : IDisposable {
         if (addTag) {
             session.Field?.Broadcast(GuildPacket.AddTag(session.PlayerName, Guild.Name));
         }
+
+        session.ConditionUpdate(ConditionType.guild_join_req);
         return true;
     }
 

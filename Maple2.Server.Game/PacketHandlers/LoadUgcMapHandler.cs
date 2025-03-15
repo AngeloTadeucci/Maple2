@@ -7,10 +7,9 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools.Extensions;
-using Serilog;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
@@ -37,7 +36,7 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
             }
         }
 
-        if (session.Field.MapId is not Constant.DefaultHomeMapId || session.Field.OwnerId <= 0) {
+        if (session.Field is not HomeFieldManager homeFieldManager) {
             session.Send(LoadUgcMapPacket.Load(plotCubes.Count));
 
             LoadPlots(session, plotCubes);
@@ -45,7 +44,7 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
         }
 
         using GameStorage.Request db = GameStorage.Context();
-        Home? home = db.GetHome(session.Field.OwnerId);
+        Home? home = db.GetHome(homeFieldManager.OwnerId);
         if (home == null) {
             return;
         }

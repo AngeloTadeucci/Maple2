@@ -257,7 +257,102 @@ public class ItemCollectionTest {
             [5] = item3,
         };
 
-        CollectionAssert.AreEqual(new[] { item1, item2, item3 }, collection.ToList());
+        CollectionAssert.AreEqual(new[] {
+            item1,
+            item2,
+            item3
+        }, collection.ToList());
+    }
+
+    [Test]
+    public void TestSortFullInventory() {
+        var item1 = CreateItem(3000, rarity: 1, amount: 5);
+        var item2 = CreateItem(1000, rarity: 3, amount: 10);
+        var item3 = CreateItem(1000, rarity: 2, amount: 5);
+        var item4 = CreateItem(1000, rarity: 3, amount: 1);
+        var item5 = CreateItem(2000, rarity: 4, amount: 20);
+
+        // Create a full collection
+        var collection = new ItemCollection(5);
+        collection.Add(item1); // slot 0
+        collection.Add(item2); // slot 1
+        collection.Add(item3); // slot 2
+        collection.Add(item4); // slot 3
+        collection.Add(item5); // slot 4
+
+        // Verify it's full
+        Assert.That(collection.OpenSlots, Is.EqualTo(0));
+
+        // Sort the full inventory
+        collection.Sort();
+
+        // Verify items are sorted correctly
+        Assert.That(item3, Is.EqualTo(collection[0]));
+        Assert.That(item4, Is.EqualTo(collection[1]));
+        Assert.That(item2, Is.EqualTo(collection[2]));
+        Assert.That(item5, Is.EqualTo(collection[3]));
+        Assert.That(item1, Is.EqualTo(collection[4]));
+
+        // Verify all items still exist
+        Assert.That(collection.Count, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void TestSortWithNullItems() {
+        var item1 = CreateItem(3000, rarity: 1, amount: 5);
+        var item2 = CreateItem(1000, rarity: 3, amount: 10);
+        var item3 = CreateItem(1000, rarity: 2, amount: 5);
+
+        // Create collection with gaps
+        var collection = new ItemCollection(10);
+        collection[2] = item1; // Insert at specific slots to create gaps
+        collection[5] = item2;
+        collection[8] = item3;
+
+        // Sort the inventory with gaps
+        collection.Sort();
+
+        // Verify items are sorted correctly with no gaps at the beginning
+        Assert.That(item3, Is.EqualTo(collection[0]));
+        Assert.That(item2, Is.EqualTo(collection[1]));
+        Assert.That(item1, Is.EqualTo(collection[2]));
+        Assert.IsNull(collection[3]);
+
+        // Verify all items still exist
+        Assert.That(collection.Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void TestSortAfterRemoving() {
+        var item1 = CreateItem(3000, rarity: 1, amount: 5);
+        var item2 = CreateItem(1000, rarity: 3, amount: 10);
+        var item3 = CreateItem(1000, rarity: 2, amount: 5);
+        var item4 = CreateItem(1000, rarity: 3, amount: 1);
+        var item5 = CreateItem(2000, rarity: 4, amount: 20);
+
+        // Create a full collection
+        var collection = new ItemCollection(5);
+        collection.Add(item1);
+        collection.Add(item2);
+        collection.Add(item3);
+        collection.Add(item4);
+        collection.Add(item5);
+
+        // Remove an item, creating a gap
+        collection.RemoveSlot(2, out _);
+
+        // Sort the inventory with a gap
+        collection.Sort();
+
+        // Verify items are sorted correctly
+        Assert.That(item4, Is.EqualTo(collection[0]));
+        Assert.That(item2, Is.EqualTo(collection[1]));
+        Assert.That(item5, Is.EqualTo(collection[2]));
+        Assert.That(item1, Is.EqualTo(collection[3]));
+        Assert.IsNull(collection[4]);
+
+        // Verify item count
+        Assert.That(collection.Count, Is.EqualTo(4));
     }
 
     private static Model.Game.Item CreateItem(int id, int rarity = 1, int amount = 1) {
@@ -266,6 +361,8 @@ public class ItemCollectionTest {
         var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, Array.Empty<JobCode>(), Array.Empty<JobCode>());
         var fakeLife = new ItemMetadataLife(0, 0);
         var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null, null);
-        return new Model.Game.Item(fakeMetadata, rarity, amount) { Uid = Rng.NextInt64() };
+        return new Model.Game.Item(fakeMetadata, rarity, amount) {
+            Uid = Rng.NextInt64()
+        };
     }
 }

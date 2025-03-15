@@ -2,8 +2,6 @@
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Event;
-using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
@@ -111,6 +109,7 @@ public class FieldPlayer : Actor<Player> {
         }
 
         // Loops through each registered regen stat and applies regen
+        var statsToRemove = new List<BasicAttribute>();
         foreach (BasicAttribute attribute in regenStats.Keys) {
             Stat stat = Stats.Values[attribute];
             Stat regen = Stats.Values[regenStats[attribute].Item1];
@@ -118,7 +117,7 @@ public class FieldPlayer : Actor<Player> {
 
             if (stat.Current >= stat.Total) {
                 // Removes stat from regen stats so it won't be listened for
-                regenStats.Remove(attribute);
+                statsToRemove.Add(attribute);
                 continue;
             }
 
@@ -129,6 +128,9 @@ public class FieldPlayer : Actor<Player> {
                 Stats.Values[attribute].Add(regen.Total);
                 Session.Send(StatsPacket.Update(this, attribute));
             }
+        }
+        foreach (BasicAttribute attribute in statsToRemove) {
+            regenStats.Remove(attribute);
         }
 
         Session.GameEvent.Update(tickCount);

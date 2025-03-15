@@ -104,7 +104,9 @@ public class FurnishingManager {
                 ? FurnishingStoragePacket.Update(item.Uid, item.Amount)
                 : FurnishingStoragePacket.Remove(item.Uid));
 
-            cube = new PlotCube(item.Id, NextCubeId(), item.Template);
+            cube = new PlotCube(item.Metadata, NextCubeId(), item.Template) {
+                Type = PlotCube.CubeType.Construction,
+            };
             if (!AddInventory(cube)) {
                 logger.Fatal("Failed to add cube: {CubeId} to inventory", cube.Id);
                 throw new InvalidOperationException($"Failed to add cube: {cube.Id} to inventory");
@@ -221,7 +223,12 @@ public class FurnishingManager {
                 item.Group = ItemGroup.Furnishing;
                 using GameStorage.Request db = session.GameStorage.Context();
                 item = db.CreateItem(session.AccountId, item);
-                if (item == null || storage.Add(item).Count <= 0) {
+                if (item == null) {
+                    return 0;
+                }
+
+                if (storage.Add(item).Count <= 0) {
+                    db.SaveItems(0, item);
                     return 0;
                 }
 

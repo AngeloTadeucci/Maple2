@@ -114,12 +114,14 @@ public class TaxiHandler : PacketHandler<GameSession> {
 
         int cost = Lua.CalcAirTaxiCharge((ushort) session.Player.Value.Character.Level);
 
-        if (session.Currency.Meso < cost) {
-            session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
-            return;
-        }
+        if (!session.Config.IsPremiumClubActive()) {
+            if (session.Currency.Meso < cost) {
+                session.Send(NoticePacket.MessageBox(StringCode.s_err_lack_meso));
+                return;
+            }
 
-        session.Currency.Meso -= cost;
+            session.Currency.Meso -= cost;
+        }
 
         session.Send(session.PrepareField(mapId)
             ? FieldEnterPacket.Request(session.Player)

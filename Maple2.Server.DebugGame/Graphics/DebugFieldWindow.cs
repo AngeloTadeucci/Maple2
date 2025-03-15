@@ -151,7 +151,7 @@ public class DebugFieldWindow {
 
         if (ActiveRenderer is not null) {
             ActiveRenderer.Update();
-            DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.InstanceId})";
+            DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.RoomId})";
         }
     }
 

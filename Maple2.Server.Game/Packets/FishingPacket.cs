@@ -7,6 +7,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
@@ -61,27 +62,23 @@ public static class FishingPacket {
         return pWriter;
     }
 
-    public static ByteWriter LoadTiles(IList<Vector3> tiles) {
+    public static ByteWriter LoadTiles(ICollection<FishingTile> tiles) {
         var pWriter = Packet.Of(SendOp.Fishing);
         pWriter.Write<Command>(Command.LoadTiles);
         pWriter.WriteByte(); // disable loading tiles
         pWriter.WriteInt(tiles.Count);
-        foreach (Vector3 tile in tiles) {
-            pWriter.Write<Vector3B>(tile);
-            pWriter.WriteInt(10000001); // fish id ?
-            pWriter.WriteInt(25); // unk
-            pWriter.WriteInt(15000); // fishing time minus any rod or buff time reduction
-            pWriter.WriteShort(1); // unk
+        foreach (FishingTile tile in tiles) {
+            pWriter.WriteClass<FishingTile>(tile);
         }
 
         return pWriter;
     }
 
-    public static ByteWriter CatchItem(IList<FishingRewardTable.Entry> rewards) {
+    public static ByteWriter CatchItem(IList<Item> rewards) {
         var pWriter = Packet.Of(SendOp.Fishing);
         pWriter.Write<Command>(Command.CatchItem);
         pWriter.WriteInt(rewards.Count);
-        foreach (FishingRewardTable.Entry item in rewards) {
+        foreach (Item item in rewards) {
             pWriter.WriteInt(item.Id);
             pWriter.WriteInt(item.Amount);
         }
@@ -129,7 +126,7 @@ public static class FishingPacket {
         var pWriter = Packet.Of(SendOp.Fishing);
         pWriter.Write<Command>(Command.Start);
         pWriter.WriteBool(miniGame);
-        pWriter.WriteInt(Environment.TickCount + durationTick);
+        pWriter.WriteInt(durationTick);
 
         return pWriter;
     }

@@ -13,8 +13,11 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Tools.Extensions;
-using Newtonsoft.Json;
+using DayOfWeek = System.DayOfWeek;
 using ChatSticker = Maple2.File.Parser.Xml.Table.ChatSticker;
+using DungeonCooldownType = Maple2.Model.Enum.DungeonCooldownType;
+using DungeonGroupType = Maple2.Model.Enum.DungeonGroupType;
+using DungeonPlayType = Maple2.Model.Enum.DungeonPlayType;
 using ExpType = Maple2.Model.Enum.ExpType;
 using GuildBuff = Maple2.File.Parser.Xml.Table.GuildBuff;
 using GuildNpc = Maple2.File.Parser.Xml.Table.GuildNpc;
@@ -85,11 +88,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
         yield return new TableMetadata { Name = "adventurelevelmission.xml", Table = ParsePrestigeMissionTable() };
 
-        // Fishing
-        yield return new TableMetadata { Name = "fishingspot.xml", Table = ParseFishingSpot() };
-        yield return new TableMetadata { Name = "fish.xml", Table = ParseFish() };
         yield return new TableMetadata { Name = "fishingrod.xml", Table = ParseFishingRod() };
-        yield return new TableMetadata { Name = "fishingreward.json", Table = ParseFishingRewards() };
         // Scroll
         yield return new TableMetadata { Name = "enchantscroll.xml", Table = ParseEnchantScrollTable() };
         yield return new TableMetadata { Name = "itemremakescroll.xml", Table = ParseItemRemakeScrollTable() };
@@ -108,6 +107,10 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
         // SetItemOption
         yield return new TableMetadata { Name = "setitem*.xml", Table = ParseSetItem() };
+
+        //Dungeon
+        yield return new TableMetadata { Name = "dungeonroom.xml", Table = ParseDungeonRoom() };
+        yield return new TableMetadata { Name = "dungeonrankreward.xml", Table = ParseDungeonRankReward() };
     }
 
     private ChatStickerTable ParseChatSticker() {
@@ -844,62 +847,6 @@ public class TableMapper : TypeMapper<TableMetadata> {
             Properties: guildProperties);
     }
 
-    private FishingSpotTable ParseFishingSpot() {
-        var results = new Dictionary<int, FishingSpotTable.Entry>();
-        foreach ((int mapId, FishingSpot spot) in parser.ParseFishingSpot()) {
-            var liquidTypes = new List<LiquidType>();
-            foreach (string liquidType in spot.liquidType) {
-                if (Enum.TryParse(liquidType, out LiquidType type)) {
-                    liquidTypes.Add(type);
-                }
-            }
-
-            results.Add(mapId, new FishingSpotTable.Entry(
-                Id: mapId,
-                MinMastery: spot.minMastery,
-                MaxMastery: spot.maxMastery,
-                LiquidTypes: liquidTypes));
-        }
-        return new FishingSpotTable(results);
-    }
-
-    private FishTable ParseFish() {
-        var results = new Dictionary<int, FishTable.Entry>();
-
-        // Parse habitat and combine
-        var habitats = new Dictionary<int, IReadOnlyList<int>>();
-        foreach ((int id, FishHabitat habitat) in parser.ParseFishHabitat()) {
-            var habitatMaps = new List<int>();
-            foreach (int mapId in habitat.habitat) {
-                habitatMaps.Add(mapId);
-            }
-            habitats.Add(id, habitatMaps);
-        }
-
-        foreach ((int id, string name, Fish fish) in parser.ParseFish()) {
-            if (!habitats.TryGetValue(id, out IReadOnlyList<int>? habitatList)) {
-                habitatList = new List<int>();
-            }
-
-            if (!Enum.TryParse(fish.habitat, out LiquidType liquidType)) {
-                liquidType = LiquidType.all;
-            }
-
-            int[] smallSize = fish.smallSize.Split("-").Select(int.Parse).ToArray();
-            int[] bigSize = fish.bigSize.Split("-").Select(int.Parse).ToArray();
-            var entry = new FishTable.Entry(
-                Id: id,
-                FluidHabitat: liquidType,
-                HabitatMapIds: habitatList,
-                Mastery: fish.fishMastery,
-                Rarity: fish.rank,
-                SmallSize: new FishTable.Range<int>(smallSize[0], smallSize[1]),
-                BigSize: new FishTable.Range<int>(bigSize[0], bigSize[1]));
-            results.Add(id, entry);
-        }
-        return new FishTable(results);
-    }
-
     private FishingRodTable ParseFishingRod() {
         var results = new Dictionary<int, FishingRodTable.Entry>();
         foreach ((int id, FishingRod rod) in parser.ParseFishingRod()) {
@@ -911,16 +858,6 @@ public class TableMapper : TypeMapper<TableMetadata> {
             results.Add(id, entry);
         }
         return new FishingRodTable(results);
-    }
-
-    private FishingRewardTable ParseFishingRewards() {
-        var results = new Dictionary<int, FishingRewardTable.Entry>();
-        string json = System.IO.File.ReadAllText($"Json/FishingRewards.json");
-        var items = JsonConvert.DeserializeObject<List<FishingRewardTable.Entry>>(json);
-        foreach (FishingRewardTable.Entry entry in items) {
-            results[entry.Id] = entry;
-        }
-        return new FishingRewardTable(results);
     }
 
     private EnchantScrollTable ParseEnchantScrollTable() {
@@ -1603,5 +1540,93 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 Halls: hallDataDic));
         }
         return new WeddingTable(rewardsResults, packageResults);
+    }
+
+    private DungeonRoomTable ParseDungeonRoom() {
+        var dungeons = new Dictionary<int, DungeonRoomTable.DungeonRoomMetadata>();
+        foreach ((int id, DungeonRoom dungeon) in parser.ParseDungeonRoom()) {
+            dungeons.Add(id, new DungeonRoomTable.DungeonRoomMetadata(
+                Id: dungeon.dungeonRoomID,
+                Level: dungeon.dungeonLevel,
+                PlayType: (DungeonPlayType) dungeon.playType,
+                GroupType: (DungeonGroupType) dungeon.groupType,
+                CooldownType: (DungeonCooldownType) dungeon.cooldownType,
+                CooldownValue: dungeon.cooldownValue,
+                DurationTick: dungeon.durationTick,
+                LobbyFieldId: dungeon.lobbyFieldID,
+                FieldIds: dungeon.fieldIDs,
+                Reward: new DungeonRoomReward(
+                    AccountWide: dungeon.isAccountReward,
+                    Count: dungeon.rewardCount,
+                    SubRewardCount: dungeon.subRewardCount,
+                    Exp: dungeon.rewardExp,
+                    ExpRate: dungeon.rewardExpRate,
+                    Meso: dungeon.rewardMeso,
+                    LimitedDropBoxIds: dungeon.rewardLimitedDropBoxIds,
+                    UnlimitedDropBoxIds: dungeon.rewardUnlimitedDropBoxIds,
+                    UnionRewardId: dungeon.unionRewardID,
+                    SeasonRankRewardId: dungeon.seasonRankRewardID,
+                    ScoreBonusId: dungeon.scoreBonusId),
+                Limit: new DungeonRoomLimit(
+                    MinUserCount: dungeon.minUserCount,
+                    MaxUserCount: dungeon.maxUserCount,
+                    GearScore: dungeon.gearScore,
+                    MinLevel: dungeon.limitPlayerLevel,
+                    RequiredAchievementId: dungeon.limitAchieveID,
+                    VipOnly: dungeon.limitVIP,
+                    DayOfWeeks: dungeon.limitDayOfWeeks.Length == 0 ? [] : dungeon.limitDayOfWeeks.Select(ParseDayOfWeek).ToArray(),
+                    ClearDungeonIds: dungeon.limitClearDungeon,
+                    Buffs: dungeon.limitAdditionalEffects,
+                    DisableMeretRevival: dungeon.limitMeratRevival,
+                    EquippedRecommendedWeapon: dungeon.limitRecommendWeapon,
+                    PartyOnly: dungeon.isPartyOnly,
+                    ChangeMaxUsers: dungeon.isChangeMaxUser,
+                    DisableMesoRevival: dungeon.limitMesoRevival,
+                    MaxRevivalCount: dungeon.defaultRevivalLimitCount),
+                PlayerCountFactorId: dungeon.playerCountFactorID,
+                CustomMonsterLevel: dungeon.customMonsterLevel,
+                HelperRequireClearCount: dungeon.dungeonHelperRequireClearCount,
+                DisabledFindHelper: dungeon.isDisableFindHelper,
+                RankTableId: dungeon.rankTableID,
+                LeaveAfterCloseReward: dungeon.isLeaveAfterCloseReward,
+                PartyMissions: dungeon.partyMissions,
+                UserMissions: dungeon.userMissions,
+                MoveToBackupField: dungeon.isMoveOutToBackupField
+                ));
+        }
+
+        return new DungeonRoomTable(dungeons);
+
+        DayOfWeek ParseDayOfWeek(Maple2.File.Parser.Enum.DayOfWeek dayofWeek) {
+            return dayofWeek switch {
+                Maple2.File.Parser.Enum.DayOfWeek.sun => DayOfWeek.Sunday,
+                Maple2.File.Parser.Enum.DayOfWeek.mon => DayOfWeek.Monday,
+                Maple2.File.Parser.Enum.DayOfWeek.tue => DayOfWeek.Tuesday,
+                Maple2.File.Parser.Enum.DayOfWeek.wed => DayOfWeek.Wednesday,
+                Maple2.File.Parser.Enum.DayOfWeek.thu => DayOfWeek.Thursday,
+                Maple2.File.Parser.Enum.DayOfWeek.fri => DayOfWeek.Friday,
+                Maple2.File.Parser.Enum.DayOfWeek.sat => DayOfWeek.Saturday,
+                _ => DayOfWeek.Sunday,
+            };
+        }
+    }
+
+    private DungeonRankRewardTable ParseDungeonRankReward() {
+        var results = new Dictionary<int, DungeonRankRewardTable.Entry>();
+        foreach ((int id, DungeonRankReward reward) in parser.ParseDungeonRankReward()) {
+            List<DungeonRankRewardTable.Entry.Item> rewards = [];
+            foreach (DungeonRankRewardEntry item in reward.v) {
+                rewards.Add(new DungeonRankRewardTable.Entry.Item(
+                    Rank: item.rank,
+                    ItemId: item.itemID,
+                    SystemMailId: item.systemMailID));
+            }
+
+            results.Add(id, new DungeonRankRewardTable.Entry(
+                Id: id,
+                Items: rewards.ToArray()));
+        }
+
+        return new DungeonRankRewardTable(results);
     }
 }
