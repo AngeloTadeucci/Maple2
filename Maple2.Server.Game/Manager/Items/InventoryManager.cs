@@ -319,17 +319,38 @@ public class InventoryManager {
         }
     }
 
-    public bool CanAdd(ICollection<Item> items) {
-        lock (session.Item) {
-            foreach (Item item in items) {
-                if (!CanAdd(item)) {
-                    return false;
-                }
-            }
+   public bool CanAdd(ICollection<Item> items) {
+       lock (session.Item) {
+           // Group items by inventory type
+           Dictionary<InventoryType, List<Item>> itemsByType = items.GroupBy(item => item.Inventory)
+                                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            return true;
-        }
-    }
+           foreach ((InventoryType inventoryType, List<Item> typeItems) in itemsByType) {
+               if (!tabs.TryGetValue(inventoryType, out ItemCollection? collection)) {
+                   return false;
+               }
+
+               short availableSlots = collection.OpenSlots;
+
+               foreach (Item item in typeItems) {
+                   int stackResult = collection.GetStackResult(item);
+
+                   if (stackResult == 0) {
+                       // Item can be fully stacked, no slots needed
+                       continue;
+                   }
+
+                   // Need a new slot
+                   if (availableSlots <= 0) {
+                       return false;
+                   }
+                   availableSlots--;
+               }
+           }
+
+           return true;
+       }
+   }
 
     public bool Remove(long uid, [NotNullWhen(true)] out Item? removed, int amount = -1) {
         lock (session.Item) {
