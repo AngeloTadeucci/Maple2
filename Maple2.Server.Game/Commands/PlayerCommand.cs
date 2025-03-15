@@ -291,6 +291,8 @@ public class PlayerCommand : Command {
             this.session = session;
 
             AddCommand(new ClearInventoryCommand(session));
+            AddCommand(new SlotsInventoryCommand(session));
+            AddCommand(new ExpandInventoryCommand(this.session));
         }
 
         private class ClearInventoryCommand : Command {
@@ -315,6 +317,80 @@ public class PlayerCommand : Command {
                 session.Item.Inventory.Clear(inventoryType);
                 ctx.Console.Out.WriteLine($"Cleared {inventoryType} inventory.");
                 ctx.ExitCode = 0;
+            }
+        }
+
+        private class SlotsInventoryCommand : Command {
+            private readonly GameSession session;
+
+            public SlotsInventoryCommand(GameSession session) : base("slots", "Get inventory slots information.") {
+                this.session = session;
+
+                var tabArg = new Argument<string>("tab", $"Inventory tab to get information for. Use 'all' for all tabs or one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                AddArgument(tabArg);
+                this.SetHandler<InvocationContext, string>(Handle, tabArg);
+            }
+
+            private void Handle(InvocationContext ctx, string tab) {
+                try {
+                    if (tab.Equals("all", StringComparison.OrdinalIgnoreCase)) {
+                        foreach (InventoryType inventoryTab in Enum.GetValues(typeof(InventoryType))) {
+                            DisplayInventoryInfo(ctx, inventoryTab);
+                        }
+                        ctx.ExitCode = 0;
+                        return;
+                    }
+
+                    if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                        ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                        ctx.ExitCode = 1;
+                        return;
+                    }
+
+                    DisplayInventoryInfo(ctx, inventoryType);
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+
+            private void DisplayInventoryInfo(InvocationContext ctx, InventoryType inventoryType) {
+                int totalSlots = session.Item.Inventory.TotalSlots(inventoryType);
+                int freeSlots = session.Item.Inventory.FreeSlots(inventoryType);
+                int usedSlots = totalSlots - freeSlots;
+
+                ctx.Console.Out.WriteLine($"{inventoryType} Inventory: {usedSlots}/{totalSlots} slots used.");
+            }
+        }
+
+        private class ExpandInventoryCommand : Command {
+            private readonly GameSession session;
+
+            public ExpandInventoryCommand(GameSession session) : base("expand", "Expand player inventory.") {
+                this.session = session;
+
+                var tab = new Argument<string>("tab", $"Inventory tab to expand. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+                AddArgument(tab);
+                this.SetHandler<InvocationContext, string>(Handle, tab);
+            }
+
+            private void Handle(InvocationContext ctx, string tab) {
+                try {
+                    if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                        ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                        ctx.ExitCode = 1;
+                        return;
+                    }
+
+                    session.Item.Inventory.Expand(inventoryType);
+                    ctx.Console.Out.WriteLine($"Expanded {inventoryType} inventory");
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
             }
         }
     }
