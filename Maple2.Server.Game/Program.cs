@@ -56,6 +56,13 @@ try {
     return;
 }
 
+var cancellationTokenSource = new CancellationTokenSource();
+Console.CancelKeyPress += (sender, e) => {
+    e.Cancel = true; // Prevent immediate termination
+    Log.Information("Shutdown requested. Initiating graceful shutdown...");
+    cancellationTokenSource.Cancel();
+};
+
 IConfigurationRoot configRoot = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", true, true)
@@ -152,4 +159,4 @@ app.MapGet("/", () => "Communication with gRPC endpoints must be made through a 
 app.MapGrpcService<ChannelService>();
 app.MapGrpcHealthChecksService();
 
-await app.RunAsync();
+await app.RunAsync(cancellationTokenSource.Token);
