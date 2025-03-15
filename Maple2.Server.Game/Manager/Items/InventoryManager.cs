@@ -319,6 +319,18 @@ public class InventoryManager {
         }
     }
 
+    public bool CanAdd(ICollection<Item> items) {
+        lock (session.Item) {
+            foreach (Item item in items) {
+                if (!CanAdd(item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     public bool Remove(long uid, [NotNullWhen(true)] out Item? removed, int amount = -1) {
         lock (session.Item) {
             return RemoveInternal(uid, amount, out removed);

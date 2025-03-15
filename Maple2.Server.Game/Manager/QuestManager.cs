@@ -294,7 +294,34 @@ public sealed class QuestManager {
 
         QuestMetadataReward reward = quest.Metadata.CompleteReward;
 
-        if (!CanHoldQuestRewards(reward) && !Constant.MailQuestItems) {
+        List<Item> rewards = [];
+        foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            if (item is null) {
+                continue;
+            }
+
+            rewards.Add(item);
+        }
+
+        foreach (QuestMetadataReward.Item entry in reward.EssentialJobItem) {
+            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
+                continue;
+            }
+
+            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None) && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
+                continue;
+            }
+
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            if (item is null) {
+                continue;
+            }
+
+            rewards.Add(item);
+        }
+
+        if (!session.Item.Inventory.CanAdd(rewards) && !Constant.MailQuestItems) {
             session.Send(ItemInventoryPacket.Error(ItemInventoryError.s_err_inventory));
             return false;
         }
@@ -315,36 +342,11 @@ public sealed class QuestManager {
             session.Currency[CurrencyType.Rue] += reward.Rue;
         }
 
-        foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
-            if (item is null) {
-                continue;
-            }
-
+        foreach (Item item in rewards) {
             if (!session.Item.Inventory.Add(item, true)) {
                 session.Item.MailItem(item);
             }
         }
-
-        foreach (QuestMetadataReward.Item entry in reward.EssentialJobItem) {
-            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
-                continue;
-            }
-
-            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None) && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
-                continue;
-            }
-
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
-            if (item is null) {
-                continue;
-            }
-
-            if (!session.Item.Inventory.Add(item, true)) {
-                session.Item.MailItem(item);
-            }
-        }
-
 
         // TODO: Guild rewards, mission points?
 
@@ -358,53 +360,6 @@ public sealed class QuestManager {
         session.Send(QuestPacket.Complete(quest));
         TryJobAdvance(quest.Id);
         CompleteChapter(quest.Id);
-        return true;
-    }
-
-    private bool CanHoldQuestRewards(QuestMetadataReward reward) {
-        // Check if inventory has enough space for all reward items
-        var requiredSlots = new Dictionary<InventoryType, int>(); // Track required slots by inventory type
-
-        // Count slots needed for EssentialItems
-        foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
-                continue;
-            }
-
-            InventoryType invType = metadata.Inventory();
-            requiredSlots.TryAdd(invType, 0);
-            requiredSlots[invType]++;
-        }
-
-        // Count slots needed for EssentialJobItems
-        foreach (QuestMetadataReward.Item entry in reward.EssentialJobItem) {
-            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
-                continue;
-            }
-
-            // Skip items that don't match the player's job
-            if (metadata.Limit.JobRecommends.Length > 0 &&
-                !metadata.Limit.JobRecommends.Contains(JobCode.None) &&
-                !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
-                continue;
-            }
-
-            InventoryType invType = metadata.Inventory();
-            requiredSlots.TryAdd(invType, 0);
-            requiredSlots[invType]++;
-        }
-
-        // Check if each inventory has enough free slots
-        foreach (KeyValuePair<InventoryType, int> kvp in requiredSlots) {
-            InventoryType invType = kvp.Key;
-            int requiredSlot = kvp.Value;
-            int freeSlots = session.Item.Inventory.FreeSlots(invType);
-
-            if (freeSlots < requiredSlot) {
-                return false;
-            }
-        }
-
         return true;
     }
 
