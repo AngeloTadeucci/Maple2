@@ -106,6 +106,7 @@ public sealed class BeautyManager : IDisposable {
         }
 
         if (!session.Item.Equips.EquipCosmetic(copy, copy.Metadata.SlotNames[0])) {
+            db.SaveItems(0, copy);
             return false;
         }
         session.Send(BeautyPacket.ApplySavedHair());

@@ -223,7 +223,12 @@ public class FurnishingManager {
                 item.Group = ItemGroup.Furnishing;
                 using GameStorage.Request db = session.GameStorage.Context();
                 item = db.CreateItem(session.AccountId, item);
-                if (item == null || storage.Add(item).Count <= 0) {
+                if (item == null) {
+                    return 0;
+                }
+
+                if (storage.Add(item).Count <= 0) {
+                    db.SaveItems(0, item);
                     return 0;
                 }
 

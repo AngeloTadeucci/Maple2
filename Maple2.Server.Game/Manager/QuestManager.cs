@@ -293,6 +293,39 @@ public sealed class QuestManager {
         }
 
         QuestMetadataReward reward = quest.Metadata.CompleteReward;
+
+        List<Item> rewards = [];
+        foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            if (item is null) {
+                continue;
+            }
+
+            rewards.Add(item);
+        }
+
+        foreach (QuestMetadataReward.Item entry in reward.EssentialJobItem) {
+            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
+                continue;
+            }
+
+            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None) && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
+                continue;
+            }
+
+            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            if (item is null) {
+                continue;
+            }
+
+            rewards.Add(item);
+        }
+
+        if (!session.Item.Inventory.CanAdd(rewards) && !Constant.MailQuestItems) {
+            session.Send(ItemInventoryPacket.Error(ItemInventoryError.s_err_inventory));
+            return false;
+        }
+
         if (reward.Exp > 0) {
             session.Exp.AddExp(reward.Exp);
         }
@@ -309,27 +342,11 @@ public sealed class QuestManager {
             session.Currency[CurrencyType.Rue] += reward.Rue;
         }
 
-        foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
-            if (item != null) {
-                session.Item.Inventory.Add(item, true);
+        foreach (Item item in rewards) {
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
             }
         }
-
-        foreach (QuestMetadataReward.Item entry in reward.EssentialJobItem) {
-            if (!session.ItemMetadata.TryGet(entry.Id, out ItemMetadata? metadata)) {
-                continue;
-            }
-            if (metadata.Limit.JobRecommends.Length > 0 && !metadata.Limit.JobRecommends.Contains(JobCode.None)
-                && !metadata.Limit.JobRecommends.Contains(session.Player.Value.Character.Job.Code())) {
-                continue;
-            }
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
-            if (item != null) {
-                session.Item.Inventory.Add(item, true);
-            }
-        }
-
 
         // TODO: Guild rewards, mission points?
 

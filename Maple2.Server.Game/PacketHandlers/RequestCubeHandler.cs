@@ -673,11 +673,6 @@ public class RequestCubeHandler : PacketHandler<GameSession> {
             CharacterName = session.PlayerName,
         };
 
-        item = db.CreateItem(session.CharacterId, item);
-        if (item == null) {
-            return;
-        }
-
         session.Item.Inventory.Add(item, notifyNew: true);
 
         session.StagedUgcItem = item;
