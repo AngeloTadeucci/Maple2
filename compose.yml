@@ -3,8 +3,7 @@ services:
     container_name: maple2-file-ingest
     image: mcr.microsoft.com/dotnet/sdk:8.0
     working_dir: /app/Maple2.File.Ingest
-    entrypoint: /app/Maple2.File.Ingest/docker-entrypoint.sh
-    command: dotnet run
+    entrypoint: ["dotnet", "run"]
     depends_on:
       - mysql
     links:
