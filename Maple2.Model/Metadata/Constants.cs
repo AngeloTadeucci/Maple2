@@ -112,6 +112,8 @@ public static class Constant {
     public const bool EnableRollEverywhere = false;
     public const bool HideHomeCommands = true;
 
+    public const bool MailQuestItems = false; // Mail quest item rewards if inventory is full
+
     #region Field
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
     public static readonly TimeSpan FieldDisposeLoopInterval = TimeSpan.FromMinutes(1);

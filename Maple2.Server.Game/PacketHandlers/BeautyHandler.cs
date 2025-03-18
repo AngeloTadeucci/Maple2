@@ -409,9 +409,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
         }
     }
 
-    private void HandleAskAddSlots(GameSession session, IByteReader packet) {
-
-    }
+    private void HandleAskAddSlots(GameSession session, IByteReader packet) { }
 
     private static void HandleApplySavedHair(GameSession session, IByteReader packet) {
         long uid = packet.ReadLong();
@@ -583,6 +581,11 @@ public class BeautyHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        return session.Item.Equips.EquipCosmetic(newCosmetic, newCosmetic.Metadata.SlotNames.First());
+        if (!session.Item.Equips.EquipCosmetic(newCosmetic, newCosmetic.Metadata.SlotNames.First())) {
+            db.SaveItems(0, newCosmetic);
+            return false;
+        }
+
+        return true;
     }
 }
