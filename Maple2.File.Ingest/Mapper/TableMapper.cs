@@ -79,6 +79,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
         yield return new TableMetadata { Name = "masteryugchousing.xml", Table = ParseMasteryUgcHousingTable() };
         yield return new TableMetadata { Name = "ugchousingpointreward.xml", Table = ParseUgcHousingPointRewardTable() };
+        yield return new TableMetadata { Name = "rewardcontent*.xml", Table = ParseRewardContentTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
@@ -1628,5 +1629,59 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
 
         return new DungeonRankRewardTable(results);
+    }
+
+    private RewardContentTable ParseRewardContentTable() {
+        var baseResults = new Dictionary<int, RewardContentTable.Base>();
+        foreach ((int id, RewardContent rewardContent) in parser.ParseRewardContent()) {
+            baseResults.Add(id, new RewardContentTable.Base(
+                Id: id,
+                ExpTableId: rewardContent.expTableID,
+                MesoTableId: rewardContent.mesoTableID,
+                ExpFactor: rewardContent.expFactor,
+                MesoFactor: rewardContent.mesoFactor,
+                ItemTableId: rewardContent.itemTableID,
+                PrestigeExpTableId: rewardContent.adventureExpTableID));
+        }
+
+        var itemResults = new Dictionary<int, RewardContentTable.Item>();
+        foreach ((int id, RewardContentItem content) in parser.ParseRewardContentItem()) {
+            List<RewardContentTable.Item.Data> itemData = [];
+            foreach (RewardContentValue value in content.v) {
+                List<RewardItem> items = [];
+                foreach (RewardContentItemEntry item in value.item) {
+                    items.Add(new RewardItem(item.itemID, (short) item.grade, item.count));
+                }
+                itemData.Add(new RewardContentTable.Item.Data(
+                    MinLevel: value.minLevel,
+                    MaxLevel: value.maxLevel,
+                    RewardItems: items.ToArray()));
+            }
+            itemResults.Add(id, new RewardContentTable.Item(
+                Id: id,
+                ItemData: itemData.ToArray()));
+        }
+
+        var mesoStaticResults = new Dictionary<int, long>();
+        foreach ((int id, RewardContentMesoStatic reward) in parser.ParseRewardContentMesoStatic()) {
+            mesoStaticResults.Add(id, reward.v.FirstOrDefault()?.meso ?? 0);
+        }
+
+        var mesoResults = new Dictionary<int, Dictionary<int, long>>();
+        foreach ((int id, RewardContentMeso reward) in parser.ParseRewardContentMeso()) {
+            var entries = new Dictionary<int, long>();
+            foreach (RewardContentMesoValue value in reward.v) {
+                entries.Add(value.level, value.meso);
+            }
+
+            mesoResults.Add(id, entries);
+        }
+
+        var expStaticResults = new Dictionary<int, long>();
+        foreach ((int id, RewardContentExpStatic reward) in parser.ParseRewardContentExpStatic()) {
+            expStaticResults.Add(id, reward.@base.FirstOrDefault()?.exp ?? 0);
+        }
+
+        return new RewardContentTable(baseResults, itemResults, mesoStaticResults, mesoResults, expStaticResults);
     }
 }

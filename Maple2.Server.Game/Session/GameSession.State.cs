@@ -1,4 +1,5 @@
 ﻿using Maple2.Model.Game;
+using Maple2.Model.Game.Dungeon;
 using Maple2.Model.Game.Shop;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
@@ -43,6 +44,8 @@ public partial class GameSession {
     public BeautyShop? BeautyShop;
 
     public int BonusGameId;
+
+    public MiniGameUserRecord? MiniGameRecord;
 
     public int SuperChatId;
     public int SuperChatItemId;

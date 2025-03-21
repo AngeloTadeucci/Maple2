@@ -36,6 +36,8 @@ public partial class WorldService {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             },
+            GuildName = info.GuildName,
+            GuildId = info.GuildId,
             Home = new HomeUpdate {
                 Name = info.HomeName,
                 MapId = info.PlotMapId,

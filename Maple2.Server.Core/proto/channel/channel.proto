@@ -7,6 +7,8 @@ import "sync.proto";
 
 // The channel service definition.
 service Channel {
+  // Manage field
+  rpc Field(maple2.FieldRequest) returns (maple2.FieldResponse);
   // Send a chat message.
   rpc Chat(maple2.ChatRequest) returns (maple2.ChatResponse);
   // Manage buddy list.

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 using Grpc.Core;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -88,7 +83,8 @@ public class PartyManager : IDisposable {
     }
 
     public bool CheckForDisband() {
-        if (Party.Members.Count <= 2) {
+        if (Party.Members.Values.Count(member => member.Info.Online) < 2 ||
+            Party.Members.Count <= 2) {
             PartyLookup.Disband(Party.Id);
             return true;
         }
@@ -143,7 +139,7 @@ public class PartyManager : IDisposable {
 
         var member = new PartyMember {
             PartyId = Party.Id,
-            Info = info.Clone(),
+            Info = info,
             JoinTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
         };
 
@@ -240,6 +236,17 @@ public class PartyManager : IDisposable {
         }
 
         return PartyError.none;
+    }
+
+    public void Disband(long requestorId) {
+        int onlineCount = Party.Members.Values.Count(member => member.Info.Online);
+        if (onlineCount == 0) {
+            PartyLookup.Disband(Party.Id);
+            return;
+        }
+        if (requestorId == Party.LeaderCharacterId) {
+            FindNewLeader(requestorId);
+        }
     }
 
     public string ConsumeInvite(long characterId) {
@@ -409,6 +416,7 @@ public class PartyManager : IDisposable {
             return PartyError.s_party_err_not_chief;
         }
 
+        Party.DungeonSet = set;
         Party.DungeonId = dungeonId;
         Party.DungeonLobbyRoomId = dungeonRoomId;
         Broadcast(new PartyRequest {

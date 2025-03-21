@@ -22,7 +22,7 @@ public partial class WorldService {
             case PartyRequest.PartyOneofCase.Create:
                 return Task.FromResult(CreateParty(request.RequestorId, request.Create));
             case PartyRequest.PartyOneofCase.Disband:
-                return Task.FromResult(DisbandParty(request.Disband));
+                return Task.FromResult(DisbandParty(request.RequestorId, request.Disband));
             case PartyRequest.PartyOneofCase.Invite:
                 return Task.FromResult(InviteParty(request.RequestorId, request.Invite));
             case PartyRequest.PartyOneofCase.RespondInvite:
@@ -60,12 +60,12 @@ public partial class WorldService {
         return new PartyResponse { Party = ToPartyInfo(manager.Party) };
     }
 
-    private PartyResponse DisbandParty(PartyRequest.Types.Disband disband) {
-        PartyError error = partyLookup.Disband(disband.PartyId);
-        if (error != PartyError.none) {
-            return new PartyResponse { Error = (int) error };
+    private PartyResponse DisbandParty(long requestorId, PartyRequest.Types.Disband disband) {
+        if (!partyLookup.TryGet(disband.PartyId, out PartyManager? manager)) {
+            return new PartyResponse { Error = (int) PartyError.s_party_err_not_found };
         }
 
+        manager.Disband(requestorId);
         return new PartyResponse { PartyId = disband.PartyId };
     }
 

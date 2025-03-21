@@ -261,7 +261,7 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["dungeon_clear"] = new TriggerDefinitionOverride("dungeon_clear") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("uiType", Str, "None")),
+            Types = BuildTypeOverride(("uiType", Str, null)),
         };
         ActionOverride["dungeon_clear_round"] = new TriggerDefinitionOverride("dungeon_clear_round") {
             Names = BuildNameOverride(),

@@ -20,6 +20,7 @@ namespace Maple2.Server.Game.Manager.Field;
 
 public interface IField : IDisposable {
     public int RoomId { get; }
+    public int DungeonId { get; }
     public bool Disposed { get; }
 
     #region Autofac Autowired
@@ -52,7 +53,8 @@ public interface IField : IDisposable {
 
     public RoomTimer? RoomTimer { get; }
     public FieldInstance FieldInstance { get; }
-
+    public FieldType FieldType { get; }
+    public int Size { get; init; }
 
     public int MapId { get; init; }
     public long FieldTick { get; }

@@ -75,6 +75,9 @@ public partial class TriggerContext {
         int round = rounds.ElementAtOrDefault(0, 1);
         int maxRound = rounds.ElementAtOrDefault(1, 1);
         int minRound = rounds.ElementAtOrDefault(2, 1);
+        if (minRound == maxRound) {
+            return;
+        }
         Broadcast(MassiveEventPacket.Round(round, maxRound, minRound, vOffset));
     }
 

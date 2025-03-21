@@ -5,10 +5,10 @@ using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Party;
+using Maple2.Model.Game.Dungeon;
 using Maple2.Model.Metadata;
-using Maple2.Server.World.Service;
 using Serilog;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
@@ -143,7 +143,7 @@ public partial class FieldManager {
             return field;
         }
 
-        public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata, long ownerId, Party? party = null) {
+        public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata, long ownerId, int size = 1, int partyId = 0) {
             var sw = new Stopwatch();
             sw.Start();
 
@@ -160,8 +160,14 @@ public partial class FieldManager {
             if (entities == null) {
                 throw new InvalidOperationException($"Failed to load entities for map: {dungeonMetadata.LobbyFieldId}");
             }
-            var lobbyField = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata, ownerId, party);
+
+            var dungeonRoomRecord = new DungeonRoomRecord(dungeonMetadata);
+            var lobbyField = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata, ownerId, size, partyId) {
+                DungeonRoomRecord = dungeonRoomRecord,
+                FieldType = FieldType.Default,
+            };
             context.InjectProperties(lobbyField);
+            lobbyField.Init();
 
             foreach (int fieldId in dungeonMetadata.FieldIds) {
                 if (!MapMetadata.TryGet(fieldId, out mapMetadata)) {
@@ -177,8 +183,10 @@ public partial class FieldManager {
                 if (entities == null) {
                     throw new InvalidOperationException($"Failed to load entities for map: {fieldId}");
                 }
-                var field = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata) {
+                var field = new DungeonFieldManager(dungeonMetadata, mapMetadata, ugcMetadata, entities, NpcMetadata, ownerId, size, partyId) {
                     Lobby = lobbyField,
+                    DungeonRoomRecord = dungeonRoomRecord,
+                    FieldType = FieldType.Dungeon,
                 };
                 context.InjectProperties(field);
                 field.Init();
@@ -190,6 +198,14 @@ public partial class FieldManager {
             dungeons.TryAdd(lobbyField.RoomId, lobbyField);
 
             return lobbyField;
+        }
+
+        public MigrationError DestroyDungeon(int roomId) {
+            if (!dungeons.TryGetValue(roomId, out DungeonFieldManager? dungeon)) {
+                return MigrationError.s_move_err_dungeon_not_exist;
+            }
+
+            return DisposeDungeon(dungeon);
         }
 
         /// <summary>
@@ -261,35 +277,7 @@ public partial class FieldManager {
                 }
 
                 foreach (DungeonFieldManager dungeonField in dungeons.Values) {
-                    int playerCount = dungeonField.Players.Values.Count + dungeonField.RoomFields.Values.Sum(x => x.Players.Values.Count);
-                    if (playerCount > 0) {
-                        continue;
-                    }
-                    if (dungeonField.Party != null) {
-                        // Check if party still exists
-                        PartyInfoResponse response = World.PartyInfo(new PartyInfoRequest {
-                            PartyId = dungeonField.Party.Id,
-                        });
-                        if (response.Party == null) {
-                            logger.Debug("Dungeon {DungeonId} party {PartyId} does not exist, disposing", dungeonField.DungeonId, dungeonField.Party.Id);
-                            dungeonField.Dispose();
-                        }
-                        continue;
-                    }
-
-                    dungeonField.Dispose();
-                }
-
-                foreach (int roomId in dungeons.Keys) {
-                    if (dungeons[roomId].Disposed) {
-                        List<int> roomIds = dungeons[roomId].RoomFields.Values.Select(x => x.RoomId).ToList();
-                        foreach (DungeonFieldManager roomField in dungeons[roomId].RoomFields.Values) {
-                            roomField.Dispose();
-                            subDungeonFields.TryRemove(roomField.RoomId, out _);
-                        }
-                        dungeons.TryRemove(roomId, out _);
-                        logger.Debug("Dungeon disposed room Ids: {roomIds}", string.Join(",", roomIds));
-                    }
+                    DisposeDungeon(dungeonField);
                 }
 
                 logger.Verbose("Field dispose loop sleeping for {Interval}ms", Constant.FieldDisposeLoopInterval);
@@ -299,6 +287,24 @@ public partial class FieldManager {
                     /* Do nothing */
                 }
             }
+        }
+
+        private MigrationError DisposeDungeon(DungeonFieldManager dungeon) {
+            int playerCount = dungeon.Players.Values.Count + dungeon.RoomFields.Values.Sum(x => x.Players.Values.Count);
+            if (playerCount > 0) {
+                return MigrationError.s_move_err_InsideDungeonUser;
+            }
+
+            dungeon.Dispose();
+
+            List<int> roomIds = dungeon.RoomFields.Values.Select(x => x.RoomId).ToList();
+            foreach (DungeonFieldManager roomField in dungeon.RoomFields.Values) {
+                roomField.Dispose();
+                subDungeonFields.TryRemove(roomField.RoomId, out _);
+            }
+            dungeons.TryRemove(dungeon.RoomId, out _);
+            logger.Debug("Dungeon disposed room Ids: {lobbyRoomId}, {roomIds}", dungeon.RoomId, string.Join(",", roomIds));
+            return MigrationError.ok;
         }
 
         public void Dispose() {

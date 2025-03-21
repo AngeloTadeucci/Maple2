@@ -144,7 +144,7 @@ internal record PyParameter(ScriptType Type, string Name) {
                 //"2" => "",
                 "3" => "BannerType.Winner",
                 "4" => "BannerType.Lose",
-                "5" => "BannerType.Fail",
+                "5" => "BannerType.GameOver",
                 "6" => "BannerType.Bonus",
                 "7" => "BannerType.Success",
                 _ => throw new ArgumentException($"Unexpected BannerType: {value}"),

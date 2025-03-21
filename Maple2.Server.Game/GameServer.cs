@@ -4,12 +4,11 @@ using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.PacketLib.Tools;
-using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
-using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
@@ -29,7 +28,6 @@ public class GameServer : Server<GameSession> {
     private readonly IGraphicsContext debugGraphicsContext;
 
     private readonly ItemMetadataStorage itemMetadataStorage;
-
 
     private static short _channel = 0;
 
@@ -102,6 +100,14 @@ public class GameServer : Server<GameSession> {
 
     public FieldManager? GetField(int mapId, int roomId = 0) {
         return fieldFactory.Get(mapId, roomId: roomId);
+    }
+
+    public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata metadata, long requesterId, int size, int partyId) {
+        return fieldFactory.CreateDungeon(metadata, requesterId, size, partyId);
+    }
+
+    public MigrationError DestroyDungeon(int roomId) {
+        return fieldFactory.DestroyDungeon(roomId);
     }
 
     public IList<GameEvent> FindEvent(GameEventType type) {

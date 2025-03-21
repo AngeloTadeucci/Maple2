@@ -16,6 +16,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<UserStatTable> userStatTable;
     private readonly Lazy<IndividualDropItemTable> individualDropItemTable;
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
+    private readonly Lazy<PrestigeIdExpTable> prestigeIdExpTable;
     private readonly Lazy<TimeEventTable> timeEventTable;
     private readonly Lazy<GameEventTable> gameEventTable;
     private readonly Lazy<OxQuizTable> oxQuizTable;
@@ -36,6 +37,7 @@ public class ServerTableMetadataStorage {
     public UserStatTable UserStatTable => userStatTable.Value;
     public IndividualDropItemTable IndividualDropItemTable => individualDropItemTable.Value;
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
+    public PrestigeIdExpTable PrestigeIdExpTable => prestigeIdExpTable.Value;
     public TimeEventTable TimeEventTable => timeEventTable.Value;
     public GameEventTable GameEventTable => gameEventTable.Value;
     public OxQuizTable OxQuizTable => oxQuizTable.Value;
@@ -57,6 +59,7 @@ public class ServerTableMetadataStorage {
         userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
         individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
         prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
+        prestigeIdExpTable = Retrieve<PrestigeIdExpTable>(context, "adventureExpIdTable.xml");
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
         gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
         oxQuizTable = Retrieve<OxQuizTable>(context, "oxQuiz.xml");

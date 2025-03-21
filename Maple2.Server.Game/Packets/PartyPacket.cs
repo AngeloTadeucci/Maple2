@@ -126,7 +126,7 @@ public static class PartyPacket {
         }
         pWriter.WriteBool(party.DungeonSet);
         pWriter.WriteInt(party.DungeonId);
-        pWriter.WriteBool(false);
+        pWriter.WriteBool(false); // Party Search
         pWriter.WriteByte();
         pWriter.WriteBool(party.Search != null);
         if (party.Search != null) {
@@ -199,12 +199,12 @@ public static class PartyPacket {
         return pWriter;
     }
 
-    public static ByteWriter PartyNotice(PartyMessage message, string message2 = "") {
+    public static ByteWriter PartyNotice(PartyMessage message, string systemSoundKey = "") {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.DungeonNotice);
 
         pWriter.WriteUnicodeString(message.ToString());
-        pWriter.WriteUnicodeString(); // "Field_Enterance_Reset_Dungeon"
+        pWriter.WriteUnicodeString(systemSoundKey); // "Field_Enterance_Reset_Dungeon"
         pWriter.WriteUnicodeString();
 
         return pWriter;
