@@ -13,6 +13,7 @@ public static class DungeonRoomPacket {
         Load = 5,
         Update = 6,
         Modify = 7,
+        DungeonResult = 11,
         Error = 18,
         RankRewards = 20,
     }
@@ -42,6 +43,21 @@ public static class DungeonRoomPacket {
         pWriter.Write<Command>(Command.Modify);
         pWriter.Write<DungeonRoomModify>(modifyType);
         pWriter.WriteInt(dungeonId);
+
+        return pWriter;
+    }
+
+    public static ByteWriter DungeonResult(DungeonState result, Dictionary<long, DungeonUserResult> statistics) {
+        var pWriter = Packet.Of(SendOp.RoomDungeon);
+        pWriter.Write<Command>(Command.DungeonResult);
+        pWriter.Write<DungeonState>(result);
+        pWriter.WriteInt(statistics.Count);
+        foreach (DungeonUserResult userResult in statistics.Values) {
+            pWriter.WriteLong(userResult.CharacterId);
+            pWriter.Write<DungeonGrade>(userResult.Grade);
+            pWriter.Write<DungeonAccumulationRecordType>(userResult.RecordType);
+            pWriter.WriteInt(userResult.Value);
+        }
 
         return pWriter;
     }

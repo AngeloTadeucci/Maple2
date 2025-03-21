@@ -1,6 +1,5 @@
-﻿// ReSharper disable InconsistentNaming
+// ReSharper disable InconsistentNaming
 
-using System;
 using Maple2.Model.Enum;
 
 #pragma warning disable IDE1006 // Naming Styles
@@ -111,6 +110,13 @@ public static class Constant {
 
     public const bool EnableRollEverywhere = false;
     public const bool HideHomeCommands = true;
+
+    public static IReadOnlyDictionary<string, int> ContentRewards { get; } = new Dictionary<string, int> {
+        {"miniGame", 1005},
+        {"dungeonHelper", 1006},
+        {"MiniGameType2", 0}, // Shanghai Runners
+        {"UserOpenMiniGameExtraReward", 0}, // Player hosted mini game extra rewards
+    };
 
     public const bool MailQuestItems = false; // Mail quest item rewards if inventory is full
 

@@ -102,7 +102,7 @@ public class ItemDropManager {
 
         if (index > 0 && dropGroupId > 0) {
             if (entryDict.TryGetValue(dropGroupId, out IndividualDropItemTable.Entry? entry)) {
-                return GetAllGroups(session, level, new List<IndividualDropItemTable.Entry> { entry }, index).ToList();
+                return GetAllGroups(session, level, [entry], index).ToList();
             }
         }
         return GetAllGroups(session, level, entryDict.Values.ToList()).ToList();

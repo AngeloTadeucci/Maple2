@@ -25,8 +25,10 @@ public class DungeonManager {
     private IDictionary<int, DungeonEnterLimit> EnterLimits => session.Player.Value.Character.DungeonEnterLimits;
     private IDictionary<int, DungeonRankReward> RankRewards => session.Player.Value.Unlock.DungeonRankRewards;
 
-    public DungeonFieldManager? Field { get; set; }
+    public DungeonFieldManager? Lobby { get; private set; }
     public DungeonRoomTable.DungeonRoomMetadata? Metadata;
+    public DungeonRoomRecord? DungeonRoomRecord => Lobby?.DungeonRoomRecord;
+    public DungeonUserRecord? UserRecord;
     private int LobbyRoomId { get; set; }
 
     private Party? Party => session.Party.Party;
@@ -42,7 +44,6 @@ public class DungeonManager {
     private void Init() {
         using GameStorage.Request db = session.GameStorage.Context();
         Records = db.GetDungeonRecords(session.CharacterId);
-    }
 
     public void Load() {
         using GameStorage.Request db = session.GameStorage.Context();
@@ -60,10 +61,22 @@ public class DungeonManager {
             DungeonEnterLimit limit = GetEnterLimit(metadata.Limit);
             EnterLimits[metadata.Id] = limit;
         }
+    }
 
+    public void Load() {
         session.Send(DungeonRoomPacket.Load(Records));
         session.Send(DungeonRoomPacket.RankRewards(RankRewards));
         session.Send(FieldEntrancePacket.Load(EnterLimits));
+    }
+
+    public void LoadField() {
+        if (Lobby == null) {
+            return;
+        }
+
+        if (Lobby.FieldInstance.InstanceType == InstanceType.DungeonLobby) {
+            session.Send(DungeonWaitingPacket.Set(Lobby.DungeonId, Lobby.Size));
+        }
     }
 
     public void UpdateDungeonEnterLimit() {
@@ -194,11 +207,16 @@ public class DungeonManager {
     }
 
     public void SetDungeon(DungeonFieldManager field) {
-        Field = field;
-        Metadata = field.Metadata;
+        Lobby = field;
+        LobbyRoomId = field.RoomId;
+        Metadata = field.DungeonMetadata;
+        UserRecord = new DungeonUserRecord(field.DungeonId, session.CharacterId);
+
+        field.DungeonRoomRecord.UserResults.TryAdd(session.CharacterId, UserRecord);
     }
 
     public void CreateDungeonRoom(int dungeonId, bool withParty) {
+        int size = 1;
         if (!session.TableMetadata.DungeonRoomTable.Entries.TryGetValue(dungeonId, out DungeonRoomTable.DungeonRoomMetadata? metadata)) {
             session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_dungeon_notOpenTimeDungeon));
             return;
@@ -218,17 +236,27 @@ public class DungeonManager {
                 session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_party_err_not_chief));
                 return;
             }
+            size = Party.Members.Count;
         }
 
+        try {
+            FieldResponse response = session.World.Field(new FieldRequest {
+                CreateDungeon = new FieldRequest.Types.CreateDungeon {
+                    DungeonId = dungeonId,
+                    Size = size,
+                    PartyId = session.Party.Id,
+                },
+            });
+            if ((MigrationError) response.Error != MigrationError.ok) {
+                session.Send(MigrationPacket.GameToGameError((MigrationError) response.Error));
+                return;
+            }
 
-        DungeonFieldManager? dungeonField = session.FieldFactory.CreateDungeon(metadata, session.CharacterId, Party);
-        if (dungeonField == null) {
-            session.Send(DungeonRoomPacket.Error(DungeonRoomError.s_room_dungeon_NotAllowTime));
+            LobbyRoomId = response.RoomId;
+        } catch (RpcException) {
+            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_no_server));
             return;
         }
-        LobbyRoomId = dungeonField.RoomId;
-
-        SetDungeon(dungeonField);
 
         if (withParty) {
             var request = new PartyRequest {
@@ -236,7 +264,7 @@ public class DungeonManager {
                 SetDungeon = new PartyRequest.Types.SetDungeon {
                     PartyId = Party!.Id,
                     DungeonId = dungeonId,
-                    DungeonRoomId = dungeonField.RoomId,
+                    DungeonRoomId = LobbyRoomId,
                     Set = true,
                 },
             };
@@ -246,6 +274,7 @@ public class DungeonManager {
             } catch (RpcException) { }
         }
 
+        Metadata = metadata;
         MigrateToDungeon();
     }
 
@@ -253,26 +282,24 @@ public class DungeonManager {
         if (Party == null) {
             return;
         }
-        FieldManager? field = session.Field.FieldFactory.Get(roomId: Party.DungeonLobbyRoomId);
-        if (field is not DungeonFieldManager dungeonField) {
-            return;
-        }
 
-        SetDungeon(dungeonField);
         MigrateToDungeon();
     }
 
     public void EnterInitField() {
-        if (Field == null || Metadata == null) {
+        if (Lobby == null || Metadata == null) {
             logger.Error("Field is null, cannot enter dungeon");
             return;
         }
 
-        if (!Field.RoomFields.TryGetValue(Metadata.FieldIds[0], out DungeonFieldManager? firstField)) {
+        if (!Lobby.RoomFields.TryGetValue(Metadata.FieldIds[0], out DungeonFieldManager? firstField)) {
             logger.Error("First field is null, cannot enter dungeon");
             return;
         }
 
+        if (firstField.DungeonRoomRecord.StartTick == 0) {
+            firstField.DungeonRoomRecord.StartTick = Environment.TickCount;
+        }
         session.Send(session.PrepareField(firstField.MapId, roomId: firstField.RoomId) ? FieldEnterPacket.Request(session.Player) :
             FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
@@ -288,9 +315,80 @@ public class DungeonManager {
             LobbyRoomId = roomId;
         } else {
             Metadata = null;
-            Field = null;
             LobbyRoomId = 0;
         }
+    }
+
+    public void CompleteDungeon() {
+        if (Lobby == null || Metadata == null || UserRecord == null) {
+            return;
+        }
+        DungeonRoomReward metadata = Metadata.Reward;
+        UserRecord.IsDungeonSuccess = Lobby.DungeonRoomRecord.State == DungeonState.Clear;
+        UserRecord.TotalSeconds = (int) (Lobby.DungeonRoomRecord.EndTick - Lobby.DungeonRoomRecord.StartTick) / 1000;
+
+        int exp = (int) metadata.Exp;
+        if (metadata.ExpRate > 0f) {
+            exp = (int) (metadata.Exp * metadata.ExpRate);
+        }
+        UserRecord.Rewards[DungeonRewardType.Exp] = exp;
+        UserRecord.Rewards[DungeonRewardType.Meso] = (int) metadata.Meso;
+        session.Exp.AddExp(UserRecord.Rewards[DungeonRewardType.Exp]);
+        session.Currency.Meso += UserRecord.Rewards[DungeonRewardType.Meso];
+        session.Send(DungeonRoomPacket.Modify(DungeonRoomModify.GiveReward, Lobby.DungeonId));
+
+        ICollection<Item> items = [];
+        if (metadata.UnlimitedDropBoxIds.Length > 0) {
+            foreach (int boxId in metadata.UnlimitedDropBoxIds) {
+                items = items.Concat(Lobby.ItemDrop.GetIndividualDropItems(boxId)).ToList();
+                items = items.Concat(Lobby.ItemDrop.GetGlobalDropItems(boxId, Metadata.Level)).ToList();
+            }
+        }
+
+        foreach (Item item in items) {
+            UserRecord.RewardItems.Add(item);
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
+            }
+        }
+
+        session.Send(DungeonRewardPacket.Dungeon(UserRecord));
+    }
+
+    public void Reset() {
+        if (session.Party.Party == null || session.Party.Party.LeaderCharacterId != session.CharacterId) {
+            return;
+        }
+
+        try {
+            FieldResponse response = session.World.Field(new FieldRequest {
+                DestroyDungeon = new FieldRequest.Types.DestroyDungeon {
+                    RoomId = LobbyRoomId,
+                },
+            });
+            if ((MigrationError) response.Error != MigrationError.ok) {
+                session.Send(MigrationPacket.GameToGameError((MigrationError) response.Error));
+                return;
+            }
+        } catch (RpcException) {
+            session.Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_no_server));
+            return;
+        }
+
+        var request = new PartyRequest {
+            RequestorId = session.CharacterId,
+            SetDungeon = new PartyRequest.Types.SetDungeon {
+                PartyId = session.Party.Id,
+                DungeonId = 0,
+                DungeonRoomId = 0,
+                Set = false,
+            },
+        };
+
+        try {
+            session.World.Party(request);
+        } catch (RpcException) { }
+
     }
 
     private void MigrateToDungeon() {

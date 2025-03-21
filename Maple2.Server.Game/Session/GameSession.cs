@@ -245,8 +245,6 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         Buddy.Load();
-        // We load Party after partyInfo update to properly set the player's online status.
-        Party = new PartyManager(World, this);
 
         Send(SurvivalPacket.UpdateStats(player.Account));
 
@@ -302,6 +300,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Dungeon.Load();
         // InGameRank
         Send(FieldEnterPacket.Request(Player));
+        Party = new PartyManager(World, this);
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
@@ -330,6 +329,7 @@ public sealed partial class GameSession : Core.Network.Session {
         HeldLiftup = null;
         ActiveSkills.Clear();
         NpcScript = null;
+        MiniGameRecord = null;
 
         if (Field != null) {
             Scheduler.Stop();
@@ -351,8 +351,16 @@ public sealed partial class GameSession : Core.Network.Session {
             ownerId = AccountId;
         }
 
-        if (Field is DungeonFieldManager dungeonField && dungeonField.RoomFields.TryGetValue(mapId, out DungeonFieldManager? nextDungeonField)) {
-            newField = nextDungeonField;
+        if (Field is DungeonFieldManager dungeonField) {
+            if (dungeonField.Lobby!.RoomFields.TryGetValue(mapId, out DungeonFieldManager? nextDungeonField)) {
+                newField = nextDungeonField;
+            } else if (mapId == dungeonField.Lobby.MapId) {
+                newField = dungeonField.Lobby;
+            } else {
+                MigrateOutOfInstance(mapId);
+                newField = null;
+                return false;
+            }
         } else {
             newField = FieldFactory.Get(mapId, ownerId: ownerId, roomId: roomId);
             if (newField == null) {
@@ -411,6 +419,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(EmotePacket.Load(Player.Value.Unlock.Emotes.Select(id => new Emote(id)).ToList()));
         Config.LoadMacros();
         Config.LoadSkillCooldowns();
+        Dungeon.LoadField();
         Marriage.Load();
 
         Send(CubePacket.DesignRankReward(Player.Value.Home));
@@ -511,6 +520,63 @@ public sealed partial class GameSession : Core.Network.Session {
     public IEnumerable<PremiumMarketItem> GetPremiumMarketItems(params int[] tabIds) => server.GetPremiumMarketItems(tabIds);
 
     public PremiumMarketItem? GetPremiumMarketItem(int id, int subId = 0) => server.GetPremiumMarketItem(id, subId);
+
+    public RewardRecord GetRewardContent(int id) {
+        if (!TableMetadata.RewardContentTable.BaseEntries.TryGetValue(id, out RewardContentTable.Base? baseMetadata)) {
+            return new RewardRecord();
+        }
+
+        long exp = 0;
+        if (baseMetadata.ExpTableId > 0) {
+            if (baseMetadata.ExpTableId > 100000 && TableMetadata.RewardContentTable.ExpStaticEntries.TryGetValue(baseMetadata.ExpTableId, out exp)) {
+            } else if (TableMetadata.ExpTable.ExpBase.TryGetValue(baseMetadata.ExpTableId, out IReadOnlyDictionary<int, long>? expTable)) {
+                exp = expTable[Player.Value.Character.Level];
+            }
+            if (baseMetadata.ExpFactor > 0f) {
+                exp = (long) (exp * baseMetadata.ExpFactor);
+            }
+            Exp.AddExp(exp);
+        }
+
+        long meso = 0;
+        if (baseMetadata.MesoTableId > 0) {
+            if (baseMetadata.MesoTableId > 100000 && TableMetadata.RewardContentTable.MesoStaticEntries.TryGetValue(baseMetadata.MesoTableId, out meso)) {
+            } else if (TableMetadata.RewardContentTable.MesoEntries.TryGetValue(baseMetadata.MesoTableId, out Dictionary<int, long>? mesoTable)) {
+                meso = mesoTable[Player.Value.Character.Level];
+            }
+            if (baseMetadata.MesoFactor > 0f) {
+                meso = (long) (meso * baseMetadata.MesoFactor);
+            }
+            Currency.Meso += meso;
+        }
+
+        long prestigeExp = 0;
+        if (baseMetadata.PrestigeExpTableId > 0 && ServerTableMetadata.PrestigeIdExpTable.Entries.TryGetValue(baseMetadata.PrestigeExpTableId, out PrestigeIdExpTable.Entry? prestigeExpTable)) {
+            // TODO: Prestige exp given this way is fixed. Need to revise how exp is given.
+        }
+
+        List<Item> items = [];
+        if (baseMetadata.ItemTableId > 0 && TableMetadata.RewardContentTable.ItemEntries.TryGetValue(baseMetadata.ItemTableId, out RewardContentTable.Item? itemMetadata)) {
+            foreach (RewardContentTable.Item.Data data in itemMetadata.ItemData) {
+                if ((data.MinLevel > 0 && Player.Value.Character.Level < data.MinLevel) ||
+                    (data.MaxLevel > 0 && Player.Value.Character.Level > data.MaxLevel)) {
+                    continue;
+                }
+                foreach (RewardItem rewardItem in data.RewardItems) {
+                    Item? item = Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+                    if (item != null) {
+                        items.Add(item);
+                    }
+                }
+            }
+            foreach (Item item in items) {
+                if (!Item.Inventory.Add(item)) {
+                    Item.MailItem(item);
+                }
+            }
+        }
+        return new RewardRecord(items, exp, prestigeExp, meso);
+    }
 
     public void ChannelBroadcast(ByteWriter packet) {
         server.Broadcast(packet);
@@ -628,6 +694,8 @@ public sealed partial class GameSession : Core.Network.Session {
                 Channel = 0,
                 Async = true,
             });
+
+            Party.CheckDisband();
         }
 
         try {

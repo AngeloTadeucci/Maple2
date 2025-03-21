@@ -5,6 +5,16 @@ namespace Maple2.Server.Game.Trigger;
 public partial class TriggerContext {
     public void DungeonClear(string uiType) {
         ErrorLog("[DungeonClear] uiType:{UiType}", uiType);
+        if (Field is not DungeonFieldManager dungeonField) {
+            return;
+        }
+
+        if (uiType == "None") {
+            // Do not send dungeon clear UI
+            return;
+        }
+
+        dungeonField.ChangeState(Maple2.Model.Enum.DungeonState.Clear);
     }
 
     public void DungeonClearRound(int round) {
@@ -107,16 +117,12 @@ public partial class TriggerContext {
 
     #region Conditions
     public bool CheckDungeonLobbyUserCount() {
+        DebugLog("[CheckDungeonLobbyUserCount]");
         if (Field is not DungeonFieldManager dungeonField) {
             return false;
         }
 
-        if (dungeonField.Party is null) {
-            return Field.Players.Values.Count >= 1;
-        }
-
-        DebugLog("[CheckDungeonLobbyUserCount]");
-        return dungeonField.Party.Members.Count == Field.Players.Values.Count;
+        return Field.Players.Values.Count >= dungeonField.Size;
     }
 
     public bool DungeonTimeout() {
@@ -125,15 +131,8 @@ public partial class TriggerContext {
     }
 
     public bool IsDungeonRoom() {
-        if (Field is not DungeonFieldManager dungeonField) {
-            return false;
-        }
-
-        if (dungeonField.Party is not null) {
-            return true;
-        }
         DebugLog("[IsDungeonRoom]");
-        return false;
+        return Field is DungeonFieldManager;
     }
 
     public bool IsPlayingMapleSurvival() {

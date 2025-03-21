@@ -51,7 +51,7 @@ public class OxQuizWidget : Widget {
         }
         string answer = string.Empty;
         if (isDevMode) {
-            answer = question.IsTrue ? "TRUE" : "FALSE";
+            answer = question.IsTrue ? "\n[DebugMode] TRUE" : "\n[DebugMode] FALSE";
         }
         if (!int.TryParse(durationStr, out int duration)) {
             duration = 15;

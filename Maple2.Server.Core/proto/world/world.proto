@@ -12,6 +12,8 @@ service World {
   rpc MigrateOut(MigrateOutRequest) returns (MigrateOutResponse);
   // Migrate into a server.
   rpc MigrateIn(MigrateInRequest) returns (MigrateInResponse);
+  // Cross field
+  rpc Field(maple2.FieldRequest) returns (maple2.FieldResponse);
   // Retrieve information about channels.
   rpc Channels(ChannelsRequest) returns (ChannelsResponse);
   // Send a chat message.

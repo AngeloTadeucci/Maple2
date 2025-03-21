@@ -2,6 +2,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using Grpc.Core;
+using Maple2.Model.Error;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Helpers;
 using Microsoft.Extensions.Caching.Memory;
@@ -97,5 +98,36 @@ public partial class WorldService {
         } while (tokenCache.TryGetValue(token, out _));
 
         return token;
+    }
+
+    public override Task<FieldResponse> Field(FieldRequest request, ServerCallContext context) {
+        switch (request.FieldCase) {
+            case FieldRequest.FieldOneofCase.CreateDungeon:
+                return Task.FromResult(CreateDungeon(request));
+            case FieldRequest.FieldOneofCase.DestroyDungeon:
+                return Task.FromResult(DestroyDungeon(request));
+            default:
+                return Task.FromResult(new FieldResponse { Error = (int) MigrationError.ok });
+        }
+    }
+
+    private FieldResponse CreateDungeon(FieldRequest request) {
+        if (!channelClients.TryGetClient(channelClients.FirstChannel(), out Channel.Service.Channel.ChannelClient? client)) {
+            return new FieldResponse {
+                Error = (int) MigrationError.s_move_err_no_server,
+            };
+        }
+
+        return client.Field(request);
+    }
+
+    private FieldResponse DestroyDungeon(FieldRequest request) {
+        if (!channelClients.TryGetClient(channelClients.FirstChannel(), out Channel.Service.Channel.ChannelClient? client)) {
+            return new FieldResponse {
+                Error = (int) MigrationError.s_move_err_no_server,
+            };
+        }
+
+        return client.Field(request);
     }
 }

@@ -43,6 +43,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
         yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
+        yield return new ServerTableMetadata { Name = "adventureIdExpTable.xml", Table = ParsePrestigeIdExpTable() };
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
         yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
         yield return new ServerTableMetadata { Name = "OxQuiz.xml", Table = ParseOxQuizTable() };
@@ -63,7 +64,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
                 InstanceFieldMetadata instanceFieldMetadata = new(
                     MapId: fieldId,
-                    Type: (InstanceType) instanceField.instanceType,
+                    Type: Enum.TryParse(instanceField.instanceType.ToString(), out InstanceType instanceType) ? instanceType : InstanceType.none,
                     InstanceId: instanceId,
                     BackupSourcePortal: instanceField.backupSourcePortal,
                     PoolCount: instanceField.poolCount,
@@ -640,6 +641,18 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         }
 
         return new PrestigeExpTable(results);
+    }
+
+    private PrestigeIdExpTable ParsePrestigeIdExpTable() {
+        var results = new Dictionary<int, PrestigeIdExpTable.Entry>();
+        foreach ((int id, AdventureIdExpTable table) in parser.ParseAdventureIdExp()) {
+            results.Add(id, new PrestigeIdExpTable.Entry(
+                Id: id,
+                Value: table.value,
+                Type: ToExpType(table.expType)));
+        }
+
+        return new PrestigeIdExpTable(results);
     }
 
     private static ExpType ToExpType(AdventureExpType type) {

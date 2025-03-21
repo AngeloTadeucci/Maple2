@@ -71,6 +71,9 @@ public partial class FieldManager : IField {
 
     public int MapId { get; init; }
     public int RoomId { get; init; }
+    public int DungeonId { get; init; }
+    public int Size { get; init; }
+    public FieldType FieldType { get; init; }
     public FieldInstance FieldInstance { get; private set; }
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
@@ -98,6 +101,8 @@ public partial class FieldManager : IField {
         if (MapId is Constant.PerformanceMapId) {
             PerformanceStage = new PerformanceStageManager(this);
         }
+
+        FieldType = FieldType.Default;
     }
 
     // Init is separate from constructor to allow properties to be injected first.
@@ -115,7 +120,7 @@ public partial class FieldManager : IField {
         }
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
-            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
+            FieldInstance = new FieldInstance( instanceField.Type, instanceField.InstanceId);
         }
 
         if (ugcMetadata.Plots.Count > 0) {
@@ -126,7 +131,12 @@ public partial class FieldManager : IField {
         }
 
         // Create default to place liftable cubes
-        Plots[0] = Plot.Default;
+        Plots[0] = new Plot(new UgcMapGroup(0,
+            0,
+            0,
+            new UgcMapGroup.Cost(0, 0, 0),
+            new UgcMapGroup.Cost(0, 0, 0),
+            new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
 
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
             AddTrigger(trigger);

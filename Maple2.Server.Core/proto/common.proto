@@ -2,6 +2,27 @@ syntax = "proto3";
 
 package maple2;
 
+message FieldRequest {
+  message CreateDungeon {
+    int32 dungeon_id = 1;
+    int32 size = 2;
+    int32 party_id = 3;
+  }
+  message DestroyDungeon {
+    int32 room_id = 1;
+  }
+  int64 requester_id = 1;
+  oneof field {
+    CreateDungeon create_dungeon = 2;
+    DestroyDungeon destroy_dungeon = 3;
+  }
+}
+
+message FieldResponse {
+  int32 error = 1;
+  int32 room_id = 2;
+}
+
 message ChatRequest {
   message Whisper {
     int64 recipient_id = 1;

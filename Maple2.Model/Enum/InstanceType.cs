@@ -6,15 +6,15 @@ public enum InstanceType : byte {
     channelScale = 2,
     massiveEvent = 3,
     ugcMap = 4,
-    GameMaker = 5,
-    GuildPvp = 6,
-    GuildEvent = 7,
-    RankingPvp = 8,
+    GameMaker = 5, //UGD
+    GuildEvent = 6,
+    GuildPvp = 7, // Not confirmed
+    DungeonLobby = 8,
     GuildHouse = 9,
-    GuildVsGame = 10,
-    DungeonLobby = 11,
-    MapleSurvival = 12,
-    MapleSurvivalSquad = 13,
+    GuildVsGame = 10, // Not confirmed
+    RankingPvp = 11, // Not confirmed
+    MapleSurvival = 12, // Not confirmed
+    MapleSurvivalSquad = 13, // Not confirmed
     FieldWar = 14,
     WeddingHall = 15,
 }
