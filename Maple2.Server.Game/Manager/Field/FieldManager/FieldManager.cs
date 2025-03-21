@@ -120,7 +120,7 @@ public partial class FieldManager : IField {
         }
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
-            FieldInstance = new FieldInstance( instanceField.Type, instanceField.InstanceId);
+            FieldInstance = new FieldInstance(instanceField.Type, instanceField.InstanceId);
         }
 
         if (ugcMetadata.Plots.Count > 0) {

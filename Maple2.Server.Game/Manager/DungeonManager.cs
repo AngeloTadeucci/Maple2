@@ -72,7 +72,7 @@ public class DungeonManager {
             return;
         }
 
-        if (Lobby.FieldInstance.InstanceType == InstanceType.DungeonLobby) {
+        if (session.Field.FieldInstance.InstanceType == InstanceType.DungeonLobby) {
             session.Send(DungeonWaitingPacket.Set(Lobby.DungeonId, Lobby.Size));
         }
     }
@@ -285,7 +285,7 @@ public class DungeonManager {
     }
 
     public void EnterInitField() {
-        if (Lobby == null || Metadata == null) {
+        if (Lobby == null || Metadata == null || Lobby.RoomFields.IsEmpty) {
             logger.Error("Field is null, cannot enter dungeon");
             return;
         }

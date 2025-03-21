@@ -5,7 +5,7 @@ using Maple2.Server.Core.Packets;
 namespace Maple2.Server.Game.Packets;
 
 public static class DungeonWaitingPacket {
-    public static ByteWriter Set (int dungeonId, int size) {
+    public static ByteWriter Set(int dungeonId, int size) {
         var pWriter = Packet.Of(SendOp.DungeonWaiting);
         pWriter.WriteInt(dungeonId);
         pWriter.WriteInt(size);

@@ -62,7 +62,7 @@ public class DungeonUserRecord : IUserContentRecord {
             writer.WriteInt(value);
         }
 
-        writer.WriteInt(Rewards.Count);
+        writer.WriteInt(RewardItems.Count);
         foreach (RewardItem item in RewardItems) {
             writer.WriteInt(item.ItemId);
             writer.WriteInt(item.Rarity);

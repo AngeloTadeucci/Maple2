@@ -9,7 +9,7 @@ public static class RoomStageDungeonPacket {
         Set = 0,
     }
 
-    public static ByteWriter Set (int dungeonId) {
+    public static ByteWriter Set(int dungeonId) {
         var pWriter = Packet.Of(SendOp.RoomStageDungeon);
         pWriter.Write<Command>(Command.Set);
         pWriter.WriteInt(dungeonId);

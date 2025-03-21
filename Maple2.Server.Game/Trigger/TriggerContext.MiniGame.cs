@@ -101,6 +101,7 @@ public partial class TriggerContext {
     public void MiniGameGiveReward(int winnerBoxId, string contentType, string type) {
         if (!Constant.ContentRewards.TryGetValue(contentType, out int rewardId)) {
             WarnLog("MiniGameGiveReward: {Type} not found", type);
+            return;
         }
         IEnumerable<FieldPlayer> players = PlayersInBox(winnerBoxId);
         foreach (FieldPlayer player in players) {

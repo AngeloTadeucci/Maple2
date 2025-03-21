@@ -4,7 +4,7 @@ namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void DungeonClear(string uiType) {
-        ErrorLog("[DungeonClear] uiType:{UiType}", uiType);
+        DebugLog("[DungeonClear] uiType:{UiType}", uiType);
         if (Field is not DungeonFieldManager dungeonField) {
             return;
         }

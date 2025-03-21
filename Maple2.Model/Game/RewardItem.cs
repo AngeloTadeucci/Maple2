@@ -26,7 +26,7 @@ public readonly record struct RewardItem {
 }
 
 public readonly struct RewardRecord {
-    public ICollection<RewardItem>? Items { get; } = [];
+    public ICollection<RewardItem> Items { get; } = [];
     public long Exp { get; }
     public long PrestigeExp { get; }
     public long Meso { get; }

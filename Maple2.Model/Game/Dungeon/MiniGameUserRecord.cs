@@ -25,10 +25,8 @@ public class MiniGameUserRecord : IUserContentRecord {
         Rewards[DungeonRewardType.Meso] += (int) record.Meso;
         Rewards[DungeonRewardType.Prestige] += (int) record.PrestigeExp;
 
-        if (record.Items != null) {
-            foreach (RewardItem item in record.Items) {
-                RewardItems.Add(item);
-            }
+        foreach (RewardItem item in record.Items) {
+            RewardItems.Add(item);
         }
     }
 
