@@ -45,8 +45,6 @@ public class DungeonManager {
         using GameStorage.Request db = session.GameStorage.Context();
         Records = db.GetDungeonRecords(session.CharacterId);
 
-    public void Load() {
-        using GameStorage.Request db = session.GameStorage.Context();
         foreach (DungeonRoomTable.DungeonRoomMetadata metadata in session.TableMetadata.DungeonRoomTable.Entries.Values) {
             if (!Records.TryGetValue(metadata.Id, out DungeonRecord? record)) {
                 record = new DungeonRecord(metadata.Id);

@@ -280,18 +280,6 @@ public partial class FieldManager {
                     DisposeDungeon(dungeonField);
                 }
 
-                foreach (int roomId in dungeons.Keys) {
-                    if (dungeons[roomId].Disposed) {
-                        List<int> roomIds = dungeons[roomId].RoomFields.Values.Select(x => x.RoomId).ToList();
-                        foreach (DungeonFieldManager roomField in dungeons[roomId].RoomFields.Values) {
-                            roomField.Dispose();
-                            subDungeonFields.TryRemove(roomField.RoomId, out _);
-                        }
-                        dungeons.TryRemove(roomId, out _);
-                        logger.Debug("Dungeon disposed room Ids: {roomIds}", string.Join(",", roomIds));
-                    }
-                }
-
                 logger.Verbose("Field dispose loop sleeping for {Interval}ms", Constant.FieldDisposeLoopInterval);
                 try {
                     Task.Delay(Constant.FieldDisposeLoopInterval, cancel.Token).Wait(cancel.Token);
