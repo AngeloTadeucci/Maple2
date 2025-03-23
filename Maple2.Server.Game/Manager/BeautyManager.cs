@@ -82,7 +82,7 @@ public sealed class BeautyManager : IDisposable {
 
         // Making a copy due to previous hair being added to delete collection
         Item? previousHairCopy = previousHair.Clone();
-        GameStorage.Request db = session.GameStorage.Context();
+        using GameStorage.Request db = session.GameStorage.Context();
         previousHairCopy = db.CreateItem(session.CharacterId, previousHairCopy);
         if (previousHairCopy == null) {
             return;
