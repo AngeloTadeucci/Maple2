@@ -1,4 +1,4 @@
-name: Build+Test .NET
+name: Build .NET
 
 on:
     push:
@@ -19,16 +19,16 @@ jobs:
             - name: Cache NuGet Packages
               id: nuget-packages
               uses: actions/cache@v3
-              env:
-                  cache-name: nuget-package-cache
               with:
-                  path: ~/.nuget/packages
-                  key: ${{ runner.os }}-${{ env.cache-name }}
+                path: ~/.nuget/packages
+                key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                restore-keys: |
+                  ${{ runner.os }}-nuget-
 
             - name: List NuGet Packages
               if: ${{ steps.nuget-packages.outputs.cache-hit == 'true' }}
               continue-on-error: true
-              run: ls -lh ~/.nuget/packages
+              run: Get-ChildItem ~/.nuget/packages -Force
             - name: Restore dependencies
               run: dotnet restore
             - name: Build
