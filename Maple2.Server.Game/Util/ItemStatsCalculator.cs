@@ -199,26 +199,26 @@ public sealed class ItemStatsCalculator {
 
         foreach (BasicAttribute attribute in option.Basic.Keys) {
             if (table.Values.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
-                int value = GetValue(item, itemOptionMetadata, attribute, tableValues: values, rollMax: rollMax);
+                int value = GetValue(attribute, tableValues: values, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((int) (value * option.MultiplyFactor));
             } else if (table.Rates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
-                int rateInt = GetValue(item, itemOptionMetadata, attribute, tableRates: rates, rollMax: rollMax);
+                int rateInt = GetValue(attribute, tableRates: rates, rollMax: rollMax);
                 option.Basic[attribute] = new BasicOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
         foreach (SpecialAttribute attribute in option.Special.Keys) {
             if (table.SpecialValues.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
-                int value = GetValue(item, itemOptionMetadata, specialAttribute: attribute, tableValues: values, rollMax: rollMax);
+                int value = GetValue(specialAttribute: attribute, tableValues: values, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
             } else if (table.SpecialRates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
-                int rateInt = GetValue(item, itemOptionMetadata, specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
+                int rateInt = GetValue(specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption((rateInt / 1000f) * option.MultiplyFactor);
             }
         }
 
         return true;
 
-        int GetValue(Item item, ItemOption itemOptionMetadata, BasicAttribute? attribute = null, SpecialAttribute? specialAttribute = null, ItemEquipVariationTable.Set<int>[]? tableValues = null, ItemEquipVariationTable.Set<float>[]? tableRates = null, bool rollMax = false) {
+        int GetValue(BasicAttribute? attribute = null, SpecialAttribute? specialAttribute = null, ItemEquipVariationTable.Set<int>[]? tableValues = null, ItemEquipVariationTable.Set<float>[]? tableRates = null, bool rollMax = false) {
             var weightedValues = new WeightedSet<int>();
             var weightedRates = new WeightedSet<float>();
             if (item.Type.IsPet) {
@@ -446,13 +446,17 @@ public sealed class ItemStatsCalculator {
             } else if (TableMetadata.ItemVariationTable.Rates.TryGetValue(basicAttribute.Value, out ItemVariationTable.Range<float>[]? rates)) {
                 foreach (ItemVariationTable.Range<float> range in rates) {
                     if (rate >= range.Min && rate <= range.Max) {
-                        int convertedVariation = (int) range.Variation * 1000;
-                        int convertedRate = (int) rate * 1000;
+                        int convertedVariation = (int) (range.Variation * 1000);
+                        int convertedRate = (int) (rate * 1000);
                         return Random.Shared.Next(convertedRate, convertedRate + convertedVariation + 1);
                     }
                 }
             }
-        } else if (specialAttribute != null) {
+
+            return value;
+        }
+
+        if (specialAttribute != null) {
             if (TableMetadata.ItemVariationTable.SpecialValues.TryGetValue(specialAttribute.Value, out ItemVariationTable.Range<int>[]? values)) {
                 foreach (ItemVariationTable.Range<int> range in values) {
                     if (value >= range.Min && value <= range.Max) {
@@ -462,13 +466,16 @@ public sealed class ItemStatsCalculator {
             } else if (TableMetadata.ItemVariationTable.SpecialRates.TryGetValue(specialAttribute.Value, out ItemVariationTable.Range<float>[]? rates)) {
                 foreach (ItemVariationTable.Range<float> range in rates) {
                     if (rate >= range.Min && rate <= range.Max) {
-                        int convertedVariation = (int) range.Variation * 1000;
-                        int convertedRate = (int) rate * 1000;
+                        int convertedVariation = (int) (range.Variation * 1000);
+                        int convertedRate = (int) (rate * 1000);
                         return Random.Shared.Next(convertedRate, convertedRate + convertedVariation + 1);
                     }
                 }
             }
+
+            return (int) (rate * 1000);
         }
+
         return 0;
     }
 
