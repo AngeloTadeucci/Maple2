@@ -453,7 +453,11 @@ public sealed class ItemStatsCalculator {
                 }
             }
 
-            return value;
+            if (value != 0) {
+                return value;
+            }
+
+            return (int) (rate * 1000);
         }
 
         if (specialAttribute != null) {
@@ -471,6 +475,10 @@ public sealed class ItemStatsCalculator {
                         return Random.Shared.Next(convertedRate, convertedRate + convertedVariation + 1);
                     }
                 }
+            }
+
+            if (value != 0) {
+                return value;
             }
 
             return (int) (rate * 1000);
