@@ -73,11 +73,15 @@ if (server == null || port == null || database == null || user == null || passwo
 
 string worldServerDir = Path.Combine(Paths.SOLUTION_DIR, "Maple2.Server.World");
 
+bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+bool isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
 // check if dotnet ef is installed
 Process processCheck;
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+if (isWindows) {
     processCheck = Process.Start("CMD.exe", "/C dotnet ef");
-} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+} else if (isLinux || isMac) {
     processCheck = Process.Start("bash", "-c \"dotnet ef\"");
 } else {
     throw new PlatformNotSupportedException("Unsupported OS platform");
@@ -85,7 +89,33 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 processCheck.WaitForExit();
 
 if (processCheck.ExitCode != 0) {
-    throw new Exception("dotnet ef is not installed. Please install it by running 'dotnet tool install --global dotnet-ef'");
+
+    Process installEf;
+    if (isWindows) {
+        installEf = Process.Start("CMD.exe", "/C dotnet tool install --global dotnet-ef");
+    } else if (isLinux || isMac) {
+        installEf = Process.Start("bash", "-c \"dotnet tool install --global dotnet-ef\"");
+    } else {
+        throw new PlatformNotSupportedException("Unsupported OS platform");
+    }
+    installEf.WaitForExit();
+    if (installEf.ExitCode != 0) {
+        throw new Exception("Failed to install dotnet-ef. Please install it manually by running 'dotnet tool install --global dotnet-ef'");
+    }
+
+    if (isWindows) {
+        string dotnetToolsPath = Environment.GetEnvironmentVariable("USERPROFILE") + "/.dotnet/tools";
+        string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+        Environment.SetEnvironmentVariable("PATH", currentPath + ";" + dotnetToolsPath);
+        Console.WriteLine($"Updated PATH to include {dotnetToolsPath}");
+    } else if (isLinux || isMac) {
+        string dotnetToolsPath = Environment.GetEnvironmentVariable("HOME") + "/.dotnet/tools";
+        string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+        Environment.SetEnvironmentVariable("PATH", currentPath + ":" + dotnetToolsPath);
+        Console.WriteLine($"Updated PATH to include {dotnetToolsPath}");
+    } else {
+        throw new PlatformNotSupportedException("Unsupported OS platform");
+    }
 }
 
 string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
@@ -93,15 +123,19 @@ string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
 Console.WriteLine("Migrating game database...");
 
 Process process;
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+if (isWindows) {
     process = Process.Start("CMD.exe", "/C " + cmdCommand);
-} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+} else if (isLinux || isMac) {
     process = Process.Start("bash", "-c \"" + cmdCommand + "\"");
 } else {
     throw new PlatformNotSupportedException("Unsupported OS platform");
 }
 
 process.WaitForExit();
+
+if (process.ExitCode != 0) {
+    throw new Exception("Failed to migrate game database.");
+}
 
 Console.WriteLine("Game Migration complete!");
 
