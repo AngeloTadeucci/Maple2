@@ -76,6 +76,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AnimationSequence IdleSequence;
     public readonly AnimationSequence? JumpSequence;
     public readonly AnimationSequence? WalkSequence;
+    public readonly AnimationSequence? SpawnSequence;
     private readonly WeightedSet<string> defaultRoutines;
     public readonly AiState AiState;
     public readonly MovementState MovementState;
@@ -89,7 +90,7 @@ public class FieldNpc : Actor<Npc> {
     private int currentWaypointIndex;
 
     private bool hasBeenBattling = false;
-    private NpcTask? idleTask = null;
+    public NpcTask? idleTask { get; private set; } = null;
     private long idleTaskLimitTick = 0;
 
     public readonly Dictionary<string, int> AiExtraData = new();
@@ -98,6 +99,7 @@ public class FieldNpc : Actor<Npc> {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
+        SpawnSequence = npc.Animations.GetValueOrDefault(spawnAnimation);
         defaultRoutines = new WeightedSet<string>();
         foreach (NpcAction action in Value.Metadata.Action.Actions) {
             defaultRoutines.Add(action.Name, action.Probability);
@@ -124,7 +126,6 @@ public class FieldNpc : Actor<Npc> {
             var entry = Value.Metadata.Skill.Entries[i];
             Field.SkillMetadata.TryGet(entry.Id, entry.Level, out Skills[i]);
         }
-
     }
 
     protected override void Dispose(bool disposing) { }
@@ -247,7 +248,7 @@ public class FieldNpc : Actor<Npc> {
                 if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? animationSequence)) {
                     break;
                 }
-                return MovementState.TryEmote(animationSequence.Name, false);
+                return MovementState.TryEmote(animationSequence.Name, SpawnSequence is not null);
         }
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);

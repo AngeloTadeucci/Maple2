@@ -28,7 +28,7 @@ public partial class MovementState {
             FacePos = facePos;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.SkillCast(this, SkillId, SkillLevel, SkillUid, 0);
         }
 

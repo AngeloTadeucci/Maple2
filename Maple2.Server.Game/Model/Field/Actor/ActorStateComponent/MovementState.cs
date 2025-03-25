@@ -11,7 +11,7 @@ namespace Maple2.Server.Game.Model.ActorStateComponent;
 public partial class MovementState {
     private readonly FieldNpc actor;
 
-    public ActorState State { get; private set; }
+    public ActorState State { get; private set; } = ActorState.None;
     public float Speed { get; private set; }
     public Vector3 Velocity { get; private set; }
     private AnimationSequence? stateSequence;
@@ -37,7 +37,6 @@ public partial class MovementState {
     public MovementState(FieldNpc actor) {
         this.actor = actor;
 
-        State = ActorState.None;
         hasIdleA = actor.AnimationState.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
         aniSpeed = actor.Value.Metadata.Model.AniSpeed;
 
@@ -218,7 +217,6 @@ public partial class MovementState {
                     SetState(ActorState.Regen);
 
                     stateSequence = actor.AnimationState.PlayingSequence;
-
                 } else {
                     Idle();
                 }

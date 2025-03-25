@@ -1,6 +1,4 @@
-﻿using Maple2.Model.Enum;
-using Maple2.Server.Game.Model.Enum;
-using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+﻿using Maple2.Server.Game.Model.Enum;
 using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
