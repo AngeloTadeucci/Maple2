@@ -1,25 +1,25 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
-
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 public partial class MovementState {
 
     public class NpcMoveDirectionTask : NpcTask {
-        private MovementState movement;
+        private readonly MovementState movement;
 
         public Vector3 Direction { get; init; }
         public string Sequence { get; init; } = string.Empty;
         public float Speed { get; init; }
-        override public bool CancelOnInterrupt { get => Priority == NpcTaskPriority.IdleAction; }
+        public override bool CancelOnInterrupt => Priority == NpcTaskPriority.IdleAction;
 
         public NpcMoveDirectionTask(TaskState taskState, NpcTaskPriority priority, MovementState movement) : base(taskState, priority) {
             this.movement = movement;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.MoveDirection(this, Direction, Sequence, Speed);
         }
 
@@ -51,18 +51,18 @@ public partial class MovementState {
     }
 
     public class NpcMoveToTask : NpcTask {
-        private MovementState movement;
+        private readonly MovementState movement;
         public Vector3 Position { get; init; }
         public string Sequence { get; init; } = "";
         public float Speed { get; init; }
         public bool LookAt { get; init; }
-        override public bool CancelOnInterrupt { get => Priority == NpcTaskPriority.IdleAction; }
+        public override bool CancelOnInterrupt => Priority == NpcTaskPriority.IdleAction;
 
         public NpcMoveToTask(TaskState taskState, NpcTaskPriority priority, MovementState movement) : base(taskState, priority) {
             this.movement = movement;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.MoveTo(this, Position, Sequence, Speed, LookAt);
         }
 
@@ -109,19 +109,19 @@ public partial class MovementState {
     }
 
     public class NpcMoveTargetDistanceTask : NpcTask {
-        private MovementState movement;
+        private readonly MovementState movement;
         public IActor Target { get; init; }
         public float Distance { get; init; }
         public string Sequence { get; init; } = string.Empty;
         public float Speed { get; init; }
-        override public bool CancelOnInterrupt { get => Priority == NpcTaskPriority.IdleAction; }
+        public override bool CancelOnInterrupt => Priority == NpcTaskPriority.IdleAction;
 
         public NpcMoveTargetDistanceTask(TaskState taskState, NpcTaskPriority priority, MovementState movement, IActor target) : base(taskState, priority) {
             this.movement = movement;
             Target = target;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.MoveTargetDistance(this, Target, Distance, Sequence, Speed);
         }
 

@@ -16,7 +16,8 @@ public record NpcMetadata(
     NpcMetadataProperty Property,
     NpcMetadataDropInfo DropInfo,
     NpcMetadataAction Action,
-    NpcMetadataDead Dead) : ISearchResult;
+    NpcMetadataDead Dead,
+    NpcMetadataLookAtTarget LookAtTarget) : ISearchResult;
 
 public record NpcMetadataModel(
     string Name,
@@ -104,3 +105,9 @@ public record NpcMetadataDead(
     int Count,
     float LifeTime,
     int ExtendRoomTime);
+
+public record NpcMetadataLookAtTarget(
+    string TargetDummy,
+    bool LookAtMyPlayerWhenTalking,
+    bool UseTalkMotion);
+

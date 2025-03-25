@@ -3,9 +3,9 @@ using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     private enum WalkType {

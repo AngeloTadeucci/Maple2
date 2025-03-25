@@ -581,6 +581,21 @@ public partial class FieldManager : IField {
         }
     }
 
+    public void BroadcastNpcControl(FieldNpc npc) {
+        if (!initialized) {
+            return;
+        }
+
+        foreach (FieldPlayer fieldPlayer in Players.Values) {
+            if (fieldPlayer.Session.NpcScript is not null && fieldPlayer.Session.NpcScript.Npc.Value.Id == npc.Value.Id && (npc.Value.Metadata.LookAtTarget.LookAtMyPlayerWhenTalking || npc.Value.Metadata.LookAtTarget.UseTalkMotion)) {
+                fieldPlayer.Session.Send(NpcControlPacket.Talk(npc));
+                continue;
+            }
+
+            fieldPlayer.Session.Send(NpcControlPacket.Control(npc));
+        }
+    }
+
     public void Dispose() {
         if (Disposed) {
             return;

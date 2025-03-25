@@ -11,10 +11,12 @@ using Maple2.Tools;
 using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Core.Packets;
 using DotRecast.Detour.Crowd;
+using Maple2.Server.Game.Model.ActorStateComponent;
+using MovementState = Maple2.Server.Game.Model.ActorStateComponent.MovementState;
 
 namespace Maple2.Server.Game.Model;
 
@@ -116,7 +118,6 @@ public class FieldNpc : Actor<Npc> {
         SequenceCounter = 1;
         AiState = new AiState(this, aiPath);
 
-
         Skills = new SkillMetadata[Value.Metadata.Skill.Entries.Length];
 
         for (int i = 0; i < Skills.Length; ++i) {
@@ -180,7 +181,7 @@ public class FieldNpc : Actor<Npc> {
 
         if (SendControl) {
             SequenceCounter++;
-            Field.Broadcast(NpcControlPacket.Control(this));
+            Field.BroadcastNpcControl(this);
             SendControl = false;
         }
         lastUpdate = tickCount;
@@ -314,6 +315,16 @@ public class FieldNpc : Actor<Npc> {
         bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase);
 
         idleTask = MovementState.TryEmote(sequence.Name, isIdle, duration);
+    }
+
+    public void Talk() {
+        idleTask = MovementState.TryTalk();
+    }
+
+    public void StopTalk() {
+        if (idleTask is MovementState.NpcTalkTask) {
+            idleTask.Cancel();
+        }
     }
 
     public void DropLoot(FieldPlayer firstPlayer) {
