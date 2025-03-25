@@ -90,7 +90,7 @@ public class FieldNpc : Actor<Npc> {
     private int currentWaypointIndex;
 
     private bool hasBeenBattling = false;
-    public NpcTask? idleTask { get; private set; } = null;
+    private NpcTask? idleTask;
     private long idleTaskLimitTick = 0;
 
     public readonly Dictionary<string, int> AiExtraData = new();
