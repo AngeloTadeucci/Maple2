@@ -1,6 +1,5 @@
 ﻿using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
-using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
@@ -11,13 +10,13 @@ public partial class MovementState {
         public IActor? Target { get; init; }
         public string Sequence { get; init; } = string.Empty;
         public bool IsIdle { get; init; }
-        override public bool CancelOnInterrupt => true;
+        public override bool CancelOnInterrupt => true;
 
         public NpcStandbyTask(TaskState taskState, MovementState movement, string sequence, NpcTaskPriority priority, bool isIdle) : base(taskState, priority) {
             this.movement = movement;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.Standby(this, Target, IsIdle, Sequence);
         }
     }
