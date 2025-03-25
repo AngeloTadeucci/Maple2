@@ -311,7 +311,9 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        idleTask = MovementState.TryEmote(sequence.Name, false, duration);
+        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase);
+
+        idleTask = MovementState.TryEmote(sequence.Name, isIdle, duration);
     }
 
     public void DropLoot(FieldPlayer firstPlayer) {

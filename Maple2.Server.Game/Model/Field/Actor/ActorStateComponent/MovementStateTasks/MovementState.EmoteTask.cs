@@ -48,6 +48,6 @@ public partial class MovementState {
         emoteActionTask = task;
         stateSequence = actor.AnimationState.PlayingSequence;
 
-        SetState(isIdle ? ActorState.Emotion : ActorState.EmotionIdle);
+        SetState(isIdle ? ActorState.Idle : ActorState.Emotion);
     }
 }

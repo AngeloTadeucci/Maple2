@@ -179,6 +179,7 @@ public partial class MovementState {
             case ActorState.PcSkill:
                 StateSkillEvent(keyName);
                 break;
+            case ActorState.Idle:
             case ActorState.Emotion:
             case ActorState.EmotionIdle:
                 StateEmoteEvent(keyName);
@@ -224,6 +225,7 @@ public partial class MovementState {
             case ActorState.PcSkill:
                 StateSkillCastUpdate(tickCount, tickDelta);
                 break;
+            case ActorState.Idle:
             case ActorState.Emotion:
             case ActorState.EmotionIdle:
                 EmoteStateUpdate(tickCount, tickDelta);
