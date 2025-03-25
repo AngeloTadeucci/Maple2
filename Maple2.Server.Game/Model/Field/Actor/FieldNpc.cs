@@ -319,6 +319,9 @@ public class FieldNpc : Actor<Npc> {
     }
 
     public void Talk() {
+        if (SpawnSequence is not null) {
+            return;
+        }
         idleTask = MovementState.TryTalk();
     }
 
