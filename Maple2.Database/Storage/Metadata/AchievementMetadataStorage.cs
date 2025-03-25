@@ -56,7 +56,7 @@ public class AchievementMetadataStorage(MetadataContext context) : MetadataStora
             }
 
             cachedTypes.Add(type);
-            
+
             return achievements;
         }
     }
