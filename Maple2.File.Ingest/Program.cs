@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
+using Maple2.File.Ingest;
 using Maple2.File.Ingest.Helpers;
 using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
@@ -58,7 +59,7 @@ if (!File.Exists(exportedPath)) {
 
 if (!File.Exists(serverPath)) {
     throw new FileNotFoundException($"Could not find Server.m2d file at path: {serverPath}\n" +
-        "You can download this file from here: https://github.com/Zintixx/MapleStory2-XML/releases/latest");
+                                    "You can download this file from here: https://github.com/Zintixx/MapleStory2-XML/releases/latest");
 }
 
 string? server = Environment.GetEnvironmentVariable("DB_IP");
@@ -151,13 +152,18 @@ DbContextOptions options = new DbContextOptionsBuilder()
 Console.WriteLine("Connecting to metadata database...");
 using var metadataContext = new MetadataContext(options);
 
-if (dropData) {
+bool schemaChanged = SchemaVersionManager.ShouldRecreateDatabase(metadataContext);
+
+if (dropData || schemaChanged) {
     Console.WriteLine("Dropping metadata database...");
     metadataContext.Database.EnsureDeleted();
 }
 Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB
+
+// Store schema version after creation
+SchemaVersionManager.StoreSchemaVersion(metadataContext);
 
 Console.WriteLine("Starting data ingestion...");
 
