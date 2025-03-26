@@ -3,13 +3,13 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Game.Model.Skill;
 using System.Numerics;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     class NpcSkillCastTask : NpcTask {
-        private MovementState movement;
+        private readonly MovementState movement;
 
         public SkillRecord? Cast;
         public int SkillId { get; init; }
@@ -27,7 +27,7 @@ public partial class MovementState {
             FacePos = facePos;
         }
 
-        override protected void TaskResumed() {
+        protected override void TaskResumed() {
             movement.SkillCast(this, SkillId, SkillLevel, SkillUid, 0);
         }
 

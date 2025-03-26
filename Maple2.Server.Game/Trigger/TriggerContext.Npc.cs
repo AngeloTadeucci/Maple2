@@ -269,7 +269,7 @@ public partial class TriggerContext {
             }
 
             for (int i = 0; i < entry.Count; i++) {
-                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
+                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation, spawnAnimation: spawn.SpawnAnimation);
                 if (fieldNpc == null) {
                     logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", entry.NpcId);
                     continue;

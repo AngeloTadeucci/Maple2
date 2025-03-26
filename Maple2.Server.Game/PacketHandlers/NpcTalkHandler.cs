@@ -67,6 +67,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClose(GameSession session) {
+        session.NpcScript?.Npc.StopTalk();
         session.NpcScript = null;
         session.Shop.ClearActiveShop();
     }
@@ -134,6 +135,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         } else if (talkType.HasFlag(NpcTalkType.Quest)) {
             if (questState == null) {
                 session.Send(NpcTalkPacket.Close());
+                npc.StopTalk();
                 return;
             }
             selectedState = questState;
@@ -141,6 +143,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             // now that quest is selected, change the metadata to the quest's metadata
             if (!ScriptMetadata.TryGet(session.Quest.GetAvailableQuests(npc.Value.Id).Keys.Min(), out metadata)) {
                 session.Send(NpcTalkPacket.Close());
+                npc.StopTalk();
                 return;
             }
         } else if (scriptState == null && selectState == null) {
@@ -149,6 +152,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                 return;
             }
             session.Send(NpcTalkPacket.Close());
+            npc.StopTalk();
             return;
         } else {
             selectedState = scriptState ?? selectState;

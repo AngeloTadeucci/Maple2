@@ -65,6 +65,7 @@ public sealed class NpcScriptManager {
     public bool BeginNpcTalk() {
         if (State == null) {
             session.Send(NpcTalkPacket.Close());
+            Npc.StopTalk();
             return false;
         }
         var dialogue = new NpcDialogue(State.Id, 0, GetButton());
@@ -74,6 +75,7 @@ public sealed class NpcScriptManager {
         }
 
         session.Send(NpcTalkPacket.Respond(Npc, TalkType, dialogue));
+        Npc.Talk();
         ProcessScriptFunction();
 
         return true;
@@ -88,6 +90,7 @@ public sealed class NpcScriptManager {
         State = GetQuestScriptState(metadata);
         if (State == null || State.Id == 0) {
             session.Send(NpcTalkPacket.Close());
+            Npc.StopTalk();
             return false;
         }
         Button = GetButton();
@@ -133,6 +136,7 @@ public sealed class NpcScriptManager {
             if (State?.Type == ScriptStateType.Job) {
                 PerformJobScript();
             }
+            Npc.StopTalk();
             return false;
         }
 
@@ -142,6 +146,7 @@ public sealed class NpcScriptManager {
         }
         if (nextState != State && !metadata.States.ContainsKey(nextState.Id)) {
             session.Send(NpcTalkPacket.Close());
+            Npc.StopTalk();
             return false;
         }
 
