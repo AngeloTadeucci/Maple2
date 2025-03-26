@@ -1,16 +1,13 @@
-﻿using Maple2.Model.Enum;
+﻿using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools;
 using Serilog;
-using Serilog.Core;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
-using Maple2.Server.Game.Manager.Field;
 using static Maple2.Model.Metadata.AiMetadata;
 using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public class AiState {
     protected readonly ILogger Logger = Log.ForContext<AiState>();
