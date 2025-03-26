@@ -185,6 +185,9 @@ var modelReaders = new List<PrefixedM2dReader> {
     new("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
 };
 
+UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
+UpdateDatabase(metadataContext, new AiMapper(serverReader));
+
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
 UpdateDatabase(metadataContext, new ItemMapper(xmlReader));
@@ -221,19 +224,6 @@ mapDataMapper.ReportStats();
 if (runNavmesh) {
     _ = new NavMeshMapper(metadataContext, exportedReader);
 }
-
-UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
-UpdateDatabase(metadataContext, new AiMapper(serverReader));
-
-// new MusicScoreParser(xmlReader).Parse().ToList();
-// new ScriptParser(xmlReader).ParseNpc().ToList();
-// new ScriptParser(xmlReader).ParseQuest().ToList();
-// new PetParser(xmlReader).Parse().ToList();
-// new PetParser(xmlReader).ParseProperty().ToList();
-//
-// new AchieveParser(xmlReader).Parse().ToList();
-// new AdditionalEffectParser(xmlReader).Parse().ToList();
-// new QuestParser(xmlReader).Parse().ToList();
 
 Console.WriteLine("Done!".ColorGreen());
 
