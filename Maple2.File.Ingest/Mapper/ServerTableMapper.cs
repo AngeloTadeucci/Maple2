@@ -42,8 +42,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
         yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
         yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
-        yield return new ServerTableMetadata { Name = "adventureExpTable.xml", Table = ParsePrestigeExpTable() };
-        yield return new ServerTableMetadata { Name = "adventureIdExpTable.xml", Table = ParsePrestigeIdExpTable() };
+        yield return new ServerTableMetadata { Name = "prestigeExpTable.xml", Table = ParsePrestigeExpTable() };
+        yield return new ServerTableMetadata { Name = "prestigeIdExpTable.xml", Table = ParsePrestigeIdExpTable() };
         yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
         yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
         yield return new ServerTableMetadata { Name = "OxQuiz.xml", Table = ParseOxQuizTable() };
