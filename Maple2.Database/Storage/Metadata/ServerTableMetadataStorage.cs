@@ -58,8 +58,8 @@ public class ServerTableMetadataStorage {
         globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, "globalItemDrop*.xml");
         userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
         individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
-        prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
-        prestigeIdExpTable = Retrieve<PrestigeIdExpTable>(context, "adventureExpIdTable.xml");
+        prestigeExpTable = Retrieve<PrestigeExpTable>(context, "prestigeExpTable.xml");
+        prestigeIdExpTable = Retrieve<PrestigeIdExpTable>(context, "prestigeIdExpTable.xml");
         timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
         gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
         oxQuizTable = Retrieve<OxQuizTable>(context, "oxQuiz.xml");
