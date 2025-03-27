@@ -1,4 +1,4 @@
-namespace Maple2.Model.Common;
+﻿namespace Maple2.Model.Common;
 
 public static class TableNames {
     // Common table names

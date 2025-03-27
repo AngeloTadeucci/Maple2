@@ -1,4 +1,4 @@
-namespace Maple2.Model.Common;
+﻿namespace Maple2.Model.Common;
 
 public static class ServerTableNames {
     public const string INSTANCE_FIELD = "instancefield.xml";
