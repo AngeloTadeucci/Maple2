@@ -44,74 +44,74 @@ public class TableMapper : TypeMapper<TableMetadata> {
     }
 
     protected override IEnumerable<TableMetadata> Map() {
-        yield return new TableMetadata { Name = "chatemoticon.xml", Table = ParseChatSticker() };
-        yield return new TableMetadata { Name = "defaultitems.xml", Table = ParseDefaultItems() };
-        yield return new TableMetadata { Name = "itembreakingredient.xml", Table = ParseItemBreakIngredient() };
-        yield return new TableMetadata { Name = "itemgemstoneupgrade.xml", Table = ParseItemGemstoneUpgrade() };
-        yield return new TableMetadata { Name = "itemextraction.xml", Table = ParseItemExtraction() };
-        yield return new TableMetadata { Name = "job.xml", Table = ParseJobTable() };
-        yield return new TableMetadata { Name = "magicpath.xml", Table = ParseMagicPath() };
-        yield return new TableMetadata { Name = "instrumentcategoryinfo.xml", Table = ParseInstrument() };
-        yield return new TableMetadata { Name = "interactobject*.xml", Table = ParseInteractObject() };
-        yield return new TableMetadata { Name = "itemlapenshardupgrade.xml", Table = ParseLapenshardUpgradeTable() };
-        yield return new TableMetadata { Name = "itemsocket.xml", Table = ParseItemSocketTable() };
-        yield return new TableMetadata { Name = "masteryreceipe.xml", Table = ParseMasteryRecipe() };
-        yield return new TableMetadata { Name = "mastery.xml", Table = ParseMasteryReward() };
-        yield return new TableMetadata { Name = "guild*.xml", Table = ParseGuildTable() };
-        yield return new TableMetadata { Name = "vip*.xml", Table = ParsePremiumClubTable() };
-        yield return new TableMetadata { Name = "individualitemdrop*.xml", Table = ParseIndividualItemDropTable() };
-        yield return new TableMetadata { Name = "colorpalette.xml", Table = ParseColorPaletteTable() };
-        yield return new TableMetadata { Name = "meretmarketcategory.xml", Table = ParseMeretMarketCategoryTable() };
-        yield return new TableMetadata { Name = "shop_beautycoupon.xml", Table = ParseShopBeautyCouponTable() };
-        yield return new TableMetadata { Name = "na/shop_*.xml", Table = ParseFurnishingShopTable() };
-        yield return new TableMetadata { Name = "gacha_info.xml", Table = ParseGachaInfoTable() };
-        yield return new TableMetadata { Name = "nametagsymbol.xml", Table = ParseInsigniaTable() };
-        yield return new TableMetadata { Name = "exp*.xml", Table = ParseExpTable() };
-        yield return new TableMetadata { Name = "commonexp.xml", Table = ParseCommonExpTable() };
-        yield return new TableMetadata { Name = "ugcdesign.xml", Table = ParseUgcDesignTable() };
-        yield return new TableMetadata { Name = "learningquest.xml", Table = ParseLearningQuestTable() };
-        yield return new TableMetadata { Name = "blackmarkettable.xml", Table = ParseBlackMarketTable() };
-        yield return new TableMetadata { Name = "changejob.xml", Table = ParseChangeJobTable() };
-        yield return new TableMetadata { Name = "chapterbook.xml", Table = ParseChapterBookTable() };
-        yield return new TableMetadata { Name = "fieldmission.xml", Table = ParseFieldMissionTable() };
-        yield return new TableMetadata { Name = "newworldmap.xml", Table = ParseWorldMapTable() };
-        yield return new TableMetadata { Name = "maplesurvivalskininfo.xml", Table = ParseSurvivalSkinTable() };
-        yield return new TableMetadata { Name = "banner.xml", Table = ParseBanner() };
-        yield return new TableMetadata { Name = "masteryugchousing.xml", Table = ParseMasteryUgcHousingTable() };
-        yield return new TableMetadata { Name = "ugchousingpointreward.xml", Table = ParseUgcHousingPointRewardTable() };
-        yield return new TableMetadata { Name = "rewardcontent*.xml", Table = ParseRewardContentTable() };
+        yield return new TableMetadata { Name = TableNames.CHAT_EMOTICON, Table = ParseChatSticker() };
+        yield return new TableMetadata { Name = TableNames.DEFAULT_ITEMS, Table = ParseDefaultItems() };
+        yield return new TableMetadata { Name = TableNames.ITEM_BREAK_INGREDIENT, Table = ParseItemBreakIngredient() };
+        yield return new TableMetadata { Name = TableNames.ITEM_GEMSTONE_UPGRADE, Table = ParseItemGemstoneUpgrade() };
+        yield return new TableMetadata { Name = TableNames.ITEM_EXTRACTION, Table = ParseItemExtraction() };
+        yield return new TableMetadata { Name = TableNames.JOB, Table = ParseJobTable() };
+        yield return new TableMetadata { Name = TableNames.MAGIC_PATH, Table = ParseMagicPath() };
+        yield return new TableMetadata { Name = TableNames.INSTRUMENT_CATEGORY_INFO, Table = ParseInstrument() };
+        yield return new TableMetadata { Name = TableNames.INTERACT_OBJECT, Table = ParseInteractObject() };
+        yield return new TableMetadata { Name = TableNames.ITEM_LAPENSHARD_UPGRADE, Table = ParseLapenshardUpgradeTable() };
+        yield return new TableMetadata { Name = TableNames.ITEM_SOCKET, Table = ParseItemSocketTable() };
+        yield return new TableMetadata { Name = TableNames.MASTERY_RECIPE, Table = ParseMasteryRecipe() };
+        yield return new TableMetadata { Name = TableNames.MASTERY, Table = ParseMasteryReward() };
+        yield return new TableMetadata { Name = TableNames.GUILD, Table = ParseGuildTable() };
+        yield return new TableMetadata { Name = TableNames.VIP, Table = ParsePremiumClubTable() };
+        yield return new TableMetadata { Name = TableNames.INDIVIDUAL_ITEM_DROP, Table = ParseIndividualItemDropTable() };
+        yield return new TableMetadata { Name = TableNames.COLOR_PALETTE, Table = ParseColorPaletteTable() };
+        yield return new TableMetadata { Name = TableNames.MERET_MARKET_CATEGORY, Table = ParseMeretMarketCategoryTable() };
+        yield return new TableMetadata { Name = TableNames.SHOP_BEAUTY_COUPON, Table = ParseShopBeautyCouponTable() };
+        yield return new TableMetadata { Name = TableNames.SHOP_FURNISHING, Table = ParseFurnishingShopTable() };
+        yield return new TableMetadata { Name = TableNames.GACHA_INFO, Table = ParseGachaInfoTable() };
+        yield return new TableMetadata { Name = TableNames.NAME_TAG_SYMBOL, Table = ParseInsigniaTable() };
+        yield return new TableMetadata { Name = TableNames.EXP, Table = ParseExpTable() };
+        yield return new TableMetadata { Name = TableNames.COMMON_EXP, Table = ParseCommonExpTable() };
+        yield return new TableMetadata { Name = TableNames.UGC_DESIGN, Table = ParseUgcDesignTable() };
+        yield return new TableMetadata { Name = TableNames.LEARNING_QUEST, Table = ParseLearningQuestTable() };
+        yield return new TableMetadata { Name = TableNames.BLACK_MARKET_TABLE, Table = ParseBlackMarketTable() };
+        yield return new TableMetadata { Name = TableNames.CHANGE_JOB, Table = ParseChangeJobTable() };
+        yield return new TableMetadata { Name = TableNames.CHAPTER_BOOK, Table = ParseChapterBookTable() };
+        yield return new TableMetadata { Name = TableNames.FIELD_MISSION, Table = ParseFieldMissionTable() };
+        yield return new TableMetadata { Name = TableNames.WORLD_MAP, Table = ParseWorldMapTable() };
+        yield return new TableMetadata { Name = TableNames.SURVIVAL_SKIN_INFO, Table = ParseSurvivalSkinTable() };
+        yield return new TableMetadata { Name = TableNames.BANNER, Table = ParseBanner() };
+        yield return new TableMetadata { Name = TableNames.MASTERY_UGC_HOUSING, Table = ParseMasteryUgcHousingTable() };
+        yield return new TableMetadata { Name = TableNames.UGC_HOUSING_POINT_REWARD, Table = ParseUgcHousingPointRewardTable() };
+        yield return new TableMetadata { Name = TableNames.REWARD_CONTENT, Table = ParseRewardContentTable() };
 
         // Marriage/Wedding
-        yield return new TableMetadata { Name = "wedding*.xml", Table = ParseWeddingTable() };
+        yield return new TableMetadata { Name = TableNames.WEDDING, Table = ParseWeddingTable() };
 
         // Prestige
-        yield return new TableMetadata { Name = "adventurelevelability.xml", Table = ParsePrestigeLevelAbilityTable() };
-        yield return new TableMetadata { Name = "adventurelevelreward.xml", Table = ParsePrestigeLevelRewardTable() };
-        yield return new TableMetadata { Name = "adventurelevelmission.xml", Table = ParsePrestigeMissionTable() };
+        yield return new TableMetadata { Name = TableNames.PRESTIGE_LEVEL_ABILITY, Table = ParsePrestigeLevelAbilityTable() };
+        yield return new TableMetadata { Name = TableNames.PRESTIGE_LEVEL_REWARD, Table = ParsePrestigeLevelRewardTable() };
+        yield return new TableMetadata { Name = TableNames.PRESTIGE_MISSION, Table = ParsePrestigeMissionTable() };
 
-        yield return new TableMetadata { Name = "fishingrod.xml", Table = ParseFishingRod() };
+        yield return new TableMetadata { Name = TableNames.FISHING_ROD, Table = ParseFishingRod() };
         // Scroll
-        yield return new TableMetadata { Name = "enchantscroll.xml", Table = ParseEnchantScrollTable() };
-        yield return new TableMetadata { Name = "itemremakescroll.xml", Table = ParseItemRemakeScrollTable() };
-        yield return new TableMetadata { Name = "itemrepackingscroll.xml", Table = ParseItemRepackingScrollTable() };
-        yield return new TableMetadata { Name = "itemsocketscroll.xml", Table = ParseItemSocketScrollTable() };
-        yield return new TableMetadata { Name = "itemexchangescrolltable.xml", Table = ParseItemExchangeScrollTable() };
+        yield return new TableMetadata { Name = TableNames.ENCHANT_SCROLL, Table = ParseEnchantScrollTable() };
+        yield return new TableMetadata { Name = TableNames.ITEM_REMAKE_SCROLL, Table = ParseItemRemakeScrollTable() };
+        yield return new TableMetadata { Name = TableNames.ITEM_REPACKING_SCROLL, Table = ParseItemRepackingScrollTable() };
+        yield return new TableMetadata { Name = TableNames.ITEM_SOCKET_SCROLL, Table = ParseItemSocketScrollTable() };
+        yield return new TableMetadata { Name = TableNames.ITEM_EXCHANGE_SCROLL, Table = ParseItemExchangeScrollTable() };
         // ItemOption
-        yield return new TableMetadata { Name = "itemoptionconstant.xml", Table = ParseItemOptionConstant() };
-        yield return new TableMetadata { Name = "itemoptionrandom.xml", Table = ParseItemOptionRandom() };
-        yield return new TableMetadata { Name = "itemoptionstatic.xml", Table = ParseItemOptionStatic() };
-        yield return new TableMetadata { Name = "itemoptionpick.xml", Table = ParseItemOptionPick() };
-        yield return new TableMetadata { Name = "itemoptionvariation.xml", Table = ParseItemVariation() };
+        yield return new TableMetadata { Name = TableNames.ITEM_OPTION_CONSTANT, Table = ParseItemOptionConstant() };
+        yield return new TableMetadata { Name = TableNames.ITEM_OPTION_RANDOM, Table = ParseItemOptionRandom() };
+        yield return new TableMetadata { Name = TableNames.ITEM_OPTION_STATIC, Table = ParseItemOptionStatic() };
+        yield return new TableMetadata { Name = TableNames.ITEM_OPTION_PICK, Table = ParseItemOptionPick() };
+        yield return new TableMetadata { Name = TableNames.ITEM_OPTION_VARIATION, Table = ParseItemVariation() };
 
         foreach ((string type, ItemEquipVariationTable table) in ParseItemEquipVariation()) {
-            yield return new TableMetadata { Name = $"itemoptionvariation_{type}.xml", Table = table };
+            yield return new TableMetadata { Name = TableNames.ItemOptionVariationTableNames[type], Table = table };
         }
         // SetItemOption
-        yield return new TableMetadata { Name = "setitem*.xml", Table = ParseSetItem() };
+        yield return new TableMetadata { Name = TableNames.SET_ITEM, Table = ParseSetItem() };
 
         //Dungeon
-        yield return new TableMetadata { Name = "dungeonroom.xml", Table = ParseDungeonRoom() };
-        yield return new TableMetadata { Name = "dungeonrankreward.xml", Table = ParseDungeonRankReward() };
+        yield return new TableMetadata { Name = TableNames.DUNGEON_ROOM, Table = ParseDungeonRoom() };
+        yield return new TableMetadata { Name = TableNames.DUNGEON_RANK_REWARD, Table = ParseDungeonRankReward() };
     }
 
     private ChatStickerTable ParseChatSticker() {
@@ -1082,7 +1082,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                             entry,
                         });
                     } else {
-                        results[id][drop.dropGroup].Add(entry);
+                        results[id][dropGroup].Add(entry);
                     }
                 }
             }

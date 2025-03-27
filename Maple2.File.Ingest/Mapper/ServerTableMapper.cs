@@ -5,9 +5,9 @@ using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Enum;
-using Maple2.File.Parser.Xml.Table;
 using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Shop;
@@ -34,26 +34,26 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     protected override IEnumerable<ServerTableMetadata> Map() {
-        yield return new ServerTableMetadata { Name = "instancefield.xml", Table = ParseInstanceField() };
-        yield return new ServerTableMetadata { Name = "*scriptCondition.xml", Table = ParseScriptCondition() };
-        yield return new ServerTableMetadata { Name = "*scriptFunction.xml", Table = ParseScriptFunction() };
-        yield return new ServerTableMetadata { Name = "jobConditionTable.xml", Table = ParseJobCondition() };
-        yield return new ServerTableMetadata { Name = "bonusGame*.xml", Table = ParseBonusGameTable() };
-        yield return new ServerTableMetadata { Name = "globalItemDrop*.xml", Table = ParseGlobalItemDropTable() };
-        yield return new ServerTableMetadata { Name = "userStat*.xml", Table = ParseUserStat() };
-        yield return new ServerTableMetadata { Name = "individualItemDrop.xml", Table = ParseIndividualItemDropTable() };
-        yield return new ServerTableMetadata { Name = "prestigeExpTable.xml", Table = ParsePrestigeExpTable() };
-        yield return new ServerTableMetadata { Name = "prestigeIdExpTable.xml", Table = ParsePrestigeIdExpTable() };
-        yield return new ServerTableMetadata { Name = "timeEventData.xml", Table = ParseTimeEventTable() };
-        yield return new ServerTableMetadata { Name = "gameEvent.xml", Table = ParseGameEventTable() };
-        yield return new ServerTableMetadata { Name = "OxQuiz.xml", Table = ParseOxQuizTable() };
-        yield return new ServerTableMetadata { Name = "itemMergeOptionBase.xml", Table = ParseItemMergeOptionTable() };
-        yield return new ServerTableMetadata { Name = "shop_game_info.xml", Table = ParseShop() };
-        yield return new ServerTableMetadata { Name = "shop_game.xml", Table = ParseShopItems() };
-        yield return new ServerTableMetadata { Name = "shop_beauty.xml", Table = ParseBeautyShops() };
-        yield return new ServerTableMetadata { Name = "shop_merat_custom.xml", Table = ParseMeretCustomShop() };
-        yield return new ServerTableMetadata { Name = "fish*.xml", Table = ParseFish() };
-        yield return new ServerTableMetadata { Name = "combineSpawn*.xml", Table = ParseCombineSpawn() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.INSTANCE_FIELD, Table = ParseInstanceField() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_CONDITION, Table = ParseScriptCondition() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_FUNCTION, Table = ParseScriptFunction() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.JOB_CONDITION, Table = ParseJobCondition() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.BONUS_GAME, Table = ParseBonusGameTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX, Table = ParseGlobalItemDropTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.USER_STAT, Table = ParseUserStat() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.INDIVIDUAL_DROP_ITEM, Table = ParseIndividualItemDropTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.PRESTIGE_EXP, Table = ParsePrestigeExpTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.PRESTIGE_ID_EXP, Table = ParsePrestigeIdExpTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.TIME_EVENT, Table = ParseTimeEventTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.GAME_EVENT, Table = ParseGameEventTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.OX_QUIZ, Table = ParseOxQuizTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.ITEM_MERGE, Table = ParseItemMergeOptionTable() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.SHOP, Table = ParseShop() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.SHOP_ITEM, Table = ParseShopItems() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.BEAUTY_SHOP, Table = ParseBeautyShops() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.MERET_MARKET, Table = ParseMeretCustomShop() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.FISH, Table = ParseFish() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.COMBINE_SPAWN, Table = ParseCombineSpawn() };
 
     }
 
