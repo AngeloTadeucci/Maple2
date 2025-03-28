@@ -72,7 +72,7 @@ public class DungeonManager {
             return;
         }
 
-        if (session.Field.FieldInstance.InstanceType == InstanceType.DungeonLobby) {
+        if (session.Field.FieldInstance.Type == InstanceType.DungeonLobby) {
             session.Send(DungeonWaitingPacket.Set(Lobby.DungeonId, Lobby.Size));
         }
     }

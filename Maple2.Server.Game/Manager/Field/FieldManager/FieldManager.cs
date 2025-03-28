@@ -74,7 +74,7 @@ public partial class FieldManager : IField {
     public int DungeonId { get; init; }
     public int Size { get; init; }
     public FieldType FieldType { get; init; }
-    public FieldInstance FieldInstance { get; private set; }
+    public InstanceFieldMetadata FieldInstance { get; private set; }
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
@@ -92,7 +92,7 @@ public partial class FieldManager : IField {
         Ai = new AiManager(this);
         RoomId = NextGlobalId();
 
-        FieldInstance = FieldInstance.Default;
+        FieldInstance = new InstanceFieldMetadata(0, InstanceType.none, 0, false, 0, true, 0, 0, 0, 0);
 
         ItemDrop = new ItemDropManager(this);
 
@@ -120,7 +120,7 @@ public partial class FieldManager : IField {
         }
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
-            FieldInstance = new FieldInstance(instanceField.Type, instanceField.InstanceId);
+            FieldInstance = instanceField;
         }
 
         if (ugcMetadata.Plots.Count > 0) {

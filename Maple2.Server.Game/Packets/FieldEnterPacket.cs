@@ -17,7 +17,8 @@ public static class FieldEnterPacket {
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteInt(player.Value.Character.MapId);
         pWriter.Write<FieldType>(player.Field.FieldType);
-        pWriter.WriteClass<FieldInstance>(player.Field.FieldInstance);
+        pWriter.Write<InstanceType>(player.Field.FieldInstance.Type);
+        pWriter.WriteInt(player.Field.FieldInstance.InstanceId);
         pWriter.WriteInt(player.Field.DungeonId);
         pWriter.Write<Vector3>(player.Position);
         pWriter.Write<Vector3>(player.Rotation);

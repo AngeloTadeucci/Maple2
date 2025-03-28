@@ -52,7 +52,7 @@ public interface IField : IDisposable {
     public ConcurrentDictionary<int, FieldPet> Pets { get; }
 
     public RoomTimer? RoomTimer { get; }
-    public FieldInstance FieldInstance { get; }
+    public InstanceFieldMetadata FieldInstance { get; }
     public FieldType FieldType { get; }
     public int Size { get; init; }
 

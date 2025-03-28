@@ -94,7 +94,7 @@ public partial class FieldManager {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
-        if (FieldInstance.InstanceType == InstanceType.none) {
+        if (FieldInstance.Type == InstanceType.none || FieldInstance.SaveField) {
             if (Metadata.Property.EnterReturnId != 0) {
                 player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
             }
