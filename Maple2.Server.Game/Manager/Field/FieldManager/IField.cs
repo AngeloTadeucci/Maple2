@@ -89,7 +89,6 @@ public interface IField : IDisposable {
     public ICollection<FieldInteract> EnumerateInteract();
     public ICollection<FieldLiftable> EnumerateLiftables();
     public bool TryGetInteract(string entityId, [NotNullWhen(true)] out FieldInteract? fieldInteract);
-    public bool MoveToPortal(GameSession session, int portalId);
     public bool UsePortal(GameSession session, int portalId, string password);
     public bool LiftupCube(in Vector3B coordinates, [NotNullWhen(true)] out LiftupWeapon? liftupWeapon);
     public void MovePlayerAlongPath(string pathName);

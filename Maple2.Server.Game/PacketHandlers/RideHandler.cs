@@ -168,7 +168,7 @@ public class RideHandler : PacketHandler<GameSession> {
 
         int ownerId = session.Ride.OwnerId;
         if (session.Field.TryGetPlayerById(ownerId, out FieldPlayer? owner) && owner.Session.Ride == session.Ride) {
-            session.Send(PortalPacket.MoveByPortal(session.Player, session.Player.Position, session.Player.Rotation));
+            session.Player.MoveToPosition(session.Player.Position, session.Player.Rotation);
         }
 
         session.Ride.Passengers[index] = 0;

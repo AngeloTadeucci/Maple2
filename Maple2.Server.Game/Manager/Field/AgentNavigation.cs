@@ -15,6 +15,7 @@ public sealed class AgentNavigation {
     private static readonly ILogger Logger = Log.Logger.ForContext<AgentNavigation>();
 
     private readonly FieldNpc npc;
+    private FieldManager field => npc.Field;
     public readonly DtCrowdAgent agent;
     private readonly DtCrowd crowd;
 
@@ -40,12 +41,12 @@ public sealed class AgentNavigation {
         DtNavMesh navMesh = crowd.GetNavMesh();
         DtNavMeshQuery navMeshQuery = crowd.GetNavMeshQuery();
         IDtQueryFilter filter = crowd.GetFilter(0);
-        if (!FindNearestPoly(startVec, out long pos1Ref, out RcVec3f _)) {
+        if (!field.FindNearestPoly(startVec, out long pos1Ref, out RcVec3f _)) {
             Logger.Error("Failed to find nearest poly at {StartVec}", startVec);
             return null;
         }
 
-        if (!FindNearestPoly(targetVec, out long posRef2, out RcVec3f _)) {
+        if (!field.FindNearestPoly(targetVec, out long posRef2, out RcVec3f _)) {
             Logger.Error("Failed to find nearest poly at {TargetVec}", targetVec);
             return null;
         }
@@ -159,28 +160,13 @@ public sealed class AgentNavigation {
     public bool HasPath => currentPath != null && currentPath.Count > 0;
 
     public bool UpdatePosition() {
-        if (!FindNearestPoly(npc.Position, out _, out RcVec3f position)) {
+        if (!field.FindNearestPoly(npc.Position, out _, out RcVec3f position)) {
             Logger.Error("Failed to find valid position from {Source} => {Position}", npc.Position, position);
             return false;
         }
 
         agent.npos = position;
         npc.Position = DotRecastHelper.FromNavMeshSpace(position);
-        return true;
-    }
-
-    private bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
-        var pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
-        return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
-    }
-
-    private bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
-        var status = crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), crowd.GetFilter(0), out nearestRef, out position, out _);
-        if (status.Failed()) {
-            Logger.Error("Failed to find nearest poly from position {Source} for NPC {Npc}", point, npc.Value.Metadata.Name);
-            return false;
-        }
-
         return true;
     }
 
@@ -225,7 +211,7 @@ public sealed class AgentNavigation {
     }
 
     public Vector3 GetRandomPatrolPoint() {
-        if (!FindNearestPoly(npc.Origin, out long startRef, out RcVec3f startVec)) {
+        if (!field.FindNearestPoly(npc.Origin, out long startRef, out RcVec3f startVec)) {
             return npc.Position;
         }
 
@@ -244,7 +230,7 @@ public sealed class AgentNavigation {
     }
 
     public Vector3 FindClosestPoint(Vector3 point, int maxDistance, Vector3 fallback) {
-        if (!FindNearestPoly(point, out long closest, out RcVec3f position)) {
+        if (!field.FindNearestPoly(point, out long closest, out RcVec3f position)) {
             return fallback;
         }
 
@@ -263,11 +249,11 @@ public sealed class AgentNavigation {
     }
 
     public bool PathTo(Vector3 goal) {
-        if (!FindNearestPoly(agent.npos, out _, out _)) {
+        if (!field.FindNearestPoly(agent.npos, out _, out _)) {
             return false;
         }
 
-        if (!FindNearestPoly(goal, out _, out RcVec3f end)) {
+        if (!field.FindNearestPoly(goal, out _, out RcVec3f end)) {
             return false;
         }
 
@@ -288,7 +274,7 @@ public sealed class AgentNavigation {
     }
 
     public bool PathAwayFrom(Vector3 goal, int distance) {
-        if (!FindNearestPoly(agent.npos, out _, out RcVec3f position)) {
+        if (!field.FindNearestPoly(agent.npos, out _, out RcVec3f position)) {
             return false;
         }
 
@@ -305,7 +291,7 @@ public sealed class AgentNavigation {
         RcVec3f positionAway = RcVec3f.Add(position, RcVec3f.Normalize(direction) * -fDistance);
 
         // find the nearest poly to the positionAway
-        if (!FindNearestPoly(positionAway, out _, out RcVec3f positionAwayNavMesh)) {
+        if (!field.FindNearestPoly(positionAway, out _, out RcVec3f positionAwayNavMesh)) {
             return false;
         }
 
