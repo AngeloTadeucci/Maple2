@@ -97,18 +97,21 @@ internal class TriggerApiScript {
     public void WriteEnums(IndentedTextWriter writer) {
         writer.WriteLine("namespace Maple2.Server.Game.Scripting.Trigger;");
         writer.WriteBlankLine();
-        writer.WriteLine("""
-                         [Flags]
-                         public enum Align { Top = 0, Center = 1, Bottom = 2, Left = 4, Right = 8 }
-                         """);
+        writer.WriteLine("// ReSharper disable InconsistentNaming");
+        writer.WriteLine("public enum Align { center = 0, left = 1, right = 2, bottomLeft = 3, bottomRight = 4, topCenter = 5, centerLeft = 6, centerRight = 7 }");
+        writer.WriteLine("// ReSharper restore All");
         writer.WriteBlankLine();
         writer.WriteLine("public enum FieldGame { Unknown, HideAndSeek, GuildVsGame, MapleSurvival, MapleSurvivalTeam, WaterGunBattle }");
         writer.WriteBlankLine();
+        writer.WriteLine("// ReSharper disable InconsistentNaming");
         writer.WriteLine("public enum Locale { ALL, KR, CN, NA, JP, TH, TW }");
+        writer.WriteLine("// ReSharper restore All");
         writer.WriteBlankLine();
         writer.WriteLine("public enum Weather { Clear = 0, Snow = 1, HeavySnow = 2, Rain = 3, HeavyRain = 4, SandStorm = 5, CherryBlossom = 6, LeafFall = 7 }");
         writer.WriteBlankLine();
         writer.WriteLine("public enum BannerType : byte { Lose = 0, GameOver = 1, Winner = 2, Bonus = 3, Draw = 4, Success = 5, Text = 6, Fail = 7, Countdown = 8, }");
+        writer.WriteBlankLine();
+        writer.WriteLine("public enum SideNpcTalkType : byte { Default = 0, Movie = 1, CutIn = 2, TalkBottom = 3, Invasion = 4, Wedding = 5 }");
     }
 
     internal class Function : IComparable<Function> {
