@@ -157,6 +157,7 @@ bool schemaChanged = SchemaVersionManager.ShouldRecreateDatabase(metadataContext
 if (dropData || schemaChanged) {
     Console.WriteLine("Dropping metadata database...");
     metadataContext.Database.EnsureDeleted();
+    metadataContext.ChangeTracker.Clear();
 }
 Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
