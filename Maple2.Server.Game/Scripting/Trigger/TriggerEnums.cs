@@ -1,6 +1,8 @@
 ﻿namespace Maple2.Server.Game.Scripting.Trigger;
 
-public enum Align { Center = 0, Left = 1, Right = 2, BottomLeft = 3, BottomRight = 4, TopCenter = 5, CenterLeft = 6, CenterRight = 7 }
+// ReSharper disable InconsistentNaming
+public enum Align { center = 0, left = 1, right = 2, bottomLeft = 3, bottomRight = 4, topCenter = 5, centerLeft = 6, centerRight = 7 }
+// ReSharper restore All
 
 public enum FieldGame { Unknown, HideAndSeek, GuildVsGame, MapleSurvival, MapleSurvivalTeam, WaterGunBattle }
 

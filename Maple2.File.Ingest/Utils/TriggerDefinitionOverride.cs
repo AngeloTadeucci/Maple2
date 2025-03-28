@@ -523,7 +523,7 @@ internal class TriggerDefinitionOverride {
         };
         ActionOverride["score_board_create"] = new TriggerDefinitionOverride("score_board_create") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("type", Str, Required), ("title", Str, Required), ("maxScore", Int, null)),
+            Types = BuildTypeOverride(("type", Str, null), ("title", Str, null), ("maxScore", Int, null)),
         };
         ActionOverride["score_board_remove"] = new TriggerDefinitionOverride("score_board_remove") {
             Names = BuildNameOverride(),

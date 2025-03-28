@@ -149,16 +149,12 @@ public static class CinematicPacket {
     }
 
     public static ByteWriter Caption(string type, string title, string script, Align align, float offsetRateX, float offsetRateY, int duration, float scale) {
-        // Convert enum align value to camelCase string
-        string alignStr = align.ToString().Replace(", ", "");
-        alignStr = char.ToLower(alignStr[0]) + alignStr[1..];
-
         var pWriter = Packet.Of(SendOp.Cinematic);
         pWriter.Write<Command>(Command.Caption);
         pWriter.WriteUnicodeString(type);
         pWriter.WriteUnicodeString(title);
         pWriter.WriteUnicodeString(script);
-        pWriter.WriteUnicodeString(alignStr);
+        pWriter.WriteUnicodeString(align.ToString());
         pWriter.WriteInt(duration);
         pWriter.WriteFloat(offsetRateX);
         pWriter.WriteFloat(offsetRateY);
