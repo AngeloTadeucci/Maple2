@@ -291,7 +291,7 @@ public partial class FieldManager : IField {
             return;
         }
 
-        player.Session.Send(PortalPacket.MoveByPortal(player, player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default));
+        player.MoveToPosition(player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default);
     }
 
     public bool ValidPosition(Vector3 position) {
@@ -415,15 +415,6 @@ public partial class FieldManager : IField {
         return fieldInteracts.Values.Where(interact => interact.SpawnId == spawnId)
             .Concat(fieldAdBalloons.Values.Where(interact => interact.SpawnId == spawnId))
             .Concat(fieldChests.Values.Where(interact => interact.SpawnId == spawnId));
-    }
-
-    public bool MoveToPortal(GameSession session, int portalId) {
-        if (!TryGetPortal(portalId, out FieldPortal? portal)) {
-            return false;
-        }
-
-        session.Send(PortalPacket.MoveByPortal(session.Player, portal));
-        return true;
     }
 
     public bool UsePortal(GameSession session, int portalId, string password) {

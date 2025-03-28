@@ -35,7 +35,7 @@ public partial class TriggerContext {
         }
 
         foreach (FieldPlayer player in PlayersInBox(targetBoxId)) {
-            player.Session.Send(PortalPacket.MoveByPortal(player, portal));
+            player.MoveToPortal(portal);
         }
     }
 
@@ -55,7 +55,7 @@ public partial class TriggerContext {
                 if (!Field.TryGetPortal(portalId, out FieldPortal? portal)) {
                     return;
                 }
-                player.Session.Send(PortalPacket.MoveByPortal(player, portal));
+                player.MoveToPortal(portal);
                 return;
             }
 
@@ -73,7 +73,7 @@ public partial class TriggerContext {
 
         foreach (FieldPlayer player in PlayersInBox(boxId)) {
             if (userTagId <= 0 || player.TagId == userTagId) {
-                player.Session.Send(PortalPacket.MoveByPortal(player, portal));
+                player.MoveToPortal(portal);
             }
         }
     }
@@ -92,12 +92,8 @@ public partial class TriggerContext {
                 return;
             }
 
-            if (!Field.ValidPosition(portal.Position)) {
-                return;
-            }
-
             foreach (FieldPlayer player in PlayersInBox(boxId)) {
-                player.Session.Send(PortalPacket.MoveByPortal(player, portal));
+                player.MoveToPortal(portal);
             }
             return;
         }
@@ -122,14 +118,14 @@ public partial class TriggerContext {
         }
 
         foreach (FieldPlayer player in PlayersNotInBox(boxId)) {
-            player.Session.Send(PortalPacket.MoveByPortal(player, portal));
+            player.MoveToPortal(portal);
         }
     }
 
     public void MoveUserToPos(Vector3 position, Vector3 rotation) {
         DebugLog("[MoveUserToPos] position:{Position}, rotation:{Rotation}", position, rotation);
         foreach (FieldPlayer player in Field.Players.Values) {
-            Broadcast(PortalPacket.MoveByPortal(player, position, rotation));
+            player.MoveToPosition(position, rotation);
         }
     }
 
