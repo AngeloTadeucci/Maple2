@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using DotRecast.Core.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
@@ -19,6 +20,7 @@ using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
+using Maple2.Tools.DotRecast;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using Serilog;
@@ -290,6 +292,25 @@ public partial class FieldManager : IField {
         }
 
         player.Session.Send(PortalPacket.MoveByPortal(player, player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default));
+    }
+
+    public bool ValidPosition(Vector3 position) {
+        return FindNearestPoly(position, out long nearestRef, out _) && nearestRef != 0;
+    }
+
+    public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
+        var pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
+        return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
+    }
+
+    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
+        var status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
+        if (status.Failed()) {
+            logger.Error("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
+            return false;
+        }
+
+        return true;
     }
 
     public bool TryGetPlayerById(long characterId, [NotNullWhen(true)] out FieldPlayer? player) {

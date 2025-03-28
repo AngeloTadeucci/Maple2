@@ -91,6 +91,11 @@ public partial class TriggerContext {
             if (!Field.TryGetPortal(portalId, out FieldPortal? portal)) {
                 return;
             }
+
+            if (!Field.ValidPosition(portal.Position)) {
+                return;
+            }
+
             foreach (FieldPlayer player in PlayersInBox(boxId)) {
                 player.Session.Send(PortalPacket.MoveByPortal(player, portal));
             }
