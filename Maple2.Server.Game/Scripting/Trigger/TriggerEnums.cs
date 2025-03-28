@@ -1,7 +1,6 @@
 ﻿namespace Maple2.Server.Game.Scripting.Trigger;
 
-[Flags]
-public enum Align { Top = 0, Center = 1, Bottom = 2, Left = 4, Right = 8 }
+public enum Align { Center = 0, Left = 1, Right = 2, BottomLeft = 3, BottomRight = 4, TopCenter = 5, CenterLeft = 6, CenterRight = 7 }
 
 public enum FieldGame { Unknown, HideAndSeek, GuildVsGame, MapleSurvival, MapleSurvivalTeam, WaterGunBattle }
 

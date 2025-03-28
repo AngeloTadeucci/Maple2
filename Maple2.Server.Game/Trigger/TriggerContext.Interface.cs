@@ -12,7 +12,7 @@ namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void CreateWidget(string type) {
-        ErrorLog("[CreateWidget] type:{Type}", type);
+        DebugLog("[CreateWidget] type:{Type}", type);
         var widget = type switch {
             "OxQuiz" => new OxQuizWidget(Field),
             _ => new Widget(Field),
