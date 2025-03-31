@@ -2,7 +2,8 @@
 
 namespace Maple2.Model.Metadata;
 
-public record DungeonConfigTable(IReadOnlyDictionary<int, int> UnitedWeeklyRewards, // Key: RewardCount, Value: RewardId
+public record DungeonConfigTable(
+    IReadOnlyDictionary<int, int> UnitedWeeklyRewards, // Key: RewardCount, Value: RewardId
     IReadOnlyDictionary<int, DungeonMissionRankMetadata> MissionRanks) : Table;
 
 public record DungeonMissionRankMetadata(
@@ -13,5 +14,4 @@ public record DungeonMissionRankMetadata(
     public record Score(
         DungeonMissionRank Grade,
         int Value);
-    }
-
+}

@@ -84,10 +84,10 @@ public static class Enchant {
         double cost = 0;
         if (itemLevel is >= 20 and <= 50) {
             cost = -0.0000049627 * Math.Pow(itemLevel, 4)
-                          +  0.0006886    * Math.Pow(itemLevel, 3)
-                          -  0.0285752    * Math.Pow(itemLevel, 2)
-                          +  0.45096      * itemLevel
-                          -  1.2688;
+                   + 0.0006886 * Math.Pow(itemLevel, 3)
+                   - 0.0285752 * Math.Pow(itemLevel, 2)
+                   + 0.45096 * itemLevel
+                   - 1.2688;
 
             cost = cost * CRYSTAL_FRAGMENT_RARITY_MULTIPLIER[item.Rarity];
             cost = Math.Max(1, Math.Floor(cost));
@@ -134,12 +134,12 @@ public static class Enchant {
         int itemLevel = item.Metadata.Limit.Level;
         double cost = 0;
         if (itemLevel is >= 20 and <= 50) {
-           cost = -0.001023 * Math.Pow(itemLevel, 2)
-                +  0.11095  * itemLevel
-                -  0.91968;
+            cost = -0.001023 * Math.Pow(itemLevel, 2)
+                   + 0.11095 * itemLevel
+                   - 0.91968;
 
-           cost = cost * CHAOS_ONYX_RARITY_MULTIPLIER[item.Rarity];
-           cost = Math.Floor(cost);
+            cost = cost * CHAOS_ONYX_RARITY_MULTIPLIER[item.Rarity];
+            cost = Math.Floor(cost);
         } else {
             switch (item.Rarity) {
                 case 1:
