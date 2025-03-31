@@ -81,14 +81,14 @@ public class DungeonManager {
         if (session.Field.FieldInstance.Type == InstanceType.DungeonLobby) {
             session.Send(DungeonWaitingPacket.Set(Lobby.DungeonId, Lobby.Size));
         } else {
-            session.Send(RoomStageDungeonPacket.Set(Metadata.Id));
+            /*session.Send(RoomStageDungeonPacket.Set(Metadata.Id));
             ByteWriter pWriter = Packet.Of(SendOp.DungeonMission);
             pWriter.WriteByte(0);
             pWriter.WriteInt(1);
             pWriter.WriteInt(23023005);
             pWriter.WriteShort(1);
             pWriter.WriteShort(); // counter
-            session.Send(pWriter);
+            session.Send(pWriter);*/
         }
     }
 
