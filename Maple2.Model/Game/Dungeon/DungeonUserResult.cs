@@ -8,7 +8,7 @@ public struct DungeonUserResult {
     public readonly long CharacterId;
     public readonly DungeonAccumulationRecordType RecordType;
     public readonly int Value;
-    public DungeonGrade Grade = DungeonGrade.None;
+    public DungeonMissionRank MissionRank = DungeonMissionRank.None;
 
     public DungeonUserResult(long characterId, DungeonAccumulationRecordType recordType, int value) {
         CharacterId = characterId;

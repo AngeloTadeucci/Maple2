@@ -141,7 +141,13 @@ public partial class TriggerContext {
     }
 
     public void SetNpcDuelHpBar(bool isOpen, int spawnId, int durationTick, int npcHpStep) {
-        ErrorLog("[SetNpcDuelHpBar] isOpen:{IsOpen}, spawnId:{SpawnId}, durationTick:{Duration}, npcHpStep:{HpStep}", isOpen, spawnId, durationTick, npcHpStep);
+        DebugLog("[SetNpcDuelHpBar] isOpen:{IsOpen}, spawnId:{SpawnId}, durationTick:{Duration}, npcHpStep:{HpStep}", isOpen, spawnId, durationTick, npcHpStep);
+        IActor? actor = Field.GetActorsBySpawnId(spawnId).FirstOrDefault();
+        if (actor is null) {
+            return;
+        }
+
+        Broadcast(TriggerPacket.DuelHpBar(isOpen, actor.ObjectId, durationTick, npcHpStep));
     }
 
     public void SetNpcEmotionLoop(int spawnId, string sequenceName, float duration) {

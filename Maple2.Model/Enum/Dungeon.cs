@@ -54,8 +54,8 @@ public enum DungeonRequireRole {
 }
 
 public enum DungeonEnterLimit : byte {
-    Unknown = 0,
-    None = 1,
+    Rookie = 0,
+    Veteran = 1,
     MinLevel = 12,
     Achievement = 13,
     Vip = 14,
@@ -107,7 +107,7 @@ public enum DungeonState : byte {
     Fail = 2,
 }
 
-public enum DungeonGrade {
+public enum DungeonMissionRank {
     None = -1,
     F = 0,
     C = 1,
@@ -124,20 +124,42 @@ public enum DungeonRewardType : byte {
 }
 
 [Flags]
-public enum DungeonBonusFlag : byte {
-    None = 0,
-    Clears = 2,
+public enum DungeonBonusFlag {
+    None = 1,
+    [Description("s_dungeon_reward_dungeon_reward_count - Dungeon Clears: {0}")]
+    Clear = 2,
+    [Description("s_dungeon_reward_bonus_event - Event Bonus")]
     Event = 4,
-    Rank = 8,
+    [Description("s_dungeon_reward_mission_rank - Rank Bonus")]
+    MissionRank = 8,
+    [Description("s_dungeon_reward_dungeon_helper - Dungeon Helper Bonus")]
     Helper = 16,
+    [Description("s_dungeon_reward_dungeon_helper_event - Mutual Help Event")]
     MutualHelp = 32,
+    [Description("s_dungeon_reward_mentor - Mentor Bonus")]
     Mentor = 64,
-    Returning = 128,
+    [Description("s_dungeon_reward_mentee - Returning Player Bonus")]
+    Mentee = 128,
+    [Description("s_dungeon_reward_mentee_party_gift - Mentee Party Gift")]
+    MenteePartyGift = 256,
+    [Description("s_dungeon_reward_united_weekly - Weekly Bonus")]
+    UnitedWeekly = 512,
+}
+
+public enum DungeonMissionType {
+    LastHitNpc,
+    PlayTime,
+    DamageBySkill,
+    DeathCount,
+    GainBuff,
+    LimitUserCount,
+    Trigger,
+    DamageToNpc,
 }
 
 [Flags]
-public enum DungeonBonusFlag2 : byte {
+public enum DungeonRecordFlag : byte {
     None = 0,
-    ReturningPlayerParty = 1,
-    NormalHardAdventure = 2,
+    Veteran = 1,
+    Favorite = 2,
 }

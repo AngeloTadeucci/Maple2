@@ -6,12 +6,12 @@ namespace Maple2.Model.Game.Dungeon;
 
 public class DungeonRoomRecord {
     public ConcurrentDictionary<long, DungeonUserRecord> UserResults = [];
-    public readonly DungeonRoomTable.DungeonRoomMetadata Metadata;
+    public readonly DungeonRoomMetadata Metadata;
     public long StartTick { get; set; }
     public long EndTick { get; set; }
     public DungeonState State { get; set; } = DungeonState.None;
 
-    public DungeonRoomRecord(DungeonRoomTable.DungeonRoomMetadata metadata) {
+    public DungeonRoomRecord(DungeonRoomMetadata metadata) {
         Metadata = metadata;
     }
 }

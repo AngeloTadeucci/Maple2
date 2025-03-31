@@ -35,9 +35,9 @@ public sealed class ItemEnchant : IByteSerializable, IByteDeserializable {
         writer.WriteInt(Enchants);
         writer.WriteInt(EnchantExp);
         writer.WriteByte(EnchantCharges);
-        writer.WriteLong();
+        writer.WriteLong(); // Destabilized timestamp
         writer.WriteInt();
-        writer.WriteInt();
+        writer.WriteInt();// Enchantment attempts
         writer.WriteBool(Tradeable);
         writer.WriteInt(Charges);
 

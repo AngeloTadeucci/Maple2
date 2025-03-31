@@ -92,7 +92,6 @@ public sealed class ItemMergeManager {
 
         CinematicEventScript[] eventScripts = state.Contents.First().Events;
         session.NpcScript = new NpcScriptManager(session, eventScripts);
-        session.NpcScript.Event();
     }
 
     public void Empower(long itemUid, long catalystUid) {
@@ -157,7 +156,7 @@ public sealed class ItemMergeManager {
         }
 
         session.Send(ItemMergePacket.Empower(upgradeItem));
-        session.NpcScript?.Event();
+        session.NpcScript?.EmpowerEvent();
         session.ConditionUpdate(ConditionType.item_merge_success);
 
         return;

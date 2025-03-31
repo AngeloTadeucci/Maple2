@@ -62,12 +62,31 @@ public class EnchantScrollHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int minEnchant = Math.Max(item.Enchant?.Enchants ?? 0, metadata.Enchants.Min());
-        Dictionary<BasicAttribute, BasicOption> minOptions = ItemEnchantManager.GetBasicOptions(item, minEnchant)
-            .ToDictionary(entry => entry.Item1, entry => entry.Item2);
-        Dictionary<BasicAttribute, BasicOption> maxOptions = ItemEnchantManager.GetBasicOptions(item, metadata.Enchants.Max())
-            .ToDictionary(entry => entry.Item1, entry => entry.Item2);
+        int minEnchant = Math.Min(item.Enchant?.Enchants ?? 0, metadata.Enchants.Min());
+        int maxEnchant = metadata.Enchants.Max();
+        Dictionary<BasicAttribute, BasicOption> minOptions = [];
+        Dictionary<BasicAttribute, BasicOption> maxOptions = [];
+        for (int i = minEnchant; i < maxEnchant; i++) {
+            // add to dictionaries
+            int targetEnchant = i - 1;
+            ItemEnchant result = ItemEnchantManager.GetEnchant(session, item, i + 1);
+            foreach ((BasicAttribute attribute, BasicOption option) in result.BasicOptions) {
+                if (minOptions.TryGetValue(attribute, out BasicOption currentOption)) {
+                    minOptions[attribute] = currentOption + option;
+                } else {
+                    minOptions[attribute] = option;
+                }
+            }
 
+            result = ItemEnchantManager.GetEnchant(session, item, i - 1);
+            foreach ((BasicAttribute attribute, BasicOption option) in result.BasicOptions) {
+                if (maxOptions.TryGetValue(attribute, out BasicOption currentOption)) {
+                    maxOptions[attribute] = currentOption + option;
+                } else {
+                    maxOptions[attribute] = option;
+                }
+            }
+        }
         session.Send(EnchantScrollPacket.Preview(item, metadata.Type, minOptions, maxOptions));
     }
 
@@ -103,9 +122,7 @@ public class EnchantScrollHandler : PacketHandler<GameSession> {
             // Ensure that you cannot randomize an enchant lower than current item.
             item.Enchant ??= new ItemEnchant();
             if (enchantLevel > item.Enchant.Enchants) {
-                foreach ((BasicAttribute attribute, BasicOption option) in ItemEnchantManager.GetBasicOptions(item, enchantLevel)) {
-                    item.Enchant.BasicOptions[attribute] = option;
-                }
+                item.Enchant = ItemEnchantManager.GetEnchant(session, item, enchantLevel);
                 item.Enchant.Enchants = enchantLevel;
             }
 

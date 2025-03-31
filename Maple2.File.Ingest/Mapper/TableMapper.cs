@@ -112,6 +112,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
         //Dungeon
         yield return new TableMetadata { Name = TableNames.DUNGEON_ROOM, Table = ParseDungeonRoom() };
         yield return new TableMetadata { Name = TableNames.DUNGEON_RANK_REWARD, Table = ParseDungeonRankReward() };
+        yield return new TableMetadata { Name = TableNames.DUNGEON_CONFIG, Table = ParseDungeonConfigTable() };
+        yield return new TableMetadata { Name = TableNames.DUNGEON_MISSION, Table = ParseDungeonMissionTable() };
     }
 
     private ChatStickerTable ParseChatSticker() {
@@ -865,7 +867,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         var results = new Dictionary<int, EnchantScrollMetadata>();
         foreach ((int id, EnchantScroll scroll) in parser.ParseEnchantScroll()) {
             var metadata = new EnchantScrollMetadata(
-                Type: scroll.scrollType,
+                Type: (EnchantScrollType) scroll.scrollType,
                 MinLevel: scroll.minLv,
                 MaxLevel: scroll.maxLv,
                 Enchants: scroll.grade,
@@ -1544,19 +1546,19 @@ public class TableMapper : TypeMapper<TableMetadata> {
     }
 
     private DungeonRoomTable ParseDungeonRoom() {
-        var dungeons = new Dictionary<int, DungeonRoomTable.DungeonRoomMetadata>();
+        var dungeons = new Dictionary<int, DungeonRoomMetadata>();
         foreach ((int id, DungeonRoom dungeon) in parser.ParseDungeonRoom()) {
-            dungeons.Add(id, new DungeonRoomTable.DungeonRoomMetadata(
+            dungeons.Add(id, new DungeonRoomMetadata(
                 Id: dungeon.dungeonRoomID,
                 Level: dungeon.dungeonLevel,
                 PlayType: (DungeonPlayType) dungeon.playType,
                 GroupType: (DungeonGroupType) dungeon.groupType,
                 CooldownType: (DungeonCooldownType) dungeon.cooldownType,
-                CooldownValue: dungeon.cooldownValue,
+                CooldownValue: dungeon.cooldownType == Parser.Enum.DungeonCooldownType.dayOfWeeks ? dungeon.cooldownValue + 1 : dungeon.cooldownValue, // dayOfWeeks is 0-indexed
                 DurationTick: dungeon.durationTick,
                 LobbyFieldId: dungeon.lobbyFieldID,
                 FieldIds: dungeon.fieldIDs,
-                Reward: new DungeonRoomReward(
+                Reward: new DungeonRoomRewardMetadata(
                     AccountWide: dungeon.isAccountReward,
                     Count: dungeon.rewardCount,
                     SubRewardCount: dungeon.subRewardCount,
@@ -1568,7 +1570,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                     UnionRewardId: dungeon.unionRewardID,
                     SeasonRankRewardId: dungeon.seasonRankRewardID,
                     ScoreBonusId: dungeon.scoreBonusId),
-                Limit: new DungeonRoomLimit(
+                Limit: new DungeonRoomLimitMetadata(
                     MinUserCount: dungeon.minUserCount,
                     MaxUserCount: dungeon.maxUserCount,
                     GearScore: dungeon.gearScore,
@@ -1589,6 +1591,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 HelperRequireClearCount: dungeon.dungeonHelperRequireClearCount,
                 DisabledFindHelper: dungeon.isDisableFindHelper,
                 RankTableId: dungeon.rankTableID,
+                RoundId: dungeon.roundID,
                 LeaveAfterCloseReward: dungeon.isLeaveAfterCloseReward,
                 PartyMissions: dungeon.partyMissions,
                 UserMissions: dungeon.userMissions,
@@ -1629,6 +1632,55 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
 
         return new DungeonRankRewardTable(results);
+    }
+
+    private DungeonConfigTable ParseDungeonConfigTable() {
+        var missionRankResults = new Dictionary<int, DungeonMissionRankMetadata>();
+        foreach (DungeonConfig config in parser.ParseDungeonConfig()) {
+            MissionRank missionRank = config.MissionRank.First();
+            foreach (MissionRankGroup group in missionRank.group) {
+                var scores = new List<DungeonMissionRankMetadata.Score>();
+                for (int i = 0; i < group.rank.Count; i++) {
+                    scores.Add(new DungeonMissionRankMetadata.Score(
+                        Grade: (DungeonMissionRank) (i + 1), // Ranking start at C
+                        Value: group.rank[i].score));
+                }
+                missionRankResults.Add(group.id, new DungeonMissionRankMetadata(
+                    Id: group.id,
+                    Description: group.desc,
+                    MaxScore: group.maxScore,
+                    Scores: scores.ToArray()));
+            }
+            break; // Break because there should only be one entry.
+        }
+
+        var unitedWeeklyResults = new Dictionary<int, int>();
+        UnitedWeeklyReward reward = parser.ParseUnitedWeeklyReward().First();
+        foreach (UnitedWeeklyRewardEntry item in reward.v) {
+            unitedWeeklyResults.Add(item.rewardCount, item.rewardID);
+        }
+
+        return new DungeonConfigTable(unitedWeeklyResults, missionRankResults);
+    }
+
+    private DungeonMissionTable ParseDungeonMissionTable() {
+        var results = new Dictionary<int, DungeonMissionMetadata>();
+        foreach ((int id, DungeonMission mission) in parser.ParseDungeonMission()) {
+            Console.WriteLine(id);
+            if (!Enum.TryParse(mission.type, out DungeonMissionType type)) {
+                Console.WriteLine($"Unknown Mission type: {mission.type}");
+                continue;
+            }
+            results.Add(id, new DungeonMissionMetadata(
+                Id: id,
+                Type: type,
+                Value1: Array.ConvertAll(mission.value1, element => (long) element),
+                Value2: mission.value2,
+                MaxScore: (short) mission.maxScore,
+                ApplyCount: (short) mission.applyCount,
+                IsPenaltyType: mission.isPenaltyType));
+        }
+        return new DungeonMissionTable(results);
     }
 
     private RewardContentTable ParseRewardContentTable() {

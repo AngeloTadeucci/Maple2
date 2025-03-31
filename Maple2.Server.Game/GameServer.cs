@@ -102,7 +102,7 @@ public class GameServer : Server<GameSession> {
         return fieldFactory.Get(mapId, roomId: roomId);
     }
 
-    public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata metadata, long requesterId, int size, int partyId) {
+    public DungeonFieldManager? CreateDungeon(DungeonRoomMetadata metadata, long requesterId, int size, int partyId) {
         return fieldFactory.CreateDungeon(metadata, requesterId, size, partyId);
     }
 

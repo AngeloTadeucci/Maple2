@@ -18,7 +18,7 @@ public partial class ChannelService {
     }
 
     private FieldResponse CreateDungeon(FieldRequest.Types.CreateDungeon create, long requestorId) {
-        if (!tableMetadata.DungeonRoomTable.Entries.TryGetValue(create.DungeonId, out DungeonRoomTable.DungeonRoomMetadata? dungeonRoom)) {
+        if (!tableMetadata.DungeonRoomTable.Entries.TryGetValue(create.DungeonId, out DungeonRoomMetadata? dungeonRoom)) {
             return new FieldResponse {
                 Error = (int) MigrationError.s_move_err_dungeon_not_exist,
             };

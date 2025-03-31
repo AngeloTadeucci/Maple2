@@ -1,4 +1,7 @@
-﻿using Maple2.Server.Game.Manager.Field;
+﻿using Maple2.Model.Game.Dungeon;
+using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Packets;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -18,7 +21,15 @@ public partial class TriggerContext {
     }
 
     public void DungeonClearRound(int round) {
-        ErrorLog("[DungeonClearRound] round:{Round}", round);
+        DebugLog("[DungeonClearRound] round:{Round}", round);
+
+        foreach (FieldPlayer player in Field.Players.Values) {
+            if (player.Session.Dungeon.UserRecord is null) {
+                continue;
+            }
+
+            player.Session.Dungeon.UserRecord.Round = round;
+        }
     }
 
     public void DungeonCloseTimer() {
@@ -30,7 +41,8 @@ public partial class TriggerContext {
     }
 
     public void DungeonEnableGiveUp(bool enabled) {
-        ErrorLog("[DungeonEnableGiveUp] enabled:{Enabled}", enabled);
+        DebugLog("[DungeonEnableGiveUp] enabled:{Enabled}", enabled);
+        Field.Broadcast(DungeonMissionPacket.SetAbandon(enabled));
     }
 
     public void DungeonFail() {
@@ -39,6 +51,18 @@ public partial class TriggerContext {
 
     public void DungeonMissionComplete(string feature, int missionId) {
         ErrorLog("[DungeonMissionComplete] missionId:{MissionId}, feature:{Feature}", missionId, feature);
+
+        foreach (FieldPlayer player in Field.Players.Values) {
+            if (player.Session.Dungeon.UserRecord is null) {
+                continue;
+            }
+            if (!player.Session.Dungeon.UserRecord.Missions.TryGetValue(missionId, out DungeonMission? missionRecord)) {
+                continue;
+            }
+
+            missionRecord.Complete();
+            player.Session.Send(DungeonMissionPacket.Update(missionRecord));
+        }
     }
 
     public void DungeonMoveLapTimeToNow(int id) {
