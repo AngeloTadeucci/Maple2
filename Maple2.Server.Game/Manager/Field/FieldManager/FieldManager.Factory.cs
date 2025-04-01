@@ -372,6 +372,13 @@ public partial class FieldManager {
                 return Create(mapId, ownerId: ownerId, roomId: roomId);
             }
 
+            if (roomId == 0 && mapFields.Count > 0) {
+                FieldManager? firstField = mapFields.Values.FirstOrDefault();
+                if (firstField != null) {
+                    return firstField;
+                }
+            }
+
             return mapFields.TryGetValue(roomId, out FieldManager? field) ? field :
                 Create(mapId, ownerId: ownerId, roomId: roomId);
 
