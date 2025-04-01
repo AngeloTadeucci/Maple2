@@ -127,6 +127,7 @@ public class GotoCommand : Command {
             }
         }
     }
+
     private class PlayerCommand : Command {
         private readonly GameSession session;
 
@@ -161,6 +162,11 @@ public class GotoCommand : Command {
 
             if (warpResponse is not { Error: 0 }) {
                 ctx.Console.Out.WriteLine($"Failed to warp to '{playerName}'.");
+                return;
+            }
+
+            if (warpResponse.RoomId == session.Field.RoomId && playerInfo.MapId == session.Player.Value.Character.MapId) {
+                session.Send(PortalPacket.MoveByPortal(session.Player, new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + 75), session.Player.Rotation));
                 return;
             }
 
@@ -200,5 +206,4 @@ public class GotoCommand : Command {
             }
         }
     }
-
 }

@@ -52,6 +52,8 @@ service World {
   rpc Marriage(maple2.MarriageRequest) returns (maple2.MarriageResponse);
   // PlayerWarp
   rpc PlayerWarp(maple2.PlayerWarpRequest) returns (maple2.PlayerWarpResponse);
+  // Admin
+  rpc Admin(maple2.AdminRequest) returns (maple2.AdminResponse);
 }
 
 enum Server {

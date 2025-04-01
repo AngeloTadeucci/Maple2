@@ -72,6 +72,15 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<GlobalPortalLookup>()
         .SingleInstance();
+
+    // Register WorldServer and inject ChannelClientLookup
+    autofac.RegisterType<WorldServer>()
+        .AsSelf()
+        .OnActivated(e => {
+            var lookup = e.Context.Resolve<ChannelClientLookup>();
+            lookup.SetWorldServer(e.Instance);
+        })
+        .SingleInstance();
 });
 
 WebApplication app = builder.Build();

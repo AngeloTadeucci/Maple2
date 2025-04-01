@@ -299,3 +299,35 @@ message PlayerWarpResponse {
   float z = 4;
   int32 room_id = 5;
 }
+
+message AdminRequest {
+  message Alert {
+    string message = 1;
+    int32 duration = 2;
+    int32 flags = 3;
+  }
+
+  message AddStringBoard {
+    string message = 1;
+    int32 id = 2;
+  }
+
+  message RemoveStringBoard {
+    int32 id = 1;
+  }
+
+  message ListStringBoard {}
+
+  int64 requester_id = 1;
+  oneof request {
+    Alert alert = 2;
+    AddStringBoard add_string_board = 3;
+    RemoveStringBoard remove_string_board = 4;
+    ListStringBoard list_string_board = 5;
+  }
+}
+
+message AdminResponse {
+  int32 error = 1;
+  string message = 2;
+}

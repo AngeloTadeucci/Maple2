@@ -10,7 +10,8 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class NpcCommand : Command {
+public class
+    NpcCommand : Command {
     private const string NAME = "npc";
     private const string DESCRIPTION = "Npc spawning.";
 
