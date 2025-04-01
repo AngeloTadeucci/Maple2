@@ -3,6 +3,7 @@ using System;
 using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    partial class Ms2ContextModelSnapshot : ModelSnapshot
+    [Migration("20250331233640_DungeonInfo2")]
+    partial class DungeonInfo2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1157,45 +1160,6 @@ namespace Maple2.Server.World.Migrations
                     b.HasKey("ItemUid");
 
                     b.ToTable("pet-config", (string)null);
-                });
-
-            modelBuilder.Entity("Maple2.Database.Model.PlayerReport", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<byte>("Category")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<long>("CharacterId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreateTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("PlayerName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ReportInfo")
-                        .IsRequired()
-                        .HasColumnType("json");
-
-                    b.Property<long>("ReporterCharacterId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ReporterName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("player-reports", (string)null);
                 });
 
             modelBuilder.Entity("Maple2.Database.Model.Quest", b =>

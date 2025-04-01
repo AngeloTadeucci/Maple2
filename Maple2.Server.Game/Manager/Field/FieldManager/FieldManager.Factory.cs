@@ -143,7 +143,7 @@ public partial class FieldManager {
             return field;
         }
 
-        public DungeonFieldManager? CreateDungeon(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata, long ownerId, int size = 1, int partyId = 0) {
+        public DungeonFieldManager? CreateDungeon(DungeonRoomMetadata dungeonMetadata, long ownerId, int size = 1, int partyId = 0) {
             var sw = new Stopwatch();
             sw.Start();
 

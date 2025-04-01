@@ -6,6 +6,7 @@ using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
+using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -14,7 +15,7 @@ namespace Maple2.Server.Game.Manager;
 public sealed class NpcScriptManager {
     private readonly GameSession session;
 
-    public readonly FieldNpc Npc;
+    public readonly FieldNpc? Npc;
     private readonly ScriptMetadata? metadata;
     private readonly Dictionary<int, ScriptConditionMetadata>? scriptConditions;
     public SortedDictionary<int, QuestMetadata> Quests = new();
@@ -29,21 +30,24 @@ public sealed class NpcScriptManager {
     public int Index { get; private set; } = 0;
     private readonly ILogger logger = Log.Logger.ForContext<NpcScriptManager>();
 
-    public NpcScriptManager(GameSession session, FieldNpc npc, ScriptMetadata? metadata, ScriptState? state, NpcTalkType talkType) {
+    public NpcScriptManager(GameSession session, FieldNpc? npc, ScriptMetadata? metadata, ScriptState? state, NpcTalkType talkType) {
         this.session = session;
         Npc = npc;
         this.metadata = metadata;
         TalkType = talkType;
         State = state;
-        if (session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditionMetadata)) {
-            scriptConditions = scriptConditionMetadata;
-        }
-        if (talkType.HasFlag(NpcTalkType.Quest)) {
-            Quests = session.Quest.GetAvailableQuests(Npc.Value.Id);
-        }
 
-        if (state?.Type == ScriptStateType.Job) {
-            JobCondition = session.ServerTableMetadata.JobConditionTable.Entries.GetValueOrDefault(Npc.Value.Id);
+        if (Npc != null) {
+            if (session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(Npc.Value.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditionMetadata)) {
+                scriptConditions = scriptConditionMetadata;
+            }
+            if (talkType.HasFlag(NpcTalkType.Quest)) {
+                Quests = session.Quest.GetAvailableQuests(Npc.Value.Id);
+            }
+
+            if (state?.Type == ScriptStateType.Job) {
+                JobCondition = session.ServerTableMetadata.JobConditionTable.Entries.GetValueOrDefault(Npc.Value.Id);
+            }
         }
     }
 
@@ -55,7 +59,7 @@ public sealed class NpcScriptManager {
         this.eventScripts = eventScripts;
     }
 
-    public void Event() {
+    public void EmpowerEvent() {
         CinematicEventScript script = eventScripts[Index];
         ScriptContent content = script.Contents[Random.Shared.Next(script.Contents.Length - 1)];
         session.Send(NpcTalkPacket.Update(content));
@@ -63,9 +67,9 @@ public sealed class NpcScriptManager {
     }
 
     public bool BeginNpcTalk() {
-        if (State == null) {
+        if (State == null || Npc == null) {
             session.Send(NpcTalkPacket.Close());
-            Npc.StopTalk();
+            Npc?.StopTalk();
             return false;
         }
         var dialogue = new NpcDialogue(State.Id, 0, GetButton());
@@ -102,7 +106,7 @@ public sealed class NpcScriptManager {
 
     public void EnterDialog() {
         // Basic shops are treated slightly different
-        if (Npc.Value.Metadata.Basic.Kind is 1 or > 10 and < 20) {
+        if (Npc?.Value.Metadata.Basic.Kind is 1 or > 10 and < 20) {
             TalkType = NpcTalkType.Talk;
             State = null;
             Button = GetButton();
@@ -113,6 +117,9 @@ public sealed class NpcScriptManager {
     }
 
     public void EnterTalk() {
+        if (Npc == null) {
+            return;
+        }
         ScriptState? scriptState = NpcTalkUtil.GetInitialScriptType(session, ScriptStateType.Script, metadata, Npc.Value.Id);
         if (scriptState == null) {
             return;
@@ -136,7 +143,7 @@ public sealed class NpcScriptManager {
             if (State?.Type == ScriptStateType.Job) {
                 PerformJobScript();
             }
-            Npc.StopTalk();
+            Npc?.StopTalk();
             return false;
         }
 
@@ -146,7 +153,7 @@ public sealed class NpcScriptManager {
         }
         if (nextState != State && !metadata.States.ContainsKey(nextState.Id)) {
             session.Send(NpcTalkPacket.Close());
-            Npc.StopTalk();
+            Npc?.StopTalk();
             return false;
         }
 
@@ -307,7 +314,7 @@ public sealed class NpcScriptManager {
 
         switch (State.Type) {
             case ScriptStateType.Job:
-                switch (Npc.Value.Metadata.Basic.Kind) {
+                switch (Npc?.Value.Metadata.Basic.Kind) {
                     case >= 30 and < 40: // Beauty
                         return NpcTalkButton.SelectableBeauty;
                     case 80:
@@ -321,7 +328,7 @@ public sealed class NpcScriptManager {
                 }
                 break;
             case ScriptStateType.Select:
-                switch (Npc.Value.Metadata.Basic.Kind) {
+                switch (Npc?.Value.Metadata.Basic.Kind) {
                     case 1 or > 10 and < 20: // Shop
                         return NpcTalkButton.None;
                     case 2: // Storage
@@ -377,6 +384,12 @@ public sealed class NpcScriptManager {
             }
         }
 
+        if (!string.IsNullOrEmpty(scriptFunction.SetTriggerValueKey)) {
+            if (int.TryParse(scriptFunction.SetTriggerValue, out int value)) {
+                session.Field.UserValues[scriptFunction.SetTriggerValueKey] = value;
+            }
+        }
+
         if (scriptFunction.CollectMeso > 0) {
             session.Currency.Meso -= scriptFunction.CollectMeso;
         }
@@ -406,4 +419,60 @@ public sealed class NpcScriptManager {
                 : FieldEnterPacket.Error(MigrationError.s_move_err_default));
         }
     }
+
+    #region EnchantTalk
+    public void EnchantResultScript(ScriptEventType eventType, EnchantResult result = EnchantResult.None, ItemEnchantError error = ItemEnchantError.s_itemenchant_unknown_err, int enchantLevel = 0, short rarity = 0, int failCount = 0) {
+        int eventId = 0;
+
+        if (!session.ServerTableMetadata.ScriptEventConditionTable.Entries.TryGetValue(eventType, out Dictionary<int, ScriptEventConditionMetadata>? scriptDict)) {
+            return;
+        }
+
+        foreach ((int id, ScriptEventConditionMetadata value) in scriptDict) {
+            if (EventConditionCheck(value, enchantLevel, rarity, failCount, result, error)) {
+                eventId = id;
+                break;
+            }
+        }
+
+        RunEventScript(eventId);
+    }
+
+    private bool EventConditionCheck(ScriptEventConditionMetadata metadata, int enchantLevel, short rarity, int failCount, EnchantResult result, ItemEnchantError error) {
+        if (error != ItemEnchantError.s_itemenchant_unknown_err && metadata.ErrorCode != error) {
+            return false;
+        }
+
+        if (metadata.Rarity > 0 && metadata.Rarity != rarity) {
+            return false;
+        }
+
+        if (!metadata.EnchantLevel.Contains(enchantLevel)) {
+            return false;
+        }
+
+        if (metadata.FailCount > 0 || metadata.DamageType != EnchantDamageType.None) {
+            // Returning false here because we don't have the fail count or damage type
+            return false;
+        }
+
+        if (metadata.ResultType != EnchantResult.None && metadata.ResultType != result) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void RunEventScript(int eventId) {
+        if (eventId == 0) {
+            return;
+        }
+        CinematicEventScript? script = eventScripts.FirstOrDefault(eventScript => eventScript.Id == eventId);
+        if (script == null) {
+            return;
+        }
+        ScriptContent content = script.Contents[Random.Shared.Next(script.Contents.Length)];
+        session.Send(NpcTalkPacket.Update(content));
+    }
+    #endregion
 }

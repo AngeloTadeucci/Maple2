@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game.Dungeon;
@@ -9,13 +10,13 @@ using Maple2.Server.Game.Packets;
 namespace Maple2.Server.Game.Manager.Field;
 
 public class DungeonFieldManager : FieldManager {
-    public readonly DungeonRoomTable.DungeonRoomMetadata DungeonMetadata;
+    public readonly DungeonRoomMetadata DungeonMetadata;
     public DungeonFieldManager? Lobby { get; init; }
     public readonly ConcurrentDictionary<int, DungeonFieldManager> RoomFields = [];
     public required DungeonRoomRecord DungeonRoomRecord { get; init; }
     public int PartyId { get; init; }
 
-    public DungeonFieldManager(DungeonRoomTable.DungeonRoomMetadata dungeonMetadata, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0, int size = 1, int partyId = 0)
+    public DungeonFieldManager(DungeonRoomMetadata dungeonMetadata, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, long ownerId = 0, int size = 1, int partyId = 0)
         : base(mapMetadata, ugcMetadata, entities, npcMetadata, ownerId) {
         DungeonMetadata = dungeonMetadata;
         if (dungeonMetadata.LobbyFieldId == mapMetadata.Id) {
@@ -56,12 +57,13 @@ public class DungeonFieldManager : FieldManager {
         Broadcast(DungeonRoomPacket.DungeonResult(DungeonRoomRecord.State, compiledResults));
 
         if (DungeonRoomRecord.State == DungeonState.Clear) {
+            long clearTimestamp = DateTime.Now.ToEpochSeconds();
             foreach (long characterId in compiledResults.Keys) {
                 if (!TryGetPlayerById(characterId, out FieldPlayer? player)) {
                     continue;
                 }
 
-                player.Session.Dungeon.CompleteDungeon();
+                player.Session.Dungeon.CompleteDungeon(clearTimestamp);
 
             }
         }

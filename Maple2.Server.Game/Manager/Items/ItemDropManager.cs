@@ -239,7 +239,11 @@ public class ItemDropManager {
                 createdItem.Transfer?.Bind(character);
             }
 
-            // TODO: SockDataId, EnchantLevel, DisableBreak, Announce
+            if (selectedItem.EnchantLevel > 0) {
+                createdItem.Enchant = ItemEnchantManager.GetEnchant(field.ServerTableMetadata.EnchantOptionTable, createdItem, selectedItem.EnchantLevel);
+            }
+
+            // TODO: SockDataId, DisableBreak, Announce
 
             yield return createdItem;
         }

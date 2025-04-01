@@ -28,6 +28,7 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(InstanceFieldTable), typeDiscriminator: "instancefield")]
 [JsonDerivedType(typeof(ScriptConditionTable), typeDiscriminator: "*scriptCondition")]
 [JsonDerivedType(typeof(ScriptFunctionTable), typeDiscriminator: "*scriptFunction")]
+[JsonDerivedType(typeof(ScriptEventConditionTable), typeDiscriminator: "*scriptEventCondition")]
 [JsonDerivedType(typeof(JobConditionTable), typeDiscriminator: "jobConditionTable")]
 [JsonDerivedType(typeof(BonusGameTable), typeDiscriminator: "bonusGame")]
 [JsonDerivedType(typeof(GlobalDropItemBoxTable), typeDiscriminator: "globalItemDrop")]
@@ -45,4 +46,5 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(MeretMarketTable), typeDiscriminator: "meretMarket")]
 [JsonDerivedType(typeof(FishTable), typeDiscriminator: "fish")]
 [JsonDerivedType(typeof(CombineSpawnTable), typeDiscriminator: "combineSpawn")]
+[JsonDerivedType(typeof(EnchantOptionTable), typeDiscriminator: "enchantOption")]
 public abstract record ServerTable;

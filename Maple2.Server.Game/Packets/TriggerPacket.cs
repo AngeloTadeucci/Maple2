@@ -131,21 +131,15 @@ public static class TriggerPacket {
         return pWriter;
     }
 
-    public static ByteWriter DuelHpBar(int objectId, int durationTick, int hpStep) {
+    public static ByteWriter DuelHpBar(bool set, int objectId = 0, int durationTick = 0, int hpStep = 0) {
         var pWriter = Packet.Of(SendOp.Trigger);
         pWriter.Write<Command>(Command.DuelHpBar);
-        pWriter.WriteBool(true);
-        pWriter.WriteInt(objectId);
-        pWriter.WriteInt(durationTick);
-        pWriter.WriteInt(hpStep);
-
-        return pWriter;
-    }
-
-    public static ByteWriter HideDuelHpBar() {
-        var pWriter = Packet.Of(SendOp.Trigger);
-        pWriter.Write<Command>(Command.DuelHpBar);
-        pWriter.WriteBool(false);
+        pWriter.WriteBool(set);
+        if (set) {
+            pWriter.WriteInt(objectId);
+            pWriter.WriteInt(durationTick);
+            pWriter.WriteInt(hpStep);
+        }
 
         return pWriter;
     }

@@ -117,6 +117,17 @@ public enum NpcTalkAction : byte {
     Cutscene = 10,
 }
 
-public enum NpcEventType : short {
-    Empower = 202,
+public enum ScriptEventType : short {
+    EnchantSelect = 1,
+    EnchantFail = 2,
+    EnchantComplete = 3,
+    PeachySelect = 31,
+    RerollItemSelect = 100,
+    RerollFail = 101,
+    RerollOptionSelect = 102,
+    RerollComplete = 103,
+    EmpowerSelect = 202,
+    EmpowerTry = 203,
+    EmpowerResult = 204,
+
 }

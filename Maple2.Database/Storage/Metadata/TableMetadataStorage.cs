@@ -66,6 +66,8 @@ public class TableMetadataStorage {
 
     private readonly Lazy<DungeonRoomTable> dungeonRoomTable;
     private readonly Lazy<DungeonRankRewardTable> dungeonRankRewardTable;
+    private readonly Lazy<DungeonConfigTable> dungeonConfigTable;
+    private readonly Lazy<DungeonMissionTable> dungeonMissionTable;
 
     public ChatStickerTable ChatStickerTable => chatStickerTable.Value;
     public DefaultItemsTable DefaultItemsTable => defaultItemsTable.Value;
@@ -127,6 +129,8 @@ public class TableMetadataStorage {
 
     public DungeonRoomTable DungeonRoomTable => dungeonRoomTable.Value;
     public DungeonRankRewardTable DungeonRankRewardTable => dungeonRankRewardTable.Value;
+    public DungeonConfigTable DungeonConfigTable => dungeonConfigTable.Value;
+    public DungeonMissionTable DungeonMissionTable => dungeonMissionTable.Value;
 
     public TableMetadataStorage(MetadataContext context) {
         chatStickerTable = Retrieve<ChatStickerTable>(context, TableNames.CHAT_EMOTICON);
@@ -186,6 +190,8 @@ public class TableMetadataStorage {
         weaponVariationTable = Retrieve<ItemEquipVariationTable>(context, TableNames.ITEM_OPTION_VARIATION_WEAPON);
         dungeonRoomTable = Retrieve<DungeonRoomTable>(context, TableNames.DUNGEON_ROOM);
         dungeonRankRewardTable = Retrieve<DungeonRankRewardTable>(context, TableNames.DUNGEON_RANK_REWARD);
+        dungeonConfigTable = Retrieve<DungeonConfigTable>(context, TableNames.DUNGEON_CONFIG);
+        dungeonMissionTable = Retrieve<DungeonMissionTable>(context, TableNames.DUNGEON_MISSION);
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : Table {

@@ -571,7 +571,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 }
             }
             foreach (Item item in items) {
-                if (!Item.Inventory.Add(item)) {
+                if (!Item.Inventory.Add(item, true)) {
                     Item.MailItem(item);
                 }
             }

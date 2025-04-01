@@ -13,4 +13,8 @@ public enum ItemEnchantError : short {
     s_itemenchant_damaged_item = 2,
     [Description("Not enough materials.")]
     s_itemenchant_lack_ingredient = 3,
+    not_enough_fodder = 4,
+    excess_fodder = 5,
+    max_fodder = 6,
+    over_100_success_rate = 7,
 }

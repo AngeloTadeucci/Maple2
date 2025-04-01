@@ -600,7 +600,7 @@ public partial class FieldManager : IField {
 
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             NpcScriptManager? npcScript = fieldPlayer.Session.NpcScript;
-            if (npcScript is not null && npcScript.Npc.Value.Id == npc.Value.Id && npc.Value.Metadata.LookAtTarget.UseTalkMotion) {
+            if (npcScript is not null && npcScript.Npc is not null && npcScript.Npc.Value.Id == npc.Value.Id && npc.Value.Metadata.LookAtTarget.UseTalkMotion) {
                 fieldPlayer.Session.Send(NpcControlPacket.Talk(npc));
                 continue;
             }

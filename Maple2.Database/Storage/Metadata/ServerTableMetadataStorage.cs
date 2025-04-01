@@ -9,6 +9,7 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<InstanceFieldTable> instanceFieldTable;
     private readonly Lazy<ScriptConditionTable> scriptConditionTable;
     private readonly Lazy<ScriptFunctionTable> scriptFunctionTable;
+    private readonly Lazy<ScriptEventConditionTable> scriptEventConditionTable;
     private readonly Lazy<JobConditionTable> jobConditionTable;
     private readonly Lazy<BonusGameTable> bonusGameTable;
     private readonly Lazy<GlobalDropItemBoxTable> globalDropItemBoxTable;
@@ -26,10 +27,12 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<MeretMarketTable> meretMarketTable;
     private readonly Lazy<FishTable> fishTable;
     private readonly Lazy<CombineSpawnTable> combineSpawnTable;
+    private readonly Lazy<EnchantOptionTable> enchantOptionTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
     public ScriptFunctionTable ScriptFunctionTable => scriptFunctionTable.Value;
+    public ScriptEventConditionTable ScriptEventConditionTable => scriptEventConditionTable.Value;
     public JobConditionTable JobConditionTable => jobConditionTable.Value;
     public BonusGameTable BonusGameTable => bonusGameTable.Value;
     public GlobalDropItemBoxTable GlobalDropItemBoxTable => globalDropItemBoxTable.Value;
@@ -47,11 +50,13 @@ public class ServerTableMetadataStorage {
     public MeretMarketTable MeretMarketTable => meretMarketTable.Value;
     public FishTable FishTable => fishTable.Value;
     public CombineSpawnTable CombineSpawnTable => combineSpawnTable.Value;
+    public EnchantOptionTable EnchantOptionTable => enchantOptionTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
         instanceFieldTable = Retrieve<InstanceFieldTable>(context, ServerTableNames.INSTANCE_FIELD);
         scriptConditionTable = Retrieve<ScriptConditionTable>(context, ServerTableNames.SCRIPT_CONDITION);
         scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, ServerTableNames.SCRIPT_FUNCTION);
+        scriptEventConditionTable = Retrieve<ScriptEventConditionTable>(context, ServerTableNames.SCRIPT_EVENT);
         jobConditionTable = Retrieve<JobConditionTable>(context, ServerTableNames.JOB_CONDITION);
         bonusGameTable = Retrieve<BonusGameTable>(context, ServerTableNames.BONUS_GAME);
         globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, ServerTableNames.GLOBAL_DROP_ITEM_BOX);
@@ -69,6 +74,7 @@ public class ServerTableMetadataStorage {
         meretMarketTable = Retrieve<MeretMarketTable>(context, ServerTableNames.MERET_MARKET);
         fishTable = Retrieve<FishTable>(context, ServerTableNames.FISH);
         combineSpawnTable = Retrieve<CombineSpawnTable>(context, ServerTableNames.COMBINE_SPAWN);
+        enchantOptionTable = Retrieve<EnchantOptionTable>(context, ServerTableNames.ENCHANT_OPTION);
     }
 
     public IEnumerable<GameEvent> GetGameEvents() {

@@ -1,6 +1,7 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Serilog;
@@ -18,30 +19,12 @@ public class ItemEnchantManager {
     private static readonly int[] SuccessRate = new int[15] { 100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5 };
     private static readonly int[] FodderRate = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2 };
     private static readonly int[] FailCharge = new int[15] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5 };
-    private static readonly float[] StatBonusRate = new float[15] { 0.02f, 0.04f, 0.07f, 0.1f, 0.14f, 0.19f, 0.25f, 0.32f, 0.4f, 0.5f, 0.64f, 0.84f, 1.12f, 1.5f, 2f };
     // ReSharper restore RedundantExplicitArraySize
 
-    private static readonly IngredientInfo[][] OpheliaCost = new IngredientInfo[15][];
     private static readonly IngredientInfo[][] PeachyCost = new IngredientInfo[15][];
 
     // TODO: Dynamic catalysts
     static ItemEnchantManager() {
-        OpheliaCost[0] = Build(802, 4, 20);
-        OpheliaCost[1] = Build(802, 4, 20);
-        OpheliaCost[2] = Build(802, 4, 20);
-        OpheliaCost[3] = Build(1100, 4, 28);
-        OpheliaCost[4] = Build(1100, 4, 28);
-        OpheliaCost[5] = Build(1396, 6, 34);
-        OpheliaCost[6] = Build(1694, 6, 42);
-        OpheliaCost[7] = Build(1990, 6, 50);
-        OpheliaCost[8] = Build(4576, 6, 58);
-        OpheliaCost[9] = Build(4576, 11, 64);
-        OpheliaCost[10] = Build(4576, 11, 74);
-        OpheliaCost[11] = Build(6864, 18, 74);
-        OpheliaCost[12] = Build(6864, 18, 74);
-        OpheliaCost[13] = Build(6864, 18, 74);
-        OpheliaCost[14] = Build(6864, 18, 74);
-
         PeachyCost[0] = Build(802, 4, 20); // 1x
         PeachyCost[1] = Build(802, 4, 20); // 1x
         PeachyCost[2] = Build(802, 4, 20); // 1x
@@ -80,6 +63,8 @@ public class ItemEnchantManager {
     private readonly EnchantRates rates;
     private int fodderWeight;
     private int useCharges;
+    private EnchantResult enchantResult;
+
 
     public ItemEnchantManager(GameSession session, Lua.Lua lua) {
         this.session = session;
@@ -100,6 +85,7 @@ public class ItemEnchantManager {
         rates.Clear();
         fodderWeight = 0;
         useCharges = 0;
+        enchantResult = EnchantResult.None;
     }
 
     public bool StageItem(EnchantType enchantType, long itemUid) {
@@ -110,6 +96,7 @@ public class ItemEnchantManager {
         Item? item = session.Item.GetGear(itemUid);
         if (item == null || !item.Metadata.Limit.EnableEnchant) {
             session.Send(ItemEnchantPacket.Error(ItemEnchantError.s_itemenchant_invalid_item));
+            NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.s_itemenchant_invalid_item);
             return false;
         }
 
@@ -125,12 +112,8 @@ public class ItemEnchantManager {
         foreach (IngredientInfo ingredient in GetRequiredCatalysts()) {
             catalysts.Add(ingredient);
         }
-        foreach ((BasicAttribute attribute, BasicOption option) in GetBasicOptions(upgradeItem)) {
-            if (upgradeItem.Enchant.BasicOptions.TryGetValue(attribute, out BasicOption existing)) {
-                attributeDeltas[attribute] = option - existing;
-            } else {
-                attributeDeltas[attribute] = option;
-            }
+        foreach ((BasicAttribute attribute, BasicOption option) in GetEnchant(session, upgradeItem).BasicOptions) {
+            attributeDeltas[attribute] = option;
         }
 
         switch (Type) {
@@ -141,7 +124,7 @@ public class ItemEnchantManager {
                 rates.Success = MAX_RATE;
                 break;
         }
-
+        NpcTalkEvent(ScriptEventType.EnchantSelect);
         session.Send(ItemEnchantPacket.StageItem(Type, upgradeItem, catalysts, attributeDeltas, rates, minFodder));
         return true;
     }
@@ -159,6 +142,7 @@ public class ItemEnchantManager {
         if (add) {
             // Prevent adding more fodder if it won't help.
             if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE) {
+                NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.max_fodder);
                 return false;
             }
             // Cannot add the same fodder twice.
@@ -169,6 +153,7 @@ public class ItemEnchantManager {
             Item? item = session.Item.Inventory.Get(itemUid);
             if (item == null) {
                 session.Send(ItemEnchantPacket.Error(ItemEnchantError.s_itemenchant_lack_ingredient));
+                NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.s_itemenchant_lack_ingredient);
                 return false;
             }
             if (!IsValidFodder(upgradeItem, item)) {
@@ -221,10 +206,12 @@ public class ItemEnchantManager {
         upgradeItem.Enchant ??= new ItemEnchant();
         int enchants = Math.Clamp(upgradeItem.Enchant.Enchants, 0, 14);
         if (fodderWeight < RequireFodder[enchants]) {
+            NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.not_enough_fodder);
             return false;
         }
 
         if (!ConsumeMaterial()) {
+            NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.s_itemenchant_lack_ingredient);
             return false;
         }
 
@@ -232,14 +219,18 @@ public class ItemEnchantManager {
             case EnchantType.Ophelia:
                 float roll = Random.Shared.NextSingle() * MAX_RATE;
                 int totalRate = rates.Total;
-                bool success = roll < totalRate;
-                logger.Debug("Enchant result: {Roll} / {Total} = {Result}", roll, totalRate, success);
+                enchantResult = roll < totalRate ? EnchantResult.Success : EnchantResult.Fail;
+                logger.Debug("Enchant result: {Roll} / {Total} = {Result}", roll, totalRate, enchantResult.ToString());
 
-                if (success) {
+                if (enchantResult == EnchantResult.Success) {
                     // GetBasicOptions() again to ensure rates match those in table.
                     // This *MUST* be called before incrementing Enchants.
-                    foreach ((BasicAttribute attribute, BasicOption option) in GetBasicOptions(upgradeItem)) {
-                        upgradeItem.Enchant.BasicOptions[attribute] = option;
+                    foreach ((BasicAttribute attribute, BasicOption option) in GetEnchant(session, upgradeItem).BasicOptions) {
+                        if (upgradeItem.Enchant.BasicOptions.TryGetValue(attribute, out BasicOption existing)) {
+                            upgradeItem.Enchant.BasicOptions[attribute] = option + existing;
+                        } else {
+                            upgradeItem.Enchant.BasicOptions[attribute] = option;
+                        }
                     }
                     upgradeItem.Enchant.Enchants++;
 
@@ -251,7 +242,6 @@ public class ItemEnchantManager {
                     session.Send(ItemEnchantPacket.Failure(upgradeItem, FailCharge[enchants]));
                 }
 
-                Reset();
                 return true;
             case EnchantType.Peachy:
                 upgradeItem.Enchant.EnchantExp += GainExp[enchants];
@@ -259,7 +249,7 @@ public class ItemEnchantManager {
                     upgradeItem.Enchant.EnchantExp = 0;
                     // GetBasicOptions() again to ensure rates match those in table.
                     // This *MUST* be called before incrementing Enchants.
-                    foreach ((BasicAttribute attribute, BasicOption option) in GetBasicOptions(upgradeItem)) {
+                    foreach ((BasicAttribute attribute, BasicOption option) in GetEnchant(session, upgradeItem).BasicOptions) {
                         upgradeItem.Enchant.BasicOptions[attribute] = option;
                     }
                     upgradeItem.Enchant.Enchants++;
@@ -326,45 +316,34 @@ public class ItemEnchantManager {
             yield break;
         }
 
-        float ratio = 1f;
-        if (upgradeItem.Type.IsWeapon) {
-            if (upgradeItem.Type.IsDagger || upgradeItem.Type.IsThrowingStar) {
-                ratio = 0.5f;
-            } else {
-                ratio = 1f; // All other weapons
-            }
-        } else if (upgradeItem.Type.IsArmor) {
-            if (upgradeItem.Type.IsOverall) {
-                ratio = 1f;
-            }
-            if (upgradeItem.Type.IsClothes || upgradeItem.Type.IsPants) {
-                ratio = 0.5f;
-            } else if (upgradeItem.Type.IsHat) {
-                ratio = 0.375f;
-            } else if (upgradeItem.Type.IsGloves || upgradeItem.Type.IsShoes) {
-                ratio = 0.125f;
-            }
-        }
-
         int enchants = upgradeItem.Enchant?.Enchants ?? 0;
-        IEnumerable<IngredientInfo> costs = Type == EnchantType.Peachy ? PeachyCost[enchants] : OpheliaCost[enchants];
-        foreach (IngredientInfo ingredient in costs) {
-            IngredientInfo modified = ingredient * ratio;
-            if (modified.Amount > 0) {
-                yield return modified;
-            }
+        IEnumerable<IngredientInfo> costs = Type == EnchantType.Peachy ? PeachyCost[enchants] : Core.Formulas.Enchant.GetEnchantCost(upgradeItem);
+        foreach (IngredientInfo cost in costs) {
+            yield return cost;
         }
     }
 
-    // TODO: Dynamic attribute options
-    public static IEnumerable<(BasicAttribute, BasicOption)> GetBasicOptions(Item upgradeItem, int target = -1) {
-        int enchants = Math.Clamp(target > 0 ? target - 1 : upgradeItem.Enchant?.Enchants ?? 0, 0, 14);
-        if (upgradeItem.Type.IsWeapon) {
-            yield return (BasicAttribute.MinWeaponAtk, new BasicOption(StatBonusRate[enchants]));
-            yield return (BasicAttribute.MaxWeaponAtk, new BasicOption(StatBonusRate[enchants]));
-        } else if (upgradeItem.Type.IsArmor) {
-            yield return (BasicAttribute.Defense, new BasicOption(StatBonusRate[enchants]));
+    public static ItemEnchant GetEnchant(GameSession session, Item upgradeItem, int target = -1) {
+        return GetEnchant(session.ServerTableMetadata.EnchantOptionTable, upgradeItem, target);
+    }
+
+    public static ItemEnchant GetEnchant(EnchantOptionTable table, Item upgradeItem, int target = -1) {
+        int enchantLevel = Math.Clamp(target >= 0 ? target : (upgradeItem.Enchant?.Enchants ?? 0) + 1, 1, 15);
+        var itemEnchant = new ItemEnchant();
+        EnchantOptionMetadata? entry = table.Entries.Values.FirstOrDefault(
+            e => e.Slot == upgradeItem.Type.Type &&
+                 e.EnchantLevel == enchantLevel &&
+                 e.Rarity == upgradeItem.Rarity &&
+                 e.MinLevel <= upgradeItem.Metadata.Limit.Level &&
+                 e.MaxLevel >= upgradeItem.Metadata.Limit.Level);
+        if (entry == null) {
+            return itemEnchant;
         }
+        foreach (BasicAttribute attribute in entry.Attributes) {
+            itemEnchant.BasicOptions[attribute] = new BasicOption(entry.Rate);
+        }
+        itemEnchant.Enchants = enchantLevel;
+        return itemEnchant;
     }
 
     // Prevent user from using more charges than needed
@@ -404,5 +383,12 @@ public class ItemEnchantManager {
             ItemTag.EnchantJockerItemEpic => item.Rarity == 6,
             _ => false,
         };
+    }
+
+    public void NpcTalkEvent(ScriptEventType scriptEventType, ItemEnchantError error = ItemEnchantError.s_itemenchant_unknown_err) {
+        session.NpcScript?.EnchantResultScript(scriptEventType, enchantResult, error, upgradeItem?.Enchant?.Enchants ?? 0, (short) (upgradeItem?.Rarity ?? 0));
+        if (scriptEventType == ScriptEventType.EnchantComplete) {
+            Reset();
+        }
     }
 }

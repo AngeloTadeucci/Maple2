@@ -54,7 +54,7 @@ public static class DungeonRoomPacket {
         pWriter.WriteInt(statistics.Count);
         foreach (DungeonUserResult userResult in statistics.Values) {
             pWriter.WriteLong(userResult.CharacterId);
-            pWriter.Write<DungeonGrade>(userResult.Grade);
+            pWriter.Write<DungeonMissionRank>(userResult.MissionRank);
             pWriter.Write<DungeonAccumulationRecordType>(userResult.RecordType);
             pWriter.WriteInt(userResult.Value);
         }

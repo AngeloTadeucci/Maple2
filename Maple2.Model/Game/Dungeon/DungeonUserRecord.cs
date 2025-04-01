@@ -10,8 +10,8 @@ public class DungeonUserRecord : IUserContentRecord {
     public bool IsDungeonSuccess;
     public bool WithParty { get; set; }
     public readonly ConcurrentDictionary<DungeonAccumulationRecordType, int> AccumulationRecords;
+    public Dictionary<int, DungeonMission> Missions = [];
     public DungeonBonusFlag BonusFlag = DungeonBonusFlag.None;
-    public DungeonBonusFlag2 BonusFlag2 = DungeonBonusFlag2.None;
     public Dictionary<DungeonRewardType, int> Rewards { get; init; } = [];
     public ICollection<RewardItem> RewardItems { get; init; } = [];
     public Dictionary<DungeonRewardType, int> BonusRewards { get; init; } = [];
@@ -19,6 +19,8 @@ public class DungeonUserRecord : IUserContentRecord {
     public int TotalSeconds;
     public int Score = -1;
     public int HighestScore = -1;
+    public DungeonBonusFlag Flag = DungeonBonusFlag.None;
+    public int Round;
 
     public DungeonUserRecord(int dungeonId, long characterId) {
         DungeonId = dungeonId;
@@ -31,16 +33,17 @@ public class DungeonUserRecord : IUserContentRecord {
         var rewardTypeEnumList = new List<DungeonRewardType>((DungeonRewardType[]) System.Enum.GetValues(typeof(DungeonRewardType)));
         foreach (DungeonRewardType type in rewardTypeEnumList) {
             Rewards[type] = 0;
+            BonusRewards[type] = 0;
         }
     }
 
     public void Add(RewardRecord record) {
-        Rewards[DungeonRewardType.Exp] += (int) record.Exp;
-        Rewards[DungeonRewardType.Meso] += (int) record.Meso;
-        Rewards[DungeonRewardType.Prestige] += (int) record.PrestigeExp;
+        BonusRewards[DungeonRewardType.Exp] += (int) record.Exp;
+        BonusRewards[DungeonRewardType.Meso] += (int) record.Meso;
+        BonusRewards[DungeonRewardType.Prestige] += (int) record.PrestigeExp;
 
         foreach (RewardItem item in record.Items) {
-            RewardItems.Add(item);
+            BonusRewardItems.Add(item);
         }
     }
 
@@ -49,13 +52,9 @@ public class DungeonUserRecord : IUserContentRecord {
         writer.WriteInt(DungeonId);
         writer.WriteBool(WithParty);
         writer.WriteInt(TotalSeconds);
-        writer.WriteInt(Score);
         writer.WriteInt(HighestScore);
-        writer.Write<DungeonBonusFlag>(BonusFlag);
-        writer.Write<DungeonBonusFlag2>(BonusFlag2);
-        writer.WriteByte();
-        writer.WriteByte();
-
+        writer.WriteInt(Score);
+        writer.Write<DungeonBonusFlag>(BonusFlag); // Client reads this as 4 separate bytes.
         writer.WriteInt(Rewards.Count);
         foreach ((DungeonRewardType type, int value) in Rewards) {
             writer.Write<DungeonRewardType>(type);
@@ -65,8 +64,8 @@ public class DungeonUserRecord : IUserContentRecord {
         writer.WriteInt(RewardItems.Count);
         foreach (RewardItem item in RewardItems) {
             writer.WriteInt(item.ItemId);
-            writer.WriteInt(item.Rarity);
             writer.WriteInt(item.Amount);
+            writer.WriteInt(item.Rarity);
             writer.WriteBool(item.Unknown1);
             writer.WriteBool(item.Unknown2);
             writer.WriteBool(item.Unknown3);
@@ -81,8 +80,8 @@ public class DungeonUserRecord : IUserContentRecord {
         writer.WriteInt(BonusRewardItems.Count);
         foreach (RewardItem item in BonusRewardItems) {
             writer.WriteInt(item.ItemId);
-            writer.WriteInt(item.Rarity);
             writer.WriteInt(item.Amount);
+            writer.WriteInt(item.Rarity);
             writer.WriteBool(item.Unknown1);
             writer.WriteBool(item.Unknown2);
             writer.WriteBool(item.Unknown3);

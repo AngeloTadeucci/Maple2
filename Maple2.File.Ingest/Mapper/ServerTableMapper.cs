@@ -9,6 +9,7 @@ using Maple2.File.Parser.Xml.Table.Server;
 using Maple2.Model;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
@@ -21,6 +22,7 @@ using IndividualItemDrop = Maple2.File.Parser.Xml.Table.Server.IndividualItemDro
 using InstanceType = Maple2.Model.Enum.InstanceType;
 using JobConditionTable = Maple2.Model.Metadata.JobConditionTable;
 using MergeOption = Maple2.File.Parser.Xml.Table.Server.MergeOption;
+using ScriptEventType = Maple2.Model.Enum.ScriptEventType;
 using ScriptType = Maple2.Model.Enum.ScriptType;
 using TimeEventType = Maple2.File.Parser.Enum.TimeEventType;
 
@@ -37,6 +39,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = ServerTableNames.INSTANCE_FIELD, Table = ParseInstanceField() };
         yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_CONDITION, Table = ParseScriptCondition() };
         yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_FUNCTION, Table = ParseScriptFunction() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_EVENT, Table = ParseScriptEventConditionTable() };
         yield return new ServerTableMetadata { Name = ServerTableNames.JOB_CONDITION, Table = ParseJobCondition() };
         yield return new ServerTableMetadata { Name = ServerTableNames.BONUS_GAME, Table = ParseBonusGameTable() };
         yield return new ServerTableMetadata { Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX, Table = ParseGlobalItemDropTable() };
@@ -54,6 +57,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         yield return new ServerTableMetadata { Name = ServerTableNames.MERET_MARKET, Table = ParseMeretCustomShop() };
         yield return new ServerTableMetadata { Name = ServerTableNames.FISH, Table = ParseFish() };
         yield return new ServerTableMetadata { Name = ServerTableNames.COMBINE_SPAWN, Table = ParseCombineSpawn() };
+        yield return new ServerTableMetadata { Name = ServerTableNames.ENCHANT_OPTION, Table = ParseEnchantOption() };
 
     }
 
@@ -1715,6 +1719,86 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         }
 
         return new CombineSpawnTable(groupDict, npcDict, objectDict);
+    }
+
+    private EnchantOptionTable ParseEnchantOption() {
+        var results = new Dictionary<int, EnchantOptionMetadata>();
+        foreach ((int id, EnchantOption enchantOption) in parser.ParseEnchantOption()) {
+            IList<BasicAttribute> basicAttributes = [];
+            foreach (int option in enchantOption.option) {
+                if (!Enum.TryParse(option.ToString(), out BasicAttribute basicAttribute)) {
+                    Console.WriteLine($"Failed to parse basic attribute {option}");
+                    continue;
+                }
+                basicAttributes.Add(basicAttribute);
+            }
+            results.Add(id, new EnchantOptionMetadata(
+                Id: id,
+                Slot: enchantOption.slot,
+                EnchantLevel: enchantOption.grade,
+                Rarity: (short) enchantOption.rank,
+                Rate: enchantOption.rate,
+                MinLevel: enchantOption.minLv,
+                MaxLevel: enchantOption.maxLv,
+                Attributes: basicAttributes.ToArray()));
+        }
+        return new EnchantOptionTable(results);
+    }
+
+    private ScriptEventConditionTable ParseScriptEventConditionTable() {
+        var results = new Dictionary<ScriptEventType, Dictionary<int, ScriptEventConditionMetadata>>();
+
+        foreach ((int eventId, ScriptEventCondition scriptEventCondition) in parser.ParseScriptEventCondition()) {
+            ScriptEventType type = scriptEventCondition.type switch {
+                Parser.Enum.ScriptEventType.enchant_fail => ScriptEventType.EnchantFail,
+                Parser.Enum.ScriptEventType.enchant_item_select => ScriptEventType.EnchantSelect,
+                Parser.Enum.ScriptEventType.enchant_complete => ScriptEventType.EnchantComplete,
+                Parser.Enum.ScriptEventType.merge_select => ScriptEventType.EmpowerSelect,
+                Parser.Enum.ScriptEventType.merge_try => ScriptEventType.EmpowerTry,
+                Parser.Enum.ScriptEventType.merge_result => ScriptEventType.EmpowerResult,
+                Parser.Enum.ScriptEventType.remake_fail => ScriptEventType.RerollFail,
+                Parser.Enum.ScriptEventType.remake_item_select => ScriptEventType.RerollItemSelect,
+                Parser.Enum.ScriptEventType.remake_option_select => ScriptEventType.RerollOptionSelect,
+                Parser.Enum.ScriptEventType.remake_complete => ScriptEventType.RerollComplete,
+                _ => ScriptEventType.EnchantFail,
+            };
+
+            List<int> enchantLevels = [];
+            if (scriptEventCondition.enchantLevel.Contains('-')) {
+                string[] enchantLevelSplit = scriptEventCondition.enchantLevel.Split('-');
+                int startInt = int.TryParse(enchantLevelSplit[0], out int start) ? start : 0;
+                int endInt = int.TryParse(enchantLevelSplit[1], out int end) ? end : 0;
+
+                for (int i = startInt; i <= endInt; i++) {
+                    enchantLevels.Add(i);
+                }
+            } else {
+                if (!int.TryParse(scriptEventCondition.enchantLevel, out int enchantLevel)) {
+                    if (scriptEventCondition.enchantLevel == "MAX") {
+                        enchantLevels.Add(15);
+                    }
+                } else {
+                    enchantLevels.Add(enchantLevel);
+                }
+            }
+
+            if (!results.TryGetValue(type, out Dictionary<int, ScriptEventConditionMetadata>? value)) {
+                value = new Dictionary<int, ScriptEventConditionMetadata>();
+                results[type] = value;
+            }
+
+            value[scriptEventCondition.id] = new ScriptEventConditionMetadata(
+                Id: scriptEventCondition.id,
+                EventType: type,
+                ErrorCode: (ItemEnchantError) scriptEventCondition.enchantError,
+                Rarity: (short) scriptEventCondition.rank,
+                EnchantLevel: enchantLevels.ToArray(),
+                FailCount: scriptEventCondition.failCount,
+                DamageType: (EnchantDamageType) scriptEventCondition.isDamaged,
+                ResultType: (EnchantResult) scriptEventCondition.result
+                );
+        }
+        return new ScriptEventConditionTable(results);
     }
 }
 

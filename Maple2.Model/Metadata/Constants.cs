@@ -97,6 +97,8 @@ public static class Constant {
     public const int GuildCoinRarity = 4;
     public const int BlueprintId = 35200000;
     public const int EmpowermentNpc = 11003416;
+    public const int OpheliaNpc = 11000508;
+    public const int PeachyNpc = 11000510;
     public const int InteriorPortalCubeId = 50400158;
     public const int PortalEntryId = 50400190;
     public const int Grade1WeddingCouponItemId = 20303166;
@@ -114,8 +116,27 @@ public static class Constant {
     public static IReadOnlyDictionary<string, int> ContentRewards { get; } = new Dictionary<string, int> {
         {"miniGame", 1005},
         {"dungeonHelper", 1006},
-        {"MiniGameType2", 0}, // Shanghai Runners
-        {"UserOpenMiniGameExtraReward", 0}, // Player hosted mini game extra rewards
+        {"MiniGameType2",1007}, // Shanghai Runners
+        {"UserOpenMiniGameExtraReward", 1008}, // Player hosted mini game extra rewards
+        {"PrestigeRankUp", 1020},
+        {"NormalHardDungeonBonusTier1", 10000001},
+        {"NormalHardDungeonBonusTier2", 10000002},
+        {"NormalHardDungeonBonusTier3", 10000003},
+        {"NormalHardDungeonBonusTier4", 10000004},
+        {"NormalHardDungeonBonusTier5", 10000005},
+        {"NormalHardDungeonBonusTier6", 10000006},
+        {"NormalHardDungeonBonusTier7", 10000007},
+        {"NormalHardDungeonBonusTier8", 10000008},
+        {"QueenBeanArenaRound1Reward", 10000009},
+        {"QueenBeanArenaRound2Reward", 10000010},
+        {"QueenBeanArenaRound3Reward", 10000011},
+        {"QueenBeanArenaRound4Reward", 10000012},
+        {"QueenBeanArenaRound5Reward", 10000013},
+        {"QueenBeanArenaRound6Reward", 10000014},
+        {"QueenBeanArenaRound7Reward", 10000015},
+        {"QueenBeanArenaRound8Reward", 10000016},
+        {"QueenBeanArenaRound9Reward", 10000017},
+        {"QueenBeanArenaRound10Reward", 10000018},
     };
 
     public const bool MailQuestItems = false; // Mail quest item rewards if inventory is full

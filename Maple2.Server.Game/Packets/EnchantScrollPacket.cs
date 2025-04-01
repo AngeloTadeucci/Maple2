@@ -21,7 +21,7 @@ public static class EnchantScrollPacket {
         var pWriter = Packet.Of(SendOp.EnchantScroll);
         pWriter.Write<Command>(Command.UseScroll);
         pWriter.WriteLong(item.Uid);
-        pWriter.WriteShort(metadata.Type);
+        pWriter.Write<EnchantScrollType>(metadata.Type);
         pWriter.WriteBool(false);
         pWriter.WriteInt(metadata.Enchants.Max());
         pWriter.WriteInt(10000); // div 100 = Rate
@@ -35,7 +35,8 @@ public static class EnchantScrollPacket {
         foreach (int rarity in metadata.Rarities) {
             pWriter.WriteInt(rarity);
         }
-        if (metadata.Type == 3) {
+
+        if (metadata.Type == EnchantScrollType.Random) {
             pWriter.WriteInt(metadata.Enchants.Min());
             pWriter.WriteInt(metadata.Enchants.Max());
         }
@@ -43,14 +44,14 @@ public static class EnchantScrollPacket {
         return pWriter;
     }
 
-    public static ByteWriter Preview(Item item, short scrollType, IDictionary<BasicAttribute, BasicOption> minOptions, IDictionary<BasicAttribute, BasicOption> maxOptions) {
+    public static ByteWriter Preview(Item item, EnchantScrollType scrollType, IDictionary<BasicAttribute, BasicOption> minOptions, IDictionary<BasicAttribute, BasicOption> maxOptions) {
         var pWriter = Packet.Of(SendOp.EnchantScroll);
         pWriter.Write<Command>(Command.Preview);
         pWriter.WriteLong(item.Uid);
-        pWriter.WriteShort(scrollType);
+        pWriter.Write<EnchantScrollType>(scrollType);
 
         switch (scrollType) {
-            case 1 or 2:
+            case EnchantScrollType.Enchant or EnchantScrollType.Restore:
                 pWriter.WriteInt(minOptions.Count);
                 foreach ((BasicAttribute attribute, BasicOption delta) in minOptions) {
                     pWriter.WriteShort((short) attribute);
@@ -58,21 +59,21 @@ public static class EnchantScrollPacket {
                     pWriter.WriteInt(delta.Value);
                 }
                 break;
-            case 3:
-                pWriter.WriteInt(minOptions.Count);
-                foreach ((BasicAttribute attribute, BasicOption delta) in minOptions) {
-                    pWriter.WriteShort((short) attribute);
-                    pWriter.WriteFloat(delta.Rate);
-                    pWriter.WriteInt(delta.Value);
-                }
+            case EnchantScrollType.Random:
                 pWriter.WriteInt(maxOptions.Count);
                 foreach ((BasicAttribute attribute, BasicOption delta) in maxOptions) {
                     pWriter.WriteShort((short) attribute);
                     pWriter.WriteFloat(delta.Rate);
                     pWriter.WriteInt(delta.Value);
                 }
+                pWriter.WriteInt(minOptions.Count);
+                foreach ((BasicAttribute attribute, BasicOption delta) in minOptions) {
+                    pWriter.WriteShort((short) attribute);
+                    pWriter.WriteFloat(delta.Rate);
+                    pWriter.WriteInt(delta.Value);
+                }
                 break;
-            case 5:
+            case EnchantScrollType.Stabilize:
                 break;
         }
 

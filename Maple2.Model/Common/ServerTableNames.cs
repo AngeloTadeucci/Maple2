@@ -4,6 +4,7 @@ public static class ServerTableNames {
     public const string INSTANCE_FIELD = "instancefield.xml";
     public const string SCRIPT_CONDITION = "*scriptCondition.xml";
     public const string SCRIPT_FUNCTION = "*scriptFunction.xml";
+    public const string SCRIPT_EVENT = "scriptEventCondition.xml";
     public const string JOB_CONDITION = "jobConditionTable.xml";
     public const string BONUS_GAME = "bonusGame*.xml";
     public const string GLOBAL_DROP_ITEM_BOX = "globalItemDrop*.xml";
@@ -21,4 +22,5 @@ public static class ServerTableNames {
     public const string MERET_MARKET = "shop_merat_custom.xml";
     public const string FISH = "fish*.xml";
     public const string COMBINE_SPAWN = "combineSpawn*.xml";
+    public const string ENCHANT_OPTION = "enchantOption.xml";
 }
