@@ -1666,7 +1666,6 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private DungeonMissionTable ParseDungeonMissionTable() {
         var results = new Dictionary<int, DungeonMissionMetadata>();
         foreach ((int id, DungeonMission mission) in parser.ParseDungeonMission()) {
-            Console.WriteLine(id);
             if (!Enum.TryParse(mission.type, out DungeonMissionType type)) {
                 Console.WriteLine($"Unknown Mission type: {mission.type}");
                 continue;
