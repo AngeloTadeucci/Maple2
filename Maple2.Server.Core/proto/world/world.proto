@@ -50,6 +50,8 @@ service World {
   rpc AddChannel(AddChannelRequest) returns (AddChannelResponse);
   // Marriage
   rpc Marriage(maple2.MarriageRequest) returns (maple2.MarriageResponse);
+  // PlayerWarp
+  rpc PlayerWarp(maple2.PlayerWarpRequest) returns (maple2.PlayerWarpResponse);
 }
 
 enum Server {
@@ -71,7 +73,10 @@ message MigrateOutRequest {
   optional int32 portal_id = 8;
   optional int64 owner_id = 9;
   optional int32 room_id = 10;
-  optional MigrationType type = 11;
+  optional float position_x = 11;
+  optional float position_y = 12;
+  optional float position_z = 13;
+  optional MigrationType type = 14;
 }
 
 enum MigrationType {
@@ -104,7 +109,10 @@ message MigrateInResponse {
   int32 portal_id = 4;
   int64 owner_id = 5;
   int32 room_id = 6;
-  MigrationType type = 7;
+  float position_x = 7;
+  float position_y = 8;
+  float position_z = 9;
+  MigrationType type = 10;
 }
 
 message ChannelsRequest {}
