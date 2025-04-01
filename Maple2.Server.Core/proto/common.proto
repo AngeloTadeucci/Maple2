@@ -216,7 +216,7 @@ message PartySearchRequest {
     string search_string = 2;
     int32 page = 3;
   }
-  message Remove { }
+  message Remove {}
 
   int64 id = 1;
   int32 party_id = 2;
@@ -265,8 +265,8 @@ message ClubInfoResponse {
 }
 
 message MarriageRequest {
-  message RemoveMarriage { }
-  message RemoveWeddingHall { }
+  message RemoveMarriage {}
+  message RemoveWeddingHall {}
 
   int64 id = 1;
   int64 receiver_id = 2;
@@ -278,4 +278,24 @@ message MarriageRequest {
 
 message MarriageResponse {
   int32 error = 1;
+}
+
+message PlayerWarpRequest {
+  message GoToPlayer {
+    int64 character_id = 1;
+    int32 channel = 2;
+  }
+
+  int64 requester_id = 3;
+  oneof request {
+    GoToPlayer go_to_player = 4;
+  }
+}
+
+message PlayerWarpResponse {
+  int32 error = 1;
+  float x = 2;
+  float y = 3;
+  float z = 4;
+  int32 room_id = 5;
 }

@@ -126,6 +126,7 @@ public sealed partial class GameSession : Core.Network.Session {
         long ownerId = migrateResponse.OwnerId;
         int roomId = migrateResponse.RoomId;
         var migrationType = (MigrationType) migrateResponse.Type;
+        var position = new Vector3(migrateResponse.PositionX, migrateResponse.PositionY, migrateResponse.PositionZ);
 
         AccountId = accountId;
         CharacterId = characterId;
@@ -182,7 +183,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         int fieldId = mapId == 0 ? player.Character.MapId : mapId;
-        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, roomId: roomId)) {
+        if (!PrepareField(fieldId, out FieldManager? fieldManager, portalId: portalId, ownerId: ownerId, roomId: roomId, position: position)) {
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
