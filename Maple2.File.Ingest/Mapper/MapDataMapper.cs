@@ -100,7 +100,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
             }
 
             FieldEntity? fieldEntity;
-            var entityId = new FieldEntityId(0, 0);
+            var entityId = new FieldEntityId(0, 0, string.Empty);
 
             if (isHexId) {
                 entityId = FieldEntityId.FromString(entity.EntityId);

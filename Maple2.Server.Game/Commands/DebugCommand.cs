@@ -301,12 +301,17 @@ public class DebugCommand : Command {
 
                 ctx.Console.Out.WriteLine($"Player at {center.X} {center.Y} {center.Z} in cell {cell.X} {cell.Y} {cell.Z}");
 
+                int count = 0;
                 mapData.QueryVibrateObjectsCenter(session.Player.Position, 2 * new Vector3(x, y, z), (vibrate) => {
                     Vector3 center = vibrate.Position;
                     Vector3S cell = FieldAccelerationStructure.PointToCell(center);
 
+                    count++;
+
                     ctx.Console.Out.WriteLine($"Vibrate object found at {center.X} {center.Y} {center.Z} in cell {cell.X} {cell.Y} {cell.Z}");
                 });
+
+                ctx.Console.Out.WriteLine($"Vibrate object count: {count}");
             }
         }
 

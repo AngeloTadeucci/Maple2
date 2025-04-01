@@ -172,6 +172,8 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                     //     }
                     // }
 
+                    Field.VibrateObjects(record, Position);
+
                     foreach (IActor target in targets) {
                         target.ApplyDamage(Caster, damage, attack);
                         // TODO: Set PrevUid?
@@ -181,8 +183,9 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                             Index = (byte) targetRecords.Count,
                         });
                     }
-
-                    Field.Broadcast(SkillDamagePacket.Target(record, targetRecords));
+                    if (targetRecords.Count > 0) {
+                        Field.Broadcast(SkillDamagePacket.Target(record, targetRecords));
+                    }
                     Field.Broadcast(SkillDamagePacket.Region(damage));
                     ApplyEffect(attack, targets);
                 }
