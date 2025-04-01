@@ -17,9 +17,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 #else
     private static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(5);
 #endif
+    private WorldServer worldServer = null!;
     private enum ChannelStatus {
         Active,
         Inactive
+    }
+
+    public void SetWorldServer(WorldServer worldServer) {
+        this.worldServer = worldServer;
     }
 
     private class Channel {
@@ -173,6 +178,16 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                         if (channel.Status is ChannelStatus.Inactive) {
                             logger.Information("Channel {Channel} has become active", channel.Id);
                             channel.Status = ChannelStatus.Active;
+
+                            // Load custom string boards
+                            foreach ((int id, string message) in worldServer.GetCustomStringBoards()) {
+                                channel.Client.Admin(new AdminRequest {
+                                    AddStringBoard = new AdminRequest.Types.AddStringBoard {
+                                        Id = id,
+                                        Message = message,
+                                    },
+                                });
+                            }
                         }
                         break;
                     default:

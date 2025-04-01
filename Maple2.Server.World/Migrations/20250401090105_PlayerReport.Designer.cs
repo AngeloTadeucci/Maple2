@@ -3,6 +3,7 @@ using System;
 using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maple2.Server.World.Migrations
 {
     [DbContext(typeof(Ms2Context))]
-    partial class Ms2ContextModelSnapshot : ModelSnapshot
+    [Migration("20250401090105_PlayerReport")]
+    partial class PlayerReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -514,16 +517,28 @@ namespace Maple2.Server.World.Migrations
                     b.Property<DateTime>("ClearTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<byte>("DailyClears")
+                    b.Property<DateTime>("CooldownTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("CurrentClears")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<short>("CurrentRecord")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("CurrentSubClears")
                         .HasColumnType("tinyint unsigned");
 
                     b.Property<DateTime>("DailyResetTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<byte>("ExtraDailyClears")
+                    b.Property<byte>("ExtraCurrentClears")
                         .HasColumnType("tinyint unsigned");
 
-                    b.Property<byte>("ExtraWeeklyClears")
+                    b.Property<byte>("ExtraCurrentSubClears")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("Flag")
                         .HasColumnType("tinyint unsigned");
 
                     b.Property<short>("LifetimeRecord")
@@ -532,13 +547,7 @@ namespace Maple2.Server.World.Migrations
                     b.Property<int>("TotalClears")
                         .HasColumnType("int");
 
-                    b.Property<byte>("WeeklyClears")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<short>("WeeklyRecord")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("WeeklyResetTime")
+                    b.Property<DateTime>("UnionCooldownTime")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("OwnerId", "DungeonId");

@@ -50,6 +50,8 @@ public partial class GameSession {
     public int SuperChatId;
     public int SuperChatItemId;
 
+    public long ReportCooldown = 0;
+
     public bool CanHold() {
         return GuideObject == null
                && Ride == null

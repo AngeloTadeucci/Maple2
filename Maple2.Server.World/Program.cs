@@ -45,9 +45,6 @@ builder.Logging.AddSerilog(dispose: true);
 builder.Services.AddGrpc();
 builder.Services.AddMemoryCache();
 
-builder.Services.AddSingleton<WorldServer>();
-
-
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     // Database
@@ -71,6 +68,15 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<BlackMarketLookup>()
         .SingleInstance();
     autofac.RegisterType<GlobalPortalLookup>()
+        .SingleInstance();
+
+    // Register WorldServer and inject ChannelClientLookup
+    autofac.RegisterType<WorldServer>()
+        .AsSelf()
+        .OnActivated(e => {
+            var lookup = e.Context.Resolve<ChannelClientLookup>();
+            lookup.SetWorldServer(e.Instance);
+        })
         .SingleInstance();
 });
 
