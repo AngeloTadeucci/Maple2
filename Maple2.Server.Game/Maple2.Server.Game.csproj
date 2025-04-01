@@ -44,17 +44,17 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDockerBuild)' == 'true'">
-        <None Remove="Scripting\Scripts\Trigger\**\*.py"/>
-        <None Remove="Navmeshes\**\*.navmesh"/>
+        <None Remove="Scripting/Scripts/Trigger/**/*.py"/>
+        <None Remove="Navmeshes/**/*.navmesh"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDockerBuild)' != 'true'">
-        <None Update="Scripting\Scripts\Trigger\**\*.py">
-            <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').TrimEnd('\'))))\</ParentDir>
-            <TargetPath>Scripts\Trigger\%(ParentDir)\%(Filename)%(Extension)</TargetPath>
+        <None Update="Scripting/Scripts/Trigger/**/*.py">
+            <ParentDir> $([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').Replace('\', '/').TrimEnd('/'))))</ParentDir>
+            <TargetPath>Scripts/Trigger/%(ParentDir)/%(Filename)%(Extension)</TargetPath>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Navmeshes\**\*.navmesh">
+        <None Update="Navmeshes/**/*.navmesh">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
@@ -63,8 +63,8 @@
         <None Update="appsettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Scripting\Scripts\Trigger\trigger_api.py">
-            <TargetPath>Scripts\Trigger\trigger_api.py</TargetPath>
+        <None Update="Scripting/Scripts/Trigger/trigger_api.py">
+            <TargetPath>Scripts/Trigger/trigger_api.py</TargetPath>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

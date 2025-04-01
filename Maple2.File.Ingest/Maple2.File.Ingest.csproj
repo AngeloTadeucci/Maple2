@@ -32,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Utils\ai_translate.csv">
+      <None Update="Utils/ai_translate.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
