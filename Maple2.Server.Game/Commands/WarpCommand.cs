@@ -130,7 +130,8 @@ public class GotoCommand : Command {
 
     private class PlayerCommand : Command {
         private readonly GameSession session;
-
+        // Vertical offset to prevent players from spawning inside the ground or other players
+        private const float VERTICAL_SPAWN_OFFSET = 75f;
         public PlayerCommand(GameSession session) : base("player", "Go to player.") {
             this.session = session;
 
@@ -166,12 +167,12 @@ public class GotoCommand : Command {
             }
 
             if (warpResponse.RoomId == session.Field.RoomId && playerInfo.MapId == session.Player.Value.Character.MapId) {
-                session.Send(PortalPacket.MoveByPortal(session.Player, new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + 75), session.Player.Rotation));
+                session.Send(PortalPacket.MoveByPortal(session.Player, new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + VERTICAL_SPAWN_OFFSET), session.Player.Rotation));
                 return;
             }
 
             if (playerInfo.Channel == session.Player.Value.Character.Channel) {
-                session.Send(session.PrepareField(playerInfo.MapId, roomId: warpResponse.RoomId, position: new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + 75))
+                session.Send(session.PrepareField(playerInfo.MapId, roomId: warpResponse.RoomId, position: new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + VERTICAL_SPAWN_OFFSET))
                     ? FieldEnterPacket.Request(session.Player)
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
 

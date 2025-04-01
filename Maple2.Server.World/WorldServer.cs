@@ -46,7 +46,8 @@ public class WorldServer {
             scheduler.InvokeAll();
             try {
                 Task.Delay(TimeSpan.FromMinutes(1), tokenSource.Token).Wait();
-            } catch {/* do nothing */ }
+            } catch { /* do nothing */
+            }
         }
     }
 

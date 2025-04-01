@@ -45,9 +45,6 @@ builder.Logging.AddSerilog(dispose: true);
 builder.Services.AddGrpc();
 builder.Services.AddMemoryCache();
 
-builder.Services.AddSingleton<WorldServer>();
-
-
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     // Database

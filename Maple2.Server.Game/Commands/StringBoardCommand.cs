@@ -52,6 +52,7 @@ public class StringBoardCommand : Command {
                 ctx.Console.Out.WriteLine($"Failed to add string board: {ex.Message}");
                 return;
             }
+            ctx.Console.Out.WriteLine("String board added successfully.");
         }
     }
 
@@ -85,6 +86,7 @@ public class StringBoardCommand : Command {
                 ctx.Console.Out.WriteLine($"Failed to remove string board: {ex.Message}");
                 return;
             }
+            ctx.Console.Out.WriteLine($"String board with ID {id} removed successfully.");
         }
     }
 
@@ -109,6 +111,7 @@ public class StringBoardCommand : Command {
                     return;
                 }
 
+                ctx.Console.Out.WriteLine("Current string boards:");
                 ctx.Console.Out.WriteLine(response.Message);
             } catch (Exception ex) {
                 ctx.Console.Out.WriteLine($"Failed to find string board: {ex.Message}");
