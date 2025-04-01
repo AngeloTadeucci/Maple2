@@ -238,9 +238,8 @@ public class FieldNpc : Actor<Npc> {
                 return MovementState.TryStandby(null, true, sequence.Name);
             case { } when routineName.Contains("Bore_"):
                 return MovementState.TryEmote(sequence.Name, true);
-            case { } when routineName.StartsWith("Walk_"): {
-                    return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
-                }
+            case { } when routineName.StartsWith("Walk_"):
+                return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
             case { } when routineName.StartsWith("Run_"):
                 return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
             case { }:

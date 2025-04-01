@@ -11,12 +11,14 @@ using Maple2.Model.Game;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
+using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -559,6 +561,18 @@ public partial class FieldManager : IField {
             dummyNpc.SetPatrolData(patrolData);
             dummyNpc.MovementState.CleanupPatrolData();
             player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
+        }
+    }
+
+    public void VibrateObjects(SkillRecord record, Vector3 position) {
+        float rangeDistance = record.Attack.Range.Distance;
+        if (AccelerationStructure is null) {
+            return;
+        }
+
+        List<FieldVibrateEntity> vibrateObjects = AccelerationStructure.QueryVibrateObjectsCenterList(position, 2 * new Vector3(rangeDistance, rangeDistance, rangeDistance));
+        foreach (FieldVibrateEntity vibrate in vibrateObjects) {
+            Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
     }
 

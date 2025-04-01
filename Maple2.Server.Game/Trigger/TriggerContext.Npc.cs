@@ -60,8 +60,8 @@ public partial class TriggerContext {
     public void MoveNpc(int spawnId, string patrolName) {
         DebugLog("[MoveNpc] spawnId:{SpawnId} patrolName:{PatrolName}", spawnId, patrolName);
 
-        IEnumerable<FieldNpc> fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId);
-        if (!fieldNpcs.Any()) {
+        List<FieldNpc> fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId).ToList();
+        if (fieldNpcs.Count == 0) {
             return;
         }
 
