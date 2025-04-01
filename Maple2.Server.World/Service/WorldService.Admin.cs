@@ -115,7 +115,7 @@ public partial class WorldService {
     private AdminResponse ListStringBoards() {
         string responseMessage = string.Empty;
 
-        Dictionary<int, string> stringBoards = worldServer.GetCustomStringBoards();
+        IReadOnlyDictionary<int, string> stringBoards = worldServer.GetCustomStringBoards();
         foreach (KeyValuePair<int, string> stringBoard in stringBoards) {
             responseMessage += $"ID: {stringBoard.Key}, Message: {stringBoard.Value}\n";
         }

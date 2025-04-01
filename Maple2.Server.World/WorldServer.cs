@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Extensions;
+﻿using System.Collections.Concurrent;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game.Event;
@@ -19,11 +20,10 @@ public class WorldServer {
     private readonly Thread thread;
     private readonly EventQueue scheduler;
     private readonly CancellationTokenSource tokenSource = new();
-    private readonly Dictionary<int, string> memoryStringBoards;
+    private readonly ConcurrentDictionary<int, string> memoryStringBoards;
     private static int _globalIdCounter;
 
     private readonly ILogger logger = Log.ForContext<WorldServer>();
-
 
     public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup) {
         this.gameStorage = gameStorage;
@@ -194,15 +194,15 @@ public class WorldServer {
         }
 
         int id = NextGlobalId();
-        memoryStringBoards.Add(id, message);
+        memoryStringBoards.TryAdd(id, message);
         return id;
     }
 
     public bool RemoveCustomStringBoard(int id) {
-        return memoryStringBoards.Remove(id);
+        return memoryStringBoards.TryRemove(id, out _);
     }
 
-    public Dictionary<int, string> GetCustomStringBoards() {
+    public IReadOnlyDictionary<int, string> GetCustomStringBoards() {
         return memoryStringBoards;
     }
 }

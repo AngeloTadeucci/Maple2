@@ -105,7 +105,7 @@ public class StringBoardCommand : Command {
                 });
 
                 if (string.IsNullOrEmpty(response.Message)) {
-                    ctx.Console.Out.WriteLine($"Failed to find string boards: {response.Message}");
+                    ctx.Console.Out.WriteLine($"Failed to find any string boards.");
                     return;
                 }
 

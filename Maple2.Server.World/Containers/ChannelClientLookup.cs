@@ -17,7 +17,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 #else
     private static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(5);
 #endif
-    private WorldServer worldServer;
+    private WorldServer worldServer = null!;
     private enum ChannelStatus {
         Active,
         Inactive

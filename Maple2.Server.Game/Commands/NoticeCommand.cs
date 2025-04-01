@@ -16,7 +16,7 @@ public class AlertCommand : Command {
     public AlertCommand(GameSession session) : base(NAME, DESCRIPTION) {
         this.session = session;
 
-        var message = new Argument<string[]>("message", Array.Empty<string> ,"Message to display");
+        var message = new Argument<string[]>("message", () => [],"Message to display");
         var flag = new Option<int>(["--flag", "-f"], () => 1, $"Flags set for alert type. Possible flags are:\n"
                                                + $"1 - Message\n" +
                                                "4 - Alert\n" +
