@@ -123,7 +123,7 @@ public partial class FieldManager {
                     mapId,
                     _ => new ConcurrentDictionary<int, FieldManager>([new KeyValuePair<int, FieldManager>(roomId, field)]),
                     (_, existingOwnerFields) => {
-                        existingOwnerFields.AddOrUpdate(roomId, field, (_, __) => field);
+                        existingOwnerFields.AddOrUpdate(field.RoomId, field, (_, __) => field);
                         return existingOwnerFields;
                     });
             }
