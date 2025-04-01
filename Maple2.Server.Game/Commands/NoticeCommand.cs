@@ -16,15 +16,15 @@ public class AlertCommand : Command {
     public AlertCommand(GameSession session) : base(NAME, DESCRIPTION) {
         this.session = session;
 
-        var message = new Argument<string[]>("message", () => [],"Message to display");
+        var message = new Argument<string[]>("message", () => [], "Message to display");
         var flag = new Option<int>(["--flag", "-f"], () => 1, $"Flags set for alert type. Possible flags are:\n"
-                                               + $"1 - Message\n" +
-                                               "4 - Alert\n" +
-                                               "16 - Mint\n" +
-                                               "64 - MessageBox\n" +
-                                               "128 - Disconnect after OK.\n" +
-                                               "512 - LargeAlert\n" +
-                                               "1024 - Banner");
+                                                              + $"1 - Message\n" +
+                                                              "4 - Alert\n" +
+                                                              "16 - Mint\n" +
+                                                              "64 - MessageBox\n" +
+                                                              "128 - Disconnect after OK.\n" +
+                                                              "512 - LargeAlert\n" +
+                                                              "1024 - Banner");
         var duration = new Option<int>(["--duration", "-d"], () => 10000, "Duration in milliseconds. Only used if flag has LargeAlert.");
         AddArgument(message);
         AddOption(flag);
