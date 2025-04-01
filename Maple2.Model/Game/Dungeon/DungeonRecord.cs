@@ -29,7 +29,7 @@ public class DungeonRecord : IByteSerializable {
         writer.WriteInt(DungeonId);
         writer.WriteLong(UnionCooldownTimestamp);
         writer.WriteByte(UnionClears);
-        writer.WriteByte(UnionClears);
+        writer.WriteByte(UnionSubClears);
         writer.WriteLong(UnionSubCooldownTimestamp);
         writer.WriteByte(ExtraSubClears);
         writer.WriteByte(ExtraClears);
