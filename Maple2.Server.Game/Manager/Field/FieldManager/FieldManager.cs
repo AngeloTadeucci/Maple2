@@ -454,7 +454,7 @@ public partial class FieldManager : IField {
                             return false;
                         }
 
-                        session.Player.MoveToPosition(destinationCube.Position, default);
+                        session.Send(PortalPacket.MoveByPortal(session.Player, destinationCube.Position, default));
                         return true;
                     case CubePortalDestination.SelectedMap:
                         session.MigrateOutOfInstance(srcPortal.TargetMapId);
