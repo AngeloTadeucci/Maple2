@@ -165,7 +165,7 @@ public class GotoCommand : Command {
             }
 
             if (playerInfo.Channel == session.Player.Value.Character.Channel) {
-                session.Send(session.PrepareField(playerInfo.MapId, roomId: warpResponse.RoomId, position: new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z))
+                session.Send(session.PrepareField(playerInfo.MapId, roomId: warpResponse.RoomId, position: new Vector3(warpResponse.X, warpResponse.Y, warpResponse.Z + 75))
                     ? FieldEnterPacket.Request(session.Player)
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
 
@@ -184,7 +184,7 @@ public class GotoCommand : Command {
                     RoomId = warpResponse.RoomId,
                     PositionX = warpResponse.X,
                     PositionY = warpResponse.Y,
-                    PositionZ = warpResponse.Z,
+                    PositionZ = warpResponse.Z + 75,
                     Type = MigrationType.Normal,
                 };
 
