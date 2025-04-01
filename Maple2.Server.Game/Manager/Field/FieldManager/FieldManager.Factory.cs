@@ -121,9 +121,9 @@ public partial class FieldManager {
             void AddField(FieldManager field) {
                 fields.AddOrUpdate(
                     mapId,
-                    _ => new ConcurrentDictionary<int, FieldManager>([new KeyValuePair<int, FieldManager>(roomId, field)]),
+                    _ => new ConcurrentDictionary<int, FieldManager>([new KeyValuePair<int, FieldManager>(field.RoomId, field)]),
                     (_, existingOwnerFields) => {
-                        existingOwnerFields.AddOrUpdate(roomId, field, (_, __) => field);
+                        existingOwnerFields.AddOrUpdate(field.RoomId, field, (_, __) => field);
                         return existingOwnerFields;
                     });
             }
