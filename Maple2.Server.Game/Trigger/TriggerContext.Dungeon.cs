@@ -50,7 +50,7 @@ public partial class TriggerContext {
     }
 
     public void DungeonMissionComplete(string feature, int missionId) {
-        ErrorLog("[DungeonMissionComplete] missionId:{MissionId}, feature:{Feature}", missionId, feature);
+        DebugLog("[DungeonMissionComplete] missionId:{MissionId}, feature:{Feature}", missionId, feature);
 
         foreach (FieldPlayer player in Field.Players.Values) {
             if (player.Session.Dungeon.UserRecord is null) {

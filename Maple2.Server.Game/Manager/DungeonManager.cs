@@ -77,6 +77,7 @@ public class DungeonManager {
         if (session.Field.FieldInstance.Type == InstanceType.DungeonLobby) {
             session.Send(DungeonWaitingPacket.Set(Lobby.DungeonId, Lobby.Size));
         } else {
+            // DEBUG
             /*session.Send(RoomStageDungeonPacket.Set(Metadata.Id));
             ByteWriter pWriter = Packet.Of(SendOp.DungeonMission);
             pWriter.WriteByte(0);
@@ -229,7 +230,7 @@ public class DungeonManager {
         UserRecord = new DungeonUserRecord(field.DungeonId, session.CharacterId);
 
         foreach (int missionId in Metadata.UserMissions) {
-
+            //TODO
         }
 
         field.DungeonRoomRecord.UserResults.TryAdd(session.CharacterId, UserRecord);
