@@ -736,7 +736,13 @@ public partial class FieldManager {
 
     #region Events
     public void OnAddPlayer(FieldPlayer added) {
-        Players[added.ObjectId] = added;
+        if (Players.IsEmpty) {
+            Players[added.ObjectId] = added;
+            // Add delay to ensure floor is loaded, triggers have ran.
+            Task.Delay(200).Wait();
+        } else {
+            Players[added.ObjectId] = added;
+        }
         // LOAD:
         foreach (FieldLiftable liftable in fieldLiftables.Values.Where(liftable => liftable.FinishTick > 0)) {
             added.Session.Send(LiftablePacket.Add(liftable));

@@ -254,7 +254,7 @@ public partial class FieldManager : IField {
             }
 
             // Environment.TickCount has ~16ms precision so sleep until next update
-            Thread.Sleep(5);
+            Thread.Sleep(15);
         }
     }
 
