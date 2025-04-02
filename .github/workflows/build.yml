@@ -17,4 +17,4 @@ jobs:
         with:
           dotnet-version: 9
       - name: Build
-        run: dotnet build
+        run: dotnet build -c Release --parallel
