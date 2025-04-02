@@ -69,12 +69,12 @@ public partial class TriggerScriptLoader {
             return true;
         }
 
-        string combine = Path.Combine(rootDir,$"{key}.py");
-        if (!File.Exists(combine)) {
+        string scriptPath = Path.Combine(rootDir,$"{key}.py");
+        if (!File.Exists(scriptPath)) {
             return false;
         }
 
-        ScriptSource scriptSource = engine.CreateScriptSourceFromFile(combine);
+        ScriptSource scriptSource = engine.CreateScriptSourceFromFile(scriptPath);
         string code = scriptSource.GetCode();
         string[] lines = code.Split(["\n", "\r\n"], StringSplitOptions.None);
         scripts = new List<ScriptSource>();
