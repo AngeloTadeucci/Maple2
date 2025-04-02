@@ -1110,8 +1110,8 @@ internal class TriggerDefinitionOverride {
         };
         ConditionOverride["user_value"] = new TriggerDefinitionOverride("user_value") {
             Names = BuildNameOverride(),
-            Types = BuildTypeOverride(("key", Str, Required), ("value", Int, Required), ("operator", Str, "GreaterEqual")),
-            Compare = BuildCompareOverride(Int, "value", "operator", "GreaterEqual"),
+            Types = BuildTypeOverride(("key", Str, Required), ("value", Int, Required), ("operator", Str, "Equal")),
+            Compare = BuildCompareOverride(Int, "value", "operator"),
         };
         ConditionOverride["wait_and_reset_tick"] = new TriggerDefinitionOverride("wait_and_reset_tick") {
             Names = BuildNameOverride(),

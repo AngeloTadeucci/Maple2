@@ -9,6 +9,7 @@ using Maple2.File.Ingest.Utils;
 using Maple2.File.Ingest.Utils.Trigger;
 using Maple2.File.IO;
 using Maple2.File.IO.Crypto.Common;
+using Maple2.Tools;
 using static System.Char;
 
 namespace Maple2.File.Ingest.Generator;
@@ -51,8 +52,9 @@ public class TriggerGenerator {
 
             string scriptDir = entry.Name.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
             string scriptName = Path.GetFileNameWithoutExtension(entry.Name);
-            Directory.CreateDirectory($"Scripts/Trigger/{scriptDir}");
-            string pyName = $"Scripts/Trigger/{scriptDir}/{scriptName}.py";
+
+            Directory.CreateDirectory(Path.Combine(Paths.GAME_SCRIPTS_DIR, scriptDir));
+            string pyName = Path.Combine(Paths.GAME_SCRIPTS_DIR, scriptDir, $"{scriptName}.py");
             using var stream = new StreamWriter(pyName);
             using var writer = new IndentedTextWriter(stream, "    ");
             writer.WriteLine(@$""""""" {entry.Name} """"""");
@@ -159,16 +161,16 @@ public class TriggerGenerator {
         }
 
         // Create module for dungeon_common
-        System.IO.File.Create("Scripts/Trigger/dungeon_common/__init__.py");
-        using var apiStream = new StreamWriter("Scripts/Trigger/trigger_api.py");
+        System.IO.File.Create(Path.Combine(Paths.GAME_SCRIPTS_DIR, "dungeon_common", "__init__.py"));
+        using var apiStream = new StreamWriter(Path.Combine(Paths.GAME_SCRIPTS_DIR, "trigger_api.py"));
         using var apiWriter = new IndentedTextWriter(apiStream, "    ");
         ApiScript.WriteTo(apiWriter);
 
-        using var csStream = new StreamWriter("Scripts/ITriggerContext.cs");
+        using var csStream = new StreamWriter(Path.Combine(Paths.TRIGGER_CONTEXT_DIR, "TriggerContext.cs"));
         using var csWriter = new IndentedTextWriter(csStream, "    ");
         ApiScript.WriteInterface(csWriter);
 
-        using var csEnumStream = new StreamWriter("Scripts/TriggerEnums.cs");
+        using var csEnumStream = new StreamWriter(Path.Combine(Paths.TRIGGER_CONTEXT_DIR, "TriggerEnums.cs"));
         using var csEnumWriter = new IndentedTextWriter(csEnumStream, "    ");
         ApiScript.WriteEnums(csEnumWriter);
     }
@@ -496,13 +498,13 @@ public class TriggerGenerator {
     }
 
     private static readonly Dictionary<string, string> SubStart = new() {
-        {"1st", "First"},
-        {"2nd", "Second"},
-        {"3rd", "Third"},
-        {"4th", "Fourth"},
-        {"5th", "Fifth"},
-        {"6th", "Sixth"},
-        {"7th", "Seventh"},
+        { "1st", "First" },
+        { "2nd", "Second" },
+        { "3rd", "Third" },
+        { "4th", "Fourth" },
+        { "5th", "Fifth" },
+        { "6th", "Sixth" },
+        { "7th", "Seventh" },
     };
 
     [return: NotNullIfNotNull(nameof(name))]
@@ -640,7 +642,11 @@ public class TriggerGenerator {
         }
 
         // Many cases of valid xml missing first and last <>
-        foreach (string tryXml in new[] { xml, $"<{xml.Trim()}>", $"<{xml.Trim()}/>" }) {
+        foreach (string tryXml in new[] {
+                xml,
+                $"<{xml.Trim()}>",
+                $"<{xml.Trim()}/>",
+            }) {
             try {
                 var stateDocument = new XmlDocument();
                 stateDocument.LoadXml($"<root>{tryXml}</root>");
@@ -651,7 +657,8 @@ public class TriggerGenerator {
                         return true;
                     }
                 }
-            } catch (XmlException) { /* ignored */ }
+            } catch (XmlException) { /* ignored */
+            }
         }
 
         nodes = [];
