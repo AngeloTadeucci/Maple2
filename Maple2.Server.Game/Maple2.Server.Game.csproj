@@ -50,7 +50,7 @@
 
     <ItemGroup Condition="'$(IsDockerBuild)' != 'true'">
         <None Update="Scripting/Scripts/Trigger/**/*.py">
-            <ParentDir> $([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').Replace('\', '/').TrimEnd('/'))))</ParentDir>
+            <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').Replace('\', '/').TrimEnd('/'))))</ParentDir>
             <TargetPath>Scripts/Trigger/%(ParentDir)/%(Filename)%(Extension)</TargetPath>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
