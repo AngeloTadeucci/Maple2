@@ -151,7 +151,7 @@ public class FieldNpc : Actor<Npc> {
             }
         }
 
-        bool isSpawning = MovementState.State == ActorState.Spawn || MovementState.State == ActorState.Regen;
+        bool isSpawning = MovementState.State is ActorState.Spawn or ActorState.Regen;
 
         if (!isSpawning) {
             BattleState.Update(tickCount);

@@ -170,6 +170,17 @@ public sealed class AgentNavigation {
         return true;
     }
 
+    public bool UpdatePosition(Vector3 position) {
+        if (!field.FindNearestPoly(position, out _, out RcVec3f rcPosition)) {
+            Logger.Error("Failed to find valid position from {Source} => {Position}", npc.Position, rcPosition);
+            return false;
+        }
+
+        agent.npos = rcPosition;
+        npc.Position = DotRecastHelper.FromNavMeshSpace(rcPosition);
+        return true;
+    }
+
     public Vector3 GetAgentPosition() {
         return DotRecastHelper.FromNavMeshSpace(agent.npos);
     }
@@ -229,7 +240,7 @@ public sealed class AgentNavigation {
         return DotRecastHelper.FromNavMeshSpace(randomPt);
     }
 
-    public Vector3 FindClosestPoint(Vector3 point, int maxDistance, Vector3 fallback) {
+    public Vector3 FindRandomPointAround(Vector3 point, int maxDistance, Vector3 fallback) {
         if (!field.FindNearestPoly(point, out long closest, out RcVec3f position)) {
             return fallback;
         }
@@ -244,8 +255,8 @@ public sealed class AgentNavigation {
         return DotRecastHelper.FromNavMeshSpace(randomPt);
     }
 
-    public Vector3 FindClosestPoint(Vector3 point, int maxDistance) {
-        return FindClosestPoint(point, maxDistance, DotRecastHelper.FromNavMeshSpace(agent.npos));
+    public Vector3 FindRandomPointAround(Vector3 point, int maxDistance) {
+        return FindRandomPointAround(point, maxDistance, DotRecastHelper.FromNavMeshSpace(agent.npos));
     }
 
     public bool PathTo(Vector3 goal) {
