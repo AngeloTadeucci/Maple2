@@ -16,6 +16,6 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8
-      - name: Run dotnet-format
+          dotnet-version: 9
+      - name: Run dotnet format
         run: dotnet format whitespace --verify-no-changes --exclude 'Maple2.Server.World/Migrations/*.cs'
