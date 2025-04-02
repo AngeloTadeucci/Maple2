@@ -260,6 +260,12 @@ public partial class FieldManager {
                 }
 
                 foreach (HomeFieldManager homeField in homes.Values) {
+                    if (!homeField.Players.IsEmpty) {
+                        logger.Verbose("Home Field {MapId} Owner: {OwnerId} has players", homeField.MapId, homeField.OwnerId);
+                        homeField.fieldEmptySince = null;
+                        continue;
+                    }
+
                     if (homeField.fieldEmptySince is null) {
                         logger.Verbose("Home Field {MapId} Owner: {OwnerId} is empty, starting timer", homeField.MapId, homeField.OwnerId);
                         homeField.fieldEmptySince = DateTime.UtcNow;
