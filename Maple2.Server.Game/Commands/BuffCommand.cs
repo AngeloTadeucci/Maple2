@@ -72,7 +72,6 @@ public class BuffCommand : Command {
 
                 if (remove) {
                     player.Buffs.Remove(buffId);
-                    session.Field?.Broadcast(BuffPacket.Remove(player.Buffs.Buffs[buffId]));
                     return;
                 }
                 player.Buffs.AddBuff(session.Player, player, buffId, (short) level, duration);
@@ -83,7 +82,6 @@ public class BuffCommand : Command {
             } else {
                 if (remove) {
                     session.Player.Buffs.Remove(buffId);
-                    session.Field?.Broadcast(BuffPacket.Remove(session.Player.Buffs.Buffs[buffId]));
                     return;
                 }
                 session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, duration);
