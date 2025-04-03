@@ -65,15 +65,17 @@ public enum PetReportFlag {
 
 [Flags]
 public enum AdminPermissions {
-    Alert,
-    Ban,
-    SpawnItem,
-    SpawnNpc,
-    Debug,
-    Quest,
-    Warp,
-    Find,
-    PlayerCommands,
+    Alert = 1,
+    StringBoard = 2,
+    EventManagement = 4,
+    Ban = 8,
+    SpawnItem = 16,
+    SpawnNpc = 32,
+    Debug = 64,
+    Quest = 128,
+    Warp = 256,
+    Find = 512,
+    PlayerCommands = 1024,
 
     Spawn = SpawnNpc | SpawnItem,
     Admin = int.MaxValue,

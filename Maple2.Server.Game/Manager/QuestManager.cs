@@ -448,7 +448,7 @@ public sealed class QuestManager {
         session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
     }
 
-    private void CompleteChapter(int questId) {
+    private void CompleteChapter(int questId, bool ignoreItemRewards = false) {
         IEnumerable<ChapterBookTable.Entry> entries = session.TableMetadata.ChapterBookTable.Entries.Values.Where(entry => entry.EndQuestId == questId).ToList();
         if (!entries.Any()) {
             return;
@@ -459,14 +459,16 @@ public sealed class QuestManager {
                 continue;
             }
 
-            foreach (ItemComponent itemComponent in entry.Items) {
-                Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
-                if (item == null) {
-                    continue;
-                }
+            if (!ignoreItemRewards) {
+                foreach (ItemComponent itemComponent in entry.Items) {
+                    Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
+                    if (item == null) {
+                        continue;
+                    }
 
-                if (!session.Item.Inventory.Add(item, true)) {
-                    session.Item.MailItem(item);
+                    if (!session.Item.Inventory.Add(item, true)) {
+                        session.Item.MailItem(item);
+                    }
                 }
             }
 
@@ -507,6 +509,73 @@ public sealed class QuestManager {
         if (metadata.StatPoints > 0) {
             session.Config.AddStatPoint(AttributePointSource.Exploration, metadata.StatPoints);
         }
+    }
+
+    public void LevelPotion(int level, int lastQuest = 0) {
+        List<IGrouping<int, QuestMetadata>> chapterQuestsGroups = session.QuestMetadata.GetQuestsByType(QuestType.EpicQuest)
+            .Where(q => q.Require.Level <= level)
+            .Where(q => q.Basic.Disabled == false)
+            .GroupBy(q => q.Basic.ChapterId)
+            .ToList();
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        bool lastQuestFound = false;
+        foreach (IGrouping<int, QuestMetadata> chapterQuests in chapterQuestsGroups.OrderBy(q => q.Key)) {
+            Console.WriteLine($"Chapter {chapterQuests.Key}");
+            if (lastQuestFound) {
+                break;
+            }
+            foreach (QuestMetadata metadata in chapterQuests.OrderBy(q => q.Id)) {
+                if (TryGetQuest(metadata.Id, out Quest? quest)) {
+                    if (quest.State == QuestState.Completed) {
+                        continue;
+                    }
+
+                    foreach (Quest.Condition condition in quest.Conditions.Values) {
+                        condition.Counter = (int) condition.Metadata.Value;
+                    }
+                    quest.State = QuestState.Completed;
+                    quest.CompletionCount++;
+                    quest.EndTime = DateTime.Now.ToEpochSeconds();
+                    continue;
+                }
+
+                if (metadata.Require.Job.Length > 0 && !metadata.Require.Job.Contains(session.Player.Value.Character.Job.Code())) {
+                    continue;
+                }
+
+                var epicQuest = new Quest(metadata) {
+                    State = QuestState.Completed,
+                    StartTime = DateTime.Now.ToEpochSeconds(),
+                    EndTime = DateTime.Now.ToEpochSeconds() + 1,
+                    CompletionCount = 1,
+                    Track = true,
+                };
+
+                for (int i = 0; i < metadata.Conditions.Length; i++) {
+                    epicQuest.Conditions.Add(i, new Quest.Condition(metadata.Conditions[i]));
+                    epicQuest.Conditions[i].Counter = (int) epicQuest.Conditions[i].Metadata.Value;
+                }
+
+                long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+                epicQuest = db.CreateQuest(ownerId, epicQuest);
+                if (epicQuest == null) {
+                    logger.Error("Failed to create quest entry {questId}", metadata.Id);
+                    continue;
+                }
+                Add(epicQuest);
+                CompleteChapter(epicQuest.Id, true);
+
+                if (epicQuest.Id == lastQuest) {
+                    lastQuestFound = true;
+                    break;
+                }
+            }
+        }
+
+        //TODO: Start and load fame quests
+        Load();
+        session.Send(QuestPacket.LoadQuests([]));
     }
 
     public void Save(GameStorage.Request db) {

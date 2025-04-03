@@ -79,7 +79,7 @@ public class GotoCommand : Command {
 
             AddArgument(mapName);
             AddOption(mapIndex);
-            this.SetHandler<InvocationContext, string[], int>(Handle, mapName);
+            this.SetHandler<InvocationContext, string[], int>(Handle, mapName, mapIndex);
         }
 
         private void Handle(InvocationContext ctx, string[] mapName, int mapIndex) {
