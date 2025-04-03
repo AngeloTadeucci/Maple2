@@ -1,15 +1,15 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Server.Game.Model.Enum;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     public class NpcEmoteTask : NpcTask {
-        private MovementState movement;
+        private readonly MovementState movement;
         public string Sequence { get; init; } = string.Empty;
         public bool IsIdle { get; init; }
-        override public bool CancelOnInterrupt { get => true; }
+        public override bool CancelOnInterrupt => true;
         public float Duration { get; init; }
 
         public NpcEmoteTask(TaskState taskState, MovementState movement, string sequence, NpcTaskPriority priority, bool isIdle, float duration) : base(taskState, priority) {
@@ -48,6 +48,6 @@ public partial class MovementState {
         emoteActionTask = task;
         stateSequence = actor.AnimationState.PlayingSequence;
 
-        SetState(isIdle ? ActorState.Emotion : ActorState.EmotionIdle);
+        SetState(isIdle ? ActorState.Idle : ActorState.Emotion);
     }
 }

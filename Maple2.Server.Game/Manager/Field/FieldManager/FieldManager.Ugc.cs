@@ -145,7 +145,7 @@ public partial class FieldManager {
                 fieldLiftable.State = LiftableState.Default;
                 fieldLiftable.Position = position;
                 fieldLiftable.Rotation = new Vector3(0, 0, rotation);
-                fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.ItemLifetime;
+                fieldLiftable.FinishTick = session.Field.FieldTick + fieldLiftable.Value.ItemLifetime + fieldLiftable.Value.FinishTime;
 
                 if (session.Field.Entities.LiftableTargetBoxes.TryGetValue(position, out LiftableTargetBox? liftableTarget)) {
                     session.ConditionUpdate(ConditionType.item_move, codeLong: cubeItem.ItemId, targetLong: liftableTarget.LiftableTarget);

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
-using Maple2.Server.Core.Network;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model.Skill;
@@ -11,9 +10,9 @@ using Maple2.Tools.VectorMath;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
-using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
 using Maple2.Database.Storage;
 using Maple2.Server.Game.Manager;
+using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Model;

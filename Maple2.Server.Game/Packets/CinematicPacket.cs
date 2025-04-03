@@ -154,7 +154,7 @@ public static class CinematicPacket {
         pWriter.WriteUnicodeString(type);
         pWriter.WriteUnicodeString(title);
         pWriter.WriteUnicodeString(script);
-        pWriter.WriteUnicodeString(align.ToString().Replace(", ", ""));
+        pWriter.WriteUnicodeString(align.ToString());
         pWriter.WriteInt(duration);
         pWriter.WriteFloat(offsetRateX);
         pWriter.WriteFloat(offsetRateY);

@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -16,8 +16,10 @@ public static class FieldEnterPacket {
         var pWriter = Packet.Of(SendOp.RequestFieldEnter);
         pWriter.Write<MigrationError>(MigrationError.ok);
         pWriter.WriteInt(player.Value.Character.MapId);
-        pWriter.WriteClass<FieldInstance>(player.Field.FieldInstance);
-        pWriter.WriteInt();
+        pWriter.Write<FieldType>(player.Field.FieldType);
+        pWriter.Write<InstanceType>(player.Field.FieldInstance.Type);
+        pWriter.WriteInt(player.Field.FieldInstance.InstanceId);
+        pWriter.WriteInt(player.Field.DungeonId);
         pWriter.Write<Vector3>(player.Position);
         pWriter.Write<Vector3>(player.Rotation);
         pWriter.WriteInt(GameSession.FIELD_KEY);

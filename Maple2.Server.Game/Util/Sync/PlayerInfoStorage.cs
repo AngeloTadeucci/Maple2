@@ -43,6 +43,8 @@ public class PlayerInfoStorage {
                 MapId = response.MapId,
                 Channel = (short) response.Channel,
                 UpdateTime = response.UpdateTime,
+                GuildName = response.GuildName,
+                GuildId = response.GuildId,
             };
             var trophy = new AchievementInfo {
                 Adventure = response.Trophy.Adventure,

@@ -6,6 +6,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
@@ -163,7 +164,15 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost contract = plot.Metadata.ContractCost;
-        if (!CheckAndRemoveCost(session, contract)) {
+
+        int costAmount = contract.Amount;
+        GameEvent? saleEvent = session.FindEvent(GameEventType.UGCMapContractSale).FirstOrDefault();
+        if (saleEvent != null) {
+            float discount = float.Parse(saleEvent.Metadata.Value1) / 10000f;
+            costAmount = (int) Math.Ceiling(costAmount * (1 - discount));
+        }
+
+        if (!CheckAndRemoveCost(session, contract.ItemId, costAmount)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_enough_money));
             return false;
         }
@@ -242,8 +251,16 @@ public class HousingManager {
         }
 
         UgcMapGroup.Cost extension = Home.Outdoor.Metadata.ExtensionCost;
-        if (!CheckAndRemoveCost(session, extension)) {
-            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_need_extansion_pay));
+
+        int costAmount = extension.Amount;
+        GameEvent? saleEvent = session.FindEvent(GameEventType.UGCMapExtensionSale).FirstOrDefault();
+        if (saleEvent != null) {
+            float discount = float.Parse(saleEvent.Metadata.Value1) / 10000f;
+            costAmount = (int) Math.Ceiling(costAmount * (1 - discount));
+        }
+
+        if (!CheckAndRemoveCost(session, extension.ItemId, costAmount)) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_need_extension_pay));
             return;
         }
 
@@ -266,21 +283,21 @@ public class HousingManager {
         SetPlot(plotInfo);
     }
 
-    private static bool CheckAndRemoveCost(GameSession session, UgcMapGroup.Cost cost) {
-        switch (cost.ItemId) {
+    private static bool CheckAndRemoveCost(GameSession session, int itemId, int cost) {
+        switch (itemId) {
             case >= 90000001 and <= 90000003:
-                if (session.Currency.Meso < cost.Amount) {
+                if (session.Currency.Meso < cost) {
                     return false;
                 }
 
-                session.Currency.Meso -= cost.Amount;
+                session.Currency.Meso -= cost;
                 return true;
             case 90000004 or 90000011 or 90000015 or 90000016:
-                if (session.Currency.Meret < cost.Amount) {
+                if (session.Currency.Meret < cost) {
                     return false;
                 }
 
-                session.Currency.Meret -= cost.Amount;
+                session.Currency.Meret -= cost;
                 return true;
         }
 

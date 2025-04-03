@@ -17,9 +17,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 #else
     private static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(5);
 #endif
+    private WorldServer worldServer = null!;
     private enum ChannelStatus {
         Active,
         Inactive
+    }
+
+    public void SetWorldServer(WorldServer worldServer) {
+        this.worldServer = worldServer;
     }
 
     private class Channel {
@@ -62,14 +67,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp, string grpcGameIp, bool instancedContent) {
-        for (int i = 0; i < channels.Count; i++) {
-            channels.TryGetValue(i, out Channel? activeChannel);
-            if (activeChannel is null) {
-                continue;
-            }
-            if (activeChannel.Endpoint.Address.ToString() == gameIp && activeChannel.Status is ChannelStatus.Inactive && activeChannel.InstancedContent == instancedContent) {
-                return (activeChannel.GamePort, activeChannel.GrpcPort, activeChannel.Id);
-            }
+        // find the first channel that matches the ip, status and instanced content
+        Channel? activeChannel = channels.Values.FirstOrDefault(channel =>
+            channel.Endpoint.Address.ToString() == gameIp &&
+            channel.Status is ChannelStatus.Inactive &&
+            channel.InstancedContent == instancedContent);
+
+        if (activeChannel is not null) {
+            return (activeChannel.GamePort, activeChannel.GrpcPort, activeChannel.Id);
         }
 
         return AddChannel(gameIp, grpcGameIp, instancedContent);
@@ -173,6 +178,16 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                         if (channel.Status is ChannelStatus.Inactive) {
                             logger.Information("Channel {Channel} has become active", channel.Id);
                             channel.Status = ChannelStatus.Active;
+
+                            // Load custom string boards
+                            foreach ((int id, string message) in worldServer.GetCustomStringBoards()) {
+                                channel.Client.Admin(new AdminRequest {
+                                    AddStringBoard = new AdminRequest.Types.AddStringBoard {
+                                        Id = id,
+                                        Message = message,
+                                    },
+                                });
+                            }
                         }
                         break;
                     default:

@@ -2,9 +2,11 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Numerics;
+using DotRecast.Core.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Tools.DotRecast;
 
 namespace Maple2.Server.Game.Commands;
 
@@ -23,20 +25,28 @@ public class CoordCommand : Command {
         var yPosition = new Argument<int?>("y", () => null, "Y Coordinate.");
         var zPosition = new Argument<int?>("z", () => null, "Z Coordinate.");
 
+        var force = new Option<bool>(["--force", "-f"], "Skip validation and move to the specified position.");
+
         AddArgument(xPosition);
         AddArgument(yPosition);
         AddArgument(zPosition);
-        this.SetHandler<InvocationContext, int?, int?, int?>(Handle, xPosition, yPosition, zPosition);
+        AddOption(force);
+        this.SetHandler<InvocationContext, int?, int?, int?, bool>(Handle, xPosition, yPosition, zPosition, force);
     }
 
-    private void Handle(InvocationContext ctx, int? x, int? y, int? z) {
+    private void Handle(InvocationContext ctx, int? x, int? y, int? z, bool force) {
         if (x is null || y is null || z is null) {
             ctx.Console.Out.WriteLine("Current position: " + session.Player.Position);
             return;
         }
+        Vector3 position = new((int) x, (int) y, (int) z);
+
+        if (!session.Field.ValidPosition(position) && !force) {
+            ctx.Console.Out.WriteLine("Position is invalid.");
+            return;
+        }
 
         try {
-            Vector3 position = new((int) x, (int) y, (int) z);
             ctx.Console.Out.WriteLine($"Moving to '{position}'");
             session.Send(PortalPacket.MoveByPortal(session.Player, position, session.Player.Rotation));
             ctx.ExitCode = 0;

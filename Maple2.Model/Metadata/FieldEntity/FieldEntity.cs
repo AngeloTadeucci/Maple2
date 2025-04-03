@@ -17,14 +17,16 @@ public enum FieldEntityType : byte {
 
 public record FieldEntityId(
     ulong High,
-    ulong Low) {
+    ulong Low,
+    string Id) {
     public bool IsNull { get => High == 0 && Low == 0; }
 
     public static FieldEntityId FromString(string id) {
-        ulong High = Convert.ToUInt64(id.Substring(0, 16), 16);
-        ulong Low = Convert.ToUInt64(id.Substring(16, 16), 16);
+        ReadOnlySpan<char> idSpan = id.AsSpan();
+        ulong high = ulong.Parse(idSpan.Slice(0, 16), System.Globalization.NumberStyles.HexNumber);
+        ulong low = ulong.Parse(idSpan.Slice(16, 16), System.Globalization.NumberStyles.HexNumber);
 
-        return new FieldEntityId(High, Low);
+        return new FieldEntityId(high, low, id);
     }
 }
 

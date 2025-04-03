@@ -103,7 +103,7 @@ public class PremiumClubHandler : PacketHandler<GameSession> {
         session.Currency.Meret -= premiumMetadata.Price;
 
         foreach (PremiumClubTable.Item item in premiumMetadata.BonusItems) {
-            Item? bonusItem = session.Field.ItemDrop.CreateItem(item.Id, item.Rarity, item.Rarity);
+            Item? bonusItem = session.Field.ItemDrop.CreateItem(item.Id, item.Rarity, item.Amount);
             if (bonusItem == null) {
                 continue;
             }

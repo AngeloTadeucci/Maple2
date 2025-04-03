@@ -1,5 +1,7 @@
-﻿using Maple2.Database.Extensions;
+﻿using System.Collections.Concurrent;
+using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
@@ -18,9 +20,10 @@ public class WorldServer {
     private readonly Thread thread;
     private readonly EventQueue scheduler;
     private readonly CancellationTokenSource tokenSource = new();
+    private readonly ConcurrentDictionary<int, string> memoryStringBoards;
+    private static int _globalIdCounter;
 
     private readonly ILogger logger = Log.ForContext<WorldServer>();
-
 
     public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup) {
         this.gameStorage = gameStorage;
@@ -29,6 +32,7 @@ public class WorldServer {
         this.globalPortalLookup = globalPortalLookup;
         scheduler = new EventQueue();
         scheduler.Start();
+        memoryStringBoards = [];
 
         StartDailyReset();
         StartWorldEvents();
@@ -42,7 +46,8 @@ public class WorldServer {
             scheduler.InvokeAll();
             try {
                 Task.Delay(TimeSpan.FromMinutes(1), tokenSource.Token).Wait();
-            } catch {/* do nothing */ }
+            } catch { /* do nothing */
+            }
         }
     }
 
@@ -180,5 +185,25 @@ public class WorldServer {
                 },
             });
         }
+    }
+
+    private static int NextGlobalId() => Interlocked.Increment(ref _globalIdCounter);
+
+    public int AddCustomStringBoard(string message) {
+        if (string.IsNullOrEmpty(message)) {
+            return -1;
+        }
+
+        int id = NextGlobalId();
+        memoryStringBoards.TryAdd(id, message);
+        return id;
+    }
+
+    public bool RemoveCustomStringBoard(int id) {
+        return memoryStringBoards.TryRemove(id, out _);
+    }
+
+    public IReadOnlyDictionary<int, string> GetCustomStringBoards() {
+        return memoryStringBoards;
     }
 }

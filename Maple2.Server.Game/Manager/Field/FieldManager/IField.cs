@@ -20,6 +20,7 @@ namespace Maple2.Server.Game.Manager.Field;
 
 public interface IField : IDisposable {
     public int RoomId { get; }
+    public int DungeonId { get; }
     public bool Disposed { get; }
 
     #region Autofac Autowired
@@ -51,8 +52,9 @@ public interface IField : IDisposable {
     public ConcurrentDictionary<int, FieldPet> Pets { get; }
 
     public RoomTimer? RoomTimer { get; }
-    public FieldInstance FieldInstance { get; }
-
+    public InstanceFieldMetadata FieldInstance { get; }
+    public FieldType FieldType { get; }
+    public int Size { get; init; }
 
     public int MapId { get; init; }
     public long FieldTick { get; }
@@ -87,7 +89,6 @@ public interface IField : IDisposable {
     public ICollection<FieldInteract> EnumerateInteract();
     public ICollection<FieldLiftable> EnumerateLiftables();
     public bool TryGetInteract(string entityId, [NotNullWhen(true)] out FieldInteract? fieldInteract);
-    public bool MoveToPortal(GameSession session, int portalId);
     public bool UsePortal(GameSession session, int portalId, string password);
     public bool LiftupCube(in Vector3B coordinates, [NotNullWhen(true)] out LiftupWeapon? liftupWeapon);
     public void MovePlayerAlongPath(string pathName);

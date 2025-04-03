@@ -33,7 +33,7 @@ public static class ItemEnchantPacket {
             pWriter.Write<IngredientInfo>(catalyst);
         }
 
-        pWriter.WriteShort();
+        pWriter.Write<EnchantFailType>(EnchantFailType.None);
 
         pWriter.WriteInt(statDeltas.Count);
         foreach ((BasicAttribute attribute, BasicOption delta) in statDeltas) {

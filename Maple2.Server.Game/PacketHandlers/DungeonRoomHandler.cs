@@ -43,6 +43,7 @@ public class DungeonRoomHandler : PacketHandler<GameSession> {
     }
 
     private void HandleReset(GameSession session) {
+        session.Dungeon.Reset();
     }
 
     private void HandleCreate(GameSession session, IByteReader packet) {

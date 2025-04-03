@@ -4,8 +4,6 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Model.State;
-using Maple2.Tools.Extensions;
 using System.Numerics;
 
 namespace Maple2.Server.Game.Packets;
@@ -28,7 +26,19 @@ public static class NpcControlPacket {
         return pWriter;
     }
 
-    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc) {
+    public static ByteWriter Talk(FieldNpc npc) {
+        var pWriter = Packet.Of(SendOp.NpcControl);
+        pWriter.WriteShort(1);
+
+        using var buffer = new PoolByteWriter();
+        buffer.NpcBuffer(npc, isTalk: true);
+        pWriter.WriteShort((short) buffer.Length);
+        pWriter.WriteBytes(buffer.ToArray());
+
+        return pWriter;
+    }
+
+    private static void NpcBuffer(this PoolByteWriter buffer, FieldNpc npc, bool isTalk = false) {
         buffer.WriteInt(npc.ObjectId);
         // Flags bit-1 (AdditionalEffectRelated), bit-2 (UIHpBarRelated)
         buffer.WriteByte(2);
@@ -44,8 +54,13 @@ public static class NpcControlPacket {
 
         short defaultSequenceId = npc.AnimationState.IdleSequenceId;
 
-        buffer.Write<ActorState>(npc.MovementState.State);
-        buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);
+        if (isTalk) {
+            buffer.Write<ActorState>(ActorState.Talk);
+            buffer.WriteShort(-1);
+        } else {
+            buffer.Write<ActorState>(npc.MovementState.State);
+            buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);
+        }
         buffer.WriteShort(npc.SequenceCounter);
 
         // Animation (-2 = Jump_A, -3 = Jump_B)

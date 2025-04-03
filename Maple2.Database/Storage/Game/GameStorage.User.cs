@@ -128,9 +128,15 @@ public partial class GameStorage {
                 return null;
             }
 
+            Tuple<long, string> guild = Context.GuildMember
+                .Where(member => member.CharacterId == characterId)
+                .Join(Context.Guild, member => member.GuildId, guild => guild.Id,
+                    (member, guild) => new Tuple<long, string>(guild.Id, guild.Name))
+                .FirstOrDefault() ?? new Tuple<long, string>(0, string.Empty);
+
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
             IList<long> clubs = ListClubs(result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, result.PremiumTime, clubs);
+            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, guild.Item1, guild.Item2, result.PremiumTime, clubs);
         }
 
         public Home? GetHome(long ownerId) {

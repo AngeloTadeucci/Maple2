@@ -96,21 +96,22 @@ public sealed class ExperienceManager {
         return addedRestExp;
     }
 
-    public void AddExp(long expGained, ExpMessageCode message = ExpMessageCode.s_msg_take_exp) {
+    public long AddExp(long expGained, ExpMessageCode message = ExpMessageCode.s_msg_take_exp) {
         if (expGained <= 0) {
-            return;
+            return 0;
         }
         expGained += GetRestExp(expGained);
         LevelUp();
         AddPrestigeExp(message.Type());
         session.Send(ExperienceUpPacket.Add(expGained, Exp, RestExp, message));
         session.ConditionUpdate(ConditionType.exp, counter: expGained);
+        return expGained;
     }
 
-    public void AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
+    public long AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
         if (!session.TableMetadata.CommonExpTable.Entries.TryGetValue(expType, out CommonExpTable.Entry? entry)
             || !session.TableMetadata.ExpTable.ExpBase.TryGetValue(entry.ExpTableId, out IReadOnlyDictionary<int, long>? expBase)) {
-            return;
+            return 0;
         }
 
         long expValue;
@@ -124,8 +125,10 @@ public sealed class ExperienceManager {
             case ExpType.gathering:
             case ExpType.arcade:
             case ExpType.expDrop:
+            case ExpType.miniGame:
+            case ExpType.userMiniGame:
                 if (!expBase.TryGetValue(Level, out expValue)) {
-                    return;
+                    return 0;
                 }
                 break;
             case ExpType.taxi:
@@ -136,15 +139,15 @@ public sealed class ExperienceManager {
                 int fieldLevel = session.Field.Metadata.Drop.Level;
                 int correctedLevel = fieldLevel > Level ? Level : fieldLevel;
                 if (!expBase.TryGetValue(correctedLevel, out expValue)) {
-                    return;
+                    return 0;
                 }
                 break;
             default:
                 Log.Logger.Warning("Unhandled ExpType: {ExpType}", expType);
-                return;
+                return 0;
         }
 
-        AddExp((long) ((expValue * modifier) * entry.Factor) + additionalExp, expType.Message());
+        return AddExp((long) ((expValue * modifier) * entry.Factor) + additionalExp, expType.Message());
     }
 
     public void AddMobExp(int moblevel, float modifier = 1f, long additionalExp = 0) {

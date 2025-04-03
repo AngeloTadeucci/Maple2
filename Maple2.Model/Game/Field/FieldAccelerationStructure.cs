@@ -364,7 +364,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                         var bounds = new BoundingBox3(cellPosition - new Vector3(HALF_BLOCK, HALF_BLOCK, 0), cellPosition + new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE));
 
                         entities.Add(new FieldSpawnTile(
-                            Id: new FieldEntityId(0, 0),
+                            Id: new FieldEntityId(0, 0, string.Empty),
                             Position: cellPosition,
                             Rotation: Vector3.Zero,
                             Scale: 1,
@@ -519,7 +519,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
                 // limit the number of nodes in the AABB tree by bundling cells together
                 FieldCellEntities cell = new FieldCellEntities(
-                    Id: new FieldEntityId(0, 0),
+                    Id: new FieldEntityId(0, 0, string.Empty),
                     Position: cellPosition,
                     Rotation: new Vector3(0, 0, 0),
                     Scale: 1,
@@ -565,7 +565,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
         for (int i = 0; i < vibrateCount; ++i) {
             vibrateEntities.Add(new FieldVibrateEntity(
-                Id: new FieldEntityId(0, 0),
+                Id: new FieldEntityId(0, 0, string.Empty),
                 Position: new Vector3(0, 0, 0),
                 Rotation: new Vector3(0, 0, 0),
                 Scale: 1,
@@ -734,6 +734,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         if ((memberFlags & FieldEntityMembers.Id) != 0) {
             writer.Write(entity.Id.High);
             writer.Write(entity.Id.Low);
+            writer.WriteString(entity.Id.Id);
         }
 
         if ((memberFlags & FieldEntityMembers.Position) != 0) {
@@ -805,7 +806,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
         for (int i = 0; i < vibrateCount; ++i) {
             vibrateEntities.Add(new FieldVibrateEntity(
-                Id: new FieldEntityId(0, 0),
+                Id: new FieldEntityId(0, 0, string.Empty),
                 Position: new Vector3(0, 0, 0),
                 Rotation: new Vector3(0, 0, 0),
                 Scale: 1,
@@ -860,7 +861,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         var type = reader.Read<FieldEntityType>();
         var memberFlags = reader.Read<FieldEntityMembers>();
 
-        var id = new FieldEntityId(0, 0);
+        var id = new FieldEntityId(0, 0, string.Empty);
         Vector3 position;
         var rotation = new Vector3(0, 0, 0);
         float scale = 1;
@@ -868,7 +869,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         uint llid = 0;
 
         if ((memberFlags & FieldEntityMembers.Id) != 0) {
-            id = new FieldEntityId(reader.Read<ulong>(), reader.Read<ulong>());
+            id = new FieldEntityId(reader.Read<ulong>(), reader.Read<ulong>(), reader.ReadString());
         }
 
         if ((memberFlags & FieldEntityMembers.Position) != 0) {

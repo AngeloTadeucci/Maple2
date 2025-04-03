@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -322,7 +323,20 @@ public partial class TriggerContext {
     }
 
     public void SetSkill(int[] triggerIds, bool enabled) {
-        ErrorLog("[SetSkill] triggerIds:{Ids}, enabled:{Enabled}", string.Join(", ", triggerIds), enabled);
+        DebugLog("[SetSkill] triggerIds:{Ids}, enabled:{Enabled}", string.Join(", ", triggerIds), enabled);
+        foreach (int triggerId in triggerIds) {
+            Ms2TriggerSkill? skill = Field.Entities.Trigger.Skills.FirstOrDefault(x => x.TriggerId == triggerId);
+            if (skill == null) {
+                continue;
+            }
+
+            if (!Field.SkillMetadata.TryGet(skill.SkillId, skill.Level, out var skillMetadata)) {
+                logger.Warning("Invalid skill: {Id}", skill.SkillId);
+                continue;
+            }
+
+            Field.AddSkill(skillMetadata, 0, skill.Position, skill.Rotation);
+        }
     }
 
     public void SetSound(int triggerId, bool enabled) {
@@ -370,7 +384,7 @@ public partial class TriggerContext {
     }
 
     public void RemoveBuff(int boxId, int buffId, bool ignorePlayer) {
-        ErrorLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
+        DebugLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
         if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxId)) {
                 player.Buffs.Remove(buffId);

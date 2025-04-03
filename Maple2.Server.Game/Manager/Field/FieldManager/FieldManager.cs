@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using DotRecast.Core.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
@@ -10,15 +11,18 @@ using Maple2.Model.Game;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
+using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
+using Maple2.Tools.DotRecast;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using Serilog;
@@ -71,7 +75,10 @@ public partial class FieldManager : IField {
 
     public int MapId { get; init; }
     public int RoomId { get; init; }
-    public FieldInstance FieldInstance { get; private set; }
+    public int DungeonId { get; init; }
+    public int Size { get; init; }
+    public FieldType FieldType { get; init; }
+    public InstanceFieldMetadata FieldInstance { get; private set; }
     public readonly AiManager Ai;
     public IFieldRenderer? DebugRenderer { get; private set; }
 
@@ -89,7 +96,7 @@ public partial class FieldManager : IField {
         Ai = new AiManager(this);
         RoomId = NextGlobalId();
 
-        FieldInstance = FieldInstance.Default;
+        FieldInstance = new InstanceFieldMetadata(0, InstanceType.none, 0, false, 0, true, 0, 0, 0, 0);
 
         ItemDrop = new ItemDropManager(this);
 
@@ -98,6 +105,8 @@ public partial class FieldManager : IField {
         if (MapId is Constant.PerformanceMapId) {
             PerformanceStage = new PerformanceStageManager(this);
         }
+
+        FieldType = FieldType.Default;
     }
 
     // Init is separate from constructor to allow properties to be injected first.
@@ -115,7 +124,7 @@ public partial class FieldManager : IField {
         }
 
         if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(Metadata.Id, out InstanceFieldMetadata? instanceField)) {
-            FieldInstance = new FieldInstance(blockChangeChannel: true, instanceField.Type, instanceField.InstanceId);
+            FieldInstance = instanceField;
         }
 
         if (ugcMetadata.Plots.Count > 0) {
@@ -126,7 +135,12 @@ public partial class FieldManager : IField {
         }
 
         // Create default to place liftable cubes
-        Plots[0] = Plot.Default;
+        Plots[0] = new Plot(new UgcMapGroup(0,
+            0,
+            0,
+            new UgcMapGroup.Cost(0, 0, 0),
+            new UgcMapGroup.Cost(0, 0, 0),
+            new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
 
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
             AddTrigger(trigger);
@@ -279,7 +293,26 @@ public partial class FieldManager : IField {
             return;
         }
 
-        player.Session.Send(PortalPacket.MoveByPortal(player, player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default));
+        player.MoveToPosition(player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default);
+    }
+
+    public bool ValidPosition(Vector3 position) {
+        return FindNearestPoly(position, out long nearestRef, out _) && nearestRef != 0;
+    }
+
+    public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
+        var pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
+        return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
+    }
+
+    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
+        var status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
+        if (status.Failed()) {
+            logger.Error("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
+            return false;
+        }
+
+        return true;
     }
 
     public bool TryGetPlayerById(long characterId, [NotNullWhen(true)] out FieldPlayer? player) {
@@ -386,15 +419,6 @@ public partial class FieldManager : IField {
             .Concat(fieldChests.Values.Where(interact => interact.SpawnId == spawnId));
     }
 
-    public bool MoveToPortal(GameSession session, int portalId) {
-        if (!TryGetPortal(portalId, out FieldPortal? portal)) {
-            return false;
-        }
-
-        session.Send(PortalPacket.MoveByPortal(session.Player, portal));
-        return true;
-    }
-
     public bool UsePortal(GameSession session, int portalId, string password) {
         if (!TryGetPortal(portalId, out FieldPortal? fieldPortal)) {
             return false;
@@ -432,7 +456,7 @@ public partial class FieldManager : IField {
                             return false;
                         }
 
-                        session.Player.MoveToPosition(destinationCube.Position, default);
+                        session.Send(PortalPacket.MoveByPortal(session.Player, destinationCube.Position, default));
                         return true;
                     case CubePortalDestination.SelectedMap:
                         session.MigrateOutOfInstance(srcPortal.TargetMapId);
@@ -540,6 +564,18 @@ public partial class FieldManager : IField {
         }
     }
 
+    public void VibrateObjects(SkillRecord record, Vector3 position) {
+        float rangeDistance = record.Attack.Range.Distance;
+        if (AccelerationStructure is null) {
+            return;
+        }
+
+        List<FieldVibrateEntity> vibrateObjects = AccelerationStructure.QueryVibrateObjectsCenterList(position, 2 * new Vector3(rangeDistance, rangeDistance, rangeDistance));
+        foreach (FieldVibrateEntity vibrate in vibrateObjects) {
+            Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
+        }
+    }
+
     #region DebugUtils
     public void BroadcastAiMessage(ByteWriter packet) {
         foreach ((int objectId, FieldPlayer player) in Players) {
@@ -568,6 +604,22 @@ public partial class FieldManager : IField {
         foreach (FieldPlayer fieldPlayer in Players.Values) {
             if (fieldPlayer.Session == sender) continue;
             fieldPlayer.Session.Send(packet);
+        }
+    }
+
+    public void BroadcastNpcControl(FieldNpc npc) {
+        if (!initialized) {
+            return;
+        }
+
+        foreach (FieldPlayer fieldPlayer in Players.Values) {
+            NpcScriptManager? npcScript = fieldPlayer.Session.NpcScript;
+            if (npcScript is not null && npcScript.Npc is not null && npcScript.Npc.Value.Id == npc.Value.Id && npc.Value.Metadata.LookAtTarget.UseTalkMotion) {
+                fieldPlayer.Session.Send(NpcControlPacket.Talk(npc));
+                continue;
+            }
+
+            fieldPlayer.Session.Send(NpcControlPacket.Control(npc));
         }
     }
 

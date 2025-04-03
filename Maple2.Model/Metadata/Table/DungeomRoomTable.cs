@@ -2,32 +2,33 @@
 
 namespace Maple2.Model.Metadata;
 
-public record DungeonRoomTable(IReadOnlyDictionary<int, DungeonRoomTable.DungeonRoomMetadata> Entries) : Table {
-    public record DungeonRoomMetadata(
-        int Id,
-        short Level,
-        DungeonPlayType PlayType,
-        DungeonGroupType GroupType,
-        DungeonCooldownType CooldownType,
-        int CooldownValue,
-        int DurationTick,
-        int LobbyFieldId,
-        int[] FieldIds,
-        DungeonRoomReward Reward,
-        DungeonRoomLimit Limit,
-        int PlayerCountFactorId,
-        short CustomMonsterLevel,
-        int HelperRequireClearCount,
-        bool DisabledFindHelper,
-        int RankTableId,
-        bool LeaveAfterCloseReward,
-        int[] PartyMissions,
-        int[] UserMissions,
-        bool MoveToBackupField
-        );
-}
+public record DungeonRoomTable(IReadOnlyDictionary<int, DungeonRoomMetadata> Entries) : Table;
 
-public record DungeonRoomReward(
+public record DungeonRoomMetadata(
+    int Id,
+    short Level,
+    DungeonPlayType PlayType,
+    DungeonGroupType GroupType,
+    DungeonCooldownType CooldownType,
+    int CooldownValue,
+    int DurationTick,
+    int LobbyFieldId,
+    int[] FieldIds,
+    DungeonRoomRewardMetadata Reward,
+    DungeonRoomLimitMetadata Limit,
+    int PlayerCountFactorId,
+    short CustomMonsterLevel,
+    int HelperRequireClearCount,
+    bool DisabledFindHelper,
+    int RankTableId,
+    int RoundId,
+    bool LeaveAfterCloseReward,
+    int[] PartyMissions,
+    int[] UserMissions,
+    bool MoveToBackupField
+);
+
+public record DungeonRoomRewardMetadata(
     bool AccountWide,
     int Count,
     int SubRewardCount,
@@ -41,7 +42,7 @@ public record DungeonRoomReward(
     int ScoreBonusId
 );
 
-public record DungeonRoomLimit(
+public record DungeonRoomLimitMetadata(
     int MinUserCount,
     int MaxUserCount,
     int GearScore,

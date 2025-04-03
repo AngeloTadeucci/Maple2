@@ -1,6 +1,6 @@
 ﻿using Maple2.Server.Game.Model.Enum;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public class TaskState {
     public FieldNpc Actor { get; init; }

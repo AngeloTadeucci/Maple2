@@ -2,7 +2,7 @@
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model.Enum;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public class AnimationState {
     private readonly IActor actor;

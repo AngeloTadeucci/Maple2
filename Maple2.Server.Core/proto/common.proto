@@ -2,6 +2,27 @@ syntax = "proto3";
 
 package maple2;
 
+message FieldRequest {
+  message CreateDungeon {
+    int32 dungeon_id = 1;
+    int32 size = 2;
+    int32 party_id = 3;
+  }
+  message DestroyDungeon {
+    int32 room_id = 1;
+  }
+  int64 requester_id = 1;
+  oneof field {
+    CreateDungeon create_dungeon = 2;
+    DestroyDungeon destroy_dungeon = 3;
+  }
+}
+
+message FieldResponse {
+  int32 error = 1;
+  int32 room_id = 2;
+}
+
 message ChatRequest {
   message Whisper {
     int64 recipient_id = 1;
@@ -195,7 +216,7 @@ message PartySearchRequest {
     string search_string = 2;
     int32 page = 3;
   }
-  message Remove { }
+  message Remove {}
 
   int64 id = 1;
   int32 party_id = 2;
@@ -244,8 +265,8 @@ message ClubInfoResponse {
 }
 
 message MarriageRequest {
-  message RemoveMarriage { }
-  message RemoveWeddingHall { }
+  message RemoveMarriage {}
+  message RemoveWeddingHall {}
 
   int64 id = 1;
   int64 receiver_id = 2;
@@ -257,4 +278,56 @@ message MarriageRequest {
 
 message MarriageResponse {
   int32 error = 1;
+}
+
+message PlayerWarpRequest {
+  message GoToPlayer {
+    int64 character_id = 1;
+    int32 channel = 2;
+  }
+
+  int64 requester_id = 3;
+  oneof request {
+    GoToPlayer go_to_player = 4;
+  }
+}
+
+message PlayerWarpResponse {
+  int32 error = 1;
+  float x = 2;
+  float y = 3;
+  float z = 4;
+  int32 room_id = 5;
+}
+
+message AdminRequest {
+  message Alert {
+    string message = 1;
+    int32 duration = 2;
+    int32 flags = 3;
+  }
+
+  message AddStringBoard {
+    string message = 1;
+    int32 id = 2;
+  }
+
+  message RemoveStringBoard {
+    int32 id = 1;
+  }
+
+  message ListStringBoard {}
+
+  int64 requester_id = 1;
+  oneof request {
+    Alert alert = 2;
+    AddStringBoard add_string_board = 3;
+    RemoveStringBoard remove_string_board = 4;
+    ListStringBoard list_string_board = 5;
+  }
+}
+
+message AdminResponse {
+  int32 error = 1;
+  string message = 2;
 }

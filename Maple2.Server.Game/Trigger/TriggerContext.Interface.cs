@@ -12,7 +12,7 @@ namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext {
     public void CreateWidget(string type) {
-        ErrorLog("[CreateWidget] type:{Type}", type);
+        DebugLog("[CreateWidget] type:{Type}", type);
         var widget = type switch {
             "OxQuiz" => new OxQuizWidget(Field),
             _ => new Widget(Field),
@@ -75,6 +75,9 @@ public partial class TriggerContext {
         int round = rounds.ElementAtOrDefault(0, 1);
         int maxRound = rounds.ElementAtOrDefault(1, 1);
         int minRound = rounds.ElementAtOrDefault(2, 1);
+        if (minRound == maxRound) {
+            return;
+        }
         Broadcast(MassiveEventPacket.Round(round, maxRound, minRound, vOffset));
     }
 

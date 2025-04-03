@@ -1,4 +1,5 @@
 ﻿using Maple2.Model.Game;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
 using Serilog;
 
@@ -23,7 +24,11 @@ public class PerformanceStageManager {
             return;
         }
 
-        bool insideStage = triggerBox.Contains(session.Player.Position);
-        Field.MoveToPortal(session, insideStage ? 802 : 803);
+        int portalId = triggerBox.Contains(session.Player.Position) ? 802 : 803;
+        if (!Field.TryGetPortal(portalId, out FieldPortal? portal)) {
+            return;
+        }
+
+        session.Player.MoveToPortal(portal);
     }
 }

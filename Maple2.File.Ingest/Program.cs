@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
+using Maple2.File.Ingest;
 using Maple2.File.Ingest.Helpers;
 using Maple2.File.Ingest.Mapper;
 using Maple2.File.IO;
@@ -58,7 +59,7 @@ if (!File.Exists(exportedPath)) {
 
 if (!File.Exists(serverPath)) {
     throw new FileNotFoundException($"Could not find Server.m2d file at path: {serverPath}\n" +
-        "You can download this file from here: https://github.com/Zintixx/MapleStory2-XML/releases/latest");
+                                    "You can download this file from here: https://github.com/Zintixx/MapleStory2-XML/releases/latest");
 }
 
 string? server = Environment.GetEnvironmentVariable("DB_IP");
@@ -73,11 +74,15 @@ if (server == null || port == null || database == null || user == null || passwo
 
 string worldServerDir = Path.Combine(Paths.SOLUTION_DIR, "Maple2.Server.World");
 
+bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+bool isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
 // check if dotnet ef is installed
 Process processCheck;
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+if (isWindows) {
     processCheck = Process.Start("CMD.exe", "/C dotnet ef");
-} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+} else if (isLinux || isMac) {
     processCheck = Process.Start("bash", "-c \"dotnet ef\"");
 } else {
     throw new PlatformNotSupportedException("Unsupported OS platform");
@@ -85,7 +90,33 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 processCheck.WaitForExit();
 
 if (processCheck.ExitCode != 0) {
-    throw new Exception("dotnet ef is not installed. Please install it by running 'dotnet tool install --global dotnet-ef'");
+
+    Process installEf;
+    if (isWindows) {
+        installEf = Process.Start("CMD.exe", "/C dotnet tool install --global dotnet-ef");
+    } else if (isLinux || isMac) {
+        installEf = Process.Start("bash", "-c \"dotnet tool install --global dotnet-ef\"");
+    } else {
+        throw new PlatformNotSupportedException("Unsupported OS platform");
+    }
+    installEf.WaitForExit();
+    if (installEf.ExitCode != 0) {
+        throw new Exception("Failed to install dotnet-ef. Please install it manually by running 'dotnet tool install --global dotnet-ef'");
+    }
+
+    if (isWindows) {
+        string dotnetToolsPath = Environment.GetEnvironmentVariable("USERPROFILE") + "/.dotnet/tools";
+        string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+        Environment.SetEnvironmentVariable("PATH", currentPath + ";" + dotnetToolsPath);
+        Console.WriteLine($"Updated PATH to include {dotnetToolsPath}");
+    } else if (isLinux || isMac) {
+        string dotnetToolsPath = Environment.GetEnvironmentVariable("HOME") + "/.dotnet/tools";
+        string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+        Environment.SetEnvironmentVariable("PATH", currentPath + ":" + dotnetToolsPath);
+        Console.WriteLine($"Updated PATH to include {dotnetToolsPath}");
+    } else {
+        throw new PlatformNotSupportedException("Unsupported OS platform");
+    }
 }
 
 string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
@@ -93,15 +124,19 @@ string cmdCommand = "cd " + worldServerDir + " && dotnet ef database update";
 Console.WriteLine("Migrating game database...");
 
 Process process;
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+if (isWindows) {
     process = Process.Start("CMD.exe", "/C " + cmdCommand);
-} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+} else if (isLinux || isMac) {
     process = Process.Start("bash", "-c \"" + cmdCommand + "\"");
 } else {
     throw new PlatformNotSupportedException("Unsupported OS platform");
 }
 
 process.WaitForExit();
+
+if (process.ExitCode != 0) {
+    throw new Exception("Failed to migrate game database.");
+}
 
 Console.WriteLine("Game Migration complete!");
 
@@ -117,13 +152,19 @@ DbContextOptions options = new DbContextOptionsBuilder()
 Console.WriteLine("Connecting to metadata database...");
 using var metadataContext = new MetadataContext(options);
 
-if (dropData) {
+bool schemaChanged = SchemaVersionManager.ShouldRecreateDatabase(metadataContext);
+
+if (dropData || schemaChanged) {
     Console.WriteLine("Dropping metadata database...");
     metadataContext.Database.EnsureDeleted();
+    metadataContext.ChangeTracker.Clear();
 }
 Console.WriteLine("Ensuring metadata database is created...");
 metadataContext.Database.EnsureCreated();
 metadataContext.Database.ExecuteSqlRaw(@"SET GLOBAL max_allowed_packet=268435456"); // 256MB
+
+// Store schema version after creation
+SchemaVersionManager.StoreSchemaVersion(metadataContext);
 
 Console.WriteLine("Starting data ingestion...");
 
@@ -144,6 +185,9 @@ var modelReaders = new List<PrefixedM2dReader> {
     new("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
     new("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
 };
+
+UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
+UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
@@ -181,19 +225,6 @@ mapDataMapper.ReportStats();
 if (runNavmesh) {
     _ = new NavMeshMapper(metadataContext, exportedReader);
 }
-
-UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
-UpdateDatabase(metadataContext, new AiMapper(serverReader));
-
-// new MusicScoreParser(xmlReader).Parse().ToList();
-// new ScriptParser(xmlReader).ParseNpc().ToList();
-// new ScriptParser(xmlReader).ParseQuest().ToList();
-// new PetParser(xmlReader).Parse().ToList();
-// new PetParser(xmlReader).ParseProperty().ToList();
-//
-// new AchieveParser(xmlReader).Parse().ToList();
-// new AdditionalEffectParser(xmlReader).Parse().ToList();
-// new QuestParser(xmlReader).Parse().ToList();
 
 Console.WriteLine("Done!".ColorGreen());
 

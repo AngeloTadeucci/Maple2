@@ -60,8 +60,8 @@ public partial class TriggerContext {
     public void MoveNpc(int spawnId, string patrolName) {
         DebugLog("[MoveNpc] spawnId:{SpawnId} patrolName:{PatrolName}", spawnId, patrolName);
 
-        IEnumerable<FieldNpc> fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId);
-        if (!fieldNpcs.Any()) {
+        List<FieldNpc> fieldNpcs = Field.EnumerateNpcs().Where(npc => npc.SpawnPointId == spawnId).ToList();
+        if (fieldNpcs.Count == 0) {
             return;
         }
 
@@ -141,7 +141,13 @@ public partial class TriggerContext {
     }
 
     public void SetNpcDuelHpBar(bool isOpen, int spawnId, int durationTick, int npcHpStep) {
-        ErrorLog("[SetNpcDuelHpBar] isOpen:{IsOpen}, spawnId:{SpawnId}, durationTick:{Duration}, npcHpStep:{HpStep}", isOpen, spawnId, durationTick, npcHpStep);
+        DebugLog("[SetNpcDuelHpBar] isOpen:{IsOpen}, spawnId:{SpawnId}, durationTick:{Duration}, npcHpStep:{HpStep}", isOpen, spawnId, durationTick, npcHpStep);
+        IActor? actor = Field.GetActorsBySpawnId(spawnId).FirstOrDefault();
+        if (actor is null) {
+            return;
+        }
+
+        Broadcast(TriggerPacket.DuelHpBar(isOpen, actor.ObjectId, durationTick, npcHpStep));
     }
 
     public void SetNpcEmotionLoop(int spawnId, string sequenceName, float duration) {
@@ -269,7 +275,7 @@ public partial class TriggerContext {
             }
 
             for (int i = 0; i < entry.Count; i++) {
-                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation);
+                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation, spawnAnimation: spawn.SpawnAnimation);
                 if (fieldNpc == null) {
                     logger.Error("[SpawnMonster] Failed to spawn npcId:{NpcId}", entry.NpcId);
                     continue;

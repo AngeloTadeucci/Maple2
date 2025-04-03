@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Maple2.Database.Context;
 
 public sealed class MetadataContext(DbContextOptions options) : DbContext(options) {
+    public DbSet<SchemaVersion> SchemaVersion { get; set; } = null!;
     public DbSet<TableChecksum> TableChecksum { get; set; } = null!;
     public DbSet<AdditionalEffectMetadata> AdditionalEffectMetadata { get; set; } = null!;
     public DbSet<AnimationMetadata> AnimationMetadata { get; set; } = null!;
@@ -33,6 +34,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<SchemaVersion>(Maple2.Database.Model.Metadata.SchemaVersion.Configure);
         modelBuilder.Entity<TableChecksum>(Maple2.Database.Model.Metadata.TableChecksum.Configure);
         modelBuilder.Entity<AdditionalEffectMetadata>(ConfigureAdditionalEffectMetadata);
         modelBuilder.Entity<AnimationMetadata>(ConfigureAnimationMetadata);
@@ -118,6 +120,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(npc => npc.DropInfo).HasJsonConversion();
         builder.Property(npc => npc.Action).HasJsonConversion();
         builder.Property(npc => npc.Dead).HasJsonConversion();
+        builder.Property(npc => npc.LookAtTarget).HasJsonConversion();
     }
 
     private static void ConfigureMapMetadata(EntityTypeBuilder<MapMetadata> builder) {

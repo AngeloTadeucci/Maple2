@@ -10,11 +10,12 @@ using Maple2.Server.Game.Packets;
 using Maple2.Tools;
 using Maple2.Tools.Collision;
 using Maple2.Server.Game.Session;
-using Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 using Maple2.Server.Game.Model.Enum;
 using Maple2.Server.Core.Packets;
 using DotRecast.Detour.Crowd;
+using Maple2.Server.Game.Model.ActorStateComponent;
+using MovementState = Maple2.Server.Game.Model.ActorStateComponent.MovementState;
 
 namespace Maple2.Server.Game.Model;
 
@@ -74,6 +75,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AnimationSequence IdleSequence;
     public readonly AnimationSequence? JumpSequence;
     public readonly AnimationSequence? WalkSequence;
+    public readonly AnimationSequence? SpawnSequence;
     private readonly WeightedSet<string> defaultRoutines;
     public readonly AiState AiState;
     public readonly MovementState MovementState;
@@ -87,7 +89,7 @@ public class FieldNpc : Actor<Npc> {
     private int currentWaypointIndex;
 
     private bool hasBeenBattling = false;
-    private NpcTask? idleTask = null;
+    private NpcTask? idleTask;
     private long idleTaskLimitTick = 0;
 
     public readonly Dictionary<string, int> AiExtraData = new();
@@ -96,6 +98,7 @@ public class FieldNpc : Actor<Npc> {
         IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
+        SpawnSequence = npc.Animations.GetValueOrDefault(spawnAnimation);
         defaultRoutines = new WeightedSet<string>();
         foreach (NpcAction action in Value.Metadata.Action.Actions) {
             defaultRoutines.Add(action.Name, action.Probability);
@@ -116,14 +119,12 @@ public class FieldNpc : Actor<Npc> {
         SequenceCounter = 1;
         AiState = new AiState(this, aiPath);
 
-
         Skills = new SkillMetadata[Value.Metadata.Skill.Entries.Length];
 
         for (int i = 0; i < Skills.Length; ++i) {
             var entry = Value.Metadata.Skill.Entries[i];
             Field.SkillMetadata.TryGet(entry.Id, entry.Level, out Skills[i]);
         }
-
     }
 
     protected override void Dispose(bool disposing) { }
@@ -150,7 +151,7 @@ public class FieldNpc : Actor<Npc> {
             }
         }
 
-        bool isSpawning = MovementState.State == ActorState.Spawn || MovementState.State == ActorState.Regen;
+        bool isSpawning = MovementState.State is ActorState.Spawn or ActorState.Regen;
 
         if (!isSpawning) {
             BattleState.Update(tickCount);
@@ -180,7 +181,7 @@ public class FieldNpc : Actor<Npc> {
 
         if (SendControl) {
             SequenceCounter++;
-            Field.Broadcast(NpcControlPacket.Control(this));
+            Field.BroadcastNpcControl(this);
             SendControl = false;
         }
         lastUpdate = tickCount;
@@ -237,16 +238,15 @@ public class FieldNpc : Actor<Npc> {
                 return MovementState.TryStandby(null, true, sequence.Name);
             case { } when routineName.Contains("Bore_"):
                 return MovementState.TryEmote(sequence.Name, true);
-            case { } when routineName.StartsWith("Walk_"): {
-                    return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
-                }
+            case { } when routineName.StartsWith("Walk_"):
+                return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
             case { } when routineName.StartsWith("Run_"):
                 return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
             case { }:
                 if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? animationSequence)) {
                     break;
                 }
-                return MovementState.TryEmote(animationSequence.Name, false);
+                return MovementState.TryEmote(animationSequence.Name, SpawnSequence is not null);
         }
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
@@ -311,7 +311,22 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        idleTask = MovementState.TryEmote(sequence.Name, false, duration);
+        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase);
+
+        idleTask = MovementState.TryEmote(sequence.Name, isIdle, duration);
+    }
+
+    public void Talk() {
+        if (SpawnSequence is not null) {
+            return;
+        }
+        idleTask = MovementState.TryTalk();
+    }
+
+    public void StopTalk() {
+        if (idleTask is MovementState.NpcTalkTask) {
+            idleTask.Cancel();
+        }
     }
 
     public void DropLoot(FieldPlayer firstPlayer) {

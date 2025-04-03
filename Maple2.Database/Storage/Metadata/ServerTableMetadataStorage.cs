@@ -1,6 +1,5 @@
-﻿using System;
-using Maple2.Database.Context;
-using Maple2.Model.Enum;
+﻿using Maple2.Database.Context;
+using Maple2.Model.Common;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 
@@ -10,12 +9,14 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<InstanceFieldTable> instanceFieldTable;
     private readonly Lazy<ScriptConditionTable> scriptConditionTable;
     private readonly Lazy<ScriptFunctionTable> scriptFunctionTable;
+    private readonly Lazy<ScriptEventConditionTable> scriptEventConditionTable;
     private readonly Lazy<JobConditionTable> jobConditionTable;
     private readonly Lazy<BonusGameTable> bonusGameTable;
     private readonly Lazy<GlobalDropItemBoxTable> globalDropItemBoxTable;
     private readonly Lazy<UserStatTable> userStatTable;
     private readonly Lazy<IndividualDropItemTable> individualDropItemTable;
     private readonly Lazy<PrestigeExpTable> prestigeExpTable;
+    private readonly Lazy<PrestigeIdExpTable> prestigeIdExpTable;
     private readonly Lazy<TimeEventTable> timeEventTable;
     private readonly Lazy<GameEventTable> gameEventTable;
     private readonly Lazy<OxQuizTable> oxQuizTable;
@@ -26,16 +27,19 @@ public class ServerTableMetadataStorage {
     private readonly Lazy<MeretMarketTable> meretMarketTable;
     private readonly Lazy<FishTable> fishTable;
     private readonly Lazy<CombineSpawnTable> combineSpawnTable;
+    private readonly Lazy<EnchantOptionTable> enchantOptionTable;
 
     public InstanceFieldTable InstanceFieldTable => instanceFieldTable.Value;
     public ScriptConditionTable ScriptConditionTable => scriptConditionTable.Value;
     public ScriptFunctionTable ScriptFunctionTable => scriptFunctionTable.Value;
+    public ScriptEventConditionTable ScriptEventConditionTable => scriptEventConditionTable.Value;
     public JobConditionTable JobConditionTable => jobConditionTable.Value;
     public BonusGameTable BonusGameTable => bonusGameTable.Value;
     public GlobalDropItemBoxTable GlobalDropItemBoxTable => globalDropItemBoxTable.Value;
     public UserStatTable UserStatTable => userStatTable.Value;
     public IndividualDropItemTable IndividualDropItemTable => individualDropItemTable.Value;
     public PrestigeExpTable PrestigeExpTable => prestigeExpTable.Value;
+    public PrestigeIdExpTable PrestigeIdExpTable => prestigeIdExpTable.Value;
     public TimeEventTable TimeEventTable => timeEventTable.Value;
     public GameEventTable GameEventTable => gameEventTable.Value;
     public OxQuizTable OxQuizTable => oxQuizTable.Value;
@@ -46,27 +50,31 @@ public class ServerTableMetadataStorage {
     public MeretMarketTable MeretMarketTable => meretMarketTable.Value;
     public FishTable FishTable => fishTable.Value;
     public CombineSpawnTable CombineSpawnTable => combineSpawnTable.Value;
+    public EnchantOptionTable EnchantOptionTable => enchantOptionTable.Value;
 
     public ServerTableMetadataStorage(MetadataContext context) {
-        instanceFieldTable = Retrieve<InstanceFieldTable>(context, "instancefield.xml");
-        scriptConditionTable = Retrieve<ScriptConditionTable>(context, "*scriptCondition.xml");
-        scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, "*scriptFunction.xml");
-        jobConditionTable = Retrieve<JobConditionTable>(context, "jobConditionTable.xml");
-        bonusGameTable = Retrieve<BonusGameTable>(context, "bonusGame*.xml");
-        globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, "globalItemDrop*.xml");
-        userStatTable = Retrieve<UserStatTable>(context, "userStat*.xml");
-        individualDropItemTable = Retrieve<IndividualDropItemTable>(context, "individualItemDrop.xml");
-        prestigeExpTable = Retrieve<PrestigeExpTable>(context, "adventureExpTable.xml");
-        timeEventTable = Retrieve<TimeEventTable>(context, "timeEventData.xml");
-        gameEventTable = Retrieve<GameEventTable>(context, "gameEvent.xml");
-        oxQuizTable = Retrieve<OxQuizTable>(context, "oxQuiz.xml");
-        itemMergeTable = Retrieve<ItemMergeTable>(context, "itemMergeOptionBase.xml");
-        shopTable = Retrieve<ShopTable>(context, "shop_game_info.xml");
-        shopItemTable = Retrieve<ShopItemTable>(context, "shop_game.xml");
-        beautyShopTable = Retrieve<BeautyShopTable>(context, "shop_beauty.xml");
-        meretMarketTable = Retrieve<MeretMarketTable>(context, "shop_merat_custom.xml");
-        fishTable = Retrieve<FishTable>(context, "fish*.xml");
-        combineSpawnTable = Retrieve<CombineSpawnTable>(context, "combineSpawn*.xml");
+        instanceFieldTable = Retrieve<InstanceFieldTable>(context, ServerTableNames.INSTANCE_FIELD);
+        scriptConditionTable = Retrieve<ScriptConditionTable>(context, ServerTableNames.SCRIPT_CONDITION);
+        scriptFunctionTable = Retrieve<ScriptFunctionTable>(context, ServerTableNames.SCRIPT_FUNCTION);
+        scriptEventConditionTable = Retrieve<ScriptEventConditionTable>(context, ServerTableNames.SCRIPT_EVENT);
+        jobConditionTable = Retrieve<JobConditionTable>(context, ServerTableNames.JOB_CONDITION);
+        bonusGameTable = Retrieve<BonusGameTable>(context, ServerTableNames.BONUS_GAME);
+        globalDropItemBoxTable = Retrieve<GlobalDropItemBoxTable>(context, ServerTableNames.GLOBAL_DROP_ITEM_BOX);
+        userStatTable = Retrieve<UserStatTable>(context, ServerTableNames.USER_STAT);
+        individualDropItemTable = Retrieve<IndividualDropItemTable>(context, ServerTableNames.INDIVIDUAL_DROP_ITEM);
+        prestigeExpTable = Retrieve<PrestigeExpTable>(context, ServerTableNames.PRESTIGE_EXP);
+        prestigeIdExpTable = Retrieve<PrestigeIdExpTable>(context, ServerTableNames.PRESTIGE_ID_EXP);
+        timeEventTable = Retrieve<TimeEventTable>(context, ServerTableNames.TIME_EVENT);
+        gameEventTable = Retrieve<GameEventTable>(context, ServerTableNames.GAME_EVENT);
+        oxQuizTable = Retrieve<OxQuizTable>(context, ServerTableNames.OX_QUIZ);
+        itemMergeTable = Retrieve<ItemMergeTable>(context, ServerTableNames.ITEM_MERGE);
+        shopTable = Retrieve<ShopTable>(context, ServerTableNames.SHOP);
+        shopItemTable = Retrieve<ShopItemTable>(context, ServerTableNames.SHOP_ITEM);
+        beautyShopTable = Retrieve<BeautyShopTable>(context, ServerTableNames.BEAUTY_SHOP);
+        meretMarketTable = Retrieve<MeretMarketTable>(context, ServerTableNames.MERET_MARKET);
+        fishTable = Retrieve<FishTable>(context, ServerTableNames.FISH);
+        combineSpawnTable = Retrieve<CombineSpawnTable>(context, ServerTableNames.COMBINE_SPAWN);
+        enchantOptionTable = Retrieve<EnchantOptionTable>(context, ServerTableNames.ENCHANT_OPTION);
     }
 
     public IEnumerable<GameEvent> GetGameEvents() {

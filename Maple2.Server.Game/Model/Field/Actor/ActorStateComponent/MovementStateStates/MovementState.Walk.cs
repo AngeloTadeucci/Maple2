@@ -3,9 +3,9 @@ using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
-using static Maple2.Server.Game.Model.Field.Actor.ActorStateComponent.TaskState;
+using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     private enum WalkType {
@@ -69,10 +69,8 @@ public partial class MovementState {
 
     private void StateWalkDirectionUpdate(long tickCount, long tickDelta, float delta) {
         Vector3 newPosition = actor.Position + delta * Speed * walkDirection;
-        int searchRadius = Math.Max((int) (delta * Speed * 1.1f), 10);
 
-        actor.Navigation!.UpdatePosition();
-        actor.Position = actor.Navigation.FindClosestPoint(newPosition, searchRadius);
+        actor.Navigation!.UpdatePosition(newPosition);
 
         Velocity = Speed * walkDirection;
 

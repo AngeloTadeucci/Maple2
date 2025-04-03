@@ -94,7 +94,7 @@ public partial class FieldManager {
             player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
-        if (FieldInstance.InstanceType == InstanceType.none) {
+        if (FieldInstance.Type == InstanceType.none || FieldInstance.SaveField) {
             if (Metadata.Property.EnterReturnId != 0) {
                 player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
             }
@@ -103,12 +103,12 @@ public partial class FieldManager {
         return fieldPlayer;
     }
 
-    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null) {
+    public FieldNpc? SpawnNpc(NpcMetadata npc, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, SpawnPointNPC? spawnPointNpc = null, string spawnAnimation = "") {
         DtCrowdAgent agent = Navigation.AddAgent(npc, position);
 
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
         Vector3 spawnPosition = position;
-        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData) {
+        var fieldNpc = new FieldNpc(this, NextLocalId(), agent, new Npc(npc, animation), npc.AiPath, patrolDataUUID: spawnPointNpc?.PatrolData, spawnAnimation: spawnAnimation) {
             Owner = owner,
             Position = spawnPosition,
             Rotation = rotation,

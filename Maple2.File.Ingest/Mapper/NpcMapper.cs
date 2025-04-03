@@ -111,7 +111,11 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                     Revival: data.dead.revival,
                     Count: data.dead.count,
                     LifeTime: data.dead.lifeTime,
-                    ExtendRoomTime: data.dead.extendRoomTime)
+                    ExtendRoomTime: data.dead.extendRoomTime),
+                LookAtTarget: new NpcMetadataLookAtTarget(
+                    data.lookattarget.targetdummy,
+                    data.lookattarget.lookAtMyPCWhenTalking == 1,
+                    data.lookattarget.useTalkMotion == 1)
             );
         }
     }

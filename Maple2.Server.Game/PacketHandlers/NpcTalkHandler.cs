@@ -67,6 +67,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClose(GameSession session) {
+        session.NpcScript?.Npc.StopTalk();
         session.NpcScript = null;
         session.Shop.ClearActiveShop();
     }
@@ -134,6 +135,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         } else if (talkType.HasFlag(NpcTalkType.Quest)) {
             if (questState == null) {
                 session.Send(NpcTalkPacket.Close());
+                npc.StopTalk();
                 return;
             }
             selectedState = questState;
@@ -141,6 +143,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
             // now that quest is selected, change the metadata to the quest's metadata
             if (!ScriptMetadata.TryGet(session.Quest.GetAvailableQuests(npc.Value.Id).Keys.Min(), out metadata)) {
                 session.Send(NpcTalkPacket.Close());
+                npc.StopTalk();
                 return;
             }
         } else if (scriptState == null && selectState == null) {
@@ -149,6 +152,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                 return;
             }
             session.Send(NpcTalkPacket.Close());
+            npc.StopTalk();
             return;
         } else {
             selectedState = scriptState ?? selectState;
@@ -224,11 +228,25 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     private void HandleEnchant(GameSession session, IByteReader packet) {
         int npcId = packet.ReadInt();
         int scriptId = packet.ReadInt();
-        var eventType = packet.Read<NpcEventType>();
+        var eventType = packet.Read<ScriptEventType>();
 
-        if (eventType == NpcEventType.Empower) {
-            session.NpcScript?.Event();
-            return;
+        switch (eventType) {
+            case ScriptEventType.EnchantSelect:
+            case ScriptEventType.PeachySelect:
+                if (!session.ScriptMetadata.TryGet(npcId, out ScriptMetadata? script) ||
+                    !script.States.TryGetValue(Constant.EnchantMasterScriptID, out ScriptState? state)) {
+                    return;
+                }
+
+                CinematicEventScript[] eventScripts = state.Contents.First().Events;
+                session.NpcScript = new NpcScriptManager(session, eventScripts);
+                return;
+            case ScriptEventType.EmpowerSelect:
+                session.NpcScript?.EmpowerEvent();
+                return;
+            case ScriptEventType.EnchantComplete:
+                session.ItemEnchant.NpcTalkEvent(eventType);
+                return;
         }
     }
 
@@ -240,7 +258,7 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         int questId = packet.ReadInt();
         packet.ReadShort(); // 2 or 0. 2 = Start quest, 0 = Complete quest.
 
-        FieldNpc npc = session.NpcScript.Npc;
+        FieldNpc? npc = session.NpcScript.Npc;
         if (!session.ScriptMetadata.TryGet(questId, out ScriptMetadata? metadata)) {
             session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
             session.NpcScript = null;

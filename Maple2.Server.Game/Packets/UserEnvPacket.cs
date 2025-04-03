@@ -86,7 +86,7 @@ public static class UserEnvPacket {
         foreach ((int rewardId, bool isClaimed) in claimedRewards) {
             pWriter.WriteInt(rewardId);
             pWriter.WriteBool(isClaimed);
-        };
+        }
 
         return pWriter;
     }
@@ -98,7 +98,7 @@ public static class UserEnvPacket {
         foreach ((ReputationType type, int amount) in reputations) {
             pWriter.Write<ReputationType>(type);
             pWriter.WriteInt(amount);
-        };
+        }
 
         return pWriter;
     }

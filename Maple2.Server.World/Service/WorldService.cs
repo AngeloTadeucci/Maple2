@@ -7,6 +7,7 @@ namespace Maple2.Server.World.Service;
 
 public partial class WorldService : World.WorldBase {
     private readonly ChannelClientLookup channelClients;
+    private readonly WorldServer worldServer;
     private readonly PlayerInfoLookup playerLookup;
     private readonly GuildLookup guildLookup;
     private readonly PartyLookup partyLookup;
@@ -18,12 +19,13 @@ public partial class WorldService : World.WorldBase {
     private readonly ILogger logger = Log.Logger.ForContext<WorldService>();
 
     public WorldService(
-        IMemoryCache tokenCache, ChannelClientLookup channelClients,
+        IMemoryCache tokenCache, WorldServer worldServer, ChannelClientLookup channelClients,
         PlayerInfoLookup playerLookup, GuildLookup guildLookup, PartyLookup partyLookup,
         PartySearchLookup partySearchLookup, GroupChatLookup groupChatLookup, BlackMarketLookup blackMarketLookup,
         ClubLookup clubLookup, GlobalPortalLookup globalPortalLookup
         ) {
         this.tokenCache = tokenCache;
+        this.worldServer = worldServer;
         this.channelClients = channelClients;
         this.playerLookup = playerLookup;
         this.guildLookup = guildLookup;

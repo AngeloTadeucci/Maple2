@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 
 namespace Maple2.Model.Metadata;
@@ -6,7 +7,7 @@ namespace Maple2.Model.Metadata;
 public record EnchantScrollTable(IReadOnlyDictionary<int, EnchantScrollMetadata> Entries) : Table;
 
 public record EnchantScrollMetadata(
-    short Type,
+    EnchantScrollType Type,
     short MinLevel,
     short MaxLevel,
     int[] Enchants,

@@ -70,9 +70,6 @@ public class LoadUgcMapHandler : PacketHandler<GameSession> {
         session.Send(LoadUgcMapPacket.LoadHome(plotCubes.Count, home));
 
         LoadPlots(session, plotCubes);
-
-        // this is a workaround for the client to load the map before field add player - without this, player will fall and get tp'd back to 0,0
-        Task.Delay(200).Wait();
     }
 
     private static void LoadPlots(GameSession session, List<PlotCube> plotCubes) {

@@ -11,6 +11,8 @@ namespace Maple2.Database.Storage;
 public class AchievementMetadataStorage(MetadataContext context) : MetadataStorage<int, AchievementMetadata>(context, CACHE_SIZE), ISearchable<AchievementMetadata> {
     private const int CACHE_SIZE = 2500; // ~2.2k total trophies
 
+    private readonly HashSet<ConditionType> cachedTypes = [];
+
     public bool TryGet(int id, [NotNullWhen(true)] out AchievementMetadata? achievement) {
         if (Cache.TryGet(id, out achievement)) {
             return true;
@@ -36,10 +38,26 @@ public class AchievementMetadataStorage(MetadataContext context) : MetadataStora
 
     public ICollection<AchievementMetadata> GetType(ConditionType type) {
         lock (Context) {
-            return Context.AchievementMetadata
+            // If we've already loaded this type, use cached items
+            if (cachedTypes.Contains(type)) {
+                return Cache.All().Values
+                    .Where(achievement => achievement.Grades.Values.Any(grade => grade.Condition.Type == type))
+                    .ToList();
+            }
+
+            // Otherwise, query from database and cache all results
+            List<AchievementMetadata> achievements = Context.AchievementMetadata
                 .AsEnumerable()
                 .Where(achievement => achievement.Grades.Values.Any(grade => grade.Condition.Type == type))
                 .ToList();
+
+            foreach (AchievementMetadata achievement in achievements) {
+                Cache.AddReplace(achievement.Id, achievement);
+            }
+
+            cachedTypes.Add(type);
+
+            return achievements;
         }
     }
 

@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Manager;
@@ -385,7 +384,19 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public void MoveToPosition(Vector3 position, Vector3 rotation) {
+        if (!Field.ValidPosition(position)) {
+            return;
+        }
+
         Session.Send(PortalPacket.MoveByPortal(this, position, rotation));
+    }
+
+    public void MoveToPortal(FieldPortal portal) {
+        if (!Field.ValidPosition(portal.Position)) {
+            return;
+        }
+
+        Session.Send(PortalPacket.MoveByPortal(this, portal.Position, portal.Rotation));
     }
 }
 

@@ -46,11 +46,13 @@ public partial class GameStorage {
             this.game = game;
         }
 
-        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long premiumTime, IList<long> clubs) {
+        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long guildId, string guildName, long premiumTime, IList<long> clubs) {
             if (outdoor == null) {
                 return new PlayerInfo(character, indoor.Name, achievementInfo, clubs) {
                     PremiumTime = premiumTime,
                     LastOnlineTime = character.LastModified.ToEpochSeconds(),
+                    GuildId = guildId,
+                    GuildName = guildName,
                 };
             }
 
@@ -61,6 +63,8 @@ public partial class GameStorage {
                 ApartmentNumber = outdoor.ApartmentNumber,
                 PlotExpiryTime = outdoor.ExpiryTime.ToUnixTimeSeconds(),
                 LastOnlineTime = character.LastModified.ToEpochSeconds(),
+                GuildId = guildId,
+                GuildName = guildName,
             };
         }
     }

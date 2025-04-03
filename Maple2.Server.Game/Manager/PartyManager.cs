@@ -61,18 +61,6 @@ public class PartyManager : IDisposable {
                 });
             }
         }
-
-        if (!CheckDisband(session.CharacterId)) {
-            // Find new leader
-            if (session.CharacterId == Party.LeaderCharacterId) {
-                world.Party(new PartyRequest {
-                    RequestorId = session.CharacterId,
-                    UpdateLeader = new PartyRequest.Types.UpdateLeader {
-                        PartyId = Party.Id,
-                    },
-                });
-            }
-        }
     }
 
     public bool SetParty(PartyInfo info) {
@@ -102,7 +90,9 @@ public class PartyManager : IDisposable {
 
         var party = new Party(info.Id, leader) {
             CreationTime = info.CreationTime,
+            DungeonSet = info.DungeonSet,
             DungeonId = info.DungeonId,
+            DungeonLobbyRoomId = info.DungeonRoomId,
         };
         Party = party;
         foreach (PartyMember member in members) {
@@ -110,6 +100,8 @@ public class PartyManager : IDisposable {
         }
 
         session.Send(PartyPacket.Load(Party));
+
+        session.Dungeon.SetDungeon(Party.DungeonId, Party.DungeonLobbyRoomId, Party.DungeonSet);
 
         // Listening happens after loading the party
         foreach (PartyMember member in party.Members.Values) {
@@ -208,17 +200,17 @@ public class PartyManager : IDisposable {
         return true;
     }
 
-    public bool CheckDisband(long characterId) {
-        // Check if any other player is online
-        if (!Party!.Members.Values.Any(partyMember => partyMember.Info.Online && partyMember.CharacterId != characterId)) {
-            world.Party(new PartyRequest {
-                Disband = new PartyRequest.Types.Disband {
-                    PartyId = Id,
-                },
-            });
-            return true;
+    public void CheckDisband() {
+        if (Party == null) {
+            return;
         }
-        return false;
+
+        world.Party(new PartyRequest {
+            Disband = new PartyRequest.Types.Disband {
+                PartyId = Id,
+            },
+            RequestorId = session.CharacterId,
+        });
     }
 
     public void StartReadyCheck(long characterId) {
@@ -304,6 +296,9 @@ public class PartyManager : IDisposable {
         session.Dungeon.SetDungeon(dungeonId, dungeonRoomId, set);
 
         session.Send(PartyPacket.DungeonReset(set, dungeonId));
+        if (Party.DungeonId == 0) {
+            session.Send(PartyPacket.PartyNotice(PartyMessage.s_field_enteracne_party_notify_reset_dungeon, "Field_Enterance_Reset_Dungeon"));
+        }
     }
 
     public int GuildMemberCount() {

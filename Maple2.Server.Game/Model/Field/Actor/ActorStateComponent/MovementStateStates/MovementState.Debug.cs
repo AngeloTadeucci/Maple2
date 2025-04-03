@@ -3,7 +3,7 @@ using Maple2.Model.Metadata;
 using System.Numerics;
 using Maple2.Model.Game;
 
-namespace Maple2.Server.Game.Model.Field.Actor.ActorStateComponent;
+namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     private class DebugMarker {

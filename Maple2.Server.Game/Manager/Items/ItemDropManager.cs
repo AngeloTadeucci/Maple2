@@ -102,7 +102,7 @@ public class ItemDropManager {
 
         if (index > 0 && dropGroupId > 0) {
             if (entryDict.TryGetValue(dropGroupId, out IndividualDropItemTable.Entry? entry)) {
-                return GetAllGroups(session, level, new List<IndividualDropItemTable.Entry> { entry }, index).ToList();
+                return GetAllGroups(session, level, [entry], index).ToList();
             }
         }
         return GetAllGroups(session, level, entryDict.Values.ToList()).ToList();
@@ -239,7 +239,11 @@ public class ItemDropManager {
                 createdItem.Transfer?.Bind(character);
             }
 
-            // TODO: SockDataId, EnchantLevel, DisableBreak, Announce
+            if (selectedItem.EnchantLevel > 0) {
+                createdItem.Enchant = ItemEnchantManager.GetEnchant(field.ServerTableMetadata.EnchantOptionTable, createdItem, selectedItem.EnchantLevel);
+            }
+
+            // TODO: SockDataId, DisableBreak, Announce
 
             yield return createdItem;
         }

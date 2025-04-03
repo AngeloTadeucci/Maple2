@@ -30,7 +30,7 @@ public enum DungeonRoomError {
     s_room_dungeon_canEnterDayOfWeeks = 12,
     [Description("You are already in the hall.")]
     s_room_dungeon_AlreadyChaosHall = 13,
-    [Description("You are already $map:63000063$.")]
+    [Description("You are already Within the Anomaly.")]
     s_room_dungeon_AlreadyLapentaHall = 14,
     [Description("You are already in the Queen's Parlor.")]
     s_room_dungeon_AlreadyColosseumHall = 15,

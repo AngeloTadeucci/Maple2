@@ -134,7 +134,7 @@ public enum UgcMapError : byte {
     [Description("The duration cannot be extended yet.")]
     s_ugcmap_not_extension_date = 66,
     [Description("You do not have the necessary funds to extend the contract.")]
-    s_ugcmap_need_extansion_pay = 67,
+    s_ugcmap_need_extension_pay = 67,
     [Description("This area is waiting to be sold.")]
     s_ugcmap_expired_salable_group = 68,
     [Description("Please sell while outdoors.")]
