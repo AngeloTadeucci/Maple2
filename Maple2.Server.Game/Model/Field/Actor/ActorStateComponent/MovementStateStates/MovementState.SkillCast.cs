@@ -1,6 +1,4 @@
-﻿
-using Maple2.Model.Common;
-using Maple2.Model.Metadata;
+﻿using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Skill;
 using System.Numerics;
 using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
@@ -29,15 +27,13 @@ public partial class MovementState {
             actor.AppendDebugMessage(actor.AnimationState.PlayingSequence.Name);
         }
 
-        if (castSkill.Motion.AttackPoints.ContainsKey(keyName)) {
+        if (castSkill.Motion.AttackPoints.TryGetValue(keyName, out byte point)) {
             var targets = new List<IActor>();
 
             // TODO: change BattleState to track a list of targets for multi projectile skills & use that instead
             if (actor.BattleState.Target is not null) {
                 targets.Add(actor.BattleState.Target);
             }
-
-            byte point = castSkill.Motion.AttackPoints[keyName];
 
             if (point != 0xFF) {
                 actor.SkillState.SkillCastAttack(castSkill, point, targets);
@@ -126,12 +122,7 @@ public partial class MovementState {
             castMoveLastTick = castMoveTick;
         }
 
-        int searchRadius = Math.Max((int) Math.Ceiling(offset.Length()), 0) + 10;
-
-        Vector3 lastPosition = actor.Position;
-
-        actor.Navigation!.UpdatePosition();
-        actor.Position = actor.Navigation.FindClosestPoint(newPosition, searchRadius, actor.Position);
+        actor.Navigation!.UpdatePosition(newPosition);
 
         float timeStep = 0;
 

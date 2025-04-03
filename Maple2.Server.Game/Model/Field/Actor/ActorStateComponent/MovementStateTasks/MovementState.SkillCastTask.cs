@@ -120,7 +120,5 @@ public partial class MovementState {
         SetState(ActorState.PcSkill);
 
         stateSequence = sequence;
-
-        return;
     }
 }

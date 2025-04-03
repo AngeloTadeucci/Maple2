@@ -69,10 +69,8 @@ public partial class MovementState {
 
     private void StateWalkDirectionUpdate(long tickCount, long tickDelta, float delta) {
         Vector3 newPosition = actor.Position + delta * Speed * walkDirection;
-        int searchRadius = Math.Max((int) (delta * Speed * 1.1f), 10);
 
-        actor.Navigation!.UpdatePosition();
-        actor.Position = actor.Navigation.FindClosestPoint(newPosition, searchRadius);
+        actor.Navigation!.UpdatePosition(newPosition);
 
         Velocity = Speed * walkDirection;
 

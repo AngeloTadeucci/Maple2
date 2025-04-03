@@ -149,14 +149,6 @@ public partial class MovementState {
         }
     }
 
-    public void Died() {
-        SetState(ActorState.Dead);
-
-        UpdateControl();
-
-        Velocity = new Vector3(0, 0, 0);
-    }
-
     public void StateRegenEvent(string keyName) {
         switch (keyName) {
             case "end":
@@ -196,9 +188,7 @@ public partial class MovementState {
 
         Velocity = new Vector3(0, 0, 0);
 
-        if (actor.Stats.Values[BasicAttribute.Health].Current == 0) {
-            SetState(ActorState.Dead);
-
+        if (actor.IsDead) {
             return;
         }
 
