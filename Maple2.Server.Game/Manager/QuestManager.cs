@@ -521,7 +521,6 @@ public sealed class QuestManager {
         using GameStorage.Request db = session.GameStorage.Context();
         bool lastQuestFound = false;
         foreach (IGrouping<int, QuestMetadata> chapterQuests in chapterQuestsGroups.OrderBy(q => q.Key)) {
-            Console.WriteLine($"Chapter {chapterQuests.Key}");
             if (lastQuestFound) {
                 break;
             }
