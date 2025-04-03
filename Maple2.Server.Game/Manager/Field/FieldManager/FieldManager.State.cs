@@ -38,7 +38,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<int, FieldInstrument> fieldInstruments = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
-    private readonly ConcurrentDictionary<int, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
+    private readonly ConcurrentDictionary<string, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
     private readonly ConcurrentDictionary<int, FieldPlayerSpawnPoint> fieldPlayerSpawnPoints = new();
     private readonly ConcurrentDictionary<int, FieldSpawnGroup> fieldSpawnGroups = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
@@ -364,7 +364,7 @@ public partial class FieldManager {
             Rotation = metadata.Rotation,
         };
 
-        fieldSpawnPointNpcs[metadata.Id] = fieldSpawnPointNpc;
+        fieldSpawnPointNpcs[metadata.EntityId] = fieldSpawnPointNpc;
         fieldSpawnPointNpc.SpawnOnCreate();
         return fieldSpawnPointNpc;
     }
@@ -379,11 +379,10 @@ public partial class FieldManager {
     }
 
     public void ToggleNpcSpawnPoint(int spawnId) {
-        if (!fieldSpawnPointNpcs.TryGetValue(spawnId, out FieldSpawnPointNpc? fieldSpawnGroup)) {
-            return;
+        List<FieldSpawnPointNpc> spawns = fieldSpawnPointNpcs.Values.Where(spawn => spawn.Value.SpawnPointId == spawnId).ToList();
+        foreach (FieldSpawnPointNpc spawn in spawns) {
+            spawn.TriggerSpawn();
         }
-
-        fieldSpawnGroup.TriggerSpawn();
     }
 
     public void SpawnInteractObject(SpawnInteractObjectMetadata metadata) {

@@ -81,7 +81,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Debug.Assert(effect.Condition != null);
 
         foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, notifyField);
+            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, notifyField: notifyField);
         }
     }
 

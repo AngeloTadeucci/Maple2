@@ -38,7 +38,7 @@ public class Buff : IUpdatable, IByteSerializable {
 
     private readonly ILogger logger = Log.ForContext<Buff>();
 
-    public Buff(FieldManager field, AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner) {
+    public Buff(FieldManager field, AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, int duration) {
         this.field = field;
         Metadata = metadata;
         ObjectId = objectId;
@@ -49,19 +49,23 @@ public class Buff : IUpdatable, IByteSerializable {
         // Buffs with IntervalTick=0 will just proc a single time
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
-        Stack();
+        Stack(duration: duration);
         NextProcTick = StartTick + this.Metadata.Property.DelayTick + this.Metadata.Property.IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
         canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= StartTick;
     }
 
-    public bool Stack(int amount = 1) {
-        Stacks = Math.Min(Stacks + 1, Metadata.Property.MaxCount);
+    public bool Stack(int amount = 1, int duration = 0) {
+        Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
         StartTick = Environment.TickCount64;
 
         if (Stacks == 1 || Metadata.Property.ResetCondition != BuffResetCondition.PersistEndTick) {
             EndTick = StartTick + Metadata.Property.DurationTick;
+        }
+
+        if (duration > 0) {
+            EndTick = StartTick + duration;
         }
         return true;
     }

@@ -58,10 +58,14 @@ public class BuffManager : IUpdatable {
         }
     }
 
-    public void AddBuff(IActor caster, IActor owner, int id, short level, bool notifyField = true) {
+    public void AddBuff(IActor caster, IActor owner, int id, short level, int durationSec = -1, bool notifyField = true) {
         if (!owner.Field.SkillMetadata.TryGetEffect(id, level, out AdditionalEffectMetadata? additionalEffect)) {
             logger.Error("Invalid buff: {SkillId},{Level}", id, level);
             return;
+        }
+
+        if (durationSec < 0) {
+            durationSec = additionalEffect.Property.DurationTick;
         }
 
         // Check if immune to any present buffs
@@ -93,8 +97,7 @@ public class BuffManager : IUpdatable {
             }
         }
 
-
-        var buff = new Buff(owner.Field, additionalEffect, NextLocalId(), caster, owner);
+        var buff = new Buff(owner.Field, additionalEffect, NextLocalId(), caster, owner, durationSec);
         if (!Buffs.TryAdd(id, buff)) {
             Buffs[id].Stack();
             owner.Field.Broadcast(BuffPacket.Update(buff));

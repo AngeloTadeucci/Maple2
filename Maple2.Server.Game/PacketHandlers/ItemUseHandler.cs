@@ -102,7 +102,10 @@ public class ItemUseHandler : PacketHandler<GameSession> {
                 HandleOpenMassive(session, packet, item);
                 break;
             case ItemFunction.DefenseGuard:
-                HandleDefenseGuard(session, packet, item);
+                HandleDefenseGuard(session, item);
+                break;
+            case ItemFunction.LevelPotion:
+                HandleLevelPotion(session, item);
                 break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
@@ -258,7 +261,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int[] buddyBadgeBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? Array.Empty<int>();
+        int[] buddyBadgeBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
         if (buddyBadgeBoxParams.Length != 2) {
             session.Send(NoticePacket.MessageBox(StringCode.s_couple_effect_error_openbox_unknown));
             Logger.Error("Invalid buddy badge box parameters: {Parameters}", item.Metadata.Function?.Parameters);
@@ -485,7 +488,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         session.Field.UsePortal(session, portal.Value.Id, password);
     }
 
-    private static void HandleDefenseGuard(GameSession session, IByteReader packet, Item item) {
+    private static void HandleDefenseGuard(GameSession session, Item item) {
         int[] npcParameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
         if (npcParameters.Length < 3) {
             return;
@@ -508,6 +511,38 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
         session.Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
         session.Field.RemoveNpc(fieldNpc.ObjectId, (int) TimeSpan.FromSeconds(lifeSpanSeconds).TotalMilliseconds);
+        session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private static void HandleLevelPotion(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("targetLevel") || !short.TryParse(xmlParameters["targetLevel"], out short level)) {
+            return;
+        }
+
+        int lastClearEpicQuestId = 0;
+        if (xmlParameters.TryGetValue("lastClearEpic", out string? lastEpicQuestId) && !int.TryParse(lastEpicQuestId, out lastClearEpicQuestId)) {
+            lastClearEpicQuestId = 0;
+        }
+
+        int currentLevel = session.Player.Value.Character.Level;
+        session.Player.Value.Character.Level = level;
+        session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
+        session.Stats.Refresh();
+
+        session.Quest.LevelPotion(level - 1, lastClearEpicQuestId);
+
+        for (int i = currentLevel; i < level; i++) {
+            session.ConditionUpdate(ConditionType.level, targetLong: i);
+        }
+
+        session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = session.AccountId,
+            CharacterId = session.CharacterId,
+            Level = level,
+            Async = true,
+        });
+
         session.Item.Inventory.Consume(item.Uid, 1);
     }
 }

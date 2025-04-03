@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Maple2.Database.Context;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,6 +44,20 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
         lock (Context) {
             return Context.QuestMetadata
                 .FromSqlRaw($"SELECT * FROM `quest` WHERE JSON_EXTRACT(Basic, '$.StartNpc')={npcId}")
+                .ToList();
+        }
+    }
+
+    public IEnumerable<QuestMetadata> GetQuestsByType(QuestType type) {
+        lock (Context) {
+            if (type == QuestType.EpicQuest) {
+                // Type is not saved because EpicQuest value is 0.
+                return Context.QuestMetadata
+                    .FromSqlRaw($@"SELECT * FROM `quest` WHERE JSON_UNQUOTE(JSON_EXTRACT(Basic, '$.Type')) IS NULL")
+                    .ToList();
+            }
+            return Context.QuestMetadata
+                .FromSqlRaw($"SELECT * FROM `quest` WHERE JSON_EXTRACT(Basic, '$.Type')={(int) type}")
                 .ToList();
         }
     }

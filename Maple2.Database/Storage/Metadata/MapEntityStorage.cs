@@ -75,17 +75,17 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                         regionSkills.Add(regionSkill);
                         break;
                     case SpawnPointPC playerSpawn:
-                        playerSpawns[playerSpawn.Id] = playerSpawn;
+                        playerSpawns[playerSpawn.SpawnPointId] = playerSpawn;
                         break;
                     case SpawnPointNPC npcSpawn:
                         if (npcSpawn is EventSpawnPointNPC eventNpcSpawn) {
-                            eventNpcSpawns.Add(eventNpcSpawn.Id, eventNpcSpawn);
+                            eventNpcSpawns.Add(eventNpcSpawn.SpawnPointId, eventNpcSpawn);
                         } else {
                             npcSpawns.Add(npcSpawn);
                         }
                         break;
                     case EventSpawnPointItem eventItemSpawn:
-                        eventItemSpawns.Add(eventItemSpawn.Id, eventItemSpawn);
+                        eventItemSpawns.Add(eventItemSpawn.SpawnPointId, eventItemSpawn);
                         break;
                     case TaxiStation taxiStation:
                         Debug.Assert(taxi == null, $"Multiple taxi stations found in xblock:{xblock}");
