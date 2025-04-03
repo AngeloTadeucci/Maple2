@@ -564,6 +564,7 @@ public sealed class QuestManager {
                     continue;
                 }
                 Add(epicQuest);
+                TryJobAdvance(epicQuest.Id);
                 CompleteChapter(epicQuest.Id, true);
 
                 if (epicQuest.Id == lastQuest) {
@@ -575,7 +576,6 @@ public sealed class QuestManager {
 
         //TODO: Start and load fame quests
         Load();
-        session.Send(QuestPacket.LoadQuests([]));
     }
 
     public void Save(GameStorage.Request db) {
