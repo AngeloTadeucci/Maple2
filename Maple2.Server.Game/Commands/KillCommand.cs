@@ -16,10 +16,7 @@ public class KillCommand : Command {
     private const string NAME = "kill";
     private const string DESCRIPTION = "Kill NPCs and/or Mobs.";
 
-    private readonly GameSession session;
-
     public KillCommand(GameSession session) : base(NAME, DESCRIPTION) {
-        this.session = session;
         AddCommand(new KillAllNpcCommand(session));
         AddCommand(new KillNearNpcCommand(session));
     }
@@ -103,12 +100,11 @@ public class KillCommand : Command {
                     ctx.Console.Out.WriteLine($"Killing {npc.Value.Metadata.Name} - ObjectId: ({npc.ObjectId})");
                     Kill(session, npc, skill);
                 };
-
             }
         }
     }
 
-    public static void Kill(GameSession session, FieldNpc npc, SkillMetadata skill) {
+    private static void Kill(GameSession session, FieldNpc npc, SkillMetadata skill) {
         var damageRecord = new DamageRecord(skill, skill.Data.Motions[0].Attacks[0]) {
             CasterId = session.Player.ObjectId,
             TargetUid = ((long) Random.Shared.Next(int.MinValue, int.MaxValue) << 32) | (uint) Random.Shared.Next(int.MinValue, int.MaxValue),
