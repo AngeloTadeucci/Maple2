@@ -99,7 +99,7 @@ public class KillCommand : Command {
                 if (prism.Intersects(npc.Shape)) {
                     ctx.Console.Out.WriteLine($"Killing {npc.Value.Metadata.Name} - ObjectId: ({npc.ObjectId})");
                     Kill(session, npc, skill);
-                };
+                }
             }
         }
     }
