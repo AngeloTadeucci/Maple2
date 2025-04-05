@@ -247,6 +247,19 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Buddy.Load();
 
+        try {
+            PlayerConfigResponse configResponse = World.PlayerConfig(new PlayerConfigRequest {
+            Get = new PlayerConfigRequest.Types.Get(),
+            RequesterId = CharacterId,
+        });
+            long currentTick = Environment.TickCount64;
+            Buffs.SetCacheBuffs(configResponse.Buffs, currentTick);
+            Config.SetCacheSkillCooldowns(configResponse.SkillCooldowns, currentTick);
+
+        } catch (RpcException ex) {
+            Logger.Warning(ex, "Failed to load cache player config");
+        }
+
         Send(SurvivalPacket.UpdateStats(player.Account));
 
         Send(TimeSyncPacket.Reset(DateTimeOffset.UtcNow));
@@ -724,6 +737,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 club.Dispose();
             }
 
+            SaveCacheConfig();
             using (GameStorage.Request db = GameStorage.Context()) {
                 db.BeginTransaction();
                 db.SavePlayer(Player);
@@ -740,6 +754,44 @@ public sealed partial class GameSession : Core.Network.Session {
             }
 
             base.Dispose(disposing);
+        }
+        return;
+
+        void SaveCacheConfig() {
+            List<Buff> buffs = Buffs.GetSaveCacheBuffs();
+            IList<SkillCooldown> skillCooldowns = Config.GetCurrentSkillCooldowns();
+
+            long stopTime = DateTime.Now.ToEpochSeconds();
+            long fieldTick = Field.FieldTick;
+            try {
+                PlayerConfigResponse _ = World.PlayerConfig(new PlayerConfigRequest {
+                    Save = new PlayerConfigRequest.Types.Save {
+                        Buffs = {
+                            buffs.Select(buff => new BuffInfo {
+                                Id = buff.Id,
+                                Level = buff.Level,
+                                MsRemaining = (int) (buff.EndTick - fieldTick),
+                                Stacks = buff.Stacks,
+                                Enabled = buff.Enabled,
+                                StopTime = stopTime,
+                            }),
+                        },
+                        SkillCooldowns = {
+                            skillCooldowns.Select(cooldown => new SkillCooldownInfo {
+                                SkillId = cooldown.SkillId,
+                                SkillLevel = cooldown.Level,
+                                GroupId = cooldown.GroupId,
+                                MsRemaining = (int) (cooldown.EndTick - fieldTick),
+                                StopTime = stopTime,
+                                Charges = cooldown.Charges,
+                            }),
+                        },
+                    },
+                    RequesterId = CharacterId,
+                });
+            } catch (Exception ex) {
+                Logger.Error(ex, "Error saving buffs for {Player}", PlayerName);
+            }
         }
     }
     #endregion

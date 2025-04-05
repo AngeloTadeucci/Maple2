@@ -372,13 +372,14 @@ public partial class TriggerContext {
             return;
         }
 
+        long startTick = Field.FieldTick;
         if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxIds)) {
-                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level);
+                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level, startTick);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxIds)) {
-                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level);
+                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level, startTick);
             }
         }
     }

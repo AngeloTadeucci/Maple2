@@ -21,7 +21,7 @@ public interface IActor : IFieldEntity {
     public bool IsDead { get; }
     public IPrism Shape { get; }
 
-    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect) { }
+    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, long startTick) { }
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) { }
 
     public virtual void TargetAttack(SkillRecord record) { }

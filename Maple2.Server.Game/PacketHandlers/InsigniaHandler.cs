@@ -62,7 +62,7 @@ public class InsigniaHandler : PacketHandler<GameSession> {
         }
 
         if (display && newInsigniaMetadata.BuffId > 0) {
-            session.Player.Buffs.AddBuff(session.Player, session.Player, newInsigniaMetadata.BuffId, newInsigniaMetadata.BuffLevel);
+            session.Player.Buffs.AddBuff(session.Player, session.Player, newInsigniaMetadata.BuffId, newInsigniaMetadata.BuffLevel, session.Field.FieldTick);
         }
 
         session.Field.Broadcast(InsigniaPacket.Update(session.Player.ObjectId, insigniaId, display));

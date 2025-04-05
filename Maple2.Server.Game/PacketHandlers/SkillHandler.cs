@@ -154,17 +154,18 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         session.Player.InBattle = metadata.State.InBattle;
         session.ActiveSkills.Add(record);
-        session.Field?.Broadcast(SkillPacket.Use(record));
+        session.Field.Broadcast(SkillPacket.Use(record));
 
-        SkillMetadataMotionProperty motion = metadata.Data.Motions[0].MotionProperty;
+        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
 
         session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
 
+        long startTick = session.Field.FieldTick;
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
-            session.Player.ApplyEffect(session.Player, session.Player, effect);
+            session.Player.ApplyEffect(session.Player, session.Player, effect, startTick);
         }
 
-        session.Config.SaveSkillCooldown(metadata);
+        session.Config.SaveSkillCooldown(metadata, startTick);
     }
 
     private void HandlePoint(GameSession session, IByteReader packet) {

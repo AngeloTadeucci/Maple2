@@ -28,6 +28,7 @@ public record AdditionalEffectMetadataProperty(
     int IntervalTick,
     int DelayTick,
     int MaxCount,
+    bool UseInGameTime,
     bool KeepOnDeath,
     bool RemoveOnLogout,
     bool RemoveOnLeaveField,

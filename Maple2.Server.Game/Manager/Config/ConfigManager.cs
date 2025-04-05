@@ -6,8 +6,10 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.World.Service;
 
 namespace Maple2.Server.Game.Manager.Config;
 
@@ -51,7 +53,6 @@ public class ConfigManager {
             IList<int>? FavoriteStickers,
             IList<long>? FavoriteDesigners,
             IDictionary<LapenshardSlot, int>? Lapenshards,
-            IList<SkillCooldown>? SkillCooldowns,
             long deathPenaltyTick,
             int DeathCounter,
             int ExplorationProgress,
@@ -88,15 +89,6 @@ public class ConfigManager {
         deathPenaltyTick = load.deathPenaltyTick;
         DeathCount = load.DeathCounter;
         ExplorationProgress = load.ExplorationProgress;
-
-        if (load.SkillCooldowns != null) {
-            foreach (SkillCooldown cooldown in load.SkillCooldowns) {
-                if (Environment.TickCount64 > cooldown.EndTick) {
-                    continue;
-                }
-                skillCooldowns[cooldown.SkillId] = cooldown;
-            }
-        }
 
         statAttributes = new StatAttributes();
         if (load.StatPoints != null) {
@@ -166,16 +158,29 @@ public class ConfigManager {
     }
 
     #region SkillCooldowns
-    public void SaveSkillCooldown(SkillMetadata skill) {
-        var cooldown = new SkillCooldown(skill.Id) {
-            EndTick = (long) (skill.Data.Condition.CooldownTime * TimeSpan.FromSeconds(1).TotalMilliseconds) + Environment.TickCount64,
-            OriginSkillId = skill.Data.Change?.Origin.Id ?? 0,
-        };
-        skillCooldowns[skill.Id] = cooldown;
+    public void SetCacheSkillCooldowns(IList<SkillCooldownInfo> cooldowns, long currentTick) {
+        foreach (SkillCooldownInfo cooldown in cooldowns) {
+            skillCooldowns[cooldown.SkillId] = new SkillCooldown(cooldown.SkillId, (short) cooldown.SkillLevel) {
+                EndTick = currentTick + cooldown.MsRemaining,
+                GroupId = cooldown.GroupId,
+            };
+        }
+    }
+    public void SaveSkillCooldown(SkillMetadata skill, long startTick) {
+        if (!skillCooldowns.TryGetValue(skill.Id, out SkillCooldown? cooldown) || startTick > cooldown.EndTick) {
+            cooldown = new SkillCooldown(skill.Id, skill.Level) {
+                EndTick = (long) (skill.Data.Condition.CooldownTime * TimeSpan.FromSeconds(1).TotalMilliseconds) + startTick,
+                GroupId = skill.State.CooldownGroupId,
+            };
+            skillCooldowns[skill.Id] = cooldown;
+        }
+        if (skill.State.RechargeMaxCount > 0) {
+            cooldown.Charges = Math.Clamp(cooldown.Charges + 1, cooldown.Charges, skill.State.RechargeMaxCount);
+        }
     }
 
-    public void SetSkillCooldown(int skillId, int endTick = 0) {
-        var cooldown = new SkillCooldown(skillId) {
+    public void SetSkillCooldown(int skillId, short level, int endTick = 0) {
+        var cooldown = new SkillCooldown(skillId, level) {
             EndTick = endTick,
         };
         skillCooldowns[skillId] = cooldown;
@@ -230,7 +235,7 @@ public class ConfigManager {
     public void RefreshPremiumClubBuffs() {
         if (session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds()) {
             foreach ((int buffId, PremiumClubTable.Buff buff) in session.TableMetadata.PremiumClubTable.Buffs) {
-                session.Player.Buffs.AddBuff(session.Player, session.Player, buff.Id, buff.Level);
+                session.Player.Buffs.AddBuff(session.Player, session.Player, buff.Id, buff.Level, session.Field.FieldTick);
             }
         }
     }

@@ -5,17 +5,20 @@ namespace Maple2.Model.Game;
 
 public class SkillCooldown : IByteSerializable {
     public readonly int SkillId;
-    public int OriginSkillId { get; init; }
+    public readonly short Level;
+    public int GroupId { get; init; }
     public long EndTick;
+    public int Charges;
 
-    public SkillCooldown(int skillId) {
+    public SkillCooldown(int skillId, short level) {
         SkillId = skillId;
+        Level = level;
     }
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(SkillId);
-        writer.WriteInt(OriginSkillId);
+        writer.WriteInt(GroupId);
         writer.WriteInt((int) EndTick);
-        writer.WriteInt(); // Unknown Tick. Origin Skill tick maybe?
+        writer.WriteInt(Charges);
     }
 }

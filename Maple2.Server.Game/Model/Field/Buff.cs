@@ -11,7 +11,7 @@ using Serilog;
 namespace Maple2.Server.Game.Model;
 
 public class Buff : IUpdatable, IByteSerializable {
-    private readonly FieldManager field;
+    private FieldManager Field => Owner.Field;
     public readonly AdditionalEffectMetadata Metadata;
     public readonly int ObjectId;
     public long CastUid { get; set; }
@@ -38,8 +38,7 @@ public class Buff : IUpdatable, IByteSerializable {
 
     private readonly ILogger logger = Log.ForContext<Buff>();
 
-    public Buff(FieldManager field, AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, int duration) {
-        this.field = field;
+    public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, int durationMs) {
         Metadata = metadata;
         ObjectId = objectId;
 
@@ -49,23 +48,19 @@ public class Buff : IUpdatable, IByteSerializable {
         // Buffs with IntervalTick=0 will just proc a single time
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
-        Stack(duration: duration);
-        NextProcTick = StartTick + this.Metadata.Property.DelayTick + this.Metadata.Property.IntervalTick;
+        Stack(startTick, durationMs: durationMs);
+        NextProcTick = startTick + Metadata.Property.DelayTick + Metadata.Property.IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
-        canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= StartTick;
+        canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= startTick;
     }
 
-    public bool Stack(int amount = 1, int duration = 0) {
+    public bool Stack(long startTick, int amount = 1, int durationMs = 0) {
         Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
-        StartTick = Environment.TickCount64;
+        StartTick = startTick;
 
         if (Stacks == 1 || Metadata.Property.ResetCondition != BuffResetCondition.PersistEndTick) {
-            EndTick = StartTick + Metadata.Property.DurationTick;
-        }
-
-        if (duration > 0) {
-            EndTick = StartTick + duration;
+            EndTick = StartTick + durationMs;
         }
         return true;
     }
@@ -113,7 +108,7 @@ public class Buff : IUpdatable, IByteSerializable {
         if (Enabled != enabled) {
             Enabled = enabled;
             if (notifyField) {
-                field.Broadcast(BuffPacket.Update(this));
+                Field.Broadcast(BuffPacket.Update(this));
             }
         }
 
@@ -140,17 +135,17 @@ public class Buff : IUpdatable, IByteSerializable {
                 // logger.Error("Buff Condition-Effect unimplemented from {Id} on {Owner}", Id, Owner.ObjectId);
                 switch (effect.Condition.Target) {
                     case SkillEntity.Target:
-                        Owner.ApplyEffect(Caster, Owner, effect);
+                        Owner.ApplyEffect(Caster, Owner, effect, Field.FieldTick);
                         break;
                     case SkillEntity.Caster:
-                        Caster.ApplyEffect(Caster, Owner, effect);
+                        Caster.ApplyEffect(Caster, Owner, effect, Field.FieldTick);
                         break;
                     default:
                         logger.Error("Invalid Buff Target: {Target}", effect.Condition.Target);
                         break;
                 }
             } else if (effect.Splash != null) {
-                field.AddSkill(Caster, effect, [Owner.Position], Owner.Rotation);
+                Caster.Field.AddSkill(Caster, effect, [Owner.Position], Owner.Rotation);
             }
         }
 
@@ -181,9 +176,9 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         if (updated.Count > 0) {
-            field.Broadcast(StatsPacket.Update(Owner, updated.ToArray()));
+            Field.Broadcast(StatsPacket.Update(Owner, updated.ToArray()));
         }
-        field.Broadcast(SkillDamagePacket.Heal(record));
+        Field.Broadcast(SkillDamagePacket.Heal(record));
     }
 
     private void ApplyDotDamage() {
@@ -212,11 +207,11 @@ public class Buff : IUpdatable, IByteSerializable {
             return;
         }
 
-        field.Broadcast(StatsPacket.Update(Owner, targetUpdated.ToArray()));
-        field.Broadcast(SkillDamagePacket.DotDamage(record));
+        Field.Broadcast(StatsPacket.Update(Owner, targetUpdated.ToArray()));
+        Field.Broadcast(SkillDamagePacket.DotDamage(record));
         if (record.RecoverHp != 0) {
             Caster.Stats.Values[BasicAttribute.Health].Add(record.RecoverHp);
-            field.Broadcast(StatsPacket.Update(Caster, BasicAttribute.Health));
+            Field.Broadcast(StatsPacket.Update(Caster, BasicAttribute.Health));
         }
     }
 
@@ -227,9 +222,9 @@ public class Buff : IUpdatable, IByteSerializable {
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
         if (dotBuff.Target == SkillEntity.Target) {
-            Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         } else {
-            Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level);
+            Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         }
     }
 
@@ -271,7 +266,7 @@ public class Buff : IUpdatable, IByteSerializable {
             if (NextProcTick < EndTick) {
                 canProc = true;
             }
-            field.Broadcast(BuffPacket.Update(buff));
+            Field.Broadcast(BuffPacket.Update(buff));
         }
     }
 

@@ -56,7 +56,7 @@ public class BuffCommand : Command {
                     } else {
                         player.Buffs.AddBuff(session.Player, player, buffId, (short) level, duration);
                         if (stack > 1) {
-                            player.Buffs.Buffs[buffId].Stack(stack);
+                            player.Buffs.Buffs[buffId].Stack(player.Field.FieldTick, stack);
                             session.Field?.Broadcast(BuffPacket.Update(player.Buffs.Buffs[buffId]));
                         }
                     }
@@ -76,7 +76,7 @@ public class BuffCommand : Command {
                 }
                 player.Buffs.AddBuff(session.Player, player, buffId, (short) level, duration);
                 if (stack > 1) {
-                    player.Buffs.Buffs[buffId].Stack(stack);
+                    player.Buffs.Buffs[buffId].Stack(player.Field.FieldTick, stack);
                     session.Field.Broadcast(BuffPacket.Update(player.Buffs.Buffs[buffId]));
                 }
             } else {
@@ -86,7 +86,7 @@ public class BuffCommand : Command {
                 }
                 session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, duration);
                 if (stack > 1) {
-                    session.Player.Buffs.Buffs[buffId].Stack(stack);
+                    session.Player.Buffs.Buffs[buffId].Stack(session.Field.FieldTick, stack);
                     session.Field?.Broadcast(BuffPacket.Update(session.Player.Buffs.Buffs[buffId]));
                 }
             }

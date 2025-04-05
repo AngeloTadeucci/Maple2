@@ -81,7 +81,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Debug.Assert(effect.Condition != null);
 
         foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, notifyField: notifyField);
+            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, Field.FieldTick, notifyField: notifyField);
         }
     }
 
@@ -137,7 +137,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         if (record.Counter >= record.Metadata.Count) {
             Buffs.Remove(record.SourceBuffId);
         }
-        target.Buffs.AddBuff(this, target, record.Metadata.EffectId, record.Metadata.EffectLevel);
+        target.Buffs.AddBuff(this, target, record.Metadata.EffectId, record.Metadata.EffectLevel, Field.FieldTick);
 
         // TODO: Reflect should also amend the target's damage record from Reflect.ReflectValues and ReflectRates
     }
@@ -165,12 +165,13 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
         Field.Broadcast(SkillDamagePacket.Damage(damage));
 
+        long startTick = Field.FieldTick;
         foreach (SkillEffectMetadata effect in record.Attack.Skills) {
             if (effect.Condition != null) {
                 foreach (IActor actor in record.Targets) {
                     IActor owner = GetTarget(effect.Condition.Target, record.Caster, actor);
                     if (effect.Condition.Condition.Check(record.Caster, owner, actor)) {
-                        actor.ApplyEffect(record.Caster, owner, effect);
+                        actor.ApplyEffect(record.Caster, owner, effect, startTick);
                     }
                 }
             } else if (effect.Splash != null) {
@@ -181,9 +182,9 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         }
     }
 
-    public virtual void ApplyEffect(IActor caster, IActor target, SkillEffectMetadata effect) {
+    public virtual void ApplyEffect(IActor caster, IActor target, SkillEffectMetadata effect, long startTick) {
         foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, target, skill.Id, skill.Level);
+            Buffs.AddBuff(caster, target, skill.Id, skill.Level, startTick);
         }
     }
 
