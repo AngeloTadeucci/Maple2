@@ -71,7 +71,7 @@ public class PlayerConfigLookUp {
             }
 
             if (!metadata.Property.UseInGameTime) {
-                long msSurpassed = (long) ((currentTime - buffInfo.StopTime) * TimeSpan.FromMilliseconds(1).TotalMilliseconds);
+                long msSurpassed = (long) ((currentTime - buffInfo.StopTime) * TimeSpan.FromSeconds(1).TotalMilliseconds);
                 if (msSurpassed > buffInfo.MsRemaining) {
                     removeBuffs.Add(buffInfo);
                 } else {
@@ -99,7 +99,7 @@ public class PlayerConfigLookUp {
             }
 
             if (!skillMetadata.State.UseInGameTime) {
-                long msSurpassed = (long) ((currentTime - skillCooldownInfo.StopTime) * TimeSpan.FromMilliseconds(1).TotalMilliseconds);
+                long msSurpassed = (long) ((currentTime - skillCooldownInfo.StopTime) * TimeSpan.FromSeconds(1).TotalMilliseconds);
                 if (msSurpassed > skillCooldownInfo.MsRemaining) {
                     removeSkillCooldowns.Add(skillCooldownInfo);
                 } else {

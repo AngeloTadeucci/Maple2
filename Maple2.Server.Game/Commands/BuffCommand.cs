@@ -46,7 +46,7 @@ public class BuffCommand : Command {
             }
 
             if (duration > 0) {
-                duration = (int) TimeSpan.FromMilliseconds(1).TotalMilliseconds * duration;
+                duration = (int) TimeSpan.FromSeconds(1).TotalMilliseconds * duration;
             }
 
             long startTick = session.Field.FieldTick;
