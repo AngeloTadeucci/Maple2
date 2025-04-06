@@ -64,7 +64,7 @@ public class PlayerConfigLookUp {
             return [];
         }
 
-        var removeBuffs =  new List<BuffInfo>();
+        var removeBuffs = new List<BuffInfo>();
         foreach (BuffInfo buffInfo in list.Values) {
             if (!skillMetadataStorage.TryGetEffect(buffInfo.Id, (short) buffInfo.Level, out AdditionalEffectMetadata? metadata)) {
                 throw new InvalidDataException($"Buff not found: {buffInfo.Id}, level: {buffInfo.Level}");
@@ -99,7 +99,7 @@ public class PlayerConfigLookUp {
 
         var removeSkillCooldowns = new List<SkillCooldownInfo>();
         foreach (SkillCooldownInfo skillCooldownInfo in list.Values) {
-            if (!skillMetadataStorage.TryGet(skillCooldownInfo.SkillId, (short) skillCooldownInfo.SkillLevel,  out SkillMetadata? skillMetadata)) {
+            if (!skillMetadataStorage.TryGet(skillCooldownInfo.SkillId, (short) skillCooldownInfo.SkillLevel, out SkillMetadata? skillMetadata)) {
                 throw new InvalidDataException($"Skill not found: {skillCooldownInfo.SkillId}");
             }
 

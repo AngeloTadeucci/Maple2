@@ -249,9 +249,9 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             PlayerConfigResponse configResponse = World.PlayerConfig(new PlayerConfigRequest {
-            Get = new PlayerConfigRequest.Types.Get(),
-            RequesterId = CharacterId,
-        });
+                Get = new PlayerConfigRequest.Types.Get(),
+                RequesterId = CharacterId,
+            });
             long currentTick = Environment.TickCount64;
             Buffs.SetCacheBuffs(configResponse.Buffs, currentTick);
             Config.SetCacheSkillCooldowns(configResponse.SkillCooldowns, currentTick);
