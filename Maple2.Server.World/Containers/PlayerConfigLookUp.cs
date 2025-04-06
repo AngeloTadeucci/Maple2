@@ -65,22 +65,17 @@ public class PlayerConfigLookUp {
         }
 
         var removeBuffs = new List<BuffInfo>();
-        foreach (BuffInfo buffInfo in list.Values) {
+        foreach ((int buffId, BuffInfo buffInfo) in list) {
             if (!skillMetadataStorage.TryGetEffect(buffInfo.Id, (short) buffInfo.Level, out AdditionalEffectMetadata? metadata)) {
                 throw new InvalidDataException($"Buff not found: {buffInfo.Id}, level: {buffInfo.Level}");
             }
 
-            long msPassed = currentTime - buffInfo.StopTime;
-            if (metadata.Property.UseInGameTime) {
-                long msSurpassed = (currentTime - buffInfo.StopTime) * 1000;
+            if (!metadata.Property.UseInGameTime) {
+                long msSurpassed = (long) ((currentTime - buffInfo.StopTime) * TimeSpan.FromMilliseconds(1).TotalMilliseconds);
                 if (msSurpassed > buffInfo.MsRemaining) {
                     removeBuffs.Add(buffInfo);
                 } else {
                     buffInfo.MsRemaining -= (int) msSurpassed;
-                }
-            } else {
-                if (msPassed > buffInfo.MsRemaining) {
-                    removeBuffs.Add(buffInfo);
                 }
             }
         }
@@ -98,23 +93,18 @@ public class PlayerConfigLookUp {
         }
 
         var removeSkillCooldowns = new List<SkillCooldownInfo>();
-        foreach (SkillCooldownInfo skillCooldownInfo in list.Values) {
+        foreach ((int skillId, SkillCooldownInfo skillCooldownInfo) in list) {
             if (!skillMetadataStorage.TryGet(skillCooldownInfo.SkillId, (short) skillCooldownInfo.SkillLevel, out SkillMetadata? skillMetadata)) {
                 throw new InvalidDataException($"Skill not found: {skillCooldownInfo.SkillId}");
             }
 
-            long msPassed = currentTime - skillCooldownInfo.StopTime;
-            if (skillMetadata.State.UseInGameTime) {
-                long msSurpassed = (currentTime - skillCooldownInfo.StopTime) * 1000;
+            if (!skillMetadata.State.UseInGameTime) {
+                long msSurpassed = (long) ((currentTime - skillCooldownInfo.StopTime) * TimeSpan.FromMilliseconds(1).TotalMilliseconds);
                 if (msSurpassed > skillCooldownInfo.MsRemaining) {
                     removeSkillCooldowns.Add(skillCooldownInfo);
                 } else {
                     skillCooldownInfo.MsRemaining -= (int) msSurpassed;
                 }
-            }
-
-            if (msPassed > skillCooldownInfo.MsRemaining) {
-                removeSkillCooldowns.Add(skillCooldownInfo);
             }
         }
 
