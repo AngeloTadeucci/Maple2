@@ -525,7 +525,7 @@ public class AiState {
             return;
         }
 
-        target.Buffs.AddBuff(actor, actor, node.Id, node.Level);
+        target.Buffs.AddBuff(actor, actor, node.Id, node.Level, actor.Field.FieldTick);
     }
 
     private void ProcessNode(TargetEffectNode node) {

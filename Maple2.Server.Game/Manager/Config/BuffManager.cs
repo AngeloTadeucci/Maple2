@@ -1,11 +1,14 @@
 ﻿using System.Collections.Concurrent;
+using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
+using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -58,14 +61,14 @@ public class BuffManager : IUpdatable {
         }
     }
 
-    public void AddBuff(IActor caster, IActor owner, int id, short level, int durationSec = -1, bool notifyField = true) {
+    public void AddBuff(IActor caster, IActor owner, int id, short level, long startTick, int durationMs = -1, bool notifyField = true) {
         if (!owner.Field.SkillMetadata.TryGetEffect(id, level, out AdditionalEffectMetadata? additionalEffect)) {
             logger.Error("Invalid buff: {SkillId},{Level}", id, level);
             return;
         }
 
-        if (durationSec < 0) {
-            durationSec = additionalEffect.Property.DurationTick;
+        if (durationMs < 0) {
+            durationMs = additionalEffect.Property.DurationTick;
         }
 
         // Check if immune to any present buffs
@@ -79,7 +82,7 @@ public class BuffManager : IUpdatable {
             if (level > existing.Level) {
 
             }
-            if (!existing.Stack()) {
+            if (!existing.Stack(startTick)) {
                 return;
             }
             if (notifyField) {
@@ -97,9 +100,9 @@ public class BuffManager : IUpdatable {
             }
         }
 
-        var buff = new Buff(owner.Field, additionalEffect, NextLocalId(), caster, owner, durationSec);
+        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, durationMs);
         if (!Buffs.TryAdd(id, buff)) {
-            Buffs[id].Stack();
+            Buffs[id].Stack(startTick);
             owner.Field.Broadcast(BuffPacket.Update(buff));
             return;
         }
@@ -309,7 +312,7 @@ public class BuffManager : IUpdatable {
 
     private void AddMapBuffs() {
         foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
-            AddBuff(Actor, Actor, buff.Id, buff.Level);
+            AddBuff(Actor, Actor, buff.Id, buff.Level, Actor.Field.FieldTick);
         }
 
         if (Actor.Field.Metadata.Property.Type == MapType.Pvp) {
@@ -325,21 +328,21 @@ public class BuffManager : IUpdatable {
         }
 
         if (Actor.Field.Metadata.Property.Region == MapRegion.ShadowWorld) {
-            AddBuff(Actor, Actor, Constant.shadowWorldBuffHpUp, 1);
-            AddBuff(Actor, Actor, Constant.shadowWorldBuffMoveProtect, 1);
+            AddBuff(Actor, Actor, Constant.shadowWorldBuffHpUp, 1, Actor.Field.FieldTick);
+            AddBuff(Actor, Actor, Constant.shadowWorldBuffMoveProtect, 1, Actor.Field.FieldTick);
         }
     }
 
     public void AddItemBuffs(Item item) {
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-            AddBuff(Actor, Actor, buff.Id, buff.Level);
+            AddBuff(Actor, Actor, buff.Id, buff.Level, Actor.Field.FieldTick);
         }
 
         if (item.Socket != null) {
             foreach (ItemGemstone? gem in item.Socket.Sockets) {
                 if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
                     foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
-                        AddBuff(Actor, Actor, buff.Id, buff.Level);
+                        AddBuff(Actor, Actor, buff.Id, buff.Level, Actor.Field.FieldTick);
                     }
                 }
             }
@@ -358,6 +361,23 @@ public class BuffManager : IUpdatable {
                         Remove(buff.Id);
                     }
                 }
+            }
+        }
+    }
+
+    public void SetCacheBuffs(IList<BuffInfo> buffs, long currentTick) {
+        if (Actor is not FieldPlayer player) {
+            return;
+        }
+
+        foreach (BuffInfo info in buffs) {
+            if (!player.Field.SkillMetadata.TryGetEffect(info.Id, (short) info.Level, out AdditionalEffectMetadata? additionalEffect)) {
+                logger.Error("Invalid buff: {SkillId},{Level}", info.Id, info.Level);
+                continue;
+            }
+
+            if (additionalEffect.Property.UseInGameTime || info.MsRemaining > 0) {
+                AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.MsRemaining);
             }
         }
     }
@@ -405,5 +425,9 @@ public class BuffManager : IUpdatable {
         }
 
         return true;
+    }
+
+    public List<Buff> GetSaveCacheBuffs() {
+        return Buffs.Values.Where(buff => !buff.Metadata.Property.RemoveOnLogout).ToList();
     }
 }

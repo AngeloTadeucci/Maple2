@@ -33,6 +33,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                         IntervalTick: data.BasicProperty.intervalTick,
                         DelayTick: data.BasicProperty.delayTick,
                         MaxCount: data.BasicProperty.maxBuffCount,
+                        UseInGameTime: data.BasicProperty.useInGameTime,
                         KeepOnDeath: data.BasicProperty.deadKeepEffect,
                         RemoveOnLogout: data.BasicProperty.logoutClearEffect,
                         RemoveOnLeaveField: data.BasicProperty.leaveFieldClearEffect,

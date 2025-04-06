@@ -215,11 +215,11 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             switch (effect.Condition.Target) {
                 case SkillEntity.Owner:
                     foreach (IActor target in targets) {
-                        target.ApplyEffect(Caster, target, effect);
+                        target.ApplyEffect(Caster, target, effect, Field.FieldTick);
                     }
                     break;
                 case SkillEntity.Target:
-                    Caster.ApplyEffect(Caster, Caster, effect);
+                    Caster.ApplyEffect(Caster, Caster, effect, Field.FieldTick);
                     break;
                 default:
                     logger.Error("Invalid FieldSkill Target: {Target}", effect.Condition.Target);

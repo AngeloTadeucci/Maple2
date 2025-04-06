@@ -310,11 +310,11 @@ public partial class GameStorage {
         }
 
         public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners,
-            IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
+            IDictionary<LapenshardSlot, int>? Lapenshards, long DeathTick, int DeathCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
             IDictionary<BasicAttribute, int>?, SkillPoint? SkillPoint, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, 0, 0, 0, null, null, null, null, null, null);
+                return (null, null, null, null, null, null, null, 0, 0, 0, null, null, null, null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -344,7 +344,6 @@ public partial class GameStorage {
                 config.FavoriteStickers?.Select(stickers => stickers).ToList(),
                 config.FavoriteDesigners?.Select(designer => designer).ToList(),
                 config.Lapenshards,
-                config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
                 config.DeathTick,
                 config.DeathCount,
                 config.ExplorationProgress,
@@ -390,9 +389,6 @@ public partial class GameStorage {
             config.FavoriteStickers = favoriteStickers;
             config.FavoriteDesigners = favoriteDesigners;
             config.Lapenshards = lapenshards;
-            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64)
-                .Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
-                .ToList();
             config.DeathTick = deathTick;
             config.DeathCount = deathCount;
             config.ExplorationProgress = explorationProgress;

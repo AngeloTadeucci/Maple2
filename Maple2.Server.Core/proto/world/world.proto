@@ -54,6 +54,8 @@ service World {
   rpc PlayerWarp(maple2.PlayerWarpRequest) returns (maple2.PlayerWarpResponse);
   // Admin
   rpc Admin(maple2.AdminRequest) returns (maple2.AdminResponse);
+  // Buff
+  rpc PlayerConfig(PlayerConfigRequest) returns (PlayerConfigResponse);
 }
 
 enum Server {
@@ -520,4 +522,42 @@ message AddChannelResponse {
   int32 game_port = 1;
   int32 grpc_port = 2;
   int32 game_channel = 3;
+}
+
+message PlayerConfigRequest {
+  message Save {
+    repeated BuffInfo buffs = 1;
+    repeated SkillCooldownInfo skill_cooldowns = 2;
+  }
+
+  message Get { }
+
+  int64 requester_id = 1;
+  oneof buff {
+    Save save = 2;
+    Get get = 3;
+  }
+}
+
+message PlayerConfigResponse {
+  repeated BuffInfo buffs = 1;
+  repeated SkillCooldownInfo skill_cooldowns = 2;
+}
+
+message BuffInfo {
+  int32 id = 1;
+  int32 level = 2;
+  int32 ms_remaining = 3;
+  int64 stop_time = 4;
+  bool enabled = 5;
+  int32 stacks = 6;
+}
+
+message SkillCooldownInfo {
+  int32 skill_id = 1;
+  int32 skill_level = 2;
+  int32 group_id = 3;
+  int32 ms_remaining = 4;
+  int64 stop_time = 5;
+  int32 charges = 6;
 }
