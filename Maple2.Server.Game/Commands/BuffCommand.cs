@@ -46,15 +46,16 @@ public class BuffCommand : Command {
             }
 
             if (duration > 0) {
-                duration *= 1000; // convert to milliseconds
+                duration = (int) TimeSpan.FromMilliseconds(1).TotalMilliseconds * duration;
             }
 
+            long startTick = session.Field.FieldTick;
             if (all) {
                 foreach (FieldPlayer player in session.Field.Players.Values) {
                     if (remove) {
                         player.Buffs.Remove(buffId);
                     } else {
-                        player.Buffs.AddBuff(session.Player, player, buffId, (short) level, duration);
+                        player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, duration);
                         if (stack > 1) {
                             player.Buffs.Buffs[buffId].Stack(player.Field.FieldTick, stack);
                             session.Field?.Broadcast(BuffPacket.Update(player.Buffs.Buffs[buffId]));
@@ -74,7 +75,7 @@ public class BuffCommand : Command {
                     player.Buffs.Remove(buffId);
                     return;
                 }
-                player.Buffs.AddBuff(session.Player, player, buffId, (short) level, duration);
+                player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, duration);
                 if (stack > 1) {
                     player.Buffs.Buffs[buffId].Stack(player.Field.FieldTick, stack);
                     session.Field.Broadcast(BuffPacket.Update(player.Buffs.Buffs[buffId]));
@@ -84,7 +85,7 @@ public class BuffCommand : Command {
                     session.Player.Buffs.Remove(buffId);
                     return;
                 }
-                session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, duration);
+                session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, startTick, duration);
                 if (stack > 1) {
                     session.Player.Buffs.Buffs[buffId].Stack(session.Field.FieldTick, stack);
                     session.Field?.Broadcast(BuffPacket.Update(session.Player.Buffs.Buffs[buffId]));

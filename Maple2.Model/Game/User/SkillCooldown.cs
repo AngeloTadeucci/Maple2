@@ -13,6 +13,8 @@ public class SkillCooldown : IByteSerializable {
     public SkillCooldown(int skillId, short level) {
         SkillId = skillId;
         Level = level;
+        GroupId = 0;
+        Charges = 0;
     }
 
     public void WriteTo(IByteWriter writer) {
