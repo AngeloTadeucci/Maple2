@@ -384,7 +384,6 @@ public class BuffManager : IUpdatable {
                 }
                 AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.MsRemaining);
             }
-            Console.WriteLine($"Buff Id: {info.Id}, Level: {info.Level}, Stacks: {info.Stacks}, Duration: {info.MsRemaining}");
         }
     }
 
