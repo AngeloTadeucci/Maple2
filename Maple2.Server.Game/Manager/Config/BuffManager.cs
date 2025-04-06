@@ -376,12 +376,7 @@ public class BuffManager : IUpdatable {
                 continue;
             }
 
-            if (additionalEffect.Property.UseInGameTime) {
-                AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.MsRemaining);
-            } else {
-                if (info.MsRemaining <= 0) {
-                    continue;
-                }
+            if (additionalEffect.Property.UseInGameTime || info.MsRemaining > 0) {
                 AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.MsRemaining);
             }
         }
