@@ -13,6 +13,7 @@ public record BeginCondition(
     float CooldownTime,
     bool OnlyShadowWorld,
     bool OnlyFlyableMap,
+    bool AllowDead,
     IReadOnlyDictionary<BasicAttribute, long> Stat,
     BeginConditionWeapon[]? Weapon,
     BeginConditionTarget? Target,

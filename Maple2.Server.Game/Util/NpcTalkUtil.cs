@@ -131,6 +131,10 @@ public static class NpcTalkUtil {
             return false;
         }
 
+        if (jobCondition.DeathPenalty && session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
+            return false;
+        }
+
         return true;
     }
 
@@ -210,6 +214,10 @@ public static class NpcTalkUtil {
         }
 
         if (scriptCondition.InGuild && session.Player.Value.Character.GuildId == 0) {
+            return false;
+        }
+
+        if (scriptCondition.DeathPenalty && session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
             return false;
         }
 

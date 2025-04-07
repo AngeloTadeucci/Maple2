@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
@@ -17,7 +19,25 @@ public class FieldPlayer : Actor<Player> {
     public override StatsManager Stats => Session.Stats;
     public override BuffManager Buffs => Session.Buffs;
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
-    public ActorState State { get; set; }
+    private ActorState state;
+    public ActorState State {
+        get => state;
+        set {
+            if (state == value) return;
+            state = value;
+            Flag |= PlayerObjectFlag.State;
+            stateSyncTimeTracking = 0; // Reset time tracking on state change
+        }
+    }
+    private bool isDead;
+    public override bool IsDead {
+        get => isDead;
+        protected set {
+            if (value == isDead) return;
+            isDead = value;
+            Flag |= PlayerObjectFlag.Dead;
+        }
+    }
     public ActorSubState SubState { get; set; }
     public PlayerObjectFlag Flag { get; set; }
     private long flagTick;
@@ -32,6 +52,8 @@ public class FieldPlayer : Actor<Player> {
     private readonly Dictionary<ActorState, float> stateSyncDistanceTracking;
     private long stateSyncTimeTracking { get; set; }
     private long stateSyncTrackingTick { get; set; }
+
+    public Tombstone? Tombstone { get; set; }
 
     #region DebugFlags
     private bool debugAi = false;
@@ -97,14 +119,26 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public override void Update(long tickCount) {
-        if (InBattle && tickCount - battleTick > 2000) {
-            InBattle = false;
-        }
+        base.Update(tickCount);
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
             Flag = PlayerObjectFlag.None;
             flagTick = (long) (tickCount + TimeSpan.FromSeconds(2).TotalMilliseconds);
+        }
+
+        if (IsDead) {
+            if (Tombstone == null) {
+                return;
+            }
+            if (Tombstone.HitsRemaining == 0) {
+                Revive();
+            }
+            return;
+        }
+
+        if (InBattle && tickCount - battleTick > 2000) {
+            InBattle = false;
         }
 
         // Loops through each registered regen stat and applies regen
@@ -133,8 +167,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Session.GameEvent.Update(tickCount);
-
-        base.Update(tickCount);
     }
 
     public void OnStateSync(StateSync stateSync) {
@@ -149,10 +181,6 @@ public class FieldPlayer : Actor<Player> {
         Position = stateSync.Position;
         Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
 
-        if (State != stateSync.State) {
-            Flag |= PlayerObjectFlag.State;
-            stateSyncTimeTracking = 0; // Reset time tracking on state change
-        }
         State = stateSync.State;
         SubState = stateSync.SubState;
 
@@ -258,7 +286,64 @@ public class FieldPlayer : Actor<Player> {
     }
 
     protected override void OnDeath() {
-        Flag |= PlayerObjectFlag.Dead; // TODO: Need to also send this flag upon revival
+        Field.Broadcast(SetCraftModePacket.Stop(ObjectId));
+
+        Session.HeldCube = null;
+        InBattle = false;
+        Tombstone = new Tombstone(this, Session.Config.DeathCount + 1);
+        bool darkTomb = Session.Field.Metadata.Property.OnlyDarkTomb || Session.Config.DeathCount > 0;
+        Field.Broadcast(DeadUserPacket.Dead(ObjectId, darkTomb));
+
+        Buffs.OnDeath();
+    }
+
+    /// <summary>
+    /// Revives the player from death state.
+    /// </summary>
+    /// <param name="instant">If true, performs an instant revival without moving to spawn point.</param>
+    public bool Revive(bool instant = false) {
+        // Check if player can be revived
+        if (!IsDead || Tombstone == null) {
+            return false;
+        }
+
+        // Restore health and update state
+        Stats.Values[BasicAttribute.Health].Add(Stats.Values[BasicAttribute.Health].Total);
+        IsDead = false;
+
+        // Apply death penalty if field requires it
+        if (Field.Metadata.Property.DeathPenalty) {
+            Session.Config.UpdateDeathPenalty(Field.FieldTick + Constant.UserRevivalPaneltyTick);
+        }
+
+        // Update revival condition
+        Session.ConditionUpdate(ConditionType.revival);
+
+        // Mark tombstone as cleared
+        Tombstone.HitsRemaining = 0;
+
+        // Handle revival return to different map
+        if (!instant && Field.Metadata.Property.RevivalReturnId != 0 && Field.Metadata.Property.RevivalReturnId != Field.Metadata.Id) {
+            Session.Send(Session.PrepareField(Field.Metadata.Property.RevivalReturnId)
+                ? FieldEnterPacket.Request(Session.Player)
+                : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+            return true;
+        }
+
+        // Send revival packets
+        Session.Send(StatsPacket.Init(this));
+        if (instant) {
+            Session.Send(RevivalPacket.RevivalCount(Session.Config.InstantReviveCount));
+        }
+        Field.Broadcast(RevivalPacket.Revive(ObjectId));
+
+        // Move to spawn point if not instant revival
+        if (!instant && Field.TryGetPlayerSpawn(-1, out FieldPlayerSpawnPoint? point)) {
+            MoveToPosition(point.Position, point.Rotation);
+        }
+
+        Buffs.UpdateEnabled();
+        return true;
     }
 
     /// <summary>

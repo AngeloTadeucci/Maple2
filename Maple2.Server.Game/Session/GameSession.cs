@@ -255,6 +255,7 @@ public sealed partial class GameSession : Core.Network.Session {
             long currentTick = Environment.TickCount64;
             Buffs.SetCacheBuffs(configResponse.Buffs, currentTick);
             Config.SetCacheSkillCooldowns(configResponse.SkillCooldowns, currentTick);
+            Config.SetDeathPenalty(configResponse.DeathInfo, currentTick);
 
         } catch (RpcException ex) {
             Logger.Warning(ex, "Failed to load cache player config");
@@ -441,8 +442,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
 
         Config.LoadLapenshard();
-        Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
-        Send(RevivalPacket.Confirm(Player));
+        Config.LoadRevival();
         Config.LoadStatAttributes();
         Config.LoadSkillPoints();
         Player.Buffs.LoadFieldBuffs();
@@ -601,8 +601,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.GatheringCounts.Clear();
         Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
         // Death Counter
-        Config.DeathCount = 0;
-        Send(RevivalPacket.Count(0));
+        Config.AddInstantReviveCount(-1);
         // Premium Rewards Claimed
         Player.Value.Account.PremiumRewardsClaimed.Clear();
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
@@ -785,6 +784,11 @@ public sealed partial class GameSession : Core.Network.Session {
                                 StopTime = stopTime,
                                 Charges = cooldown.Charges,
                             }),
+                        },
+                        DeathInfo = new DeathInfo {
+                            Count = Config.DeathCount,
+                            MsRemaining = (int) (Config.DeathPenaltyEndTick - fieldTick),
+                            StopTime = stopTime,
                         },
                     },
                     RequesterId = CharacterId,

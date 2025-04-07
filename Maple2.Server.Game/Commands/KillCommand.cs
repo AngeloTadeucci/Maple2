@@ -14,11 +14,12 @@ namespace Maple2.Server.Game.Commands;
 
 public class KillCommand : Command {
     private const string NAME = "kill";
-    private const string DESCRIPTION = "Kill NPCs and/or Mobs.";
+    private const string DESCRIPTION = "Kill NPCs/Mobs/Players";
 
     public KillCommand(GameSession session) : base(NAME, DESCRIPTION) {
         AddCommand(new KillAllNpcCommand(session));
         AddCommand(new KillNearNpcCommand(session));
+        AddCommand(new KillPlayerCommand(session));
     }
 
     private class KillAllNpcCommand : Command {
@@ -101,6 +102,37 @@ public class KillCommand : Command {
                     Kill(session, npc, skill);
                 }
             }
+        }
+    }
+
+    private class KillPlayerCommand : Command {
+        private readonly GameSession session;
+
+        public KillPlayerCommand(GameSession session) : base("player", "Kill specific player in field.") {
+            this.session = session;
+
+            var name = new Argument<string>("name", "Name of player.");
+
+            AddArgument(name);
+            this.SetHandler<InvocationContext, string>(Handle, name);
+
+        }
+
+        private void Handle(InvocationContext ctx, string name) {
+            if (string.IsNullOrEmpty(name)) {
+                ctx.Console.Out.WriteLine("Name cannot be empty.");
+                return;
+            }
+            FieldPlayer? player = session.Field.GetPlayers().Values
+                .FirstOrDefault(player => string.Equals(player.Value.Character.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            if (player is null) {
+                ctx.Console.Out.WriteLine($"Player {name} not found.");
+                return;
+            }
+
+            player.Stats.Values[BasicAttribute.Health].Add(-player.Stats.Values[BasicAttribute.Health].Current);
+            player.Session.Send(StatsPacket.Update(player, BasicAttribute.Health));
         }
     }
 

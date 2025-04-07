@@ -187,7 +187,7 @@ var modelReaders = new List<PrefixedM2dReader> {
 };
 
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
-UpdateDatabase(metadataContext, new AiMapper(serverReader));
+/*UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
@@ -218,9 +218,9 @@ UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, parser));
 
 MapDataMapper mapDataMapper = new MapDataMapper(metadataContext, parser);
 
-UpdateDatabase(metadataContext, mapDataMapper);
+UpdateDatabase(metadataContext, mapDataMapper);*/
 
-mapDataMapper.ReportStats();
+//mapDataMapper.ReportStats();
 
 if (runNavmesh) {
     _ = new NavMeshMapper(metadataContext, exportedReader);

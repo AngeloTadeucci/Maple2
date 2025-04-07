@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +19,7 @@ internal class CharacterConfig {
     public IList<int>? FavoriteStickers { get; set; }
     public IList<long>? FavoriteDesigners { get; set; }
     public IDictionary<LapenshardSlot, int>? Lapenshards { get; set; }
-    public long DeathTick { get; set; }
-    public int DeathCount { get; set; }
+    public int InstantRevivalCount { get; set; }
     public IDictionary<int, int>? GatheringCounts { get; set; }
     public IDictionary<int, int>? GuideRecords { get; set; }
     public int ExplorationProgress { get; set; }

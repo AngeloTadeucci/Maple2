@@ -49,7 +49,7 @@ public record MapMetadataProperty(
     int TutorialType,
     int RevivalReturnId,
     int EnterReturnId,
-    int AutoRevivalType,
+    AutoReviveType AutoRevivalType,
     int AutoRevivalTime,
     bool InfiniteMeretRevival,
     bool NoRevivalHere,

@@ -72,6 +72,9 @@ public static class SkillUtils {
             if (condition is not { Probability: 1 } && condition.Probability < Random.Shared.NextDouble()) {
                 return false;
             }
+            if (!condition.AllowDead && caster.IsDead) {
+                return false;
+            }
             if (condition.OnlyShadowWorld && caster.Field.Metadata.Property.Type != MapType.Shadow) {
                 return false;
             }

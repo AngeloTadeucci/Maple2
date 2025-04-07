@@ -26,4 +26,5 @@ public record JobConditionMetadata(
     JobCode ChangeToJobCode,
     int MapId,
     int MoveMapId,
+    bool DeathPenalty,
     int MovePortalId);

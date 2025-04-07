@@ -928,6 +928,8 @@ public static class Constant {
     public const int NextStateTriggerDefaultTick = 100;
     public const int UserRevivalPaneltyTick = 3600000;
     public const int UserRevivalPaneltyMinLevel = 10;
+    public const int maxDeadCount = 3;
+    public const byte hitPerDeadCount = 5;
     public const int FishFightingProp = 3000;
 
     public const float NpcLastSightRadius = 1800;

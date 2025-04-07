@@ -37,7 +37,6 @@ public class Character {
     public long StorageCooldown;
     public long DoctorCooldown;
 
-    public int ReviveMapId;
     public int ReturnMapId;
     public Vector3 ReturnPosition;
     public string Picture = string.Empty;

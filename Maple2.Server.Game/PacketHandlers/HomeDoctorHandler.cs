@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Metadata;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -11,23 +12,27 @@ namespace Maple2.Server.Game.PacketHandlers;
 public class HomeDoctorHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.RequestHomeDoctor;
 
-    private const int DOCTOR_COST_MESO = 10000;
-
     public override void Handle(GameSession session, IByteReader packet) {
         long time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (session.Player.Value.Character.DoctorCooldown + Constant.HomeDoctorCallCooldown > time) {
             return;
         }
 
-        // TODO: Error here? and how much should this cost.
-        if (session.Currency.Meso < DOCTOR_COST_MESO) {
+        if (session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
+            return;
+        }
+
+        int cost =session.Field.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, 0);
+        if (session.Currency.Meso < cost) {
             return;
         }
 
         session.Player.Value.Character.DoctorCooldown = time;
-        session.Currency.Meso -= DOCTOR_COST_MESO;
-        session.Send(RevivalPacket.Confirm(session.Player));
+        session.Currency.Meso -= cost;
+        session.Config.UpdateDeathPenalty(0);
         session.Send(HomeDoctor(time));
+        session.ConditionUpdate(ConditionType.home_doctor);
+        session.ConditionUpdate(ConditionType.resolve_panelty);
     }
 
     private static ByteWriter HomeDoctor(long time) {

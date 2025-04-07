@@ -103,7 +103,7 @@ public class Buff : IUpdatable, IByteSerializable {
         Proc();
     }
 
-    private bool UpdateEnabled(bool notifyField = true) {
+    public bool UpdateEnabled(bool notifyField = true) {
         bool enabled = Metadata.Condition.Check(Caster, Owner, Owner);
         if (Enabled != enabled) {
             Enabled = enabled;
