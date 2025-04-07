@@ -12,7 +12,7 @@ public class Tombstone : IByteSerializable {
     public byte HitsRemaining {
         get => hitsRemaining;
         set {
-            if (hitsRemaining == 0 || value == 0) {
+            if (hitsRemaining == 0) {
                 return;
             }
             hitsRemaining = Math.Clamp(value, (byte) 0, TotalHitCount);
