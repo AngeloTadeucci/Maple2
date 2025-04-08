@@ -131,8 +131,12 @@ public class KillCommand : Command {
                 return;
             }
 
-            player.Stats.Values[BasicAttribute.Health].Add(-player.Stats.Values[BasicAttribute.Health].Current);
-            player.Session.Send(StatsPacket.Update(player, BasicAttribute.Health));
+            if (player.DeathState != DeathState.Alive) {
+                ctx.Console.Out.WriteLine($"Player {name} is already dead.");
+                return;
+            }
+
+            player.ConsumeHp((int) player.Stats.Values[BasicAttribute.Health].Current);
         }
     }
 

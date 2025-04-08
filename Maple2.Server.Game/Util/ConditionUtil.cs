@@ -162,6 +162,7 @@ public static class ConditionUtil {
             case ConditionType.revival:
             case ConditionType.home_doctor:
             case ConditionType.resolve_panelty:
+            case ConditionType.hit_tombstone:
                 return true;
         }
         return false;
@@ -294,6 +295,7 @@ public static class ConditionUtil {
             case ConditionType.revival:
             case ConditionType.home_doctor:
             case ConditionType.resolve_panelty:
+            case ConditionType.hit_tombstone:
                 return true;
         }
         return false;

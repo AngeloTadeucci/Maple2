@@ -426,6 +426,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(StatsPacket.Init(Player));
         Field.Broadcast(StatsPacket.Update(Player), Player.Session);
 
+        //TODO: Save current hp/sp/ep in memory. This will help determine if player is dead upon login.
         var pWriter = Packet.Of(SendOp.UserState);
         pWriter.WriteInt(Player.ObjectId);
         pWriter.Write<ActorState>(ActorState.Fall);

@@ -21,7 +21,7 @@ public class ResolveDeathPenaltyHandler : PacketHandler<GameSession> {
         }
 
         int mode = session.Field.Metadata.Property.Continent == Continent.ShadowWorld ? 1 : 0;
-        int cost =session.Field.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, mode);
+        int cost = session.Field.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, mode);
         if (session.Currency.Meso < cost) {
             return;
         }

@@ -6,7 +6,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Tools.Extensions;
 using Maple2.Model.Game.Party;
-using Maple2.Server.Game.Manager.Field;
+// ReSharper disable RedundantTypeArgumentsOfMethod
 
 namespace Maple2.Server.Game.Packets;
 
@@ -192,9 +192,9 @@ public static class PartyPacket {
 
         pWriter.WriteLong(member.CharacterId);
         pWriter.WriteLong(member.AccountId);
-        pWriter.WriteInt((int) member.Info.CurrentHp);
         pWriter.WriteInt((int) member.Info.TotalHp);
-        pWriter.WriteShort(member.Info.Level);
+        pWriter.WriteInt((int) member.Info.CurrentHp);
+        pWriter.Write<DeathState>(member.Info.DeathState);
 
         return pWriter;
     }
@@ -204,6 +204,7 @@ public static class PartyPacket {
         pWriter.Write<Command>(Command.DungeonNotice);
 
         pWriter.WriteUnicodeString(message.ToString());
+        // ReSharper disable once CommentTypo
         pWriter.WriteUnicodeString(systemSoundKey); // "Field_Enterance_Reset_Dungeon"
         pWriter.WriteUnicodeString();
 
@@ -243,6 +244,7 @@ public static class PartyPacket {
     public static ByteWriter PartySearch(byte type, bool searching) {
         var pWriter = Packet.Of(SendOp.Party);
         pWriter.Write<Command>(Command.PartySearch);
+        // ReSharper disable once CommentTypo
         /*
             if type == 1:
                 dungeon_message(1) # s_enum_dungeon_group_normal

@@ -1,4 +1,5 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Model;
@@ -18,5 +19,6 @@ public class TombstoneHandler : PacketHandler<GameSession> {
         }
 
         player.Tombstone.HitsRemaining -= (byte) hits;
+        session.ConditionUpdate(ConditionType.hit_tombstone);
     }
 }

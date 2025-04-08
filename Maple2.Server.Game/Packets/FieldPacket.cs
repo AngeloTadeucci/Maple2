@@ -298,9 +298,9 @@ public static class FieldPacket {
         writer.WriteShort(character.Channel);
         writer.WriteInt((int) character.Job.Code());
         writer.Write<Job>(character.Job);
-        writer.WriteInt((int) session.Stats.Values[BasicAttribute.Health].Current);
         writer.WriteInt((int) session.Stats.Values[BasicAttribute.Health].Total);
-        writer.WriteShort();
+        writer.WriteInt((int) session.Stats.Values[BasicAttribute.Health].Current);
+        writer.WriteShort(character.DeathCount);
         writer.WriteLong();
         writer.WriteLong(character.StorageCooldown);
         writer.WriteLong(character.DoctorCooldown);

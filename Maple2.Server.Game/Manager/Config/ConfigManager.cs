@@ -1,4 +1,4 @@
-﻿﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
@@ -6,7 +6,6 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
-using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -27,8 +26,14 @@ public class ConfigManager {
     private readonly IList<long> favoriteDesigners;
     private readonly IDictionary<LapenshardSlot, int> lapenshards;
     private readonly IDictionary<int, SkillCooldown> skillCooldowns;
-    public long DeathPenaltyEndTick;
-    public int DeathCount;
+    public long DeathPenaltyEndTick {
+        get => session.Player.Value.Character.DeathTick;
+        private set => session.Player.Value.Character.DeathTick = value;
+    }
+    public short DeathCount {
+        get => session.Player.Value.Character.DeathCount;
+        private set => session.Player.Value.Character.DeathCount = value;
+    }
     public int InstantReviveCount;
     private readonly StatAttributes statAttributes;
     private readonly SkillPoint skillPoints;
@@ -340,7 +345,7 @@ public class ConfigManager {
 
     public void SetDeathPenalty(DeathInfo deathInfo, long currentTick) {
         DeathPenaltyEndTick = currentTick + deathInfo.MsRemaining;
-        DeathCount = deathInfo.Count;
+        DeathCount = (short) deathInfo.Count;
     }
 
     public void AddInstantReviveCount(int count = 1) {

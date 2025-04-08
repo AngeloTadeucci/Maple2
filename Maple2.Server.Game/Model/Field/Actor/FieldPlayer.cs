@@ -36,6 +36,15 @@ public class FieldPlayer : Actor<Player> {
             if (value == isDead) return;
             isDead = value;
             Flag |= PlayerObjectFlag.Dead;
+            if (!isDead) {
+                DeathState = DeathState.Alive;
+            } else {
+                if (Session.Field.Metadata.Property.OnlyDarkTomb) {
+                    DeathState = DeathState.Metal;
+                } else {
+                    DeathState = Session.Config.DeathCount == 0 ? DeathState.FirstDeath : DeathState.Metal;
+                }
+            }
         }
     }
     public ActorSubState SubState { get; set; }
@@ -54,6 +63,20 @@ public class FieldPlayer : Actor<Player> {
     private long stateSyncTrackingTick { get; set; }
 
     public Tombstone? Tombstone { get; set; }
+    public DeathState DeathState {
+        get => Value.Character.DeathState;
+        set {
+            if (value != Value.Character.DeathState) {
+                Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+                    AccountId = Session.AccountId,
+                    CharacterId = Session.CharacterId,
+                    DeathState = (int) value,
+                    Async = true,
+                });
+            }
+            Value.Character.DeathState = value;
+        }
+    }
 
     #region DebugFlags
     private bool debugAi = false;
@@ -66,7 +89,6 @@ public class FieldPlayer : Actor<Player> {
 
     public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, GetPlayerModel(player.Character.Gender)) {
         Session = session;
-
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
         lastRegenTime = new Dictionary<BasicAttribute, long>();
@@ -158,7 +180,10 @@ public class FieldPlayer : Actor<Player> {
 
             if (tickCount - regenTime > interval.Total) {
                 lastRegenTime[attribute] = tickCount;
-                Stats.Values[attribute].Add(regen.Total);
+                if (attribute == BasicAttribute.Health) {
+                    RecoverHp((int) regen.Total);
+                    continue;
+                }
                 Session.Send(StatsPacket.Update(this, attribute));
             }
         }
@@ -308,7 +333,7 @@ public class FieldPlayer : Actor<Player> {
         }
 
         // Restore health and update state
-        Stats.Values[BasicAttribute.Health].Add(Stats.Values[BasicAttribute.Health].Total);
+        RecoverHp((int) Stats.Values[BasicAttribute.Health].Total);
         IsDead = false;
 
         // Apply death penalty if field requires it
@@ -360,6 +385,16 @@ public class FieldPlayer : Actor<Player> {
             stat.Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
         }
+
+        Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = Session.AccountId,
+            CharacterId = Session.CharacterId,
+            Health = new HealthUpdate {
+                CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+                TotalHp = Stats.Values[BasicAttribute.Health].Total,
+            },
+            Async = true,
+        });
     }
 
     /// <summary>
@@ -373,10 +408,21 @@ public class FieldPlayer : Actor<Player> {
 
         Stat stat = Stats.Values[BasicAttribute.Health];
         stat.Add(-amount);
+        Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
-        if (!regenStats.ContainsKey(BasicAttribute.Health)) {
+        if (stat.Current > 0 && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
         }
+
+        Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = Session.AccountId,
+            CharacterId = Session.CharacterId,
+            Health = new HealthUpdate {
+                CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+                TotalHp = Stats.Values[BasicAttribute.Health].Total,
+            },
+            Async = true,
+        });
     }
 
     /// <summary>
