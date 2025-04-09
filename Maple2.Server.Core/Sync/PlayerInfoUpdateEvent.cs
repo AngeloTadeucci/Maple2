@@ -19,12 +19,13 @@ public enum UpdateField {
     PremiumTime = 512,
     Clubs = 1024,
     Dungeon = 2048,
+    Death = 4096,
 
     // Presets
     Buddy = Profile | Job | Level | Map | Channel | Home | Trophy,
     Guild = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
     Club = Profile | Job | Level | GearScore | Map | Channel | Home | Trophy | Clubs,
-    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs | Dungeon,
+    Party = Profile | Job | Level | GearScore | Health | Map | Channel | Home | Clubs | Dungeon | Death,
     GroupChat = Profile | Job | Level | Map | Channel | Home | Clubs,
     Marriage = Profile,
     All = int.MaxValue,
@@ -77,6 +78,9 @@ public class PlayerInfoUpdateEvent {
                 Type |= UpdateField.Health;
             }
         }
+        if (request.HasDeathState && player.DeathState != (DeathState) request.DeathState) {
+            Type |= UpdateField.Death;
+        }
         if (request.Home != null) {
             if (player.PlotMapId != request.Home.MapId) {
                 Type |= UpdateField.Home;
@@ -106,13 +110,13 @@ public class PlayerInfoUpdateEvent {
             }
         }
 
-        if (request.Clubs != null) {
+        if (request.Clubs.Count > 0) {
             if (player.ClubIds != request.Clubs.Select(club => club.Id).ToList()) {
                 Type |= UpdateField.Clubs;
             }
         }
 
-        if (request.DungeonEnterLimits != null) {
+        if (request.DungeonEnterLimits.Count > 0) {
             if (player.DungeonEnterLimits != request.DungeonEnterLimits.Select(dungeon => new KeyValuePair<int, DungeonEnterLimit>(dungeon.DungeonId, (DungeonEnterLimit) dungeon.Limit)).ToDictionary()) {
                 Type |= UpdateField.Dungeon;
             }

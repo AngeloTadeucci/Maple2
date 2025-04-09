@@ -65,9 +65,10 @@ message PlayerUpdateRequest {
   optional TrophyUpdate trophy = 19;
   repeated ClubUpdate clubs = 20;
   repeated DungeonEnterLimitUpdate dungeon_enter_limits = 21;
+  optional int32 death_state = 22;
 
   // Batch updates in a queue rather than immediately forwarding.
-  bool async = 22;
+  bool async = 23;
 }
 
 message PlayerUpdateResponse {
@@ -100,4 +101,5 @@ message PlayerInfoResponse {
   TrophyUpdate trophy = 19;
   repeated ClubUpdate clubs = 20;
   repeated DungeonEnterLimitUpdate dungeon_enter_limits = 21;
+  int32 death_state = 22;
 }

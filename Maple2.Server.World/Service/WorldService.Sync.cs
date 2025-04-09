@@ -36,6 +36,7 @@ public partial class WorldService {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             },
+            DeathState = (int) info.DeathState,
             GuildName = info.GuildName,
             GuildId = info.GuildId,
             Home = new HomeUpdate {

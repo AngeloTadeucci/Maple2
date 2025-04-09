@@ -47,3 +47,9 @@ public enum Continent {
     Kritias = 105,
     ShadowWorld = 202,
 }
+
+public enum AutoReviveType {
+    None = 0,
+    Trigger = 1,
+    Countdown = 2, // Only map 65000003 - Treasure Island. Uses autoRevivalTime
+}

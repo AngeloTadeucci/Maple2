@@ -83,15 +83,10 @@ public partial class FieldManager {
 
         // Use SpawnPoint if needed.
         if (fieldPlayer.Position == default) {
-            FieldPlayerSpawnPoint? spawn = fieldPlayerSpawnPoints.Values.FirstOrDefault(spawn => spawn.Enable);
-            if (spawn != null) {
+            if (TryGetPlayerSpawn(-1, out FieldPlayerSpawnPoint? spawn)) {
                 fieldPlayer.Position = spawn.Position + new Vector3(0, 0, 25);
                 fieldPlayer.Rotation = spawn.Rotation;
             }
-        }
-
-        if (Metadata.Property.RevivalReturnId != 0) {
-            player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
         if (FieldInstance.Type == InstanceType.none || FieldInstance.SaveField) {
@@ -780,6 +775,8 @@ public partial class FieldManager {
             }
         }
         Broadcast(FieldPacket.AddPlayer(added.Session), added.Session);
+        added.Flag = PlayerObjectFlag.All;
+
         Broadcast(ProxyObjectPacket.AddPlayer(added), added.Session);
         foreach (FieldItem fieldItem in fieldItems.Values) {
             added.Session.Send(FieldPacket.DropItem(fieldItem));

@@ -37,7 +37,6 @@ public class Character {
     public long StorageCooldown;
     public long DoctorCooldown;
 
-    public int ReviveMapId;
     public int ReturnMapId;
     public Vector3 ReturnPosition;
     public string Picture = string.Empty;
@@ -50,5 +49,8 @@ public class Character {
     public AchievementInfo AchievementInfo;
     public MarriageInfo MarriageInfo;
     public readonly Dictionary<int, DungeonEnterLimit> DungeonEnterLimits = [];
+    public short DeathCount;
+    public long DeathTick;
+    public DeathState DeathState;
     public long PremiumTime;
 }

@@ -122,6 +122,16 @@ public class StatsManager {
         StatConversion(player);
         Actor.Field.Broadcast(StatsPacket.Init(player));
         Actor.Field.Broadcast(StatsPacket.Update(player), player.Session);
+
+        player.Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = player.Session.AccountId,
+            CharacterId = player.Session.CharacterId,
+            Health = new HealthUpdate {
+                CurrentHp = Values[BasicAttribute.Health].Current,
+                TotalHp = Values[BasicAttribute.Health].Total,
+            },
+            Async = true,
+        });
     }
 
     public void ResetActor(IActor actor) {

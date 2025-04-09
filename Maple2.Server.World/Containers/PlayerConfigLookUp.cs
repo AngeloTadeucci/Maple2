@@ -11,14 +11,16 @@ public class PlayerConfigLookUp {
 
     private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, BuffInfo>> buffs;
     private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, SkillCooldownInfo>> skillCooldowns;
+    private readonly ConcurrentDictionary<long, DeathInfo> deaths;
 
     public PlayerConfigLookUp(SkillMetadataStorage skillMetadataStorage) {
         this.skillMetadataStorage = skillMetadataStorage;
         buffs = [];
         skillCooldowns = [];
+        deaths = [];
     }
 
-    public void Save(List<BuffInfo> saveBuffs, List<SkillCooldownInfo> skillCooldownInfos, long characterId) {
+    public void Save(List<BuffInfo> saveBuffs, List<SkillCooldownInfo> skillCooldownInfos, DeathInfo death, long characterId) {
         // Save buffs
         if (!buffs.TryGetValue(characterId, out ConcurrentDictionary<int, BuffInfo>? list)) {
             buffs.TryAdd(characterId, new ConcurrentDictionary<int, BuffInfo>());
@@ -50,13 +52,21 @@ public class PlayerConfigLookUp {
 
             skillList.TryAdd(skillCooldown.SkillId, skillCooldown);
         }
+
+        // Save death
+        if (!deaths.TryGetValue(characterId, out DeathInfo? _)) {
+            deaths.TryAdd(characterId, death);
+        } else {
+            deaths[characterId] = death;
+        }
     }
 
-    public (List<BuffInfo>, List<SkillCooldownInfo>) Retrieve(long characterId) {
+    public (List<BuffInfo> Buffs, List<SkillCooldownInfo> SkillCooldowns, DeathInfo Death) Retrieve(long characterId) {
         long currentTime = DateTime.Now.ToEpochSeconds();
         List<BuffInfo> buffs = RetrieveBuffs(characterId, currentTime);
         List<SkillCooldownInfo> skillCooldowns = RetrieveSkillCooldowns(characterId, currentTime);
-        return (buffs, skillCooldowns);
+        DeathInfo death = RetrieveDeath(characterId);
+        return (buffs, skillCooldowns, death);
     }
 
     private List<BuffInfo> RetrieveBuffs(long characterId, long currentTime) {
@@ -113,6 +123,22 @@ public class PlayerConfigLookUp {
         }
 
         return list.Values.ToList();
+    }
+
+    private DeathInfo RetrieveDeath(long characterId) {
+        if (!deaths.TryGetValue(characterId, out DeathInfo? death)) {
+            return new DeathInfo();
+        }
+
+        long msSurpassed = (long) ((DateTime.Now.ToEpochSeconds() - death.StopTime) * TimeSpan.FromSeconds(1).TotalMilliseconds);
+        if (msSurpassed > death.MsRemaining) {
+            deaths.Remove(characterId, out _);
+            return new DeathInfo();
+        }
+
+        death.MsRemaining -= (int) msSurpassed;
+
+        return death;
     }
 
 }

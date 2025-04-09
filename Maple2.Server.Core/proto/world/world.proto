@@ -528,12 +528,13 @@ message PlayerConfigRequest {
   message Save {
     repeated BuffInfo buffs = 1;
     repeated SkillCooldownInfo skill_cooldowns = 2;
+    DeathInfo death_info = 3;
   }
 
   message Get { }
 
   int64 requester_id = 1;
-  oneof buff {
+  oneof player_config {
     Save save = 2;
     Get get = 3;
   }
@@ -542,6 +543,7 @@ message PlayerConfigRequest {
 message PlayerConfigResponse {
   repeated BuffInfo buffs = 1;
   repeated SkillCooldownInfo skill_cooldowns = 2;
+  DeathInfo death_info = 3;
 }
 
 message BuffInfo {
@@ -560,4 +562,10 @@ message SkillCooldownInfo {
   int32 ms_remaining = 4;
   int64 stop_time = 5;
   int32 charges = 6;
+}
+
+message DeathInfo {
+  int32 count = 1;
+  int32 ms_remaining = 2;
+  int64 stop_time = 3;
 }

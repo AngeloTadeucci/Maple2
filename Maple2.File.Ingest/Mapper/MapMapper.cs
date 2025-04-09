@@ -52,7 +52,7 @@ public class MapMapper : TypeMapper<MapMetadata> {
                     TutorialType: data.property.tutorialType,
                     RevivalReturnId: data.property.revivalreturnid,
                     EnterReturnId: data.property.enterreturnid,
-                    AutoRevivalType: data.property.autoRevivalType,
+                    AutoRevivalType: (AutoReviveType) data.property.autoRevivalType,
                     AutoRevivalTime: data.property.autoRevivalTime,
                     InfiniteMeretRevival: data.property.infinityMeratRevival,
                     NoRevivalHere: data.property.doNotRevivalHere,

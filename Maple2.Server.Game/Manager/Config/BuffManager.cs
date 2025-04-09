@@ -413,7 +413,9 @@ public class BuffManager : IUpdatable {
         foreach (Buff buff in Buffs.Values) {
             if (!buff.Metadata.Property.KeepOnDeath) {
                 Remove(buff.Id);
+                continue;
             }
+            buff.UpdateEnabled();
         }
     }
 
@@ -429,5 +431,11 @@ public class BuffManager : IUpdatable {
 
     public List<Buff> GetSaveCacheBuffs() {
         return Buffs.Values.Where(buff => !buff.Metadata.Property.RemoveOnLogout).ToList();
+    }
+
+    public void UpdateEnabled() {
+        foreach (Buff buff in Buffs.Values) {
+            buff.UpdateEnabled();
+        }
     }
 }

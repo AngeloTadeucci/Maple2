@@ -5,10 +5,10 @@ namespace Maple2.Server.World.Service;
 
 public partial class WorldService {
     public override Task<PlayerConfigResponse> PlayerConfig(PlayerConfigRequest request, ServerCallContext context) {
-        switch (request.BuffCase) {
-            case PlayerConfigRequest.BuffOneofCase.Get:
+        switch (request.PlayerConfigCase) {
+            case PlayerConfigRequest.PlayerConfigOneofCase.Get:
                 return Task.FromResult(Get(request.Get, request.RequesterId));
-            case PlayerConfigRequest.BuffOneofCase.Save:
+            case PlayerConfigRequest.PlayerConfigOneofCase.Save:
                 return Task.FromResult(Save(request.Save, request.RequesterId));
             default:
                 return Task.FromResult(new PlayerConfigResponse());
@@ -16,7 +16,7 @@ public partial class WorldService {
     }
 
     private PlayerConfigResponse Get(PlayerConfigRequest.Types.Get get, long requesterId) {
-        (List<BuffInfo> buffs, List<SkillCooldownInfo> skillCooldowns) = playerConfigLookUp.Retrieve(requesterId);
+        (List<BuffInfo> buffs, List<SkillCooldownInfo> skillCooldowns, DeathInfo death) = playerConfigLookUp.Retrieve(requesterId);
         return new PlayerConfigResponse {
             Buffs = {
                 buffs.Select(b => new BuffInfo {
@@ -38,11 +38,12 @@ public partial class WorldService {
                     Charges = c.Charges,
                 }),
             },
+            DeathInfo = death,
         };
     }
 
     private PlayerConfigResponse Save(PlayerConfigRequest.Types.Save save, long requesterId) {
-        playerConfigLookUp.Save(save.Buffs.ToList(), save.SkillCooldowns.ToList(), requesterId);
+        playerConfigLookUp.Save(save.Buffs.ToList(), save.SkillCooldowns.ToList(), save.DeathInfo, requesterId);
         return new PlayerConfigResponse();
     }
 }

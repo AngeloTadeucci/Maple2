@@ -327,6 +327,7 @@ public static class MapperExtensions {
             CooldownTime: beginCondition.cooldownTime,
             OnlyShadowWorld: beginCondition.onlyShadowWorld || beginCondition.isShadowWorld,
             OnlyFlyableMap: beginCondition.onlyFlyableMap,
+            AllowDead: beginCondition.allowDeadState,
             Weapon: beginCondition.weapon.Select(weapon => new BeginConditionWeapon(
                 new ItemType(1, (byte) weapon.lh),
                 new ItemType(1, (byte) weapon.rh))).ToArray(),

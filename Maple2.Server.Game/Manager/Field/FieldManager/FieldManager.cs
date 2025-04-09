@@ -389,6 +389,12 @@ public partial class FieldManager : IField {
     }
 
     public bool TryGetPlayerSpawn(int id, [NotNullWhen(true)] out FieldPlayerSpawnPoint? playerSpawnPoint) {
+        // Get random spawn point if id is -1
+        if (id < 0) {
+            List<FieldPlayerSpawnPoint> enabledSpawns = fieldPlayerSpawnPoints.Values.Where(spawn => spawn.Enable).ToList();
+            playerSpawnPoint = enabledSpawns.Count > 0 ? enabledSpawns[Random.Shared.Next(enabledSpawns.Count)] : null;
+            return playerSpawnPoint != null;
+        }
         return fieldPlayerSpawnPoints.TryGetValue(id, out playerSpawnPoint);
     }
 

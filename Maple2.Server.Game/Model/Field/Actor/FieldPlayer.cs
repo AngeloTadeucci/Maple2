@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
@@ -17,7 +19,34 @@ public class FieldPlayer : Actor<Player> {
     public override StatsManager Stats => Session.Stats;
     public override BuffManager Buffs => Session.Buffs;
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
-    public ActorState State { get; set; }
+    private ActorState state;
+    public ActorState State {
+        get => state;
+        set {
+            if (state == value) return;
+            state = value;
+            Flag |= PlayerObjectFlag.State;
+            stateSyncTimeTracking = 0; // Reset time tracking on state change
+        }
+    }
+    private bool isDead;
+    public override bool IsDead {
+        get => isDead;
+        protected set {
+            if (value == isDead) return;
+            isDead = value;
+            Flag |= PlayerObjectFlag.Dead;
+            if (!isDead) {
+                DeathState = DeathState.Alive;
+            } else {
+                if (Session.Field.Metadata.Property.OnlyDarkTomb) {
+                    DeathState = DeathState.Metal;
+                } else {
+                    DeathState = Session.Config.DeathCount == 0 ? DeathState.FirstDeath : DeathState.Metal;
+                }
+            }
+        }
+    }
     public ActorSubState SubState { get; set; }
     public PlayerObjectFlag Flag { get; set; }
     private long flagTick;
@@ -33,6 +62,22 @@ public class FieldPlayer : Actor<Player> {
     private long stateSyncTimeTracking { get; set; }
     private long stateSyncTrackingTick { get; set; }
 
+    public Tombstone? Tombstone { get; set; }
+    public DeathState DeathState {
+        get => Value.Character.DeathState;
+        set {
+            if (value != Value.Character.DeathState) {
+                Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+                    AccountId = Session.AccountId,
+                    CharacterId = Session.CharacterId,
+                    DeathState = (int) value,
+                    Async = true,
+                });
+            }
+            Value.Character.DeathState = value;
+        }
+    }
+
     #region DebugFlags
     private bool debugAi = false;
     public bool DebugSkills = false;
@@ -44,7 +89,6 @@ public class FieldPlayer : Actor<Player> {
 
     public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, GetPlayerModel(player.Character.Gender)) {
         Session = session;
-
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
         lastRegenTime = new Dictionary<BasicAttribute, long>();
@@ -97,14 +141,26 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public override void Update(long tickCount) {
-        if (InBattle && tickCount - battleTick > 2000) {
-            InBattle = false;
-        }
+        base.Update(tickCount);
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
             Flag = PlayerObjectFlag.None;
             flagTick = (long) (tickCount + TimeSpan.FromSeconds(2).TotalMilliseconds);
+        }
+
+        if (IsDead) {
+            if (Tombstone == null) {
+                return;
+            }
+            if (Tombstone.HitsRemaining == 0) {
+                Revive();
+            }
+            return;
+        }
+
+        if (InBattle && tickCount - battleTick > 2000) {
+            InBattle = false;
         }
 
         // Loops through each registered regen stat and applies regen
@@ -124,7 +180,10 @@ public class FieldPlayer : Actor<Player> {
 
             if (tickCount - regenTime > interval.Total) {
                 lastRegenTime[attribute] = tickCount;
-                Stats.Values[attribute].Add(regen.Total);
+                if (attribute == BasicAttribute.Health) {
+                    RecoverHp((int) regen.Total);
+                    continue;
+                }
                 Session.Send(StatsPacket.Update(this, attribute));
             }
         }
@@ -133,8 +192,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Session.GameEvent.Update(tickCount);
-
-        base.Update(tickCount);
     }
 
     public void OnStateSync(StateSync stateSync) {
@@ -149,10 +206,6 @@ public class FieldPlayer : Actor<Player> {
         Position = stateSync.Position;
         Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
 
-        if (State != stateSync.State) {
-            Flag |= PlayerObjectFlag.State;
-            stateSyncTimeTracking = 0; // Reset time tracking on state change
-        }
         State = stateSync.State;
         SubState = stateSync.SubState;
 
@@ -258,7 +311,64 @@ public class FieldPlayer : Actor<Player> {
     }
 
     protected override void OnDeath() {
-        Flag |= PlayerObjectFlag.Dead; // TODO: Need to also send this flag upon revival
+        Field.Broadcast(SetCraftModePacket.Stop(ObjectId));
+
+        Session.HeldCube = null;
+        InBattle = false;
+        Tombstone = new Tombstone(this, Session.Config.DeathCount + 1);
+        bool darkTomb = Session.Field.Metadata.Property.OnlyDarkTomb || Session.Config.DeathCount > 0;
+        Field.Broadcast(DeadUserPacket.Dead(ObjectId, darkTomb));
+
+        Buffs.OnDeath();
+    }
+
+    /// <summary>
+    /// Revives the player from death state.
+    /// </summary>
+    /// <param name="instant">If true, performs an instant revival without moving to spawn point.</param>
+    public bool Revive(bool instant = false) {
+        // Check if player can be revived
+        if (!IsDead || Tombstone == null) {
+            return false;
+        }
+
+        // Restore health and update state
+        RecoverHp((int) Stats.Values[BasicAttribute.Health].Total);
+        IsDead = false;
+
+        // Apply death penalty if field requires it
+        if (Field.Metadata.Property.DeathPenalty) {
+            Session.Config.UpdateDeathPenalty(Field.FieldTick + Constant.UserRevivalPaneltyTick);
+        }
+
+        // Update revival condition
+        Session.ConditionUpdate(ConditionType.revival);
+
+        // Mark tombstone as cleared
+        Tombstone.HitsRemaining = 0;
+
+        // Handle revival return to different map
+        if (!instant && Field.Metadata.Property.RevivalReturnId != 0 && Field.Metadata.Property.RevivalReturnId != Field.Metadata.Id) {
+            Session.Send(Session.PrepareField(Field.Metadata.Property.RevivalReturnId)
+                ? FieldEnterPacket.Request(Session.Player)
+                : FieldEnterPacket.Error(MigrationError.s_move_err_default));
+            return true;
+        }
+
+        // Send revival packets
+        Session.Send(StatsPacket.Init(this));
+        if (instant) {
+            Session.Send(RevivalPacket.RevivalCount(Session.Config.InstantReviveCount));
+        }
+        Field.Broadcast(RevivalPacket.Revive(ObjectId));
+
+        // Move to spawn point if not instant revival
+        if (!instant && Field.TryGetPlayerSpawn(-1, out FieldPlayerSpawnPoint? point)) {
+            MoveToPosition(point.Position, point.Rotation);
+        }
+
+        Buffs.UpdateEnabled();
+        return true;
     }
 
     /// <summary>
@@ -275,6 +385,16 @@ public class FieldPlayer : Actor<Player> {
             stat.Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
         }
+
+        Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = Session.AccountId,
+            CharacterId = Session.CharacterId,
+            Health = new HealthUpdate {
+                CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+                TotalHp = Stats.Values[BasicAttribute.Health].Total,
+            },
+            Async = true,
+        });
     }
 
     /// <summary>
@@ -288,10 +408,21 @@ public class FieldPlayer : Actor<Player> {
 
         Stat stat = Stats.Values[BasicAttribute.Health];
         stat.Add(-amount);
+        Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
-        if (!regenStats.ContainsKey(BasicAttribute.Health)) {
+        if (stat.Current > 0 && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
         }
+
+        Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
+            AccountId = Session.AccountId,
+            CharacterId = Session.CharacterId,
+            Health = new HealthUpdate {
+                CurrentHp = Stats.Values[BasicAttribute.Health].Current,
+                TotalHp = Stats.Values[BasicAttribute.Health].Total,
+            },
+            Async = true,
+        });
     }
 
     /// <summary>
