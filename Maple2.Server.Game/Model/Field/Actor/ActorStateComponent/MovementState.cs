@@ -14,7 +14,7 @@ public partial class MovementState {
     public ActorState State { get; private set; } = ActorState.None;
     public float Speed { get; private set; }
     public Vector3 Velocity { get; private set; }
-    private AnimationSequence? stateSequence;
+    private AnimationSequenceMetadata? stateSequence;
     #region LastTickData
     private float lastSpeed;
     private Vector3 lastVelocity;

@@ -22,7 +22,7 @@ public partial class MovementState {
     private (Vector3 start, Vector3 end) walkSegment;
     private bool walkSegmentSet;
     private bool walkLookWhenDone = false;
-    private AnimationSequence? walkSequence = null;
+    private AnimationSequenceMetadata? walkSequence = null;
     private float walkSpeed;
     private NpcTask? walkTask = null;
 

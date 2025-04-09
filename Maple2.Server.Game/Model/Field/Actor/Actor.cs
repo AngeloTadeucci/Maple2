@@ -48,6 +48,11 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual BuffManager Buffs { get; }
 
+    /// <summary>
+    /// Tick duration of actor in the same position.
+    /// </summary>
+    public (Vector3 Position, long LastTick, long Duration) PositionTick { get; set; }
+
     protected Actor(FieldManager field, int objectId, T value, string modelName, NpcMetadataStorage npcMetadata) {
         Field = field;
         ObjectId = objectId;
@@ -58,16 +63,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         AnimationState = new AnimationState(this, modelName);
         SkillState = new SkillState(this);
         Stats = new StatsManager(this);
-    }
-
-    protected Actor(FieldManager field, int objectId, T value, string modelName) {
-        Field = field;
-        ObjectId = objectId;
-        Value = value;
-        Buffs = new BuffManager(this);
-        Transform = new Transform();
-        AnimationState = new AnimationState(this, modelName);
-        SkillState = new SkillState(this);
+        PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
     }
 
     public void Dispose() {
@@ -204,6 +200,12 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             IsDead = true;
             OnDeath();
             return;
+        }
+
+        if (PositionTick.Position != Position) {
+            PositionTick = new ValueTuple<Vector3, long, long>(Position, tickCount, 0);
+        } else {
+            PositionTick = new ValueTuple<Vector3, long, long>(Position, PositionTick.LastTick, tickCount - PositionTick.LastTick);
         }
 
         AnimationState.Update(tickCount);

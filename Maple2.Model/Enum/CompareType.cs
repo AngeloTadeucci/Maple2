@@ -7,3 +7,8 @@ public enum CompareType {
     Greater = 3,
     GreaterEquals = 4,
 }
+
+public enum CompareStatValueType {
+    CurrentPercentage = 0,
+    TotalValue = 1,
+}

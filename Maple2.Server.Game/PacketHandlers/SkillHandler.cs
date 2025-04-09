@@ -158,7 +158,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
 
         long startTick = session.Field.FieldTick;
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using Maple2.Model.Metadata;
+﻿﻿using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model.Enum;
 
@@ -9,19 +9,21 @@ namespace Maple2.Server.Game.Model.ActorStateComponent;
 /// </summary>
 public class AnimationState {
     private readonly IActor actor;
-    public AnimationRecord? Current;
+    private AnimationRecord? current;
     private AnimationRecord? queued;
 
     public readonly AnimationMetadata? RigMetadata;
-    public AnimationSequenceMetadata? PlayingSequence => Current?.Sequence;
+    public AnimationSequenceMetadata? PlayingSequence => current?.Sequence;
     public short IdleSequenceId { get; init; }
-    public float SequenceSpeed => Current?.Speed ?? 1.0f;
+    public float SequenceSpeed => current?.Speed ?? 1.0f;
 
     private bool isHandlingKeyframe;
     private bool IsPlayerAnimation => actor is FieldPlayer;
-    public float MoveSpeed { get; set; } = 1f;
-    public float AttackSpeed { get; set; } = 1f;
+    public float MoveSpeed { get; set; } = 1;
+    public float AttackSpeed { get; set; } = 1;
     private float lastSequenceTime;
+    private float sequenceEnd;
+    private LoopData sequenceLoop;
     private long lastTick;
     private long sequenceEndTick;
     private long sequenceLoopEndTick;
@@ -45,6 +47,9 @@ public class AnimationState {
         this.actor = actor;
 
         RigMetadata = actor.NpcMetadata?.GetAnimation(modelName);
+        MoveSpeed = 1;
+        AttackSpeed = 1;
+        sequenceLoop = new LoopData(0, 0);
 
         if (RigMetadata is null) {
             IdleSequenceId = 0;
@@ -64,12 +69,14 @@ public class AnimationState {
     /// Resets the current animation sequence.
     /// </summary>
     private void ResetSequence() {
-        if (Current?.Sequence != null && actor is FieldNpc npc) {
+        if (current?.Sequence != null && actor is FieldNpc npc) {
             npc.SendControl = true;
         }
-        Current = null;
+        current = null;
         lastSequenceTime = 0;
+        sequenceLoop = new LoopData(0, 0);
         lastTick = 0;
+        sequenceEnd = 0;
     }
 
     /// <summary>
@@ -78,9 +85,8 @@ public class AnimationState {
     /// <param name="name">The name of the animation sequence to play</param>
     /// <param name="speed">The speed at which to play the animation</param>
     /// <param name="type">The type of animation (Move, Skill, or Misc)</param>
-    /// <param name="skill">Optional skill metadata associated with this animation</param>
     /// <returns>True if the sequence was found and started (or queued), false otherwise</returns>
-    public bool TryPlaySequence(string name, float speed, AnimationType type, SkillMetadata? skill = null) {
+    public bool TryPlaySequence(string name, float speed, AnimationType type) {
         // Can't play animations without metadata
         if (RigMetadata is null || !RigMetadata.Sequences.TryGetValue(name, out AnimationSequenceMetadata? sequence)) {
             DebugPrint($"Attempt to play nonexistent sequence '{name}' at x{speed} speed, previous: '{PlayingSequence?.Name ?? "none"}' x{SequenceSpeed}");
@@ -90,42 +96,12 @@ public class AnimationState {
 
         // If we're currently processing a keyframe event, queue this sequence for later
         if (isHandlingKeyframe) {
-            queued = new AnimationRecord(sequence, speed, type, skill);
+            queued = new AnimationRecord(sequence, speed, type);
             return true;
         }
 
         // Play the sequence immediately
-        PlaySequence(sequence, speed, type, skill);
-        return true;
-    }
-
-    /// <summary>
-    /// Attempts to play an animation sequence and returns the sequence metadata if successful.
-    /// </summary>
-    /// <param name="name">The name of the animation sequence to play</param>
-    /// <param name="speed">The speed at which to play the animation</param>
-    /// <param name="type">The type of animation (Move, Skill, or Misc)</param>
-    /// <param name="sequence">When this method returns, contains the animation sequence metadata if found; otherwise, null</param>
-    /// <param name="skill">Optional skill metadata associated with this animation</param>
-    /// <returns>True if the sequence was found and started (or queued), false otherwise</returns>
-    public bool TryPlaySequence(string name, float speed, AnimationType type, out AnimationSequenceMetadata? sequence, SkillMetadata? skill = null) {
-        // Try to play the sequence
-        if (!TryPlaySequence(name, speed, type, skill)) {
-            sequence = null;
-            return false;
-        }
-
-        // Return the appropriate sequence metadata
-        // If we're in a keyframe event, return the queued sequence metadata
-        // Otherwise, return the currently playing sequence metadata
-        sequence = queued?.Sequence ?? PlayingSequence;
-
-        // Double-check that we have a valid sequence
-        if (sequence == null) {
-            DebugPrint($"Warning: Failed to get sequence metadata for '{name}' after successful TryPlaySequence");
-            return false;
-        }
-
+        PlaySequence(sequence, speed, type);
         return true;
     }
 
@@ -135,10 +111,9 @@ public class AnimationState {
     /// <param name="sequenceMetadata">The animation sequence to play</param>
     /// <param name="speed">The speed at which to play the animation</param>
     /// <param name="type">The type of animation (Move, Skill, or Misc)</param>
-    /// <param name="skill">Optional skill metadata associated with this animation</param>
-    private void PlaySequence(AnimationSequenceMetadata sequenceMetadata, float speed, AnimationType type, SkillMetadata? skill = null) {
+    private void PlaySequence(AnimationSequenceMetadata sequenceMetadata, float speed, AnimationType type) {
         // For NPCs, set SendControl flag when changing sequences
-        if (Current?.Sequence != sequenceMetadata && actor is FieldNpc npc) {
+        if (current?.Sequence != sequenceMetadata && actor is FieldNpc npc) {
             npc.SendControl = true;
         }
 
@@ -149,8 +124,8 @@ public class AnimationState {
         ResetSequence();
 
         // Set the new sequence properties
-        Current = new AnimationRecord(sequenceMetadata, speed, type, skill);
-
+        current = new AnimationRecord(sequenceMetadata, speed, type);
+        
         // Start tracking from current tick
         lastTick = actor.Field.FieldTick;
     }
@@ -191,7 +166,7 @@ public class AnimationState {
         }
 
         // Calculate the current sequence time
-        float sequenceSpeedModifier = Current?.Type switch {
+        float sequenceSpeedModifier = current?.Type switch {
             AnimationType.Move => MoveSpeed,
             AnimationType.Skill => AttackSpeed,
             _ => 1,
@@ -203,7 +178,7 @@ public class AnimationState {
         float sequenceTime = lastSequenceTime + delta;
 
         // Process keyframe events
-        if (PlayingSequence != null && PlayingSequence.Keys.Count > 0) {
+        if (PlayingSequence?.Keys != null) {
             foreach (AnimationKey key in PlayingSequence.Keys) {
                 if (HasHitKeyframe(sequenceTime, key)) {
                     HitKeyframe(sequenceTime, key, speed);
@@ -212,15 +187,15 @@ public class AnimationState {
         }
 
         // Handle sequence looping
-        if (Current != null && Current.IsLooping && Current.Loop.end != 0 && sequenceTime > Current.Loop.end) {
+        if (current?.IsLooping == true && sequenceLoop.end != 0 && sequenceTime > sequenceLoop.end) {
             if (!IsPlayerAnimation || tickCount <= sequenceLoopEndTick + Constant.ClientGraceTimeTick) {
-                if (Current.LoopOnlyOnce) {
-                    Current.IsLooping = false;
-                    Current.LoopOnlyOnce = false;
+                if (current.LoopOnlyOnce) {
+                    current.IsLooping = false;
+                    current.LoopOnlyOnce = false;
                 }
 
-                sequenceTime -= Current.Loop.end - Current.Loop.start;
-                lastSequenceTime = sequenceTime - Math.Max(delta, sequenceTime - Current.Loop.end + 0.001f);
+                sequenceTime -= sequenceLoop.end - sequenceLoop.start;
+                lastSequenceTime = sequenceTime - Math.Max(delta, sequenceTime - sequenceLoop.end + 0.001f);
 
                 // Play all keyframe events from loopstart to current
                 if (PlayingSequence?.Keys != null) {
@@ -234,7 +209,7 @@ public class AnimationState {
         }
 
         // Check for sequence end
-        if (Current != null && Current.EndTime != 0 && sequenceTime > Current.EndTime) {
+        if (sequenceEnd != 0 && sequenceTime > sequenceEnd) {
             if (!IsPlayerAnimation || tickCount <= sequenceEndTick + Constant.ClientGraceTimeTick) {
                 ResetSequence();
             }
@@ -258,12 +233,12 @@ public class AnimationState {
     /// <param name="shouldLoop">Whether the sequence should loop</param>
     /// <param name="loopOnlyOnce">Whether the sequence should only loop once</param>
     public void SetLoopSequence(bool shouldLoop, bool loopOnlyOnce) {
-        if (Current is null) {
+        if (current is null) {
             return;
         }
 
-        Current.IsLooping = shouldLoop;
-        Current.LoopOnlyOnce = loopOnlyOnce;
+        current.IsLooping = shouldLoop;
+        current.LoopOnlyOnce = loopOnlyOnce;
     }
 
     /// <summary>
@@ -273,7 +248,7 @@ public class AnimationState {
     /// <param name="key">The keyframe to check</param>
     /// <returns>True if the keyframe has been hit, false otherwise</returns>
     private bool HasHitKeyframe(float sequenceTime, AnimationKey key) {
-        bool keyBeforeLoop = !Current?.IsLooping ?? true || Current?.Loop.end == 0 || key.Time <= Current?.Loop.end + 0.001f;
+        bool keyBeforeLoop = !current?.IsLooping ?? true || sequenceLoop.end == 0 || key.Time <= sequenceLoop.end + 0.001f;
         bool hitKeySinceLastTick = key.Time > lastSequenceTime && key.Time <= sequenceTime;
 
         return keyBeforeLoop && hitKeySinceLastTick;
@@ -331,27 +306,21 @@ public class AnimationState {
     private void HitKeyframe(float sequenceTime, AnimationKey key, float speed) {
         isHandlingKeyframe = true;
 
-        if (PlayingSequence != null) {
-            DebugPrint($"Sequence '{PlayingSequence.Name}' keyframe event '{key.Name}'");
-        }
+        DebugPrint($"Sequence '{PlayingSequence!.Name}' keyframe event '{key.Name}'");
 
         actor.KeyframeEvent(key.Name);
 
-        if (Current == null) return;
-
         switch (key.Name) {
             case "loopstart":
-                Current.Loop = new AnimationRecord.LoopData(key.Time, 0);
+                sequenceLoop = new LoopData(key.Time, 0);
                 break;
             case "loopend":
-                Current.Loop = new AnimationRecord.LoopData(Current.Loop.start, key.Time);
-                Current.LoopEndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
-                sequenceLoopEndTick = Current.LoopEndTick;
+                sequenceLoop = new LoopData(sequenceLoop.start, key.Time);
+                sequenceLoopEndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
                 break;
             case "end":
-                Current.EndTime = key.Time;
-                Current.EndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
-                sequenceEndTick = Current.EndTick;
+                sequenceEnd = key.Time;
+                sequenceEndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
                 break;
             default:
                 break;
@@ -369,10 +338,15 @@ public class AnimationState {
     }
 
     /// <summary>
-    /// Checks if an animation is currently playing.
+    /// Represents a loop section in an animation sequence
     /// </summary>
-    /// <returns>True if an animation is playing, false otherwise</returns>
-    public bool IsAnimationPlaying() {
-        return Current != null && PlayingSequence != null;
+    private struct LoopData {
+        public float start;
+        public float end;
+
+        public LoopData(float start, float end) {
+            this.start = start;
+            this.end = end;
+        }
     }
 }

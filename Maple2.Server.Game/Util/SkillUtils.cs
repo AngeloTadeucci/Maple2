@@ -3,6 +3,7 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Tools.Collision;
 
@@ -81,6 +82,9 @@ public static class SkillUtils {
             if (condition.OnlyFlyableMap && !caster.Field.Metadata.Property.CanFly) {
                 return false;
             }
+            if (condition.OnlySurvival && !(caster.Field.Metadata.Property.Type is MapType.SurvivalTeam or MapType.SurvivalSolo)) {
+                return false;
+            }
             if (player.Value.Character.Level < condition.Level) {
                 return false;
             }
@@ -102,6 +106,28 @@ public static class SkillUtils {
                 if (player.Stats.Values[stat].Total < value) {
                     return false;
                 }
+            }
+            if (condition.DurationWithoutMoving > 0) {
+                if (player.PositionTick.Duration < condition.DurationWithoutMoving) {
+                    return false;
+                }
+            }
+            if (condition.Maps.Length > 0 && !condition.Maps.Contains(caster.Field.MapId)) {
+                return false;
+            }
+            if (condition.Maps.Length > 0 && !condition.MapTypes.Contains(caster.Field.Metadata.Property.Type)) {
+                return false;
+            }
+            if (condition.Maps.Length > 0 && !condition.Continents.Contains(caster.Field.Metadata.Property.Continent)) {
+                return false;
+            }
+            if (condition.DungeonGroupType.Length > 0 &&
+                (caster.Field is not DungeonFieldManager dungeonFieldManager ||
+                 !condition.DungeonGroupType.Contains(dungeonFieldManager.DungeonMetadata.GroupType))) {
+                return false;
+            }
+            if (condition.ActiveSkill.Length > 0 && condition.ActiveSkill.All(id => owner.AnimationState.Current?.Skill?.Id != id)) {
+                return false;
             }
         }
 
@@ -133,6 +159,49 @@ public static class SkillUtils {
                 _ => true,
             };
             if (!compareResult) {
+                return false;
+            }
+        }
+
+        foreach ((BasicAttribute attribute, float value, CompareType compare, CompareStatValueType valueType) in condition.Stat) {
+            float targetValue = valueType switch {
+                CompareStatValueType.CurrentPercentage => (float) target.Stats.Values[attribute].Current / target.Stats.Values[attribute].Total,
+                CompareStatValueType.TotalValue => target.Stats.Values[attribute].Total,
+                _ => 0,
+            };
+
+            bool compareResult = compare switch {
+                CompareType.Equals => targetValue == value,
+                CompareType.Less => targetValue < value,
+                CompareType.LessEquals => targetValue <= value,
+                CompareType.Greater => targetValue > value,
+                CompareType.GreaterEquals => targetValue >= value,
+                _ => true,
+            };
+            if (!compareResult) {
+                return false;
+            }
+        }
+
+        if (condition.HasNotBuffIds.Length > 0 && condition.HasNotBuffIds.Any(id => target.Buffs.HasBuff(id))) {
+            return false;
+        }
+
+        // Verify if these conditions are only for player.
+        if (target is FieldPlayer player) {
+            if (condition.States.Length > 0 && !condition.States.Contains(player.State)) {
+                return false;
+            }
+
+            if (condition.SubStates.Length > 0 && !condition.SubStates.Contains(player.SubState)) {
+                return false;
+            }
+
+            if (condition.Masteries.Count > 0 && !condition.Masteries.All(mastery => player.Session.Mastery[mastery.Key] >= mastery.Value)) {
+                return false;
+            }
+        } else if (target is FieldNpc npc) {
+            if (condition.NpcIds.Length > 0 && !condition.NpcIds.Contains(npc.Value.Id)) {
                 return false;
             }
         }

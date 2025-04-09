@@ -40,6 +40,10 @@ public class SkillQueue {
         }
     }
 
+    public bool Contains(int skillId) {
+        return casts.Any(cast => cast?.SkillId == skillId);
+    }
+
     public void Clear() {
         for (int i = 0; i < MAX_PENDING; i++) {
             casts[i] = null;
