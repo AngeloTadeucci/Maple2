@@ -1,4 +1,4 @@
-﻿﻿﻿using Maple2.Model.Metadata;
+﻿using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;

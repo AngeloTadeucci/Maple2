@@ -221,7 +221,7 @@ public class AnimationManager {
 
         long lastServerTick = lastTick == 0 ? tickCount : lastTick;
         float speed = SequenceSpeed * sequenceSpeedModifier / 1000;
-        float delta = (float)(tickCount - lastServerTick) * speed;
+        float delta = (float) (tickCount - lastServerTick) * speed;
         float sequenceTime = lastSequenceTime + delta;
 
         // Process keyframe events
@@ -367,12 +367,12 @@ public class AnimationManager {
                 break;
             case "loopend":
                 Current.Loop = new AnimationRecord.LoopData(Current.Loop.start, key.Time);
-                Current.LoopEndTick = Actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
+                Current.LoopEndTick = Actor.Field.FieldTick + (long) ((key.Time - sequenceTime) / speed);
                 sequenceLoopEndTick = Current.LoopEndTick;
                 break;
             case "end":
                 Current.EndTime = key.Time;
-                Current.EndTick = Actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
+                Current.EndTick = Actor.Field.FieldTick + (long) ((key.Time - sequenceTime) / speed);
                 sequenceEndTick = Current.EndTick;
                 break;
             default:
