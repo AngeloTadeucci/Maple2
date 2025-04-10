@@ -40,7 +40,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         set => Transform.RotationAnglesDegrees = value;
     }
     public Transform Transform { get; init; }
-    public virtual AnimationManager Animation { get; }
+    public AnimationManager Animation { get; init; }
     public SkillState SkillState { get; init; }
 
     public virtual bool IsDead { get; protected set; }

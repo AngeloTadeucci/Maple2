@@ -18,7 +18,6 @@ public class FieldPlayer : Actor<Player> {
 
     public override StatsManager Stats => Session.Stats;
     public override BuffManager Buffs => Session.Buffs;
-    public override AnimationManager Animation => Session.Animation;
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
     private ActorState state;
     public ActorState State {
@@ -90,6 +89,7 @@ public class FieldPlayer : Actor<Player> {
 
     public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
+        Animation = Session.Animation;
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
         lastRegenTime = new Dictionary<BasicAttribute, long>();
@@ -185,9 +185,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Session.GameEvent.Update(tickCount);
-
-        //Console.WriteLine($"Playing sequence: {AnimationState.PlayingSequence?.Name ?? "null"}");
-        Console.WriteLine($"Current Animation: {Animation.Current?.Sequence?.Name ?? "null"} Skill: {Animation.Current?.Skill?.Id ?? 0}");
     }
 
     public void OnStateSync(StateSync stateSync) {

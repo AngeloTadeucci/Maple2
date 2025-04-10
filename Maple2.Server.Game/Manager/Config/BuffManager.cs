@@ -49,6 +49,9 @@ public class BuffManager : IUpdatable {
 
     public void ResetActor(IActor actor) {
         Actor = actor;
+        foreach ((int id, Buff buff) in Buffs) {
+            buff.ResetActor(actor);
+        }
     }
 
     public void LoadFieldBuffs() {
