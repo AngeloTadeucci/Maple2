@@ -23,8 +23,8 @@ public partial class MovementState {
 
         actor.AppendDebugMessage("Skill Keyframe: " + keyName);
 
-        if (actor.AnimationState.PlayingSequence is not null) {
-            actor.AppendDebugMessage(actor.AnimationState.PlayingSequence.Name);
+        if (actor.Animation.PlayingSequence is not null) {
+            actor.AppendDebugMessage(actor.Animation.PlayingSequence.Name);
         }
 
         if (castSkill.Motion.AttackPoints.TryGetValue(keyName, out byte point)) {
@@ -104,7 +104,7 @@ public partial class MovementState {
 
             castMoveLastTick = -1;
         } else {
-            castMoveTick = actor.AnimationState.GetSequenceSegmentTime(castMoveStartKeyframe, castMoveEndKeyframe);
+            castMoveTick = actor.Animation.GetSequenceSegmentTime(castMoveStartKeyframe, castMoveEndKeyframe);
 
             if (castMoveFinished) {
                 castMoveTick = 1;

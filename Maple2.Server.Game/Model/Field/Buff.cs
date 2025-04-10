@@ -16,8 +16,8 @@ public class Buff : IUpdatable, IByteSerializable {
     public readonly int ObjectId;
     public long CastUid { get; set; }
 
-    public readonly IActor Caster;
-    public readonly IActor Owner;
+    public IActor Caster { get; private set; }
+    public IActor Owner { get; private set; }
 
     public int Id => Metadata.Id;
     public short Level => Metadata.Level;
@@ -53,6 +53,15 @@ public class Buff : IUpdatable, IByteSerializable {
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
         canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= startTick;
+    }
+
+    public void ResetActor(IActor actor) {
+        if (actor.ObjectId == Caster.ObjectId) {
+            Caster = actor;
+        }
+        if (actor.ObjectId == Owner.ObjectId) {
+            Owner = actor;
+        }
     }
 
     public bool Stack(long startTick, int amount = 1, int durationMs = 0) {

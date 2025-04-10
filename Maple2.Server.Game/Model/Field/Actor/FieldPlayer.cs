@@ -87,8 +87,9 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, GetPlayerModel(player.Character.Gender)) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
+        Animation = Session.Animation;
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
         lastRegenTime = new Dictionary<BasicAttribute, long>();
@@ -99,14 +100,6 @@ public class FieldPlayer : Actor<Player> {
 
         scheduler = new EventQueue();
         scheduler.Start();
-    }
-
-    private static string GetPlayerModel(Gender gender) {
-        return gender switch {
-            Gender.Male => "male",
-            Gender.Female => "female",
-            _ => "male"
-        };
     }
 
     protected override void Dispose(bool disposing) {

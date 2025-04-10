@@ -15,7 +15,7 @@ public interface IActor : IFieldEntity {
     public BuffManager Buffs { get; }
 
     public StatsManager Stats { get; }
-    public AnimationState AnimationState { get; init; }
+    public AnimationManager Animation { get; }
     public SkillState SkillState { get; init; }
 
     public bool IsDead { get; }

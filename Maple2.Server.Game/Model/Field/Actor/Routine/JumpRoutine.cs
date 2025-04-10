@@ -40,7 +40,7 @@ public class JumpRoutine : NpcRoutine {
         this.duration = TimeSpan.FromSeconds(duration);
         Npc.State = new StateJumpNpc(Npc.Position, endPosition, duration, scale);
 
-        NextRoutine = () => new WaitRoutine(npc, npc.IdleSequence.Id, npc.IdleSequence.Time);
+        NextRoutine = () => new WaitRoutine(npc, npc.IdleSequenceMetadata.Id, npc.IdleSequenceMetadata.Time);
     }
 
     private JumpRoutine(FieldNpc npc, short sequenceId, float duration) : base(npc, sequenceId) {
@@ -48,7 +48,7 @@ public class JumpRoutine : NpcRoutine {
         this.duration = TimeSpan.FromSeconds(duration);
         Npc.State = new StateJumpNpc(Npc.Position);
 
-        NextRoutine = () => new WaitRoutine(npc, npc.IdleSequence.Id, npc.IdleSequence.Time);
+        NextRoutine = () => new WaitRoutine(npc, npc.IdleSequenceMetadata.Id, npc.IdleSequenceMetadata.Time);
     }
 
     public override Result Update(TimeSpan elapsed) {

@@ -40,7 +40,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         set => Transform.RotationAnglesDegrees = value;
     }
     public Transform Transform { get; init; }
-    public AnimationState AnimationState { get; init; }
+    public AnimationManager Animation { get; init; }
     public SkillState SkillState { get; init; }
 
     public virtual bool IsDead { get; protected set; }
@@ -48,26 +48,22 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual BuffManager Buffs { get; }
 
-    protected Actor(FieldManager field, int objectId, T value, string modelName, NpcMetadataStorage npcMetadata) {
+    /// <summary>
+    /// Tick duration of actor in the same position.
+    /// </summary>
+    public (Vector3 Position, long LastTick, long Duration) PositionTick { get; set; }
+
+    protected Actor(FieldManager field, int objectId, T value, NpcMetadataStorage npcMetadata) {
         Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
         Transform = new Transform();
         NpcMetadata = npcMetadata;
-        AnimationState = new AnimationState(this, modelName);
+        Animation = new AnimationManager(this);
         SkillState = new SkillState(this);
         Stats = new StatsManager(this);
-    }
-
-    protected Actor(FieldManager field, int objectId, T value, string modelName) {
-        Field = field;
-        ObjectId = objectId;
-        Value = value;
-        Buffs = new BuffManager(this);
-        Transform = new Transform();
-        AnimationState = new AnimationState(this, modelName);
-        SkillState = new SkillState(this);
+        PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
     }
 
     public void Dispose() {
@@ -206,7 +202,13 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             return;
         }
 
-        AnimationState.Update(tickCount);
+        if (PositionTick.Position != Position) {
+            PositionTick = new ValueTuple<Vector3, long, long>(Position, tickCount, 0);
+        } else {
+            PositionTick = new ValueTuple<Vector3, long, long>(Position, PositionTick.LastTick, tickCount - PositionTick.LastTick);
+        }
+
+        Animation.Update(tickCount);
         Buffs.Update(tickCount);
     }
 

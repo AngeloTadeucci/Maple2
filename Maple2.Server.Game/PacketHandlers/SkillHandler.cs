@@ -158,7 +158,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
 
         long startTick = session.Field.FieldTick;
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
@@ -335,7 +335,7 @@ public class SkillHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Player.AnimationState.PlayingSequence is null) {
+        if (session.Player.Animation.PlayingSequence is null) {
             Logger.Warning($"Last motion already expired on skill {skillUid}");
         }
 
@@ -357,7 +357,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = record.Metadata.Data.Motions[motionPoint].MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
     }
 
     private void HandleTickSync(GameSession session, IByteReader packet) {
@@ -375,14 +375,14 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         string skillSequence = record.Motion.MotionProperty.SequenceName;
-        string playingSequence = session.Player.AnimationState.PlayingSequence?.Name ?? "";
+        string playingSequence = session.Player.Animation.PlayingSequence?.Name ?? "";
 
         if (skillSequence != playingSequence) {
             Logger.Warning($"Motion point on skill cast {skillUid} '{skillSequence}' doesn't match playing sequence '{playingSequence}'", skillUid);
             return;
         }
 
-        session.Player.AnimationState.SetLoopSequence(true, true);
+        session.Player.Animation.SetLoopSequence(true, true);
     }
 
     private void HandleCancel(GameSession session, IByteReader packet) {
@@ -400,6 +400,6 @@ public class SkillHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Message($"Skill.Cancel: {skillUid}"));
         }
 
-        session.Player.AnimationState.CancelSequence();
+        session.Animation.CancelSequence();
     }
 }

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
 using Maple2.File.Ingest.Utils;
 using Maple2.File.Parser.Xml;
 using Maple2.File.Parser.Xml.Common;
@@ -322,12 +324,25 @@ public static class MapperExtensions {
             Gender: (Gender) beginCondition.gender,
             Mesos: beginCondition.money,
             Stat: beginCondition.stat.ToDictionary(),
+            Maps: beginCondition.requireMapCodes.Select(mapCodes => mapCodes.code).ToArray(),
+            MapTypes: beginCondition.requireMapCategoryCodes.Select(mapType => (MapType) mapType.code).ToArray(),
+            Continents: beginCondition.requireMapContinentCodes.Select(continent => (Continent) continent.code).ToArray(),
+            ActiveSkill: beginCondition.requireSkillCodes.Select(skill => skill.code).ToArray(),
             JobCode: beginCondition.job.Select(job => (JobCode) job.code).ToArray(),
             Probability: beginCondition.probability,
             CooldownTime: beginCondition.cooldownTime,
+            DurationWithoutMoving: (int) TimeSpan.FromSeconds(beginCondition.requireDurationWithoutMove).TotalMilliseconds,
+            DurationWithoutDamage: (int) TimeSpan.FromSeconds(beginCondition.requireDurationWithoutDamage).TotalMilliseconds,
             OnlyShadowWorld: beginCondition.onlyShadowWorld || beginCondition.isShadowWorld,
             OnlyFlyableMap: beginCondition.onlyFlyableMap,
+            OnlySurvival: beginCondition.allowMapleSurvival,
             AllowDead: beginCondition.allowDeadState,
+            AllowOnBattleMount: beginCondition.allowBattleRidingState,
+            OnlyOnBattleMount: beginCondition.onlyBattleRidingState,
+            DungeonGroupType: beginCondition.requireDungeonRoomGroupTypes
+                .Where(type => Enum.TryParse<DungeonGroupType>(type.type, true, out DungeonGroupType _))
+                .Select(type => Enum.Parse<DungeonGroupType>(type.type, true))
+                .ToArray(),
             Weapon: beginCondition.weapon.Select(weapon => new BeginConditionWeapon(
                 new ItemType(1, (byte) weapon.lh),
                 new ItemType(1, (byte) weapon.rh))).ToArray(),
@@ -337,7 +352,7 @@ public static class MapperExtensions {
     }
 
     // We use this default to avoid writing useless checks
-    private static readonly BeginConditionTarget DefaultBeginConditionTarget = new(Array.Empty<BeginConditionTarget.HasBuff>(), null);
+    private static readonly BeginConditionTarget DefaultBeginConditionTarget = new([], null, [], [], [], new Dictionary<MasteryType, int>(), [], []);
     private static BeginConditionTarget? Convert(SubConditionTarget? target) {
         if (target == null) {
             return null;
@@ -345,13 +360,39 @@ public static class MapperExtensions {
 
         var result = new BeginConditionTarget(
             Buff: ParseBuffs(target),
-            Event: ParseEvent(target));
+            Event: ParseEvent(target),
+            Stat: ParseStat(target),
+            States: target.requireStates
+                .Select(state => Enum.GetValues<ActorState>()
+                    .FirstOrDefault(enumValue =>
+                        enumValue.GetType()
+                            .GetField(enumValue.ToString())
+                            ?.GetCustomAttribute<DescriptionAttribute>()
+                            ?.Description == state))
+                .Where(state => state != ActorState.None)
+                .ToArray(),
+            SubStates: target.requireSubStates
+                .Select(state => Enum.GetValues<ActorSubState>()
+                    .FirstOrDefault(enumValue =>
+                        enumValue.GetType()
+                            .GetField(enumValue.ToString())
+                            ?.GetCustomAttribute<DescriptionAttribute>()
+                            ?.Description == state))
+                .Where(state => state != ActorSubState.None)
+                .ToArray(),
+            Masteries: target.requireMasteryTypes
+                .Where(type => Enum.TryParse<MasteryType>(type, true, out MasteryType _))
+                .Select(type => Enum.Parse<MasteryType>(type, true))
+                .Zip(target.requireMasteryValues, (type, value) => (Type: type, Value: value))
+                .ToDictionary(pair => pair.Type, pair => pair.Value),
+            NpcIds: target.NpcIDs,
+            HasNotBuffIds: target.hasNotBuffID);
 
         return DefaultBeginConditionTarget.Equals(result) ? null : result;
 
         BeginConditionTarget.HasBuff[] ParseBuffs(SubConditionTarget data) {
             if (data.hasBuffID.Length == 0 || data.hasBuffID[0] == 0) {
-                return Array.Empty<BeginConditionTarget.HasBuff>();
+                return [];
             }
 
             var hasBuff = new BeginConditionTarget.HasBuff[data.hasBuffID.Length];
@@ -382,6 +423,28 @@ public static class MapperExtensions {
                 IgnoreOwner: data.ignoreOwnerEvent != 0,
                 SkillIds: data.eventSkillID,
                 BuffIds: data.eventEffectID);
+        }
+
+        BeginConditionTarget.BeginConditionStat[] ParseStat(SubConditionTarget data) {
+            if (data.compareStat.Count == 0) {
+                return [];
+            }
+
+            var stats = new BeginConditionTarget.BeginConditionStat[data.compareStat.Count];
+            for (int i = 0; i < stats.Length; i++) {
+                foreach (BasicAttribute attribute in Enum.GetValues<BasicAttribute>()) {
+                    float value = data.compareStat[i][(byte) attribute];
+                    if (value != default) {
+                        stats[i] = new BeginConditionTarget.BeginConditionStat(
+                            Attribute: attribute,
+                            Value: value,
+                            Compare: data.compareStat.Count > i ? Enum.Parse<CompareType>(data.compareStat[i].func) : CompareType.Equals,
+                            ValueType: (CompareStatValueType) data.compareStat[i].type);
+                        break;
+                    }
+                }
+            }
+            return stats;
         }
     }
 

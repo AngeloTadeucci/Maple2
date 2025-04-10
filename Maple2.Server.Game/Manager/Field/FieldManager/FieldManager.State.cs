@@ -71,6 +71,7 @@ public partial class FieldManager {
         };
         session.Stats.ResetActor(fieldPlayer);
         session.Buffs.ResetActor(fieldPlayer);
+        session.Animation.ResetActor(fieldPlayer);
 
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {
