@@ -177,12 +177,12 @@ public class AdminPermissionCommand : Command {
                 continue; // Skip composite permissions
             }
 
-            result.AppendLine($"{flag} ({(int)flag})");
+            result.AppendLine($"{flag} ({(int) flag})");
         }
 
         // Add composite flags at the end
-        result.AppendLine($"GameMaster ({(int)AdminPermissions.GameMaster})");
-        result.AppendLine($"Admin ({(int)AdminPermissions.Admin})");
+        result.AppendLine($"GameMaster ({(int) AdminPermissions.GameMaster})");
+        result.AppendLine($"Admin ({(int) AdminPermissions.Admin})");
 
         return result.ToString().TrimEnd();
     }
