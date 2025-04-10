@@ -40,7 +40,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         set => Transform.RotationAnglesDegrees = value;
     }
     public Transform Transform { get; init; }
-    public AnimationState AnimationState { get; init; }
+    public virtual AnimationManager Animation { get; }
     public SkillState SkillState { get; init; }
 
     public virtual bool IsDead { get; protected set; }
@@ -53,14 +53,14 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     /// </summary>
     public (Vector3 Position, long LastTick, long Duration) PositionTick { get; set; }
 
-    protected Actor(FieldManager field, int objectId, T value, string modelName, NpcMetadataStorage npcMetadata) {
+    protected Actor(FieldManager field, int objectId, T value, NpcMetadataStorage npcMetadata) {
         Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
         Transform = new Transform();
         NpcMetadata = npcMetadata;
-        AnimationState = new AnimationState(this, modelName);
+        Animation = new AnimationManager(this);
         SkillState = new SkillState(this);
         Stats = new StatsManager(this);
         PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
@@ -208,7 +208,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             PositionTick = new ValueTuple<Vector3, long, long>(Position, PositionTick.LastTick, tickCount - PositionTick.LastTick);
         }
 
-        AnimationState.Update(tickCount);
+        Animation.Update(tickCount);
         Buffs.Update(tickCount);
     }
 

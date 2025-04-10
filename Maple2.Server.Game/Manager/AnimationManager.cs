@@ -1,14 +1,18 @@
-﻿﻿﻿﻿using Maple2.Model.Metadata;
+﻿using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Model.Enum;
+using Maple2.Server.Game.Session;
 
-namespace Maple2.Server.Game.Model.ActorStateComponent;
+namespace Maple2.Server.Game.Manager;
 
 /// <summary>
 /// Manages animation sequences for actors in the game.
 /// </summary>
-public class AnimationState {
-    private readonly IActor actor;
+public class AnimationManager {
+    private IActor Actor { get; set; }
     public AnimationRecord? Current;
     private AnimationRecord? queued;
 
@@ -18,7 +22,7 @@ public class AnimationState {
     public float SequenceSpeed => Current?.Speed ?? 1.0f;
 
     private bool isHandlingKeyframe;
-    private bool IsPlayerAnimation => actor is FieldPlayer;
+    private bool IsPlayerAnimation => Actor is FieldPlayer;
     public float MoveSpeed { get; set; } = 1f;
     public float AttackSpeed { get; set; } = 1f;
     private float lastSequenceTime;
@@ -30,7 +34,7 @@ public class AnimationState {
     public bool DebugPrintAnimations {
         get { return debugPrintAnimations; }
         set {
-            if (actor is FieldPlayer) {
+            if (Actor is FieldPlayer) {
                 debugPrintAnimations = value;
             }
         }
@@ -41,10 +45,13 @@ public class AnimationState {
     /// </summary>
     /// <param name="actor">The actor this animation state belongs to</param>
     /// <param name="modelName">The model name to load animations for</param>
-    public AnimationState(IActor actor, string modelName) {
-        this.actor = actor;
+    public AnimationManager(IActor actor) {
+        Actor = actor;
 
-        RigMetadata = actor.NpcMetadata?.GetAnimation(modelName);
+        RigMetadata = actor switch {
+            FieldNpc fieldNpc => actor.Field.NpcMetadata.GetAnimation(fieldNpc.Value.Metadata.Model.Name),
+            _ => null,
+        };
 
         if (RigMetadata is null) {
             IdleSequenceId = 0;
@@ -60,11 +67,26 @@ public class AnimationState {
         IdleSequenceId = RigMetadata.Sequences.FirstOrDefault(sequence => sequence.Key == idleName).Value.Id;
     }
 
+    public AnimationManager(GameSession session) {
+        Actor = session.Player;
+        string model = session.Player.Value.Character.Gender == Gender.Male ? "male" : "female";
+        RigMetadata = session.NpcMetadata.GetAnimation(model);
+
+        if (RigMetadata is null) {
+            throw new Exception("Failed to initialize AnimationState, could not find metadata for player model " + model);
+        }
+        IdleSequenceId = RigMetadata!.Sequences.FirstOrDefault(sequence => sequence.Key == "Idle_A").Value.Id;
+    }
+
+    public void ResetActor(IActor actor) {
+        Actor = actor;
+    }
+
     /// <summary>
     /// Resets the current animation sequence.
     /// </summary>
     private void ResetSequence() {
-        if (Current?.Sequence != null && actor is FieldNpc npc) {
+        if (Current?.Sequence != null && Actor is FieldNpc npc) {
             npc.SendControl = true;
         }
         Current = null;
@@ -138,7 +160,7 @@ public class AnimationState {
     /// <param name="skill">Optional skill metadata associated with this animation</param>
     private void PlaySequence(AnimationSequenceMetadata sequenceMetadata, float speed, AnimationType type, SkillMetadata? skill = null) {
         // For NPCs, set SendControl flag when changing sequences
-        if (Current?.Sequence != sequenceMetadata && actor is FieldNpc npc) {
+        if (Current?.Sequence != sequenceMetadata && Actor is FieldNpc npc) {
             npc.SendControl = true;
         }
 
@@ -152,7 +174,7 @@ public class AnimationState {
         Current = new AnimationRecord(sequenceMetadata, speed, type, skill);
 
         // Start tracking from current tick
-        lastTick = actor.Field.FieldTick;
+        lastTick = Actor.Field.FieldTick;
     }
 
     /// <summary>
@@ -335,7 +357,7 @@ public class AnimationState {
             DebugPrint($"Sequence '{PlayingSequence.Name}' keyframe event '{key.Name}'");
         }
 
-        actor.KeyframeEvent(key.Name);
+        Actor.KeyframeEvent(key.Name);
 
         if (Current == null) return;
 
@@ -345,12 +367,12 @@ public class AnimationState {
                 break;
             case "loopend":
                 Current.Loop = new AnimationRecord.LoopData(Current.Loop.start, key.Time);
-                Current.LoopEndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
+                Current.LoopEndTick = Actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
                 sequenceLoopEndTick = Current.LoopEndTick;
                 break;
             case "end":
                 Current.EndTime = key.Time;
-                Current.EndTick = actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
+                Current.EndTick = Actor.Field.FieldTick + (long)((key.Time - sequenceTime) / speed);
                 sequenceEndTick = Current.EndTick;
                 break;
             default:
@@ -363,7 +385,7 @@ public class AnimationState {
     /// </summary>
     /// <param name="message">The message to print</param>
     private void DebugPrint(string message) {
-        if (debugPrintAnimations && actor is FieldPlayer player) {
+        if (debugPrintAnimations && Actor is FieldPlayer player) {
             player.Session.Send(NoticePacket.Message(message));
         }
     }

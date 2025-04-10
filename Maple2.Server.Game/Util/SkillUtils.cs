@@ -126,7 +126,7 @@ public static class SkillUtils {
                  !condition.DungeonGroupType.Contains(dungeonFieldManager.DungeonMetadata.GroupType))) {
                 return false;
             }
-            if (condition.ActiveSkill.Length > 0 && condition.ActiveSkill.All(id => owner.AnimationState.Current?.Skill?.Id != id)) {
+            if (condition.ActiveSkill.Length > 0 && condition.ActiveSkill.All(id => owner.Animation.Current?.Skill?.Id != id)) {
                 return false;
             }
         }

@@ -104,6 +104,9 @@ public class Buff : IUpdatable, IByteSerializable {
     }
 
     public bool UpdateEnabled(bool notifyField = true) {
+        if (Id == 11000081) {
+            Console.WriteLine($"Striker buff");
+        }
         bool enabled = Metadata.Condition.Check(Caster, Owner, Owner);
         if (Enabled != enabled) {
             Enabled = enabled;

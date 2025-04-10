@@ -10,6 +10,7 @@ using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
 using System;
+using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Commands;
 
@@ -94,7 +95,7 @@ public class DebugCommand : Command {
         }
 
         private void Handle(InvocationContext ctx, bool? enabled) {
-            session.Player.AnimationState.DebugPrintAnimations = enabled ?? true;
+            session.Player.Animation.DebugPrintAnimations = enabled ?? true;
 
             string message = enabled ?? true ? "Enabled" : "Disabled";
             ctx.Console.Out.WriteLine($"{message} animation debug info printing");

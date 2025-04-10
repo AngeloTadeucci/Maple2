@@ -18,6 +18,7 @@ public class FieldPlayer : Actor<Player> {
 
     public override StatsManager Stats => Session.Stats;
     public override BuffManager Buffs => Session.Buffs;
+    public override AnimationManager Animation => Session.Animation;
     public override IPrism Shape => new Prism(new Circle(new Vector2(Position.X, Position.Y), 10), Position.Z, 100);
     private ActorState state;
     public ActorState State {
@@ -87,7 +88,7 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, GetPlayerModel(player.Character.Gender), session.NpcMetadata) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
 
         regenStats = new Dictionary<BasicAttribute, Tuple<BasicAttribute, BasicAttribute>>();
@@ -99,14 +100,6 @@ public class FieldPlayer : Actor<Player> {
 
         scheduler = new EventQueue();
         scheduler.Start();
-    }
-
-    private static string GetPlayerModel(Gender gender) {
-        return gender switch {
-            Gender.Male => "male",
-            Gender.Female => "female",
-            _ => "male"
-        };
     }
 
     protected override void Dispose(bool disposing) {
@@ -192,6 +185,9 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Session.GameEvent.Update(tickCount);
+
+        //Console.WriteLine($"Playing sequence: {AnimationState.PlayingSequence?.Name ?? "null"}");
+        Console.WriteLine($"Current Animation: {Animation.Current?.Sequence?.Name ?? "null"} Skill: {Animation.Current?.Skill?.Id ?? 0}");
     }
 
     public void OnStateSync(StateSync stateSync) {

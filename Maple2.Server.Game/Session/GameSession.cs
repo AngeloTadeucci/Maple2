@@ -100,6 +100,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public MarriageManager Marriage { get; set; } = null!;
     public FishingManager Fishing { get; set; } = null!;
     public DungeonManager Dungeon { get; set; } = null!;
+    public AnimationManager Animation { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -147,6 +148,7 @@ public sealed partial class GameSession : Core.Network.Session {
         db.Commit();
 
         Player = new FieldPlayer(this, player);
+        Animation = new AnimationManager(this);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);

@@ -45,8 +45,8 @@ public partial class MovementState {
 
         baseSpeed = isWalking ? actor.Value.Metadata.Action.WalkSpeed : actor.Value.Metadata.Action.RunSpeed;
 
-        if (actor.AnimationState.PlayingSequence?.Name == sequence || actor.AnimationState.TryPlaySequence(sequence, aniSpeed * Speed, AnimationType.Misc)) {
-            stateSequence = actor.AnimationState.PlayingSequence;
+        if (actor.Animation.PlayingSequence?.Name == sequence || actor.Animation.TryPlaySequence(sequence, aniSpeed * Speed, AnimationType.Misc)) {
+            stateSequence = actor.Animation.PlayingSequence;
             walkSequence = stateSequence;
             walkTask = task;
 
@@ -166,8 +166,8 @@ public partial class MovementState {
         switch (keyName) {
             case "end":
                 if (State == ActorState.Walk) {
-                    if (actor.AnimationState.TryPlaySequence(stateSequence!.Name, aniSpeed * Speed, AnimationType.Misc)) {
-                        stateSequence = actor.AnimationState.PlayingSequence;
+                    if (actor.Animation.TryPlaySequence(stateSequence!.Name, aniSpeed * Speed, AnimationType.Misc)) {
+                        stateSequence = actor.Animation.PlayingSequence;
                     }
 
                     return;

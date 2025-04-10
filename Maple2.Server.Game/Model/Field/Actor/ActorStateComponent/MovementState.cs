@@ -37,7 +37,7 @@ public partial class MovementState {
     public MovementState(FieldNpc actor) {
         this.actor = actor;
 
-        hasIdleA = actor.AnimationState.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
+        hasIdleA = actor.Animation.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
         aniSpeed = actor.Value.Metadata.Model.AniSpeed;
 
         SetState(ActorState.Spawn);
@@ -141,10 +141,10 @@ public partial class MovementState {
         SetState(ActorState.Idle);
 
         if (hasIdleA) {
-            if (actor.AnimationState.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
-                stateSequence = actor.AnimationState.PlayingSequence;
-            } else if (setAttackIdle && actor.AnimationState.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
-                stateSequence = actor.AnimationState.PlayingSequence;
+            if (actor.Animation.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
+                stateSequence = actor.Animation.PlayingSequence;
+            } else if (setAttackIdle && actor.Animation.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
+                stateSequence = actor.Animation.PlayingSequence;
             }
         }
     }
@@ -182,7 +182,7 @@ public partial class MovementState {
     }
 
     public void Update(long tickCount) {
-        if (actor.AnimationState.PlayingSequence != stateSequence) {
+        if (actor.Animation.PlayingSequence != stateSequence) {
             Idle();
         }
 
@@ -203,10 +203,10 @@ public partial class MovementState {
                 StateWalkUpdate(tickCount, tickDelta);
                 break;
             case ActorState.Spawn:
-                if (actor.AnimationState.TryPlaySequence("Regen_A", aniSpeed, AnimationType.Misc)) {
+                if (actor.Animation.TryPlaySequence("Regen_A", aniSpeed, AnimationType.Misc)) {
                     SetState(ActorState.Regen);
 
-                    stateSequence = actor.AnimationState.PlayingSequence;
+                    stateSequence = actor.Animation.PlayingSequence;
                 } else {
                     Idle();
                 }

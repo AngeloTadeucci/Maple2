@@ -94,7 +94,7 @@ public class FieldNpc : Actor<Npc> {
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
-    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
+    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, field.NpcMetadata) {
         IdleSequenceMetadata = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequenceMetadata(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");

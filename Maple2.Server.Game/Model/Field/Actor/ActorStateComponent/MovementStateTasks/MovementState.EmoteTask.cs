@@ -36,7 +36,7 @@ public partial class MovementState {
             return;
         }
 
-        if (!actor.AnimationState.TryPlaySequence(sequence, 1, AnimationType.Misc)) {
+        if (!actor.Animation.TryPlaySequence(sequence, 1, AnimationType.Misc)) {
             task.Cancel();
             return;
         }
@@ -46,7 +46,7 @@ public partial class MovementState {
         }
 
         emoteActionTask = task;
-        stateSequence = actor.AnimationState.PlayingSequence;
+        stateSequence = actor.Animation.PlayingSequence;
 
         SetState(isIdle ? ActorState.Idle : ActorState.Emotion);
     }
