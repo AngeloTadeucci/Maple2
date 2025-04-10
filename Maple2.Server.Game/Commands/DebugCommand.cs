@@ -10,17 +10,19 @@ using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
 using System;
+using Maple2.Model.Enum;
 using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Commands;
 
-public class DebugCommand : Command {
+public class DebugCommand : GameCommand {
     private const string NAME = "debug";
     private const string DESCRIPTION = "Debug information management.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     private readonly NpcMetadataStorage npcStorage;
 
-    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(NAME, DESCRIPTION) {
+    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.npcStorage = npcStorage;
 
         AddCommand(new DebugNpcAiCommand(session, npcStorage));

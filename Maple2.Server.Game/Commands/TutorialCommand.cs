@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
 using Maple2.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Session;
@@ -10,9 +11,10 @@ using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Commands;
 
-public class TutorialCommand : Command {
+public class TutorialCommand : GameCommand {
     private const string NAME = "tutorial";
     private const string DESCRIPTION = "Tutorial management.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -20,7 +22,7 @@ public class TutorialCommand : Command {
     // ReSharper restore All
     #endregion
 
-    public TutorialCommand(GameSession session) : base(NAME, DESCRIPTION) {
+    public TutorialCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
         Add(new RewardCommand(session, this));
     }
 

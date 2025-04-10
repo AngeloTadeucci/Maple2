@@ -2,21 +2,23 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class FieldCommand : Command {
+public class FieldCommand : GameCommand {
     private const string NAME = "field";
     private const string DESCRIPTION = "Field information.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
     private readonly MapEntityStorage mapEntities;
 
-    public FieldCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base(NAME, DESCRIPTION) {
+    public FieldCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.mapStorage = mapStorage;
         this.mapEntities = mapEntities;

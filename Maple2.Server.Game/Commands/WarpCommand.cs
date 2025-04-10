@@ -18,14 +18,15 @@ using MigrationType = Maple2.Server.World.Service.MigrationType;
 
 namespace Maple2.Server.Game.Commands;
 
-public class WarpCommand : Command {
+public class WarpCommand : GameCommand {
     private const string NAME = "warp";
     private const string DESCRIPTION = "Map warping.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Warp;
 
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
 
-    public WarpCommand(GameSession session, MapMetadataStorage mapStorage) : base(NAME, DESCRIPTION) {
+    public WarpCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.mapStorage = mapStorage;
 
@@ -57,11 +58,12 @@ public class WarpCommand : Command {
     }
 }
 
-public class GotoCommand : Command {
+public class GotoCommand : GameCommand {
     private const string NAME = "goto";
     private const string DESCRIPTION = "Map warping by name or player.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Warp;
 
-    public GotoCommand(GameSession session, MapMetadataStorage mapStorage) : base(NAME, DESCRIPTION) {
+    public GotoCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         AddCommand(new MapCommand(session, mapStorage));
         AddCommand(new PlayerCommand(session));
     }
