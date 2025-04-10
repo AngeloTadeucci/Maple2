@@ -1,8 +1,5 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
-using Maple2.Model.Enum;
-using Maple2.Model.Game;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;

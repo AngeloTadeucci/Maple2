@@ -4,6 +4,10 @@ using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.Text;
 using Autofac;
+using Maple2.Model.Enum;
+using Maple2.Model.Game;
+using Maple2.Model.Metadata;
+using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
@@ -36,9 +40,39 @@ public class CommandRouter {
         var listBuilder = ImmutableList.CreateBuilder<Command>();
         var dictionaryBuilder = ImmutableDictionary.CreateBuilder<string, Command>();
         foreach (Command command in context.Resolve<IEnumerable<Command>>(new NamedParameter("session", session))) {
-            listBuilder.Add(command);
-            foreach (string alias in command.Aliases) {
-                dictionaryBuilder.Add(alias, command);
+            // Check permissions based on command type
+            bool hasPermission = command switch {
+                AnimateNpcCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                AlertCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Alert) ?? false,
+                BuffCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.GameMaster) ?? false,
+                CoordCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                DailyResetCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.EventManagement) ?? false,
+                DebugCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                FieldCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                FindCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Find) ?? false,
+                FreeCamCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                HomeCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                GotoCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Warp) ?? false,
+                ItemCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.SpawnItem) ?? false,
+                KillCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.GameMaster) ?? false,
+                NpcCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.SpawnNpc) ?? false,
+                PetCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.SpawnNpc) ?? false,
+                PlayerCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.PlayerCommands) ?? false,
+                QuestCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Quest) ?? false,
+                StringBoardCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.StringBoard) ?? false,
+                TriggerCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                TutorialCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Debug) ?? false,
+                WarpCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Warp) ?? false,
+                AdminPermissionCommand => session.Player?.AdminPermissions.HasFlag(AdminPermissions.Admin) ?? false,
+                // Add other command types as needed
+                _ => true // Default to allowing command if not specifically restricted
+            };
+
+            if (hasPermission) {
+                listBuilder.Add(command);
+                foreach (string alias in command.Aliases) {
+                    dictionaryBuilder.Add(alias.ToLower(), command);
+                }
             }
         }
 
@@ -66,16 +100,25 @@ public class CommandRouter {
             return command.Invoke(args, console);
         }
 
-        if (commandName != "help") {
-            console.Error.WriteLine($"Unrecognized command '{commandName}'");
+        if (session.Player.AdminPermissions == AdminPermissions.None || (commandName != "commands" && commandName != "command")) {
+            session.Send(NoticePacket.Notice(NoticePacket.Flags.Message, new InterfaceText(StringCode.s_chat_unknown_command)));
+            return 0;
         }
 
-        console.Out.Write(GetCommandList());
+        string commandList = GetCommandList();
+        if (!string.IsNullOrEmpty(commandList)) {
+            console.Out.Write(commandList);
+        }
+
         return 0;
     }
 
     private string GetCommandList() {
         int width = commands.Max(c => c.Name.Length);
+
+        if (commands.Count == 0) {
+            return string.Empty;
+        }
 
         var builder = new StringBuilder();
         builder.Append("Commands:\n");

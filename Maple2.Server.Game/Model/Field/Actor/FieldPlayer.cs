@@ -84,6 +84,10 @@ public class FieldPlayer : Actor<Player> {
     #endregion
 
     public int TagId = 1;
+    public AdminPermissions AdminPermissions {
+        get => Value.Account.AdminPermissions;
+        set => Value.Account.AdminPermissions = value;
+    }
 
     private readonly EventQueue scheduler;
 
