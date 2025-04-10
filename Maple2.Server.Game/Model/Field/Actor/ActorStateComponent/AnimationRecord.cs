@@ -4,7 +4,7 @@ using Maple2.Server.Game.Model.Enum;
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public class AnimationRecord {
-    public AnimationSequenceMetadata? Sequence { get; set; }
+    public AnimationSequenceMetadata? Sequence { get; private set; }
     public float Speed { get; set; }
     public AnimationType Type { get; set; }
     public float LastTime { get; set; }
@@ -14,7 +14,7 @@ public class AnimationRecord {
     public long LoopEndTick { get; set; }
     public bool IsLooping { get; set; }
     public bool LoopOnlyOnce { get; set; }
-    public SkillMetadata? Skill { get; set; }
+    public SkillMetadata? Skill { get; private set; }
 
     public AnimationRecord() {
         Speed = 1;

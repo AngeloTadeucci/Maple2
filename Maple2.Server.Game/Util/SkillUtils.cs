@@ -115,10 +115,10 @@ public static class SkillUtils {
             if (condition.Maps.Length > 0 && !condition.Maps.Contains(caster.Field.MapId)) {
                 return false;
             }
-            if (condition.Maps.Length > 0 && !condition.MapTypes.Contains(caster.Field.Metadata.Property.Type)) {
+            if (condition.MapTypes.Length > 0 && !condition.MapTypes.Contains(caster.Field.Metadata.Property.Type)) {
                 return false;
             }
-            if (condition.Maps.Length > 0 && !condition.Continents.Contains(caster.Field.Metadata.Property.Continent)) {
+            if (condition.Continents.Length > 0 && !condition.Continents.Contains(caster.Field.Metadata.Property.Continent)) {
                 return false;
             }
             if (condition.DungeonGroupType.Length > 0 &&
@@ -165,6 +165,7 @@ public static class SkillUtils {
 
         foreach ((BasicAttribute attribute, float value, CompareType compare, CompareStatValueType valueType) in condition.Stat) {
             float targetValue = valueType switch {
+                CompareStatValueType.CurrentPercentage when target.Stats.Values[attribute].Total == 0 => 0,
                 CompareStatValueType.CurrentPercentage => (float) target.Stats.Values[attribute].Current / target.Stats.Values[attribute].Total,
                 CompareStatValueType.TotalValue => target.Stats.Values[attribute].Total,
                 _ => 0,

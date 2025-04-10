@@ -319,12 +319,6 @@ public static class MapperExtensions {
     }
 
     public static BeginCondition Convert(this Maple2.File.Parser.Xml.Skill.BeginCondition beginCondition) {
-        List<DungeonGroupType> dungeonGroupType = [];
-        foreach (Parser.Xml.Skill.BeginCondition.DungeonRoomGroupTypes type in beginCondition.requireDungeonRoomGroupTypes) {
-            if (Enum.TryParse(type.type, true, out DungeonGroupType groupType)) {
-                dungeonGroupType.Add(groupType);
-            }
-        }
         return new BeginCondition(
             Level: beginCondition.level,
             Gender: (Gender) beginCondition.gender,
