@@ -26,7 +26,9 @@ public partial class ChannelService {
         var flag = (NoticePacket.Flags) alert.Flags;
         foreach (GameSession session in server.GetSessions()) {
             // Avoid disconnecting the requester
-            if (session.CharacterId == requesterId && flag.HasFlag(NoticePacket.Flags.Disconnect)) {
+            if (session.CharacterId == requesterId && flag.HasFlag(NoticePacket.Flags.Disconnect) ||
+                (session.Player.AdminPermissions == AdminPermissions.Admin ||
+                session.Player.AdminPermissions == AdminPermissions.GameMaster)) {
                 var moddedFlag = flag & ~NoticePacket.Flags.Disconnect;
                 if (moddedFlag == 0) {
                     // No flags left, don't send anything

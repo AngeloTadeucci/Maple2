@@ -9,14 +9,15 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class QuestCommand : Command {
+public class QuestCommand : GameCommand {
     private const string NAME = "quest";
     private const string DESCRIPTION = "Field information.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Quest;
 
     private readonly GameSession session;
     private readonly QuestMetadataStorage questStorage;
 
-    public QuestCommand(GameSession session, QuestMetadataStorage questStorage) : base(NAME, DESCRIPTION) {
+    public QuestCommand(GameSession session, QuestMetadataStorage questStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.questStorage = questStorage;
 

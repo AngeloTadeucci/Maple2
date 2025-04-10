@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -9,14 +10,15 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class BuffCommand : Command {
+public class BuffCommand : GameCommand {
     private const string NAME = "buff";
     private const string DESCRIPTION = "Add buff to player.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.GameMaster;
 
     private readonly GameSession session;
     private readonly SkillMetadataStorage skillStorage;
 
-    public BuffCommand(GameSession session, SkillMetadataStorage skillStorage) : base(NAME, DESCRIPTION) {
+    public BuffCommand(GameSession session, SkillMetadataStorage skillStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.skillStorage = skillStorage;
 

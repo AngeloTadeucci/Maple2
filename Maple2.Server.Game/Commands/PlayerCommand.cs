@@ -11,11 +11,12 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class PlayerCommand : Command {
+public class PlayerCommand : GameCommand {
     private const string NAME = "player";
     private const string DESCRIPTION = "Player management.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.PlayerCommands;
 
-    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(NAME, DESCRIPTION) {
+    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         AddCommand(new LevelCommand(session));
         AddCommand(new PrestigeCommand(session));
         AddCommand(new ExpCommand(session));
@@ -23,7 +24,6 @@ public class PlayerCommand : Command {
         AddCommand(new InfoCommand(session));
         AddCommand(new SkillPointCommand(session));
         AddCommand(new CurrencyCommand(session));
-        AddCommand(new DailyResetCommand(session));
         AddCommand(new InventoryCommand(session));
         AddCommand(new TrophyCommand(session, achievementMetadataStorage));
     }
@@ -268,19 +268,6 @@ public class PlayerCommand : Command {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
-        }
-    }
-
-    private class DailyResetCommand : Command {
-        private readonly GameSession session;
-
-        public DailyResetCommand(GameSession session) : base("daily-reset", "Force daily reset for this player.") {
-            this.session = session;
-            this.SetHandler<InvocationContext>(Handle);
-        }
-
-        private void Handle(InvocationContext ctx) {
-            session.DailyReset();
         }
     }
 

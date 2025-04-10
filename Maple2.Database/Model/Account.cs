@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -34,6 +35,7 @@ internal class Account {
     public DateTime LastModified { get; set; }
 
     public bool Online { get; set; }
+    public string Permissions { get; set; }
 
     public ICollection<Character>? Characters { get; set; }
 
@@ -72,6 +74,7 @@ internal class Account {
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
             Online = other.Online,
+            Permissions = other.AdminPermissions.ToString(),
         };
     }
 
@@ -106,6 +109,7 @@ internal class Account {
             SurvivalGoldLevelRewardClaimed = other.SurvivalGoldLevelRewardClaimed,
             ActiveGoldPass = other.ActiveGoldPass,
             Online = other.Online,
+            AdminPermissions = Enum.TryParse<AdminPermissions>(other.Permissions, true, out AdminPermissions permissions) ? permissions : AdminPermissions.None,
         };
     }
 

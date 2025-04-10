@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
@@ -11,15 +12,16 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class PetCommand : Command {
+public class PetCommand : GameCommand {
     private const string NAME = "pet";
     private const string DESCRIPTION = "Hungry field pet spawning.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.SpawnItem;
 
     private readonly GameSession session;
     private readonly NpcMetadataStorage npcStorage;
     private readonly ItemMetadataStorage itemStorage;
 
-    public PetCommand(GameSession session, NpcMetadataStorage npcStorage, ItemMetadataStorage itemStorage) : base(NAME, DESCRIPTION) {
+    public PetCommand(GameSession session, NpcMetadataStorage npcStorage, ItemMetadataStorage itemStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.npcStorage = npcStorage;
         this.itemStorage = itemStorage;

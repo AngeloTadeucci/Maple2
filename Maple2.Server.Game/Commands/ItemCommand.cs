@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
 using Maple2.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -10,9 +11,10 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class ItemCommand : Command {
+public class ItemCommand : GameCommand {
     private const string NAME = "item";
     private const string DESCRIPTION = "Item spawning.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.SpawnItem;
 
     private const int MAX_RARITY = 6;
     private const int MAX_SOCKET = 5;
@@ -20,7 +22,7 @@ public class ItemCommand : Command {
     private readonly GameSession session;
     private readonly ItemMetadataStorage itemStorage;
 
-    public ItemCommand(GameSession session, ItemMetadataStorage itemStorage) : base(NAME, DESCRIPTION) {
+    public ItemCommand(GameSession session, ItemMetadataStorage itemStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.itemStorage = itemStorage;
 
