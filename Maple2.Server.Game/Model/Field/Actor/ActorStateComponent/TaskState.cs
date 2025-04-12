@@ -88,7 +88,7 @@ public class TaskState {
         pendingTask = null;
     }
 
-    public bool HasTask<T>( [NotNullWhen(true)] out T? currentTask) where T : NpcTask {
+    public bool HasTask<T>([NotNullWhen(true)] out T? currentTask) where T : NpcTask {
         currentTask = taskQueue.UnorderedItems.FirstOrDefault(x => x.Element.GetType() == typeof(T)).Element as T;
         return currentTask != null;
     }
