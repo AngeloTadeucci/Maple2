@@ -68,9 +68,17 @@ public class Buff : IUpdatable, IByteSerializable {
         Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
         StartTick = startTick;
 
-        if (Stacks == 1 || Metadata.Property.ResetCondition != BuffResetCondition.PersistEndTick) {
-            EndTick = StartTick + durationMs;
+        switch (Metadata.Property.ResetCondition) {
+            case BuffResetCondition.Reset:
+            case BuffResetCondition.Reset2:
+            case BuffResetCondition.Reset3:
+                EndTick = StartTick + durationMs;
+                break;
+            case BuffResetCondition.PersistEndTick:
+                // Do not change end tick
+                break;
         }
+
         return true;
     }
 

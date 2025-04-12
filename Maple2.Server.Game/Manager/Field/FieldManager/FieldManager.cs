@@ -293,6 +293,7 @@ public partial class FieldManager : IField {
             return;
         }
 
+        player.FallDamage(Constant.FallBoundingAddedDistance);
         player.MoveToPosition(player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default);
     }
 

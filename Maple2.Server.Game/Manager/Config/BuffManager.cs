@@ -26,7 +26,7 @@ public class BuffManager : IUpdatable {
     #endregion
     public IActor Actor { get; private set; }
     // TODO: Change this to support multiple buffs of the same id, different casters. Possibly also different levels?
-    public ConcurrentDictionary<int, Buff> Buffs { get; } = new();
+    public ConcurrentDictionary<int, List<Buff>> Buffs { get; } = new();
     public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
     public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
     private Dictionary<BasicAttribute, float> Resistances { get; } = new();
@@ -49,8 +49,10 @@ public class BuffManager : IUpdatable {
 
     public void ResetActor(IActor actor) {
         Actor = actor;
-        foreach ((int id, Buff buff) in Buffs) {
-            buff.ResetActor(actor);
+        foreach ((int id, List<Buff> buffDict) in Buffs) {
+            foreach (Buff buff in buffDict) {
+                buff.ResetActor(actor);
+            }
         }
     }
 
@@ -81,11 +83,21 @@ public class BuffManager : IUpdatable {
 
         // TODO: Implement AdditionalEffectMetadata.CasterIndividualBuff.
         // If true, each caster will have their own buff added to the same Actor.
+        List<Buff> existingBuffs = GetBuff(id, additionalEffect.Property.CasterIndividualBuff ? caster.ObjectId : 0);
+        foreach (Buff existingBuff in existingBuffs) {
+            if (existingBuff.Level < level) {
+            }
+
+            existingBuff.Disable();
+            owner.Field.Broadcast(BuffPacket.Remove(existingBuff));
+        }
+
         if (Buffs.TryGetValue(id, out Buff? existing)) {
             if (level > existing.Level) {
 
             }
-            if (!existing.Stack(startTick)) {
+
+            if (!existing.Stack(startTick, durationMs: durationMs)) {
                 return;
             }
             if (notifyField) {
@@ -141,6 +153,19 @@ public class BuffManager : IUpdatable {
         if (notifyField) {
             owner.Field.Broadcast(BuffPacket.Add(buff));
         }
+    }
+
+    private Buff? GetBuff(int buffId, int casterObjectId = 0) {
+        if (casterObjectId > 0) {
+            if (Buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+                return buffs.FirstOrDefault(buff => buff.Caster.ObjectId == casterObjectId);
+            }
+        } else {
+            if (Buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+                return buffs.FirstOrDefault();
+            }
+        }
+        return null;
     }
 
     public bool HasBuff(int effectId, short effectLevel = 1, int overlapCount = 0) {
