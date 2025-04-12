@@ -552,9 +552,7 @@ public partial class FieldManager : IField {
         }
 
         foreach (FieldPlayer player in Players.Values) {
-            int dummyNpcId = player.Value.Character.Gender is Gender.Male ? Constant.DummyNpcMale : Constant.DummyNpcFemale;
-
-            if (!NpcMetadata.TryGet(dummyNpcId, out NpcMetadata? npcMetadata)) {
+            if (!NpcMetadata.TryGet(Constant.DummyNpc(player.Value.Character.Gender), out NpcMetadata? npcMetadata)) {
                 continue;
             }
 
@@ -566,7 +564,7 @@ public partial class FieldManager : IField {
             Broadcast(ProxyObjectPacket.AddNpc(dummyNpc));
 
             dummyNpc.SetPatrolData(patrolData);
-            dummyNpc.MovementState.CleanupPatrolData();
+            dummyNpc.MovementState.CleanupPatrolData(player);
             player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
         }
     }

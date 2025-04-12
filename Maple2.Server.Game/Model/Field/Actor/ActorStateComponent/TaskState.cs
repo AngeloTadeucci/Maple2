@@ -1,14 +1,15 @@
-﻿using Maple2.Server.Game.Model.Enum;
+﻿using System.Diagnostics.CodeAnalysis;
+using Maple2.Server.Game.Model.Enum;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public class TaskState {
-    public FieldNpc Actor { get; init; }
+    private FieldNpc Actor { get; }
 
-    private PriorityQueue<NpcTask, NpcTaskPriority> taskQueue;
-    private NpcTask?[] runningTasks;
-    private bool isPendingStart = false;
-    private NpcTask? pendingTask = null;
+    private readonly PriorityQueue<NpcTask, NpcTaskPriority> taskQueue;
+    private readonly NpcTask?[] runningTasks;
+    private bool isPendingStart;
+    private NpcTask? pendingTask;
 
     public TaskState(FieldNpc actor) {
         Actor = actor;
@@ -22,17 +23,16 @@ public class TaskState {
     private NpcTaskStatus QueueTask(NpcTask task) {
         NpcTask? queued = runningTasks[task.PriorityValue];
 
-        if (queued != null && !task.ShouldOverride(task)) {
+        if (queued != null && !task.ShouldOverride(queued)) {
             return NpcTaskStatus.Cancelled;
         }
 
-        if (taskQueue.TryPeek(out NpcTask? currentTask, out NpcTaskPriority priority)) {
-            bool cancelLowerPriority = currentTask.PriorityValue < task.PriorityValue && currentTask.CancelOnInterrupt;
-            bool cancelEqualPriority = currentTask.PriorityValue == task.PriorityValue;
+        queued?.Cancel();
 
-            if (cancelLowerPriority || cancelEqualPriority) {
+        if (taskQueue.TryPeek(out NpcTask? currentTask, out NpcTaskPriority priority) && currentTask.PriorityValue < task.PriorityValue) {
+            if (currentTask.CancelOnInterrupt) {
                 currentTask.Cancel();
-            } else if (currentTask.PriorityValue < task.PriorityValue) {
+            } else {
                 currentTask.Pause();
             }
         }
@@ -40,7 +40,8 @@ public class TaskState {
         runningTasks[task.PriorityValue] = task;
         taskQueue.Enqueue(task, task.Priority);
 
-        if (taskQueue.Peek() == task) {
+        NpcTask npcTask = taskQueue.Peek();
+        if (npcTask == task) {
             isPendingStart = true;
             pendingTask = task;
 
@@ -57,19 +58,28 @@ public class TaskState {
 
         runningTasks[task.PriorityValue] = null;
 
-        if (taskQueue.TryPeek(out NpcTask? currentTask, out NpcTaskPriority priority) && currentTask == task) {
-            taskQueue.Dequeue();
-
-            if (taskQueue.TryPeek(out currentTask, out priority)) {
-                isPendingStart = true;
-                pendingTask = currentTask;
-            }
+        if (!taskQueue.TryPeek(out NpcTask? currentTask, out _) || currentTask != task) {
+            return;
         }
+
+        taskQueue.Dequeue();
+
+        if (!taskQueue.TryPeek(out currentTask, out _)) {
+            return;
+        }
+        isPendingStart = true;
+        pendingTask = currentTask;
     }
 
     public void Update(long tickCount) {
         if (isPendingStart) {
-            if (taskQueue.TryPeek(out NpcTask? task, out NpcTaskPriority priority) && task == pendingTask) {
+            NpcTask? task;
+
+            while (taskQueue.TryPeek(out task, out _) && task.Status == NpcTaskStatus.Cancelled) {
+                taskQueue.Dequeue();
+            }
+
+            if (taskQueue.TryPeek(out task, out _) && task == pendingTask) {
                 task.Resume();
             }
         }
@@ -78,23 +88,21 @@ public class TaskState {
         pendingTask = null;
     }
 
-    public abstract class NpcTask {
-        protected TaskState queue { get; private set; }
+    public bool HasTask<T>( [NotNullWhen(true)] out T? currentTask) where T : NpcTask {
+        currentTask = taskQueue.UnorderedItems.FirstOrDefault(x => x.Element.GetType() == typeof(T)).Element as T;
+        return currentTask != null;
+    }
 
-        public NpcTaskPriority Priority { get; private init; }
-        public int PriorityValue { get => (int) Priority; }
-        public NpcTaskStatus Status {
-            get => status;
-            private set {
-                status = value;
-            }
-        }
-        public bool IsDone { get => Status == NpcTaskStatus.Cancelled || Status == NpcTaskStatus.Complete; }
+    public abstract class NpcTask {
+        private TaskState Queue { get; }
+        public NpcTaskPriority Priority { get; }
+        public int PriorityValue => (int) Priority;
+        public NpcTaskStatus Status { get; private set; }
+        public bool IsDone => Status is NpcTaskStatus.Cancelled or NpcTaskStatus.Complete;
         public virtual bool CancelOnInterrupt { get; }
-        private NpcTaskStatus status;
 
         public NpcTask(TaskState queue, NpcTaskPriority priority) {
-            this.queue = queue;
+            this.Queue = queue;
             Priority = priority;
 
             Status = queue.QueueTask(this);
@@ -131,7 +139,7 @@ public class TaskState {
 
             Status = isCompleted ? NpcTaskStatus.Complete : NpcTaskStatus.Cancelled;
 
-            queue.FinishTask(this);
+            Queue.FinishTask(this);
             TaskFinished(isCompleted);
         }
 
@@ -143,6 +151,10 @@ public class TaskState {
 
         public void Completed() {
             Finish(true);
+        }
+
+        public override string ToString() {
+            return $"{GetType().Name} (Priority: {Priority}, Status: {Status})";
         }
     }
 }

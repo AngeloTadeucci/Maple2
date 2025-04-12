@@ -86,11 +86,18 @@ public partial class MovementState {
 
     public NpcTask TryStandby(IActor? target, bool isIdle, string sequence = "") {
         NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+
+        // check if taskstate is already running or has a pending a standby task
+        actor.TaskState.HasTask(out NpcStandbyTask? task);
+        if (task?.Priority == priority && task.Status is NpcTaskStatus.Pending or NpcTaskStatus.Running) {
+            return task;
+        }
+
         return new NpcStandbyTask(actor.TaskState, this, sequence, priority, isIdle);
     }
 
     public NpcTask TryEmote(string sequenceName, bool isIdle, float duration = -1f) {
-        NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+        NpcTaskPriority priority = isIdle ? NpcTaskPriority.Emote : NpcTaskPriority.BattleStandby;
         return new NpcEmoteTask(actor.TaskState, this, sequenceName, priority, isIdle, duration);
     }
 
@@ -118,8 +125,8 @@ public partial class MovementState {
         return new NpcSkillCastTask(actor.TaskState, this, id, level, faceTarget, facePos, uid);
     }
 
-    public NpcTask CleanupPatrolData() {
-        return new NpcCleanupPatrolDataTask(actor.TaskState, this);
+    public NpcTask CleanupPatrolData(FieldPlayer player) {
+        return new NpcCleanupPatrolDataTask(player, actor.TaskState, this);
     }
 
     private void SetState(ActorState state) {

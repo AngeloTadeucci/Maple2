@@ -170,7 +170,7 @@ public class FieldNpc : Actor<Npc> {
         if (tickCount >= nextDebugPacket && playersListeningToDebugNow && debugMessages.Count > 0) {
             sentDebugPacket = true;
 
-            Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(false, ObjectId, String.Join("", debugMessages.ToArray()), 2500, 0));
+            Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(false, ObjectId, string.Join("", debugMessages.ToArray()), 2500, 0));
         }
 
         if (sentDebugPacket || tickCount >= nextDebugPacket) {

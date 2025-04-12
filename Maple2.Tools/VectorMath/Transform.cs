@@ -138,6 +138,9 @@ public class Transform {
     }
 
     public void LookTo(Vector3 direction, Vector3 up, bool snapToGroundPlane = true) {
+        direction = Vector3.Normalize(direction);
+        up = Vector3.Normalize(up);
+
         if (snapToGroundPlane) {
             direction = Vector3.Normalize(direction - Vector3.Dot(direction, up) * up); // plane projection formula
 
@@ -147,6 +150,8 @@ public class Transform {
         }
 
         Vector3 right = Vector3.Cross(direction, up);
+        up = Vector3.Cross(right, direction);
+
         float scale = Scale;
 
         RightAxis = scale * right;

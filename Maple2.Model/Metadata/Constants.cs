@@ -921,6 +921,7 @@ public static class Constant {
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
     public const int DummyNpcMale = 2040998;
     public const int DummyNpcFemale = 2040999;
+    public static int DummyNpc(Gender gender) => gender is Gender.Female ? DummyNpcFemale : DummyNpcMale;
 
     #endregion
 
