@@ -88,9 +88,9 @@ public class FieldNpc : Actor<Npc> {
     public MS2PatrolData? Patrol { get; private set; }
     private int currentWaypointIndex;
 
-    private bool hasBeenBattling = false;
+    private bool hasBeenBattling;
     private NpcTask? idleTask;
-    private long idleTaskLimitTick = 0;
+    private long idleTaskLimitTick;
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
@@ -206,6 +206,8 @@ public class FieldNpc : Actor<Npc> {
 
         if (idleTask is MovementState.NpcStandbyTask && idleTaskLimitTick == 0) {
             idleTaskLimitTick = tickCount + 1000;
+        } else if (idleTask is not MovementState.NpcStandbyTask && idleTaskLimitTick != 0) {
+            idleTaskLimitTick = 0;
         }
 
         bool hitLimit = idleTaskLimitTick != 0 && tickCount >= idleTaskLimitTick;
@@ -350,7 +352,6 @@ public class FieldNpc : Actor<Npc> {
             Field.Broadcast(FieldPacket.DropItem(fieldItem));
         }
     }
-
 
     public override SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata) || metadata.Data.Motions.Length <= motionPoint) {

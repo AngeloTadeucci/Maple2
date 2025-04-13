@@ -87,12 +87,6 @@ public partial class MovementState {
     public NpcTask TryStandby(IActor? target, bool isIdle, string sequence = "") {
         NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
 
-        // check if taskstate is already running or has a pending a standby task
-        actor.TaskState.HasTask(out NpcStandbyTask? task);
-        if (task?.Priority == priority && task.Status is NpcTaskStatus.Pending or NpcTaskStatus.Running) {
-            return task;
-        }
-
         return new NpcStandbyTask(actor.TaskState, this, sequence, priority, isIdle);
     }
 

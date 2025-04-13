@@ -88,11 +88,6 @@ public class TaskState {
         pendingTask = null;
     }
 
-    public bool HasTask<T>([NotNullWhen(true)] out T? currentTask) where T : NpcTask {
-        currentTask = taskQueue.UnorderedItems.FirstOrDefault(x => x.Element.GetType() == typeof(T)).Element as T;
-        return currentTask != null;
-    }
-
     public abstract class NpcTask {
         private TaskState Queue { get; }
         public NpcTaskPriority Priority { get; }
@@ -101,7 +96,7 @@ public class TaskState {
         public bool IsDone => Status is NpcTaskStatus.Cancelled or NpcTaskStatus.Complete;
         public virtual bool CancelOnInterrupt { get; }
 
-        public NpcTask(TaskState queue, NpcTaskPriority priority) {
+        protected NpcTask(TaskState queue, NpcTaskPriority priority) {
             this.Queue = queue;
             Priority = priority;
 
