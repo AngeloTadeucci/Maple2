@@ -1,19 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Maple2.Database.Context;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
-using Microsoft.EntityFrameworkCore;
 
 namespace Maple2.Database.Storage;
 
 public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int, QuestMetadata>(context, CACHE_SIZE), ISearchable<QuestMetadata> {
     private const int CACHE_SIZE = 2500; // ~2.2k total items
 
-    private readonly Dictionary<int, QuestMetadata> allQuests = [];
+    private readonly ConcurrentDictionary<int, QuestMetadata> allQuests = [];
 
     public bool TryGet(int id, [NotNullWhen(true)] out QuestMetadata? quest) {
+        if (allQuests.IsEmpty) {
+            GetAllQuests();
+        }
+
         if (Cache.TryGet(id, out quest)) {
             return true;
         }
@@ -24,9 +26,7 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
                 return true;
             }
 
-            quest = Context.QuestMetadata.Find(id);
-
-            if (quest == null) {
+            if (!allQuests.TryGetValue(id, out quest)) {
                 return false;
             }
 
@@ -36,17 +36,32 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
         return true;
     }
 
-    public IEnumerable<QuestMetadata> GetQuests() {
+    private void GetAllQuests() {
+        if (!allQuests.IsEmpty) {
+            return;
+        }
+
         lock (Context) {
-            if (allQuests.Count > 0) {
-                return allQuests.Values;
+            if (!allQuests.IsEmpty) {
+                return;
             }
 
             List<QuestMetadata> allQuestsList = Context.QuestMetadata.ToList();
             foreach (QuestMetadata quest in allQuestsList) {
-                allQuests.Add(quest.Id, quest);
+                allQuests.TryAdd(quest.Id, quest);
             }
-            return allQuestsList;
+        }
+    }
+
+    public IEnumerable<QuestMetadata> GetQuests() {
+        lock (Context) {
+            if (!allQuests.IsEmpty) {
+                return allQuests.Values;
+            }
+
+            GetAllQuests();
+
+            return allQuests.Values;
         }
     }
 
