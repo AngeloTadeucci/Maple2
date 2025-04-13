@@ -76,6 +76,10 @@ public sealed class QuestManager {
                 continue;
             }
 
+            if (characterValues.ContainsKey(metadata.Id) || accountValues.ContainsKey(metadata.Id)) {
+                continue;
+            }
+
             var quest = new Quest(metadata) {
                 Track = true,
                 State = QuestState.Started,
@@ -86,9 +90,6 @@ public sealed class QuestManager {
                 quest.Conditions.Add(i, new Quest.Condition(metadata.Conditions[i]));
             }
 
-            if (characterValues.ContainsKey(metadata.Id) || accountValues.ContainsKey(metadata.Id)) {
-                continue;
-            }
             long ownerId = metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
             quest = db.CreateQuest(ownerId, quest);
             if (quest == null) {
