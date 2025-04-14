@@ -6,7 +6,7 @@ using Maple2.Model.Metadata;
 namespace Maple2.Database.Storage;
 
 public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int, QuestMetadata>(context, CACHE_SIZE), ISearchable<QuestMetadata> {
-    private const int CACHE_SIZE = 5000; // 4.903 quests are in the database
+    private const int CACHE_SIZE = 8000; // 4.903 quests are in the database with NA feature, 7.2k quests in xmls
     private bool isInitialized;
 
     public bool TryGet(int id, [NotNullWhen(true)] out QuestMetadata? quest) {
