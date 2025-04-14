@@ -5,7 +5,6 @@ using Maple2.Database.Storage;
 using System.CommandLine.IO;
 using Maple2.Server.Game.Util;
 using Maple2.Model.Metadata;
-using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
