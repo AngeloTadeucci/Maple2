@@ -372,6 +372,7 @@ public class DebugCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx) {
+            ctx.Console.Out.WriteLine("Logging out...");
             session.Disconnect();
         }
     }

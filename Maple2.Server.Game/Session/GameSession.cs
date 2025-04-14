@@ -723,11 +723,6 @@ public sealed partial class GameSession : Core.Network.Session {
             State = SessionState.Disconnected;
             Complete();
         } finally {
-#if !DEBUG
-            if (Player.Value.Character.ReturnMapId != 0) {
-                Player.Value.Character.MapId = Player.Value.Character.ReturnMapId;
-            }
-#endif
             Guild.Dispose();
             Buddy.Dispose();
             Party.Dispose();
