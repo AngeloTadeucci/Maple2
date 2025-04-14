@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Context;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -7,15 +6,10 @@ using Maple2.Model.Metadata;
 namespace Maple2.Database.Storage;
 
 public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int, QuestMetadata>(context, CACHE_SIZE), ISearchable<QuestMetadata> {
-    private const int CACHE_SIZE = 2500; // ~2.2k total items
-
-    private readonly ConcurrentDictionary<int, QuestMetadata> allQuests = [];
+    private const int CACHE_SIZE = 5000; // 4.903 quests are in the database
+    private bool isInitialized;
 
     public bool TryGet(int id, [NotNullWhen(true)] out QuestMetadata? quest) {
-        if (allQuests.IsEmpty) {
-            GetAllQuests();
-        }
-
         if (Cache.TryGet(id, out quest)) {
             return true;
         }
@@ -26,7 +20,9 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
                 return true;
             }
 
-            if (!allQuests.TryGetValue(id, out quest)) {
+            quest = Context.QuestMetadata.Find(id);
+
+            if (quest is null) {
                 return false;
             }
 
@@ -36,44 +32,36 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
         return true;
     }
 
-    private void GetAllQuests() {
-        if (!allQuests.IsEmpty) {
-            return;
-        }
-
-        lock (Context) {
-            if (!allQuests.IsEmpty) {
-                return;
-            }
-
-            List<QuestMetadata> allQuestsList = Context.QuestMetadata.ToList();
-            foreach (QuestMetadata quest in allQuestsList) {
-                allQuests.TryAdd(quest.Id, quest);
-            }
-        }
-    }
-
     public IEnumerable<QuestMetadata> GetQuests() {
+        if (isInitialized) {
+            return Cache.All().Values;
+        }
+
         lock (Context) {
-            if (!allQuests.IsEmpty) {
-                return allQuests.Values;
+            List<QuestMetadata> allQuestsList = Context.QuestMetadata.ToList();
+            if (allQuestsList.Count > CACHE_SIZE) {
+                // leaving this exception in case more quests are added in the future
+                throw new Exception("Cache size exceeded the limit.");
             }
 
-            GetAllQuests();
+            foreach (QuestMetadata quest in allQuestsList) {
+                Cache.AddReplace(quest.Id, quest);
+            }
 
-            return allQuests.Values;
+            isInitialized = true;
+            return allQuestsList;
         }
     }
 
     public IEnumerable<QuestMetadata> GetQuestsByNpc(int npcId) {
-        return allQuests.Values.Where(x => x.Basic.StartNpc == npcId).ToList();
+        return GetQuests().Where(x => x.Basic.StartNpc == npcId).ToList();
     }
 
     public IEnumerable<QuestMetadata> GetQuestsByType(QuestType type) {
-        return allQuests.Values.Where(x => x.Basic.Type == type);
+        return GetQuests().Where(x => x.Basic.Type == type);
     }
 
     public List<QuestMetadata> Search(string name) {
-        return allQuests.Values.Where(x => x.Name != null && x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+        return GetQuests().Where(x => x.Name != null && x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 }
