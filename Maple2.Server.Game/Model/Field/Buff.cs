@@ -64,19 +64,26 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
-    public bool Stack(long startTick, int amount = 1, int durationMs = 0) {
-        Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
-        StartTick = startTick;
+    public bool UpdateEndTime(long endTick) {
+        if (endTick == EndTick) {
+            return false;
+        }
+        EndTick = endTick;
+        return true;
+    }
 
-        switch (Metadata.Property.ResetCondition) {
-            case BuffResetCondition.ResetEndTick:
-            case BuffResetCondition.Reset2:
-            case BuffResetCondition.Replace:
-                EndTick = StartTick + durationMs;
-                break;
-            case BuffResetCondition.PersistEndTick:
-                // Do not change end tick
-                break;
+    public bool Stack(int amount = 1) {
+        int currentStacks = Stacks;
+
+        // Ensure we don't go below 0
+        int adjustedAmount = Math.Max(0, Stacks - amount);
+        if (adjustedAmount == 0) {
+            return false;
+        }
+
+        Stacks = Math.Min(Stacks + adjustedAmount, Metadata.Property.MaxCount);
+        if (Stacks == currentStacks) {
+            return false;
         }
 
         if (Stacks >= Metadata.Property.MaxCount) {
@@ -84,11 +91,6 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         return true;
-    }
-
-    public void ModifyStack(int amount) {
-        Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
-        Field.Broadcast(BuffPacket.Update(this));
     }
 
     public void RemoveStack(int amount = 1) {
@@ -122,11 +124,7 @@ public class Buff : IUpdatable, IByteSerializable {
             return;
         }
 
-        if (tickCount < NextProcTick) {
-            return;
-        }
-
-        if (!canProc) {
+        if (!canProc ||tickCount < NextProcTick) {
             return;
         }
 

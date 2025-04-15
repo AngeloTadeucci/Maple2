@@ -165,7 +165,7 @@ public static class FieldPacket {
         pWriter.WriteInt();
 
         if (npc.Value.IsBoss) {
-            pWriter.WriteUnicodeString("Eff_Test_Regen"); // EffectStr
+            pWriter.WriteUnicodeString(); // EffectStr
             pWriter.WriteInt(npc.Value.Metadata.Skill.Entries.Length);
             foreach (NpcMetadataSkill.Entry skill in npc.Value.Metadata.Skill.Entries) {
                 pWriter.WriteInt(skill.Id);

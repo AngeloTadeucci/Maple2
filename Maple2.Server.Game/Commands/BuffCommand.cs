@@ -61,8 +61,9 @@ public class BuffCommand : GameCommand {
                         if (stack > 1) {
                             List<Buff> buffs = player.Buffs.EnumerateBuffs(buffId);
                             foreach (Buff buff in buffs) {
-                                buff.Stack(player.Field.FieldTick, stack);
-                                session.Field?.Broadcast(BuffPacket.Update(buff));
+                                if (buff.Stack(stack)) {
+                                    session.Field?.Broadcast(BuffPacket.Update(buff));
+                                }
                             }
 
                         }
@@ -85,8 +86,9 @@ public class BuffCommand : GameCommand {
                 if (stack > 1) {
                     List<Buff> buffs = player.Buffs.EnumerateBuffs(buffId);
                     foreach (Buff buff in buffs) {
-                        buff.Stack(player.Field.FieldTick, stack);
-                        session.Field?.Broadcast(BuffPacket.Update(buff));
+                        if (buff.Stack(stack)) {
+                            session.Field?.Broadcast(BuffPacket.Update(buff));
+                        }
                     }
                 }
             } else {
@@ -98,8 +100,9 @@ public class BuffCommand : GameCommand {
                 if (stack > 1) {
                     List<Buff> buffs = session.Player.Buffs.EnumerateBuffs(buffId);
                     foreach (Buff buff in buffs) {
-                        buff.Stack(startTick, stack);
-                        session.Field.Broadcast(BuffPacket.Update(buff));
+                        if (buff.Stack(stack)) {
+                            session.Field.Broadcast(BuffPacket.Update(buff));
+                        }
                     }
                 }
             }

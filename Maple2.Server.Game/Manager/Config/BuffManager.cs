@@ -85,18 +85,28 @@ public class BuffManager : IUpdatable {
 
         CooldownTimes[id] = startTick + additionalEffect.Property.CooldownTime;
         Buff? existing = GetBuff(id, additionalEffect.Property.CasterIndividualBuff ? caster.ObjectId : 0);
+        long endTick = startTick + durationMs;
+
+        switch (additionalEffect.Property.ResetCondition) {
+            case BuffResetCondition.ResetEndTick:
+            case BuffResetCondition.Reset2: // This isn't correct, but it seems to behave VERY close to ResetEndTick
+                // endTick = startTick + durationMs;
+                break;
+            case BuffResetCondition.PersistEndTick:
+                if (existing != null) {
+                    endTick = existing.EndTick;
+                }
+                break;
+            case BuffResetCondition.Replace:
+                if (existing != null) {
+                    Remove(existing.Id, existing.Caster.ObjectId);
+                    existing = null;
+                }
+                //endTick = startTick + durationMs;
+                break;
+        }
         if (existing != null) {
-            if (additionalEffect.Property.ResetCondition == BuffResetCondition.Replace) {
-                Remove(existing.Id, existing.Caster.ObjectId);
-                AddBuff(caster, owner, id, level, startTick, durationMs, notifyField);
-                return;
-            }
-
-            if (!existing.Stack(startTick, durationMs: durationMs)) {
-                return;
-            }
-
-            if (notifyField) {
+            if ((existing.UpdateEndTime(endTick) || existing.Stack()) && notifyField) {
                 owner.Field.Broadcast(BuffPacket.Update(existing));
             }
             return;
@@ -111,7 +121,7 @@ public class BuffManager : IUpdatable {
             }
         }
 
-        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, durationMs);
+        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, endTick);
 
         if (!TryAdd(buff)) {
             logger.Error("Could not add buff {Id} to {Object}", buff.Id, Actor.ObjectId);
@@ -311,7 +321,9 @@ public class BuffManager : IUpdatable {
         foreach (AdditionalEffectMetadataModifyOverlapCount modifyOverlapCount in buff.Metadata.ModifyOverlapCount) {
             List<Buff> buffs = EnumerateBuffs(modifyOverlapCount.Id);
             foreach (Buff buffResult in buffs) {
-                buffResult.ModifyStack(modifyOverlapCount.OffsetCount);
+                if (buffResult.Stack(modifyOverlapCount.OffsetCount)) {
+                    Actor.Field.Broadcast(BuffPacket.Update(buffResult));
+                }
             }
         }
     }
