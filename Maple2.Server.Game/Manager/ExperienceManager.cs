@@ -151,7 +151,12 @@ public sealed class ExperienceManager {
     }
 
     public void AddStaticExp(long amount) {
+        if (amount <= 0) {
+            return;
+        }
         Exp += amount;
+        session.Send(ExperienceUpPacket.Add(amount, Exp, RestExp, ExpMessageCode.s_msg_take_exp));
+        session.ConditionUpdate(ConditionType.exp, counter: amount);
         LevelUp();
     }
 

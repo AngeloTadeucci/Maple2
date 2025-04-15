@@ -127,7 +127,7 @@ public class Buff : IUpdatable, IByteSerializable {
             return;
         }
 
-        if (!canProc ||tickCount < NextProcTick) {
+        if (!canProc || tickCount < NextProcTick) {
             return;
         }
 

@@ -29,6 +29,10 @@ public sealed class RideManager {
     }
 
     public bool Mount(Item item) {
+        if (Ride != null) {
+            return false;
+        }
+
         if (!session.RideMetadata.TryGet(item.Metadata.Property.Ride, out RideMetadata? metadata)) {
             session.Send(NoticePacket.MessageBox(StringCode.s_item_invalid_function_item));
             return false;

@@ -507,7 +507,7 @@ public class BuffManager : IUpdatable {
 
             buffsToRemove.Add(buff);
             foreach ((BasicAttribute attribute, float value) in buff.Metadata.Status.Resistances) {
-                Resistances[attribute] = Math.Min(0, Resistances[attribute] - value);
+                Resistances[attribute] = Math.Max(0, Resistances[attribute] - value);
             }
 
             if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 || buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {

@@ -49,6 +49,7 @@ public class Stats {
         foreach (BasicAttribute attribute in statsDictionary.Keys) {
             this[attribute].AddBase(statsDictionary[attribute]);
         }
+        // Does not add PhysicalAtk or MagicalAtk due to it not using jobCode
     }
 
     public void Reset(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {

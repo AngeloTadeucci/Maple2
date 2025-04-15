@@ -135,6 +135,11 @@ public class RideHandler : PacketHandler<GameSession> {
         // s_multi_riding_item_desc
 
         sbyte index = (sbyte) Array.FindIndex(other.Session.Ride.Ride.Passengers, objectId => objectId == 0);
+        if (index < 0) {
+            // Ride is full
+            return;
+        }
+
         other.Session.Ride.Ride.Passengers[index] = session.Player.ObjectId;
         session.Ride = other.Session.Ride;
 

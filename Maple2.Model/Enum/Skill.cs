@@ -79,8 +79,8 @@ public enum SkillRegion {
 
 public enum SkillEntity {
     None = 0,
-    Target = 2,
     Owner = 1,
+    Target = 2,
     Caster = 3,
     PetOwner = 4,
     Attacker = 5,
