@@ -47,6 +47,7 @@ public partial class FieldManager : IField {
     public TableMetadataStorage TableMetadata { get; init; } = null!;
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
+    public RideMetadataStorage RideMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
@@ -293,6 +294,7 @@ public partial class FieldManager : IField {
             return;
         }
 
+        player.FallDamage(Constant.FallBoundingAddedDistance);
         player.MoveToPosition(player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default);
     }
 

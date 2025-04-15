@@ -35,6 +35,10 @@ public class StatsManager {
         Values = new Stats(metadata, player.Value.Character.Job.Code());
     }
 
+    public void SetBattleMountStats(IReadOnlyDictionary<BasicAttribute, long> stats) {
+        Values.SetStaticStats(stats);
+    }
+
     public StatsManager(IActor actor) {
         this.Actor = actor;
         levelStats = new Dictionary<short, IReadOnlyDictionary<BasicAttribute, long>>();
@@ -108,6 +112,11 @@ public class StatsManager {
             return;
         }
 
+        // Do not refresh stats if player is mounted
+        if (player.Session.Ride.RideType is RideOnType.Battle or RideOnType.Object) {
+            return;
+        }
+
         Character character = player.Value.Character;
         if (levelStats.TryGetValue(character.Level, out IReadOnlyDictionary<BasicAttribute, long>? metadata)) {
             Values.Reset(metadata, character.Job.Code());
@@ -163,7 +172,7 @@ public class StatsManager {
     }
 
     private void AddBuffs(FieldPlayer player) {
-        foreach (Buff buff in player.Buffs.Buffs.Values) {
+        foreach (Buff buff in player.Buffs.EnumerateBuffs()) {
             foreach ((BasicAttribute valueBasicAttribute, long value) in buff.Metadata.Status.Values) {
                 Values[valueBasicAttribute].AddTotal(value);
             }
@@ -180,7 +189,7 @@ public class StatsManager {
     }
 
     private void StatConversion(FieldPlayer player) {
-        foreach (Buff buff in player.Buffs.Buffs.Values) {
+        foreach (Buff buff in player.Buffs.EnumerateBuffs()) {
             if (buff.Metadata.Status.Conversion != null) {
                 float sum = Values[buff.Metadata.Status.Conversion.BaseAttribute].Total;
                 sum *= buff.Metadata.Status.Conversion.Rate;

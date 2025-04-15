@@ -261,12 +261,12 @@ public class SkillHandler : PacketHandler<GameSession> {
             packet.ReadByte();
 
             switch (record.Attack.Range.ApplyTarget) {
-                case SkillEntity.Target:
+                case SkillEntity.Owner:
                     if (session.Field.Mobs.TryGetValue(targetId, out FieldNpc? npc)) {
                         record.Targets.Add(npc);
                     }
                     continue;
-                case SkillEntity.Owner:
+                case SkillEntity.Target:
                     if (session.Field.TryGetPlayer(targetId, out FieldPlayer? player)) {
                         record.Targets.Add(player);
                     }

@@ -936,6 +936,11 @@ public static class Constant {
     public const float NpcLastSightRadius = 1800;
     public const float NpcLastSightHeightUp = 525;
     public const float NpcLastSightHeightDown = 225;
+
+    public const int RecoveryHPWaitTick = 1000;
+    public const int RecoverySPWaitTick = 1000;
+    public const int RecoveryEPWaitTick = 1000;
+    public const float FallBoundingAddedDistance = 750f;
     #endregion
 }
 

@@ -150,6 +150,16 @@ public sealed class ExperienceManager {
         return AddExp((long) ((expValue * modifier) * entry.Factor) + additionalExp, expType.Message());
     }
 
+    public void AddStaticExp(long amount) {
+        if (amount <= 0) {
+            return;
+        }
+        Exp += amount;
+        session.Send(ExperienceUpPacket.Add(amount, Exp, RestExp, ExpMessageCode.s_msg_take_exp));
+        session.ConditionUpdate(ConditionType.exp, counter: amount);
+        LevelUp();
+    }
+
     public void AddMobExp(int moblevel, float modifier = 1f, long additionalExp = 0) {
         if (!session.TableMetadata.ExpTable.ExpBase.TryGetValue(2, out IReadOnlyDictionary<int, long>? expBase)) {
             return;
@@ -179,7 +189,7 @@ public sealed class ExperienceManager {
             session.Field?.Broadcast(LevelUpPacket.LevelUp(session.Player));
             session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: Level);
             session.ConditionUpdate(ConditionType.level, targetLong: Level);
-
+            session.Config.UpdateDeathPenalty(0);
             session.Stats.Refresh();
 
             session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {

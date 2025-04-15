@@ -19,9 +19,6 @@ public class FunctionCubeMapper : TypeMapper<FunctionCubeMetadata> {
         foreach ((int id, FunctionCubeRoot functionCubeRoot) in parser.Parse()) {
             FunctionCube functionCube = functionCubeRoot.FunctionCube;
 
-            if (!Enum.TryParse(functionCube.ControlType, out InteractCubeControlType controlTypet)) {
-                Console.WriteLine($"Unknown control type: {functionCube.ControlType}");
-            }
             ConfigurableCube? configurableCube = functionCubeRoot.ConfigurableCube;
             yield return new FunctionCubeMetadata(
                 Id: id,

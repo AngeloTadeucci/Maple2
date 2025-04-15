@@ -243,7 +243,7 @@ public static class MapperExtensions {
                 Independent: trigger.independent,
                 Chain: trigger.chain ? new SkillEffectMetadataChain(trigger.chainDistance) : null);
         } else {
-            var owner = SkillEntity.Target;
+            var owner = SkillEntity.Owner;
             if (trigger.skillOwner > 0 && Enum.IsDefined<SkillEntity>((SkillEntity) trigger.skillOwner)) {
                 owner = (SkillEntity) trigger.skillOwner;
             }
@@ -352,7 +352,7 @@ public static class MapperExtensions {
     }
 
     // We use this default to avoid writing useless checks
-    private static readonly BeginConditionTarget DefaultBeginConditionTarget = new([], null, [], [], [], new Dictionary<MasteryType, int>(), [], []);
+    private static readonly BeginConditionTarget DefaultBeginConditionTarget = new([], new BeginConditionTarget.EventCondition(EventConditionType.Activate, false, [], []), [], [], [], new Dictionary<MasteryType, int>(), [], []);
     private static BeginConditionTarget? Convert(SubConditionTarget? target) {
         if (target == null) {
             return null;
@@ -413,11 +413,7 @@ public static class MapperExtensions {
         //     return data.hasSkillID > 0 ? new BeginConditionTarget.HasSkill(data.hasSkillID, data.hasSkillLevel) : null;
         // }
 
-        BeginConditionTarget.EventCondition? ParseEvent(SubConditionTarget data) {
-            if (data.eventCondition == 0) {
-                return null;
-            }
-
+        BeginConditionTarget.EventCondition ParseEvent(SubConditionTarget data) {
             return new BeginConditionTarget.EventCondition(
                 Type: (EventConditionType) data.eventCondition,
                 IgnoreOwner: data.ignoreOwnerEvent != 0,

@@ -1,10 +1,10 @@
 ﻿namespace Maple2.Model.Enum;
 
 public enum RideOnType : byte {
-    Default = 0,
-    UseItem = 1,
-    AdditionalEffect = 2,
-    HideAndSeek = 3,
+    None = 0,
+    Default = 1,
+    Battle = 2,
+    Object = 3,
 }
 
 public enum RideOffType : byte {

@@ -1,6 +1,7 @@
 ﻿using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.Riding;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 
 namespace Maple2.File.Ingest.Mapper;
@@ -23,7 +24,7 @@ public class RideMapper : TypeMapper<RideMetadata> {
                 Id: id,
                 Model: data.basic.kfm,
                 Basic: new RideMetadataBasic(
-                    Type: (int) data.basic.type, // default=0,battle=1,object=2
+                    Type: Enum.TryParse(data.basic.type.ToString(), true, out RideOnType type) ? type : RideOnType.Default,
                     SkillSetId: data.basic.skillSetID,
                     SummonTime: data.basic.rideSummonCastTime,
                     RunXStamina: data.basic.runXConsumeEp,

@@ -63,6 +63,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
+    public required RideMetadataStorage RideMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
@@ -101,6 +102,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public FishingManager Fishing { get; set; } = null!;
     public DungeonManager Dungeon { get; set; } = null!;
     public AnimationManager Animation { get; set; } = null!;
+    public RideManager Ride { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -174,6 +176,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
         Dungeon = new DungeonManager(this);
+        Ride = new RideManager(this);
         CommandHandler.RegisterCommands(); // Refresh commands with proper permissions
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -347,6 +350,8 @@ public sealed partial class GameSession : Core.Network.Session {
         ActiveSkills.Clear();
         NpcScript = null;
         MiniGameRecord = null;
+
+        Buffs.LeaveField();
 
         if (Field != null) {
             Scheduler.Stop();

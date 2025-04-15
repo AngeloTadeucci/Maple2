@@ -160,32 +160,41 @@ public class FieldPlayer : Actor<Player> {
             InBattle = false;
         }
 
-        // Loops through each registered regen stat and applies regen
-        var statsToRemove = new List<BasicAttribute>();
-        foreach (BasicAttribute attribute in regenStats.Keys) {
-            Stat stat = Stats.Values[attribute];
-            Stat regen = Stats.Values[regenStats[attribute].Item1];
-            Stat interval = Stats.Values[regenStats[attribute].Item2];
+        if (!IsDead) {
+            // Loops through each registered regen stat and applies regen
+            var statsToRemove = new List<BasicAttribute>();
+            foreach (BasicAttribute attribute in regenStats.Keys) {
+                Stat stat = Stats.Values[attribute];
+                Stat regen = Stats.Values[regenStats[attribute].Item1];
+                Stat interval = Stats.Values[regenStats[attribute].Item2];
 
-            if (stat.Current >= stat.Total) {
-                // Removes stat from regen stats so it won't be listened for
-                statsToRemove.Add(attribute);
-                continue;
-            }
-
-            lastRegenTime.TryGetValue(attribute, out long regenTime);
-
-            if (tickCount - regenTime > interval.Total) {
-                lastRegenTime[attribute] = tickCount;
-                if (attribute == BasicAttribute.Health) {
-                    RecoverHp((int) regen.Total);
+                if (stat.Current >= stat.Total) {
+                    // Removes stat from regen stats so it won't be listened for
+                    statsToRemove.Add(attribute);
                     continue;
                 }
-                Session.Send(StatsPacket.Update(this, attribute));
+
+                lastRegenTime.TryGetValue(attribute, out long regenTime);
+
+                if (tickCount - regenTime > interval.Base) {
+                    lastRegenTime[attribute] = tickCount;
+                    switch (attribute) {
+                        case BasicAttribute.Health:
+                            RecoverHp((int) regen.Total);
+                            continue;
+                        case BasicAttribute.Spirit:
+                            RecoverSp((int) regen.Total);
+                            continue;
+                        case BasicAttribute.Stamina:
+                            RecoverStamina((int) regen.Total);
+                            continue;
+                    }
+                    Session.Send(StatsPacket.Update(this, attribute));
+                }
             }
-        }
-        foreach (BasicAttribute attribute in statsToRemove) {
-            regenStats.Remove(attribute);
+            foreach (BasicAttribute attribute in statsToRemove) {
+                regenStats.Remove(attribute);
+            }
         }
 
         Session.GameEvent.Update(tickCount);
@@ -365,6 +374,7 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Buffs.UpdateEnabled();
+        CheckRegen();
         return true;
     }
 
@@ -407,8 +417,11 @@ public class FieldPlayer : Actor<Player> {
         stat.Add(-amount);
         Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
-        if (stat.Current > 0 && !regenStats.ContainsKey(BasicAttribute.Health)) {
-            regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
+        if (!IsDead) {
+            if (!regenStats.ContainsKey(BasicAttribute.Health)) {
+                regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
+            }
+            lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
 
         Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
@@ -449,8 +462,11 @@ public class FieldPlayer : Actor<Player> {
 
         Stats.Values[BasicAttribute.Spirit].Add(-amount);
 
-        if (!regenStats.ContainsKey(BasicAttribute.Spirit)) {
-            regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
+        if (!IsDead) {
+            if (!regenStats.ContainsKey(BasicAttribute.Spirit)) {
+                regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
+            }
+            // lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoverySPWaitTick; - Not applicable for SP?
         }
     }
 
@@ -464,7 +480,7 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stat stat = Stats.Values[BasicAttribute.Stamina];
-        if (stat.Total < stat.Base) {
+        if (stat.Current < stat.Total) {
             Stats.Values[BasicAttribute.Stamina].Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Stamina));
         }
@@ -482,8 +498,11 @@ public class FieldPlayer : Actor<Player> {
 
         Stats.Values[BasicAttribute.Stamina].Add(-amount);
 
-        if (!regenStats.ContainsKey(BasicAttribute.Stamina) && !noRegen) {
-            regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
+        if (!IsDead) {
+            if (!regenStats.ContainsKey(BasicAttribute.Stamina) && !noRegen) {
+                regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
+            }
+            lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryEPWaitTick;
         }
     }
 
@@ -525,6 +544,31 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Session.Send(PortalPacket.MoveByPortal(this, portal.Position, portal.Rotation));
+    }
+
+    public void FallDamage(float distance) {
+        double distanceScalingFactor = 0.04813;      // base distance scaling factor
+        double hpRatioExponent = 1.087;        // HP ratio exponent for diminishing returns
+        double currentHp = Stats.Values[BasicAttribute.Health].Current;
+        double maxHp = Stats.Values[BasicAttribute.Health].Total;
+        double distanceFactor = distanceScalingFactor * Math.Exp(0.0046 * distance);
+        double hpRatio = currentHp / maxHp;
+        double hpScaling = Math.Pow(hpRatio, hpRatioExponent);
+
+        double damageD = currentHp * distanceFactor * hpScaling;
+        damageD = Math.Min(currentHp * 0.25, damageD);
+        int damage = (int) damageD;
+        if (damage > 0) {
+            ConsumeHp(damage);
+            Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
+            Session.Send(FallDamagePacket.FallDamage(ObjectId, damage));
+            Session.ConditionUpdate(ConditionType.fall_damage, targetLong: damage);
+            if (!IsDead) {
+                Session.ConditionUpdate(ConditionType.fall_survive);
+            } else {
+                Session.ConditionUpdate(ConditionType.fall_die);
+            }
+        }
     }
 }
 

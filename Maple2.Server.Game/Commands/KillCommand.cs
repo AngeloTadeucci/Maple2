@@ -153,8 +153,7 @@ public class KillCommand : GameCommand {
             Position = npc.Position,
             Direction = session.Player.Rotation,
         };
-        var target = new DamageRecordTarget() {
-            ObjectId = npc.ObjectId,
+        var target = new DamageRecordTarget(npc) {
             Position = session.Player.Position,
             Direction = session.Player.Rotation,
         };

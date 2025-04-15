@@ -1,12 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
 using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
@@ -25,11 +23,11 @@ public class BuffManager : IUpdatable {
     private int NextLocalId() => Interlocked.Increment(ref idCounter);
     #endregion
     public IActor Actor { get; private set; }
-    // TODO: Change this to support multiple buffs of the same id, different casters. Possibly also different levels?
-    public ConcurrentDictionary<int, Buff> Buffs { get; } = new();
+    private readonly ConcurrentDictionary<int, List<Buff>> buffs = [];
     public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
     public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
     private Dictionary<BasicAttribute, float> Resistances { get; } = new();
+    public ConcurrentDictionary<int, long> CooldownTimes { get; } = new(); // TODO: Cache this
     public ReflectRecord? Reflect;
     private readonly ILogger logger = Log.ForContext<BuffManager>();
 
@@ -49,8 +47,16 @@ public class BuffManager : IUpdatable {
 
     public void ResetActor(IActor actor) {
         Actor = actor;
-        foreach ((int id, Buff buff) in Buffs) {
-            buff.ResetActor(actor);
+        foreach ((int id, List<Buff> buffDict) in buffs) {
+            foreach (Buff buff in buffDict) {
+                buff.ResetActor(actor);
+            }
+        }
+    }
+
+    public void Clear() {
+        foreach (Buff buff in EnumerateBuffs()) {
+            Remove(buff.Id, buff.Caster.ObjectId);
         }
     }
 
@@ -58,7 +64,7 @@ public class BuffManager : IUpdatable {
         // Lapenshards
         // Game Events
         // Prestige
-        AddMapBuffs();
+        EnterField();
         if (Actor is FieldPlayer player) {
             player.Session.Config.RefreshPremiumClubBuffs();
         }
@@ -67,6 +73,10 @@ public class BuffManager : IUpdatable {
     public void AddBuff(IActor caster, IActor owner, int id, short level, long startTick, int durationMs = -1, bool notifyField = true) {
         if (!owner.Field.SkillMetadata.TryGetEffect(id, level, out AdditionalEffectMetadata? additionalEffect)) {
             logger.Error("Invalid buff: {SkillId},{Level}", id, level);
+            return;
+        }
+
+        if (CooldownTimes.TryGetValue(id, out long cooldownTick) && startTick < cooldownTick) {
             return;
         }
 
@@ -79,16 +89,30 @@ public class BuffManager : IUpdatable {
             return;
         }
 
-        // TODO: Implement AdditionalEffectMetadata.CasterIndividualBuff.
-        // If true, each caster will have their own buff added to the same Actor.
-        if (Buffs.TryGetValue(id, out Buff? existing)) {
-            if (level > existing.Level) {
+        CooldownTimes[id] = startTick + additionalEffect.Property.CooldownTime;
+        Buff? existing = GetBuff(id, additionalEffect.Property.CasterIndividualBuff ? caster.ObjectId : 0);
+        long endTick = startTick + durationMs;
 
-            }
-            if (!existing.Stack(startTick)) {
-                return;
-            }
-            if (notifyField) {
+        switch (additionalEffect.Property.ResetCondition) {
+            case BuffResetCondition.ResetEndTick:
+            case BuffResetCondition.Reset2: // This isn't correct, but it seems to behave VERY close to ResetEndTick
+                // endTick = startTick + durationMs;
+                break;
+            case BuffResetCondition.PersistEndTick:
+                if (existing != null) {
+                    endTick = existing.EndTick;
+                }
+                break;
+            case BuffResetCondition.Replace:
+                if (existing != null) {
+                    Remove(existing.Id, existing.Caster.ObjectId);
+                    existing = null;
+                }
+                //endTick = startTick + durationMs;
+                break;
+        }
+        if (existing != null) {
+            if ((existing.UpdateEndTime(endTick) || existing.Stack()) && notifyField) {
                 owner.Field.Broadcast(BuffPacket.Update(existing));
             }
             return;
@@ -96,17 +120,15 @@ public class BuffManager : IUpdatable {
 
         // Remove existing buff if it's in the same group
         if (additionalEffect.Property.Group > 0) {
-            existing = Buffs.Values.FirstOrDefault(buff => buff.Metadata.Property.Group == additionalEffect.Property.Group);
-            if (existing != null) {
-                existing.Disable();
-                owner.Field.Broadcast(BuffPacket.Remove(existing));
+            foreach (Buff existingBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group)) {
+                Remove(existingBuff.Id, existingBuff.Caster.ObjectId);
             }
         }
 
-        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, durationMs);
-        if (!Buffs.TryAdd(id, buff)) {
-            Buffs[id].Stack(startTick);
-            owner.Field.Broadcast(BuffPacket.Update(buff));
+        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, endTick);
+
+        if (!TryAdd(buff)) {
+            logger.Error("Could not add buff {Id} to {Object}", buff.Id, Actor.ObjectId);
             return;
         }
 
@@ -116,6 +138,7 @@ public class BuffManager : IUpdatable {
         SetCompulsionEvent(buff);
         SetShield(buff);
         SetUpdates(buff);
+        ModifyBuffStackCount(buff);
 
         // refresh stats if needed
         if (buff.Metadata.Status.Values.Any() || buff.Metadata.Status.Rates.Any() || buff.Metadata.Status.SpecialValues.Any() || buff.Metadata.Status.SpecialRates.Any()) {
@@ -133,30 +156,71 @@ public class BuffManager : IUpdatable {
         }
 
         logger.Information("{Id} AddBuff to {ObjectId}: {SkillId},{Level} for {Tick}ms", buff.ObjectId, owner.ObjectId, id, level, buff.EndTick - buff.StartTick);
-        // Logger.Information("> {Data}", additionalEffect.Property);
         if (owner is FieldPlayer player) {
+            if (additionalEffect.Property.Exp > 0) { // Assuming this doesnt proc s
+                player.Session.Exp.AddStaticExp(additionalEffect.Property.Exp);
+            }
+
             player.Session.ConditionUpdate(ConditionType.buff, codeLong: buff.Id);
             player.Session.Dungeon.UpdateDungeonEnterLimit();
         }
         if (notifyField) {
             owner.Field.Broadcast(BuffPacket.Add(buff));
         }
+        SetMount(buff);
     }
 
-    public bool HasBuff(int effectId, short effectLevel = 1, int overlapCount = 0) {
-        if (!Buffs.TryGetValue(effectId, out Buff? buff)) {
+    private Buff? GetBuff(int buffId, int casterObjectId = 0) {
+        if (casterObjectId > 0) {
+            if (this.buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+                return buffs.FirstOrDefault(buff => buff.Caster.ObjectId == casterObjectId);
+            }
+        } else {
+            if (this.buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+                return buffs.FirstOrDefault();
+            }
+        }
+        return null;
+    }
+
+    private bool TryAdd(Buff buff) {
+        if (this.buffs.TryGetValue(buff.Id, out List<Buff>? buffs)) {
+            Buff? casterBuff = buffs.FirstOrDefault(b => b.Caster.ObjectId == buff.Caster.ObjectId);
+            if (casterBuff != null) {
+                return false;
+            }
+            buffs.Add(buff);
+            return true;
+        }
+
+        return this.buffs.TryAdd(buff.Id, [buff]);
+    }
+
+    public List<Buff> EnumerateBuffs() => buffs.Values.SelectMany(list => list).ToList();
+    public List<Buff> EnumerateBuffs(int buffId) => this.buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs : [];
+
+    public bool HasBuff(int effectId, short effectLevel = 1, int stacks = 0) {
+        List<Buff> buffs = EnumerateBuffs(effectId);
+        if (buffs.Count == 0) {
             return false;
         }
 
-        if (overlapCount != 0 && buff.Stacks < overlapCount) {
-            return false;
-        }
+        foreach (Buff buff in buffs) {
+            if (stacks != 0 && buff.Stacks < stacks) {
+                continue;
+            }
 
-        return effectLevel == 0 || buff.Level >= effectLevel;
+            if (effectLevel != 0 && buff.Level < effectLevel) {
+                continue;
+            }
+
+            return true;
+        }
+        return false;
     }
 
     public bool HasBuff(BuffEventType eventType) {
-        return Buffs.Values.Any(buff => buff.Metadata.Property.EventType == eventType);
+        return EnumerateBuffs().Any(buff => buff.Metadata.Property.EventType == eventType);
     }
 
     private void SetReflect(Buff buff) {
@@ -260,6 +324,28 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    private void ModifyBuffStackCount(Buff buff) {
+        if (buff.Metadata.ModifyOverlapCount.Length <= 0) {
+            return;
+        }
+        foreach (AdditionalEffectMetadataModifyOverlapCount modifyOverlapCount in buff.Metadata.ModifyOverlapCount) {
+            foreach (Buff buffResult in EnumerateBuffs(modifyOverlapCount.Id).Where(b => b.Stack(modifyOverlapCount.OffsetCount))) {
+                Actor.Field.Broadcast(BuffPacket.Update(buffResult));
+            }
+        }
+    }
+
+    private void SetMount(Buff buff) {
+        if (buff.Metadata.Property.RideId == 0 || Actor is not FieldPlayer player) {
+            return;
+        }
+
+        if (!player.Session.Ride.Mount(buff.Metadata)) {
+            logger.Error("Failed to mount {Id} on {Object}", buff.Id, Actor.ObjectId);
+            Remove(buff.Id, Actor.ObjectId);
+        }
+    }
+
     private void SetUpdates(Buff buff) {
         if (buff.Metadata.Update.Cancel != null) {
             CancelBuffs(buff, buff.Metadata.Update.Cancel);
@@ -268,66 +354,84 @@ public class BuffManager : IUpdatable {
         // Reset skill cooldowns
         if (buff.Metadata.Update.ResetCooldown.Length > 0 && Actor is FieldPlayer player) {
             foreach (int skillId in buff.Metadata.Update.ResetCooldown) {
-                // TODO: Uncomment this when skill cooldown PR is merged
-                //player.Session.Config.SetSkillCooldown(skillId);
+                player.Session.Config.SetSkillCooldown(skillId);
             }
+        }
+    }
+
+    public void TriggerEvent(IActor caster, IActor owner, IActor target, EventConditionType type, int effectSkillId = 0, int buffSkillId = 0) {
+        foreach (Buff buff in EnumerateBuffs()) {
+            if (!buff.Enabled) {
+                continue;
+            }
+            buff.ApplySkills(caster, owner, target, type, effectSkillId, buffSkillId);
         }
     }
 
     private void CancelBuffs(Buff buff, AdditionalEffectMetadataUpdate.CancelEffect cancel) {
+        List<(int buffId, int casterId)> buffsToRemove = [];
         foreach (int cancelId in cancel.Ids) {
-            if (Buffs.TryGetValue(cancelId, out Buff? cancelBuff)) {
+            foreach (Buff buffResult in EnumerateBuffs(cancelId)) {
                 if (cancel.CheckSameCaster) {
-                    if (cancelBuff.Caster != buff.Caster) {
+                    if (buffResult.Caster != buff.Caster) {
                         continue;
                     }
                 }
-
-                Remove(cancelId);
+                buffsToRemove.Add((buffResult.Id, Actor.ObjectId));
             }
         }
 
         foreach (BuffCategory category in cancel.Categories) {
-            foreach (Buff cancelCategoryBuff in Buffs.Values) {
-                if (cancelCategoryBuff.Metadata.Property.Category == category) {
-                    Remove(cancelCategoryBuff.Id);
-                }
+            foreach (Buff cancelCategoryBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Category == category)) {
+                buffsToRemove.Add((cancelCategoryBuff.Id, Actor.ObjectId));
             }
+        }
+        Remove(buffsToRemove.ToArray());
+    }
+
+    public void ModifyDuration(int buffId, int modifyValue) {
+        foreach (Buff buff in EnumerateBuffs(buffId)) {
+            buff.UpdateEndTime(modifyValue);
         }
     }
 
     public virtual void Update(long tickCount) {
-        foreach (Buff buff in Buffs.Values) {
+        foreach (Buff buff in EnumerateBuffs()) {
             buff.Update(tickCount);
         }
     }
 
     public void LeaveField() {
+        if (Actor.Field == null) {
+            return;
+        }
+        List<(int id, int casterId)> buffsToRemove = [];
         foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
-            Remove(buff.Id);
+            buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
-        foreach (Buff buff in Buffs.Values) {
-            if (buff.Metadata.Property.RemoveOnLeaveField) {
-                Remove(buff.Id);
-            }
+        foreach (Buff buff in EnumerateBuffs().Where(b => b.Metadata.Property.RemoveOnLeaveField)) {
+            buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
+        Remove(buffsToRemove.ToArray());
     }
 
-    private void AddMapBuffs() {
+    private void EnterField() {
         foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
             AddBuff(Actor, Actor, buff.Id, buff.Level, Actor.Field.FieldTick);
         }
 
         if (Actor.Field.Metadata.Property.Type == MapType.Pvp) {
-            foreach (Buff buff in Buffs.Values) {
+            List<(int id, int casterId)> buffsToRemove = [];
+            foreach (Buff buff in EnumerateBuffs()) {
                 if (buff.Metadata.Property.RemoveOnPvpZone) {
-                    Remove(buff.Id);
+                    buffsToRemove.Add((buff.Id, Actor.ObjectId));
                 }
 
                 if (!buff.Metadata.Property.KeepOnEnterPvpZone) {
-                    Remove(buff.Id);
+                    buffsToRemove.Add((buff.Id, Actor.ObjectId));
                 }
             }
+            Remove(buffsToRemove.ToArray());
         }
 
         if (Actor.Field.Metadata.Property.Region == MapRegion.ShadowWorld) {
@@ -353,19 +457,22 @@ public class BuffManager : IUpdatable {
     }
 
     public void RemoveItemBuffs(Item item) {
+        List<(int id, int casterId)> buffsToRemove = [];
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-            Remove(buff.Id);
+            buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
 
         if (item.Socket != null) {
             foreach (ItemGemstone? gem in item.Socket.Sockets) {
                 if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
                     foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
-                        Remove(buff.Id);
+                        buffsToRemove.Add((buff.Id, Actor.ObjectId));
                     }
                 }
             }
         }
+
+        Remove(buffsToRemove.ToArray());
     }
 
     public void SetCacheBuffs(IList<BuffInfo> buffs, long currentTick) {
@@ -385,37 +492,69 @@ public class BuffManager : IUpdatable {
         }
     }
 
-    public bool Remove(int id) {
+    public void Remove(params (int id, int casterId)[] buffIds) {
+        foreach ((int id, int casterId) in buffIds) {
+            Remove(id, casterId);
+        }
+    }
+
+    public bool Remove(int id, int casterId) {
         //TODO: Check if buff is removable/should be removed
-        if (!Buffs.Remove(id, out Buff? buff)) {
-            return false;
+        bool refreshStats = false;
+        List<Buff> buffsToRemove = [];
+        foreach (Buff buff in EnumerateBuffs(id)) {
+            if (buff.Metadata.Property.CasterIndividualBuff && buff.Caster.ObjectId != casterId) {
+                continue;
+            }
+
+            buffsToRemove.Add(buff);
+            foreach ((BasicAttribute attribute, float value) in buff.Metadata.Status.Resistances) {
+                Resistances[attribute] = Math.Max(0, Resistances[attribute] - value);
+            }
+
+            if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 || buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {
+                if (Actor is FieldPlayer player) {
+                    refreshStats = true;
+                }
+            }
         }
 
         if (Reflect?.SourceBuffId == id) {
             Reflect = null;
         }
 
-        foreach ((BasicAttribute attribute, float value) in buff.Metadata.Status.Resistances) {
-            Resistances[attribute] = Math.Min(0, Resistances[attribute] - value);
-        }
 
         Invokes.RemoveAll(id);
         Compulsions.RemoveAll(id);
-
-        if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 || buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {
-            if (Actor is FieldPlayer player) {
-                player.Session.Stats.Refresh();
+        foreach (Buff buff in buffsToRemove) {
+            RemoveInternal(buff);
+            Actor.Field.Broadcast(BuffPacket.Remove(buff));
+            if (buff.Metadata.Property.RideId > 0) {
+                refreshStats = true;
+                if (Actor is FieldPlayer player && player.Session.Ride.Ride?.Action is RideOnActionBattle battle && battle.SkillId == buff.Id) {
+                    player.Session.Ride.Dismount(RideOffType.AdditionalEffect);
+                }
             }
         }
+        if (refreshStats) {
+            Actor.Stats.Refresh();
+        }
 
-        Actor.Field.Broadcast(BuffPacket.Remove(buff));
         return true;
+
+        void RemoveInternal(Buff buffToRemove) {
+            if (buffs.TryGetValue(buffToRemove.Id, out List<Buff>? buffList)) {
+                if (!buffList.Remove(buffToRemove)) {
+                    logger.Error("Failed to remove buff {Id} from {Object}", buffToRemove.Id, Actor.ObjectId);
+                }
+            }
+        }
     }
 
     public void OnDeath() {
-        foreach (Buff buff in Buffs.Values) {
+        foreach (Buff buff in EnumerateBuffs()) {
             if (!buff.Metadata.Property.KeepOnDeath) {
-                Remove(buff.Id);
+                Remove(buff.Id, Actor.ObjectId);
                 continue;
             }
             buff.UpdateEnabled();
@@ -423,7 +562,7 @@ public class BuffManager : IUpdatable {
     }
 
     private bool CheckImmunity(int newBuffId, BuffCategory category) {
-        foreach ((int id, Buff buff) in Buffs) {
+        foreach (Buff buff in EnumerateBuffs()) {
             if (buff.Metadata.Update.ImmuneIds.Contains(newBuffId) || buff.Metadata.Update.ImmuneCategories.Contains(category)) {
                 return false;
             }
@@ -433,11 +572,13 @@ public class BuffManager : IUpdatable {
     }
 
     public List<Buff> GetSaveCacheBuffs() {
-        return Buffs.Values.Where(buff => !buff.Metadata.Property.RemoveOnLogout).ToList();
+        return EnumerateBuffs()
+            .Where(buff => !buff.Metadata.Property.RemoveOnLogout)
+            .ToList();
     }
 
     public void UpdateEnabled() {
-        foreach (Buff buff in Buffs.Values) {
+        foreach (Buff buff in EnumerateBuffs()) {
             buff.UpdateEnabled();
         }
     }
