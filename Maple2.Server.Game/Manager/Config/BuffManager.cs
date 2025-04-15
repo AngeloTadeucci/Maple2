@@ -23,7 +23,7 @@ public class BuffManager : IUpdatable {
     private int NextLocalId() => Interlocked.Increment(ref idCounter);
     #endregion
     public IActor Actor { get; private set; }
-    public ConcurrentDictionary<int, List<Buff>> Buffs { get; } = new();
+    private readonly ConcurrentDictionary<int, List<Buff>> buffs = [];
     public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
     public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
     private Dictionary<BasicAttribute, float> Resistances { get; } = new();
@@ -47,10 +47,16 @@ public class BuffManager : IUpdatable {
 
     public void ResetActor(IActor actor) {
         Actor = actor;
-        foreach ((int id, List<Buff> buffDict) in Buffs) {
+        foreach ((int id, List<Buff> buffDict) in buffs) {
             foreach (Buff buff in buffDict) {
                 buff.ResetActor(actor);
             }
+        }
+    }
+
+    public void Clear() {
+        foreach (Buff buff in EnumerateBuffs()) {
+            Remove(buff.Id, buff.Caster.ObjectId);
         }
     }
 
@@ -114,10 +120,8 @@ public class BuffManager : IUpdatable {
 
         // Remove existing buff if it's in the same group
         if (additionalEffect.Property.Group > 0) {
-            List<Buff> buffs = EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group).ToList();
-            foreach (Buff existingBuff in buffs) {
-                existingBuff.Disable(); // Disable?
-                owner.Field.Broadcast(BuffPacket.Remove(existingBuff));
+            foreach (Buff existingBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group).ToList()) {
+                Remove(existingBuff.Id, existingBuff.Caster.ObjectId);
             }
         }
 
@@ -168,11 +172,11 @@ public class BuffManager : IUpdatable {
 
     private Buff? GetBuff(int buffId, int casterObjectId = 0) {
         if (casterObjectId > 0) {
-            if (Buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+            if (this.buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
                 return buffs.FirstOrDefault(buff => buff.Caster.ObjectId == casterObjectId);
             }
         } else {
-            if (Buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
+            if (this.buffs.TryGetValue(buffId, out List<Buff>? buffs)) {
                 return buffs.FirstOrDefault();
             }
         }
@@ -180,7 +184,7 @@ public class BuffManager : IUpdatable {
     }
 
     private bool TryAdd(Buff buff) {
-        if (Buffs.TryGetValue(buff.Id, out List<Buff>? buffs)) {
+        if (this.buffs.TryGetValue(buff.Id, out List<Buff>? buffs)) {
             Buff? casterBuff = buffs.FirstOrDefault(b => b.Caster.ObjectId == buff.Caster.ObjectId);
             if (casterBuff != null) {
                 return false;
@@ -189,11 +193,11 @@ public class BuffManager : IUpdatable {
             return true;
         }
 
-        return Buffs.TryAdd(buff.Id, [buff]);
+        return this.buffs.TryAdd(buff.Id, [buff]);
     }
 
-    public List<Buff> EnumerateBuffs() => Buffs.Values.SelectMany(list => list).ToList();
-    public List<Buff> EnumerateBuffs(int buffId) => Buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs : [];
+    public List<Buff> EnumerateBuffs() => buffs.Values.SelectMany(list => list).ToList();
+    public List<Buff> EnumerateBuffs(int buffId) => this.buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs : [];
 
     public bool HasBuff(int effectId, short effectLevel = 1, int stacks = 0) {
         List<Buff> buffs = EnumerateBuffs(effectId);
@@ -325,11 +329,8 @@ public class BuffManager : IUpdatable {
             return;
         }
         foreach (AdditionalEffectMetadataModifyOverlapCount modifyOverlapCount in buff.Metadata.ModifyOverlapCount) {
-            List<Buff> buffs = EnumerateBuffs(modifyOverlapCount.Id);
-            foreach (Buff buffResult in buffs) {
-                if (buffResult.Stack(modifyOverlapCount.OffsetCount)) {
-                    Actor.Field.Broadcast(BuffPacket.Update(buffResult));
-                }
+            foreach (Buff buffResult in EnumerateBuffs(modifyOverlapCount.Id).Where(b => b.Stack(modifyOverlapCount.OffsetCount))) {
+                Actor.Field.Broadcast(BuffPacket.Update(buffResult));
             }
         }
     }
@@ -381,18 +382,15 @@ public class BuffManager : IUpdatable {
         }
 
         foreach (BuffCategory category in cancel.Categories) {
-            foreach (Buff cancelCategoryBuff in EnumerateBuffs()) {
-                if (cancelCategoryBuff.Metadata.Property.Category == category) {
-                    buffsToRemove.Add((cancelCategoryBuff.Id, Actor.ObjectId));
-                }
+            foreach (Buff cancelCategoryBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Category == category)) {
+                buffsToRemove.Add((cancelCategoryBuff.Id, Actor.ObjectId));
             }
         }
         Remove(buffsToRemove.ToArray());
     }
 
     public void ModifyDuration(int buffId, int modifyValue) {
-        List<Buff> buffs = EnumerateBuffs(buffId);
-        foreach (Buff buff in buffs) {
+        foreach (Buff buff in EnumerateBuffs(buffId)) {
             buff.UpdateEndTime(modifyValue);
         }
     }
@@ -411,10 +409,8 @@ public class BuffManager : IUpdatable {
         foreach (MapEntranceBuff buff in Actor.Field.Metadata.EntranceBuffs) {
             buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
-        foreach (Buff buff in EnumerateBuffs()) {
-            if (buff.Metadata.Property.RemoveOnLeaveField) {
-                buffsToRemove.Add((buff.Id, Actor.ObjectId));
-            }
+        foreach (Buff buff in EnumerateBuffs().Where(b => b.Metadata.Property.RemoveOnLeaveField)) {
+            buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
         Remove(buffsToRemove.ToArray());
     }
@@ -547,7 +543,7 @@ public class BuffManager : IUpdatable {
         return true;
 
         void RemoveInternal(Buff buffToRemove) {
-            if (Buffs.TryGetValue(buffToRemove.Id, out List<Buff>? buffList)) {
+            if (buffs.TryGetValue(buffToRemove.Id, out List<Buff>? buffList)) {
                 if (!buffList.Remove(buffToRemove)) {
                     logger.Error("Failed to remove buff {Id} from {Object}", buffToRemove.Id, Actor.ObjectId);
                 }

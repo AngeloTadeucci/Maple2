@@ -98,8 +98,7 @@ public class BuffCommand : GameCommand {
                 }
                 session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, startTick, duration);
                 if (stack > 1) {
-                    List<Buff> buffs = session.Player.Buffs.EnumerateBuffs(buffId);
-                    foreach (Buff buff in buffs) {
+                    foreach (Buff buff in session.Player.Buffs.EnumerateBuffs(buffId)) {
                         if (buff.Stack(stack)) {
                             session.Field.Broadcast(BuffPacket.Update(buff));
                         }

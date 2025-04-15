@@ -172,7 +172,7 @@ public class PlayerCommand : GameCommand {
                 session.Player.Value.Character.Job = job;
                 session.Config.Skill.SkillInfo.SetJob(job);
 
-                session.Player.Buffs.Buffs.Clear();
+                session.Player.Buffs.Clear();
                 session.Player.Buffs.Initialize();
                 session.Player.Buffs.LoadFieldBuffs();
                 session.Stats.Refresh();

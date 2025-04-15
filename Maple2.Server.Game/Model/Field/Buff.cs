@@ -274,8 +274,7 @@ public class Buff : IUpdatable, IByteSerializable {
 
         if (Metadata.Update.Cancel.Ids.Length > 0) {
             foreach (int id in Metadata.Update.Cancel.Ids) {
-                List<Buff> buffs = Owner.Buffs.EnumerateBuffs(id);
-                foreach (Buff buff in buffs) {
+                foreach (Buff buff in Owner.Buffs.EnumerateBuffs(id)) {
                     if (!Metadata.Update.Cancel.CheckSameCaster || buff.Caster.ObjectId == Caster.ObjectId) {
                         Owner.Buffs.Remove(id, Caster.ObjectId);
                     }
