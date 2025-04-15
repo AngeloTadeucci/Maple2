@@ -38,17 +38,20 @@ public class Buff : IUpdatable, IByteSerializable {
 
     private readonly ILogger logger = Log.ForContext<Buff>();
 
-    public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, int durationMs) {
+    public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, long endTick) {
         Metadata = metadata;
         ObjectId = objectId;
 
         Caster = caster;
         Owner = owner;
 
+        StartTick = startTick;
+        EndTick = endTick;
+
         // Buffs with IntervalTick=0 will just proc a single time
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
-        Stack(startTick, durationMs: durationMs);
+        Stack();
         NextProcTick = startTick + Metadata.Property.DelayTick + Metadata.Property.IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
