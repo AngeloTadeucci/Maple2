@@ -445,12 +445,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stat stat = Stats.Values[BasicAttribute.Spirit];
-        Stat regen = Stats.Values[BasicAttribute.SpRegen];
-        Stat interval = Stats.Values[BasicAttribute.SpRegenInterval];
-        Console.WriteLine($"Spirit Stat Values Total: {stat.Total} Base: {stat.Base} Current: {stat.Current} ");
-        Console.WriteLine($"Spirit Regen Values Total: {regen.Total} Base: {regen.Base} Current: {regen.Current}");
-        Console.WriteLine($"Spirit Regen Interval Values Total: {interval.Total} Base: {interval.Base} Current: {interval.Current}");
-        Console.WriteLine("--------------------");
         if (stat.Current < stat.Total) {
             stat.Add(amount);
             Session.Send(StatsPacket.Update(this, BasicAttribute.Spirit));

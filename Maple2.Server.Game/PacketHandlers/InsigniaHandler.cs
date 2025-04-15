@@ -26,7 +26,7 @@ public class InsigniaHandler : PacketHandler<GameSession> {
 
         // Check and remove any existing insignia buffs
         if (TableMetadata.InsigniaTable.Entries.TryGetValue(session.Player.Value.Character.Insignia, out InsigniaTable.Entry? oldInsigniaMetadata) && oldInsigniaMetadata.BuffId > 0) {
-            session.Player.Buffs.Remove(oldInsigniaMetadata.BuffId);
+            session.Player.Buffs.Remove(oldInsigniaMetadata.BuffId, session.Player.ObjectId);
         }
 
         short insigniaId = packet.ReadShort();

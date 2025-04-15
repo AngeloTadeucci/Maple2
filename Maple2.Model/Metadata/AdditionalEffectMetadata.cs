@@ -16,6 +16,7 @@ public record AdditionalEffectMetadata(
     AdditionalEffectMetadataDot Dot,
     AdditionalEffectMetadataShield? Shield,
     AdditionalEffectMetadataInvokeEffect? InvokeEffect,
+    AdditionalEffectMetadataModifyOverlapCount[] ModifyOverlapCount,
     SkillEffectMetadata[] Skills);
 
 public record AdditionalEffectMetadataProperty(
@@ -36,6 +37,8 @@ public record AdditionalEffectMetadataProperty(
     bool KeepOnEnterPvpZone,
     bool CasterIndividualBuff,
     int Exp,
+    int CooldownTime,
+    int RideId,
     BuffKeepCondition KeepCondition,
     BuffResetCondition ResetCondition,
     BuffDotCondition DotCondition);
@@ -130,3 +133,7 @@ public record AdditionalEffectMetadataInvokeEffect(
     int EffectGroupId,
     int SkillId,
     int SkillGroupId);
+
+public record AdditionalEffectMetadataModifyOverlapCount(
+    int Id,
+    int OffsetCount);

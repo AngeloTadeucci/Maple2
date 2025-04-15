@@ -41,6 +41,8 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                         KeepOnEnterPvpZone: data.BasicProperty.doNotClearEffectFromEnterPVPZone,
                         CasterIndividualBuff: data.BasicProperty.casterIndividualEffect,
                         Exp: data.ExpProperty.value,
+                        CooldownTime: (int) TimeSpan.FromSeconds(float.TryParse(data.BasicProperty.coolDownTime, out float cooldown) ? cooldown : 0).TotalMilliseconds,
+                        RideId: data.RideeProperty == null! ? 0 : data.RideeProperty.rideeID,
                         KeepCondition: (BuffKeepCondition) data.BasicProperty.keepCondition,
                         ResetCondition: (BuffResetCondition) data.BasicProperty.resetCondition,
                         DotCondition: (BuffDotCondition) data.BasicProperty.dotCondition),
@@ -56,6 +58,12 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                         Buff: Convert(data.DotBuffProperty)),
                     Shield: Convert(data.ShieldProperty),
                     InvokeEffect: Convert(data.InvokeEffectProperty),
+                    ModifyOverlapCount: data.ModifyOverlapCountProperty == null! ? [] : data.ModifyOverlapCountProperty.effectCodes
+                            .Zip(data.ModifyOverlapCountProperty.offsetCounts)
+                            .Select(tuple => new AdditionalEffectMetadataModifyOverlapCount(
+                                Id: tuple.First,
+                                OffsetCount: tuple.Second))
+                            .ToArray(),
                     Skills: data.conditionSkill.Concat(data.splashSkill).Select(skill => skill.Convert()).ToArray());
             }
         }

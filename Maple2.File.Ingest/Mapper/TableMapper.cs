@@ -347,7 +347,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
         InteractObjectMetadataEffect.ConditionEffect[] ParseConditional(InteractObject.ConditionAdditionalEffect additionalEffect) {
             if (additionalEffect.id.Length == 0 || additionalEffect.id[0] == 0) {
-                return Array.Empty<InteractObjectMetadataEffect.ConditionEffect>();
+                return [];
             }
 
             return additionalEffect.id.Zip(additionalEffect.level, (effectId, level) =>
@@ -356,7 +356,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
         InteractObjectMetadataEffect.InvokeEffect[] ParseInvoke(InteractObject.AdditionalEffect additionalEffect) {
             if (additionalEffect.invoke.code.Length == 0 || additionalEffect.invoke.code[0] == 0) {
-                return Array.Empty<InteractObjectMetadataEffect.InvokeEffect>();
+                return [];
             }
 
             return additionalEffect.invoke.code

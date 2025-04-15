@@ -55,10 +55,10 @@ public enum BuffKeepCondition {
 }
 
 public enum BuffResetCondition {
-    Reset = 0,
+    ResetEndTick = 0,
     PersistEndTick = 1, // end tick does not reset
     Reset2 = 2, // behaves the same as Reset ??
-    Reset3 = 3, // also behaves like Reset ??
+    Replace = 3, // Removes old buff and adds a new
 }
 
 public enum BuffDotCondition {

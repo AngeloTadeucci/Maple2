@@ -73,11 +73,10 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     protected virtual void Dispose(bool disposing) { }
 
-    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, bool notifyField = true) {
+    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, long startTick, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0, bool notifyField = true) {
         Debug.Assert(effect.Condition != null);
-
         foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, Field.FieldTick, notifyField: notifyField);
+            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, startTick, notifyField: notifyField);
         }
     }
 
@@ -86,8 +85,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             return;
         }
 
-        var targetRecord = new DamageRecordTarget {
-            ObjectId = ObjectId,
+        var targetRecord = new DamageRecordTarget(this) {
             Position = caster.Position,
             Direction = caster.Rotation, // Idk why this is wrong
         };
@@ -108,12 +106,29 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         if (damageAmount != 0) {
             long positiveDamage = damageAmount * -1;
             if (!DamageDealers.TryGetValue(caster.ObjectId, out DamageRecordTarget? record)) {
-                record = new DamageRecordTarget();
+                record = new DamageRecordTarget(this);
                 DamageDealers.TryAdd(caster.ObjectId, record);
             }
             record.AddDamage(DamageType.Normal, positiveDamage);
             Stats.Values[BasicAttribute.Health].Add(damageAmount);
             Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
+        }
+
+        foreach ((DamageType damageType, long amount) in targetRecord.Damage) {
+            switch (damageType) {
+                case DamageType.Critical:
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, effectSkillId: damage.SkillId);
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackCrit, effectSkillId: damage.SkillId);
+                    break;
+                case DamageType.Normal:
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, effectSkillId: damage.SkillId);
+                    break;
+                case DamageType.Block:
+                    break;
+                case DamageType.Miss:
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnAttackMiss, effectSkillId: damage.SkillId);
+                    break;
+            }
         }
 
         damage.Targets.Add(targetRecord);
@@ -131,7 +146,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
         record.Counter++;
         if (record.Counter >= record.Metadata.Count) {
-            Buffs.Remove(record.SourceBuffId);
+            Buffs.Remove(record.SourceBuffId, ObjectId);
         }
         target.Buffs.AddBuff(this, target, record.Metadata.EffectId, record.Metadata.EffectLevel, Field.FieldTick);
 
@@ -175,12 +190,6 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
                     record.Caster.Position,
                 ], record.Caster.Rotation);
             }
-        }
-    }
-
-    public virtual void ApplyEffect(IActor caster, IActor target, SkillEffectMetadata effect, long startTick) {
-        foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, target, skill.Id, skill.Level, startTick);
         }
     }
 
@@ -234,5 +243,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         return record;
     }
 
-    protected abstract void OnDeath();
+    protected virtual void OnDeath() {
+        Buffs.TriggerEvent(this, this, this, EventConditionType.OnDeath);
+    }
 }

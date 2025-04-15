@@ -69,9 +69,9 @@ public class Buff : IUpdatable, IByteSerializable {
         StartTick = startTick;
 
         switch (Metadata.Property.ResetCondition) {
-            case BuffResetCondition.Reset:
+            case BuffResetCondition.ResetEndTick:
             case BuffResetCondition.Reset2:
-            case BuffResetCondition.Reset3:
+            case BuffResetCondition.Replace:
                 EndTick = StartTick + durationMs;
                 break;
             case BuffResetCondition.PersistEndTick:
@@ -79,13 +79,22 @@ public class Buff : IUpdatable, IByteSerializable {
                 break;
         }
 
+        if (Stacks >= Metadata.Property.MaxCount) {
+            Owner.Buffs.TriggerEvent(Owner, Owner, Owner, EventConditionType.OnBuffStacksReached, buffSkillId: Id);
+        }
+
         return true;
+    }
+
+    public void ModifyStack(int amount) {
+        Stacks = Math.Min(Stacks + amount, Metadata.Property.MaxCount);
+        Field.Broadcast(BuffPacket.Update(this));
     }
 
     public void RemoveStack(int amount = 1) {
         Stacks = Math.Max(0, Stacks - amount);
         if (Stacks == 0) {
-            Owner.Buffs.Remove(Id);
+            Owner.Buffs.Remove(Id, Caster.ObjectId);
         }
     }
 
@@ -97,7 +106,7 @@ public class Buff : IUpdatable, IByteSerializable {
                         continue;
                     }
 
-                    Owner.Buffs.Remove(id);
+                    Owner.Buffs.Remove(id, Caster.ObjectId);
                 }
             }
 
@@ -105,7 +114,7 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         if (canExpire && !canProc && tickCount > EndTick) {
-            Owner.Buffs.Remove(Id);
+            Owner.Buffs.Remove(Id, Caster.ObjectId);
             return;
         }
 
@@ -113,7 +122,11 @@ public class Buff : IUpdatable, IByteSerializable {
             return;
         }
 
-        if (!canProc || tickCount < NextProcTick) {
+        if (tickCount < NextProcTick) {
+            return;
+        }
+
+        if (!canProc) {
             return;
         }
 
@@ -147,15 +160,28 @@ public class Buff : IUpdatable, IByteSerializable {
         ApplyCancel();
         ModifyDuration();
 
+        NextProcTick += IntervalTick;
+        if (NextProcTick > EndTick) {
+            canProc = false;
+        }
+    }
+
+    public void ApplySkills(IActor caster, IActor owner, IActor target, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0) {
         foreach (SkillEffectMetadata effect in Metadata.Skills) {
             if (effect.Condition != null) {
                 // logger.Error("Buff Condition-Effect unimplemented from {Id} on {Owner}", Id, Owner.ObjectId);
+                if (effect.Condition.Condition.Check(caster, owner, target, type, skillId, buffId)) {
+                    continue;
+                }
                 switch (effect.Condition.Target) {
-                    case SkillEntity.Target:
-                        Owner.ApplyEffect(Caster, Owner, effect, Field.FieldTick);
+                    case SkillEntity.Owner:
+                        owner.ApplyEffect(caster, owner, effect, Field.FieldTick, type, skillId, buffId);
                         break;
                     case SkillEntity.Caster:
-                        Caster.ApplyEffect(Caster, Owner, effect, Field.FieldTick);
+                        caster.ApplyEffect(caster, caster, effect, Field.FieldTick, type, skillId, buffId);
+                        break;
+                    case SkillEntity.Target:
+                        target.ApplyEffect(caster, target, effect, Field.FieldTick, type, skillId, buffId);
                         break;
                     default:
                         logger.Error("Invalid Buff Target: {Target}", effect.Condition.Target);
@@ -164,11 +190,6 @@ public class Buff : IUpdatable, IByteSerializable {
             } else if (effect.Splash != null) {
                 Caster.Field.AddSkill(Caster, effect, [Owner.Position], Owner.Rotation);
             }
-        }
-
-        NextProcTick += IntervalTick;
-        if (NextProcTick > EndTick) {
-            canProc = false;
         }
     }
 
@@ -238,7 +259,7 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
-        if (dotBuff.Target == SkillEntity.Target) {
+        if (dotBuff.Target == SkillEntity.Owner) {
             Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         } else {
             Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);

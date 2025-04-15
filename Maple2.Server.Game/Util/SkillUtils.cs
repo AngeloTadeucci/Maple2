@@ -68,7 +68,7 @@ public static class SkillUtils {
         }
     }
 
-    public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target) {
+    public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (caster is FieldPlayer player) {
             if (condition is not { Probability: 1 } && condition.Probability < Random.Shared.NextDouble()) {
                 return false;
@@ -129,36 +129,48 @@ public static class SkillUtils {
             if (condition.ActiveSkill.Length > 0 && condition.ActiveSkill.All(id => owner.Animation.Current?.Skill?.Id != id)) {
                 return false;
             }
+            if (condition.OnlyOnBattleMount && player.Session.Ride.Ride?.Metadata.Basic.Type != RideOnType.Battle) {
+                return false;
+            }
+            if (!condition.AllowOnBattleMount && player.Session.Ride.Ride?.Metadata.Basic.Type == RideOnType.Battle) {
+                return false;
+            }
         }
 
-        return condition.Caster.Check(caster) && condition.Owner.Check(owner) && condition.Target.Check(target);
+        return condition.Caster.Check(caster, eventType, eventSkillId, eventBuffId) && condition.Owner.Check(owner, eventType, eventSkillId, eventBuffId) && condition.Target.Check(target, eventType, eventSkillId, eventBuffId);
     }
 
-    private static bool Check(this BeginConditionTarget? condition, IActor target) {
+    private static bool Check(this BeginConditionTarget? condition, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (condition == null) {
             return true;
         }
 
         foreach ((int id, short level, bool owned, int count, CompareType compare) in condition.Buff) {
-            if (!target.Buffs.Buffs.TryGetValue(id, out Buff? buff)) {
-                return false;
-            }
-            if (buff.Level < level) {
-                return false;
-            }
-            if (owned && buff.Owner.ObjectId == 0) {
-                return false;
-            }
+            List<Buff> buffs = target.Buffs.EnumerateBuffs(id);
+            bool validBuff = false;
+            foreach (Buff buff in buffs) {
+                if (buff.Level < level) {
+                    continue;
+                }
+                if (owned && buff.Owner.ObjectId == 0) {
+                    continue;
+                }
 
-            bool compareResult = compare switch {
-                CompareType.Equals => buff.Stacks == count,
-                CompareType.Less => buff.Stacks < count,
-                CompareType.LessEquals => buff.Stacks <= count,
-                CompareType.Greater => buff.Stacks > count,
-                CompareType.GreaterEquals => buff.Stacks >= count,
-                _ => true,
-            };
-            if (!compareResult) {
+                bool compareResult = compare switch {
+                    CompareType.Equals => buff.Stacks == count,
+                    CompareType.Less => buff.Stacks < count,
+                    CompareType.LessEquals => buff.Stacks <= count,
+                    CompareType.Greater => buff.Stacks > count,
+                    CompareType.GreaterEquals => buff.Stacks >= count,
+                    _ => true,
+                };
+                if (!compareResult) {
+                    continue;
+                }
+                validBuff = true;
+                break;
+            }
+            if (!validBuff) {
                 return false;
             }
         }
@@ -205,6 +217,17 @@ public static class SkillUtils {
             if (condition.NpcIds.Length > 0 && !condition.NpcIds.Contains(npc.Value.Id)) {
                 return false;
             }
+        }
+
+        if (condition.Event.Type != eventType) {
+            return false;
+        }
+
+        if (condition.Event.BuffIds.Length > 0 && !condition.Event.BuffIds.Contains(eventBuffId)) {
+            return false;
+        }
+        if (condition.Event.SkillIds.Length > 0 && !condition.Event.SkillIds.Contains(eventSkillId)) {
+            return false;
         }
 
         return true;

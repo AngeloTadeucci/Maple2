@@ -388,11 +388,11 @@ public partial class TriggerContext {
         DebugLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
         if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxId)) {
-                player.Buffs.Remove(buffId);
+                player.Buffs.Remove(buffId, Field.FieldActor.ObjectId);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxId)) {
-                monster.Buffs.Remove(buffId);
+                monster.Buffs.Remove(buffId, Field.FieldActor.ObjectId);
             }
         }
     }

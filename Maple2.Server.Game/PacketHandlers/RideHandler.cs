@@ -53,7 +53,7 @@ public class RideHandler : PacketHandler<GameSession> {
     }
 
     private void HandleStart(GameSession session, IByteReader packet) {
-        if (session.Field == null || !session.Field.Metadata.Limit.Ride || session.Ride != null) {
+        if (session.Field == null || !session.Field.Metadata.Limit.Ride || session.Ride.Ride != null) {
             session.Send(NoticePacket.MessageBox(StringCode.s_action_cant_ride));
             return;
         }
@@ -66,7 +66,7 @@ public class RideHandler : PacketHandler<GameSession> {
         // client doesn't set this data?
         //var ugc = packet.ReadClass<UgcItemLook>();
 
-        if (type != RideOnType.UseItem) {
+        if (type != RideOnType.Default) {
             return;
         }
 
@@ -75,41 +75,29 @@ public class RideHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.MessageBox(StringCode.s_item_invalid_do_not_have));
             return;
         }
-        if (item.IsExpired() || item.Metadata.Property.Ride != rideId || !RideMetadata.TryGet(rideId, out RideMetadata? metadata)) {
+        if (item.IsExpired() || item.Metadata.Property.Ride != rideId) {
             session.Send(NoticePacket.MessageBox(StringCode.s_item_invalid_function_item));
             return;
         }
 
-        if (item.Metadata.Limit.TransferType == TransferType.BindOnUse) {
-            session.Item.Bind(item);
-        }
-
-        int objectId = FieldManager.NextGlobalId();
-        var action = new RideOnActionUseItem(rideId, objectId, item);
-        session.Ride = new Ride(session.Player.ObjectId, metadata, action);
-        session.Field.Broadcast(RidePacket.Start(session.Ride));
+        session.Ride.Mount(item);
     }
 
     private void HandleStop(GameSession session, IByteReader packet) {
-        if (session.Field == null || session.Ride == null) {
+        if (session.Field == null || session.Ride.Ride == null) {
             return;
         }
 
         var type = packet.Read<RideOffType>();
-        if (type != RideOffType.Default) {
-            return;
-        }
 
-        int ownerId = session.Ride.OwnerId;
+        int ownerId = session.Ride.Ride.OwnerId;
         bool forced = packet.ReadBool();
-        var action = new RideOffAction(forced);
 
-        session.Ride = null;
-        session.Field.Broadcast(RidePacket.Stop(ownerId, action));
+        session.Ride.Dismount(type, forced);
     }
 
     private void HandleChange(GameSession session, IByteReader packet) {
-        if (session.Field == null || session.Ride == null) {
+        if (session.Field == null || session.Ride.Ride == null) {
             return;
         }
 
@@ -126,12 +114,12 @@ public class RideHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.Ride = null;
+        session.Ride.Ride = null;
         session.Field.Broadcast(RidePacket.Change(session.Player.ObjectId, rideId, itemUid));
     }
 
     private void HandleJoin(GameSession session, IByteReader packet) {
-        if (session.Field == null || session.Ride != null) {
+        if (session.Field == null || session.Ride.Ride != null) {
             return;
         }
 
@@ -139,40 +127,40 @@ public class RideHandler : PacketHandler<GameSession> {
         if (!session.Field.TryGetPlayer(otherId, out FieldPlayer? other)) {
             return;
         }
-        if (other.Session.Ride == null || other.Session.Ride.Passengers.Length == 0) {
+        if (other.Session.Ride.Ride == null || other.Session.Ride.Ride.Passengers.Length == 0) {
             return;
         }
 
         // TODO: must be friend, guild, or party?
         // s_multi_riding_item_desc
 
-        sbyte index = (sbyte) Array.FindIndex(other.Session.Ride.Passengers, objectId => objectId == 0);
-        other.Session.Ride.Passengers[index] = session.Player.ObjectId;
+        sbyte index = (sbyte) Array.FindIndex(other.Session.Ride.Ride.Passengers, objectId => objectId == 0);
+        other.Session.Ride.Ride.Passengers[index] = session.Player.ObjectId;
         session.Ride = other.Session.Ride;
 
-        session.Field.Broadcast(RidePacket.Join(session.Ride.OwnerId, session.Player.ObjectId, index));
+        session.Field.Broadcast(RidePacket.Join(session.Ride.Ride.OwnerId, session.Player.ObjectId, index));
     }
 
     private void HandleLeave(GameSession session) {
-        if (session.Field == null || session.Ride == null) {
+        if (session.Field == null || session.Ride.Ride == null) {
             return;
         }
-        if (session.Ride.Passengers.Length == 0) {
+        if (session.Ride.Ride.Passengers.Length == 0) {
             return;
         }
 
-        sbyte index = (sbyte) Array.FindIndex(session.Ride.Passengers, objectId => objectId == session.Player.ObjectId);
+        sbyte index = (sbyte) Array.FindIndex(session.Ride.Ride.Passengers, objectId => objectId == session.Player.ObjectId);
         if (index < 0) {
             return;
         }
 
-        int ownerId = session.Ride.OwnerId;
+        int ownerId = session.Ride.Ride.OwnerId;
         if (session.Field.TryGetPlayerById(ownerId, out FieldPlayer? owner) && owner.Session.Ride == session.Ride) {
             session.Player.MoveToPosition(session.Player.Position, session.Player.Rotation);
         }
 
-        session.Ride.Passengers[index] = 0;
-        session.Ride = null;
+        session.Ride.Ride.Passengers[index] = 0;
+        session.Ride.Ride = null;
 
         session.Field.Broadcast(RidePacket.Leave(ownerId, session.Player.ObjectId));
     }

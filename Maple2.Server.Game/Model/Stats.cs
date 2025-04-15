@@ -14,15 +14,15 @@ public class Stats {
 
     public int GearScore = 0;
 
-    public Stats(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
+    public Stats(IReadOnlyDictionary<BasicAttribute, long> statsDictionary, JobCode jobCode) {
         basicValues = new Dictionary<BasicAttribute, Stat>();
         specialValues = new Dictionary<SpecialAttribute, Stat>();
 
-        foreach (BasicAttribute attribute in metadata.Keys) {
+        foreach (BasicAttribute attribute in statsDictionary.Keys) {
             if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
                 continue;
             }
-            this[attribute].AddBase(metadata[attribute]);
+            this[attribute].AddBase(statsDictionary[attribute]);
         }
 
         // TODO: Remove when UserStat has rmsp
@@ -37,6 +37,17 @@ public class Stats {
         specialValues = new Dictionary<SpecialAttribute, Stat>();
         foreach ((BasicAttribute attribute, long value) in npcStats.Stats) {
             this[attribute].AddBase(value);
+        }
+    }
+
+    /// <summary>
+    /// Clears and sets static stats.
+    /// </summary>
+    public void SetStaticStats(IReadOnlyDictionary<BasicAttribute, long> statsDictionary) {
+        basicValues.Clear();
+        specialValues.Clear();
+        foreach (BasicAttribute attribute in statsDictionary.Keys) {
+            this[attribute].AddBase(statsDictionary[attribute]);
         }
     }
 

@@ -11,7 +11,7 @@ public record RideMetadata(
     IReadOnlyDictionary<BasicAttribute, long> Stats);
 
 public record RideMetadataBasic(
-    int Type,
+    RideOnType Type,
     int SkillSetId,
     float SummonTime,
     long RunXStamina,

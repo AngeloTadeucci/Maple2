@@ -79,8 +79,8 @@ public enum SkillRegion {
 
 public enum SkillEntity {
     None = 0,
-    Target = 1,
-    Owner = 2,
+    Target = 2,
+    Owner = 1,
     Caster = 3,
     PetOwner = 4,
     Attacker = 5,
@@ -131,6 +131,11 @@ public enum SkillEntity {
 //  20:
 // 102: Frost Inflicted (10300271)
 // 103: Target Hit All 9x (11000266)
+// -----
+// All: 1,2,4,5,6,7,10,11,13,14,16,17,18,19,20,102,103
+// IgnoreOwner => 1,2,4,5,6,7,10,16,17,18
+// SkillIds => 4,6,7,14,20
+// BuffIds => 16,17,102
 public enum EventConditionType {
     Activate = 0, // always 0 in skills
     Tick = 0,

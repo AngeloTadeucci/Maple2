@@ -520,7 +520,7 @@ public class AiState {
         }
 
         if (node.Type == NodeBuffType.Remove) {
-            target.Buffs.Remove(node.Id);
+            target.Buffs.Remove(node.Id, actor.ObjectId);
 
             return;
         }

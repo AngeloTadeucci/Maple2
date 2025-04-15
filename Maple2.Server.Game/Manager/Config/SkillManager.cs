@@ -51,12 +51,12 @@ public class SkillManager {
 
             logger.Information("Applying passive skill {Name}: {SkillId},{Level}", metadata.Name, metadata.Id, metadata.Level);
             foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
-                if (effect.Condition is not { Target: SkillEntity.Target }) {
+                if (effect.Condition is not { Target: SkillEntity.Owner }) {
                     Console.WriteLine($"Skipping effect {effect}");
                     continue;
                 }
 
-                session.Player.ApplyEffect(session.Player, session.Player, effect, notifyField);
+                session.Player.ApplyEffect(session.Player, session.Player, effect, session.Player.Field.FieldTick, EventConditionType.Activate, skillId: metadata.Id, notifyField: notifyField);
             }
         }
     }

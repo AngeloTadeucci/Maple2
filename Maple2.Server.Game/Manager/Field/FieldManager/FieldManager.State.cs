@@ -476,12 +476,12 @@ public partial class FieldManager {
 
     public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null) {
         switch (entity) {
-            case SkillEntity.Owner:
+            case SkillEntity.Target:
             case SkillEntity.Attacker:
             case SkillEntity.RegionBuff:
             case SkillEntity.RegionDebuff:
                 return prisms.Filter(Players.Values, limit, ignore);
-            case SkillEntity.Target:
+            case SkillEntity.Owner:
                 return prisms.Filter(Mobs.Values, limit, ignore);
             case SkillEntity.RegionPet:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);

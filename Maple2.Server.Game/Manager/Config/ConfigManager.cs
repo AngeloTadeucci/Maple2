@@ -182,7 +182,7 @@ public class ConfigManager {
         }
     }
 
-    public void SetSkillCooldown(int skillId, short level, int endTick = 0) {
+    public void SetSkillCooldown(int skillId, short level = 1, int endTick = 0) {
         var cooldown = new SkillCooldown(skillId, level) {
             EndTick = endTick,
         };

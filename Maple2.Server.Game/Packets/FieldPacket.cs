@@ -4,6 +4,7 @@ using Maple2.Model;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -37,9 +38,9 @@ public static class FieldPacket {
 
         pWriter.Write<SkinColor>(player.Character.SkinColor);
         pWriter.WriteUnicodeString(player.Character.Picture);
-        pWriter.WriteBool(session.Ride != null);
-        if (session.Ride != null) {
-            pWriter.WriteClass<RideOnAction>(session.Ride.Action);
+        pWriter.WriteBool(session.Ride.Ride != null);
+        if (session.Ride.Ride != null) {
+            pWriter.WriteClass<RideOnAction>(session.Ride.Ride.Action);
 
             pWriter.WriteByte(); // Unknown Count for Loop
         }
@@ -83,8 +84,9 @@ public static class FieldPacket {
             pWriter.WriteDeflated(buffer.Buffer, 0, buffer.Length);
         }
 
-        pWriter.WriteShort((short) session.Player.Buffs.Buffs.Count);
-        foreach (Buff buff in session.Player.Buffs.Buffs.Values) {
+        List<Buff> buffs = session.Player.Buffs.EnumerateBuffs();
+        pWriter.WriteShort((short) buffs.Count);
+        foreach (Buff buff in buffs) {
             pWriter.WriteInt(buff.Owner.ObjectId);
             pWriter.WriteInt(buff.ObjectId);
             pWriter.WriteInt(buff.Caster.ObjectId);
@@ -148,8 +150,9 @@ public static class FieldPacket {
         pWriter.WriteNpcStats(npc.Stats.Values);
         pWriter.WriteBool(npc.IsDead);
 
-        pWriter.WriteShort((short) npc.Buffs.Buffs.Count);
-        foreach (Buff buff in npc.Buffs.Buffs.Values) {
+        List<Buff> buffs = npc.Buffs.EnumerateBuffs();
+        pWriter.WriteShort((short) buffs.Count);
+        foreach (Buff buff in buffs) {
             pWriter.WriteInt(buff.Owner.ObjectId);
             pWriter.WriteInt(buff.ObjectId);
             pWriter.WriteInt(buff.Caster.ObjectId);
@@ -162,11 +165,11 @@ public static class FieldPacket {
         pWriter.WriteInt();
 
         if (npc.Value.IsBoss) {
-            pWriter.WriteUnicodeString(); // EffectStr
-            pWriter.WriteInt(npc.Buffs.Buffs.Count);
-            foreach (Buff buff in npc.Buffs.Buffs.Values) {
-                pWriter.WriteInt(buff.Id);
-                pWriter.WriteShort(buff.Level);
+            pWriter.WriteUnicodeString("Eff_Test_Regen"); // EffectStr
+            pWriter.WriteInt(npc.Value.Metadata.Skill.Entries.Length);
+            foreach (NpcMetadataSkill.Entry skill in npc.Value.Metadata.Skill.Entries) {
+                pWriter.WriteInt(skill.Id);
+                pWriter.WriteShort(skill.Level);
             }
 
             pWriter.WriteInt();
