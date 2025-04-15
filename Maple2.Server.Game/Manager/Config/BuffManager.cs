@@ -196,7 +196,6 @@ public class BuffManager : IUpdatable {
     public List<Buff> EnumerateBuffs(int buffId) => Buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs : [];
 
     public bool HasBuff(int effectId, short effectLevel = 1, int stacks = 0) {
-        // Should we be validating all possible buffs with the same ID to see if level/stack match?
         List<Buff> buffs = EnumerateBuffs(effectId);
         if (buffs.Count == 0) {
             return false;
