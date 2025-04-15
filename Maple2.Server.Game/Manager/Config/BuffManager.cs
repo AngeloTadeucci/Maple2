@@ -104,17 +104,17 @@ public class BuffManager : IUpdatable {
 
         // Remove existing buff if it's in the same group
         if (additionalEffect.Property.Group > 0) {
-            existing = Buffs.Values.FirstOrDefault(buff => buff.Metadata.Property.Group == additionalEffect.Property.Group);
-            if (existing != null) {
-                existing.Disable();
-                owner.Field.Broadcast(BuffPacket.Remove(existing));
+            List<Buff> buffs = EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group).ToList();
+            foreach (Buff existingBuff in buffs) {
+                existingBuff.Disable(); // Disable?
+                owner.Field.Broadcast(BuffPacket.Remove(existingBuff));
             }
         }
 
         var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, durationMs);
-        if (!Buffs.TryAdd(id, buff)) {
-            Buffs[id].Stack(startTick);
-            owner.Field.Broadcast(BuffPacket.Update(buff));
+
+        if (!TryAdd(buff)) {
+            logger.Error("Could not add buff {Id} to {Object}", buff.Id, Actor.ObjectId);
             return;
         }
 
@@ -443,19 +443,22 @@ public class BuffManager : IUpdatable {
     }
 
     public void RemoveItemBuffs(Item item) {
+        List<(int id, int casterId)> buffsToRemove = [];
         foreach (ItemMetadataAdditionalEffect buff in item.Metadata.AdditionalEffects) {
-            Remove(buff.Id);
+            buffsToRemove.Add((buff.Id, Actor.ObjectId));
         }
 
         if (item.Socket != null) {
             foreach (ItemGemstone? gem in item.Socket.Sockets) {
                 if (gem != null && Actor.Field.ItemMetadata.TryGet(gem.ItemId, out ItemMetadata? metadata)) {
                     foreach (ItemMetadataAdditionalEffect buff in metadata.AdditionalEffects) {
-                        Remove(buff.Id);
+                        buffsToRemove.Add((buff.Id, Actor.ObjectId));
                     }
                 }
             }
         }
+
+        Remove(buffsToRemove.ToArray());
     }
 
     public void SetCacheBuffs(IList<BuffInfo> buffs, long currentTick) {

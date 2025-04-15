@@ -273,39 +273,49 @@ public class Buff : IUpdatable, IByteSerializable {
 
         if (Metadata.Update.Cancel.Ids.Length > 0) {
             foreach (int id in Metadata.Update.Cancel.Ids) {
-                if (Owner.Buffs.Buffs.TryGetValue(id, out Buff? buff)
-                    && (!Metadata.Update.Cancel.CheckSameCaster || buff.Caster.ObjectId == Caster.ObjectId)) {
-                    Owner.Buffs.Remove(id);
+                List<Buff> buffs = Owner.Buffs.EnumerateBuffs(id);
+                foreach (Buff buff in buffs) {
+                    if (!Metadata.Update.Cancel.CheckSameCaster || buff.Caster.ObjectId == Caster.ObjectId) {
+                        Owner.Buffs.Remove(id, Caster.ObjectId);
+                    }
                 }
             }
 
-            List<Buff> buffsToRemove = Owner.Buffs.Buffs.Values
+            List<Buff> buffsToRemove = Owner.Buffs.EnumerateBuffs()
                 .Where(buff =>
                     Metadata.Update.Cancel.Categories.Contains(buff.Metadata.Property.Category)
                     && (!Metadata.Update.Cancel.CheckSameCaster || buff.Caster.ObjectId == Caster.ObjectId)
                 ).ToList();
 
-            buffsToRemove.ForEach(buff => Owner.Buffs.Remove(buff.Id));
+            buffsToRemove.ForEach(buff => Owner.Buffs.Remove(buff.Id, Caster.ObjectId));
         }
     }
 
     public void ModifyDuration() {
         foreach (AdditionalEffectMetadataUpdate.ModifyDuration modifyDuration in Metadata.Update.Duration) {
-            if (!Owner.Buffs.Buffs.TryGetValue(modifyDuration.Id, out Buff? buff)) {
+            List<Buff> buffs = Owner.Buffs.EnumerateBuffs(modifyDuration.Id);
+            if (buffs.Count == 0) {
                 continue;
             }
-            buff.EndTick += (long) modifyDuration.Value;
-            if (modifyDuration.Rate > 0) {
-                long remainingDuration = (long) (modifyDuration.Rate * (buff.EndTick - Environment.TickCount64));
-                buff.EndTick += (modifyDuration.Rate >= 1) ? remainingDuration : -remainingDuration;
-            }
+            foreach (Buff buff in buffs) {
+                buff.EndTick += (long) modifyDuration.Value;
+                if (modifyDuration.Rate > 0) {
+                    long remainingDuration = (long) (modifyDuration.Rate * (buff.EndTick - Environment.TickCount64));
+                    buff.EndTick += (modifyDuration.Rate >= 1) ? remainingDuration : -remainingDuration;
+                }
 
-            // restart proc if possible
-            if (NextProcTick < EndTick) {
-                canProc = true;
+                // restart proc if possible
+                if (NextProcTick < EndTick) {
+                    canProc = true;
+                }
+                Field.Broadcast(BuffPacket.Update(buff));
             }
-            Field.Broadcast(BuffPacket.Update(buff));
         }
+    }
+
+    public void UpdateEndTime(int modifyValue) {
+        EndTick += modifyValue;
+        Field.Broadcast(BuffPacket.Update(this));
     }
 
     public void WriteTo(IByteWriter writer) {
