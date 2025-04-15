@@ -197,16 +197,23 @@ public class BuffManager : IUpdatable {
 
     public bool HasBuff(int effectId, short effectLevel = 1, int stacks = 0) {
         // Should we be validating all possible buffs with the same ID to see if level/stack match?
-        Buff? buff = GetBuff(effectId);
-        if (buff == null) {
+        List<Buff> buffs = EnumerateBuffs(effectId);
+        if (buffs.Count == 0) {
             return false;
         }
 
-        if (stacks != 0 && buff.Stacks < stacks) {
-            return false;
-        }
+        foreach (Buff buff in buffs) {
+            if (stacks != 0 && buff.Stacks < stacks) {
+                continue;
+            }
 
-        return effectLevel == 0 || buff.Level >= effectLevel;
+            if (effectLevel != 0 || buff.Level < effectLevel) {
+                continue;
+            }
+
+            return true;
+        }
+        return false;
     }
 
     public bool HasBuff(BuffEventType eventType) {
