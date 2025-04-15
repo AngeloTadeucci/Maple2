@@ -206,7 +206,7 @@ public class BuffManager : IUpdatable {
                 continue;
             }
 
-            if (effectLevel != 0 || buff.Level < effectLevel) {
+            if (effectLevel != 0 && buff.Level < effectLevel) {
                 continue;
             }
 
