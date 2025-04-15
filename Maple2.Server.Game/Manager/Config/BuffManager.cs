@@ -120,7 +120,7 @@ public class BuffManager : IUpdatable {
 
         // Remove existing buff if it's in the same group
         if (additionalEffect.Property.Group > 0) {
-            foreach (Buff existingBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group).ToList()) {
+            foreach (Buff existingBuff in EnumerateBuffs().Where(b => b.Metadata.Property.Group == additionalEffect.Property.Group)) {
                 Remove(existingBuff.Id, existingBuff.Caster.ObjectId);
             }
         }
