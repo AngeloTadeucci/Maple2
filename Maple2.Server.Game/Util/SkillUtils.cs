@@ -145,6 +145,10 @@ public static class SkillUtils {
             return true;
         }
 
+        if (condition.Event.Type != eventType) {
+            return false;
+        }
+
         foreach ((int id, short level, bool owned, int count, CompareType compare) in condition.Buff) {
             List<Buff> buffs = target.Buffs.EnumerateBuffs(id);
             bool validBuff = false;
@@ -217,10 +221,6 @@ public static class SkillUtils {
             if (condition.NpcIds.Length > 0 && !condition.NpcIds.Contains(npc.Value.Id)) {
                 return false;
             }
-        }
-
-        if (condition.Event.Type != eventType) {
-            return false;
         }
 
         if (condition.Event.BuffIds.Length > 0 && !condition.Event.BuffIds.Contains(eventBuffId)) {

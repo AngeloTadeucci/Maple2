@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Storage;
+﻿using System.Numerics;
+using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -141,7 +142,7 @@ public class RideHandler : PacketHandler<GameSession> {
         }
 
         other.Session.Ride.Ride.Passengers[index] = session.Player.ObjectId;
-        session.Ride = other.Session.Ride;
+        session.Ride.Ride = other.Session.Ride.Ride;
 
         session.Field.Broadcast(RidePacket.Join(session.Ride.Ride.OwnerId, session.Player.ObjectId, index));
     }
@@ -160,8 +161,8 @@ public class RideHandler : PacketHandler<GameSession> {
         }
 
         int ownerId = session.Ride.Ride.OwnerId;
-        if (session.Field.TryGetPlayerById(ownerId, out FieldPlayer? owner) && owner.Session.Ride == session.Ride) {
-            session.Player.MoveToPosition(session.Player.Position, session.Player.Rotation);
+        if (session.Field.TryGetPlayer(ownerId, out FieldPlayer? owner) && owner.Session.Ride.Ride == session.Ride.Ride) {
+            session.Player.MoveToPosition(session.Player.Position + new Vector3(0, 0, 75), session.Player.Rotation);
         }
 
         session.Ride.Ride.Passengers[index] = 0;
