@@ -162,7 +162,7 @@ public class RideHandler : PacketHandler<GameSession> {
 
         int ownerId = session.Ride.Ride.OwnerId;
         if (session.Field.TryGetPlayer(ownerId, out FieldPlayer? owner) && owner.Session.Ride.Ride == session.Ride.Ride) {
-            session.Player.MoveToPosition(session.Player.Position + new Vector3(0, 0, 75), session.Player.Rotation);
+            session.Player.MoveToPosition(session.Player.Position, session.Player.Rotation);
         }
 
         session.Ride.Ride.Passengers[index] = 0;

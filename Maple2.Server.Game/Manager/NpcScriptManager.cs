@@ -366,12 +366,15 @@ public sealed class NpcScriptManager {
             return;
         }
 
-        if (scriptFunction.PortalId > 0) {
-            session.Send(NpcTalkPacket.MovePlayer(scriptFunction.PortalId));
-        }
-
         if (!string.IsNullOrEmpty(scriptFunction.UiName)) {
             session.Send(NpcTalkPacket.OpenDialog(scriptFunction.UiName, scriptFunction.UiArg));
+        }
+
+        if (scriptFunction.PortalId > 0) {
+            if (session.Field.TryGetPortal(scriptFunction.PortalId, out FieldPortal? dstPortal)) {
+                session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
+            }
+            session.Send(NpcTalkPacket.MovePlayer(scriptFunction.PortalId));
         }
 
         if (!string.IsNullOrEmpty(scriptFunction.MoveMapMovie)) {

@@ -257,7 +257,6 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
-        Console.WriteLine($"Applying dot buff {dotBuff.Id}");
         if (dotBuff.Target == SkillEntity.Owner) {
             Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         } else {
