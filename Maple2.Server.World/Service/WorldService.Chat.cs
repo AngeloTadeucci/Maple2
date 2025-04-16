@@ -24,6 +24,8 @@ public partial class WorldService {
                 return ClubChat(request);
             case ChatRequest.ChatOneofCase.Wedding:
                 return Task.FromResult(new ChatResponse());
+            case ChatRequest.ChatOneofCase.SystemNotice:
+                return SystemNotice(request);
             default:
                 throw new RpcException(
                     new Status(StatusCode.InvalidArgument, $"Invalid chat type: {request.ChatCase}"));
@@ -140,6 +142,13 @@ public partial class WorldService {
             } catch { /* ignored */ }
         }
 
+        return Task.FromResult(new ChatResponse());
+    }
+
+    private Task<ChatResponse> SystemNotice(ChatRequest request) {
+        foreach ((int channel, ChannelClient client) in channelClients) {
+            client.Chat(request);
+        }
         return Task.FromResult(new ChatResponse());
     }
 }

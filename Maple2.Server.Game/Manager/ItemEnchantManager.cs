@@ -4,6 +4,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.Game.Util;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;
@@ -236,6 +237,7 @@ public class ItemEnchantManager {
 
                     session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Success, targetLong: upgradeItem.Enchant.Enchants);
                     session.Send(ItemEnchantPacket.Success(upgradeItem, attributeDeltas));
+                    ChatUtil.SendEnchantAnnouncement(session, upgradeItem);
                 } else {
                     session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Fail, targetLong: upgradeItem.Enchant.Enchants);
                     upgradeItem.Enchant.Charges += FailCharge[enchants];
@@ -257,6 +259,7 @@ public class ItemEnchantManager {
                     session.ConditionUpdate(ConditionType.enchant_result, codeLong: (int) EnchantResult.Success, targetLong: upgradeItem.Enchant.Enchants);
                     session.Send(ItemEnchantPacket.Success(upgradeItem, attributeDeltas));
                     session.Send(ItemEnchantPacket.UpdateExp(itemUid, 0));
+                    ChatUtil.SendEnchantAnnouncement(session, upgradeItem);
                     Reset();
                 } else {
                     // Just clear the fodder as the same details are reused.

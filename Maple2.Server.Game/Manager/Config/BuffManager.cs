@@ -112,10 +112,16 @@ public class BuffManager : IUpdatable {
                 break;
         }
         if (existing != null) {
-            if ((existing.UpdateEndTime(endTick) || existing.Stack()) && notifyField) {
-                owner.Field.Broadcast(BuffPacket.Update(existing));
+            if (existing.Level < level) {
+                // Technically in sniffs it should just update the buff level. This should still be the same?
+                Remove(existing.Id, existing.Caster.ObjectId);
+            } else {
+                bool updated = existing.UpdateEndTime(endTick) | existing.Stack();
+                if (updated && notifyField) {
+                    owner.Field.Broadcast(BuffPacket.Update(existing));
+                }
+                return;
             }
-            return;
         }
 
         // Remove existing buff if it's in the same group
@@ -197,7 +203,7 @@ public class BuffManager : IUpdatable {
     }
 
     public List<Buff> EnumerateBuffs() => buffs.Values.SelectMany(list => list).ToList();
-    public List<Buff> EnumerateBuffs(int buffId) => this.buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs : [];
+    public List<Buff> EnumerateBuffs(int buffId) => this.buffs.TryGetValue(buffId, out List<Buff>? buffs) ? buffs.ToList() : [];
 
     public bool HasBuff(int effectId, short effectLevel = 1, int stacks = 0) {
         List<Buff> buffs = EnumerateBuffs(effectId);

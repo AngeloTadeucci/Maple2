@@ -42,3 +42,18 @@ public enum ChatType {
     UgcEvent = 22,
     Wedding = 25,
 }
+
+public enum AnnounceType {
+    [Description("{0} has succeeded in enchanting {1}.")]
+    s_itemenchant_success_notice = 1,
+    [Description("{0} rolled {2} on their {1}!")]
+    s_itemremake_chat_maxoption = 2,
+    [Description("{0} has earned {2} from {1}.")]
+    s_msg_item_open_item_announce_to_world = 3,
+    [Description("{0} got {1} from the Festival House.")]
+    s_card_reverse_game_reward_notice = 4,
+    [Description("{0} rolled {2} on their {1}!")]
+    s_item_merge_chat_maxoption = 5,
+    [Description("{0} analyzed {1} and received {2}.")]
+    s_msg_item_identified_item_announce_to_world = 6,
+}

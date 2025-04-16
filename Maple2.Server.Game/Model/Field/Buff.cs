@@ -51,7 +51,7 @@ public class Buff : IUpdatable, IByteSerializable {
         // Buffs with IntervalTick=0 will just proc a single time
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
-        Stack();
+        Stack(silent: true);
         NextProcTick = startTick + Metadata.Property.DelayTick + Metadata.Property.IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
@@ -75,21 +75,17 @@ public class Buff : IUpdatable, IByteSerializable {
         return true;
     }
 
-    public bool Stack(int amount = 1) {
-        int currentStacks = Stacks;
-
-        // Ensure we don't go below 0
-        int adjustedAmount = Math.Max(0, Stacks - amount);
-        if (adjustedAmount == 0) {
+    public bool Stack(int amount = 1, bool silent = false) {
+        if (amount > 0 && Stacks >= Metadata.Property.MaxCount) {
             return false;
         }
-
-        Stacks = Math.Min(Stacks + adjustedAmount, Metadata.Property.MaxCount);
+        int currentStacks = Stacks;
+        Stacks = Math.Clamp(Stacks + amount, 0, Metadata.Property.MaxCount);
         if (Stacks == currentStacks) {
             return false;
         }
 
-        if (Stacks >= Metadata.Property.MaxCount) {
+        if (!silent && Stacks >= Metadata.Property.MaxCount) {
             Owner.Buffs.TriggerEvent(Owner, Owner, Owner, EventConditionType.OnBuffStacksReached, buffSkillId: Id);
         }
 
@@ -160,6 +156,7 @@ public class Buff : IUpdatable, IByteSerializable {
         ApplyDotBuff();
         ApplyCancel();
         ModifyDuration();
+        ApplySkills(Caster, Owner, Owner, EventConditionType.Tick, buffId: Id);
 
         NextProcTick += IntervalTick;
         if (NextProcTick > EndTick) {
@@ -171,7 +168,7 @@ public class Buff : IUpdatable, IByteSerializable {
         foreach (SkillEffectMetadata effect in Metadata.Skills) {
             if (effect.Condition != null) {
                 // logger.Error("Buff Condition-Effect unimplemented from {Id} on {Owner}", Id, Owner.ObjectId);
-                if (effect.Condition.Condition.Check(caster, owner, target, type, skillId, buffId)) {
+                if (!effect.Condition.Condition.Check(caster, owner, target, type, skillId, buffId)) {
                     continue;
                 }
                 switch (effect.Condition.Target) {
@@ -274,7 +271,8 @@ public class Buff : IUpdatable, IByteSerializable {
 
         if (Metadata.Update.Cancel.Ids.Length > 0) {
             foreach (int id in Metadata.Update.Cancel.Ids) {
-                foreach (Buff buff in Owner.Buffs.EnumerateBuffs(id)) {
+                List<Buff> buffs = Owner.Buffs.EnumerateBuffs(id);
+                foreach (Buff buff in buffs) {
                     if (!Metadata.Update.Cancel.CheckSameCaster || buff.Caster.ObjectId == Caster.ObjectId) {
                         Owner.Buffs.Remove(id, Caster.ObjectId);
                     }
