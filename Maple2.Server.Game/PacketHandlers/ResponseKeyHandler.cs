@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -42,7 +43,11 @@ public class ResponseKeyHandler : PacketHandler<GameSession> {
             session.Send(Packet.Of(SendOp.World));
         } catch (Exception ex) when (ex is RpcException or InvalidOperationException) {
             Logger.Error(ex, "Failed to login to game for accountId:{AccountId}", accountId);
+#if DEBUG
+            session.Send(NoticePacket.MessageBox(new InterfaceText("Invalid token. Are you connecting to the correct server port?")));
+#else
             session.Send(MigrationPacket.MoveResult(s_move_err_default));
+#endif
             session.Disconnect();
         }
     }
