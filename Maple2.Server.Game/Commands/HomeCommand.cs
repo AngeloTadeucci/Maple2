@@ -1,17 +1,19 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class HomeCommand : Command {
+public class HomeCommand : GameCommand {
     private const string NAME = "home";
     private const string DESCRIPTION = "Home commands.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
-    public HomeCommand(GameSession session, TableMetadataStorage tableMetadata) : base(NAME, DESCRIPTION) {
+    public HomeCommand(GameSession session, TableMetadataStorage tableMetadata) : base(RequiredPermission, NAME, DESCRIPTION) {
         AddCommand(new ExpCommand(session, tableMetadata));
         AddCommand(new LevelCommand(session));
         AddCommand(new SetExpCommand(session));

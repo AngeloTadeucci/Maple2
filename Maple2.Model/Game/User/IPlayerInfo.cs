@@ -18,6 +18,7 @@ public interface IPlayerInfo {
     // Health
     public long CurrentHp { get; set; }
     public long TotalHp { get; set; }
+    public DeathState DeathState { get; set; }
     // Location
     public int MapId { get; set; }
     public short Channel { get; set; }

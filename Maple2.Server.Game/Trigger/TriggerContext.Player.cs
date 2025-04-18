@@ -43,6 +43,9 @@ public partial class TriggerContext {
         DebugLog("[MoveRandomUser] mapId:{MapId}, portalId:{PortalId}, boxId:{BoxId}, count:{Count}", mapId, portalId, boxId, count);
         FieldPlayer[] players = PlayersInBox(boxId).ToArray();
         Random.Shared.Shuffle(players);
+        if (count > players.Length) {
+            count = players.Length;
+        }
 
         for (int i = 0; i < count; i++) {
             FieldPlayer player = players[i];
@@ -214,7 +217,7 @@ public partial class TriggerContext {
     public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level) {
         DebugLog("[CheckAnyUserAdditionalEffect] boxId:{BoxId}, additionalEffectId:{EffectId}, level:{Level}", boxId, additionalEffectId, level);
         foreach (FieldPlayer player in PlayersInBox(boxId)) {
-            if (player.Buffs.Buffs.TryGetValue(additionalEffectId, out Buff? buff) && buff.Level == level) {
+            if (player.Buffs.HasBuff(additionalEffectId, (short) level)) {
                 return true;
             }
         }

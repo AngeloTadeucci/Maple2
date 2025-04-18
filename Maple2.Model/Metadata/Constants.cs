@@ -921,6 +921,7 @@ public static class Constant {
     public const string PaybackGuideUrl = "http://maplestory2.nexon.com/News/Events";
     public const int DummyNpcMale = 2040998;
     public const int DummyNpcFemale = 2040999;
+    public static int DummyNpc(Gender gender) => gender is Gender.Female ? DummyNpcFemale : DummyNpcMale;
 
     #endregion
 
@@ -928,11 +929,18 @@ public static class Constant {
     public const int NextStateTriggerDefaultTick = 100;
     public const int UserRevivalPaneltyTick = 3600000;
     public const int UserRevivalPaneltyMinLevel = 10;
+    public const int maxDeadCount = 3;
+    public const byte hitPerDeadCount = 5;
     public const int FishFightingProp = 3000;
 
     public const float NpcLastSightRadius = 1800;
     public const float NpcLastSightHeightUp = 525;
     public const float NpcLastSightHeightDown = 225;
+
+    public const int RecoveryHPWaitTick = 1000;
+    public const int RecoverySPWaitTick = 1000;
+    public const int RecoveryEPWaitTick = 1000;
+    public const float FallBoundingAddedDistance = 750f;
     #endregion
 }
 

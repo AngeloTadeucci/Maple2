@@ -97,7 +97,7 @@ public partial class MovementState {
             return;
         }
 
-        if (!actor.AnimationState.TryPlaySequence(cast.Motion.MotionProperty.SequenceName, cast.Motion.MotionProperty.SequenceSpeed, AnimationType.Skill, out AnimationSequence? sequence)) {
+        if (!actor.Animation.TryPlaySequence(cast.Motion.MotionProperty.SequenceName, cast.Motion.MotionProperty.SequenceSpeed, AnimationType.Skill, out AnimationSequenceMetadata? sequence)) {
             task.Cancel();
 
             return;

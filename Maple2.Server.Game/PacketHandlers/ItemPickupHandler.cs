@@ -56,7 +56,7 @@ public class ItemPickupHandler : PacketHandler<GameSession> {
             // Items with Pick up effects are not added to player inventory.
             if (item.Metadata.AdditionalEffects.Any(buff => buff.PickUpEffect)) {
                 foreach (ItemMetadataAdditionalEffect additionalEffect in item.Metadata.AdditionalEffects.Where(buff => buff.PickUpEffect)) {
-                    session.Player.Buffs.AddBuff(session.Player, session.Player, additionalEffect.Id, additionalEffect.Level);
+                    session.Player.Buffs.AddBuff(session.Player, session.Player, additionalEffect.Id, additionalEffect.Level, session.Field.FieldTick);
                 }
                 return;
             }

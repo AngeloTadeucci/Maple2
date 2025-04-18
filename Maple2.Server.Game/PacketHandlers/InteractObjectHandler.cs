@@ -1,5 +1,6 @@
 ﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -102,6 +103,18 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
                     Z = interact.Position.Z + interact.Value.Drop.DropHeight,
                 }, interact.Rotation, item, session.CharacterId);
                 session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            }
+
+            foreach (InteractObjectMetadataEffect.InvokeEffect invokeEffect in interact.Value.AdditionalEffect.Invoke) {
+                if (invokeEffect.Probability < 10000 && invokeEffect.Probability / 100 < Random.Shared.Next(100)) {
+                    continue;
+                }
+
+                session.Player.Buffs.AddBuff(session.Player, session.Player, invokeEffect.Id, invokeEffect.Level, session.Field.FieldTick, notifyField: true);
+            }
+
+            if (interact.Value.AdditionalEffect.ModifyCode > 0) {
+                session.ConditionUpdate(ConditionType.interact_object, codeLong: interact.Value.Id);
             }
         }
     }

@@ -41,7 +41,11 @@ public record SkillMetadataProperty(
 
 public record SkillMetadataState(
     bool InBattle,
-    int SuperArmor); // 0, 1, 3
+    int SuperArmor,  // 0, 1, 3
+    bool UseInGameTime,
+    int CooldownGroupId,
+    bool IgnoreReduceCooldown,
+    int RechargeMaxCount);
 
 public record SkillMetadataLevel(
     BeginCondition Condition,

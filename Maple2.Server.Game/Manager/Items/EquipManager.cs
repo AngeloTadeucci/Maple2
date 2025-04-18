@@ -305,6 +305,7 @@ public class EquipManager {
         }
 
         session.Field?.Broadcast(EquipPacket.UnequipItem(session.Player, unequipItem));
+        session.Buffs.RemoveItemBuffs(unequipItem);
         return true;
     }
 

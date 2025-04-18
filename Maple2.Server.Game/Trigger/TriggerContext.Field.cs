@@ -372,13 +372,14 @@ public partial class TriggerContext {
             return;
         }
 
+        long startTick = Field.FieldTick;
         if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxIds)) {
-                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level);
+                player.Buffs.AddBuff(Field.FieldActor, player, buffId, (short) level, startTick);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxIds)) {
-                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level);
+                monster.Buffs.AddBuff(Field.FieldActor, monster, buffId, (short) level, startTick);
             }
         }
     }
@@ -387,11 +388,11 @@ public partial class TriggerContext {
         DebugLog("[RemoveBuff] boxId:{Id}, buffId:{BuffId}, ignorePlayer:{ignorePlayer}", boxId, buffId, ignorePlayer);
         if (!ignorePlayer) {
             foreach (IActor player in PlayersInBox(boxId)) {
-                player.Buffs.Remove(buffId);
+                player.Buffs.Remove(buffId, Field.FieldActor.ObjectId);
             }
         } else {
             foreach (IActor monster in MonstersInBox(boxId)) {
-                monster.Buffs.Remove(buffId);
+                monster.Buffs.Remove(buffId, Field.FieldActor.ObjectId);
             }
         }
     }

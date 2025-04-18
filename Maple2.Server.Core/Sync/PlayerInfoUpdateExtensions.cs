@@ -48,6 +48,9 @@ public static class PlayerInfoUpdateExtensions {
             info.CurrentHp = update.Request.Health.CurrentHp;
             info.TotalHp = update.Request.Health.TotalHp;
         }
+        if (update.Type.HasFlag(UpdateField.Death) && update.Request.HasDeathState) {
+            info.DeathState = (DeathState) update.Request.DeathState;
+        }
         if (update.Type.HasFlag(UpdateField.Home) && update.Request.Home != null) {
             info.HomeName = update.Request.Home.Name;
             info.PlotMapId = update.Request.Home.MapId;
@@ -102,6 +105,9 @@ public static class PlayerInfoUpdateExtensions {
             self.CurrentHp = other.CurrentHp;
             self.TotalHp = other.TotalHp;
         }
+        if (type.HasFlag(UpdateField.Death)) {
+            self.DeathState = other.DeathState;
+        }
         if (type.HasFlag(UpdateField.Home)) {
             self.HomeName = other.HomeName;
             self.PlotMapId = other.PlotMapId;
@@ -155,6 +161,9 @@ public static class PlayerInfoUpdateExtensions {
                 CurrentHp = info.CurrentHp,
                 TotalHp = info.TotalHp,
             };
+        }
+        if (type.HasFlag(UpdateField.Death)) {
+            request.DeathState = (int) info.DeathState;
         }
         if (type.HasFlag(UpdateField.Home)) {
             request.Home = new HomeUpdate {

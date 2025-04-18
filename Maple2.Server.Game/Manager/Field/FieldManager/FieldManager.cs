@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using DotRecast.Core.Numerics;
 using Maple2.Database.Storage;
-using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -48,6 +47,7 @@ public partial class FieldManager : IField {
     public TableMetadataStorage TableMetadata { get; init; } = null!;
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
+    public RideMetadataStorage RideMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
@@ -281,6 +281,7 @@ public partial class FieldManager : IField {
         foreach (FieldInteract interact in fieldAdBalloons.Values) interact.Update(FieldTick);
         foreach (FieldItem item in fieldItems.Values) item.Update(FieldTick);
         foreach (FieldMobSpawn mobSpawn in fieldMobSpawns.Values) mobSpawn.Update(FieldTick);
+        foreach (FieldSpawnPointNpc spawnPointNpc in fieldSpawnPointNpcs.Values) spawnPointNpc.Update(FieldTick);
         foreach (FieldSkill skill in fieldSkills.Values) skill.Update(FieldTick);
         foreach (FieldPortal portal in fieldPortals.Values) portal.Update(FieldTick);
         UpdateBanners();
@@ -293,6 +294,7 @@ public partial class FieldManager : IField {
             return;
         }
 
+        player.FallDamage(Constant.FallBoundingAddedDistance);
         player.MoveToPosition(player.LastGroundPosition.Align() + new Vector3(0, 0, 150f), default);
     }
 
@@ -388,6 +390,12 @@ public partial class FieldManager : IField {
     }
 
     public bool TryGetPlayerSpawn(int id, [NotNullWhen(true)] out FieldPlayerSpawnPoint? playerSpawnPoint) {
+        // Get random spawn point if id is -1
+        if (id < 0) {
+            List<FieldPlayerSpawnPoint> enabledSpawns = fieldPlayerSpawnPoints.Values.Where(spawn => spawn.Enable).ToList();
+            playerSpawnPoint = enabledSpawns.Count > 0 ? enabledSpawns[Random.Shared.Next(enabledSpawns.Count)] : null;
+            return playerSpawnPoint != null;
+        }
         return fieldPlayerSpawnPoints.TryGetValue(id, out playerSpawnPoint);
     }
 
@@ -545,9 +553,7 @@ public partial class FieldManager : IField {
         }
 
         foreach (FieldPlayer player in Players.Values) {
-            int dummyNpcId = player.Value.Character.Gender is Gender.Male ? Constant.DummyNpcMale : Constant.DummyNpcFemale;
-
-            if (!NpcMetadata.TryGet(dummyNpcId, out NpcMetadata? npcMetadata)) {
+            if (!NpcMetadata.TryGet(Constant.DummyNpc(player.Value.Character.Gender), out NpcMetadata? npcMetadata)) {
                 continue;
             }
 
@@ -559,7 +565,7 @@ public partial class FieldManager : IField {
             Broadcast(ProxyObjectPacket.AddNpc(dummyNpc));
 
             dummyNpc.SetPatrolData(patrolData);
-            dummyNpc.MovementState.CleanupPatrolData();
+            dummyNpc.MovementState.CleanupPatrolData(player);
             player.Session.Send(FollowNpcPacket.FollowNpc(dummyNpc.ObjectId));
         }
     }

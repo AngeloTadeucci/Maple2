@@ -3,7 +3,8 @@
 public enum NpcTaskPriority {
     None,
     Cleanup,
-    IdleAction, // wander, patrol, bore emote
+    IdleAction, // wander, patrol
+    Emote,
     BattleStandby,
     BattleWalk, // trace/runaway/move
     BattleAction, // skill cast, jump

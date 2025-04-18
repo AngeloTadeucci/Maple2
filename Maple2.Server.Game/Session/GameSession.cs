@@ -63,6 +63,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required QuestMetadataStorage QuestMetadata { get; init; }
     public required ScriptMetadataStorage ScriptMetadata { get; init; }
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
+    public required RideMetadataStorage RideMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { get; init; }
     public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
@@ -100,6 +101,8 @@ public sealed partial class GameSession : Core.Network.Session {
     public MarriageManager Marriage { get; set; } = null!;
     public FishingManager Fishing { get; set; } = null!;
     public DungeonManager Dungeon { get; set; } = null!;
+    public AnimationManager Animation { get; set; } = null!;
+    public RideManager Ride { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -147,6 +150,7 @@ public sealed partial class GameSession : Core.Network.Session {
         db.Commit();
 
         Player = new FieldPlayer(this, player);
+        Animation = new AnimationManager(this);
         Currency = new CurrencyManager(this);
         Mastery = new MasteryManager(this, Lua);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
@@ -172,7 +176,8 @@ public sealed partial class GameSession : Core.Network.Session {
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
         Dungeon = new DungeonManager(this);
-
+        Ride = new RideManager(this);
+        CommandHandler.RegisterCommands(); // Refresh commands with proper permissions
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
         });
@@ -246,6 +251,20 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         Buddy.Load();
+
+        try {
+            PlayerConfigResponse configResponse = World.PlayerConfig(new PlayerConfigRequest {
+                Get = new PlayerConfigRequest.Types.Get(),
+                RequesterId = CharacterId,
+            });
+            long currentTick = Environment.TickCount64;
+            Buffs.SetCacheBuffs(configResponse.Buffs, currentTick);
+            Config.SetCacheSkillCooldowns(configResponse.SkillCooldowns, currentTick);
+            Config.SetDeathPenalty(configResponse.DeathInfo, currentTick);
+
+        } catch (RpcException ex) {
+            Logger.Warning(ex, "Failed to load cache player config");
+        }
 
         Send(SurvivalPacket.UpdateStats(player.Account));
 
@@ -332,6 +351,8 @@ public sealed partial class GameSession : Core.Network.Session {
         NpcScript = null;
         MiniGameRecord = null;
 
+        Buffs.LeaveField();
+
         if (Field != null) {
             Scheduler.Stop();
             Field.RemovePlayer(Player.ObjectId, out _);
@@ -414,6 +435,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Send(AdminPacket.Enable());
 
+        //TODO: Save current hp/sp/ep in memory. This will help determine if player is dead upon login.
         var pWriter = Packet.Of(SendOp.UserState);
         pWriter.WriteInt(Player.ObjectId);
         pWriter.Write<ActorState>(ActorState.Fall);
@@ -430,8 +452,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
 
         Config.LoadLapenshard();
-        Send(RevivalPacket.Count(0)); // TODO: Consumed daily revivals?
-        Send(RevivalPacket.Confirm(Player));
+        Config.LoadRevival();
         Config.LoadStatAttributes();
         Config.LoadSkillPoints();
         Player.Buffs.LoadFieldBuffs();
@@ -590,8 +611,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Config.GatheringCounts.Clear();
         Send(UserEnvPacket.GatheringCounts(Config.GatheringCounts));
         // Death Counter
-        Config.DeathCount = 0;
-        Send(RevivalPacket.Count(0));
+        Config.AddInstantReviveCount(-1);
         // Premium Rewards Claimed
         Player.Value.Account.PremiumRewardsClaimed.Clear();
         Send(PremiumCubPacket.LoadItems(Player.Value.Account.PremiumRewardsClaimed));
@@ -710,11 +730,6 @@ public sealed partial class GameSession : Core.Network.Session {
             State = SessionState.Disconnected;
             Complete();
         } finally {
-#if !DEBUG
-            if (Player.Value.Character.ReturnMapId != 0) {
-                Player.Value.Character.MapId = Player.Value.Character.ReturnMapId;
-            }
-#endif
             Guild.Dispose();
             Buddy.Dispose();
             Party.Dispose();
@@ -726,6 +741,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 club.Dispose();
             }
 
+            SaveCacheConfig();
             using (GameStorage.Request db = GameStorage.Context()) {
                 db.BeginTransaction();
                 db.SavePlayer(Player);
@@ -742,6 +758,49 @@ public sealed partial class GameSession : Core.Network.Session {
             }
 
             base.Dispose(disposing);
+        }
+        return;
+
+        void SaveCacheConfig() {
+            List<Buff> buffs = Buffs.GetSaveCacheBuffs();
+            IList<SkillCooldown> skillCooldowns = Config.GetCurrentSkillCooldowns();
+
+            long stopTime = DateTime.Now.ToEpochSeconds();
+            long fieldTick = Field.FieldTick;
+            try {
+                PlayerConfigResponse _ = World.PlayerConfig(new PlayerConfigRequest {
+                    Save = new PlayerConfigRequest.Types.Save {
+                        Buffs = {
+                            buffs.Select(buff => new BuffInfo {
+                                Id = buff.Id,
+                                Level = buff.Level,
+                                MsRemaining = (int) (buff.EndTick - fieldTick),
+                                Stacks = buff.Stacks,
+                                Enabled = buff.Enabled,
+                                StopTime = stopTime,
+                            }),
+                        },
+                        SkillCooldowns = {
+                            skillCooldowns.Select(cooldown => new SkillCooldownInfo {
+                                SkillId = cooldown.SkillId,
+                                SkillLevel = cooldown.Level,
+                                GroupId = cooldown.GroupId,
+                                MsRemaining = (int) (cooldown.EndTick - fieldTick),
+                                StopTime = stopTime,
+                                Charges = cooldown.Charges,
+                            }),
+                        },
+                        DeathInfo = new DeathInfo {
+                            Count = Config.DeathCount,
+                            MsRemaining = (int) (Config.DeathPenaltyEndTick - fieldTick),
+                            StopTime = stopTime,
+                        },
+                    },
+                    RequesterId = CharacterId,
+                });
+            } catch (Exception ex) {
+                Logger.Error(ex, "Error saving buffs for {Player}", PlayerName);
+            }
         }
     }
     #endregion

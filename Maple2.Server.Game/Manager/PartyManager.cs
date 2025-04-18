@@ -362,7 +362,7 @@ public class PartyManager : IDisposable {
 
         member.Info.Update(type, info);
 
-        if (type == UpdateField.Health || type == UpdateField.Level) {
+        if (type is UpdateField.Health or UpdateField.Death) {
             session.Send(PartyPacket.UpdateStats(member));
         } else {
             session.Send(PartyPacket.Update(member));

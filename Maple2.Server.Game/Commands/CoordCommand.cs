@@ -4,20 +4,22 @@ using System.CommandLine.IO;
 using System.Numerics;
 using DotRecast.Core.Numerics;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.DotRecast;
 
 namespace Maple2.Server.Game.Commands;
 
-public class CoordCommand : Command {
+public class CoordCommand : GameCommand {
     private const string NAME = "coord";
     private const string DESCRIPTION = "Move to specified coordinates. If no coordinates are provided, the current position is displayed.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
 
-    public CoordCommand(GameSession session, MapMetadataStorage mapStorage) : base(NAME, DESCRIPTION) {
+    public CoordCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
         this.mapStorage = mapStorage;
 

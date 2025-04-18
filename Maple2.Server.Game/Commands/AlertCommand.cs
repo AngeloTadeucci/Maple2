@@ -1,19 +1,18 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using Maple2.Model.Enum;
-using Maple2.Model.Game;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class AlertCommand : Command {
+public class AlertCommand : GameCommand {
     private const string NAME = "alert";
     private const string DESCRIPTION = "Send alert to the entire server.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Alert;
 
     private readonly GameSession session;
 
-    public AlertCommand(GameSession session) : base(NAME, DESCRIPTION) {
+    public AlertCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
 
         var message = new Argument<string[]>("message", () => [], "Message to display");

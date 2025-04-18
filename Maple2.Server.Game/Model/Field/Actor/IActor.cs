@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
@@ -15,13 +16,13 @@ public interface IActor : IFieldEntity {
     public BuffManager Buffs { get; }
 
     public StatsManager Stats { get; }
-    public AnimationState AnimationState { get; init; }
+    public AnimationManager Animation { get; }
     public SkillState SkillState { get; init; }
 
     public bool IsDead { get; }
     public IPrism Shape { get; }
 
-    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect) { }
+    public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, long startTick, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0, bool notifyField = true) { }
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) { }
 
     public virtual void TargetAttack(SkillRecord record) { }

@@ -46,25 +46,25 @@ public static class NpcControlPacket {
         buffer.Write<Vector3S>(npc.Position);
         buffer.WriteShort((short) (npc.Transform.RotationAnglesDegrees.Z * 10));
         buffer.Write<Vector3S>(npc.MovementState.Velocity);
-        buffer.WriteShort((short) (npc.AnimationState.SequenceSpeed * 100));
+        buffer.WriteShort((short) (npc.Animation.SequenceSpeed * 100));
 
         if (npc.Value.IsBoss) {
             buffer.WriteInt(npc.BattleState.TargetId); // ObjectId of Player being targeted?
         }
 
-        short defaultSequenceId = npc.AnimationState.IdleSequenceId;
+        short defaultSequenceId = npc.Animation.IdleSequenceId;
 
         if (isTalk) {
             buffer.Write<ActorState>(ActorState.Talk);
             buffer.WriteShort(-1);
         } else {
             buffer.Write<ActorState>(npc.MovementState.State);
-            buffer.WriteShort(npc.AnimationState.PlayingSequence?.Id ?? defaultSequenceId);
+            buffer.WriteShort(npc.Animation.PlayingSequence?.Id ?? defaultSequenceId);
         }
         buffer.WriteShort(npc.SequenceCounter);
 
         // Animation (-2 = Jump_A, -3 = Jump_B)
-        bool isJumpSequence = (npc.AnimationState.PlayingSequence?.Id ?? -1) is ANI_JUMP_A or ANI_JUMP_B;
+        bool isJumpSequence = (npc.Animation.PlayingSequence?.Id ?? -1) is ANI_JUMP_A or ANI_JUMP_B;
 
         if (isJumpSequence) {
             bool isAbsolute = false;

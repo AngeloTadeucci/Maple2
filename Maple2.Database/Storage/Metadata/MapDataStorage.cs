@@ -1,12 +1,12 @@
-﻿using Maple2.Database.Context;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
+using Maple2.Database.Context;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
-using System.Diagnostics.CodeAnalysis;
-using System.IO.Compression;
 
-namespace Maple2.Database.Storage.Metadata;
+namespace Maple2.Database.Storage;
 
 public class MapDataStorage(MetadataContext context) : MetadataStorage<string, FieldAccelerationStructure>(context, CACHE_SIZE) {
     private const int CACHE_SIZE = 1500; // ~1.1k total Maps

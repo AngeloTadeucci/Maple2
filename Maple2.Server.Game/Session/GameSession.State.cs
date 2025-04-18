@@ -30,7 +30,6 @@ public partial class GameSession {
     public StorageManager? Storage;
 
     public PetManager? Pet;
-    public Ride? Ride;
     public FieldInstrument? Instrument;
 
     public FieldGuideObject? GuideObject;
@@ -54,7 +53,7 @@ public partial class GameSession {
 
     public bool CanHold() {
         return GuideObject == null
-               && Ride == null
+               && Ride.Ride == null
                && HeldCube == null;
     }
 }

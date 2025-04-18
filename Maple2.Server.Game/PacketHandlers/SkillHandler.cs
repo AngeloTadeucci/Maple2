@@ -154,17 +154,18 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         session.Player.InBattle = metadata.State.InBattle;
         session.ActiveSkills.Add(record);
-        session.Field?.Broadcast(SkillPacket.Use(record));
+        session.Field.Broadcast(SkillPacket.Use(record));
 
-        SkillMetadataMotionProperty motion = metadata.Data.Motions[0].MotionProperty;
+        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
 
+        long startTick = session.Field.FieldTick;
         foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
-            session.Player.ApplyEffect(session.Player, session.Player, effect);
+            session.Player.ApplyEffect(session.Player, session.Player, effect, startTick);
         }
 
-        session.Config.SaveSkillCooldown(metadata);
+        session.Config.SaveSkillCooldown(metadata, startTick);
     }
 
     private void HandlePoint(GameSession session, IByteReader packet) {
@@ -260,12 +261,12 @@ public class SkillHandler : PacketHandler<GameSession> {
             packet.ReadByte();
 
             switch (record.Attack.Range.ApplyTarget) {
-                case SkillEntity.Target:
+                case SkillEntity.Owner:
                     if (session.Field.Mobs.TryGetValue(targetId, out FieldNpc? npc)) {
                         record.Targets.Add(npc);
                     }
                     continue;
-                case SkillEntity.Owner:
+                case SkillEntity.Target:
                     if (session.Field.TryGetPlayer(targetId, out FieldPlayer? player)) {
                         record.Targets.Add(player);
                     }
@@ -334,7 +335,7 @@ public class SkillHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (session.Player.AnimationState.PlayingSequence is null) {
+        if (session.Player.Animation.PlayingSequence is null) {
             Logger.Warning($"Last motion already expired on skill {skillUid}");
         }
 
@@ -356,7 +357,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         SkillMetadataMotionProperty motion = record.Metadata.Data.Motions[motionPoint].MotionProperty;
 
-        session.Player.AnimationState.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
     }
 
     private void HandleTickSync(GameSession session, IByteReader packet) {
@@ -374,14 +375,14 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         string skillSequence = record.Motion.MotionProperty.SequenceName;
-        string playingSequence = session.Player.AnimationState.PlayingSequence?.Name ?? "";
+        string playingSequence = session.Player.Animation.PlayingSequence?.Name ?? "";
 
         if (skillSequence != playingSequence) {
             Logger.Warning($"Motion point on skill cast {skillUid} '{skillSequence}' doesn't match playing sequence '{playingSequence}'", skillUid);
             return;
         }
 
-        session.Player.AnimationState.SetLoopSequence(true, true);
+        session.Player.Animation.SetLoopSequence(true, true);
     }
 
     private void HandleCancel(GameSession session, IByteReader packet) {
@@ -399,6 +400,6 @@ public class SkillHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Message($"Skill.Cancel: {skillUid}"));
         }
 
-        session.Player.AnimationState.CancelSequence();
+        session.Animation.CancelSequence();
     }
 }

@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Text;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
@@ -9,11 +10,12 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class TriggerCommand : Command {
+public class TriggerCommand : GameCommand {
     private const string NAME = "trigger";
     private const string DESCRIPTION = "Manage triggers for current map.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
-    public TriggerCommand(GameSession session) : base(NAME, DESCRIPTION) {
+    public TriggerCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
         AddCommand(new ListCommand(session));
         AddCommand(new ResetCommand(session));
         AddCommand(new RunCommand(session));

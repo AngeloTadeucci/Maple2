@@ -21,6 +21,7 @@ public record ScriptConditionMetadata(
     KeyValuePair<int, bool> Meso,
     KeyValuePair<int, bool> Level,
     KeyValuePair<int, bool> AchieveCompleted,
+    bool DeathPenalty,
     bool InGuild) {
 
     public record MaidData(

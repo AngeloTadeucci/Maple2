@@ -61,6 +61,10 @@ namespace Maple2.Server.World.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("Permissions")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("PremiumRewardsClaimed")
                         .IsRequired()
                         .HasColumnType("json");
@@ -324,12 +328,6 @@ namespace Maple2.Server.World.Migrations
                     b.Property<long>("CharacterId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("DeathCount")
-                        .HasColumnType("int");
-
-                    b.Property<long>("DeathTick")
-                        .HasColumnType("bigint");
-
                     b.Property<int>("ExplorationProgress")
                         .HasColumnType("int");
 
@@ -348,6 +346,9 @@ namespace Maple2.Server.World.Migrations
                     b.Property<string>("HotBars")
                         .HasColumnType("json");
 
+                    b.Property<int>("InstantRevivalCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("KeyBinds")
                         .HasColumnType("json");
 
@@ -358,9 +359,6 @@ namespace Maple2.Server.World.Migrations
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("SkillCooldowns")
-                        .HasColumnType("json");
 
                     b.Property<string>("SkillMacros")
                         .HasColumnType("json");

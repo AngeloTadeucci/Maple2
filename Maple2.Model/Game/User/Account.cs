@@ -1,4 +1,6 @@
-﻿namespace Maple2.Model.Game;
+﻿using Maple2.Model.Enum;
+
+namespace Maple2.Model.Game;
 
 public class Account {
     #region Immutable
@@ -27,10 +29,12 @@ public class Account {
     public int SurvivalGoldLevelRewardClaimed { get; set; }
     public bool ActiveGoldPass { get; set; }
     public bool Online { get; set; }
+    public AdminPermissions AdminPermissions { get; set; }
 
     public Account() {
         PremiumRewardsClaimed = new List<int>();
         PrestigeMissions = new List<PrestigeMission>();
         PrestigeRewardsClaimed = new List<int>();
+        AdminPermissions = AdminPermissions.None;
     }
 }

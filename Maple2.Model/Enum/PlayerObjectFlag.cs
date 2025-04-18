@@ -13,4 +13,5 @@ public enum PlayerObjectFlag : byte {
     Motto = 16,
     GearScore = 32,
     State = 64,
+    All = Dead | Position | Level | Job | Motto | GearScore | State,
 }

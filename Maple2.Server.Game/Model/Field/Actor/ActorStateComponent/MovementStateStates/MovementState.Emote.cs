@@ -16,7 +16,7 @@ public partial class MovementState {
             case "end":
                 if (emoteLimitTick != 0) {
                     if (emoteActionTask is NpcEmoteTask emoteTask) {
-                        actor.AnimationState.TryPlaySequence(emoteTask.Sequence, 1, AnimationType.Misc);
+                        actor.Animation.TryPlaySequence(emoteTask.Sequence, 1, AnimationType.Misc);
                     }
                     return;
                 }

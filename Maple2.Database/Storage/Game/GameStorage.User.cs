@@ -310,11 +310,11 @@ public partial class GameStorage {
         }
 
         public (IList<KeyBind>? KeyBinds, IList<QuickSlot[]>? HotBars, List<SkillMacro>?, List<Wardrobe>?, List<int>? FavoriteStickers, List<long>? FavoriteDesigners,
-            IDictionary<LapenshardSlot, int>? Lapenshards, IList<SkillCooldown>? SkillCooldowns, long DeathTick, int DeathCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
+            IDictionary<LapenshardSlot, int>? Lapenshards, int InstantRevivalCount, int ExplorationProgress, IDictionary<AttributePointSource, int>?,
             IDictionary<BasicAttribute, int>?, SkillPoint? SkillPoint, IDictionary<int, int>? GatheringCounts, IDictionary<int, int>? GuideRecords, SkillBook?) LoadCharacterConfig(long characterId) {
             CharacterConfig? config = Context.CharacterConfig.Find(characterId);
             if (config == null) {
-                return (null, null, null, null, null, null, null, null, 0, 0, 0, null, null, null, null, null, null);
+                return (null, null, null, null, null, null, null, 0, 0, null, null, null, null, null, null);
             }
 
             SkillBook? skillBook = config.SkillBook == null ? null : new SkillBook {
@@ -344,9 +344,7 @@ public partial class GameStorage {
                 config.FavoriteStickers?.Select(stickers => stickers).ToList(),
                 config.FavoriteDesigners?.Select(designer => designer).ToList(),
                 config.Lapenshards,
-                config.SkillCooldowns?.Select<Model.SkillCooldown, SkillCooldown>(cooldown => cooldown).ToList(),
-                config.DeathTick,
-                config.DeathCount,
+                config.InstantRevivalCount,
                 config.ExplorationProgress,
                 config.StatPoints,
                 config.StatAllocation,
@@ -366,9 +364,7 @@ public partial class GameStorage {
             IList<int> favoriteStickers,
             IList<long> favoriteDesigners,
             IDictionary<LapenshardSlot, int> lapenshards,
-            IList<SkillCooldown> skillCooldowns,
-            long deathTick,
-            int deathCount,
+            int instantRevivalCount,
             int explorationProgress,
             StatAttributes.PointAllocation allocation,
             StatAttributes.PointSources statSources,
@@ -390,11 +386,7 @@ public partial class GameStorage {
             config.FavoriteStickers = favoriteStickers;
             config.FavoriteDesigners = favoriteDesigners;
             config.Lapenshards = lapenshards;
-            config.SkillCooldowns = skillCooldowns.Where(cooldown => cooldown.EndTick > Environment.TickCount64)
-                .Select<SkillCooldown, Model.SkillCooldown>(cooldown => cooldown)
-                .ToList();
-            config.DeathTick = deathTick;
-            config.DeathCount = deathCount;
+            config.InstantRevivalCount = instantRevivalCount;
             config.ExplorationProgress = explorationProgress;
             config.StatAllocation = allocation.Attributes.ToDictionary(
                 attribute => attribute,
@@ -432,8 +424,9 @@ public partial class GameStorage {
             model.Password = BCrypt.Net.BCrypt.HashPassword(password, 13);
 #if DEBUG
             model.Currency = new AccountCurrency {
-                Meret = 99999
+                Meret = 9_999_999,
             };
+            model.Permissions = AdminPermissions.Admin.ToString();
 #endif
             Context.Account.Add(model);
             Context.SaveChanges(); // Exception if failed.

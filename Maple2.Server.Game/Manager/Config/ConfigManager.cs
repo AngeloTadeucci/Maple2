@@ -8,6 +8,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Maple2.Server.World.Service;
 
 namespace Maple2.Server.Game.Manager.Config;
 
@@ -25,8 +26,15 @@ public class ConfigManager {
     private readonly IList<long> favoriteDesigners;
     private readonly IDictionary<LapenshardSlot, int> lapenshards;
     private readonly IDictionary<int, SkillCooldown> skillCooldowns;
-    private long deathPenaltyTick;
-    public int DeathCount;
+    public long DeathPenaltyEndTick {
+        get => session.Player.Value.Character.DeathTick;
+        private set => session.Player.Value.Character.DeathTick = value;
+    }
+    public short DeathCount {
+        get => session.Player.Value.Character.DeathCount;
+        private set => session.Player.Value.Character.DeathCount = value;
+    }
+    public int InstantReviveCount;
     private readonly StatAttributes statAttributes;
     private readonly SkillPoint skillPoints;
     public readonly IDictionary<int, int> GatheringCounts;
@@ -51,9 +59,7 @@ public class ConfigManager {
             IList<int>? FavoriteStickers,
             IList<long>? FavoriteDesigners,
             IDictionary<LapenshardSlot, int>? Lapenshards,
-            IList<SkillCooldown>? SkillCooldowns,
-            long deathPenaltyTick,
-            int DeathCounter,
+            int InstantReviveCount,
             int ExplorationProgress,
             IDictionary<AttributePointSource, int>? StatPoints,
             IDictionary<BasicAttribute, int>? Allocation,
@@ -85,18 +91,7 @@ public class ConfigManager {
         GatheringCounts = load.GatheringCounts ?? new Dictionary<int, int>();
         GuideRecords = load.GuideRecords ?? new Dictionary<int, int>();
         skillPoints = load.SkillPoint ?? new SkillPoint();
-        deathPenaltyTick = load.deathPenaltyTick;
-        DeathCount = load.DeathCounter;
         ExplorationProgress = load.ExplorationProgress;
-
-        if (load.SkillCooldowns != null) {
-            foreach (SkillCooldown cooldown in load.SkillCooldowns) {
-                if (Environment.TickCount64 > cooldown.EndTick) {
-                    continue;
-                }
-                skillCooldowns[cooldown.SkillId] = cooldown;
-            }
-        }
 
         statAttributes = new StatAttributes();
         if (load.StatPoints != null) {
@@ -166,16 +161,29 @@ public class ConfigManager {
     }
 
     #region SkillCooldowns
-    public void SaveSkillCooldown(SkillMetadata skill) {
-        var cooldown = new SkillCooldown(skill.Id) {
-            EndTick = (long) (skill.Data.Condition.CooldownTime * TimeSpan.FromSeconds(1).TotalMilliseconds) + Environment.TickCount64,
-            OriginSkillId = skill.Data.Change?.Origin.Id ?? 0,
-        };
-        skillCooldowns[skill.Id] = cooldown;
+    public void SetCacheSkillCooldowns(IList<SkillCooldownInfo> cooldowns, long currentTick) {
+        foreach (SkillCooldownInfo cooldown in cooldowns) {
+            skillCooldowns[cooldown.SkillId] = new SkillCooldown(cooldown.SkillId, (short) cooldown.SkillLevel) {
+                EndTick = currentTick + cooldown.MsRemaining,
+                GroupId = cooldown.GroupId,
+            };
+        }
+    }
+    public void SaveSkillCooldown(SkillMetadata skill, long startTick) {
+        if (!skillCooldowns.TryGetValue(skill.Id, out SkillCooldown? cooldown) || startTick > cooldown.EndTick) {
+            cooldown = new SkillCooldown(skill.Id, skill.Level) {
+                EndTick = (long) (skill.Data.Condition.CooldownTime * TimeSpan.FromSeconds(1).TotalMilliseconds) + startTick,
+                GroupId = skill.State.CooldownGroupId,
+            };
+            skillCooldowns[skill.Id] = cooldown;
+        }
+        if (skill.State.RechargeMaxCount > 0) {
+            cooldown.Charges = Math.Clamp(cooldown.Charges + 1, cooldown.Charges, skill.State.RechargeMaxCount);
+        }
     }
 
-    public void SetSkillCooldown(int skillId, int endTick = 0) {
-        var cooldown = new SkillCooldown(skillId) {
+    public void SetSkillCooldown(int skillId, short level = 1, int endTick = 0) {
+        var cooldown = new SkillCooldown(skillId, level) {
             EndTick = endTick,
         };
         skillCooldowns[skillId] = cooldown;
@@ -230,7 +238,7 @@ public class ConfigManager {
     public void RefreshPremiumClubBuffs() {
         if (session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds()) {
             foreach ((int buffId, PremiumClubTable.Buff buff) in session.TableMetadata.PremiumClubTable.Buffs) {
-                session.Player.Buffs.AddBuff(session.Player, session.Player, buff.Id, buff.Level);
+                session.Player.Buffs.AddBuff(session.Player, session.Player, buff.Id, buff.Level, session.Field.FieldTick);
             }
         }
     }
@@ -297,11 +305,57 @@ public class ConfigManager {
         favoriteDesigners.Remove(designer);
     }
 
-    public void UpdateDeathPenalty(int tick) {
-        deathPenaltyTick = tick;
-        DeathCount = tick > 0 ? DeathCount++ : 0;
+    public void LoadRevival() {
+        if (session.Player.Field.FieldTick > DeathPenaltyEndTick) {
+            DeathPenaltyEndTick = 0;
+            DeathCount = 0;
+        }
+        session.Send(RevivalPacket.RevivalCount(InstantReviveCount));
+        session.Send(RevivalPacket.UpdatePenalty(session.Player.ObjectId, (int) DeathPenaltyEndTick, DeathCount));
+    }
 
-        session.Send(RevivalPacket.Confirm(session.Player, (int) deathPenaltyTick, DeathCount));
+    /// <summary>
+    /// Updates the death penalty for the player
+    /// </summary>
+    /// <param name="endTick">The tick when the penalty ends, or 0 to reset</param>
+    public void UpdateDeathPenalty(long endTick) {
+        // Skip penalty for low level players
+        if (session.Player.Value.Character.Level < Constant.UserRevivalPaneltyMinLevel) {
+            return;
+        }
+
+        // Reset penalty if endTick is 0
+        if (endTick == 0) {
+            DeathCount = 0;
+            DeathPenaltyEndTick = 0;
+        }
+        // Otherwise update penalty
+        else {
+            // Reset count if previous penalty expired
+            if (session.Field.FieldTick > DeathPenaltyEndTick) {
+                DeathCount = 0;
+            }
+            DeathCount++;
+            DeathPenaltyEndTick = endTick;
+        }
+
+        // Send update to client
+        session.Send(RevivalPacket.UpdatePenalty(session.Player.ObjectId, (int) DeathPenaltyEndTick, DeathCount));
+    }
+
+    public void SetDeathPenalty(DeathInfo deathInfo, long currentTick) {
+        DeathPenaltyEndTick = currentTick + deathInfo.MsRemaining;
+        DeathCount = (short) deathInfo.Count;
+    }
+
+    public void AddInstantReviveCount(int count = 1) {
+        if (count < 0) {
+            InstantReviveCount = 0;
+        } else {
+            InstantReviveCount += count;
+        }
+
+        session.Send(RevivalPacket.RevivalCount(InstantReviveCount));
     }
 
     #region KeyBind
@@ -519,9 +573,7 @@ public class ConfigManager {
             favoriteStickers,
             favoriteDesigners,
             lapenshards,
-            skillCooldowns.Values.ToList(),
-            deathPenaltyTick,
-            DeathCount,
+            InstantReviveCount,
             ExplorationProgress,
             statAttributes.Allocation,
             statAttributes.Sources,

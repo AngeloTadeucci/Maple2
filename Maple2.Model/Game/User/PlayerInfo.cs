@@ -62,9 +62,9 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteShort(Channel);
         writer.WriteInt((int) Job.Code());
         writer.Write<Job>(Job);
-        writer.WriteInt((int) CurrentHp);
         writer.WriteInt((int) TotalHp);
-        writer.WriteShort();
+        writer.WriteInt((int) CurrentHp);
+        writer.Write<DeathState>(DeathState);
         writer.WriteLong();
         writer.WriteLong(); // Home Storage Access Time
         writer.WriteLong(); // Home Doctor Access Time
@@ -123,6 +123,7 @@ public class CharacterInfo {
     // Health
     public long CurrentHp { get; set; }
     public long TotalHp { get; set; }
+    public DeathState DeathState { get; set; }
     // Location
     public int MapId { get; set; }
     public short Channel { get; set; }

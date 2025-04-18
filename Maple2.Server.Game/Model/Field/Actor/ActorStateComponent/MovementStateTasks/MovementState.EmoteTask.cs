@@ -7,10 +7,10 @@ namespace Maple2.Server.Game.Model.ActorStateComponent;
 public partial class MovementState {
     public class NpcEmoteTask : NpcTask {
         private readonly MovementState movement;
-        public string Sequence { get; init; } = string.Empty;
-        public bool IsIdle { get; init; }
+        public string Sequence { get; init; }
+        private bool IsIdle { get; init; }
         public override bool CancelOnInterrupt => true;
-        public float Duration { get; init; }
+        private float Duration { get; init; }
 
         public NpcEmoteTask(TaskState taskState, MovementState movement, string sequence, NpcTaskPriority priority, bool isIdle, float duration) : base(taskState, priority) {
             this.movement = movement;
@@ -24,9 +24,14 @@ public partial class MovementState {
         protected override void TaskResumed() {
             movement.Emote(this, Sequence, IsIdle, Duration);
         }
+
         protected override void TaskFinished(bool isCompleted) {
             movement.emoteLimitTick = 0;
             movement.Idle();
+        }
+
+        public override string ToString() {
+            return $"{GetType().Name} (Priority: {Priority}, Status: {Status}, Sequence: {Sequence})";
         }
     }
 
@@ -36,7 +41,7 @@ public partial class MovementState {
             return;
         }
 
-        if (!actor.AnimationState.TryPlaySequence(sequence, 1, AnimationType.Misc)) {
+        if (!actor.Animation.TryPlaySequence(sequence, 1, AnimationType.Misc)) {
             task.Cancel();
             return;
         }
@@ -46,7 +51,7 @@ public partial class MovementState {
         }
 
         emoteActionTask = task;
-        stateSequence = actor.AnimationState.PlayingSequence;
+        stateSequence = actor.Animation.PlayingSequence;
 
         SetState(isIdle ? ActorState.Idle : ActorState.Emotion);
     }

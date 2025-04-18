@@ -148,6 +148,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Meso: ParseToIntKeyValuePair(scriptCondition.meso),
                     Level: ParseToIntKeyValuePair(scriptCondition.level),
                     AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
+                    DeathPenalty: scriptCondition.panelty == 1,
                     InGuild: scriptCondition.guild
                 ));
             }
@@ -210,7 +211,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Meso: ParseToIntKeyValuePair(scriptCondition.meso),
                     Level: ParseToIntKeyValuePair(scriptCondition.level),
                     AchieveCompleted: ParseToIntKeyValuePair(scriptCondition.achieve_complete),
-                    InGuild: scriptCondition.guild
+                    InGuild: scriptCondition.guild,
+                    DeathPenalty: scriptCondition.panelty == 1
                 ));
             }
             results.Add(questId, scriptConditions);
@@ -391,7 +393,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 ChangeToJobCode: (JobCode) jobCondition.jobCode,
                 MapId: jobCondition.map,
                 MoveMapId: jobCondition.moveFieldID,
-                MovePortalId: jobCondition.movePortalID
+                MovePortalId: jobCondition.movePortalID,
+                DeathPenalty: jobCondition.panelty
             ));
         }
 

@@ -10,7 +10,7 @@ public class MoveRoutine : NpcRoutine {
         try {
             return new MoveRoutine(npc, sequenceId, npc.Value.Metadata.Action.WalkSpeed);
         } catch (ArgumentException) {
-            return new WaitRoutine(npc, npc.IdleSequence.Id, npc.IdleSequence.Time);
+            return new WaitRoutine(npc, npc.IdleSequenceMetadata.Id, npc.IdleSequenceMetadata.Time);
         }
     }
 
@@ -18,7 +18,7 @@ public class MoveRoutine : NpcRoutine {
         try {
             return new MoveRoutine(npc, sequenceId, npc.Value.Metadata.Action.RunSpeed);
         } catch (ArgumentException) {
-            return new WaitRoutine(npc, npc.IdleSequence.Id, npc.IdleSequence.Time);
+            return new WaitRoutine(npc, npc.IdleSequenceMetadata.Id, npc.IdleSequenceMetadata.Time);
         }
     }
 

@@ -38,7 +38,7 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<int, FieldInstrument> fieldInstruments = new();
     private readonly ConcurrentDictionary<int, FieldItem> fieldItems = new();
     private readonly ConcurrentDictionary<int, FieldMobSpawn> fieldMobSpawns = new();
-    private readonly ConcurrentDictionary<int, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
+    private readonly ConcurrentDictionary<string, FieldSpawnPointNpc> fieldSpawnPointNpcs = new();
     private readonly ConcurrentDictionary<int, FieldPlayerSpawnPoint> fieldPlayerSpawnPoints = new();
     private readonly ConcurrentDictionary<int, FieldSpawnGroup> fieldSpawnGroups = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
@@ -71,6 +71,7 @@ public partial class FieldManager {
         };
         session.Stats.ResetActor(fieldPlayer);
         session.Buffs.ResetActor(fieldPlayer);
+        session.Animation.ResetActor(fieldPlayer);
 
         // Use Portal if needed.
         if (fieldPlayer.Position == default && Entities.Portals.TryGetValue(portalId, out Portal? portal)) {
@@ -83,15 +84,10 @@ public partial class FieldManager {
 
         // Use SpawnPoint if needed.
         if (fieldPlayer.Position == default) {
-            FieldPlayerSpawnPoint? spawn = fieldPlayerSpawnPoints.Values.FirstOrDefault(spawn => spawn.Enable);
-            if (spawn != null) {
+            if (TryGetPlayerSpawn(-1, out FieldPlayerSpawnPoint? spawn)) {
                 fieldPlayer.Position = spawn.Position + new Vector3(0, 0, 25);
                 fieldPlayer.Rotation = spawn.Rotation;
             }
-        }
-
-        if (Metadata.Property.RevivalReturnId != 0) {
-            player.Character.ReviveMapId = Metadata.Property.RevivalReturnId;
         }
 
         if (FieldInstance.Type == InstanceType.none || FieldInstance.SaveField) {
@@ -364,7 +360,7 @@ public partial class FieldManager {
             Rotation = metadata.Rotation,
         };
 
-        fieldSpawnPointNpcs[metadata.Id] = fieldSpawnPointNpc;
+        fieldSpawnPointNpcs[metadata.EntityId] = fieldSpawnPointNpc;
         fieldSpawnPointNpc.SpawnOnCreate();
         return fieldSpawnPointNpc;
     }
@@ -379,11 +375,10 @@ public partial class FieldManager {
     }
 
     public void ToggleNpcSpawnPoint(int spawnId) {
-        if (!fieldSpawnPointNpcs.TryGetValue(spawnId, out FieldSpawnPointNpc? fieldSpawnGroup)) {
-            return;
+        List<FieldSpawnPointNpc> spawns = fieldSpawnPointNpcs.Values.Where(spawn => spawn.Value.SpawnPointId == spawnId).ToList();
+        foreach (FieldSpawnPointNpc spawn in spawns) {
+            spawn.TriggerSpawn();
         }
-
-        fieldSpawnGroup.TriggerSpawn();
     }
 
     public void SpawnInteractObject(SpawnInteractObjectMetadata metadata) {
@@ -481,12 +476,12 @@ public partial class FieldManager {
 
     public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null) {
         switch (entity) {
-            case SkillEntity.Owner:
+            case SkillEntity.Target:
             case SkillEntity.Attacker:
             case SkillEntity.RegionBuff:
             case SkillEntity.RegionDebuff:
                 return prisms.Filter(Players.Values, limit, ignore);
-            case SkillEntity.Target:
+            case SkillEntity.Owner:
                 return prisms.Filter(Mobs.Values, limit, ignore);
             case SkillEntity.RegionPet:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
@@ -781,6 +776,8 @@ public partial class FieldManager {
             }
         }
         Broadcast(FieldPacket.AddPlayer(added.Session), added.Session);
+        added.Flag = PlayerObjectFlag.All;
+
         Broadcast(ProxyObjectPacket.AddPlayer(added), added.Session);
         foreach (FieldItem fieldItem in fieldItems.Values) {
             added.Session.Send(FieldPacket.DropItem(fieldItem));

@@ -72,10 +72,10 @@ public class FieldNpc : Actor<Npc> {
     );
 
     public readonly AgentNavigation? Navigation;
-    public readonly AnimationSequence IdleSequence;
-    public readonly AnimationSequence? JumpSequence;
-    public readonly AnimationSequence? WalkSequence;
-    public readonly AnimationSequence? SpawnSequence;
+    public readonly AnimationSequenceMetadata IdleSequenceMetadata;
+    public readonly AnimationSequenceMetadata? JumpSequence;
+    public readonly AnimationSequenceMetadata? WalkSequence;
+    public readonly AnimationSequenceMetadata? SpawnSequence;
     private readonly WeightedSet<string> defaultRoutines;
     public readonly AiState AiState;
     public readonly MovementState MovementState;
@@ -88,14 +88,14 @@ public class FieldNpc : Actor<Npc> {
     public MS2PatrolData? Patrol { get; private set; }
     private int currentWaypointIndex;
 
-    private bool hasBeenBattling = false;
+    private bool hasBeenBattling;
     private NpcTask? idleTask;
-    private long idleTaskLimitTick = 0;
+    private long idleTaskLimitTick;
 
     public readonly Dictionary<string, int> AiExtraData = new();
 
-    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, npc.Metadata.Model.Name, field.NpcMetadata) {
-        IdleSequence = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequence(string.Empty, -1, 1f, null);
+    public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, field.NpcMetadata) {
+        IdleSequenceMetadata = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequenceMetadata(string.Empty, -1, 1f, null);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         SpawnSequence = npc.Animations.GetValueOrDefault(spawnAnimation);
@@ -170,7 +170,7 @@ public class FieldNpc : Actor<Npc> {
         if (tickCount >= nextDebugPacket && playersListeningToDebugNow && debugMessages.Count > 0) {
             sentDebugPacket = true;
 
-            Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(false, ObjectId, String.Join("", debugMessages.ToArray()), 2500, 0));
+            Field.BroadcastAiMessage(CinematicPacket.BalloonTalk(false, ObjectId, string.Join("", debugMessages.ToArray()), 2500, 0));
         }
 
         if (sentDebugPacket || tickCount >= nextDebugPacket) {
@@ -206,6 +206,8 @@ public class FieldNpc : Actor<Npc> {
 
         if (idleTask is MovementState.NpcStandbyTask && idleTaskLimitTick == 0) {
             idleTaskLimitTick = tickCount + 1000;
+        } else if (idleTask is not MovementState.NpcStandbyTask && idleTaskLimitTick != 0) {
+            idleTaskLimitTick = 0;
         }
 
         bool hitLimit = idleTaskLimitTick != 0 && tickCount >= idleTaskLimitTick;
@@ -227,7 +229,7 @@ public class FieldNpc : Actor<Npc> {
         }
 
         string routineName = defaultRoutines.Get();
-        if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? sequence)) {
+        if (!Value.Animations.TryGetValue(routineName, out AnimationSequenceMetadata? sequence)) {
             Logger.Error("Invalid routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
 
             return MovementState.TryStandby(null, true);
@@ -243,7 +245,7 @@ public class FieldNpc : Actor<Npc> {
             case { } when routineName.StartsWith("Run_"):
                 return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
             case { }:
-                if (!Value.Animations.TryGetValue(routineName, out AnimationSequence? animationSequence)) {
+                if (!Value.Animations.TryGetValue(routineName, out AnimationSequenceMetadata? animationSequence)) {
                     break;
                 }
                 return MovementState.TryEmote(animationSequence.Name, SpawnSequence is not null);
@@ -258,7 +260,7 @@ public class FieldNpc : Actor<Npc> {
         MS2WayPoint currentWaypoint = Patrol!.WayPoints[currentWaypointIndex];
 
         if (!string.IsNullOrEmpty(currentWaypoint.ArriveAnimation) && idleTask is not MovementState.NpcEmoteTask) {
-            if (Value.Animations.TryGetValue(currentWaypoint.ArriveAnimation, out AnimationSequence? arriveSequence)) {
+            if (Value.Animations.TryGetValue(currentWaypoint.ArriveAnimation, out AnimationSequenceMetadata? arriveSequence)) {
                 return MovementState.TryEmote(arriveSequence.Name, false);
             }
         }
@@ -266,7 +268,7 @@ public class FieldNpc : Actor<Npc> {
         NpcTask? approachTask = null;
 
         if (Navigation!.PathTo(currentWaypoint.Position)) {
-            if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequence? patrolSequence)) {
+            if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequenceMetadata? patrolSequence)) {
                 approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, sequence: patrolSequence.Name);
             } else if (WalkSequence is not null) {
                 approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, WalkSequence.Name);
@@ -306,7 +308,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     public virtual void Animate(string sequenceName, float duration = -1f) {
-        if (!Value.Animations.TryGetValue(sequenceName, out AnimationSequence? sequence)) {
+        if (!Value.Animations.TryGetValue(sequenceName, out AnimationSequenceMetadata? sequence)) {
             Logger.Error("Invalid sequence: {Sequence} for npc {NpcId}", sequenceName, Value.Metadata.Id);
             return;
         }
@@ -350,7 +352,6 @@ public class FieldNpc : Actor<Npc> {
             Field.Broadcast(FieldPacket.DropItem(fieldItem));
         }
     }
-
 
     public override SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata) || metadata.Data.Motions.Length <= motionPoint) {

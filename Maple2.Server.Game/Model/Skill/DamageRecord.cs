@@ -41,14 +41,16 @@ public class DamageRecord {
 }
 
 public class DamageRecordTarget {
-    public int ObjectId { get; init; }
+    public readonly IActor Target;
+    public int ObjectId => Target.ObjectId;
     public Vector3 Position;
     public Vector3 Direction;
 
     private readonly List<(DamageType, long)> damage;
     public IReadOnlyList<(DamageType Type, long Amount)> Damage => damage;
 
-    public DamageRecordTarget() {
+    public DamageRecordTarget(IActor target) {
+        Target = target;
         damage = new List<(DamageType Type, long Amount)>();
     }
 

@@ -121,7 +121,11 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     MaxLevel: levels.Keys.Max()),
                 State: new SkillMetadataState(
                     InBattle: data.basic.stateAttr.battle == 1,
-                    SuperArmor: data.basic.stateAttr.superArmor),
+                    SuperArmor: data.basic.stateAttr.superArmor,
+                    UseInGameTime: data.basic.stateAttr.useInGameTime == 1,
+                    IgnoreReduceCooldown: data.basic.stateAttr.ignoreReduceCooldown == 1,
+                    CooldownGroupId: data.basic.stateAttr.cooldownGroupID,
+                    RechargeMaxCount: data.basic.stateAttr.rechargeMaxCount),
                 Levels: levels
             );
         }

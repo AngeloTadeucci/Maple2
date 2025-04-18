@@ -103,7 +103,7 @@ public static class NpcTalkUtil {
 
         // TODO: Maid checks
 
-        if (jobCondition.BuffId > 0 && !session.Player.Buffs.Buffs.ContainsKey(jobCondition.BuffId)) {
+        if (jobCondition.BuffId > 0 && !session.Player.Buffs.HasBuff(jobCondition.BuffId)) {
             return false;
         }
 
@@ -128,6 +128,10 @@ public static class NpcTalkUtil {
         // TODO: Check if it's the player's birthday
 
         if (jobCondition.MapId > 0 && session.Field?.MapId != jobCondition.MapId) {
+            return false;
+        }
+
+        if (jobCondition.DeathPenalty && session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
             return false;
         }
 
@@ -174,7 +178,7 @@ public static class NpcTalkUtil {
         }
 
         if (scriptCondition.Buff.Key > 0) {
-            if (scriptCondition.Buff.Value && !session.Player.Buffs.Buffs.ContainsKey(scriptCondition.Buff.Key)) {
+            if (scriptCondition.Buff.Value && !session.Player.Buffs.HasBuff(scriptCondition.Buff.Key)) {
                 return false;
             }
         }
@@ -210,6 +214,10 @@ public static class NpcTalkUtil {
         }
 
         if (scriptCondition.InGuild && session.Player.Value.Character.GuildId == 0) {
+            return false;
+        }
+
+        if (scriptCondition.DeathPenalty && session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
             return false;
         }
 

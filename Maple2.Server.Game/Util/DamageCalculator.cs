@@ -131,7 +131,7 @@ public static class DamageCalculator {
         attackDamage *= damageMultiplier * Constant.AttackDamageFactor + property.Value;
 
         // Apply any shields
-        foreach (Buff buff in target.Buffs.Buffs.Values.Where(buff => buff.Metadata.Shield != null)) {
+        foreach (Buff buff in target.Buffs.EnumerateBuffs().Where(buff => buff.Metadata.Shield != null)) {
             if (buff.ShieldHealth >= attackDamage) {
                 buff.ShieldHealth -= (long) attackDamage;
                 attackDamage = 0;
@@ -140,7 +140,7 @@ public static class DamageCalculator {
             }
 
             attackDamage -= buff.ShieldHealth;
-            target.Buffs.Remove(buff.Id);
+            target.Buffs.Remove(buff.Id, target.ObjectId);
         }
 
         return (damageType, (long) Math.Max(1, attackDamage));

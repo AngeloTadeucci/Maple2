@@ -5,21 +5,23 @@ using Maple2.Database.Storage;
 using System.CommandLine.IO;
 using Maple2.Server.Game.Util;
 using Maple2.Model.Metadata;
-using Maple2.Database.Storage.Metadata;
 using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
 using System;
+using Maple2.Model.Enum;
+using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Commands;
 
-public class DebugCommand : Command {
+public class DebugCommand : GameCommand {
     private const string NAME = "debug";
     private const string DESCRIPTION = "Debug information management.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     private readonly NpcMetadataStorage npcStorage;
 
-    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(NAME, DESCRIPTION) {
+    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.npcStorage = npcStorage;
 
         AddCommand(new DebugNpcAiCommand(session, npcStorage));
@@ -94,7 +96,7 @@ public class DebugCommand : Command {
         }
 
         private void Handle(InvocationContext ctx, bool? enabled) {
-            session.Player.AnimationState.DebugPrintAnimations = enabled ?? true;
+            session.Player.Animation.DebugPrintAnimations = enabled ?? true;
 
             string message = enabled ?? true ? "Enabled" : "Disabled";
             ctx.Console.Out.WriteLine($"{message} animation debug info printing");
@@ -369,6 +371,7 @@ public class DebugCommand : Command {
         }
 
         private void Handle(InvocationContext ctx) {
+            ctx.Console.Out.WriteLine("Logging out...");
             session.Disconnect();
         }
     }

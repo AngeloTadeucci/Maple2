@@ -31,7 +31,7 @@ public abstract class NpcRoutine {
 
         Completed = true;
         // Force Idle on completion
-        Npc.SequenceId = Npc.IdleSequence.Id;
+        Npc.SequenceId = Npc.IdleSequenceMetadata.Id;
         if (Npc.State.State != ActorState.Idle) {
             Npc.State = new NpcState();
         }

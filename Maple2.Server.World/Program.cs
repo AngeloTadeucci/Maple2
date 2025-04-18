@@ -69,6 +69,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .SingleInstance();
     autofac.RegisterType<GlobalPortalLookup>()
         .SingleInstance();
+    autofac.RegisterType<PlayerConfigLookUp>()
+        .SingleInstance();
 
     // Register WorldServer and inject ChannelClientLookup
     autofac.RegisterType<WorldServer>()

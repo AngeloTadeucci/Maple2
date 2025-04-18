@@ -3,15 +3,17 @@ using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Text;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
-public class FindCommand : Command {
+public class FindCommand : GameCommand {
     private const string NAME = "find";
     private const string DESCRIPTION = "Search database for ids.";
+    public const AdminPermissions RequiredPermission = AdminPermissions.Find;
 
     public FindCommand(GameSession session,
                        AchievementMetadataStorage achievementStorage,
@@ -19,7 +21,7 @@ public class FindCommand : Command {
                        MapMetadataStorage mapStorage,
                        NpcMetadataStorage npcStorage,
                        QuestMetadataStorage questStorage,
-                       SkillMetadataStorage skillStorage) : base(NAME, DESCRIPTION) {
+                       SkillMetadataStorage skillStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
         AddCommand(new FindSubCommand<AchievementMetadata>("achievement", session, achievementStorage));
         AddCommand(new FindSubCommand<ItemMetadata>("item", session, itemStorage));
         AddCommand(new FindSubCommand<MapMetadata>("map", session, mapStorage));

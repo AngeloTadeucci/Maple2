@@ -520,12 +520,12 @@ public class AiState {
         }
 
         if (node.Type == NodeBuffType.Remove) {
-            target.Buffs.Remove(node.Id);
+            target.Buffs.Remove(node.Id, actor.ObjectId);
 
             return;
         }
 
-        target.Buffs.AddBuff(actor, actor, node.Id, node.Level);
+        target.Buffs.AddBuff(actor, actor, node.Id, node.Level, actor.Field.FieldTick);
     }
 
     private void ProcessNode(TargetEffectNode node) {

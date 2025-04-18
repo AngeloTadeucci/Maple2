@@ -39,6 +39,9 @@ public partial class ChannelService {
                 return Task.FromResult(new ChatResponse());
             case ChatRequest.ChatOneofCase.Wedding:
                 return Task.FromResult(new ChatResponse());
+            case ChatRequest.ChatOneofCase.SystemNotice:
+                SystemChat(request, items);
+                return Task.FromResult(new ChatResponse());
             default:
                 throw new RpcException(
                     new Status(StatusCode.InvalidArgument, $"Invalid chat type: {request.ChatCase}"));
@@ -110,5 +113,12 @@ public partial class ChannelService {
 
             session.Send(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.Club, request.Message, clubId: request.Club.ClubId));
         }
+    }
+
+    private void SystemChat(ChatRequest request, List<Item> items) {
+        if (items.Count > 0) {
+            server.Broadcast(MessengerBrowserPacket.Link(items.ToArray()));
+        }
+        server.Broadcast(ChatPacket.Message(request.AccountId, request.CharacterId, request.Name, ChatType.SystemNotice, request.Message));
     }
 }

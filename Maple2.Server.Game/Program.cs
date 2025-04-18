@@ -136,8 +136,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterAssemblyTypes(typeof(CommandRouter).Assembly)
         .PublicOnly()
         .WithAttributeFiltering()
-        .Where(type => typeof(Command).IsAssignableFrom(type))
-        .As<Command>()
+        .Where(type => typeof(GameCommand)
+            .IsAssignableFrom(type) && !type.IsAbstract)
+        .As<GameCommand>()
         .PropertiesAutowired();
 
     // Managers

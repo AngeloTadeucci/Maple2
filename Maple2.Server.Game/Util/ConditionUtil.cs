@@ -159,6 +159,10 @@ public static class ConditionUtil {
             case ConditionType.wedding_propose_declined:
             case ConditionType.wedding_hall_cancel:
             case ConditionType.item_gear_score:
+            case ConditionType.revival:
+            case ConditionType.home_doctor:
+            case ConditionType.resolve_panelty:
+            case ConditionType.hit_tombstone:
                 return true;
         }
         return false;
@@ -288,6 +292,10 @@ public static class ConditionUtil {
             case ConditionType.continent:
             case ConditionType.explore:
             case ConditionType.item_gear_score:
+            case ConditionType.revival:
+            case ConditionType.home_doctor:
+            case ConditionType.resolve_panelty:
+            case ConditionType.hit_tombstone:
                 return true;
         }
         return false;

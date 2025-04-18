@@ -3,6 +3,7 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Tools.Collision;
 
@@ -67,15 +68,21 @@ public static class SkillUtils {
         }
     }
 
-    public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target) {
+    public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (caster is FieldPlayer player) {
             if (condition is not { Probability: 1 } && condition.Probability < Random.Shared.NextDouble()) {
+                return false;
+            }
+            if (!condition.AllowDead && caster.IsDead) {
                 return false;
             }
             if (condition.OnlyShadowWorld && caster.Field.Metadata.Property.Type != MapType.Shadow) {
                 return false;
             }
             if (condition.OnlyFlyableMap && !caster.Field.Metadata.Property.CanFly) {
+                return false;
+            }
+            if (condition.OnlySurvival && !(caster.Field.Metadata.Property.Type is MapType.SurvivalTeam or MapType.SurvivalSolo)) {
                 return false;
             }
             if (player.Value.Character.Level < condition.Level) {
@@ -100,38 +107,127 @@ public static class SkillUtils {
                     return false;
                 }
             }
+            if (condition.DurationWithoutMoving > 0) {
+                if (player.PositionTick.Duration < condition.DurationWithoutMoving) {
+                    return false;
+                }
+            }
+            if (condition.Maps.Length > 0 && !condition.Maps.Contains(caster.Field.MapId)) {
+                return false;
+            }
+            if (condition.MapTypes.Length > 0 && !condition.MapTypes.Contains(caster.Field.Metadata.Property.Type)) {
+                return false;
+            }
+            if (condition.Continents.Length > 0 && !condition.Continents.Contains(caster.Field.Metadata.Property.Continent)) {
+                return false;
+            }
+            if (condition.DungeonGroupType.Length > 0 &&
+                (caster.Field is not DungeonFieldManager dungeonFieldManager ||
+                 !condition.DungeonGroupType.Contains(dungeonFieldManager.DungeonMetadata.GroupType))) {
+                return false;
+            }
+            if (condition.ActiveSkill.Length > 0 && condition.ActiveSkill.All(id => owner.Animation.Current?.Skill?.Id != id)) {
+                return false;
+            }
+            if (condition.OnlyOnBattleMount && player.Session.Ride.Ride?.Metadata.Basic.Type != RideOnType.Battle) {
+                return false;
+            }
+            if (!condition.AllowOnBattleMount && player.Session.Ride.Ride?.Metadata.Basic.Type == RideOnType.Battle) {
+                return false;
+            }
         }
 
-        return condition.Caster.Check(caster) && condition.Owner.Check(owner) && condition.Target.Check(target);
+        return condition.Caster.Check(caster, eventType, eventSkillId, eventBuffId) && condition.Owner.Check(owner, eventType, eventSkillId, eventBuffId) && condition.Target.Check(target, eventType, eventSkillId, eventBuffId);
     }
 
-    private static bool Check(this BeginConditionTarget? condition, IActor target) {
+    private static bool Check(this BeginConditionTarget? condition, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (condition == null) {
             return true;
         }
 
+        if (condition.Event.Type != eventType) {
+            return false;
+        }
+
         foreach ((int id, short level, bool owned, int count, CompareType compare) in condition.Buff) {
-            if (!target.Buffs.Buffs.TryGetValue(id, out Buff? buff)) {
+            List<Buff> buffs = target.Buffs.EnumerateBuffs(id);
+            bool validBuff = false;
+            foreach (Buff buff in buffs) {
+                if (buff.Level < level) {
+                    continue;
+                }
+                if (owned && buff.Owner.ObjectId == 0) {
+                    continue;
+                }
+
+                bool compareResult = compare switch {
+                    CompareType.Equals => buff.Stacks == count,
+                    CompareType.Less => buff.Stacks < count,
+                    CompareType.LessEquals => buff.Stacks <= count,
+                    CompareType.Greater => buff.Stacks > count,
+                    CompareType.GreaterEquals => buff.Stacks >= count,
+                    _ => true,
+                };
+                if (!compareResult) {
+                    continue;
+                }
+                validBuff = true;
+                break;
+            }
+            if (!validBuff) {
                 return false;
             }
-            if (buff.Level < level) {
-                return false;
-            }
-            if (owned && buff.Owner.ObjectId == 0) {
-                return false;
-            }
+        }
+
+        foreach ((BasicAttribute attribute, float value, CompareType compare, CompareStatValueType valueType) in condition.Stat) {
+            float targetValue = valueType switch {
+                CompareStatValueType.CurrentPercentage when target.Stats.Values[attribute].Total == 0 => 0,
+                CompareStatValueType.CurrentPercentage => (float) target.Stats.Values[attribute].Current / target.Stats.Values[attribute].Total,
+                CompareStatValueType.TotalValue => target.Stats.Values[attribute].Total,
+                _ => 0,
+            };
 
             bool compareResult = compare switch {
-                CompareType.Equals => buff.Stacks == count,
-                CompareType.Less => buff.Stacks < count,
-                CompareType.LessEquals => buff.Stacks <= count,
-                CompareType.Greater => buff.Stacks > count,
-                CompareType.GreaterEquals => buff.Stacks >= count,
+                CompareType.Equals => targetValue == value,
+                CompareType.Less => targetValue < value,
+                CompareType.LessEquals => targetValue <= value,
+                CompareType.Greater => targetValue > value,
+                CompareType.GreaterEquals => targetValue >= value,
                 _ => true,
             };
             if (!compareResult) {
                 return false;
             }
+        }
+
+        if (condition.HasNotBuffIds.Length > 0 && condition.HasNotBuffIds.Any(id => target.Buffs.HasBuff(id))) {
+            return false;
+        }
+
+        // Verify if these conditions are only for player.
+        if (target is FieldPlayer player) {
+            if (condition.States.Length > 0 && !condition.States.Contains(player.State)) {
+                return false;
+            }
+
+            if (condition.SubStates.Length > 0 && !condition.SubStates.Contains(player.SubState)) {
+                return false;
+            }
+
+            if (condition.Masteries.Count > 0 && !condition.Masteries.All(mastery => player.Session.Mastery[mastery.Key] >= mastery.Value)) {
+                return false;
+            }
+        } else if (target is FieldNpc npc) {
+            if (condition.NpcIds.Length > 0 && !condition.NpcIds.Contains(npc.Value.Id)) {
+                return false;
+            }
+        }
+
+        if (condition.Event.BuffIds.Length > 0 && !condition.Event.BuffIds.Contains(eventBuffId)) {
+            return false;
+        }
+        if (condition.Event.SkillIds.Length > 0 && !condition.Event.SkillIds.Contains(eventSkillId)) {
+            return false;
         }
 
         return true;

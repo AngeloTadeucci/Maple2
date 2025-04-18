@@ -25,12 +25,12 @@ public class RideOnAction : IByteSerializable {
     }
 }
 
-public class RideOnActionUseItem : RideOnAction {
+public class RideOnActionDefault : RideOnAction {
     private readonly Item item;
     public int ItemId => item.Id;
     public long ItemUid => item.Uid;
 
-    public RideOnActionUseItem(int rideId, int objectId, Item item) : base(RideOnType.UseItem, rideId, objectId) {
+    public RideOnActionDefault(int rideId, int objectId, Item item) : base(RideOnType.Default, rideId, objectId) {
         this.item = item;
     }
 
@@ -42,11 +42,11 @@ public class RideOnActionUseItem : RideOnAction {
     }
 }
 
-public class RideOnActionAdditionalEffect : RideOnAction {
+public class RideOnActionBattle : RideOnAction {
     public readonly int SkillId;
     public readonly short SkillLevel;
 
-    public RideOnActionAdditionalEffect(int rideId, int objectId, int skillId, short skillLevel) : base(RideOnType.AdditionalEffect, rideId, objectId) {
+    public RideOnActionBattle(int rideId, int objectId, int skillId, short skillLevel) : base(RideOnType.Battle, rideId, objectId) {
         SkillId = skillId;
         SkillLevel = skillLevel;
     }
@@ -58,4 +58,4 @@ public class RideOnActionAdditionalEffect : RideOnAction {
     }
 }
 
-public class RideOnActionHideAndSeek(int rideId, int objectId) : RideOnAction(RideOnType.HideAndSeek, rideId, objectId);
+public class RideOnActionObject(int rideId, int objectId) : RideOnAction(RideOnType.Object, rideId, objectId);

@@ -73,6 +73,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(effect => effect.Shield).HasJsonConversion();
         builder.Property(effect => effect.InvokeEffect).HasJsonConversion();
         builder.Property(effect => effect.Skills).HasJsonConversion();
+        builder.Property(effect => effect.ModifyOverlapCount).HasJsonConversion();
     }
 
     private static void ConfigureAnimationMetadata(EntityTypeBuilder<AnimationMetadata> builder) {

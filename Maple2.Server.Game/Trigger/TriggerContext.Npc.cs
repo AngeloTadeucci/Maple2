@@ -90,7 +90,7 @@ public partial class TriggerContext {
         WarnLog("[NpcRemoveAdditionalEffect] spawnId:{SpawnId}", spawnId);
         foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
-                npc.Buffs.Remove(additionalEffectId);
+                npc.Buffs.Remove(additionalEffectId, npc.ObjectId);
             }
         }
     }
@@ -184,7 +184,15 @@ public partial class TriggerContext {
 
     #region Conditions
     public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, int level) {
-        ErrorLog("[CheckNpcAdditionalEffect] spawnId:{SpawnId}, additionalEffectId:{EffectId}, level:{Level}", spawnId, additionalEffectId, level);
+        DebugLog("[CheckNpcAdditionalEffect] spawnId:{SpawnId}, additionalEffectId:{EffectId}, level:{Level}", spawnId, additionalEffectId, level);
+        IEnumerable<IActor> actors = Field.GetActorsBySpawnId(spawnId);
+        foreach (IActor actor in actors) {
+            if (actor is not FieldNpc) {
+                continue;
+            }
+            return actor.Buffs.HasBuff(additionalEffectId, (short) level);
+        }
+
         return false;
     }
 

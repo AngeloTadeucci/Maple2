@@ -2,7 +2,6 @@
 using Autofac;
 using Maple2.Database.Context;
 using Maple2.Database.Storage;
-using Maple2.Database.Storage.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Module = Autofac.Module;
 

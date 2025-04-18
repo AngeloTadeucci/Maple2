@@ -14,7 +14,7 @@ public partial class MovementState {
     public ActorState State { get; private set; } = ActorState.None;
     public float Speed { get; private set; }
     public Vector3 Velocity { get; private set; }
-    private AnimationSequence? stateSequence;
+    private AnimationSequenceMetadata? stateSequence;
     #region LastTickData
     private float lastSpeed;
     private Vector3 lastVelocity;
@@ -37,7 +37,7 @@ public partial class MovementState {
     public MovementState(FieldNpc actor) {
         this.actor = actor;
 
-        hasIdleA = actor.AnimationState.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
+        hasIdleA = actor.Animation.RigMetadata?.Sequences?.ContainsKey("Idle_A") ?? false;
         aniSpeed = actor.Value.Metadata.Model.AniSpeed;
 
         SetState(ActorState.Spawn);
@@ -86,11 +86,12 @@ public partial class MovementState {
 
     public NpcTask TryStandby(IActor? target, bool isIdle, string sequence = "") {
         NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+
         return new NpcStandbyTask(actor.TaskState, this, sequence, priority, isIdle);
     }
 
     public NpcTask TryEmote(string sequenceName, bool isIdle, float duration = -1f) {
-        NpcTaskPriority priority = isIdle ? NpcTaskPriority.IdleAction : NpcTaskPriority.BattleStandby;
+        NpcTaskPriority priority = isIdle ? NpcTaskPriority.Emote : NpcTaskPriority.BattleStandby;
         return new NpcEmoteTask(actor.TaskState, this, sequenceName, priority, isIdle, duration);
     }
 
@@ -118,8 +119,8 @@ public partial class MovementState {
         return new NpcSkillCastTask(actor.TaskState, this, id, level, faceTarget, facePos, uid);
     }
 
-    public NpcTask CleanupPatrolData() {
-        return new NpcCleanupPatrolDataTask(actor.TaskState, this);
+    public NpcTask CleanupPatrolData(FieldPlayer player) {
+        return new NpcCleanupPatrolDataTask(player, actor.TaskState, this);
     }
 
     private void SetState(ActorState state) {
@@ -141,10 +142,10 @@ public partial class MovementState {
         SetState(ActorState.Idle);
 
         if (hasIdleA) {
-            if (actor.AnimationState.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
-                stateSequence = actor.AnimationState.PlayingSequence;
-            } else if (setAttackIdle && actor.AnimationState.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
-                stateSequence = actor.AnimationState.PlayingSequence;
+            if (actor.Animation.TryPlaySequence(sequence, aniSpeed, AnimationType.Misc)) {
+                stateSequence = actor.Animation.PlayingSequence;
+            } else if (setAttackIdle && actor.Animation.TryPlaySequence("Idle_A", aniSpeed, AnimationType.Misc)) {
+                stateSequence = actor.Animation.PlayingSequence;
             }
         }
     }
@@ -182,7 +183,7 @@ public partial class MovementState {
     }
 
     public void Update(long tickCount) {
-        if (actor.AnimationState.PlayingSequence != stateSequence) {
+        if (actor.Animation.PlayingSequence != stateSequence) {
             Idle();
         }
 
@@ -203,10 +204,10 @@ public partial class MovementState {
                 StateWalkUpdate(tickCount, tickDelta);
                 break;
             case ActorState.Spawn:
-                if (actor.AnimationState.TryPlaySequence("Regen_A", aniSpeed, AnimationType.Misc)) {
+                if (actor.Animation.TryPlaySequence("Regen_A", aniSpeed, AnimationType.Misc)) {
                     SetState(ActorState.Regen);
 
-                    stateSequence = actor.AnimationState.PlayingSequence;
+                    stateSequence = actor.Animation.PlayingSequence;
                 } else {
                     Idle();
                 }
