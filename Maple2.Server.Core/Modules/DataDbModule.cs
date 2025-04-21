@@ -31,6 +31,12 @@ public class DataDbModule : Module {
     protected override void Load(ContainerBuilder builder) {
         // NoTracking, Metadata is cached separately, and we use a single context for lifetime.
         var context = new MetadataContext(options);
+
+        // check Ingest has been run
+        if (!context.Database.CanConnect()) {
+            throw new Exception("Metadata database not found, did you run Maple2.File.Ingest?");
+        }
+
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         builder.RegisterInstance(context);
 
