@@ -29,6 +29,13 @@ public partial class GameStorage {
         this.functionCubeMetadata = functionCubeMetadata;
         this.tableMetadata = tableMetadata;
         this.serverTableMetadata = serverTableMetadata;
+
+        var context = new MetadataContext(options);
+
+        // check Ingest has been run
+        if (!context.Database.CanConnect()) {
+            throw new Exception("Game database not found, did you run Maple2.File.Ingest?");
+        }
     }
 
     public Request Context() {
