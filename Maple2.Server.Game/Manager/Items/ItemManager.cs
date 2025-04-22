@@ -46,55 +46,6 @@ public class ItemManager {
         return item ?? Equips.Outfit.Values.FirstOrDefault(outfit => outfit.Uid == uid);
     }
 
-    [Obsolete("Use in actor.ItemDrop instead")]
-    public Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
-        if (!session.ItemMetadata.TryGet(itemId, out ItemMetadata? itemMetadata)) {
-            return null;
-        }
-
-        if (rarity <= 0) {
-            if (itemMetadata.Option != null && itemMetadata.Option.ConstantId is < 6 and > 0) {
-                rarity = itemMetadata.Option.ConstantId;
-            } else {
-                rarity = 1;
-            }
-        }
-
-        var item = new Item(itemMetadata, rarity, amount);
-        item.Stats = itemStatsCalc.GetStats(item);
-        item.Socket = itemStatsCalc.GetSockets(item);
-
-        if (item.Appearance != null) {
-            item.Appearance.Color = GetColor(item.Metadata.Customize);
-        }
-
-        return item;
-    }
-
-    [Obsolete]
-    private EquipColor GetColor(ItemMetadataCustomize metadata) {
-        // Item has no color
-        if (metadata.ColorPalette == 0 ||
-            !session.TableMetadata.ColorPaletteTable.Entries.TryGetValue(metadata.ColorPalette, out IReadOnlyDictionary<int, ColorPaletteTable.Entry>? palette)) {
-            return default;
-        }
-
-        // Item has random color
-        if (metadata.DefaultColorIndex < 0) {
-            // random entry from palette
-            int index = Random.Shared.Next(palette.Count);
-            ColorPaletteTable.Entry randomEntry = palette.Values.ElementAt(index);
-            return new EquipColor(randomEntry.Primary, randomEntry.Secondary, randomEntry.Tertiary, metadata.ColorPalette, index);
-        }
-
-        // Item has specified color
-        if (palette.TryGetValue(metadata.DefaultColorIndex, out ColorPaletteTable.Entry? entry)) {
-            return new EquipColor(entry.Primary, entry.Secondary, entry.Tertiary, metadata.ColorPalette, metadata.DefaultColorIndex);
-        }
-
-        return default;
-    }
-
     public void Bind(Item item) {
         if (item.Transfer?.Bind(session.Player.Value.Character) == true) {
             session.Send(ItemInventoryPacket.UpdateItem(item));

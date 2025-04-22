@@ -161,7 +161,7 @@ public class InventoryManager {
             }
 
             if (add.Type.IsFurnishing) {
-                session.Item.Furnishing.AddStorage(add);
+                session.Item.Furnishing.AddStorage(add, add.Template);
                 session.Item.Inventory.Discard(add);
                 return true;
             }
