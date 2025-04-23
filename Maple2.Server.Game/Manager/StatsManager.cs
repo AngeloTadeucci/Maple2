@@ -86,7 +86,11 @@ public class StatsManager {
     /// <param name="mode">Unknown. Used for Lua script. If 0, the cap of damage is 250%. If 14, it's 300%</param>
     /// <returns>Critical damage</returns>
     public float GetCriticalDamage(float targetCriticalDamageResistance, int mode = 0) {
-        float criticalDamage = Actor.Field.Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode);
+        float criticalDamage = Actor switch {
+            FieldPlayer player => player.Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
+            FieldNpc npc => npc.Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
+            _ => 0
+        };
         //TODO: Apply target's resistance. Need to figure out formula for this.
         return criticalDamage;
     }
@@ -99,8 +103,8 @@ public class StatsManager {
     /// <returns>DamageType. If successful crit, returns DamageType.Critical. else returns DamageType.Normal</returns>
     public DamageType GetCriticalRate(long targetCriticalEvasion, double casterCriticalOverride) {
         float criticalChance = Actor switch {
-            FieldPlayer player => Actor.Field.Lua.CalcPlayerCritRate((int) player.Value.Character.Job.Code(), player.Stats.Values[BasicAttribute.Luck].Total, player.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion, 0, 0),
-            FieldNpc npc => Actor.Field.Lua.CalcNpcCritRate(npc.Stats.Values[BasicAttribute.Luck].Total, npc.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion),
+            FieldPlayer player => player.Lua.CalcPlayerCritRate((int) player.Value.Character.Job.Code(), player.Stats.Values[BasicAttribute.Luck].Total, player.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion, 0, 0),
+            FieldNpc npc => npc.Lua.CalcNpcCritRate(npc.Stats.Values[BasicAttribute.Luck].Total, npc.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion),
             _ => 0
         };
 
@@ -154,7 +158,7 @@ public class StatsManager {
                 AddItemStats(item.Stats);
             }
             Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
-            Values.GearScore += player.Field.Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
+            Values.GearScore += player.Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
             player.Session.Dungeon.UpdateDungeonEnterLimit();
             player.Session.ConditionUpdate(ConditionType.item_gear_score, counter: Values.GearScore);
 
