@@ -294,6 +294,20 @@ public class FurnishingManager {
         return true;
     }
 
+    public void RemoveItem(long itemUid) {
+        lock (session.Item) {
+            Item? item = storage.Get(itemUid);
+            if (item is null) {
+                return;
+            }
+
+            item.Amount = 0;
+
+            session.Send(FurnishingStoragePacket.Remove(itemUid));
+            return;
+        }
+    }
+
     public void SendStorageCount() {
         lock (session.Item) {
             session.Send(FurnishingStoragePacket.Count(storage.Count));
