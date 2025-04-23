@@ -5,7 +5,7 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class FurnishingStorageHandler : PacketHandler<GameSession>{
+public class FurnishingStorageHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.FurnishingStorage;
 
     private enum Command : byte {
