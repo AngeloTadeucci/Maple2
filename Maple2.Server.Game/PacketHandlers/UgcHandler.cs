@@ -448,15 +448,24 @@ public class UgcHandler : PacketHandler<GameSession> {
             }
 
             item.Template.Url = resource.Path;
+            long uid;
 
             // Dont create the item if it's a furniture since it's tied to account id
             if (info.Type is UgcType.Furniture) {
-                session.Item.Furnishing.AddCube(item);
+                uid = session.Item.Furnishing.AddCube(item);
             } else {
-                session.Item.Inventory.Add(item, notifyNew: true);
+                using GameStorage.Request db = session.GameStorage.Context();
+                Item? newAdd = db.CreateItem(session.CharacterId, item);
+                if (newAdd == null) {
+                    Logger.Error("Failed to create UGC item {ItemId}", item.Id);
+                    return;
+                }
+
+                uid = newAdd.Uid;
+                session.Item.Inventory.Add(newAdd, notifyNew: true);
             }
 
-            session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, item, ugcMetadata.CreatePrice, info.Type));
+            session.Send(UgcPacket.UpdateItem(session.Player.ObjectId, uid, item, ugcMetadata.CreatePrice, info.Type));
             session.Send(UgcPacket.UpdatePath(resource));
         }
 

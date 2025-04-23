@@ -76,7 +76,7 @@ public static class UgcPacket {
         return pWriter;
     }
 
-    public static ByteWriter UpdateItem(int objectId, Item item, long createPrice, UgcType ugcType) {
+    public static ByteWriter UpdateItem(int objectId, long uid, Item item, long createPrice, UgcType ugcType) {
         var pWriter = Packet.Of(SendOp.Ugc);
         switch (ugcType) {
             case UgcType.Item:
@@ -94,7 +94,7 @@ public static class UgcPacket {
 
         pWriter.WriteInt(objectId);
 
-        pWriter.WriteLong(item.Uid);
+        pWriter.WriteLong(uid);
         pWriter.WriteInt(item.Id);
         pWriter.WriteInt(item.Amount);
         pWriter.WriteUnicodeString(item.Template!.Name);
