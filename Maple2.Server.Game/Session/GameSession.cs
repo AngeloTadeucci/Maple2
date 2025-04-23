@@ -65,7 +65,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public required RideMetadataStorage RideMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { get; init; }
-    public required Lua.Lua Lua { private get; init; }
+    public required Lua.Lua Lua { get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
     // ReSharper restore All

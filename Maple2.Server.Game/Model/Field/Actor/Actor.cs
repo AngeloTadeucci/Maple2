@@ -11,6 +11,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
 using Maple2.Database.Storage;
+using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Util;
@@ -47,6 +48,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public abstract IPrism Shape { get; }
 
     public virtual BuffManager Buffs { get; }
+    public Lua.Lua Lua { get; init; }
 
     /// <summary>
     /// Tick duration of actor in the same position.
@@ -64,6 +66,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         SkillState = new SkillState(this);
         Stats = new StatsManager(this);
         PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
+        Lua = new Lua.Lua(Target.LOCALE);
     }
 
     public void Dispose() {

@@ -21,7 +21,7 @@ public class HomeDoctorHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int cost = session.Field.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, 0);
+        int cost = session.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, 0);
         if (session.Currency.Meso < cost) {
             return;
         }
