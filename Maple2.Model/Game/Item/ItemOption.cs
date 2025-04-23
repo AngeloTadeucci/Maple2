@@ -4,27 +4,27 @@ using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;
 
-[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 8)]
-public readonly record struct BasicOption(int Value, float Rate = 0) {
-    public BasicOption(float percent) : this(0, percent) { }
+[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
+public readonly record struct BasicOption(int Value) {
+    public BasicOption(float percent) : this((int) percent * 100) { }
 
     public static BasicOption operator +(BasicOption self, BasicOption other) {
-        return new BasicOption(self.Value + other.Value, self.Rate + other.Rate);
+        return new BasicOption(self.Value + other.Value);
     }
 
     public static BasicOption operator -(BasicOption self, BasicOption other) {
-        return new BasicOption(Math.Max(self.Value - other.Value, 0), Math.Max(self.Rate - other.Rate, 0));
+        return new BasicOption(Math.Max(self.Value - other.Value, 0));
     }
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 8)]
-public readonly record struct SpecialOption(float Rate, float Value = 0) {
+[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
+public readonly record struct SpecialOption(float Rate) {
     public static SpecialOption operator +(SpecialOption self, SpecialOption other) {
-        return new SpecialOption(self.Rate + other.Rate, self.Value + other.Value);
+        return new SpecialOption(self.Rate + other.Rate);
     }
 
     public static SpecialOption operator -(SpecialOption self, SpecialOption other) {
-        return new SpecialOption(Math.Max(self.Rate - other.Rate, 0), Math.Max(self.Value - other.Value, 0));
+        return new SpecialOption(Math.Max(self.Rate - other.Rate, 0));
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Enum;
+﻿using Maple2.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
@@ -14,14 +15,14 @@ public static class ItemInventoryPacket {
         Remove = 1,
         UpdateAmount = 2,
         Move = 3,
-        Load = 7,
-        NotifyNew = 8,
-        LoadTab = 10,
-        ExpandComplete = 12,
-        Reset = 13,
-        ExpandCount = 14,
-        Error = 15,
-        UpdateItem = 16,
+        Load = 6,
+        NotifyNew = 7,
+        LoadTab = 8,
+        ExpandComplete = 10,
+        Reset = 11,
+        ExpandCount = 12,
+        Error = 13,
+        UpdateItem = 14,
     }
 
     public static ByteWriter Add(Item item) {
@@ -31,7 +32,6 @@ public static class ItemInventoryPacket {
         pWriter.WriteLong(item.Uid);
         pWriter.WriteShort(item.Slot);
         pWriter.WriteInt(item.Rarity);
-        pWriter.WriteUnicodeString(); // EquipSlot
         pWriter.WriteClass<Item>(item);
 
         return pWriter;
@@ -85,7 +85,7 @@ public static class ItemInventoryPacket {
         pWriter.Write<Command>(Command.NotifyNew);
         pWriter.WriteLong(uid);
         pWriter.WriteInt(amount);
-        pWriter.WriteUnicodeString(); // EquipSlot
+        pWriter.WriteUnicodeString();
 
         return pWriter;
     }

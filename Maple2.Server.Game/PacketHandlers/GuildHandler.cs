@@ -71,6 +71,8 @@ public class GuildHandler : PacketHandler<GameSession> {
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
+
+        return;
         switch (command) {
             case Command.Create:
                 HandleCreate(session, packet);

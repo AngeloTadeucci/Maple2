@@ -179,12 +179,12 @@ public sealed class Stat {
 
     public void AddTotal(BasicOption option) {
         AddTotal(option.Value);
-        Rate += option.Rate;
+        // Rate += option.Value;
     }
 
     public void AddTotal(SpecialOption option) {
-        AddTotal((int) option.Value);
-        Rate += option.Rate;
+        AddTotal((int) option.Rate);
+        // Rate += option.Rate;
     }
 
     public void AddRate(float rate) {

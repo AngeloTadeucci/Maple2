@@ -139,20 +139,20 @@ public sealed class ItemMergeManager {
             (BasicAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.BasicOptions.ElementAt(selectedIndex);
 
             (int value, float rate) = Roll(mergeOption);
-            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
-                Basic = {
-                    [attribute] = new BasicOption(value, rate),
-                },
-            };
+            // upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
+            //     Basic = {
+            //         [attribute] = new BasicOption(value, rate),
+            //     },
+            // };
         } else {
             (SpecialAttribute attribute, ItemMergeTable.Option mergeOption) = mergeSlot.SpecialOptions.ElementAt(selectedIndex - mergeSlot.BasicOptions.Count);
 
             (int value, float rate) = Roll(mergeOption);
-            upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
-                Special = {
-                    [attribute] = new SpecialOption(rate, value),
-                },
-            };
+            // upgradeItem.Stats![ItemStats.Type.Empowerment1] = new ItemStats.Option {
+            //     Special = {
+            //         [attribute] = new SpecialOption(rate, value),
+            //     },
+            // };
         }
 
         session.Send(ItemMergePacket.Empower(upgradeItem));

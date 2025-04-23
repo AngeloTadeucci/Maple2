@@ -3,6 +3,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -34,8 +35,8 @@ public static class ServerEnterPacket {
         pWriter.WriteLong(player.Currency.MenteeToken);
         pWriter.WriteLong(player.Currency.StarPoint);
         pWriter.WriteLong(player.Currency.MesoToken);
+
         pWriter.WriteUnicodeString(player.Character.Picture);
-        pWriter.WriteByte();
         pWriter.WriteByte();
         pWriter.WriteShort((short) player.Unlock.Maps.Count);
         foreach (int mapId in player.Unlock.Maps) {
@@ -50,7 +51,6 @@ public static class ServerEnterPacket {
         pWriter.WriteUnicodeString("http://127.0.0.1:8080");
         pWriter.WriteUnicodeString();
         pWriter.WriteUnicodeString("^https?://127\\.0\\.0\\.1(:\\d+)?");
-        pWriter.WriteUnicodeString();
 
         return pWriter;
     }

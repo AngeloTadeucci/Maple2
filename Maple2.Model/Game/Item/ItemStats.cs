@@ -10,18 +10,14 @@ namespace Maple2.Model.Game;
 public sealed class ItemStats : IByteSerializable, IByteDeserializable {
     public static readonly ItemStats Default = new ItemStats();
 
-    public const int TYPE_COUNT = 9;
+    public const int TYPE_COUNT = 5;
 
     public enum Type {
         Constant = 0,
         Static = 1,
         Random = 2,
         Title = 3,
-        Empowerment1 = 4,
-        Empowerment2 = 5,
-        Empowerment3 = 6,
-        Empowerment4 = 7,
-        Empowerment5 = 8,
+        Empowerment = 4,
     }
 
     private readonly Option[] options;
@@ -59,7 +55,6 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
     }
 
     public void WriteTo(IByteWriter writer) {
-        writer.WriteByte();
         for (int i = 0; i < TYPE_COUNT; i++) {
             Option option = options[i];
             writer.WriteShort((short) option.Basic.Count);
@@ -72,13 +67,12 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
                 writer.WriteShort((short) type);
                 writer.Write<SpecialOption>(specialOption);
             }
-
-            writer.WriteInt();
         }
+
+        // writer.WriteInt(); // this version of kms2 does not have this?
     }
 
     public void ReadFrom(IByteReader reader) {
-        reader.ReadByte();
         for (int i = 0; i < TYPE_COUNT; i++) {
             Option option = options[i];
             short basicCount = reader.ReadShort();
@@ -92,7 +86,7 @@ public sealed class ItemStats : IByteSerializable, IByteDeserializable {
                 option.Special[type] = reader.Read<SpecialOption>();
             }
 
-            reader.ReadInt();
+            // reader.ReadInt(); // this version of kms2 does not have this?
         }
     }
 

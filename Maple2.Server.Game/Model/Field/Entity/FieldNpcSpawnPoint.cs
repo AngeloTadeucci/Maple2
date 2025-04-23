@@ -40,7 +40,7 @@ public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
         IEnumerable<FieldNpc> npcs = Field.GetActorsBySpawnId(SpawnId).OfType<FieldNpc>().ToList(); // Only get npcs
         foreach (SpawnPointNPCListEntry spawn in Value.NpcList) {
             if (!Field.NpcMetadata.TryGet(spawn.NpcId, out NpcMetadata? npcMetadata)) {
-                Log.Logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, Field.MapId);
+                // Log.Logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, Field.MapId);
                 continue;
             }
 

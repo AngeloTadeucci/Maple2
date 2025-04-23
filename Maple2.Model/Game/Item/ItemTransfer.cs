@@ -46,7 +46,7 @@ public sealed class ItemTransfer : IByteSerializable, IByteDeserializable {
         writer.WriteBool(false); // CItemTransfer[9] *bit-1*
         writer.WriteInt(RemainTrades); // CItemTransfer[10]
         writer.WriteInt(RepackageCount); // CItemTransfer[11]
-        writer.WriteByte(); // CItemTransfer[12]
+        writer.WriteBool(false); // CItemTransfer[12]
         writer.WriteBool(true); // CItemTransfer[9] *bit-10* (socketTransfer?)
 
         // CharBound means untradable, unsellable, bound to char (ignores TransferFlag)
@@ -61,7 +61,7 @@ public sealed class ItemTransfer : IByteSerializable, IByteDeserializable {
         reader.ReadByte();
         RemainTrades = reader.ReadInt();
         RepackageCount = reader.ReadInt();
-        reader.ReadByte();
+        reader.ReadBool();
         reader.ReadBool();
         bool isBound = reader.ReadBool();
         if (isBound) {

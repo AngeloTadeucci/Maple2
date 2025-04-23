@@ -121,8 +121,6 @@ public static class FieldPacket {
         pWriter.WriteLong(player.Account.PremiumTime);
         pWriter.WriteInt();
         pWriter.WriteByte();
-        pWriter.WriteInt(); // Tail
-        pWriter.WriteInt();
         pWriter.WriteShort();
 
         return pWriter;
@@ -330,8 +328,6 @@ public static class FieldPacket {
         writer.WriteClass<Mastery>(character.Mastery);
         #region Unknown
         writer.WriteUnicodeString(); // Login username
-        writer.WriteLong(); // Session Id
-        writer.WriteLong();
         writer.WriteLong();
         #endregion
         writer.WriteInt(); // Unknown Count

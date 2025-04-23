@@ -136,8 +136,9 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         int equipCount = packet.ReadByte();
         for (int i = 0; i < equipCount; i++) {
             int id = packet.ReadInt();
-            string slotStr = packet.ReadUnicodeString();
-            if (!Enum.TryParse(slotStr, out EquipSlot slot) || slot is SK or OH or Unknown) {
+            byte slotByte = packet.ReadByte();
+            EquipSlot slot = (EquipSlot) slotByte;
+            if (slot is SK or OH or Unknown) {
                 session.Send(CharacterListPacket.CreateError(s_char_err_invalid_def_item));
                 return;
             }

@@ -209,7 +209,7 @@ public sealed class ItemStatsCalculator {
         foreach (SpecialAttribute attribute in option.Special.Keys) {
             if (table.SpecialValues.TryGetValue(attribute, out ItemEquipVariationTable.Set<int>[]? values)) {
                 int value = GetValue(specialAttribute: attribute, tableValues: values, rollMax: rollMax);
-                option.Special[attribute] = new SpecialOption(0f, value * option.MultiplyFactor);
+                option.Special[attribute] = new SpecialOption(value * option.MultiplyFactor);
             } else if (table.SpecialRates.TryGetValue(attribute, out ItemEquipVariationTable.Set<float>[]? rates)) {
                 int rateInt = GetValue(specialAttribute: attribute, tableRates: rates, rollMax: rollMax);
                 option.Special[attribute] = new SpecialOption((rateInt / 1000f) * option.MultiplyFactor);
@@ -498,7 +498,7 @@ public sealed class ItemStatsCalculator {
             statResult.Add(attribute, new BasicOption(rate));
         }
         foreach ((SpecialAttribute attribute, int value) in option.SpecialValues) {
-            specialResult.Add(attribute, new SpecialOption(0f, value));
+            specialResult.Add(attribute, new SpecialOption(value));
         }
         foreach ((SpecialAttribute attribute, float rate) in option.SpecialRates) {
             specialResult.Add(attribute, new SpecialOption(rate));
@@ -566,7 +566,7 @@ public sealed class ItemStatsCalculator {
                 if (specialDict.ContainsKey(attribute)) return true; // Cannot add duplicate values, retry.
 
                 if (entry.Values != null) {
-                    specialDict.Add(attribute, new SpecialOption(0f, Random.Shared.Next(entry.Values.Value.Min, entry.Values.Value.Max + 1)));
+                    specialDict.Add(attribute, new SpecialOption(Random.Shared.Next(entry.Values.Value.Min, entry.Values.Value.Max + 1)));
                 } else if (entry.Rates != null) {
                     float delta = entry.Rates.Value.Max - entry.Rates.Value.Min;
                     specialDict.Add(attribute, new SpecialOption(Random.Shared.NextSingle() * delta + entry.Rates.Value.Min));

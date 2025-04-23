@@ -36,6 +36,7 @@ public class SkillPoint : IByteSerializable {
             writer.Write<SkillPointSource>(source);
             writer.WriteClass<PointRank>(point);
         }
+        writer.WriteInt();
     }
 
     public class PointRank : IByteSerializable {

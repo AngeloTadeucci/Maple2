@@ -197,7 +197,6 @@ public class Item : IByteSerializable, IByteDeserializable {
 
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(Amount);
-        writer.WriteInt();
         writer.WriteInt(-1);
         writer.WriteLong(CreationTime);
         writer.WriteLong(ExpiryTime);
@@ -223,18 +222,17 @@ public class Item : IByteSerializable, IByteDeserializable {
         } else if (Music != null) {
             writer.WriteClass<ItemCustomMusicScore>(Music);
         } else if (Badge != null) {
-            writer.WriteClass<ItemBadge>(Badge);
+            writer.WriteClass<ItemBadge>(Badge); // TODO
         }
 
         writer.WriteClass<ItemTransfer>(Transfer ?? ItemTransfer.Default);
         writer.WriteClass<ItemSocket>(Socket ?? ItemSocket.Default);
         writer.WriteClass<ItemCoupleInfo>(CoupleInfo ?? ItemCoupleInfo.Default);
-        writer.WriteClass<ItemBinding>(Binding ?? ItemBinding.Default);
+        writer.WriteClass<ItemBinding>(Transfer?.Binding ?? ItemBinding.Default);
     }
 
     public void ReadFrom(IByteReader reader) {
         Amount = reader.ReadInt();
-        reader.ReadInt();
         reader.ReadInt();
         CreationTime = reader.ReadLong();
         ExpiryTime = reader.ReadLong();

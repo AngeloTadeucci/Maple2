@@ -79,6 +79,8 @@ public static class DungeonRoomPacket {
             pWriter.WriteInt(id);
             pWriter.WriteClass<DungeonRankReward>(reward);
         }
+        pWriter.WriteInt();
+        pWriter.WriteLong();
 
         return pWriter;
     }

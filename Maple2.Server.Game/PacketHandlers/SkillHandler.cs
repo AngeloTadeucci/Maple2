@@ -109,7 +109,7 @@ public class SkillHandler : PacketHandler<GameSession> {
         record.IsHold = packet.ReadBool();
         if (record.IsHold) {
             record.HoldInt = packet.ReadInt();
-            record.HoldString = packet.ReadUnicodeString();
+            record.HoldString = packet.ReadUnicodeString().Trim('\0');
 
             if (session.Player.DebugSkills) {
                 session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: true; HoldInt: {record.HoldInt}; HoldString: {record.HoldString}; UnkBool: {record.Unknown}"));

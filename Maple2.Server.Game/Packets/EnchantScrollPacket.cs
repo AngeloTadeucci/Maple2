@@ -55,7 +55,6 @@ public static class EnchantScrollPacket {
                 pWriter.WriteInt(minOptions.Count);
                 foreach ((BasicAttribute attribute, BasicOption delta) in minOptions) {
                     pWriter.WriteShort((short) attribute);
-                    pWriter.WriteFloat(delta.Rate);
                     pWriter.WriteInt(delta.Value);
                 }
                 break;
@@ -63,13 +62,11 @@ public static class EnchantScrollPacket {
                 pWriter.WriteInt(maxOptions.Count);
                 foreach ((BasicAttribute attribute, BasicOption delta) in maxOptions) {
                     pWriter.WriteShort((short) attribute);
-                    pWriter.WriteFloat(delta.Rate);
                     pWriter.WriteInt(delta.Value);
                 }
                 pWriter.WriteInt(minOptions.Count);
                 foreach ((BasicAttribute attribute, BasicOption delta) in minOptions) {
                     pWriter.WriteShort((short) attribute);
-                    pWriter.WriteFloat(delta.Rate);
                     pWriter.WriteInt(delta.Value);
                 }
                 break;

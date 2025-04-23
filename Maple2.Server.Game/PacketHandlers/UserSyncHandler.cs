@@ -32,16 +32,13 @@ public class UserSyncHandler : PacketHandler<GameSession> {
                 ActorState.MicroGameRps => new StateSyncRps(),
                 ActorState.MicroGameCoupleDance => new StateSyncCoupleDance(),
                 ActorState.WeddingEmotion => new StateSyncWeddingEmotion(),
-                _ => new StateSync(),
+                _ => new StateSync()
             };
 
             stateSync.ReadFrom(packet);
             stateSyncs[i] = stateSync;
 
             packet.ReadInt(); // ClientTicks
-            if (playerState != ActorState.WeddingEmotion) {
-                packet.ReadInt(); // ServerTicks
-            }
         }
 
         using (var buffer = new PoolByteWriter()) {

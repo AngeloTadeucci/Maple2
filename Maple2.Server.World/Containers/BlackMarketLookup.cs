@@ -110,12 +110,11 @@ public class BlackMarketLookup : IDisposable {
 
             foreach (ItemStats.Type type in Enum.GetValues(typeof(ItemStats.Type))) {
                 if (stats[type].Basic.TryGetValue(basicOption.Key, out BasicOption option)) {
-                    rate += option.Rate;
                     value += option.Value;
                 }
             }
 
-            if (rate < basicOption.Value.Rate || value < basicOption.Value.Value) {
+            if (value < basicOption.Value.Value) {
                 return false;
             }
         }
@@ -127,11 +126,10 @@ public class BlackMarketLookup : IDisposable {
             foreach (ItemStats.Type type in Enum.GetValues(typeof(ItemStats.Type))) {
                 if (stats[type].Special.TryGetValue(specialOption.Key, out SpecialOption option)) {
                     rate += option.Rate;
-                    value += option.Value;
                 }
             }
 
-            if (rate < specialOption.Value.Rate || value < specialOption.Value.Value) {
+            if (rate < specialOption.Value.Rate) {
                 return false;
             }
         }

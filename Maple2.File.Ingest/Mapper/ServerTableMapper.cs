@@ -1397,7 +1397,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     restrictedBuyData = new RestrictedBuyData {
                         Days = item.dayOfWeek.Length == 0 ? [] : Array.ConvertAll(item.dayOfWeek, day => (ShopBuyDay) day),
                         TimeRanges = buyTimeOfDays,
-                        StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture).ToEpochSeconds(),
+                        StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
                         EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds()
                     };
                 }
