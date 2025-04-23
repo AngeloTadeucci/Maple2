@@ -58,12 +58,12 @@ public class RevivalHandler : PacketHandler<GameSession> {
             }
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert | NoticePacket.Flags.Message, StringCode.s_revival_use_coupon));
         } else {
-            int totalMaxCount = session.Field.Lua.GetMesoRevivalDailyMaxCount();
+            int totalMaxCount = session.Lua.GetMesoRevivalDailyMaxCount();
             if (session.Config.InstantReviveCount >= totalMaxCount) {
                 return;
             }
 
-            int cost = session.Field.Lua.CalcRevivalPrice((ushort) session.Player.Value.Character.Level);
+            int cost = session.Lua.CalcRevivalPrice((ushort) session.Player.Value.Character.Level);
             if (session.Currency.Meso < cost) {
                 // Client sends error
                 return;
