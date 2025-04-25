@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
@@ -30,6 +30,11 @@ internal sealed class FieldActor : IActor {
     public SkillState SkillState { get; init; }
     public SkillQueue ActiveSkills { get; init; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FieldActor"/> class, setting up its field association, metadata, stats, buffs, transform, animation manager, skill state, and active skills queue.
+    /// </summary>
+    /// <param name="field">The field manager that owns this actor.</param>
+    /// <param name="npcMetadata">The metadata storage for NPCs associated with this actor.</param>
     public FieldActor(FieldManager field, NpcMetadataStorage npcMetadata) {
         Field = field;
         Stats = new StatsManager(this);
@@ -41,5 +46,8 @@ internal sealed class FieldActor : IActor {
         ActiveSkills = new SkillQueue();
     }
 
-    public void Update(long tickCount) { }
+    /// <summary>
+/// Performs no operation during the update cycle for this actor.
+/// </summary>
+public void Update(long tickCount) { }
 }

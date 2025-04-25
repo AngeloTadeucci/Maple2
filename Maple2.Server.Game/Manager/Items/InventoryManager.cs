@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Storage;
 using Maple2.Model;
@@ -253,6 +253,10 @@ public class InventoryManager {
         }
     }
 
+    /// <summary>
+    /// Adds the specified currency or stat amount to the player's session based on the item's ID.
+    /// </summary>
+    /// <param name="add">The item representing the currency or stat to add, with its amount.</param>
     private void AddCurrency(Item add) {
         switch (add.Id) {
             case 90000001 or 90000002 or 90000003:

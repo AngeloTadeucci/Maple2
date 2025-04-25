@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -10,6 +10,14 @@ using Maple2.Tools.Collision;
 namespace Maple2.Server.Game.Util;
 
 public static class SkillUtils {
+    /// <summary>
+    /// Constructs a <see cref="Prism"/> representing the effective area of a skill based on its range type, position, and angle.
+    /// </summary>
+    /// <param name="range">The skill range metadata specifying the region type and dimensions.</param>
+    /// <param name="position">The origin position for the prism, using the XY coordinates for the base.</param>
+    /// <param name="angle">The orientation angle applied to directional shapes.</param>
+    /// <returns>A <see cref="Prism"/> corresponding to the specified skill region and parameters.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the skill region type is invalid.</exception>
     public static Prism GetPrism(this SkillMetadataRange range, in Vector3 position, float angle) {
         if (range.Type == SkillRegion.None) {
             return new Prism(IPolygon.Null, 0, 0);
@@ -27,6 +35,13 @@ public static class SkillUtils {
         return new Prism(polygon, position.Z, range.Height + range.RangeAdd.Z);
     }
 
+    /// <summary>
+    /// Returns up to a specified number of unique, non-dead entities whose shapes intersect with the given prism.
+    /// </summary>
+    /// <typeparam name="T">The type of entities to filter, implementing <see cref="IActor"/>.</typeparam>
+    /// <param name="entities">The collection of entities to filter.</param>
+    /// <param name="limit">The maximum number of entities to return. Defaults to 10.</param>
+    /// <returns>An enumerable of entities intersecting the prism, without duplicates or dead entities.</returns>
     public static IEnumerable<T> Filter<T>(this Prism prism, IEnumerable<T> entities, int limit = 10) where T : IActor {
         HashSet<int> addedActorObjectIds = [];
         foreach (T entity in entities) {
@@ -51,6 +66,15 @@ public static class SkillUtils {
         }
     }
 
+    /// <summary>
+    /// Filters and yields up to a specified number of unique, non-dead entities that intersect with any of the given prisms, optionally excluding entities in the ignore collection.
+    /// </summary>
+    /// <typeparam name="T">The type of entity, constrained to IActor.</typeparam>
+    /// <param name="prisms">An array of prisms to test for intersection.</param>
+    /// <param name="entities">The collection of entities to filter.</param>
+    /// <param name="limit">The maximum number of entities to yield.</param>
+    /// <param name="ignore">An optional collection of entities to exclude from the results.</param>
+    /// <returns>An enumerable of entities intersecting any prism, up to the specified limit, with duplicates and dead entities excluded.</returns>
     public static IEnumerable<T> Filter<T>(this Prism[] prisms, IEnumerable<T> entities, int limit = 10, ICollection<IActor>? ignore = null) where T : IActor {
         HashSet<int> addedActorObjectIds = [];
         foreach (T entity in entities) {
@@ -80,6 +104,17 @@ public static class SkillUtils {
         }
     }
 
+    /// <summary>
+    /// Determines whether a <see cref="BeginCondition"/> is satisfied for the given caster, owner, and target actors in the specified event context.
+    /// </summary>
+    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="caster">The actor attempting to trigger the condition.</param>
+    /// <param name="owner">The owner actor relevant to the condition.</param>
+    /// <param name="target">The target actor relevant to the condition.</param>
+    /// <param name="eventType">The event type context for the condition check.</param>
+    /// <param name="eventSkillId">The skill ID associated with the event, if any.</param>
+    /// <param name="eventBuffId">The buff ID associated with the event, if any.</param>
+    /// <returns><c>true</c> if all condition requirements are met for the provided actors and event context; otherwise, <c>false</c>.</returns>
     public static bool Check(this BeginCondition condition, IActor caster, IActor owner, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (caster is FieldPlayer player) {
             if (condition is not { Probability: 1 } && condition.Probability < Random.Shared.NextDouble()) {
@@ -152,6 +187,15 @@ public static class SkillUtils {
         return condition.Caster.Check(caster, eventType, eventSkillId, eventBuffId) && condition.Owner.Check(owner, eventType, eventSkillId, eventBuffId) && condition.Target.Check(target, eventType, eventSkillId, eventBuffId);
     }
 
+    /// <summary>
+    /// Determines whether a target actor satisfies the specified <see cref="BeginConditionTarget"/> constraints for a given event context.
+    /// </summary>
+    /// <param name="condition">The condition to evaluate; returns true if null.</param>
+    /// <param name="target">The actor being checked.</param>
+    /// <param name="eventType">The event type to match against the condition.</param>
+    /// <param name="eventSkillId">The skill ID associated with the event.</param>
+    /// <param name="eventBuffId">The buff ID associated with the event.</param>
+    /// <returns>True if the target meets all condition requirements; otherwise, false.</returns>
     private static bool Check(this BeginConditionTarget? condition, IActor target, EventConditionType eventType = EventConditionType.Activate, int eventSkillId = 0, int eventBuffId = 0) {
         if (condition == null) {
             return true;

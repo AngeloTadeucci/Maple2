@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -22,7 +22,11 @@ public class DamageRecord {
     public Vector3 Position;
     public Vector3 Direction;
 
-    public readonly ConcurrentDictionary<int, DamageRecordTarget> Targets; // Target's ObjectId as key
+    public readonly ConcurrentDictionary<int, DamageRecordTarget> Targets; /// <summary>
+    /// Initializes a new damage record for a skill attack, setting up associated metadata, properties, and an empty target dictionary keyed by target ObjectId.
+    /// </summary>
+    /// <param name="skillMetadata">Metadata describing the skill used in the attack.</param>
+    /// <param name="attackMetadata">Metadata for the specific attack instance.</param>
 
     public DamageRecord(SkillMetadata skillMetadata, SkillMetadataAttack attackMetadata) {
         SkillMetadata = skillMetadata;

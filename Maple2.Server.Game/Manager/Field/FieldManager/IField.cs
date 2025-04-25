@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Maple2.Database.Storage;
@@ -59,13 +59,49 @@ public interface IField : IDisposable {
     public long FieldTick { get; }
     public virtual void Init() { }
 
-    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default);
-    public void AddSkill(SkillRecord record);
-    public void AddSkill(IActor caster, SkillEffectMetadata effect, Vector3[] points, in Vector3 rotation = default);
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null);
-    public void RemoveSkill(int objectId);
-    public void Broadcast(ByteWriter packet, GameSession? sender = null);
-    public void BroadcastAiMessage(ByteWriter packet);
+    /// <summary>
+/// Adds a skill effect to the field at the specified position and rotation, with a given interval.
+/// </summary>
+/// <param name="metadata">Metadata describing the skill to add.</param>
+/// <param name="interval">The interval, in milliseconds, for the skill's effect or duration.</param>
+/// <param name="position">The world position where the skill effect is placed.</param>
+/// <param name="rotation">The rotation of the skill effect. Defaults to no rotation if not specified.</param>
+public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default);
+    /// <summary>
+/// Adds a skill to the field using the specified skill record.
+/// </summary>
+/// <param name="record">The skill record containing information about the skill to add.</param>
+public void AddSkill(SkillRecord record);
+    /// <summary>
+/// Adds a skill effect to the field, originating from the specified caster, using the given effect metadata, points, and rotation.
+/// </summary>
+/// <param name="caster">The actor casting the skill.</param>
+/// <param name="effect">Metadata describing the skill effect to apply.</param>
+/// <param name="points">An array of points defining the effect's area or trajectory.</param>
+/// <param name="rotation">The rotation to apply to the skill effect. Defaults to no rotation.</param>
+public void AddSkill(IActor caster, SkillEffectMetadata effect, Vector3[] points, in Vector3 rotation = default);
+    /// <summary>
+/// Returns a collection of actors within the specified prisms that match the given target type, up to the specified limit.
+/// </summary>
+/// <param name="prisms">Geometric prisms used to define the target search area.</param>
+/// <param name="targetType">The type of targets to include (e.g., enemies, allies).</param>
+/// <param name="limit">The maximum number of actors to return.</param>
+/// <param name="ignore">Optional collection of actors to exclude from the results.</param>
+/// <returns>An enumerable of actors matching the criteria.</returns>
+public IEnumerable<IActor> GetTargets(Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null);
+    /// <summary>
+/// Removes a skill effect or instance from the field by its object ID.
+/// </summary>
+/// <param name="objectId">The unique identifier of the skill to remove.</param>
+public void RemoveSkill(int objectId);
+    /// <summary>
+/// Sends a packet to all players in the field, optionally excluding the specified sender.
+/// </summary>
+public void Broadcast(ByteWriter packet, GameSession? sender = null);
+    /// <summary>
+/// Broadcasts an AI-related message packet to all relevant entities in the field.
+/// </summary>
+public void BroadcastAiMessage(ByteWriter packet);
     public void BroadcastAiType(GameSession requester);
 
     public void SetRoomTimer(RoomTimerType type, int duration); //TODO: MOVE THIS TO RANDOM ONLY

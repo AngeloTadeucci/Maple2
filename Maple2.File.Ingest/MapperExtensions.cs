@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using Maple2.File.Ingest.Utils;
@@ -227,6 +227,11 @@ public static class MapperExtensions {
         };
     }
 
+    /// <summary>
+    /// Converts a <see cref="TriggerSkill"/> instance into a <see cref="SkillEffectMetadata"/>, mapping its properties to either a splash or condition effect and assembling the associated skills.
+    /// </summary>
+    /// <param name="trigger">The trigger skill data to convert.</param>
+    /// <returns>A <see cref="SkillEffectMetadata"/> representing the trigger's effect, including splash or condition details and linked skills.</returns>
     public static SkillEffectMetadata Convert(this TriggerSkill trigger) {
         SkillEffectMetadataCondition? condition = null;
         SkillEffectMetadataSplash? splash = null;
@@ -316,6 +321,11 @@ public static class MapperExtensions {
             UseMove: autoTargeting.autoTargetUseMove);
     }
 
+    /// <summary>
+    /// Converts a parsed XML skill begin condition into a strongly typed <see cref="BeginCondition"/> metadata object for use in Maple2 game logic.
+    /// </summary>
+    /// <param name="beginCondition">The XML-parsed skill begin condition to convert.</param>
+    /// <returns>A <see cref="BeginCondition"/> instance containing mapped level, gender, mesos, stats, map and skill requirements, job codes, probability, cooldowns, durations, state flags, dungeon group types, weapon requirements, and subconditions for target, owner, and caster.</returns>
     public static BeginCondition Convert(this Maple2.File.Parser.Xml.Skill.BeginCondition beginCondition) {
         return new BeginCondition(
             Level: beginCondition.level,

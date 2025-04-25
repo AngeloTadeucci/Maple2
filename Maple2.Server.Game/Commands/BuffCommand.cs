@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Database.Storage;
@@ -40,6 +40,17 @@ public class BuffCommand : GameCommand {
         this.SetHandler<InvocationContext, int, int, int, int, bool, string, bool>(Handle, id, level, stack, duration, all, target, remove);
     }
 
+    /// <summary>
+    /// Processes the "buff" command to add or remove a specified buff on one or more players in the current field.
+    /// </summary>
+    /// <param name="ctx">The command invocation context.</param>
+    /// <param name="buffId">The ID of the buff to add or remove.</param>
+    /// <param name="level">The level of the buff.</param>
+    /// <param name="stack">The number of buff stacks to apply.</param>
+    /// <param name="duration">The duration of the buff in seconds, or -1 for default duration.</param>
+    /// <param name="all">If true, applies the operation to all players in the field.</param>
+    /// <param name="target">The name of the target player to affect, or empty to target the command issuer.</param>
+    /// <param name="remove">If true, removes the buff instead of adding it.</param>
     private void Handle(InvocationContext ctx, int buffId, int level, int stack, int duration, bool all, string target, bool remove) {
         try {
             if (!skillStorage.TryGetEffect(buffId, (short) level, out AdditionalEffectMetadata? _)) {

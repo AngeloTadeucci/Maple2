@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
@@ -43,6 +43,11 @@ public static class SkillDamagePacket {
         return pWriter;
     }
 
+    /// <summary>
+    /// Constructs a skill damage packet containing information about the caster, skill, impacted targets, and their respective damage details.
+    /// </summary>
+    /// <param name="record">The damage record containing skill, caster, and target damage information.</param>
+    /// <returns>A ByteWriter representing the serialized skill damage packet.</returns>
     public static ByteWriter Damage(DamageRecord record) {
         var pWriter = Packet.Of(SendOp.SkillDamage);
         pWriter.Write<Command>(Command.Damage);
@@ -90,6 +95,11 @@ public static class SkillDamagePacket {
         return pWriter;
     }
 
+    /// <summary>
+    /// Constructs a packet representing regional skill damage, including affected targets and their damage details.
+    /// </summary>
+    /// <param name="record">The damage record containing skill, caster, owner, attack point, and target information.</param>
+    /// <returns>A <see cref="ByteWriter"/> containing the serialized regional damage packet.</returns>
     public static ByteWriter Region(DamageRecord record) {
         var pWriter = Packet.Of(SendOp.SkillDamage);
         pWriter.Write<Command>(Command.Region);
@@ -113,6 +123,11 @@ public static class SkillDamagePacket {
         return pWriter;
     }
 
+    /// <summary>
+    /// Constructs a packet representing tile-based skill damage, including affected targets and their respective damage details.
+    /// </summary>
+    /// <param name="record">The damage record containing skill and target information for the tile-based attack.</param>
+    /// <returns>A ByteWriter containing the serialized tile damage packet.</returns>
     public static ByteWriter Tile(DamageRecord record) {
         var pWriter = Packet.Of(SendOp.SkillDamage);
         pWriter.Write<Command>(Command.Tile);

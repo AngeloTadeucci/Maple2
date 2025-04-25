@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
@@ -336,6 +336,9 @@ public sealed partial class GameSession : Core.Network.Session {
         return true;
     }
 
+    /// <summary>
+    /// Cleans up player state and resources when leaving the current field, including clearing staging arrays, disposing held objects, and removing the player from the field.
+    /// </summary>
     private void LeaveField() {
         Array.Clear(ItemLockStaging);
         Array.Clear(DismantleStaging);

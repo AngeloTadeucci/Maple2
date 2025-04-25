@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -92,6 +92,11 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FieldPlayer"/> class, setting up player state, regeneration tracking, event scheduling, and animation references for the associated game session.
+    /// </summary>
+    /// <param name="session">The game session associated with the player.</param>
+    /// <param name="player">The player entity represented by this field actor.</param>
     public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
         Animation = Session.Animation;
@@ -138,6 +143,9 @@ public class FieldPlayer : Actor<Player> {
         }
     }
 
+    /// <summary>
+    /// Updates the player's state for the current tick, handling state broadcasts, death and revival logic, battle state timeout, stat regeneration, and game event updates.
+    /// </summary>
     public override void Update(long tickCount) {
         base.Update(tickCount);
 
@@ -201,6 +209,10 @@ public class FieldPlayer : Actor<Player> {
         Session.GameEvent.Update(tickCount);
     }
 
+    /// <summary>
+    /// Synchronizes the player's state with incoming state data, updating position, rotation, state, and substate, and triggers relevant condition updates based on movement and activity.
+    /// </summary>
+    /// <param name="stateSync">The state synchronization data containing the player's latest position, rotation, state, and substate.</param>
     public void OnStateSync(StateSync stateSync) {
         if (Position != stateSync.Position) {
             Flag |= PlayerObjectFlag.Position;
@@ -408,7 +420,10 @@ public class FieldPlayer : Actor<Player> {
     /// <summary>
     /// Consumes health and starts regen if not already started.
     /// </summary>
-    /// <param name="amount"></param>
+    /// <summary>
+    /// Reduces the player's health by the specified amount and broadcasts the updated health to the session and field.
+    /// </summary>
+    /// <param name="amount">The amount of health to consume. Must be positive.</param>
     public void ConsumeHp(int amount) {
         if (amount <= 0) {
             return;
@@ -456,7 +471,10 @@ public class FieldPlayer : Actor<Player> {
     /// <summary>
     /// Consumes spirit and starts regen if not already started.
     /// </summary>
-    /// <param name="amount"></param>
+    /// <summary>
+    /// Reduces the player's spirit by the specified amount and broadcasts the updated value to the field.
+    /// </summary>
+    /// <param name="amount">The amount of spirit to consume.</param>
     public void ConsumeSp(int amount) {
         if (amount <= 0) {
             return;
@@ -493,7 +511,11 @@ public class FieldPlayer : Actor<Player> {
     /// Consumes stamina.
     /// </summary>
     /// <param name="amount">The amount</param>
-    /// <param name="noRegen">If regen shouldn't be started</param>
+    /// <summary>
+    /// Reduces the player's stamina by the specified amount and broadcasts the updated value to the field.
+    /// </summary>
+    /// <param name="amount">The amount of stamina to consume.</param>
+    /// <param name="noRegen">If true, prevents stamina regeneration from starting after consumption.</param>
     public void ConsumeStamina(int amount, bool noRegen = false) {
         if (amount <= 0) {
             return;
@@ -510,6 +532,9 @@ public class FieldPlayer : Actor<Player> {
         Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Stamina));
     }
 
+    /// <summary>
+    /// Ensures that health, spirit, and stamina regeneration tracking is active if the player's current values are below their maximum.
+    /// </summary>
     public void CheckRegen() {
         // Health
         var health = Stats.Values[BasicAttribute.Health];
@@ -550,6 +575,10 @@ public class FieldPlayer : Actor<Player> {
         Session.Send(PortalPacket.MoveByPortal(this, portal.Position, portal.Rotation));
     }
 
+    /// <summary>
+    /// Applies fall damage to the player based on the distance fallen, reducing health and broadcasting updates.
+    /// </summary>
+    /// <param name="distance">The distance the player has fallen.</param>
     public void FallDamage(float distance) {
         double distanceScalingFactor = 0.04813;      // base distance scaling factor
         double hpRatioExponent = 1.087;        // HP ratio exponent for diminishing returns
@@ -575,6 +604,11 @@ public class FieldPlayer : Actor<Player> {
         }
     }
 
+    /// <summary>
+    /// Consumes the required resources for casting a skill, including mesos, spirit, stamina, health percentage, and items, applying any relevant buffs or reductions.
+    /// </summary>
+    /// <param name="record">The skill record containing metadata and item usage information.</param>
+    /// <returns>True if all required resources are successfully consumed; otherwise, false.</returns>
     public override bool SkillCastConsume(SkillRecord record) {
         if (!base.SkillCastConsume(record)) {
             return false;

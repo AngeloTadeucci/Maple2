@@ -1,4 +1,4 @@
-﻿using Maple2.Database.Extensions;
+using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
 using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
@@ -59,6 +59,9 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
     }
 
+    /// <summary>
+    /// Configures the Entity Framework Core mapping for the AdditionalEffectMetadata entity, including table name, composite primary key, and JSON conversion for complex properties.
+    /// </summary>
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
         builder.ToTable("additional-effect");
         builder.HasKey(effect => new { effect.Id, effect.Level });

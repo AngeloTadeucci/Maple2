@@ -1,4 +1,4 @@
-﻿using Maple2.File.IO;
+using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.AdditionalEffect;
 using Maple2.Model.Enum;
@@ -16,6 +16,10 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         parser = new AdditionalEffectParser(xmlReader);
     }
 
+    /// <summary>
+    /// Maps parsed additional effect data into strongly typed <see cref="AdditionalEffectMetadata"/> objects.
+    /// </summary>
+    /// <returns>An enumerable of <see cref="AdditionalEffectMetadata"/> representing all parsed additional effects.</returns>
     protected override IEnumerable<AdditionalEffectMetadata> Map() {
         foreach ((int id, IList<AdditionalEffectData> datas) in parser.Parse()) {
             foreach (AdditionalEffectData data in datas) {
@@ -231,6 +235,11 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             NotKill: dotDamage.notKill);
     }
 
+    /// <summary>
+    /// Converts a <see cref="DotBuffProperty"/> to a <see cref="AdditionalEffectMetadataDot.DotBuff"/> if the buff ID is positive; otherwise returns null.
+    /// </summary>
+    /// <param name="dotBuff">The DOT buff property to convert.</param>
+    /// <returns>A <see cref="AdditionalEffectMetadataDot.DotBuff"/> instance if valid; otherwise, null.</returns>
     private static AdditionalEffectMetadataDot.DotBuff? Convert(DotBuffProperty? dotBuff) {
         if (dotBuff is not { buffID: > 0 }) {
             return null;
@@ -239,6 +248,11 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         return new AdditionalEffectMetadataDot.DotBuff(Target: (SkillTargetType) dotBuff.target, Id: dotBuff.buffID, Level: dotBuff.buffLevel);
     }
 
+    /// <summary>
+    /// Converts a <see cref="ShieldProperty"/> to an <see cref="AdditionalEffectMetadataShield"/> if shield values are positive; otherwise returns null.
+    /// </summary>
+    /// <param name="shield">The shield property to convert.</param>
+    /// <returns>An <see cref="AdditionalEffectMetadataShield"/> if applicable; otherwise, null.</returns>
     private static AdditionalEffectMetadataShield? Convert(ShieldProperty shield) {
         if (shield is { hpValue: <= 0, hpByTargetMaxHP: <= 0 }) {
             return null;

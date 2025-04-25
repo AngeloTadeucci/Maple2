@@ -1,4 +1,4 @@
-﻿using Maple2.Database.Storage;
+using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -30,6 +30,9 @@ public class SkillManager {
         session.Send(SkillBookPacket.Load(SkillBook));
     }
 
+    /// <summary>
+    /// Applies all passive skill effects that target the player, updating active buffs based on the player's learned passive skills.
+    /// </summary>
     public void UpdatePassiveBuffs(bool notifyField = true) {
         // TODO: Only remove buffs that have been unlearned.
         /*foreach (Buff buff in session.Player.Buffs.Buffs.Values) {

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
@@ -24,6 +24,12 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
 
     private readonly ILogger logger = Log.ForContext<FieldSkill>();
 
+    /// <summary>
+    /// Initializes a new field skill with indefinite activations, setting its caster, effect area, and activation interval.
+    /// </summary>
+    /// <param name="caster">The actor who casts the skill.</param>
+    /// <param name="interval">The number of field ticks between each skill activation.</param>
+    /// <param name="points">The 3D points defining the skill's area of effect.</param>
     public FieldSkill(FieldManager field, int objectId, IActor caster,
                       SkillMetadata value, int interval, params Vector3[] points) : base(field, objectId, value) {
         Caster = caster;
@@ -33,6 +39,15 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         NextTick = Field.FieldTick + interval;
     }
 
+    /// <summary>
+    /// Initializes a field skill entity with a specified number of activations and splash effect parameters.
+    /// </summary>
+    /// <param name="objectId">Unique identifier for the skill entity.</param>
+    /// <param name="caster">The actor who cast the skill.</param>
+    /// <param name="value">Metadata describing the skill's properties and behavior.</param>
+    /// <param name="fireCount">Number of times the skill effect will trigger.</param>
+    /// <param name="splash">Splash effect metadata controlling timing, activation, and area properties.</param>
+    /// <param name="points">Points defining the area of effect for the skill.</param>
     public FieldSkill(FieldManager field, int objectId, IActor caster,
                       SkillMetadata value, int fireCount, SkillEffectMetadataSplash splash, params Vector3[] points) : base(field, objectId, value) {
         Caster = caster;
@@ -55,6 +70,10 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         }
     }
 
+    /// <summary>
+    /// Processes the skill's activation and effect logic for the current game tick, including target acquisition, damage application, effect propagation, and lifecycle management.
+    /// </summary>
+    /// <param name="tickCount">The current field tick count.</param>
     public override void Update(long tickCount) {
         if (!Enabled) {
             Field.RemoveSkill(ObjectId);
@@ -207,6 +226,11 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         }
     }
 
+    /// <summary>
+    /// Applies the skill effects defined in the attack to the specified targets using the caster as the source.
+    /// </summary>
+    /// <param name="attack">The attack metadata containing the skill effects to apply.</param>
+    /// <param name="targets">The actors to which the effects will be applied.</param>
     private void ApplyEffect(SkillMetadataAttack attack, params IActor[] targets) {
         Caster.ApplyEffects(attack.Skills, Caster, Caster, skillId: Value.Id, targets: targets);
     }

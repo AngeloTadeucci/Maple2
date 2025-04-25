@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Numerics;
 using Maple2.Model.Metadata;
 
@@ -34,6 +34,12 @@ public class SkillRecord {
 
     public ConcurrentDictionary<int, IActor> Targets;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SkillRecord"/> class for a specific skill cast by an actor.
+    /// </summary>
+    /// <param name="metadata">The metadata describing the skill.</param>
+    /// <param name="castUid">A unique identifier for this skill cast instance.</param>
+    /// <param name="caster">The actor who is casting the skill.</param>
     public SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {
         Metadata = metadata;
         CastUid = castUid;
@@ -41,6 +47,11 @@ public class SkillRecord {
         Targets = [];
     }
 
+    /// <summary>
+    /// Attempts to set the current motion point index for the skill if the specified value is within the valid range.
+    /// </summary>
+    /// <param name="motionPoint">The motion point index to set.</param>
+    /// <returns>True if the motion point was set successfully; otherwise, false.</returns>
     public bool TrySetMotionPoint(byte motionPoint) {
         if (Metadata.Data.Motions.Length <= motionPoint) {
             return false;

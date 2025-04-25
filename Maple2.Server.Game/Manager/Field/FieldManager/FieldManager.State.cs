@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -437,6 +437,10 @@ public partial class FieldManager {
         }
     }
 
+    /// <summary>
+    /// Adds splash skill effects from a skill record, calculating effect positions based on cube magic paths if applicable.
+    /// </summary>
+    /// <param name="record">The skill record containing caster, position, rotation, and attack metadata.</param>
     public void AddSkill(SkillRecord record) {
         SkillMetadataAttack attack = record.Attack;
         if (!TableMetadata.MagicPathTable.Entries.TryGetValue(attack.CubeMagicPathId, out IReadOnlyList<MagicPath>? cubeMagicPaths)) {
@@ -474,6 +478,14 @@ public partial class FieldManager {
         }
     }
 
+    /// <summary>
+    /// Returns a filtered collection of actors within the specified prisms, based on the target type and limit.
+    /// </summary>
+    /// <param name="prisms">The prisms used to filter actors by location or area.</param>
+    /// <param name="targetType">The type of targets to select (e.g., friendly players, hostile mobs, or hungry mobs).</param>
+    /// <param name="limit">The maximum number of actors to return.</param>
+    /// <param name="ignore">An optional collection of actors to exclude from the results.</param>
+    /// <returns>An enumerable of actors matching the criteria, or an empty collection if the target type is unhandled.</returns>
     public IEnumerable<IActor> GetTargets(Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
         switch (targetType) {
             case ApplyTargetType.Friendly:

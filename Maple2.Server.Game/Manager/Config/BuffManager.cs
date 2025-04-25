@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -61,6 +61,9 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    /// <summary>
+    /// Applies entrance buffs and refreshes premium club buffs for the actor when entering a field.
+    /// </summary>
     public void LoadFieldBuffs() {
         // Lapenshards
         // Game Events
@@ -71,6 +74,18 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    /// <summary>
+    /// Adds a buff to the specified owner, handling stacking, duration, cooldowns, group conflicts, and effect application.
+    /// </summary>
+    /// <param name="caster">The actor applying the buff.</param>
+    /// <param name="owner">The actor receiving the buff.</param>
+    /// <param name="id">The buff's skill or effect ID.</param>
+    /// <param name="level">The level of the buff.</param>
+    /// <param name="startTick">The tick count when the buff starts.</param>
+    /// <param name="stacks">The number of stacks to apply (clamped to the buff's maximum).</param>
+    /// <param name="durationMs">The duration of the buff in milliseconds. If negative, uses the default duration.</param>
+    /// <param name="notifyField">Whether to broadcast the buff addition to the field.</param>
+    /// <param name="type">The event condition type triggering the buff application.</param>
     public void AddBuff(IActor caster, IActor owner, int id, short level, long startTick, int stacks = 0, int durationMs = -1, bool notifyField = true, EventConditionType type = EventConditionType.Activate) {
         if (!owner.Field.SkillMetadata.TryGetEffect(id, level, out AdditionalEffectMetadata? additionalEffect)) {
             logger.Error("Invalid buff: {SkillId},{Level}", id, level);
@@ -310,6 +325,11 @@ public class BuffManager : IUpdatable {
             nestedCompulsionDic.Values.Where(compulsion => compulsion.SkillIds.Contains(skillId)).Sum(compulsion => compulsion.Rate);
     }
 
+    /// <summary>
+    /// Returns the resistance value for the specified attribute, or 0 if not present.
+    /// </summary>
+    /// <param name="attribute">The attribute for which to retrieve resistance.</param>
+    /// <returns>The resistance value for the given attribute, or 0 if none is set.</returns>
     public float GetResistance(BasicAttribute attribute) {
         if (Resistances.TryGetValue(attribute, out float value)) {
             return value;
@@ -318,6 +338,13 @@ public class BuffManager : IUpdatable {
         return 0;
     }
 
+    /// <summary>
+    /// Calculates the total invoke value and rate for a specified invoke effect type, filtered by skill ID or skill group.
+    /// </summary>
+    /// <param name="invokeType">The type of invoke effect to aggregate.</param>
+    /// <param name="skillId">The skill ID to match against invoke effects.</param>
+    /// <param name="skillGroup">Optional skill group IDs to match against invoke effects.</param>
+    /// <returns>A tuple containing the total invoke value (as an integer) and the total invoke rate (as a float).</returns>
     public (int, float) GetInvokeValues(InvokeEffectType invokeType, int skillId, params int[] skillGroup) {
         if (!Invokes.TryGetValue(invokeType, out var nestedInvokeDic))
             return (0, 0f);
@@ -335,6 +362,9 @@ public class BuffManager : IUpdatable {
         return ((int) value, rate);
     }
 
+    /// <summary>
+    /// Sets the shield health for a buff based on its metadata, using either a fixed value or a percentage of the actor's maximum health.
+    /// </summary>
     private void SetShield(Buff buff) {
         if (buff.Metadata.Shield == null) {
             return;
@@ -369,6 +399,9 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    /// <summary>
+    /// Applies update effects from the buff, including canceling specified buffs and resetting skill cooldowns for the actor.
+    /// </summary>
     private void SetUpdates(Buff buff) {
         if (buff.Metadata.Update.Cancel != null) {
             CancelBuffs(buff, buff.Metadata.Update.Cancel);
@@ -381,6 +414,15 @@ public class BuffManager : IUpdatable {
             }
         }
     }
+    /// <summary>
+    /// Triggers an event for all enabled buffs, causing the owner to apply each buff's effects for the specified event type.
+    /// </summary>
+    /// <param name="caster">The actor who initiated the event.</param>
+    /// <param name="owner">The actor who owns the buffs.</param>
+    /// <param name="target">The target actor affected by the event.</param>
+    /// <param name="type">The event condition type that determines which effects to apply.</param>
+    /// <param name="skillId">Optional skill ID associated with the event.</param>
+    /// <param name="buffId">Optional buff ID associated with the event.</param>
     public void TriggerEvent(IActor caster, IActor owner, IActor target, EventConditionType type, int skillId = 0, int buffId = 0) {
         foreach (Buff buff in EnumerateBuffs()) {
             if (!buff.Enabled) {
@@ -520,6 +562,12 @@ public class BuffManager : IUpdatable {
         }
     }
 
+    /// <summary>
+    /// Removes all buffs with the specified ID and caster ID from the actor, updates resistances, handles related effects, and refreshes stats if necessary.
+    /// </summary>
+    /// <param name="id">The buff ID to remove.</param>
+    /// <param name="casterId">The object ID of the caster whose buffs should be removed.</param>
+    /// <returns>True if the removal process completes.</returns>
     public bool Remove(int id, int casterId) {
         //TODO: Check if buff is removable/should be removed
         bool refreshStats = false;

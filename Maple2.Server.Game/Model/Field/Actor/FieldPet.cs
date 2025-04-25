@@ -1,4 +1,4 @@
-﻿using DotRecast.Detour.Crowd;
+using DotRecast.Detour.Crowd;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -56,6 +56,12 @@ public sealed class FieldPet : FieldNpc {
         }
     }
 
+    /// <summary>
+    /// Applies taming-related damage to the pet based on the attack, handling taming progress, trap effects, and item drops upon successful taming or forced taming.
+    /// </summary>
+    /// <param name="caster">The actor attempting to tame or damage the pet.</param>
+    /// <param name="damage">The damage record to update with the result of the attack.</param>
+    /// <param name="attack">The attack metadata, which must include pet taming data.</param>
     public override void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) {
         if (attack.Pet == null) {
             return;
@@ -86,7 +92,11 @@ public sealed class FieldPet : FieldNpc {
         damage.Targets.TryAdd(ObjectId, targetRecord);
     }
 
-    protected override void Remove(int delay) => Field.RemovePet(ObjectId, delay);
+    /// <summary>
+/// Removes the pet from the field after the specified delay.
+/// </summary>
+/// <param name="delay">The delay in milliseconds before removal.</param>
+protected override void Remove(int delay) => Field.RemovePet(ObjectId, delay);
 
     public void UpdateSkin(int skinId) {
         SkinId = skinId > 0 ? skinId : Value.Id;

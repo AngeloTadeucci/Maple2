@@ -1,4 +1,4 @@
-﻿using Maple2.Model.Enum;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -38,6 +38,9 @@ public class InteractObjectHandler : PacketHandler<GameSession> {
         }
     }
 
+    /// <summary>
+    /// Handles the completion of an object interaction by processing rewards, triggering events, and applying effects based on the interactable object's type and properties.
+    /// </summary>
     private void HandleEnd(GameSession session, IByteReader packet) {
         string entityId = packet.ReadString();
 

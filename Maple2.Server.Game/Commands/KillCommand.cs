@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Numerics;
@@ -141,6 +141,12 @@ public class KillCommand : GameCommand {
         }
     }
 
+    /// <summary>
+    /// Instantly kills the specified NPC by applying damage equal to its current health and broadcasts the resulting updates to the field.
+    /// </summary>
+    /// <param name="session">The game session performing the kill action.</param>
+    /// <param name="npc">The NPC to be killed.</param>
+    /// <param name="skill">The skill metadata used to generate the damage record.</param>
     private static void Kill(GameSession session, FieldNpc npc, SkillMetadata skill) {
         var damageRecord = new DamageRecord(skill, skill.Data.Motions[0].Attacks[0]) {
             CasterId = session.Player.ObjectId,

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.Skill;
@@ -14,6 +14,10 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
         parser = new SkillParser(xmlReader);
     }
 
+    /// <summary>
+    /// Maps parsed skill XML data into structured <see cref="StoredSkillMetadata"/> objects, transforming raw skill definitions into strongly typed metadata for further processing.
+    /// </summary>
+    /// <returns>An enumerable sequence of <see cref="StoredSkillMetadata"/> representing all valid skills parsed from the source data.</returns>
     protected override IEnumerable<StoredSkillMetadata> Map() {
         foreach ((int id, string name, SkillData data) in parser.Parse()) {
             if (data.basic == null) continue; // Old_JobChange_01
@@ -133,6 +137,11 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
         }
     }
 
+    /// <summary>
+    /// Converts a <see cref="RegionSkill"/> object into a <see cref="SkillMetadataRange"/>, mapping region type strings to <see cref="SkillRegion"/> values and transferring relevant range properties.
+    /// </summary>
+    /// <param name="region">The region skill data to convert.</param>
+    /// <returns>A <see cref="SkillMetadataRange"/> representing the region's metadata.</returns>
     private static SkillMetadataRange Convert(RegionSkill region) {
         return new SkillMetadataRange(
             Type: region.rangeType switch {

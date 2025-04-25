@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -71,6 +71,12 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
     }
 
+    /// <summary>
+    /// Processes a skill use request from the client, validating the skill, consuming resources, updating player state, and broadcasting the skill activation to the field.
+    /// </summary>
+    /// <remarks>
+    /// If the player is holding a LiftupWeapon skill, only that skill can be used until released. The method validates the skill and motion point, attempts to play the skill animation, consumes required resources, and applies skill effects. It updates the player's battle state, adds the skill to active skills, broadcasts relevant packets, and saves the skill cooldown.
+    /// </remarks>
     private void HandleUse(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         int serverTick = packet.ReadInt();
@@ -144,6 +150,12 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Config.SaveSkillCooldown(metadata, startTick);
     }
 
+    /// <summary>
+    /// Processes a point-based skill attack, updating the skill record and broadcasting damage to targets in the field.
+    /// </summary>
+    /// <param name="packet">
+    /// The packet containing the skill UID, attack point, position, direction, target information, and iteration data.
+    /// </param>
     private void HandlePoint(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
@@ -195,6 +207,12 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
     }
 
+    /// <summary>
+    /// Processes a skill attack targeting specific entities, validating targets and attack points, and dispatching the attack based on the skill's target type.
+    /// </summary>
+    /// <param name="packet">
+    /// The packet containing skill UID, target information, impact positions, direction, attack point, and target IDs.
+    /// </param>
     private void HandleTarget(GameSession session, IByteReader packet) {
         if (session.Field == null) {
             return;
@@ -264,6 +282,9 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Player.TargetAttack(record);
     }
 
+    /// <summary>
+    /// Handles a splash (area-of-effect) skill attack by validating the skill and attack point, reading position and rotation, and registering the skill in the field.
+    /// </summary>
     private void HandleSplash(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
@@ -298,6 +319,9 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Field?.AddSkill(record);
     }
 
+    /// <summary>
+    /// Synchronizes the state of an active skill with the client, updating its motion point, position, direction, and animation sequence.
+    /// </summary>
     private void HandleSync(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
@@ -346,6 +370,9 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, record.Metadata);
     }
 
+    /// <summary>
+    /// Synchronizes the server tick for an active skill and ensures the player's animation sequence matches the skill's motion.
+    /// </summary>
     private void HandleTickSync(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
@@ -371,6 +398,9 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Player.Animation.SetLoopSequence(true, true);
     }
 
+    /// <summary>
+    /// Cancels an active skill for the player and broadcasts the cancellation to the field.
+    /// </summary>
     private void HandleCancel(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);

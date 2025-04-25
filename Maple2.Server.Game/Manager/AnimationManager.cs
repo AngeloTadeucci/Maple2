@@ -1,4 +1,4 @@
-﻿using Maple2.Model.Enum;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
@@ -199,7 +199,10 @@ public class AnimationManager {
     /// <summary>
     /// Updates the animation state based on the current tick count.
     /// </summary>
-    /// <param name="tickCount">The current server tick count</param>
+    /// <summary>
+    /// Updates the animation state for the actor based on the current server tick, processing keyframe events, handling looping, and resetting sequences as needed.
+    /// </summary>
+    /// <param name="tickCount">The current server tick count.</param>
     public void Update(long tickCount) {
         // Skip update if no animation metadata is available
         if (RigMetadata is null) {
@@ -349,7 +352,12 @@ public class AnimationManager {
     /// </summary>
     /// <param name="sequenceTime">The current sequence time</param>
     /// <param name="key">The keyframe that was hit</param>
-    /// <param name="speed">The current animation speed</param>
+    /// <summary>
+    /// Handles a keyframe event during an animation sequence, triggering actor callbacks and updating loop or end timing based on the keyframe type.
+    /// </summary>
+    /// <param name="sequenceTime">The current normalized time within the animation sequence.</param>
+    /// <param name="key">The animation keyframe being processed.</param>
+    /// <param name="speed">The current animation speed.</param>
     private void HitKeyframe(float sequenceTime, AnimationKey key, float speed) {
         isHandlingKeyframe = true;
 

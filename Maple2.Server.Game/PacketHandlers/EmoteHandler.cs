@@ -1,4 +1,4 @@
-﻿using Maple2.Model;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -55,6 +55,9 @@ public class EmoteHandler : PacketHandler<GameSession> {
         session.Send(EmotePacket.Learn(new Emote(emoteId)));
     }
 
+    /// <summary>
+    /// Processes a request to use an emote, updating the player's condition and triggering related buff events if the emote is unlocked.
+    /// </summary>
     private void HandleUse(GameSession session, IByteReader packet) {
         int emoteId = packet.ReadInt();
         string aniKey = packet.ReadUnicodeString();

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
@@ -39,6 +39,16 @@ public class Buff : IUpdatable, IByteSerializable {
 
     private readonly ILogger logger = Log.ForContext<Buff>();
 
+    /// <summary>
+    /// Initializes a new Buff instance with specified metadata, actors, timing, and initial stack count.
+    /// </summary>
+    /// <param name="metadata">The metadata describing the buff's properties and behavior.</param>
+    /// <param name="objectId">The unique identifier for this buff instance.</param>
+    /// <param name="caster">The actor who applied the buff.</param>
+    /// <param name="owner">The actor receiving the buff.</param>
+    /// <param name="startTick">The game tick when the buff starts.</param>
+    /// <param name="endTick">The game tick when the buff ends.</param>
+    /// <param name="stacks">The initial number of stacks for the buff.</param>
     public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, long endTick, int stacks) {
         Metadata = metadata;
         ObjectId = objectId;
@@ -68,6 +78,11 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
+    /// <summary>
+    /// Updates the buff's end tick if the provided value differs from the current end tick.
+    /// </summary>
+    /// <param name="endTick">The new end tick value to set.</param>
+    /// <returns>True if the end tick was updated; otherwise, false.</returns>
     public bool UpdateEndTime(long endTick) {
         if (endTick == EndTick) {
             return false;
@@ -76,6 +91,12 @@ public class Buff : IUpdatable, IByteSerializable {
         return true;
     }
 
+    /// <summary>
+    /// Adjusts the buff's stack count by the specified amount, within allowed limits.
+    /// </summary>
+    /// <param name="amount">The number of stacks to add (positive) or remove (negative). No change occurs if zero.</param>
+    /// <param name="silent">If true, suppresses the event when maximum stacks are reached.</param>
+    /// <returns>True if the stack count changed; otherwise, false.</returns>
     public bool Stack(int amount = 1, bool silent = false) {
         if (amount == 0) {
             return false;
@@ -103,6 +124,10 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
+    /// <summary>
+    /// Updates the buff's state based on the current tick, handling activation, distance-based removal, expiration, enabled state, and periodic effect procs.
+    /// </summary>
+    /// <param name="tickCount">The current game tick count.</param>
     public virtual void Update(long tickCount) {
         if (!activated) {
             if (Metadata.Update.Cancel != null) {
@@ -162,6 +187,9 @@ public class Buff : IUpdatable, IByteSerializable {
     }
     public void Enable() => Enabled = true;
 
+    /// <summary>
+    /// Executes the periodic effects of the buff, including recovery, damage, buff application, cancellation, duration modification, skill effects, and splash effects. Updates the next scheduled proc tick and disables further procs if the buff has expired.
+    /// </summary>
     private void Proc() {
         ProcCount++;
 
@@ -179,6 +207,9 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
+    /// <summary>
+    /// Applies splash skill effects from the buff's metadata to the owner's current position in the field.
+    /// </summary>
     private void ApplySplash() {
         foreach (SkillEffectMetadata effect in Metadata.Skills) {
             if (effect.Splash != null) {
@@ -247,6 +278,9 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
+    /// <summary>
+    /// Applies a damage-over-time (DoT) buff to either the owner or caster, based on the buff's target configuration.
+    /// </summary>
     private void ApplyDotBuff() {
         if (Metadata.Dot.Buff == null) {
             return;
