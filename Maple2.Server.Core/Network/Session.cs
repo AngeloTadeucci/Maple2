@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -46,6 +47,8 @@ public abstract class Session : IDisposable {
     private readonly Thread thread;
     private readonly QueuedPipeScheduler pipeScheduler;
     private readonly Pipe recvPipe;
+
+    private readonly ConcurrentDictionary<SendOp, byte[]> lastSentPackets = [];
 
     protected abstract PatchType Type { get; }
     protected readonly ILogger Logger = Log.Logger.ForContext<Session>();
@@ -221,15 +224,22 @@ public abstract class Session : IDisposable {
 
 
     /*
-        * Send packet to client
-        * packet: packet to send
-        * length: length of packet that only includes data
-    */
+     * Send packet to client
+     * packet: packet to send
+     * length: length of packet that only includes data
+     */
     private void SendInternal(byte[] packet, int length) {
         if (disposed) return;
 #if DEBUG
         LogSend(packet, length);
 #endif
+        // Track last sent packet by opcode
+        if (length >= 2) {
+            var op = (SendOp) (packet[1] << 8 | packet[0]);
+            // Store a copy to avoid mutation issues
+            lastSentPackets[op] = packet.Take(length).ToArray();
+        }
+
         lock (sendCipher) {
             using PoolByteWriter encryptedPacket = sendCipher.Encrypt(packet, 0, length);
             SendRaw(encryptedPacket);
@@ -246,6 +256,11 @@ public abstract class Session : IDisposable {
         }
     }
 
+    public byte[]? GetLastSentPacket(SendOp op) {
+        lastSentPackets.TryGetValue(op, out byte[]? packet);
+        return packet;
+    }
+
     private void CloseClient() {
         // Must close socket before network stream to prevent lingering
         client.Client?.Close();
@@ -260,6 +275,7 @@ public abstract class Session : IDisposable {
             case SendOp.NpcControl:
             case SendOp.ProxyGameObj:
             case SendOp.ResponseTimeSync:
+            case SendOp.Stat:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
