@@ -414,7 +414,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 Id: id,
                 ConsumeItem: new ItemComponent(
                     ItemId: bonusGame.consumeItemID,
-                    Rarity: -1,
+                    Rarity: 1,
                     Amount: bonusGame.consumeItemCount,
                     Tag: ItemTag.None),
                 Slots: slots.ToArray()));
@@ -779,6 +779,12 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             DateTime startTime = DateTime.TryParseExact(data.eventStart, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out startTime) ? startTime : DateTime.MinValue;
             DateTime endTime = DateTime.TryParseExact(data.eventEnd, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out endTime) ? endTime : DateTime.MinValue;
+
+            // Only add events that are not expired
+            if (endTime < DateTime.UtcNow) {
+                continue;
+            }
+
             (TimeSpan partTimeStart, TimeSpan partTimeEnd) = ParsePartTime(data.partTime);
             results.Add(id, new GameEventMetadata(
                 Id: id,
@@ -865,7 +871,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                             RoundCount: round,
                             Item: new ItemComponent(
                                 ItemId: itemId,
-                                Rarity: -1,
+                                Rarity: 1,
                                 Amount: itemCount,
                                 Tag: ItemTag.None)));
                     }

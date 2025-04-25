@@ -90,17 +90,23 @@ public class GameEvent : IByteSerializable {
                 writer.WriteLong(EndTime);
                 writer.WriteUnicodeString(attendGift.Name);
                 writer.WriteString(attendGift.Link);
+                writer.WriteByte();
                 writer.WriteBool(true); // disable claim button
                 writer.WriteInt(attendGift.RequiredPlaySeconds);
                 writer.WriteByte();
                 writer.WriteInt();
+
                 var currencyType = AttendGiftCurrencyType.None;
                 writer.Write<AttendGiftCurrencyType>(currencyType);
-
                 if (currencyType != AttendGiftCurrencyType.None) {
                     writer.WriteInt(); // Skip Days Allowed
                     writer.WriteLong(); // Skip Day Cost
                     writer.WriteInt();
+                }
+
+                writer.WriteInt(attendGift.Items.Length);
+                foreach (RewardItem item in attendGift.Items) {
+                    writer.Write<RewardItem>(item);
                 }
                 break;
             case MeretMarketNotice notice:
