@@ -26,6 +26,7 @@ public record SkillMetadataProperty(
     RangeType RangeType,
     AttackType AttackType,
     Element Element,
+    ActorState State,
     bool ContinueSkill,
     bool SpRecoverySkill,
     bool ImmediateActive,
@@ -111,7 +112,8 @@ public record SkillMetadataAttack(
     SkillMetadataRange Range,
     SkillMetadataArrow Arrow,
     SkillMetadataDamage Damage,
-    SkillEffectMetadata[] Skills);
+    SkillEffectMetadata[] Skills,
+    SkillEffectMetadata[] SkillsOnDamage);
 
 public record SkillMetadataPet(
     int TamingGroup,
@@ -128,15 +130,15 @@ public record SkillMetadataRange(
     float RotateZDegree,
     Vector3 RangeAdd,
     Vector3 RangeOffset,
-    SkillEntity IncludeCaster, // 0,1,2
-    SkillEntity ApplyTarget, // 0,1,2,3,5,6,7,8
-    SkillEntity CastTarget); // 0,1,2,3,4,5,7
+    SkillTargetType IncludeCaster, // 0,1,2
+    ApplyTargetType ApplyTarget, // 0,1,2,3,5,6,7,8
+    SkillTargetType CastTarget); // 0,1,2,3,4,5,7
 
 public record SkillMetadataArrow(
     bool Overlap,
     bool Explosion,
     bool RayPhysXTest,
-    SkillEntity NonTarget,
+    SkillTargetType NonTarget,
     int BounceType, // 2: chain, 3: pierce
     int BounceCount,
     float BounceRadius,

@@ -62,9 +62,9 @@ public enum BuffResetCondition {
 }
 
 public enum BuffDotCondition {
-    Instant = 0,
-    Delayed = 1,
-    Unknown = 2,
+    Default = 0, // Maybe activate on enable?
+    OnInterval = 1,
+    Stack = 2,
 }
 
 [Flags]
@@ -80,14 +80,14 @@ public enum InvokeEffectType : byte {
     IncreaseEffectDuration = 3,
     IncreaseDotDamage = 5,
     // 20 (90050324)
-    // 21 (90050324)
+    // 21 (90050324) // Triggered from 10200081 (Adrenaline Rush)
     IncreaseEvasionDebuff = 23,
     IncreaseCritEvasionDebuff = 26,
-    // 34 (90050853)
-    // 35 (90050854)
-    // 38 (90050806)
-    // 40 (90050827)
-    ReduceSpiritCost = 56, // flame wave 0 spirit cost? value=0, rate=2 on 10300250. subtract rate from cost (10500201, rate=20%)
-    // 57 (90050351)
+    // 34 (90050853) // Adds 9% weapon attack to the triggered effect of Explosive Panic or Explosive Fervor cannons.
+    // 35 (90050854) // Triggered from 90050852 - Increases weapon attack by 4.5% when still for at least 1.5 sec."
+    // 38 (90050806) // Adds 2% physical damage to the triggered effect of the Barbaric Extreme Longsword.
+    // 40 (90050827) // Adds 5.2% magic damage to the triggered effect of the Holy Extreme Scepter.
+    ReduceSpiritCost = 56,
+    // 57 (90050351) // Triggered from 10500061 (Sharp Eyes) -
     IncreaseHealing = 58,
 }

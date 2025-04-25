@@ -347,7 +347,6 @@ public sealed partial class GameSession : Core.Network.Session {
         GuideObject = null;
         HeldCube = null;
         HeldLiftup = null;
-        ActiveSkills.Clear();
         NpcScript = null;
         MiniGameRecord = null;
 

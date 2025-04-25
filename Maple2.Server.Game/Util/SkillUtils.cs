@@ -28,9 +28,14 @@ public static class SkillUtils {
     }
 
     public static IEnumerable<T> Filter<T>(this Prism prism, IEnumerable<T> entities, int limit = 10) where T : IActor {
+        HashSet<int> addedActorObjectIds = [];
         foreach (T entity in entities) {
             if (limit <= 0) {
                 yield break;
+            }
+
+            if (addedActorObjectIds.Contains(entity.ObjectId)) {
+                continue;
             }
 
             if (entity.IsDead) {
@@ -39,6 +44,7 @@ public static class SkillUtils {
 
             IPrism shape = entity.Shape;
             if (prism.Intersects(shape)) {
+                addedActorObjectIds.Add(entity.ObjectId);
                 limit--;
                 yield return entity;
             }
@@ -46,9 +52,14 @@ public static class SkillUtils {
     }
 
     public static IEnumerable<T> Filter<T>(this Prism[] prisms, IEnumerable<T> entities, int limit = 10, ICollection<IActor>? ignore = null) where T : IActor {
+        HashSet<int> addedActorObjectIds = [];
         foreach (T entity in entities) {
             if (limit <= 0) {
                 yield break;
+            }
+
+            if (addedActorObjectIds.Contains(entity.ObjectId)) {
+                continue;
             }
 
             if (entity.IsDead) {
@@ -62,6 +73,7 @@ public static class SkillUtils {
             foreach (Prism prism in prisms) {
                 if (prism.Intersects(shape)) {
                     limit--;
+                    addedActorObjectIds.Add(entity.ObjectId);
                     yield return entity;
                 }
             }
@@ -82,7 +94,7 @@ public static class SkillUtils {
             if (condition.OnlyFlyableMap && !caster.Field.Metadata.Property.CanFly) {
                 return false;
             }
-            if (condition.OnlySurvival && !(caster.Field.Metadata.Property.Type is MapType.SurvivalTeam or MapType.SurvivalSolo)) {
+            if (!condition.AllowOnSurvival && (caster.Field.Metadata.Property.Type is MapType.SurvivalTeam or MapType.SurvivalSolo)) {
                 return false;
             }
             if (player.Value.Character.Level < condition.Level) {
@@ -160,17 +172,21 @@ public static class SkillUtils {
                     continue;
                 }
 
-                bool compareResult = compare switch {
-                    CompareType.Equals => buff.Stacks == count,
-                    CompareType.Less => buff.Stacks < count,
-                    CompareType.LessEquals => buff.Stacks <= count,
-                    CompareType.Greater => buff.Stacks > count,
-                    CompareType.GreaterEquals => buff.Stacks >= count,
-                    _ => true,
-                };
-                if (!compareResult) {
-                    continue;
+                if (count > 0) {
+                    bool compareResult = compare switch {
+                        CompareType.Equals => buff.Stacks == count,
+                        CompareType.Less => buff.Stacks < count,
+                        CompareType.LessEquals => buff.Stacks <= count,
+                        CompareType.Greater => buff.Stacks > count,
+                        CompareType.GreaterEquals => buff.Stacks >= count,
+                        _ => true,
+                    };
+
+                    if (!compareResult) {
+                        continue;
+                    }
                 }
+
                 validBuff = true;
                 break;
             }

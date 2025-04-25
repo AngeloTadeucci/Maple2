@@ -5,6 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
+using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Collision;
@@ -26,7 +27,7 @@ public class FieldPlayer : Actor<Player> {
             if (state == value) return;
             state = value;
             Flag |= PlayerObjectFlag.State;
-            stateSyncTimeTracking = 0; // Reset time tracking on state change
+            StateSyncTimeTracking = 0; // Reset time tracking on state change
         }
     }
     private bool isDead;
@@ -59,8 +60,8 @@ public class FieldPlayer : Actor<Player> {
     private readonly Dictionary<BasicAttribute, long> lastRegenTime;
 
     private readonly Dictionary<ActorState, float> stateSyncDistanceTracking;
-    private long stateSyncTimeTracking { get; set; }
-    private long stateSyncTrackingTick { get; set; }
+    private long StateSyncTimeTracking { get; set; }
+    private long StateSyncTrackingTick { get; set; }
 
     public Tombstone? Tombstone { get; set; }
     public DeathState DeathState {
@@ -99,8 +100,8 @@ public class FieldPlayer : Actor<Player> {
         lastRegenTime = new Dictionary<BasicAttribute, long>();
 
         stateSyncDistanceTracking = new Dictionary<ActorState, float>();
-        stateSyncTimeTracking = 0;
-        stateSyncTrackingTick = Environment.TickCount64;
+        StateSyncTimeTracking = 0;
+        StateSyncTrackingTick = Environment.TickCount64;
 
         scheduler = new EventQueue();
         scheduler.Start();
@@ -156,7 +157,7 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        if (InBattle && tickCount - battleTick > 2000) {
+        if (InBattle && tickCount - battleTick > Constant.UserBattleDurationTick) {
             InBattle = false;
         }
 
@@ -206,8 +207,8 @@ public class FieldPlayer : Actor<Player> {
         }
 
         float syncDistance = Vector3.Distance(Position, stateSync.Position); // distance between old player position and new state sync position
-        long syncTick = Field.FieldTick - stateSyncTrackingTick; // time elapsed since last state sync
-        stateSyncTrackingTick = Field.FieldTick;
+        long syncTick = Field.FieldTick - StateSyncTrackingTick; // time elapsed since last state sync
+        StateSyncTrackingTick = Field.FieldTick;
 
         Position = stateSync.Position;
         Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
@@ -235,9 +236,9 @@ public class FieldPlayer : Actor<Player> {
         }
 
         bool UpdateStateSyncTimeTracking() {
-            stateSyncTimeTracking += syncTick;
-            if (stateSyncTimeTracking >= 1000) {
-                stateSyncTimeTracking = 0;
+            StateSyncTimeTracking += syncTick;
+            if (StateSyncTimeTracking >= 1000) {
+                StateSyncTimeTracking = 0;
                 return true;
             }
             return false;
@@ -433,6 +434,7 @@ public class FieldPlayer : Actor<Player> {
             },
             Async = true,
         });
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
     }
 
     /// <summary>
@@ -468,6 +470,7 @@ public class FieldPlayer : Actor<Player> {
             }
             // lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoverySPWaitTick; - Not applicable for SP?
         }
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Spirit));
     }
 
     /// <summary>
@@ -504,6 +507,7 @@ public class FieldPlayer : Actor<Player> {
             }
             lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryEPWaitTick;
         }
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Stamina));
     }
 
     public void CheckRegen() {
@@ -569,6 +573,69 @@ public class FieldPlayer : Actor<Player> {
                 Session.ConditionUpdate(ConditionType.fall_die);
             }
         }
+    }
+
+    public override bool SkillCastConsume(SkillRecord record) {
+        if (!base.SkillCastConsume(record)) {
+            return false;
+        }
+
+        SkillMetadata metadata = record.Metadata;
+
+        if (metadata.Data.Consume.Meso > 0) {
+            if (Session.Currency.Meso < metadata.Data.Consume.Meso) {
+                Logger.Error("Not enough meso to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            Session.Currency.Meso -= metadata.Data.Consume.Meso;
+        }
+
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
+            (int invokeValue, float invokeRate) = Buffs.GetInvokeValues(InvokeEffectType.ReduceSpiritCost, metadata.Id, metadata.Property.SkillGroup);
+            int finalSpriteCost = Math.Max(0, (int) (-invokeValue + (1 - invokeRate) * spiritCost));
+            if (Stats.Values[BasicAttribute.Spirit].Current < finalSpriteCost) {
+                Logger.Error("Not enough spirit to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            ConsumeSp(finalSpriteCost);
+        }
+
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
+            if (Stats.Values[BasicAttribute.Stamina].Current < staminaCost) {
+                Logger.Error("Not enough stamina to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            ConsumeStamina((int) staminaCost);
+        }
+
+        if (metadata.Data.Consume.HpRate != 0) {
+            long hp = Stats.Values[BasicAttribute.Health].Current;
+            // HpRate is a negative value in decimal form (e.g., -0.01 for 1%)
+            int hpToConsume = (int) (hp * Math.Abs(metadata.Data.Consume.HpRate));
+            if (hpToConsume > 0) {
+                ConsumeHp(hpToConsume);
+            }
+        }
+
+        if (metadata.Data.Consume.UseItem) {
+            if (record.ItemUid == 0) {
+                Logger.Error("Invalid item uid for skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+
+            Item? item = Session.Item.Inventory.Get(record.ItemUid);
+            if (item == null) {
+                Logger.Error("Invalid item uid for skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+
+            if (!Session.Item.Inventory.Consume(item.Uid, 1)) {
+                Logger.Error("Failed to consume item {itemId} for skill: {SkillId},{Level}", item.Id, metadata.Id, metadata.Level);
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

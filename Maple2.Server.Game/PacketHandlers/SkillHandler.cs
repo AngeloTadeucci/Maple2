@@ -91,7 +91,12 @@ public class SkillHandler : PacketHandler<GameSession> {
             return;
         }
 
-        var record = new SkillRecord(metadata, skillUid, session.Player) { ServerTick = serverTick };
+        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
+        bool playing = session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
+
+        var record = new SkillRecord(metadata, skillUid, session.Player) {
+            ServerTick = serverTick
+        };
         byte motionPoint = packet.ReadByte();
         if (!record.TrySetMotionPoint(motionPoint)) {
             Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);
@@ -105,7 +110,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         packet.ReadInt(); // ClientTick
         record.Unknown = packet.ReadBool(); // UnkBool
-        long itemUid = packet.ReadLong();
+        record.ItemUid = packet.ReadLong();
         record.IsHold = packet.ReadBool();
         if (record.IsHold) {
             record.HoldInt = packet.ReadInt();
@@ -118,59 +123,30 @@ public class SkillHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Message($"Skill.Use: {skillId}, {skillUid}; IsHold: false; UnkBool: {record.Unknown}"));
         }
 
-        if (itemUid > 0) {
-            Item? item = session.Item.Inventory.Get(itemUid);
-            // TODO: Check if item is valid for skill?
-            if (item == null || !session.Item.Inventory.Consume(item.Uid, 1)) {
-                session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert, StringCode.s_err_invalid_item));
-                return;
-            }
+        if (!session.Player.SkillCastConsume(record)) {
+            return;
         }
 
-        //TODO: Proper invoke cost
-        /*
-        InvokeStatValue invokeStat = Stats.GetSkillStats(skillCast.SkillId, skillCast.GetSkillGroups(), InvokeEffectType.ReduceSpiritCost);
-        spiritCost = Math.Max(0, (int) (-invokeStat.Value + (1 - invokeStat.Rate) * spiritCost));
-        */
-        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
-            if (session.Player.Stats.Values[BasicAttribute.Spirit].Current < spiritCost) {
-                Logger.Error("Not enough spirit to cast skill: {SkillId},{Level}", skillId, level);
-                return;
-            }
-        }
+        long startTick = session.Field.FieldTick;
+        session.Player.InBattle = metadata.State.InBattle;
+        session.Player.ActiveSkills.Add(record);
+        session.Field.Broadcast(SkillPacket.Use(record));
+        session.Field.Broadcast(StatsPacket.Init(session.Player));
 
-        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
-            if (session.Player.Stats.Values[BasicAttribute.Stamina].Current < staminaCost) {
-                Logger.Error("Not enough stamina to cast skill: {SkillId},{Level}", skillId, level);
-                return;
-            }
-        }
 
-        session.Player.ConsumeSp((int) spiritCost);
-        session.Player.ConsumeStamina((int) staminaCost);
-        session.Field.Broadcast(StatsPacket.Update(session.Player, [BasicAttribute.Spirit, BasicAttribute.Stamina]));
+
+        session.Player.ApplyEffects(metadata.Data.Skills, session.Player, session.Player, EventConditionType.Activate, skillId: metadata.Id, targets: [session.Player]);
 
         session.ConditionUpdate(ConditionType.skill, codeLong: skillId, targetLong: session.Field.MapId);
 
-        session.Player.InBattle = metadata.State.InBattle;
-        session.ActiveSkills.Add(record);
-        session.Field.Broadcast(SkillPacket.Use(record));
 
-        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
-
-        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
-
-        long startTick = session.Field.FieldTick;
-        foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
-            session.Player.ApplyEffect(session.Player, session.Player, effect, startTick);
-        }
 
         session.Config.SaveSkillCooldown(metadata, startTick);
     }
 
     private void HandlePoint(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid Attack-Point Skill {SkillUid}", skillUid);
             return;
@@ -225,7 +201,7 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid Attack-Target Skill {SkillUid}", skillUid);
             return;
@@ -244,12 +220,13 @@ public class SkillHandler : PacketHandler<GameSession> {
         byte count = packet.ReadByte();
         if (count > record.Attack.TargetCount) {
             Logger.Error("Attack too many targets {Count} for {Record}", count, record);
-            return;
+            // Adjust count
+            count = (byte) record.Attack.TargetCount;
         }
 
-        int unknown2 = packet.ReadInt(); // Unknown(0)
-        if (unknown2 != 0) {
-            Logger.Error("Unhandled skill-Target value2({Value}): {Record}", unknown2, record);
+        int iterations = packet.ReadInt();
+        if (iterations != 0) {
+            Logger.Information("Unhandled skill-Target iterations: ({Value}): {Record}", iterations, record);
         }
 
         if (session.Player.DebugSkills) {
@@ -258,22 +235,25 @@ public class SkillHandler : PacketHandler<GameSession> {
 
         for (byte i = 0; i < count; i++) {
             int targetId = packet.ReadInt();
+            if (record.Targets.ContainsKey(targetId)) {
+                continue;
+            }
             packet.ReadByte();
 
             switch (record.Attack.Range.ApplyTarget) {
-                case SkillEntity.Owner:
+                case ApplyTargetType.Hostile:
                     if (session.Field.Mobs.TryGetValue(targetId, out FieldNpc? npc)) {
-                        record.Targets.Add(npc);
+                        record.Targets.TryAdd(npc.ObjectId, npc);
                     }
                     continue;
-                case SkillEntity.Target:
+                case ApplyTargetType.Friendly:
                     if (session.Field.TryGetPlayer(targetId, out FieldPlayer? player)) {
-                        record.Targets.Add(player);
+                        record.Targets.TryAdd(player.ObjectId, player);
                     }
                     continue;
-                case SkillEntity.RegionPet:
+                case ApplyTargetType.HungryMobs:
                     if (session.Field.Pets.TryGetValue(targetId, out FieldPet? pet)) {
-                        record.Targets.Add(pet);
+                        record.Targets.TryAdd(pet.ObjectId, pet);
                     }
                     continue;
                 default:
@@ -281,13 +261,12 @@ public class SkillHandler : PacketHandler<GameSession> {
                     continue;
             }
         }
-
         session.Player.TargetAttack(record);
     }
 
     private void HandleSplash(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid Attack-Splash Skill {SkillUid}", skillUid);
             return;
@@ -321,7 +300,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
     private void HandleSync(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid Sync Skill {SkillUid}", skillUid);
             return;
@@ -330,39 +309,46 @@ public class SkillHandler : PacketHandler<GameSession> {
         short skillLevel = packet.ReadShort();
         byte motionPoint = packet.ReadByte();
 
-        if (record.Metadata.Data.Motions.Length >= motionPoint) {
-            Logger.Warning($"Invalid motion point {motionPoint} for {record}", skillUid);
+        if (record.Metadata.Data.Motions.Length <= motionPoint) {
+            Logger.Warning("Invalid motion point {MotionPoint} for {SkillRecord}", motionPoint, record);
+            session.Send(SkillUseFailedPacket.Fail(record));
             return;
         }
 
         if (session.Player.Animation.PlayingSequence is null) {
-            Logger.Warning($"Last motion already expired on skill {skillUid}");
+            Logger.Warning("Last motion already expired on skill {SkillUid}", skillUid);
         }
 
         record.TrySetMotionPoint(motionPoint);
 
-        Vector3 position = packet.Read<Vector3>();
-        Vector3 unk = packet.Read<Vector3>(); // either velocity or direction
-        Vector3 rotation = packet.Read<Vector3>();
-        Vector3 input = packet.Read<Vector3>(); // x and y match with wasd/arrow input, not normalized
-        bool toggle = packet.ReadByte() == 1;
+        var position = packet.Read<Vector3>();
+        var direction = packet.Read<Vector3>(); // either velocity or direction
+        var rotation = packet.Read<Vector3>();
+        var input = packet.Read<Vector3>(); // x and y match with wasd/arrow input, not normalized
+        bool isCharge = packet.ReadBool();
+        bool isRelease = packet.ReadBool();
         int unk3 = packet.ReadInt();
-        byte unk4 = packet.ReadByte();
 
-        session.Field?.Broadcast(SkillPacket.Sync(record), session);
+        /* TODO: Consume when new iteration
+         if (!session.Player.SkillCastConsume(record)) {
+            session.Send(SkillUseFailedPacket.Fail(record));
+            return;
+        }*/
+
+        //session.Field?.Broadcast(SkillPacket.Sync(record), session);
 
         if (session.Player.DebugSkills) {
-            session.Send(NoticePacket.Message($"Skill.Sync: {skillId},{skillUid}; AttackPoint: {motionPoint}; Toggle: {toggle}; UnkInt: {unk3}; UnkByte: {unk4}; UnkVec: {unk}"));
+            session.Send(NoticePacket.Message($"Skill.Sync: {skillId},{skillUid}; AttackPoint: {motionPoint}; IsCharge: {isCharge}; IsReleased: {isRelease}; UnkInt: {unk3}; Direction: {direction}"));
         }
 
         SkillMetadataMotionProperty motion = record.Metadata.Data.Motions[motionPoint].MotionProperty;
 
-        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill);
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, record.Metadata);
     }
 
     private void HandleTickSync(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid TickSync Skill {SkillUid}", skillUid);
             return;
@@ -387,7 +373,7 @@ public class SkillHandler : PacketHandler<GameSession> {
 
     private void HandleCancel(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
-        SkillRecord? record = session.ActiveSkills.Get(skillUid);
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
             Logger.Warning("Invalid Cancel Skill {SkillUid}", skillUid);
             return;

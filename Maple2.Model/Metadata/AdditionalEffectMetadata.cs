@@ -17,7 +17,8 @@ public record AdditionalEffectMetadata(
     AdditionalEffectMetadataShield? Shield,
     AdditionalEffectMetadataInvokeEffect? InvokeEffect,
     AdditionalEffectMetadataModifyOverlapCount[] ModifyOverlapCount,
-    SkillEffectMetadata[] Skills);
+    SkillEffectMetadata[] Skills,
+    SkillEffectMetadata[] TickSkills);
 
 public record AdditionalEffectMetadataProperty(
     BuffType Type, // 1,2,3
@@ -39,9 +40,12 @@ public record AdditionalEffectMetadataProperty(
     int Exp,
     int CooldownTime,
     int RideId,
+    int ImmuneBreak,
+    int Stun,
     BuffKeepCondition KeepCondition,
     BuffResetCondition ResetCondition,
-    BuffDotCondition DotCondition);
+    BuffDotCondition DotCondition,
+    int ClearOnDistanceFromCaster);
 
 public record AdditionalEffectMetadataConsume(
     float HpRate,
@@ -116,7 +120,7 @@ public record AdditionalEffectMetadataDot(
         bool NotKill);
 
     public record DotBuff(
-        SkillEntity Target, // 0,1
+        SkillTargetType Target, // 0,1
         int Id,
         short Level);
 }

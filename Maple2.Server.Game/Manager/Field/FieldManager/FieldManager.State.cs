@@ -474,20 +474,17 @@ public partial class FieldManager {
         }
     }
 
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null) {
-        switch (entity) {
-            case SkillEntity.Target:
-            case SkillEntity.Attacker:
-            case SkillEntity.RegionBuff:
-            case SkillEntity.RegionDebuff:
+    public IEnumerable<IActor> GetTargets(Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
+        switch (targetType) {
+            case ApplyTargetType.Friendly:
                 return prisms.Filter(Players.Values, limit, ignore);
-            case SkillEntity.Owner:
+            case ApplyTargetType.Hostile:
                 return prisms.Filter(Mobs.Values, limit, ignore);
-            case SkillEntity.RegionPet:
+            case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
             default:
-                Log.Debug("Unhandled SkillEntity:{Entity}", entity);
-                return Array.Empty<IActor>();
+                Log.Debug("Unhandled SkillEntity:{Entity}", targetType);
+                return [];
         }
     }
 

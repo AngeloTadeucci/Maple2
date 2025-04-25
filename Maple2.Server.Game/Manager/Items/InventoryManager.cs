@@ -272,8 +272,12 @@ public class InventoryManager {
                 session.Exp.AddExp(ExpType.expDrop, additionalExp: add.Amount);
                 break;
             case 90000009: // SpiritOrb
+                session.Stats.Values[BasicAttribute.Spirit].Add(add.Amount);
+                session.Send(StatsPacket.Update(session.Player, BasicAttribute.Spirit));
                 break;
             case 90000010: // StaminaOrb
+                session.Stats.Values[BasicAttribute.Stamina].Add(add.Amount);
+                session.Send(StatsPacket.Update(session.Player, BasicAttribute.Stamina));
                 break;
             case 90000013: // Rue
                 session.Currency[CurrencyType.Rue] += add.Amount;

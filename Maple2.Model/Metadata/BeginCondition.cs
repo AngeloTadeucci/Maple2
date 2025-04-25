@@ -15,10 +15,10 @@ public record BeginCondition(
     int DurationWithoutMoving,
     bool OnlyShadowWorld,
     bool OnlyFlyableMap,
-    bool OnlySurvival,
     bool AllowDead,
     bool AllowOnBattleMount,
     bool OnlyOnBattleMount,
+    bool AllowOnSurvival,
     DungeonGroupType[] DungeonGroupType,
     IReadOnlyDictionary<BasicAttribute, long> Stat,
     int[] Maps,
@@ -49,6 +49,8 @@ public record BeginConditionTarget(
 
     public record EventCondition(EventConditionType Type, bool IgnoreOwner, int[] SkillIds, int[] BuffIds);
     public record BeginConditionStat(BasicAttribute Attribute, float Value, CompareType Compare, CompareStatValueType ValueType);
+
+    public record TargetCheck(int RangeDistance, int RangeCount, int Friendly, CompareType Compare);
 }
 
 

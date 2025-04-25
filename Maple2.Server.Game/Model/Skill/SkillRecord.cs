@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Server.Game.Model.Skill;
@@ -29,14 +30,15 @@ public class SkillRecord {
     public bool IsHold;
     public int HoldInt;
     public string HoldString = string.Empty;
+    public long ItemUid;
 
-    public IList<IActor> Targets;
+    public ConcurrentDictionary<int, IActor> Targets;
 
     public SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {
         Metadata = metadata;
         CastUid = castUid;
         Caster = caster;
-        Targets = new List<IActor>();
+        Targets = [];
     }
 
     public bool TrySetMotionPoint(byte motionPoint) {
