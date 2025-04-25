@@ -91,17 +91,17 @@ public class SkillHandler : PacketHandler<GameSession> {
             return;
         }
 
-        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
-        bool playing = session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
-
         var record = new SkillRecord(metadata, skillUid, session.Player) {
-            ServerTick = serverTick
+            ServerTick = serverTick,
         };
         byte motionPoint = packet.ReadByte();
         if (!record.TrySetMotionPoint(motionPoint)) {
             Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);
             return;
         }
+
+        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
 
         record.Position = packet.Read<Vector3>();
         record.Direction = packet.Read<Vector3>();

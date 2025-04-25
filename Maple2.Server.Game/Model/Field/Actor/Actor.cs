@@ -81,7 +81,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, long startTick, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0, bool notifyField = true) {
         Debug.Assert(effect.Condition != null);
 
-        if (effect.Condition.RandomCast) {
+        if (effect.Condition?.RandomCast == true) {
             int index = Random.Shared.Next(effect.Skills.Length);
             owner.Buffs.AddBuff(caster, owner, effect.Skills[index].Id, effect.Skills[index].Level, startTick, stacks: effect.Condition.OverlapCount, notifyField: notifyField, type: type);
         } else {

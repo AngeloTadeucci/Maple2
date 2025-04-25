@@ -41,7 +41,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         FireCount = fireCount;
         UseDirection = splash.UseDirection;
 
-        long baseTick = Environment.TickCount64;
+        long baseTick = Field.FieldTick;
         if (splash.ImmediateActive) {
             NextTick = baseTick;
             endTick = baseTick + splash.RemoveDelay + (FireCount - 1) * splash.Interval;
