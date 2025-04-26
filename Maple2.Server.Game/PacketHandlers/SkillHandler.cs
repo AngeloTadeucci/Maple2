@@ -133,14 +133,10 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Field.Broadcast(SkillPacket.Use(record));
         session.Field.Broadcast(StatsPacket.Init(session.Player));
 
-
-
         session.Player.ApplyEffects(metadata.Data.Skills, session.Player, session.Player, EventConditionType.Activate, skillId: metadata.Id, targets: [session.Player]);
+        session.Buffs.TriggerEvent(session.Player, session.Player, session.Player, EventConditionType.OnSkillCasted, skillId: metadata.Id);
 
         session.ConditionUpdate(ConditionType.skill, codeLong: skillId, targetLong: session.Field.MapId);
-
-
-
         session.Config.SaveSkillCooldown(metadata, startTick);
     }
 
@@ -192,6 +188,9 @@ public class SkillHandler : PacketHandler<GameSession> {
 
             session.Player.InBattle = true;
             session.Field?.Broadcast(SkillDamagePacket.Target(record, targets), session);
+
+            // Unsure if this is correct.
+            session.Buffs.TriggerEvent(session.Player, session.Player, session.Player, EventConditionType.OnSkillCastEnd, skillId: record.SkillId);
         }
     }
 

@@ -474,12 +474,25 @@ public partial class FieldManager {
         }
     }
 
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
+    public IEnumerable<IActor> GetTargets(IActor caster, Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
         switch (targetType) {
             case ApplyTargetType.Friendly:
-                return prisms.Filter(Players.Values, limit, ignore);
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
             case ApplyTargetType.Hostile:
-                return prisms.Filter(Mobs.Values, limit, ignore);
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    //TODO Include other players if PVP is Active
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
             case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
             default:

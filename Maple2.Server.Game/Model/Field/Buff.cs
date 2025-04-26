@@ -53,7 +53,7 @@ public class Buff : IUpdatable, IByteSerializable {
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
         Stack(stacks, true);
-        NextProcTick = startTick + Metadata.Property.DelayTick + Metadata.Property.IntervalTick;
+        NextProcTick = startTick + Metadata.Property.DelayTick + IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
         canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= startTick;
@@ -121,7 +121,7 @@ public class Buff : IUpdatable, IByteSerializable {
         if (Metadata.Property.ClearOnDistanceFromCaster > 0) {
             // Cancel buff if caster and owner are in different rooms or too far away
             if (Caster.Field.RoomId != Owner.Field.RoomId ||
-                Vector3.DistanceSquared(Caster.Position, Owner.Position) > Metadata.Property.ClearOnDistanceFromCaster) {
+                Vector3.Distance(Caster.Position, Owner.Position) > Metadata.Property.ClearOnDistanceFromCaster) {
                 Owner.Buffs.Remove(Id, Caster.ObjectId);
                 logger.Information("Buff {Id} removed due to distance from caster", Id);
                 return;
