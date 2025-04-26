@@ -206,8 +206,4 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             NextTick += Interval;
         }
     }
-
-    private void ApplyEffect(SkillMetadataAttack attack, params IActor[] targets) {
-        Caster.ApplyEffects(attack.Skills, Caster, Caster, skillId: Value.Id, targets: targets);
-    }
 }
