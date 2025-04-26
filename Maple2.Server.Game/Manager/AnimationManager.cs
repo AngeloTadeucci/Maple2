@@ -257,7 +257,7 @@ public class AnimationManager {
 
         // Check for sequence end
         if (Current != null && Current.EndTime != 0 && sequenceTime > Current.EndTime) {
-            if (!IsPlayerAnimation || tickCount <= sequenceEndTick + Constant.ClientGraceTimeTick) {
+            if (!IsPlayerAnimation || tickCount <= sequenceEndTick) {
                 ResetSequence();
             }
         }
@@ -371,8 +371,8 @@ public class AnimationManager {
                 sequenceLoopEndTick = Current.LoopEndTick;
                 break;
             case "end":
-                Current.EndTime = key.Time;
-                Current.EndTick = Actor.Field.FieldTick + (long) ((key.Time - sequenceTime) / speed);
+                Current.EndTime = key.Time + Constant.ClientGraceTimeTick;
+                Current.EndTick = Actor.Field.FieldTick + (long) ((key.Time - sequenceTime) / speed) + Constant.ClientGraceTimeTick;
                 sequenceEndTick = Current.EndTick;
                 break;
             default:

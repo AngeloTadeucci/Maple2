@@ -474,20 +474,30 @@ public partial class FieldManager {
         }
     }
 
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null) {
-        switch (entity) {
-            case SkillEntity.Target:
-            case SkillEntity.Attacker:
-            case SkillEntity.RegionBuff:
-            case SkillEntity.RegionDebuff:
-                return prisms.Filter(Players.Values, limit, ignore);
-            case SkillEntity.Owner:
-                return prisms.Filter(Mobs.Values, limit, ignore);
-            case SkillEntity.RegionPet:
+    public IEnumerable<IActor> GetTargets(IActor caster, Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
+        switch (targetType) {
+            case ApplyTargetType.Friendly:
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
+            case ApplyTargetType.Hostile:
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    //TODO Include other players if PVP is Active
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
+            case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
             default:
-                Log.Debug("Unhandled SkillEntity:{Entity}", entity);
-                return Array.Empty<IActor>();
+                Log.Debug("Unhandled SkillEntity:{Entity}", targetType);
+                return [];
         }
     }
 

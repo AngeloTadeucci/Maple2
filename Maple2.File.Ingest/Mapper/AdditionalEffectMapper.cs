@@ -43,9 +43,12 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                         Exp: data.ExpProperty.value,
                         CooldownTime: (int) TimeSpan.FromSeconds(float.TryParse(data.BasicProperty.coolDownTime, out float cooldown) ? cooldown : 0).TotalMilliseconds,
                         RideId: data.RideeProperty == null! ? 0 : data.RideeProperty.rideeID,
+                        ImmuneBreak: data.MotionProperty.abnormalImmuneBreak,
+                        Stun: data.MotionProperty.stun,
                         KeepCondition: (BuffKeepCondition) data.BasicProperty.keepCondition,
                         ResetCondition: (BuffResetCondition) data.BasicProperty.resetCondition,
-                        DotCondition: (BuffDotCondition) data.BasicProperty.dotCondition),
+                        DotCondition: (BuffDotCondition) data.BasicProperty.dotCondition,
+                        ClearOnDistanceFromCaster: int.TryParse(data.BasicProperty.clearDistanceFromCaster, out int distance) ? distance : 0),
                     Consume: new AdditionalEffectMetadataConsume(
                         HpRate: data.ConsumeProperty.hpRate,
                         SpRate: data.ConsumeProperty.spRate),
@@ -64,7 +67,8 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
                                 Id: tuple.First,
                                 OffsetCount: tuple.Second))
                             .ToArray(),
-                    Skills: data.conditionSkill.Concat(data.splashSkill).Select(skill => skill.Convert()).ToArray());
+                    Skills: data.conditionSkill.Concat(data.splashSkill).Where(skill => !skill.activeByIntervalTick).Select(skill => skill.Convert()).ToArray(),
+                    TickSkills: data.conditionSkill.Concat(data.splashSkill).Where(skill => skill.activeByIntervalTick).Select(skill => skill.Convert()).ToArray());
             }
         }
     }
@@ -232,7 +236,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             return null;
         }
 
-        return new AdditionalEffectMetadataDot.DotBuff(Target: (SkillEntity) dotBuff.target, Id: dotBuff.buffID, Level: dotBuff.buffLevel);
+        return new AdditionalEffectMetadataDot.DotBuff(Target: (SkillTargetType) dotBuff.target, Id: dotBuff.buffID, Level: dotBuff.buffLevel);
     }
 
     private static AdditionalEffectMetadataShield? Convert(ShieldProperty shield) {

@@ -46,6 +46,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual bool IsDead { get; protected set; }
     public abstract IPrism Shape { get; }
+    public SkillQueue ActiveSkills { get; init; }
 
     public virtual BuffManager Buffs { get; }
     public Lua.Lua Lua { get; init; }
@@ -67,6 +68,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         Stats = new StatsManager(this);
         PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
         Lua = new Lua.Lua(Target.LOCALE);
+        ActiveSkills = new SkillQueue();
     }
 
     public void Dispose() {
@@ -78,20 +80,27 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual void ApplyEffect(IActor caster, IActor owner, SkillEffectMetadata effect, long startTick, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0, bool notifyField = true) {
         Debug.Assert(effect.Condition != null);
-        foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-            Buffs.AddBuff(caster, owner, skill.Id, skill.Level, startTick, notifyField: notifyField);
+
+        if (effect.Condition?.RandomCast == true) {
+            int index = Random.Shared.Next(effect.Skills.Length);
+            owner.Buffs.AddBuff(caster, owner, effect.Skills[index].Id, effect.Skills[index].Level, startTick, stacks: effect.Condition.OverlapCount, notifyField: notifyField, type: type);
+        } else {
+            foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
+                owner.Buffs.AddBuff(caster, owner, skill.Id, skill.Level, startTick, stacks: effect.Condition.OverlapCount, notifyField: notifyField, type: type);
+            }
         }
     }
 
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) {
-        if (attack.Damage.Count <= 0) {
-            return;
-        }
-
         var targetRecord = new DamageRecordTarget(this) {
             Position = caster.Position,
             Direction = caster.Rotation, // Idk why this is wrong
         };
+        damage.Targets.TryAdd(ObjectId, targetRecord);
+
+        if (attack.Damage.Count <= 0) {
+            return;
+        }
 
         long damageAmount = 0;
         for (int i = 0; i < attack.Damage.Count; i++) {
@@ -120,21 +129,22 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         foreach ((DamageType damageType, long amount) in targetRecord.Damage) {
             switch (damageType) {
                 case DamageType.Critical:
-                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, effectSkillId: damage.SkillId);
-                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackCrit, effectSkillId: damage.SkillId);
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, skillId: damage.SkillId);
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackCrit, skillId: damage.SkillId);
+                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnAttacked, skillId: damage.SkillId);
                     break;
                 case DamageType.Normal:
-                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, effectSkillId: damage.SkillId);
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, skillId: damage.SkillId);
                     break;
                 case DamageType.Block:
+                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnBlock, skillId: damage.SkillId);
                     break;
                 case DamageType.Miss:
-                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnAttackMiss, effectSkillId: damage.SkillId);
+                    caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnAttackMiss, skillId: damage.SkillId);
+                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnEvade, skillId: damage.SkillId);
                     break;
             }
         }
-
-        damage.Targets.Add(targetRecord);
     }
 
     public virtual void Reflect(IActor target) {
@@ -173,36 +183,104 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             Direction = record.Direction,
         };
 
-        foreach (IActor target in record.Targets) {
+        foreach (IActor target in record.Targets.Values) {
             target.ApplyDamage(this, damage, record.Attack);
         }
 
         Field.Broadcast(SkillDamagePacket.Damage(damage));
 
+
+        ApplyEffects(record.Attack.Skills, record.Caster, this, skillId: record.SkillId, targets: record.Targets.Values.ToArray());
+        ApplyEffects(record.Attack.SkillsOnDamage, record.Caster, damage, record.Targets.Values.ToArray());
+        /*foreach (SkillEffectMetadata effect in record.Attack.Skills.Where(e => e.Splash != null)) {
+            // This should not be sent on init skill use from PLAYER because a Splash skill packet is sent from client to server.
+            // Field.AddSkill(record.Caster, effect, [record.Caster.Position], record.Caster.Rotation);
+        }*/
+    }
+
+    public virtual IActor GetTarget(SkillTargetType targetType, IActor caster, IActor target, IActor owner) {
+        return targetType switch {
+            SkillTargetType.Owner => owner,
+            SkillTargetType.Target => target,
+            SkillTargetType.Caster => caster,
+            SkillTargetType.None => this, // Should be on self/inherit
+            SkillTargetType.Attacker => target,
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    public IActor GetOwner(SkillTargetType targetType, IActor caster, IActor target, IActor owner) {
+        return targetType switch {
+            SkillTargetType.Owner => owner,
+            SkillTargetType.Target => owner,
+            SkillTargetType.Caster => caster,
+            SkillTargetType.None => this, // Should be on self/inherit
+            SkillTargetType.Attacker => target,
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    /// <summary>
+    /// Filter effects before applying. This is needed instead of applying as iterating to ensure the current state of the actor is used.
+    /// </summary>
+    public virtual void ApplyEffects(SkillEffectMetadata[] effects, IActor caster, IActor owner, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0, params IActor[] targets) {
+        var appliedEffects = new List<(IActor Owner, IActor Caster, SkillEffectMetadata Effect)>();
         long startTick = Field.FieldTick;
-        foreach (SkillEffectMetadata effect in record.Attack.Skills) {
+
+        foreach (SkillEffectMetadata effect in effects) {
             if (effect.Condition != null) {
-                foreach (IActor actor in record.Targets) {
-                    IActor owner = GetTarget(effect.Condition.Target, record.Caster, actor);
-                    if (effect.Condition.Condition.Check(record.Caster, owner, actor)) {
-                        actor.ApplyEffect(record.Caster, owner, effect, startTick);
+                foreach (IActor target in targets) {
+                    IActor resultOwner = GetTarget(effect.Condition!.Target, caster, target, owner);
+                    IActor resultCaster = GetOwner(effect.Condition.Owner, caster, target, owner);
+                    if (effect.Condition.Condition.Check(resultCaster, resultOwner, target, type, skillId, buffId)) {
+                        appliedEffects.Add((resultOwner, resultCaster, effect));
                     }
                 }
-            } else if (effect.Splash != null) {
-                Field.AddSkill(record.Caster, effect, [
-                    record.Caster.Position,
-                ], record.Caster.Rotation);
             }
+        }
+
+        foreach ((IActor effectOwner, IActor effectCaster, SkillEffectMetadata effect) in appliedEffects) {
+            ApplyEffect(effectCaster, effectOwner, effect, startTick, type, skillId, buffId);
         }
     }
 
-    private IActor GetTarget(SkillEntity entity, IActor caster, IActor target) {
-        return entity switch {
-            SkillEntity.Target => target,
-            SkillEntity.Owner => target,
-            SkillEntity.Caster => caster,
-            _ => throw new NotImplementedException(),
-        };
+    /// <summary>
+    /// Used for On damage
+    /// </summary>
+    /// <param name="effects"></param>
+    /// <param name="caster"></param>
+    /// <param name="record"></param>
+    /// <param name="targets"></param>
+    public virtual void ApplyEffects(SkillEffectMetadata[] effects, IActor caster, DamageRecord record, params IActor[] targets) {
+        // Skill does no damage, apply effects regardless
+        if (record.AttackMetadata.Damage.Count == 0) {
+            ApplyEffects(effects, caster, caster, skillId: record.SkillId, targets: targets);
+            return;
+        }
+
+        var appliedEffects = new List<(IActor Owner, IActor Caster, SkillEffectMetadata Effect)>();
+        long startTick = Field.FieldTick;
+        foreach (SkillEffectMetadata effect in effects) {
+            if (effect.Condition != null) {
+                foreach (IActor target in targets) {
+                    IActor resultOwner = GetTarget(effect.Condition!.Target, caster, target, caster);
+                    IActor resultCaster = GetOwner(effect.Condition.Owner, caster, target, caster);
+                    if (effect.Condition.Condition.Check(resultCaster, resultOwner, target, eventSkillId: record.SkillId) &&
+                        DealtDamage(target)) {
+                        appliedEffects.Add((resultOwner, resultCaster, effect));
+                    }
+                }
+            }
+        }
+
+        foreach ((IActor effectOwner, IActor effectCaster, SkillEffectMetadata effect) in appliedEffects) {
+            ApplyEffect(effectCaster, effectOwner, effect, startTick, skillId: record.SkillId);
+        }
+        return;
+
+        bool DealtDamage(IActor target) {
+            return record.Targets.TryGetValue(target.ObjectId, out DamageRecordTarget? targetRecord) && targetRecord.Damage.Any(x => x.Amount > 0);
+        }
     }
 
     public virtual void Update(long tickCount) {
@@ -232,10 +310,11 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             return null;
         }
 
-        var record = new SkillRecord(metadata, uid, this);
-        record.Position = Position;
-        record.Rotation = Rotation;
-        record.Rotate2Z = 2 * Rotation.Z;
+        var record = new SkillRecord(metadata, uid, this) {
+            Position = Position,
+            Rotation = Rotation,
+            Rotate2Z = 2 * Rotation.Z,
+        };
 
         if (!record.TrySetMotionPoint(motionPoint)) {
             return null;
@@ -248,5 +327,12 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     protected virtual void OnDeath() {
         Buffs.TriggerEvent(this, this, this, EventConditionType.OnDeath);
+    }
+
+    /// <summary>
+    /// Consumes needed stats to cast skill.
+    /// </summary>
+    public virtual bool SkillCastConsume(SkillRecord record) {
+        return true;
     }
 }

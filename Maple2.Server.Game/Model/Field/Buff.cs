@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Enum;
+﻿using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.Manager.Field;
@@ -38,7 +39,7 @@ public class Buff : IUpdatable, IByteSerializable {
 
     private readonly ILogger logger = Log.ForContext<Buff>();
 
-    public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, long endTick) {
+    public Buff(AdditionalEffectMetadata metadata, int objectId, IActor caster, IActor owner, long startTick, long endTick, int stacks) {
         Metadata = metadata;
         ObjectId = objectId;
 
@@ -51,8 +52,8 @@ public class Buff : IUpdatable, IByteSerializable {
         // Buffs with IntervalTick=0 will just proc a single time
         IntervalTick = metadata.Property.IntervalTick > 0 ? metadata.Property.IntervalTick : metadata.Property.DurationTick + 1000;
 
-        Stack(silent: true);
-        NextProcTick = startTick + Metadata.Property.DelayTick + Metadata.Property.IntervalTick;
+        Stack(stacks, true);
+        NextProcTick = startTick + Metadata.Property.DelayTick + IntervalTick;
         UpdateEnabled(false);
         canProc = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration;
         canExpire = metadata.Property.KeepCondition != BuffKeepCondition.UnlimitedDuration && EndTick >= startTick;
@@ -76,6 +77,9 @@ public class Buff : IUpdatable, IByteSerializable {
     }
 
     public bool Stack(int amount = 1, bool silent = false) {
+        if (amount == 0) {
+            return false;
+        }
         if (amount > 0 && Stacks >= Metadata.Property.MaxCount) {
             return false;
         }
@@ -86,7 +90,7 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         if (!silent && Stacks >= Metadata.Property.MaxCount) {
-            Owner.Buffs.TriggerEvent(Owner, Owner, Owner, EventConditionType.OnBuffStacksReached, buffSkillId: Id);
+            Owner.Buffs.TriggerEvent(Owner, Owner, Owner, EventConditionType.OnBuffStacksReached, buffId: Id);
         }
 
         return true;
@@ -112,6 +116,16 @@ public class Buff : IUpdatable, IByteSerializable {
             }
 
             activated = true;
+        }
+
+        if (Metadata.Property.ClearOnDistanceFromCaster > 0) {
+            // Cancel buff if caster and owner are in different rooms or too far away
+            if (Caster.Field.RoomId != Owner.Field.RoomId ||
+                Vector3.Distance(Caster.Position, Owner.Position) > Metadata.Property.ClearOnDistanceFromCaster) {
+                Owner.Buffs.Remove(Id, Caster.ObjectId);
+                logger.Information("Buff {Id} removed due to distance from caster", Id);
+                return;
+            }
         }
 
         if (canExpire && !canProc && tickCount > EndTick) {
@@ -156,7 +170,8 @@ public class Buff : IUpdatable, IByteSerializable {
         ApplyDotBuff();
         ApplyCancel();
         ModifyDuration();
-        ApplySkills(Caster, Owner, Owner, EventConditionType.Tick, buffId: Id);
+        Owner.ApplyEffects(Metadata.TickSkills, Caster, Owner, EventConditionType.Tick, buffId: Id, targets: [Owner]);
+        ApplySplash();
 
         NextProcTick += IntervalTick;
         if (NextProcTick > EndTick) {
@@ -164,28 +179,9 @@ public class Buff : IUpdatable, IByteSerializable {
         }
     }
 
-    public void ApplySkills(IActor caster, IActor owner, IActor target, EventConditionType type = EventConditionType.Activate, int skillId = 0, int buffId = 0) {
+    private void ApplySplash() {
         foreach (SkillEffectMetadata effect in Metadata.Skills) {
-            if (effect.Condition != null) {
-                // logger.Error("Buff Condition-Effect unimplemented from {Id} on {Owner}", Id, Owner.ObjectId);
-                if (!effect.Condition.Condition.Check(caster, owner, target, type, skillId, buffId)) {
-                    continue;
-                }
-                switch (effect.Condition.Target) {
-                    case SkillEntity.Owner:
-                        owner.ApplyEffect(caster, owner, effect, Field.FieldTick, type, skillId, buffId);
-                        break;
-                    case SkillEntity.Caster:
-                        caster.ApplyEffect(caster, caster, effect, Field.FieldTick, type, skillId, buffId);
-                        break;
-                    case SkillEntity.Target:
-                        target.ApplyEffect(caster, target, effect, Field.FieldTick, type, skillId, buffId);
-                        break;
-                    default:
-                        logger.Error("Invalid Buff Target: {Target}", effect.Condition.Target);
-                        break;
-                }
-            } else if (effect.Splash != null) {
+            if (effect.Splash != null) {
                 Caster.Field.AddSkill(Caster, effect, [Owner.Position], Owner.Rotation);
             }
         }
@@ -257,7 +253,7 @@ public class Buff : IUpdatable, IByteSerializable {
         }
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
-        if (dotBuff.Target == SkillEntity.Owner) {
+        if (dotBuff.Target == SkillTargetType.Owner) {
             Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         } else {
             Caster.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);

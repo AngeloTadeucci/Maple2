@@ -7,6 +7,7 @@ using Maple2.Tools.Collision;
 using Maple2.Database.Storage;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
+using Maple2.Server.Game.Model.Skill;
 
 namespace Maple2.Server.Game.Model;
 
@@ -27,6 +28,7 @@ internal sealed class FieldActor : IActor {
     public StatsManager Stats { get; }
     public AnimationManager Animation { get; init; }
     public SkillState SkillState { get; init; }
+    public SkillQueue ActiveSkills { get; init; }
 
     public FieldActor(FieldManager field, NpcMetadataStorage npcMetadata) {
         Field = field;
@@ -36,6 +38,7 @@ internal sealed class FieldActor : IActor {
         NpcMetadata = npcMetadata;
         Animation = new AnimationManager(this); // not meant to have animations
         SkillState = new SkillState(this);
+        ActiveSkills = new SkillQueue();
     }
 
     public void Update(long tickCount) { }

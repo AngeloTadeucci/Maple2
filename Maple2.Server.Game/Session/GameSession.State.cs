@@ -36,7 +36,6 @@ public partial class GameSession {
     public HeldCube? HeldCube;
 
     public LiftupWeapon? HeldLiftup;
-    public readonly SkillQueue ActiveSkills = new();
 
     public NpcScriptManager? NpcScript { get; set; }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -70,13 +71,13 @@ public class BuffManager : IUpdatable {
         }
     }
 
-    public void AddBuff(IActor caster, IActor owner, int id, short level, long startTick, int durationMs = -1, bool notifyField = true) {
+    public void AddBuff(IActor caster, IActor owner, int id, short level, long startTick, int stacks = 0, int durationMs = -1, bool notifyField = true, EventConditionType type = EventConditionType.Activate) {
         if (!owner.Field.SkillMetadata.TryGetEffect(id, level, out AdditionalEffectMetadata? additionalEffect)) {
             logger.Error("Invalid buff: {SkillId},{Level}", id, level);
             return;
         }
 
-        if (CooldownTimes.TryGetValue(id, out long cooldownTick) && startTick < cooldownTick) {
+        if (type != EventConditionType.Activate && CooldownTimes.TryGetValue(id, out long cooldownTick) && startTick < cooldownTick) {
             return;
         }
 
@@ -84,12 +85,20 @@ public class BuffManager : IUpdatable {
             durationMs = additionalEffect.Property.DurationTick;
         }
 
+        // Apply invoke values
+        (int invokeValue, float invokeRate) = GetInvokeValues(InvokeEffectType.IncreaseEffectDuration, id, additionalEffect.Property.Group);
+        durationMs = Math.Max(0, invokeValue + (int) ((1 + invokeRate) * durationMs));
+
+        stacks = additionalEffect.Property.MaxCount == 0 ? 0 : Math.Clamp(stacks, 0, additionalEffect.Property.MaxCount);
+
         // Check if immune to any present buffs
         if (!CheckImmunity(id, additionalEffect.Property.Category)) {
             return;
         }
 
-        CooldownTimes[id] = startTick + additionalEffect.Property.CooldownTime;
+        if (type != EventConditionType.Activate) {
+            CooldownTimes[id] = startTick + additionalEffect.Property.CooldownTime;
+        }
         Buff? existing = GetBuff(id, additionalEffect.Property.CasterIndividualBuff ? caster.ObjectId : 0);
         long endTick = startTick + durationMs;
 
@@ -116,9 +125,11 @@ public class BuffManager : IUpdatable {
                 // Technically in sniffs it should just update the buff level. This should still be the same?
                 Remove(existing.Id, existing.Caster.ObjectId);
             } else {
-                bool updated = existing.UpdateEndTime(endTick) | existing.Stack();
-                if (updated && notifyField) {
-                    owner.Field.Broadcast(BuffPacket.Update(existing));
+                if (existing.UpdateEndTime(endTick) | existing.Stack(stacks)) {
+                    if (notifyField) {
+                        owner.Field.Broadcast(BuffPacket.Update(existing));
+                    }
+                    TriggerEvent(Actor, Actor, Actor, EventConditionType.OnEffectApplied, skillId: existing.Id);
                 }
                 return;
             }
@@ -131,7 +142,7 @@ public class BuffManager : IUpdatable {
             }
         }
 
-        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, endTick);
+        var buff = new Buff(additionalEffect, NextLocalId(), caster, owner, startTick, endTick, stacks);
 
         if (!TryAdd(buff)) {
             logger.Error("Could not add buff {Id} to {Object}", buff.Id, Actor.ObjectId);
@@ -145,6 +156,8 @@ public class BuffManager : IUpdatable {
         SetShield(buff);
         SetUpdates(buff);
         ModifyBuffStackCount(buff);
+
+        owner.ApplyEffects(buff.Metadata.Skills, caster, owner, type, skillId: id, buffId: id, targets: [owner]);
 
         // refresh stats if needed
         if (buff.Metadata.Status.Values.Any() || buff.Metadata.Status.Rates.Any() || buff.Metadata.Status.SpecialValues.Any() || buff.Metadata.Status.SpecialRates.Any()) {
@@ -306,16 +319,20 @@ public class BuffManager : IUpdatable {
     }
 
     public (int, float) GetInvokeValues(InvokeEffectType invokeType, int skillId, params int[] skillGroup) {
-        float value = 0;
-        float rate = 0f;
-        if (Invokes.TryGetValue(invokeType, out IDictionary<int, InvokeRecord>? nestedInvokeDic)) {
-            foreach (InvokeRecord invoke in nestedInvokeDic.Values.Where(record => record.Metadata.SkillId == skillId || skillGroup.Contains(record.Metadata.SkillGroupId))) {
+        if (!Invokes.TryGetValue(invokeType, out var nestedInvokeDic))
+            return (0, 0f);
+
+        float value = 0, rate = 0;
+        foreach (InvokeRecord invoke in nestedInvokeDic.Values) {
+            AdditionalEffectMetadataInvokeEffect meta = invoke.Metadata;
+            if ((meta.SkillId != 0 && meta.SkillId == skillId) ||
+                (meta.SkillGroupId != 0 && skillGroup.Contains(meta.SkillGroupId))) {
                 value += invoke.Value;
                 rate += invoke.Rate;
             }
         }
 
-        return ((int, float)) (value, rate);
+        return ((int) value, rate);
     }
 
     private void SetShield(Buff buff) {
@@ -364,13 +381,12 @@ public class BuffManager : IUpdatable {
             }
         }
     }
-
-    public void TriggerEvent(IActor caster, IActor owner, IActor target, EventConditionType type, int effectSkillId = 0, int buffSkillId = 0) {
+    public void TriggerEvent(IActor caster, IActor owner, IActor target, EventConditionType type, int skillId = 0, int buffId = 0) {
         foreach (Buff buff in EnumerateBuffs()) {
             if (!buff.Enabled) {
                 continue;
             }
-            buff.ApplySkills(caster, owner, target, type, effectSkillId, buffSkillId);
+            owner.ApplyEffects(buff.Metadata.Skills, caster, owner, type, skillId, buffId, target);
         }
     }
 
@@ -508,7 +524,11 @@ public class BuffManager : IUpdatable {
         //TODO: Check if buff is removable/should be removed
         bool refreshStats = false;
         List<Buff> buffsToRemove = [];
-        foreach (Buff buff in EnumerateBuffs(id)) {
+        var buffsEnum = EnumerateBuffs();
+        foreach (Buff buff in buffsEnum) {
+            if (buff.Id != id) {
+                continue;
+            }
             if (buff.Metadata.Property.CasterIndividualBuff && buff.Caster.ObjectId != casterId) {
                 continue;
             }
@@ -541,6 +561,7 @@ public class BuffManager : IUpdatable {
                     player.Session.Ride.Dismount(RideOffType.AdditionalEffect);
                 }
             }
+            TriggerEvent(Actor, Actor, Actor, EventConditionType.OnEffectRemoved, buffId: buff.Id);
         }
         if (refreshStats) {
             Actor.Stats.Refresh();

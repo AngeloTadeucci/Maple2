@@ -941,6 +941,8 @@ public static class Constant {
     public const int RecoverySPWaitTick = 1000;
     public const int RecoveryEPWaitTick = 1000;
     public const float FallBoundingAddedDistance = 750f;
+
+    public const int UserBattleDurationTick = 5000;
     #endregion
 }
 

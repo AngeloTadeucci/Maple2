@@ -65,5 +65,6 @@ public class EmoteHandler : PacketHandler<GameSession> {
         }
 
         session.ConditionUpdate(ConditionType.emotion, codeString: aniKey);
+        session.Buffs.TriggerEvent(session.Player, session.Player, session.Player, EventConditionType.OnEmote, skillId: emoteId);
     }
 }

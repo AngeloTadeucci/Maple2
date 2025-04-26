@@ -64,7 +64,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                 Overlap: attack.arrowProperty.overlap,
                                 Explosion: attack.arrowProperty.explosion,
                                 RayPhysXTest: attack.arrowProperty.rayPhysxTest,
-                                NonTarget: (SkillEntity) attack.arrowProperty.nonTarget,
+                                NonTarget: (SkillTargetType) attack.arrowProperty.nonTarget,
                                 BounceType: attack.arrowProperty.bounceType,
                                 BounceCount: attack.arrowProperty.bounceCount,
                                 BounceRadius: attack.arrowProperty.bounceRadius,
@@ -95,7 +95,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                     PriorityHitImmune: attack.damageProperty.pushPriorityHitImmune
                                 ) : null
                             ),
-                            Skills: attack.conditionSkill.Select(skill => skill.Convert()).ToArray()
+                            Skills: attack.conditionSkill.Where(skill => !skill.dependOnDamageCount).Select(skill => skill.Convert()).ToArray(),
+                            SkillsOnDamage: attack.conditionSkill.Where(skill => skill.dependOnDamageCount).Select(skill => skill.Convert()).ToArray()
                         )).ToArray(),
                         AttackPoints: motion.CollectAttackPoints()
                     )).ToArray()
@@ -110,6 +111,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     RangeType: (RangeType) data.basic.kinds.rangeType,
                     AttackType: (AttackType) data.basic.ui.attackType,
                     Element: (Element) data.basic.kinds.element,
+                    State: Enum.TryParse(data.basic.kinds.state, true, out ActorState state) ? state : ActorState.None,
                     ContinueSkill: data.basic.kinds.continueSkill,
                     SpRecoverySkill: data.basic.kinds.spRecoverySkill,
                     ImmediateActive: data.basic.kinds.immediateActive,
@@ -148,9 +150,9 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
             RotateZDegree: region.rangeZRotateDegree,
             RangeAdd: region.rangeAdd,
             RangeOffset: region.rangeOffset,
-            IncludeCaster: (SkillEntity) region.includeCaster,
-            ApplyTarget: (SkillEntity) region.applyTarget,
-            CastTarget: (SkillEntity) region.castTarget
+            IncludeCaster: (SkillTargetType) region.includeCaster,
+            ApplyTarget: (ApplyTargetType) region.applyTarget,
+            CastTarget: (SkillTargetType) region.castTarget
         );
     }
 }
