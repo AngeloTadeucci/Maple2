@@ -10,6 +10,7 @@ using Maple2.Model.Enum;
 using Maple2.PacketLib.Crypto;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
+using Maple2.Server.Core.Packets;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -107,6 +108,13 @@ public abstract class Session : IDisposable {
 
         Logger.Information("Disconnected {Session}", this);
         Dispose();
+    }
+
+    protected void Heartbeat() {
+        while (State == SessionState.Connected) {
+            Thread.Sleep(TimeSpan.FromMinutes(1));
+            Send(RequestPacket.Heartbeat());
+        }
     }
 
     public bool Connected() {

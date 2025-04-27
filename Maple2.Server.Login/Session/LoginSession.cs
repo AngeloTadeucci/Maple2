@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -34,26 +35,21 @@ public class LoginSession : Core.Network.Session {
     #endregion
 
     private Account account = null!;
+    private readonly Thread heartbeatThread;
 
     public LoginSession(TcpClient tcpClient, LoginServer server) : base(tcpClient) {
         Server = server;
         State = SessionState.ChangeMap;
+        heartbeatThread = new Thread(Heartbeat);
     }
 
     public void Init(long accountId, Guid machineId) {
         AccountId = accountId;
         MachineId = machineId;
 
-        // Account is already logged into login server.
-        if (Server.GetSession(accountId, out LoginSession? existing) && existing != this) {
-            Send(LoginResultPacket.Error((byte) LoginResponse.Types.Code.AlreadyLogin, "", accountId));
-            existing.Disconnect();
-            Disconnect();
-            return;
-        }
-
         State = SessionState.Connected;
         Server.OnConnected(this);
+        heartbeatThread.Start();
     }
 
     public void ListServers() {
@@ -128,6 +124,7 @@ public class LoginSession : Core.Network.Session {
         try {
             Server.OnDisconnected(this);
             State = SessionState.Disconnected;
+            heartbeatThread.Join();
             Complete();
         } finally {
             base.Dispose(disposing);

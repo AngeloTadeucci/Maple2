@@ -36,6 +36,7 @@ service World {
   rpc GroupChat(GroupChatRequest) returns (GroupChatResponse);
   // Retrieve player info from online player.
   rpc PlayerInfo(maple2.PlayerInfoRequest) returns (maple2.PlayerInfoResponse);
+  rpc AccountInfo(maple2.PlayerInfoRequest) returns (maple2.PlayerInfoResponse);
   // Update player info
   rpc UpdatePlayer(maple2.PlayerUpdateRequest) returns (maple2.PlayerUpdateResponse);
   // Notify character about new mail.
@@ -56,6 +57,8 @@ service World {
   rpc Admin(maple2.AdminRequest) returns (maple2.AdminResponse);
   // Buff
   rpc PlayerConfig(PlayerConfigRequest) returns (PlayerConfigResponse);
+  // Disconnect
+  rpc Disconnect(maple2.DisconnectRequest) returns (maple2.DisconnectResponse);
 }
 
 enum Server {

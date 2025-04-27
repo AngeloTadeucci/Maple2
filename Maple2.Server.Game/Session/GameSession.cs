@@ -40,6 +40,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     private bool disposed;
     private readonly GameServer server;
+    private readonly Thread heartbeatThread;
 
     public readonly CommandRouter CommandHandler;
     public readonly EventQueue Scheduler;
@@ -115,6 +116,8 @@ public sealed partial class GameSession : Core.Network.Session {
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
         Clubs = new ConcurrentDictionary<long, ClubManager>();
+
+        heartbeatThread = new Thread(Heartbeat);
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
