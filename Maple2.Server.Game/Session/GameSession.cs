@@ -727,6 +727,7 @@ public sealed partial class GameSession : Core.Network.Session {
             LeaveField();
             Player.Value.Character.Channel = 0;
             Player.Value.Account.Online = false;
+            heartbeatThread.Join();
             State = SessionState.Disconnected;
             Complete();
         } finally {
