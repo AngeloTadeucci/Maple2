@@ -156,7 +156,7 @@ public enum RecvOp : ushort {
     ItemExchangeScroll = 0x009C,
     RequestTutorialItem = 0x009D,
     DungeonReward = 0x009E,
-    ItemBillboard = 0x009F,
+    PlayerHost = 0x009F,
     TreasureMap = 0x00A0,
     ItemExtractionScroll = 0x00A1, // GlamourAnvil
     Mentor = 0x00A2,

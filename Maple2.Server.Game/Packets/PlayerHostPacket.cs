@@ -3,17 +3,52 @@ using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
 public static class PlayerHostPacket {
     private enum Command : byte {
         UseHongBao = 0,
-        HongBaoGiftNotice = 2,
+        GiftHongBao = 2,
         StartMiniGame = 3,
         MiniGameRewardNotice = 4,
         MiniGameRewardReceive = 5,
         AdBalloonWindow = 6,
+    }
+
+    public static ByteWriter UseHongBao(HongBao hongBao) {
+        var pWriter = Packet.Of(SendOp.PlayerHost);
+        pWriter.Write<Command>(Command.UseHongBao);
+        pWriter.WriteClass<HongBao>(hongBao);
+
+        return pWriter;
+    }
+
+    public static ByteWriter GiftHongBao(FieldPlayer player, HongBao hongBao, int amount) {
+        var pWriter = Packet.Of(SendOp.PlayerHost);
+        pWriter.Write<Command>(Command.GiftHongBao);
+        pWriter.WriteBool(true);
+
+        if (true) {
+            pWriter.WriteInt(hongBao.SourceItemId);
+            pWriter.WriteInt(hongBao.ItemId);
+            pWriter.WriteInt(amount);
+            pWriter.WriteUnicodeString(hongBao.Owner.Value.Character.Name);
+            pWriter.WriteUnicodeString(player.Value.Character.Name);
+
+        }
+
+        return pWriter;
+    }
+
+    public static ByteWriter InactiveHongBao() {
+        var pWriter = Packet.Of(SendOp.PlayerHost);
+        pWriter.Write<Command>(Command.GiftHongBao);
+        pWriter.WriteBool(false);
+
+        return pWriter;
     }
 
     public static ByteWriter StartMiniGame(string hostName, int mapId) {

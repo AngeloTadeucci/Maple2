@@ -107,6 +107,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             case ItemFunction.LevelPotion:
                 HandleLevelPotion(session, item);
                 break;
+            case ItemFunction.HongBao:
+                HandleHongBao(session, item);
+                break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
@@ -543,6 +546,26 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             Async = true,
         });
 
+        session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private static void HandleHongBao(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("itemId") || !int.TryParse(xmlParameters["itemId"], out int itemId) ||
+            !xmlParameters.ContainsKey("totalCount") || !int.TryParse(xmlParameters["totalCount"], out int totalCount) ||
+            !xmlParameters.ContainsKey("totalUser") || !int.TryParse(xmlParameters["totalUser"], out int totalUser) ||
+            !xmlParameters.ContainsKey("durationSec") || !int.TryParse(xmlParameters["durationSec"], out int durationSec)) {
+            return;
+        }
+
+        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
+        Item? newItem = session.Field.ItemDrop.CreateItem(itemId, amount: totalCount);
+        if (newItem == null) {
+            return;
+        }
+        if (!session.Item.Inventory.Add(newItem, true)) {
+            session.Item.MailItem(newItem);
+        }
         session.Item.Inventory.Consume(item.Uid, 1);
     }
 }
