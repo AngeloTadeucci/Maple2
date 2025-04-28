@@ -79,7 +79,7 @@ public partial class WorldService {
             throw new RpcException(new Status(StatusCode.InvalidArgument, $"CharacterId not specified"));
         }
 
-        if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info) || info is { Online: false, Channel: <= 0 }) {
+        if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info) || info is { Online: false }) {
             throw new RpcException(new Status(StatusCode.NotFound, $"Unable to find: {request.CharacterId}"));
         }
 
