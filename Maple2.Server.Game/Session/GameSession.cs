@@ -716,7 +716,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 CharacterId = CharacterId,
                 LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
-                Channel = 0,
+                Channel = -1,
                 Async = true,
             });
 
@@ -727,7 +727,7 @@ public sealed partial class GameSession : Core.Network.Session {
             Scheduler.Stop();
             server.OnDisconnected(this);
             LeaveField();
-            Player.Value.Character.Channel = 0;
+            Player.Value.Character.Channel = -1;
             Player.Value.Account.Online = false;
             State = SessionState.Disconnected;
             Complete();

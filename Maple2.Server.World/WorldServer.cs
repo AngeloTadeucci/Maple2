@@ -73,7 +73,7 @@ public class WorldServer {
 
                     if (success != null) continue;
 
-                    playerInfo.Channel = 0;
+                    playerInfo.Channel = -1;
                 }
             } catch (ThreadInterruptedException) {
                 break;
