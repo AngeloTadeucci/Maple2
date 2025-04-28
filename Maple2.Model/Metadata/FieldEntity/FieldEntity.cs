@@ -43,6 +43,8 @@ public record FieldVibrateEntity(
     Vector3 Rotation,
     float Scale,
     BoundingBox3 Bounds,
+    int BreakDefense,
+    int BreakTick,
     int VibrateIndex) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
 public record FieldSpawnTile(

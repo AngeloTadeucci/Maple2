@@ -353,6 +353,10 @@ public class BuffManager : IUpdatable {
         }
         foreach (AdditionalEffectMetadataModifyOverlapCount modifyOverlapCount in buff.Metadata.ModifyOverlapCount) {
             foreach (Buff buffResult in EnumerateBuffs(modifyOverlapCount.Id).Where(b => b.Stack(modifyOverlapCount.OffsetCount))) {
+                if (buffResult.Stacks <= 0) {
+                    Remove(buffResult.Id, buffResult.Caster.ObjectId);
+                    continue;
+                }
                 Actor.Field.Broadcast(BuffPacket.Update(buffResult));
             }
         }

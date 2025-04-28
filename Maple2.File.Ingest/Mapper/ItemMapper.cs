@@ -19,7 +19,6 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
     }
 
     protected override IEnumerable<ItemMetadata> Map() {
-        IEnumerable<(int Id, ItemExtraction Extraction)> itemExtractionData = tableParser.ParseItemExtraction();
         Dictionary<int, int> itemExtractionTryCount = tableParser.ParseItemExtraction()
             .ToDictionary(entry => entry.Id, entry => entry.Extraction.TryCount);
 

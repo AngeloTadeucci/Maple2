@@ -5,6 +5,7 @@ using Maple2.Server.Game.Manager.Field;
 using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
 using Maple2.Database.Storage;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
@@ -12,13 +13,12 @@ using Maple2.Server.Game.Model.Skill;
 namespace Maple2.Server.Game.Model;
 
 // Dummy Actor for field to own entities.
-internal sealed class FieldActor : IActor {
+public class FieldActor : Actor<MapMetadata> {
     public FieldManager Field { get; }
     public NpcMetadataStorage NpcMetadata { get; init; }
 
-    public int ObjectId => 0;
     public bool IsDead => false;
-    public IPrism Shape => new PointPrism(Position);
+    public override IPrism Shape => new PointPrism(Position);
     public ActorState State => ActorState.None;
     public ActorSubState SubState => ActorSubState.None;
     public Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
@@ -30,7 +30,7 @@ internal sealed class FieldActor : IActor {
     public SkillState SkillState { get; init; }
     public SkillQueue ActiveSkills { get; init; }
 
-    public FieldActor(FieldManager field, NpcMetadataStorage npcMetadata) {
+    public FieldActor(FieldManager field, int objectId, MapMetadata mapMetadata, NpcMetadataStorage npcMetadata) : base(field, objectId, mapMetadata, npcMetadata) {
         Field = field;
         Stats = new StatsManager(this);
         Buffs = new BuffManager(this);
