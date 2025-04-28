@@ -225,7 +225,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         patrolData.ApproachAnims.TryGetValue(wayPointDict.Key, out string? approachAnimation);
                         patrolData.ArriveAnims.TryGetValue(wayPointDict.Key, out string? arriveAnimation);
                         patrolData.ArriveAnimsTime.TryGetValue(wayPointDict.Key, out uint arriveAnimationTime);
-                        wayPoints.Add(new MS2WayPoint(wayPoint.EntityId, wayPoint.IsVisible, wayPoint.Position, wayPoint.Rotation, approachAnimation ?? "", arriveAnimation ?? "", (int) arriveAnimationTime));
+                        wayPoints.Add(new MS2WayPoint(wayPoint.EntityId, wayPoint.IsVisible, wayPoint.Position, wayPoint.Rotation, approachAnimation ?? "", arriveAnimation ?? "", (int) arriveAnimationTime, patrolData.IsAirWayPoint));
                     }
 
 

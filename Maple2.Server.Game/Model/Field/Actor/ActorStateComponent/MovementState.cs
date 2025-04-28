@@ -72,6 +72,19 @@ public partial class MovementState {
         };
     }
 
+    public NpcTask TryFlyTo(Vector3 position, bool isBattle, string sequence = "", float speed = 0, bool lookAt = false) {
+        walkTask?.Cancel();
+
+        NpcTaskPriority priority = isBattle ? NpcTaskPriority.BattleWalk : NpcTaskPriority.IdleAction;
+
+        return new NpcFlyToTask(actor.TaskState, priority, this) {
+            Position = position,
+            Sequence = sequence,
+            Speed = speed,
+            LookAt = lookAt,
+        };
+    }
+
     public NpcTask TryMoveTargetDistance(IActor target, float distance, bool isBattle, string sequence = "", float speed = 0) {
         walkTask?.Cancel();
 

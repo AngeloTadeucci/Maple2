@@ -1,5 +1,4 @@
-﻿
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
@@ -58,6 +57,30 @@ public partial class MovementState {
         }
     }
 
+    private void StartFlying(string sequence, NpcTask task) {
+        sequence = sequence == "" ? "Fly_A" : sequence;
+        walkSegmentSet = false;
+        walkSpeed = Speed;
+
+        emoteActionTask?.Cancel();
+
+        bool isFlying = sequence.StartsWith("Fly_");
+
+        baseSpeed = isFlying ? actor.Value.Metadata.Action.WalkSpeed : actor.Value.Metadata.Action.RunSpeed;
+
+        if (actor.Animation.PlayingSequence?.Name == sequence || actor.Animation.TryPlaySequence(sequence, aniSpeed * Speed, AnimationType.Misc)) {
+            stateSequence = actor.Animation.PlayingSequence;
+            walkSequence = stateSequence;
+            walkTask = task;
+
+            SetState(ActorState.Walk);
+        } else {
+            task.Cancel();
+
+            Idle("Fly_A");
+        }
+    }
+
     public bool IsMovingToTarget() {
         return State == ActorState.Walk && walkType switch {
             WalkType.MoveTo => true,
@@ -89,7 +112,26 @@ public partial class MovementState {
 
         if (walkType == WalkType.Direction) {
             StateWalkDirectionUpdate(tickCount, tickDelta, delta);
+            return;
+        }
 
+        // --- FLYING ADVANCE LOGIC ---
+        // If we're flying (sequence starts with "Fly_"), use direct advance
+        if (walkSequence != null && walkSequence.Name.StartsWith("Fly_")) {
+            Vector3 target = walkTargetPosition;
+            (Vector3 newPos, bool reachedFlying) = actor.Navigation.FlyAdvance(actor.Position, target, Speed, delta);
+
+            Velocity = (newPos - actor.Position) / delta;
+            actor.Position = newPos;
+
+            if (walkLookWhenDone && (target - actor.Position).LengthSquared() > 0) {
+                actor.Transform.LookTo(Vector3.Normalize(target - actor.Position));
+            }
+
+            if (reachedFlying) {
+                Velocity = new Vector3(0, 0, 0);
+                walkTask?.Completed();
+            }
             return;
         }
 
@@ -180,3 +222,4 @@ public partial class MovementState {
         }
     }
 }
+

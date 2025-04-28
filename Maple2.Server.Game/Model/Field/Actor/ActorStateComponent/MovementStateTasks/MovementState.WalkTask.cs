@@ -4,6 +4,7 @@ using System.Numerics;
 using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
+
 public partial class MovementState {
 
     public class NpcMoveDirectionTask : NpcTask {
@@ -75,6 +76,32 @@ public partial class MovementState {
         }
     }
 
+    public class NpcFlyToTask : NpcTask {
+        private readonly MovementState movement;
+        public Vector3 Position { get; init; }
+        public string Sequence { get; init; } = "";
+        public float Speed { get; init; }
+        public bool LookAt { get; init; }
+        public override bool CancelOnInterrupt => Priority == NpcTaskPriority.IdleAction;
+
+        public NpcFlyToTask(TaskState taskState, NpcTaskPriority priority, MovementState movement) : base(taskState, priority) {
+            this.movement = movement;
+        }
+
+        protected override void TaskResumed() {
+            movement.FlyTo(this, Position, Sequence, Speed, LookAt);
+        }
+
+        protected override void TaskPaused() {
+            movement.Idle("Fly_A");
+        }
+
+        protected override void TaskFinished(bool isCompleted) {
+            movement.walkTask = null;
+            movement.Idle("Fly_A");
+        }
+    }
+
     private void MoveTo(NpcTask task, Vector3 position, string sequence, float speed, bool lookAt) {
         if (!CanTransitionToState(ActorState.Walk)) {
             task.Cancel();
@@ -105,6 +132,29 @@ public partial class MovementState {
 
         UpdateMoveSpeed(speed);
         StartWalking(sequence, task);
+    }
+
+    private void FlyTo(NpcTask task, Vector3 position, string sequence, float speed, bool lookAt) {
+        if (!CanTransitionToState(ActorState.Walk)) {
+            task.Cancel();
+            return;
+        }
+
+        if (actor.Navigation is null) {
+            task.Cancel();
+
+            return;
+        }
+
+        actor.AppendDebugMessage($"> Flying to position\n");
+
+        walkTargetPosition = position;
+        walkType = WalkType.MoveTo;
+        walkLookWhenDone = lookAt;
+        walkTask = task;
+
+        UpdateMoveSpeed(speed);
+        StartFlying(sequence, task);
     }
 
     public class NpcMoveTargetDistanceTask : NpcTask {
