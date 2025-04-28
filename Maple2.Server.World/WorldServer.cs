@@ -68,8 +68,8 @@ public class WorldServer {
 
                     try {
                         channel.Heartbeat(new HeartbeatRequest {
-                                CharacterId = playerInfo.CharacterId,
-                            },
+                            CharacterId = playerInfo.CharacterId,
+                        },
                             cancellationToken: tokenSource.Token);
                     } catch (RpcException) {
                         playerInfo.Channel = -1;
