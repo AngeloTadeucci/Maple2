@@ -495,6 +495,8 @@ public partial class FieldManager {
                 return [];
             case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
+            case ApplyTargetType.RegionBuff:
+                return prisms.Filter(Players.Values, limit, ignore);
             default:
                 Log.Debug("Unhandled SkillEntity:{Entity}", targetType);
                 return [];

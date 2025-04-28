@@ -173,8 +173,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                     //     }
                     // }
 
-                    Field.VibrateObjects(record, Position);
-
+                    Field.VibrateObjects(damage, Position);
                     foreach (IActor target in targets) {
                         target.ApplyDamage(Caster, damage, attack);
                         // TODO: Set PrevUid?
@@ -188,6 +187,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         Field.Broadcast(SkillDamagePacket.Target(record, targetRecords));
                         Field.Broadcast(SkillDamagePacket.Region(damage));
                     }
+
                     Caster.ApplyEffects(attack.SkillsOnDamage, Caster, damage, targets: targets);
                     Caster.ApplyEffects(attack.Skills, Caster, Caster, skillId: Value.Id, targets: targets);
                 }

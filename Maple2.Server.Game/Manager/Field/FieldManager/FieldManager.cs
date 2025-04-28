@@ -90,7 +90,7 @@ public partial class FieldManager : IField {
         TriggerObjects = new TriggerCollection(entities);
 
         Scheduler = new EventQueue();
-        FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
+        FieldActor = new FieldActor(this, NextLocalId(), metadata, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
@@ -116,6 +116,7 @@ public partial class FieldManager : IField {
         }
 
         initialized = true;
+        FieldTick = Environment.TickCount64;
 
         if (MapData.TryGet(Metadata.XBlock, out FieldAccelerationStructure? accelerationStructure)) {
             AccelerationStructure = accelerationStructure;
@@ -570,14 +571,22 @@ public partial class FieldManager : IField {
         }
     }
 
-    public void VibrateObjects(SkillRecord record, Vector3 position) {
-        float rangeDistance = record.Attack.Range.Distance;
+    public void VibrateObjects(DamageRecord record, Vector3 position) {
+        if (record.AttackMetadata.BrokenOffence == 0) {
+            // No items are going to vibrate/break.
+            return;
+        }
+
+        float rangeDistance = record.AttackMetadata.Range.Distance;
         if (AccelerationStructure is null) {
             return;
         }
 
         List<FieldVibrateEntity> vibrateObjects = AccelerationStructure.QueryVibrateObjectsCenterList(position, 2 * new Vector3(rangeDistance, rangeDistance, rangeDistance));
         foreach (FieldVibrateEntity vibrate in vibrateObjects) {
+            if (vibrate.BreakDefense < record.AttackMetadata.BrokenOffence) {
+                // TODO Keep a record of when the vibrate object was broken. Don't send if it's currently broken and respawning.
+            }
             Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
     }

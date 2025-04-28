@@ -12,16 +12,16 @@ public static class VibratePacket {
         Invoke = 2,
     }
 
-    public static ByteWriter Attack(string entityId, SkillRecord skill) {
+    public static ByteWriter Attack(string entityId, DamageRecord damage) {
         var pWriter = Packet.Of(SendOp.Vibrate);
         pWriter.Write<Command>(Command.Attack);
         pWriter.WriteString(entityId);
-        pWriter.WriteLong(skill.CastUid);
-        pWriter.WriteInt(skill.SkillId);
-        pWriter.WriteShort(skill.Level);
-        pWriter.WriteByte(skill.MotionPoint);
-        pWriter.WriteByte(skill.AttackPoint);
-        pWriter.Write<Vector3S>(skill.Position);
+        pWriter.WriteLong(damage.SkillUid);
+        pWriter.WriteInt(damage.SkillId);
+        pWriter.WriteShort(damage.Level);
+        pWriter.WriteByte(damage.MotionPoint);
+        pWriter.WriteByte(damage.AttackPoint);
+        pWriter.Write<Vector3S>(damage.Position);
         pWriter.WriteInt(Environment.TickCount);
         pWriter.WriteString();
         pWriter.WriteByte();

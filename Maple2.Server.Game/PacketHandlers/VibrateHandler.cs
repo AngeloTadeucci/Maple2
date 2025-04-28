@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -24,26 +25,36 @@ public class VibrateHandler : PacketHandler<GameSession> {
         long skillUid = packet.ReadLong();
         int skillId = packet.ReadInt();
         short level = packet.ReadShort();
-        if (!SkillMetadata.TryGet(skillId, level, out SkillMetadata? metadata)) {
-            Logger.Error("Invalid skill use: {SkillId},{Level}", skillId, level);
+        byte motionPoint = packet.ReadByte();
+        byte attackPoint = packet.ReadByte();
+
+        SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
+        if (record == null) {
+            Logger.Warning("Invalid Skill {SkillUid}", skillUid);
             return;
         }
 
-        var record = new SkillRecord(metadata, skillUid, session.Player);
-        byte motionPoint = packet.ReadByte();
-        if (!record.TrySetMotionPoint(motionPoint)) {
-            Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);
-            return;
-        }
-        byte attackPoint = packet.ReadByte();
-        if (!record.TrySetAttackPoint(attackPoint)) {
-            Logger.Error("Invalid AttackPoint({AttackPoint}) for {Record}", attackPoint, record);
-            return;
-        }
+        DamageRecord damage = new(record.Metadata, record.Attack) {
+            CasterId = session.Player.ObjectId,
+            TargetUid = record.TargetUid,
+            OwnerId = session.Player.ObjectId,
+            SkillId = record.SkillId,
+            Level = record.Level,
+            MotionPoint = record.MotionPoint,
+            AttackPoint = record.AttackPoint,
+            Position = record.Position,
+            Direction = record.Direction,
+        };
 
         record.ServerTick = packet.ReadInt();
         record.Position = packet.Read<Vector3>();
 
-        session.Field?.Broadcast(VibratePacket.Attack(entityId, record));
+        FieldVibrateEntity? vibrate = session.Field?.AccelerationStructure?.GetVibrateEntity(entityId);
+        if (vibrate != null && vibrate.BreakDefense < record.Attack.BrokenOffence) {
+            //TODO: Keep a record of when the vibrate was broken.
+        }
+
+        // Packet gets sent regardless
+        session.Field?.Broadcast(VibratePacket.Attack(entityId, damage));
     }
 }

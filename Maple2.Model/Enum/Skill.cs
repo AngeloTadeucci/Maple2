@@ -95,7 +95,7 @@ public enum ApplyTargetType {
     Friendly = 2,
     Player1 = 3, // Unknown,
     Player2 = 5, // Unknown,
-    Player3 = 6, // Unknown, Recovery
+    RegionBuff = 6,
     Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
     HungryMobs = 8
 }
