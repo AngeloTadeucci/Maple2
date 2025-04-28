@@ -30,7 +30,9 @@ public partial class ChannelService {
         }
 
         if (!server.GetSession(request.CharacterId, out GameSession? session)) {
-            throw new RpcException(new Status(StatusCode.NotFound, $"Unable to find: {request.CharacterId}"));
+            return Task.FromResult(new DisconnectResponse {
+                Success = false,
+            });
         }
 
         session.Disconnect();

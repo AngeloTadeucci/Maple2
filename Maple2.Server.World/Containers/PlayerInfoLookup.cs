@@ -144,4 +144,10 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
         TryGet(id, out PlayerInfo? info);
         return info;
     }
+
+    public List<PlayerInfo> GetOnlinePlayerInfos() {
+        return cache.Values
+            .Where(player => player.Online)
+            .ToList();
+    }
 }

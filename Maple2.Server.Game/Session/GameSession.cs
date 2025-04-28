@@ -40,10 +40,14 @@ public sealed partial class GameSession : Core.Network.Session {
 
     private bool disposed;
     private readonly GameServer server;
-    private readonly Thread heartbeatThread;
 
     public readonly CommandRouter CommandHandler;
     public readonly EventQueue Scheduler;
+
+    public int LastServerTick;
+    public int LastClientTick;
+
+    public int Latency;
 
     public long AccountId { get; private set; }
     public long CharacterId { get; private set; }
@@ -116,8 +120,6 @@ public sealed partial class GameSession : Core.Network.Session {
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
         Clubs = new ConcurrentDictionary<long, ClubManager>();
-
-        heartbeatThread = new Thread(Heartbeat);
     }
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
@@ -727,7 +729,6 @@ public sealed partial class GameSession : Core.Network.Session {
             LeaveField();
             Player.Value.Character.Channel = 0;
             Player.Value.Account.Online = false;
-            heartbeatThread.Join();
             State = SessionState.Disconnected;
             Complete();
         } finally {

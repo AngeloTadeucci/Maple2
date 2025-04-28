@@ -341,3 +341,11 @@ message DisconnectRequest {
 message DisconnectResponse {
   bool success = 1;
 }
+
+message HeartbeatRequest {
+  int64 character_id = 1;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}

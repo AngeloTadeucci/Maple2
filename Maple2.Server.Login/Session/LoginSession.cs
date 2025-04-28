@@ -35,12 +35,15 @@ public class LoginSession : Core.Network.Session {
     #endregion
 
     private Account account = null!;
-    private readonly Thread heartbeatThread;
+
+    public int LastServerTick;
+    public int LastClientTick;
+
+    public int Latency;
 
     public LoginSession(TcpClient tcpClient, LoginServer server) : base(tcpClient) {
         Server = server;
         State = SessionState.ChangeMap;
-        heartbeatThread = new Thread(Heartbeat);
     }
 
     public void Init(long accountId, Guid machineId) {
@@ -49,7 +52,6 @@ public class LoginSession : Core.Network.Session {
 
         State = SessionState.Connected;
         Server.OnConnected(this);
-        heartbeatThread.Start();
     }
 
     public void ListServers() {
@@ -111,7 +113,9 @@ public class LoginSession : Core.Network.Session {
 
         Send(CharacterListPacket.SetMax(account.MaxCharacters, Constant.ServerMaxCharacters));
         Send(CharacterListPacket.AppendEntry(account, character,
-            new Dictionary<ItemGroup, List<Item>> { { ItemGroup.Outfit, outfits } }));
+            new Dictionary<ItemGroup, List<Item>> {
+                { ItemGroup.Outfit, outfits }
+            }));
     }
 
     #region Dispose
@@ -124,7 +128,6 @@ public class LoginSession : Core.Network.Session {
         try {
             Server.OnDisconnected(this);
             State = SessionState.Disconnected;
-            heartbeatThread.Join();
             Complete();
         } finally {
             base.Dispose(disposing);

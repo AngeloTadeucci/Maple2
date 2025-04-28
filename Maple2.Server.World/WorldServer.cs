@@ -2,13 +2,17 @@
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
+using Maple2.Server.Core.Sync;
 using Maple2.Server.World.Containers;
 using Maple2.Tools.Scheduler;
 using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
+using LoginClient = Maple2.Server.Login.Service.Login.LoginClient;
+
 
 namespace Maple2.Server.World;
 
@@ -17,7 +21,9 @@ public class WorldServer {
     private readonly ChannelClientLookup channelClients;
     private readonly ServerTableMetadataStorage serverTableMetadata;
     private readonly GlobalPortalLookup globalPortalLookup;
+    private readonly PlayerInfoLookup playerInfoLookup;
     private readonly Thread thread;
+    private readonly Thread heartbeatThread;
     private readonly EventQueue scheduler;
     private readonly CancellationTokenSource tokenSource = new();
     private readonly ConcurrentDictionary<int, string> memoryStringBoards;
@@ -25,11 +31,15 @@ public class WorldServer {
 
     private readonly ILogger logger = Log.ForContext<WorldServer>();
 
-    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup) {
+    private readonly LoginClient login;
+
+    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup, PlayerInfoLookup playerInfoLookup, LoginClient login) {
         this.gameStorage = gameStorage;
         this.channelClients = channelClients;
         this.serverTableMetadata = serverTableMetadata;
         this.globalPortalLookup = globalPortalLookup;
+        this.playerInfoLookup = playerInfoLookup;
+        this.login = login;
         scheduler = new EventQueue();
         scheduler.Start();
         memoryStringBoards = [];
@@ -39,6 +49,38 @@ public class WorldServer {
         ScheduleGameEvents();
         thread = new Thread(Loop);
         thread.Start();
+
+        heartbeatThread = new Thread(Heartbeat);
+        heartbeatThread.Start();
+    }
+
+    private void Heartbeat() {
+        while (!tokenSource.Token.IsCancellationRequested) {
+            try {
+                Thread.Sleep(TimeSpan.FromSeconds(30));
+                login.Heartbeat(new HeartbeatRequest());
+                foreach (PlayerInfo playerInfo in playerInfoLookup.GetOnlinePlayerInfos()) {
+                    if (playerInfo.CharacterId == 0) {
+                        continue;
+                    }
+                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channelClient)) {
+                        continue;
+                    }
+
+                    HeartbeatResponse? success = channelClient.Heartbeat(new HeartbeatRequest {
+                        CharacterId = playerInfo.CharacterId,
+                    });
+
+                    if (success != null) continue;
+
+                    playerInfo.Channel = 0;
+                }
+            } catch (ThreadInterruptedException) {
+                break;
+            } catch {
+                // Ignore exceptions
+            }
+        }
     }
 
     private void Loop() {

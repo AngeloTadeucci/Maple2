@@ -110,13 +110,6 @@ public abstract class Session : IDisposable {
         Dispose();
     }
 
-    protected void Heartbeat() {
-        while (State == SessionState.Connected) {
-            Thread.Sleep(TimeSpan.FromMinutes(1));
-            Send(RequestPacket.Heartbeat());
-        }
-    }
-
     public bool Connected() {
         if (disposed) {
             return false;
