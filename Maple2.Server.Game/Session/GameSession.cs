@@ -44,6 +44,11 @@ public sealed partial class GameSession : Core.Network.Session {
     public readonly CommandRouter CommandHandler;
     public readonly EventQueue Scheduler;
 
+    public int ServerTick;
+    public int ClientTick;
+
+    public int Latency;
+
     public long AccountId { get; private set; }
     public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
@@ -711,7 +716,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 CharacterId = CharacterId,
                 LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
-                Channel = 0,
+                Channel = -1,
                 Async = true,
             });
 
@@ -722,7 +727,7 @@ public sealed partial class GameSession : Core.Network.Session {
             Scheduler.Stop();
             server.OnDisconnected(this);
             LeaveField();
-            Player.Value.Character.Channel = 0;
+            Player.Value.Character.Channel = -1;
             Player.Value.Account.Online = false;
             State = SessionState.Disconnected;
             Complete();

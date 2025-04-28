@@ -78,4 +78,6 @@ public class LoginServer : Server<LoginSession> {
 
         return base.StopAsync(cancellationToken);
     }
+
+    public List<LoginSession> GetSessions() => sessions.Values.ToList();
 }

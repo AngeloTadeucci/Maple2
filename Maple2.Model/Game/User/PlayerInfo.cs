@@ -126,7 +126,7 @@ public class CharacterInfo {
     public DeathState DeathState { get; set; }
     // Location
     public int MapId { get; set; }
-    public short Channel { get; set; }
+    public short Channel { get; set; } = -1;
     public long LastOnlineTime { get; set; }
 
     // Guild
@@ -134,7 +134,7 @@ public class CharacterInfo {
     public string GuildName { get; set; }
 
     public long UpdateTime { get; set; }
-    public bool Online => Channel != 0;
+    public bool Online => Channel >= 0;
 
     public CharacterInfo(long accountId, long characterId, string name, string motto, string picture, Gender gender, Job job, short level) {
         AccountId = accountId;

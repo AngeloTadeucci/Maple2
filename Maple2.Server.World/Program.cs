@@ -6,6 +6,7 @@ using Maple2.Database.Storage;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Global.Service;
+using Maple2.Server.Login.Service;
 using Maple2.Server.World;
 using Maple2.Server.World.Containers;
 using Maple2.Server.World.Service;
@@ -44,6 +45,11 @@ builder.Logging.AddSerilog(dispose: true);
 
 builder.Services.AddGrpc();
 builder.Services.AddMemoryCache();
+
+builder.Services.AddGrpcClient<Login.LoginClient>(options => {
+    string loginService = Environment.GetEnvironmentVariable("GRPC_LOGIN_IP") ?? IPAddress.Loopback.ToString();
+    options.Address = new Uri($"http://{loginService}:{Target.GrpcLoginPort}");
+});
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {

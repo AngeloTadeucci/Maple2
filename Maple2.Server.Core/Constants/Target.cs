@@ -10,6 +10,8 @@ public static class Target {
     public static readonly IPAddress LoginIp = IPAddress.Loopback;
     public static readonly ushort LoginPort = 20001;
 
+    public static readonly ushort GrpcLoginPort = 21000;
+
     public static readonly IPAddress GameIp = IPAddress.Loopback;
     public static readonly ushort BaseGamePort = 20002;
 

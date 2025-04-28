@@ -333,3 +333,19 @@ message AdminResponse {
   int32 error = 1;
   string message = 2;
 }
+
+message DisconnectRequest {
+  int64 character_id = 1;
+}
+
+message DisconnectResponse {
+  bool success = 1;
+}
+
+message HeartbeatRequest {
+  int64 character_id = 1;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}
