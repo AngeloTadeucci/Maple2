@@ -6,15 +6,15 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ResponseHeartbeat : PacketHandler<GameSession> {
+public class ResponseHeartbeatHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.ResponseHeartbeat;
 
     public override void Handle(GameSession session, IByteReader packet) {
         int serverTick = packet.ReadInt();
         int clientTick = packet.ReadInt();
 
-        session.Latency = Environment.TickCount - serverTick;
-        if (session.Latency > Constant.MaxAllowedLatency) {
+        int latency = Environment.TickCount - serverTick;
+        if (latency > Constant.MaxAllowedLatency) {
 #if !DEBUG
             session.Disconnect();
 #endif
@@ -25,16 +25,16 @@ public class ResponseHeartbeat : PacketHandler<GameSession> {
             return;
         }
 
-        if (session is { LastClientTick: 0, LastServerTick: 0 }) {
-            session.LastClientTick = clientTick;
-            session.LastServerTick = serverTick;
+        if (session is { ClientTick: 0, ServerTick: 0 }) {
+            session.ClientTick = clientTick;
+            session.ServerTick = serverTick;
             return;
         }
 
-        int serverDelta = serverTick - session.LastServerTick;
-        int clientDelta = clientTick - session.LastClientTick;
+        int serverDelta = serverTick - session.ServerTick;
+        int clientDelta = clientTick - session.ClientTick;
 
-        session.LastClientTick = clientTick;
-        session.LastServerTick = serverTick;
+        session.ClientTick = clientTick;
+        session.ServerTick = serverTick;
     }
 }

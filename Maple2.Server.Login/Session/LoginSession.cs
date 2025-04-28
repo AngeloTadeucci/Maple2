@@ -36,10 +36,8 @@ public class LoginSession : Core.Network.Session {
 
     private Account account = null!;
 
-    public int LastServerTick;
-    public int LastClientTick;
-
-    public int Latency;
+    public int ServerTick;
+    public int ClientTick;
 
     public LoginSession(TcpClient tcpClient, LoginServer server) : base(tcpClient) {
         Server = server;

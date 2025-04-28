@@ -6,28 +6,28 @@ using Maple2.Server.Login.Session;
 
 namespace Maple2.Server.Login.PacketHandlers;
 
-public class ResponseHeartbeat : PacketHandler<LoginSession> {
+public class ResponseHeartbeatHandler : PacketHandler<LoginSession> {
     public override RecvOp OpCode => RecvOp.ResponseHeartbeat;
 
     public override void Handle(LoginSession session, IByteReader packet) {
         int serverTick = packet.ReadInt();
         int clientTick = packet.ReadInt();
 
-        session.Latency = Environment.TickCount - serverTick;
+
 
         if (serverTick == 0 || clientTick == 0) {
             return;
         }
 
-        if (session is { LastClientTick: 0, LastServerTick: 0 }) {
-            session.LastClientTick = clientTick;
-            session.LastServerTick = serverTick;
+        if (session is { ClientTick: 0, ServerTick: 0 }) {
+            session.ClientTick = clientTick;
+            session.ServerTick = serverTick;
             return;
         }
 
-        int serverDelta = serverTick - session.LastServerTick;
-        int clientDelta = clientTick - session.LastClientTick;
-        session.LastClientTick = clientTick;
-        session.LastServerTick = serverTick;
+        int serverDelta = serverTick - session.ServerTick;
+        int clientDelta = clientTick - session.ClientTick;
+        session.ClientTick = clientTick;
+        session.ServerTick = serverTick;
     }
 }

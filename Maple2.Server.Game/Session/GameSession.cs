@@ -44,8 +44,8 @@ public sealed partial class GameSession : Core.Network.Session {
     public readonly CommandRouter CommandHandler;
     public readonly EventQueue Scheduler;
 
-    public int LastServerTick;
-    public int LastClientTick;
+    public int ServerTick;
+    public int ClientTick;
 
     public int Latency;
 
