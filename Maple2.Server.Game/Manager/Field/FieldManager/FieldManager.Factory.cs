@@ -369,7 +369,7 @@ public partial class FieldManager {
                         return Create(mapId, ownerId: ownerId, roomId: roomId); // TODO: this should never happen.
                     case InstanceType.channelScale:
                         if (fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? scalingFields) && !scalingFields.IsEmpty) {
-                            return scalingFields.Values.FirstOrDefault();
+                            return scalingFields.Values.FirstOrDefault(f => !f.Disposed);
                         }
                         break;
                     default:
