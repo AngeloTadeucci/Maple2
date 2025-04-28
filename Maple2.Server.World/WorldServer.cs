@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Grpc.Core;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
@@ -57,28 +58,27 @@ public class WorldServer {
     private void Heartbeat() {
         while (!tokenSource.Token.IsCancellationRequested) {
             try {
-                Thread.Sleep(TimeSpan.FromSeconds(30));
-                login.Heartbeat(new HeartbeatRequest());
+                Task.Delay(TimeSpan.FromSeconds(30), tokenSource.Token);
+
+                login.Heartbeat(new HeartbeatRequest(), cancellationToken: tokenSource.Token);
+
                 foreach (PlayerInfo playerInfo in playerInfoLookup.GetOnlinePlayerInfos()) {
-                    if (playerInfo.CharacterId == 0) {
-                        continue;
+                    if (playerInfo.CharacterId == 0) continue;
+                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) continue;
+
+                    try {
+                        channel.Heartbeat(new HeartbeatRequest {
+                                CharacterId = playerInfo.CharacterId,
+                            },
+                            cancellationToken: tokenSource.Token);
+                    } catch (RpcException) {
+                        playerInfo.Channel = -1;
                     }
-                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channelClient)) {
-                        continue;
-                    }
-
-                    HeartbeatResponse? success = channelClient.Heartbeat(new HeartbeatRequest {
-                        CharacterId = playerInfo.CharacterId,
-                    });
-
-                    if (success != null) continue;
-
-                    playerInfo.Channel = -1;
                 }
-            } catch (ThreadInterruptedException) {
-                break;
-            } catch {
-                // Ignore exceptions
+            } catch (TaskCanceledException) {
+                break; // graceful shutdown
+            } catch (Exception ex) {
+                logger.Warning(ex, "Heartbeat loop error");
             }
         }
     }
