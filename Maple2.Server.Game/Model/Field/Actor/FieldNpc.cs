@@ -261,7 +261,9 @@ public class FieldNpc : Actor<Npc> {
     private NpcTask? NextWaypoint() {
         MS2WayPoint currentWaypoint = Patrol!.WayPoints[currentWaypointIndex];
         MS2WayPoint? waypointBefore = null;
-        if (currentWaypointIndex != 0) {
+        if (Patrol.IsLoop) {
+            waypointBefore = Patrol.WayPoints[(currentWaypointIndex - 1 + Patrol.WayPoints.Count) % Patrol.WayPoints.Count];
+        } else if (currentWaypointIndex != 0) {
             waypointBefore = Patrol.WayPoints[currentWaypointIndex - 1];
         }
 
@@ -275,18 +277,18 @@ public class FieldNpc : Actor<Npc> {
 
         if (currentWaypoint.AirWayPoint) {
             if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequenceMetadata? patrolSequence)) {
-                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: patrolSequence.Name, lookAt: true);
+                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: patrolSequence.Name, speed: Patrol.PatrolSpeed, lookAt: true);
             } else if (FlySequence is not null) {
-                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, FlySequence.Name, lookAt: true);
+                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: FlySequence.Name, speed: Patrol.PatrolSpeed, lookAt: true);
             } else {
                 Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, Patrol.Uuid);
             }
         } else {
             if (Navigation!.PathTo(currentWaypoint.Position)) {
                 if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequenceMetadata? patrolSequence)) {
-                    approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, sequence: patrolSequence.Name);
+                    approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, sequence: patrolSequence.Name, speed: Patrol.PatrolSpeed);
                 } else if (WalkSequence is not null) {
-                    approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, WalkSequence.Name);
+                    approachTask = MovementState.TryMoveTo(currentWaypoint.Position, false, sequence: WalkSequence.Name, speed: Patrol.PatrolSpeed);
                 } else {
                     Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, Patrol.Uuid);
                 }

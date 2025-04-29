@@ -93,12 +93,13 @@ public partial class MovementState {
         }
 
         protected override void TaskPaused() {
-            movement.Idle("Fly_A");
+            movement.Idle();
         }
 
         protected override void TaskFinished(bool isCompleted) {
             movement.walkTask = null;
-            movement.Idle("Fly_A");
+            movement.isFlying = false;
+            movement.Idle();
         }
     }
 
@@ -152,9 +153,10 @@ public partial class MovementState {
         walkType = WalkType.MoveTo;
         walkLookWhenDone = lookAt;
         walkTask = task;
+        isFlying = true;
 
         UpdateMoveSpeed(speed);
-        StartFlying(sequence, task);
+        StartWalking(sequence, task);
     }
 
     public class NpcMoveTargetDistanceTask : NpcTask {
