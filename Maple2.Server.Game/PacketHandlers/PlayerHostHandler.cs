@@ -32,6 +32,14 @@ public class PlayerHostHandler : PacketHandler<GameSession> {
             return;
         }
 
-        hongBao.Claim(session.Player);
+        Item? item = hongBao.Claim(session.Player);
+        if (item == null) {
+            return;
+        }
+
+        session.Send(PlayerHostPacket.GiftHongBao(session.Player, hongBao, item.Amount));
+        if (!session.Item.Inventory.Add(item, true)) {
+            session.Item.MailItem(item);
+        }
     }
 }

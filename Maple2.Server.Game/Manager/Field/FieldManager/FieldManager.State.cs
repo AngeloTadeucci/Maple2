@@ -410,10 +410,11 @@ public partial class FieldManager {
         Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
     }
 
-    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default) {
+    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
         var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, metadata, interval, position) {
             Position = position,
             Rotation = rotation,
+            TriggerId = triggerId,
         };
 
         fieldSkills[fieldSkill.ObjectId] = fieldSkill;
@@ -498,6 +499,7 @@ public partial class FieldManager {
             case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
             case ApplyTargetType.RegionBuff:
+            case ApplyTargetType.RegionBuff2:
                 return prisms.Filter(Players.Values, limit, ignore);
             default:
                 Log.Debug("Unhandled SkillEntity:{Entity}", targetType);
@@ -508,6 +510,13 @@ public partial class FieldManager {
     public void RemoveSkill(int objectId) {
         if (fieldSkills.Remove(objectId, out _)) {
             Broadcast(RegionSkillPacket.Remove(objectId));
+        }
+    }
+
+    public void RemoveSkillByTriggerId(int triggerId) {
+        foreach (FieldSkill fieldSkill in fieldSkills.Values.Where(skill => skill.TriggerId == triggerId)) {
+            fieldSkills.Remove(fieldSkill.ObjectId, out _);
+            Broadcast(RegionSkillPacket.Remove(fieldSkill.ObjectId));
         }
     }
     #endregion
@@ -573,8 +582,14 @@ public partial class FieldManager {
             return;
         }
 
-        hongBao.Claim(owner);
-        Broadcast(PlayerHostPacket.UseHongBao(hongBao));
+        Item? item = hongBao.Claim(owner);
+        if (item == null) {
+            return;
+        }
+        if (!owner.Session.Item.Inventory.Add(item, true)) {
+            owner.Session.Item.MailItem(item);
+        }
+        Broadcast(PlayerHostPacket.UseHongBao(hongBao, item.Amount));
     }
 
     public void RemoveHongBao(int objectId) {

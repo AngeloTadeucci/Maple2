@@ -94,8 +94,8 @@ public enum ApplyTargetType {
     Hostile = 1,
     Friendly = 2,
     Player1 = 3, // Unknown,
-    Player2 = 5, // Unknown,
-    RegionBuff = 6,
+    RegionBuff = 5, // Includes speed pads in Crazy Runners
+    RegionBuff2 = 6, // Includes Healing spots
     Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
     HungryMobs = 8
 }
