@@ -557,15 +557,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             !xmlParameters.ContainsKey("durationSec") || !int.TryParse(xmlParameters["durationSec"], out int durationSec)) {
             return;
         }
-
-        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
-        Item? newItem = session.Field.ItemDrop.CreateItem(itemId, amount: totalCount);
-        if (newItem == null) {
-            return;
-        }
-        if (!session.Item.Inventory.Add(newItem, true)) {
-            session.Item.MailItem(newItem);
-        }
         session.Item.Inventory.Consume(item.Uid, 1);
+        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
     }
 }

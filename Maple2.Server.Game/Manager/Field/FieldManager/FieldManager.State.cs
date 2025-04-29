@@ -573,6 +573,7 @@ public partial class FieldManager {
             return;
         }
 
+        hongBao.Claim(owner);
         Broadcast(PlayerHostPacket.UseHongBao(hongBao));
     }
 

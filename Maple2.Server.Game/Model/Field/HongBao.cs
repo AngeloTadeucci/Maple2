@@ -13,6 +13,7 @@ public class HongBao : IUpdatable, IByteSerializable {
     public int SourceItemId { get; init; }
     public FieldPlayer Owner { get; init; }
     public ConcurrentDictionary<int, FieldPlayer> Players { get; } = new();
+    public int[] Distributions { get; } = [];
     public int MaxUserCount { get; init; }
     public long EndTick { get; }
     public int ItemId { get; }
@@ -30,19 +31,54 @@ public class HongBao : IUpdatable, IByteSerializable {
         ItemCount = itemCount;
         active = true;
         Players.TryAdd(owner.ObjectId, owner);
+        Distributions = CalculateDistributions(ItemCount, MaxUserCount);
     }
 
-    public bool AddPlayer(FieldPlayer player) {
+    private int[] CalculateDistributions(int totalAmount, int remainingRecipients) {
+        if (remainingRecipients <= 0) return [];
+        if (remainingRecipients == 1) return [totalAmount];
+
+        // Ensure minimum 1 meret per person
+        int remainingMeret = totalAmount - remainingRecipients;
+
+        // Calculate maximum possible amount for this person
+        // Leave enough for others to get at least 1 each
+        int maxPossible = remainingMeret - (remainingRecipients - 1);
+
+        // Generate random amount between 1 and maxPossible
+        int amount = Random.Shared.Next(1, Math.Max(2, maxPossible + 1));
+
+        // Recursively distribute the rest
+        int[] remaining = CalculateDistributions(
+            totalAmount - amount,
+            remainingRecipients - 1
+        );
+
+        return new[] { amount }.Concat(remaining).ToArray();
+    }
+
+    public void Claim(FieldPlayer player) {
         if (Players.Count >= MaxUserCount) {
-            return false;
+            return;
         }
 
         if (Players.ContainsKey(player.ObjectId)) {
-            return false;
+            return;
         }
 
-        Players.TryAdd(player.ObjectId, player);
-        return true;
+        if (!Players.TryAdd(player.ObjectId, player)) {
+            return;
+        }
+
+        Item? item = player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[Players.Count - 1]);
+        if (item == null) {
+            return;
+        }
+
+        player.Session.Send(PlayerHostPacket.GiftHongBao(player, this, item.Amount));
+        if (!player.Session.Item.Inventory.Add(item, true)) {
+            player.Session.Item.MailItem(item);
+        }
     }
 
     public void Update(long tickCount) {
