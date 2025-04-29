@@ -44,6 +44,8 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
     private readonly ConcurrentDictionary<int, FieldPortal> fieldPortals = new();
 
+    private readonly ConcurrentDictionary<int, HongBao> hongBaos = new();
+
     private string? background;
     private readonly ConcurrentDictionary<FieldProperty, IFieldProperty> fieldProperties = new();
 
@@ -555,7 +557,7 @@ public partial class FieldManager {
             Continent.Kritias => "Eff_ks_magichole_portal_A01",
             _ => "Eff_event_portal_A01",
         };
-        fieldPortal.EndTick = (int) (Environment.TickCount64 + TimeSpan.FromSeconds(30).TotalMilliseconds);
+        fieldPortal.EndTick = (int) (FieldTick + TimeSpan.FromSeconds(30).TotalMilliseconds);
         Broadcast(PortalPacket.Add(fieldPortal));
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
     }
@@ -563,6 +565,26 @@ public partial class FieldManager {
     public void SetRoomTimer(RoomTimerType type, int duration) {
         RoomTimer = new RoomTimer(this, type, duration);
     }
+
+    public void AddHongBao(FieldPlayer owner, int sourceItemId, int itemId, int totalUser, int durationSec, int itemCount) {
+        var hongBao = new HongBao(this, owner, sourceItemId, NextLocalId(), itemId, totalUser, FieldTick, durationSec, itemCount);
+        if (!hongBaos.TryAdd(hongBao.ObjectId, hongBao)) {
+            logger.Error("Failed to add hongbao {ObjectId}", hongBao.ObjectId);
+            return;
+        }
+
+        hongBao.Claim(owner);
+        Broadcast(PlayerHostPacket.UseHongBao(hongBao));
+    }
+
+    public void RemoveHongBao(int objectId) {
+        hongBaos.TryRemove(objectId, out _);
+    }
+
+    public bool TryGetHongBao(int objectId, [NotNullWhen(true)] out HongBao? hongBao) {
+        return hongBaos.TryGetValue(objectId, out hongBao);
+    }
+
 
     #region Player Managed
     // GuideObject is not added to the field, it will be managed by |GameSession.State|

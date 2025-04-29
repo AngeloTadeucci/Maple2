@@ -260,8 +260,8 @@ public class InventoryManager {
                 break;
             // case 90000011: // Meret (Secondary)
             // case 90000015: // GameMeret (Secondary)
-            // case 90000016: // EventMeret (Secondary)
-            // case 90000020: // RedMeret
+            case 90000016: // EventMeret (Secondary)
+            case 90000020: // RedMeret
             case 90000004: // Meret
                 session.Currency.Meret += add.Amount;
                 break;
