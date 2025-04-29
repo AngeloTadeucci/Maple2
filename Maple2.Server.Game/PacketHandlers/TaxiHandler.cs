@@ -88,6 +88,8 @@ public class TaxiHandler : PacketHandler<GameSession> {
         }
         session.Currency.Meso -= cost;
 
+        session.ConditionUpdate(ConditionType.taxiuse);
+        session.ConditionUpdate(ConditionType.taxifee, counter: cost);
         Vector3 position = entities.Taxi.Position.Offset(-VectorExtensions.BLOCK_SIZE, entities.Taxi.Rotation);
         Vector3 rotation = entities.Taxi.Rotation;
         session.Send(session.PrepareField(mapId, position: position, rotation: rotation)

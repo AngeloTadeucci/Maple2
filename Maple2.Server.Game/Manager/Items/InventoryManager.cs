@@ -514,38 +514,44 @@ public class InventoryManager {
         }
     }
 
-    public void Expand(InventoryType type) {
+    public bool Expand(InventoryType type, int expandRowCount = Constant.InventoryExpandRowCount) {
+        // if expandRowCount is not divisible by 6, return false
+        if (expandRowCount % 6 != 0) {
+            return false;
+        }
+
         lock (session.Item) {
             if (!tabs.TryGetValue(type, out ItemCollection? items)) {
                 session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));
-                return;
+                return false;
             }
 
-            short newExpand = (short) (session.Player.Value.Unlock.Expand[type] + Constant.InventoryExpandRowCount);
+            short newExpand = (short) (session.Player.Value.Unlock.Expand[type] + expandRowCount);
             if (newExpand > MaxExpandSize(type)) {
                 // There is client side validation for this, but if the server side limits mismatch, use this error.
                 session.Send(NoticePacket.MessageBox(StringCode.s_inventory_err_expand_max));
-                return;
+                return false;
             }
 
             if (session.Currency.Meret < Constant.InventoryExpandPrice1Row) {
                 session.Send(ItemInventoryPacket.Error(s_cannot_charge_merat));
-                return;
+                return false;
             }
 
             if (!items.Expand((short) (BaseSize(type) + newExpand))) {
-                return;
+                return false;
             }
 
             session.Currency.Meret -= Constant.InventoryExpandPrice1Row;
             if (session.Player.Value.Unlock.Expand.ContainsKey(type)) {
                 session.Player.Value.Unlock.Expand[type] = newExpand;
             } else {
-                session.Player.Value.Unlock.Expand[type] = Constant.InventoryExpandRowCount;
+                session.Player.Value.Unlock.Expand[type] = (short) expandRowCount;
             }
 
             session.Send(ItemInventoryPacket.ExpandCount(type, newExpand));
             session.Send(ItemInventoryPacket.ExpandComplete());
+            return true;
         }
     }
 

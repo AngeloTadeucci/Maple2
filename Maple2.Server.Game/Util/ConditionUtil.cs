@@ -114,6 +114,9 @@ public static class ConditionUtil {
             case ConditionType.explore_continent:
             case ConditionType.continent:
             case ConditionType.explore:
+            case ConditionType.revise_achieve_multi_grade:
+            case ConditionType.revise_achieve_single_grade:
+            case ConditionType.hero_achieve_grade:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -163,6 +166,11 @@ public static class ConditionUtil {
             case ConditionType.home_doctor:
             case ConditionType.resolve_panelty:
             case ConditionType.hit_tombstone:
+            case ConditionType.taxiuse:
+            case ConditionType.taxifee:
+            case ConditionType.chat:
+            case ConditionType.send_mail:
+            case ConditionType.change_ugc_equip:
                 return true;
         }
         return false;
@@ -221,6 +229,9 @@ public static class ConditionUtil {
             case ConditionType.music_play_instrument_time:
             case ConditionType.music_play_score:
             case ConditionType.music_play_ensemble_in:
+            case ConditionType.revise_achieve_multi_grade:
+            case ConditionType.revise_achieve_single_grade:
+            case ConditionType.chat:
                 if (target.Range != null && target.Range.Value.Min >= longValue &&
                     target.Range.Value.Max <= longValue) {
                     return true;
@@ -296,6 +307,11 @@ public static class ConditionUtil {
             case ConditionType.home_doctor:
             case ConditionType.resolve_panelty:
             case ConditionType.hit_tombstone:
+            case ConditionType.hero_achieve_grade:
+            case ConditionType.taxiuse:
+            case ConditionType.taxifee:
+            case ConditionType.send_mail:
+            case ConditionType.change_ugc_equip:
                 return true;
         }
         return false;

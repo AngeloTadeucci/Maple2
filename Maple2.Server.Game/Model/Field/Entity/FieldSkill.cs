@@ -16,6 +16,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     public int FireCount { get; private set; }
     public bool Enabled => FireCount < 0 || NextTick <= endTick || Field.FieldTick <= endTick;
     public bool Active { get; private set; } = true;
+    public int TriggerId { get; init; }
 
     public readonly Vector3[] Points;
     public readonly bool UseDirection;

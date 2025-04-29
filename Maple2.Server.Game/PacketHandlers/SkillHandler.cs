@@ -255,6 +255,8 @@ public class SkillHandler : PacketHandler<GameSession> {
                         record.Targets.TryAdd(pet.ObjectId, pet);
                     }
                     continue;
+                case ApplyTargetType.RegionBuff:
+                case ApplyTargetType.RegionBuff2:
                 default:
                     Logger.Debug("Unhandled Target-SkillEntity:{Entity}", record.Attack.Range.ApplyTarget);
                     continue;

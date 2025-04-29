@@ -59,7 +59,7 @@ public interface IField : IDisposable {
     public long FieldTick { get; }
     public virtual void Init() { }
 
-    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default);
+    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0);
     public void AddSkill(SkillRecord record);
     public void AddSkill(IActor caster, SkillEffectMetadata effect, Vector3[] points, in Vector3 rotation = default);
     public IEnumerable<IActor> GetTargets(IActor actor, Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null);

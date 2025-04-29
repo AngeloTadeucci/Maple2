@@ -18,10 +18,15 @@ public static class PlayerHostPacket {
         AdBalloonWindow = 6,
     }
 
-    public static ByteWriter UseHongBao(HongBao hongBao) {
+    public static ByteWriter UseHongBao(HongBao hongBao, int amount) {
         var pWriter = Packet.Of(SendOp.PlayerHost);
         pWriter.Write<Command>(Command.UseHongBao);
-        pWriter.WriteClass<HongBao>(hongBao);
+        pWriter.WriteInt(hongBao.SourceItemId);
+        pWriter.WriteInt(hongBao.ObjectId);
+        pWriter.WriteInt(hongBao.ItemId);
+        pWriter.WriteInt(amount);
+        pWriter.WriteInt(hongBao.MaxUserCount - 1);
+        pWriter.WriteUnicodeString(hongBao.Owner.Value.Character.Name);
 
         return pWriter;
     }

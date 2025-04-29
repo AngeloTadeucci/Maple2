@@ -52,6 +52,7 @@ public class PlayerCommand : GameCommand {
                 session.Stats.Refresh();
 
                 session.ConditionUpdate(ConditionType.level, targetLong: level);
+                session.ConditionUpdate(ConditionType.level_up, codeLong: (int) session.Player.Value.Character.Job.Code(), targetLong: level);
 
                 session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                     AccountId = session.AccountId,

@@ -39,6 +39,10 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
+        if (item.Metadata.Function?.OnlyShadowWorld == true && session.Field.Metadata.Property.Continent != Continent.ShadowWorld) {
+            return;
+        }
+
         switch (item.Metadata.Function?.Type) {
             case ItemFunction.BlueprintImport:
                 HandleBlueprintImport(session, item);
@@ -109,6 +113,12 @@ public class ItemUseHandler : PacketHandler<GameSession> {
                 break;
             case ItemFunction.HongBao:
                 HandleHongBao(session, item);
+                break;
+            case ItemFunction.AddAdditionalEffect:
+                HandleAddAdditionalEffect(session, item);
+                break;
+            case ItemFunction.ExpandInven:
+                HandleExpandInventory(session, item);
                 break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
@@ -559,5 +569,51 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         }
         session.Item.Inventory.Consume(item.Uid, 1);
         session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
+    }
+
+    private void HandleAddAdditionalEffect(GameSession session, Item item) {
+        int[] parameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
+        if (parameters.Length < 2) {
+            return;
+        }
+
+        int effectId = parameters[0];
+        short effectLevel = (short) parameters[1];
+        session.Player.Buffs.AddBuff(session.Player, session.Player, effectId, effectLevel, session.Field.FieldTick, notifyField: true);
+        session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private void HandleExpandInventory(GameSession session, Item item) {
+        string[] parameters = item.Metadata.Function?.Parameters.Split(',') ?? [];
+        if (parameters.Length < 2) {
+            return;
+        }
+
+        int amount = int.Parse(parameters[0]);
+        InventoryType inventoryType = parameters[1] switch {
+            "game" => InventoryType.Gear,
+            "mastery" => InventoryType.LifeSkill,
+            "summon" => InventoryType.Mount,
+            "misc" => InventoryType.Misc,
+            "skin" => InventoryType.Outfit,
+            "gem" => InventoryType.Gemstone,
+            "material" => InventoryType.Catalyst,
+            "quest" => InventoryType.Quest,
+            "life" => InventoryType.FishingMusic,
+            "coin" => InventoryType.Currency,
+            "pet" => InventoryType.Pets,
+            "activeSkill" => InventoryType.Consumable,
+            "badge" => InventoryType.Badge,
+            "piece" => InventoryType.Fragment,
+            _ => InventoryType.Misc,
+        };
+
+        if (!session.Item.Inventory.Expand(inventoryType, amount)) {
+            session.Send(ItemUsePacket.MaxInventory());
+            return;
+        }
+
+        session.Send(ItemUsePacket.ExpandInventory());
+        session.Item.Inventory.Consume(item.Uid, 1);
     }
 }

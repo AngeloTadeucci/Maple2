@@ -1,13 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using Maple2.Model.Game;
-using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.Manager.Field;
-using Maple2.Server.Game.Packets;
-using Maple2.Tools;
 
 namespace Maple2.Server.Game.Model;
 
-public class HongBao : IUpdatable, IByteSerializable {
+public class HongBao : IUpdatable {
     private readonly FieldManager field;
     public int ObjectId { get; init; }
     public int SourceItemId { get; init; }
@@ -30,7 +27,6 @@ public class HongBao : IUpdatable, IByteSerializable {
         ItemId = itemId;
         ItemCount = itemCount;
         active = true;
-        Players.TryAdd(owner.ObjectId, owner);
         Distributions = CalculateDistributions(ItemCount, MaxUserCount);
     }
 
@@ -59,32 +55,24 @@ public class HongBao : IUpdatable, IByteSerializable {
         }.Concat(remaining).ToArray();
     }
 
-    public void Claim(FieldPlayer player) {
+    public Item? Claim(FieldPlayer player) {
         if (Players.Count >= MaxUserCount) {
-            return;
+            return null;
         }
 
         if (Players.ContainsKey(player.ObjectId)) {
-            return;
+            return null;
         }
 
         if (!Players.TryAdd(player.ObjectId, player)) {
-            return;
+            return null;
         }
 
         int distributionIndex = Players.Count - 1;
         if (distributionIndex < 0 || distributionIndex >= Distributions.Length) {
-            return;
+            return null;
         }
-        Item? item = player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[distributionIndex]);
-        if (item == null) {
-            return;
-        }
-
-        player.Session.Send(PlayerHostPacket.GiftHongBao(player, this, item.Amount));
-        if (!player.Session.Item.Inventory.Add(item, true)) {
-            player.Session.Item.MailItem(item);
-        }
+        return player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[distributionIndex]);
     }
 
     public void Update(long tickCount) {
@@ -96,13 +84,5 @@ public class HongBao : IUpdatable, IByteSerializable {
         }
         active = false;
         field.RemoveHongBao(ObjectId);
-    }
-    public void WriteTo(IByteWriter writer) {
-        writer.WriteInt(SourceItemId);
-        writer.WriteInt(ObjectId);
-        writer.WriteInt(ItemId);
-        writer.WriteInt(ItemCount);
-        writer.WriteInt(MaxUserCount);
-        writer.WriteUnicodeString(Owner.Value.Character.Name);
     }
 }
