@@ -54,7 +54,9 @@ public class HongBao : IUpdatable, IByteSerializable {
             remainingRecipients - 1
         );
 
-        return new[] { amount }.Concat(remaining).ToArray();
+        return new[] {
+            amount
+        }.Concat(remaining).ToArray();
     }
 
     public void Claim(FieldPlayer player) {
@@ -70,7 +72,11 @@ public class HongBao : IUpdatable, IByteSerializable {
             return;
         }
 
-        Item? item = player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[Players.Count - 1]);
+        int distributionIndex = Players.Count - 1;
+        if (distributionIndex < 0 || distributionIndex >= Distributions.Length) {
+            return;
+        }
+        Item? item = player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[distributionIndex]);
         if (item == null) {
             return;
         }

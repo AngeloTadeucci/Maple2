@@ -30,15 +30,11 @@ public static class PlayerHostPacket {
         var pWriter = Packet.Of(SendOp.PlayerHost);
         pWriter.Write<Command>(Command.GiftHongBao);
         pWriter.WriteBool(true);
-
-        if (true) {
-            pWriter.WriteInt(hongBao.SourceItemId);
-            pWriter.WriteInt(hongBao.ItemId);
-            pWriter.WriteInt(amount);
-            pWriter.WriteUnicodeString(hongBao.Owner.Value.Character.Name);
-            pWriter.WriteUnicodeString(player.Value.Character.Name);
-
-        }
+        pWriter.WriteInt(hongBao.SourceItemId);
+        pWriter.WriteInt(hongBao.ItemId);
+        pWriter.WriteInt(amount);
+        pWriter.WriteUnicodeString(hongBao.Owner.Value.Character.Name);
+        pWriter.WriteUnicodeString(player.Value.Character.Name);
 
         return pWriter;
     }
