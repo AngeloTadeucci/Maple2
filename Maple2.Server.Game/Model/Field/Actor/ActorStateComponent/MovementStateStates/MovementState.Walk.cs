@@ -24,6 +24,7 @@ public partial class MovementState {
     private AnimationSequenceMetadata? walkSequence = null;
     private float walkSpeed;
     private NpcTask? walkTask = null;
+    private bool isFlying;
 
     private void UpdateMoveSpeed(float speed) {
         Stat moveSpeed = actor.Stats.Values[BasicAttribute.MovementSpeed];
@@ -54,30 +55,6 @@ public partial class MovementState {
             task.Cancel();
 
             Idle();
-        }
-    }
-
-    private void StartFlying(string sequence, NpcTask task) {
-        sequence = sequence == "" ? "Fly_A" : sequence;
-        walkSegmentSet = false;
-        walkSpeed = Speed;
-
-        emoteActionTask?.Cancel();
-
-        bool isFlying = sequence.StartsWith("Fly_");
-
-        baseSpeed = isFlying ? actor.Value.Metadata.Action.WalkSpeed : actor.Value.Metadata.Action.RunSpeed;
-
-        if (actor.Animation.PlayingSequence?.Name == sequence || actor.Animation.TryPlaySequence(sequence, aniSpeed * Speed, AnimationType.Misc)) {
-            stateSequence = actor.Animation.PlayingSequence;
-            walkSequence = stateSequence;
-            walkTask = task;
-
-            SetState(ActorState.Walk);
-        } else {
-            task.Cancel();
-
-            Idle("Fly_A");
         }
     }
 
@@ -116,8 +93,8 @@ public partial class MovementState {
         }
 
         // --- FLYING ADVANCE LOGIC ---
-        // If we're flying (sequence starts with "Fly_"), use direct advance
-        if (walkSequence != null && walkSequence.Name.StartsWith("Fly_")) {
+        // If isFlying, use direct advance
+        if (walkSequence != null && isFlying) {
             Vector3 target = walkTargetPosition;
             (Vector3 newPos, bool reachedFlying) = actor.Navigation.FlyAdvance(actor.Position, target, Speed, delta);
 
