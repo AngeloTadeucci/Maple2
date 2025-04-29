@@ -111,7 +111,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             ItemMetadataFunction? function = string.IsNullOrWhiteSpace(data.function.name) ? null : new ItemMetadataFunction(
                 Type: Enum.Parse<ItemFunction>(data.function.name),
                 Name: data.function.name, // Temp duplicate data makes it easier to read DB
-                Parameters: data.function.parameter);
+                Parameters: data.function.parameter,
+                OnlyShadowWorld: data.function.onlyShadowContinent == 1);
 
             bool hasOption = data.option.@static > 0 || data.option.constant > 0 || data.option.random > 0 || data.option.optionID > 0;
             int levelFactor = (int) data.option.optionLevelFactor;

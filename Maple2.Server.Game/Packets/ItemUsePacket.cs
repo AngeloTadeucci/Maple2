@@ -13,6 +13,24 @@ public static class ItemUsePacket {
         BeautyCoupon = 6,
     }
 
+    // s_msg_expand_inven_complete
+    // - Your inventory has been expanded.
+    public static ByteWriter ExpandInventory() {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.ExpandInventory);
+
+        return pWriter;
+    }
+
+    // s_msg_expand_inven_already_maximum
+    // - You cannot expand your inventory any further.
+    public static ByteWriter MaxInventory() {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.MaxInventory);
+
+        return pWriter;
+    }
+
     // s_msg_expand_character_slot_complete
     // - A character slot has been added.
     public static ByteWriter CharacterSlotAdded() {
