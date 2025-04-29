@@ -58,7 +58,7 @@ public class WorldServer {
     private void Heartbeat() {
         while (!tokenSource.Token.IsCancellationRequested) {
             try {
-                Task.Delay(TimeSpan.FromSeconds(30), tokenSource.Token);
+                Thread.Sleep(TimeSpan.FromSeconds(30));
 
                 login.Heartbeat(new HeartbeatRequest(), cancellationToken: tokenSource.Token);
 
