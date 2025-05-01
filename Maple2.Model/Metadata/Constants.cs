@@ -113,7 +113,7 @@ public static class Constant {
     public const bool EnableRollEverywhere = false;
     public const bool HideHomeCommands = true;
 
-    public static int MaxAllowedLatency = TimeSpan.FromSeconds(2).Milliseconds;
+    public const int MaxAllowedLatency = 2000;
 
     public static IReadOnlyDictionary<string, int> ContentRewards { get; } = new Dictionary<string, int> {
         {"miniGame", 1005},
