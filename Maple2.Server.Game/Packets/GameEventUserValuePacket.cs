@@ -33,18 +33,4 @@ public static class GameEventUserValuePacket {
 
         return pWriter;
     }
-
-    public static ByteWriter Test(int i) {
-        var pWriter = Packet.Of(SendOp.GameEventUserValue);
-        pWriter.Write<Command>(Command.Update);
-        pWriter.WriteByte();
-
-        //pWriter.WriteInt(1);
-        pWriter.WriteInt(i);
-        pWriter.WriteInt(700001);
-        pWriter.WriteUnicodeString("False");
-        pWriter.WriteLong(DateTime.Now.AddYears(1).ToEpochSeconds());
-
-        return pWriter;
-    }
 }
