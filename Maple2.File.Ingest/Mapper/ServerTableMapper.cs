@@ -1160,6 +1160,117 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     RewardItems: galleryRewards.ToArray(),
                     RevealDayLimit: int.TryParse(value3, out int revealDayLimit) ? revealDayLimit : 1,
                     Image: value4);
+            case GameEventType.BingoEvent:
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not { Name: "ms2" }) {
+                    return null;
+                }
+
+                var numbers = new List<int[]>();
+                foreach (XmlNode childNode in value1Xml.FirstChild.ChildNodes) {
+                    if (childNode.Name == "number") {
+                        int[] dayNumbers = childNode.Attributes?["value"]?.Value.Split(',').Select(int.Parse).ToArray() ?? [];
+                        numbers.Add(dayNumbers);
+                    }
+                }
+
+
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not { Name: "ms2" }) {
+                    return null;
+                }
+
+
+                var bingoRewards = new List<BingoEvent.BingoReward>();
+                foreach (XmlNode childNode in value2Xml.FirstChild.ChildNodes) {
+                    if (childNode.Name == "reward") {
+                        var bingoItems = new List<RewardItem>();
+                        foreach (XmlNode itemNode in childNode.ChildNodes) {
+                            if (!int.TryParse(itemNode.Attributes?["itemID"]?.Value, out int itemId)) {
+                                continue;
+                            }
+
+                            if (!short.TryParse(itemNode.Attributes?["grade"]?.Value, out short grade)) {
+                                grade = 1;
+                            }
+
+                            if (!int.TryParse(itemNode.Attributes?["count"]?.Value, out int count)) {
+                                count = 1;
+                            }
+
+                            bingoItems.Add(new RewardItem(itemId, grade, count));
+                        }
+                        bingoRewards.Add(new BingoEvent.BingoReward(
+                            Items: bingoItems.ToArray()));
+                    }
+                }
+
+                int pencilItemId = int.TryParse(value3, out int pencilId) ? pencilId : 0;
+                int pencilPlusItemId = int.TryParse(value4, out int plusPencilId) ? plusPencilId : 0;
+                return new BingoEvent(
+                    Numbers: numbers.ToArray(),
+                    Rewards: bingoRewards.ToArray(),
+                    PencilItemId: pencilItemId,
+                    PencilPlusItemId: pencilPlusItemId);
+            case GameEventType.TimeRunEvent:
+                value1Xml.LoadXml(value1);
+                if (value1Xml.FirstChild is not { Name: "ms" }) {
+                    return null;
+                }
+
+                var quests = new List<TimeRunEvent.Quest>();
+                foreach (XmlNode childNode in value1Xml.FirstChild.ChildNodes) {
+                    if (childNode.Name == "quest") {
+                        if (!int.TryParse(childNode.Attributes?["questID"]?.Value, out int questId)) {
+                            continue;
+                        }
+                        if (!int.TryParse(childNode.Attributes?["distance"]?.Value, out int distance)) {
+                            continue;
+                        }
+                        if (!int.TryParse(childNode.Attributes?["openingDay"]?.Value, out int openingDay)) {
+                            continue;
+                        }
+                        quests.Add(new TimeRunEvent.Quest(
+                            Id: questId,
+                            Distance: distance,
+                            OpeningDay: openingDay));
+                    }
+                }
+
+                value2Xml.LoadXml(value2);
+                if (value2Xml.FirstChild is not { Name: "ms" }) {
+                    return null;
+                }
+                XmlNode? rewardNode = value2Xml.FirstChild.FirstChild;
+                if (rewardNode == null) {
+                    return null;
+                }
+
+                if (!int.TryParse(rewardNode.Attributes?["itemID"]?.Value, out int timerunEventItemId)) {
+                    return null;
+                }
+                if (!int.TryParse(rewardNode.Attributes?["count"]?.Value, out int timerunEventItemCount)) {
+                    return null;
+                }
+                if (!short.TryParse(rewardNode.Attributes?["grade"]?.Value, out short timerunEventItemGrade)) {
+                    return null;
+                }
+
+                if (!int.TryParse(value3, out int startTimeRunEventItemId)) {
+                    return null;
+                }
+                return new TimeRunEvent(
+                    StartItemId: startTimeRunEventItemId,
+                    Quests: quests.ToArray(),
+                    StepRewards: new Dictionary<int, RewardItem>(), // No step rewards were added in the metadata.
+                    FinalReward: new RewardItem(
+                        itemId: timerunEventItemId,
+                        amount: timerunEventItemCount,
+                        rarity: timerunEventItemGrade));
+            case GameEventType.MapleSurvivalOpenPeriod:
+                return new MapleSurvivalOpenPeriod();
+            case GameEventType.ShutdownMapleSurvival:
+                return new ShutdownMapleSurvival();
             default:
                 return null;
         }

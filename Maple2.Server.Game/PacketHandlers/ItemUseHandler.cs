@@ -120,6 +120,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             case ItemFunction.ExpandInven:
                 HandleExpandInventory(session, item);
                 break;
+            case ItemFunction.QuestScroll:
+                HandleQuestScroll(session, item);
+                break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
@@ -615,5 +618,20 @@ public class ItemUseHandler : PacketHandler<GameSession> {
 
         session.Send(ItemUsePacket.ExpandInventory());
         session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private void HandleQuestScroll(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("questID")) {
+            return;
+        }
+
+        int[] questIds = xmlParameters["questID"].Split(',').Select(int.Parse).ToArray();
+        foreach (int questId in questIds) {
+            session.Quest.Start(questId);
+        }
+
+        session.Item.Inventory.Consume(item.Uid, 1);
+        session.Send(ItemUsePacket.QuestScroll(item.Id));
     }
 }

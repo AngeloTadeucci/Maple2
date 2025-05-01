@@ -17,21 +17,84 @@ public class EventRewardHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.EventReward;
 
     private enum Command : byte {
+        ClaimTimeRunFinalReward = 3,
+        ClaimTimeRunStepReward = 4,
         FlipGalleryCard = 7,
         ClaimGalleryReward = 9,
+        OpenBingo = 20,
+        CrossOffBingoNumber = 22,
+        ClaimBingoReward = 23,
     }
 
     public override void Handle(GameSession session, IByteReader packet) {
         var command = packet.Read<Command>();
         switch (command) {
+            case Command.ClaimTimeRunStepReward:
+                HandleClaimTimeRunStepReward(session, packet);
+                return;
+            case Command.ClaimTimeRunFinalReward:
+                HandleClaimTimeRunFinalReward(session);
+                return;
             case Command.FlipGalleryCard:
                 HandleFlipGalleryCard(session, packet);
                 return;
             case Command.ClaimGalleryReward:
                 HandleClaimGalleryReward(session);
                 return;
-
+            case Command.OpenBingo:
+                HandleOpenBingo(session);
+                return;
+            case Command.CrossOffBingoNumber:
+                HandleCrossOffBingoNumber(session, packet);
+                return;
+            case Command.ClaimBingoReward:
+                HandleClaimBingoReward(session, packet);
+                return;
         }
+    }
+
+    private void HandleClaimTimeRunStepReward(GameSession session, IByteReader packet) {
+        int steps = packet.ReadInt();
+
+        GameEvent? gameEvent = session.FindEvent(GameEventType.TimeRunEvent).FirstOrDefault();
+        if (gameEvent?.Metadata.Data is not TimeRunEvent timeRunEvent) {
+            return;
+        }
+
+        if (!timeRunEvent.StepRewards.TryGetValue(steps, out RewardItem rewardItem)) {
+            return;
+        }
+
+        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        if (item == null) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Add(item, true)) {
+            session.Item.MailItem(item);
+        }
+
+        session.Send(EventRewardPacket.ClaimTimeRunStepReward(rewardItem));
+    }
+
+    private void HandleClaimTimeRunFinalReward(GameSession session) {
+        GameEvent? gameEvent = session.FindEvent(GameEventType.TimeRunEvent).FirstOrDefault();
+        if (gameEvent?.Metadata.Data is not TimeRunEvent timeRunEvent) {
+            return;
+        }
+
+        RewardItem rewardItem = timeRunEvent.FinalReward;
+
+        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        if (item == null) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Add(item, true)) {
+            session.Item.MailItem(item);
+        }
+
+        session.Send(EventRewardPacket.ClaimTimeRunFinalReward(rewardItem));
     }
 
     private void HandleFlipGalleryCard(GameSession session, IByteReader packet) {
@@ -106,5 +169,100 @@ public class EventRewardHandler : PacketHandler<GameSession> {
         }
 
         session.Send(EventRewardPacket.ClaimGalleryReward(gallery.RewardItems));
+    }
+
+    private void HandleOpenBingo(GameSession session) {
+        GameEvent? gameEvent = session.FindEvent(GameEventType.BingoEvent).FirstOrDefault();
+        if (gameEvent?.Metadata.Data is not BingoEvent bingoEvent) {
+            return;
+        }
+
+        DateTime startTime = gameEvent.StartTime.FromEpochSeconds();
+        // days since event started
+        int days = (int) (DateTime.Now - startTime).TotalDays;
+        if (days >= bingoEvent.Numbers.Length) {
+            Logger.Error("Bingo event is incorrectly set up. There are not enough days for the event.");
+            return;
+        }
+
+        // This uid sets up what board layout the user will have.
+        GameEventUserValue uid = session.GameEvent.Get(GameEventUserValueType.BingoUid, gameEvent.Id, gameEvent.EndTime);
+        if (string.IsNullOrEmpty(uid.Value)) {
+            uid.Value = Random.Shared.Next().ToString();
+        }
+
+        GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
+        GameEventUserValue rewardsClaimed = session.GameEvent.Get(GameEventUserValueType.BingoRewardsClaimed, gameEvent.Id, gameEvent.EndTime);
+
+        session.Send(EventRewardPacket.OpenBingo(int.Parse(uid.Value), checkedNumbers.Value, rewardsClaimed.Value, bingoEvent.Numbers[days]));
+    }
+
+    private void HandleCrossOffBingoNumber(GameSession session, IByteReader packet) {
+        GameEvent? gameEvent = session.FindEvent(GameEventType.BingoEvent).FirstOrDefault();
+        if (gameEvent?.Metadata.Data is not BingoEvent bingoEvent) {
+            return;
+        }
+
+        int itemId = packet.ReadInt();
+        int bingoNumber = packet.ReadInt();
+
+        // Check if the item is a pencil
+        if (itemId != bingoEvent.PencilItemId && itemId != bingoEvent.PencilPlusItemId) {
+            return;
+        }
+
+        GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
+        List<int> checkedNumbersList = string.IsNullOrEmpty(checkedNumbers.Value) ? [] : checkedNumbers.Value.Split(',').Select(int.Parse).ToList();
+        if (checkedNumbersList.Contains(bingoNumber)) {
+            return;
+        }
+
+        Item? item = session.Item.Inventory.Find(itemId).FirstOrDefault();
+        if (item == null) {
+            return;
+        }
+
+        checkedNumbersList.Add(bingoNumber);
+        session.Item.Inventory.Consume(item.Uid, 1);
+        checkedNumbers.Value = string.Join(',', checkedNumbersList);
+
+        GameEventUserValue rewardsClaimed = session.GameEvent.Get(GameEventUserValueType.BingoRewardsClaimed, gameEvent.Id, gameEvent.EndTime);
+
+        session.Send(EventRewardPacket.UpdateBingo(checkedNumbers.Value, rewardsClaimed.Value));
+    }
+
+    private void HandleClaimBingoReward(GameSession session, IByteReader packet) {
+        int index = packet.ReadInt();
+        GameEvent? gameEvent = session.FindEvent(GameEventType.BingoEvent).FirstOrDefault();
+        if (gameEvent?.Metadata.Data is not BingoEvent bingoEvent) {
+            return;
+        }
+
+        if (index >= bingoEvent.Rewards.Length) {
+            return;
+        }
+
+        GameEventUserValue rewardsClaimed = session.GameEvent.Get(GameEventUserValueType.BingoRewardsClaimed, gameEvent.Id, gameEvent.EndTime);
+        List<int> rewardsClaimedList = string.IsNullOrEmpty(rewardsClaimed.Value) ? [] : rewardsClaimed.Value.Split(',').Select(int.Parse).ToList();
+        if (rewardsClaimedList.Contains(index)) {
+            return;
+        }
+        rewardsClaimedList.Add(index);
+        rewardsClaimed.Value = string.Join(',', rewardsClaimedList);
+
+        GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
+
+        foreach (RewardItem rewardItem in bingoEvent.Rewards[index].Items) {
+            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            if (item == null) {
+                continue;
+            }
+
+            if (!session.Item.Inventory.Add(item, true)) {
+                session.Item.MailItem(item);
+            }
+        }
+        session.Send(EventRewardPacket.ClaimBingoReward(bingoEvent.Rewards[index].Items));
+        session.Send(EventRewardPacket.UpdateBingo(checkedNumbers.Value, rewardsClaimed.Value));
     }
 }

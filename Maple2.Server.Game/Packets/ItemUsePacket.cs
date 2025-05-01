@@ -10,6 +10,7 @@ public static class ItemUsePacket {
         MaxInventory = 1,
         CharacterSlotAdded = 2,
         MaxCharacterSlots = 3,
+        QuestScroll = 4,
         BeautyCoupon = 6,
     }
 
@@ -46,6 +47,13 @@ public static class ItemUsePacket {
         var pWriter = Packet.Of(SendOp.ItemUse);
         pWriter.Write<Command>(Command.MaxCharacterSlots);
 
+        return pWriter;
+    }
+
+    public static ByteWriter QuestScroll(int itemId) {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.QuestScroll);
+        pWriter.WriteInt(itemId);
         return pWriter;
     }
 

@@ -366,19 +366,21 @@ public sealed class NpcScriptManager {
             return;
         }
 
+        // NpcTalk packets have to be sent first before any movement, items, etc
+        if (scriptFunction.PortalId > 0) {
+            session.Send(NpcTalkPacket.MovePlayer(scriptFunction.PortalId));
+        }
+
         if (!string.IsNullOrEmpty(scriptFunction.UiName)) {
             session.Send(NpcTalkPacket.OpenDialog(scriptFunction.UiName, scriptFunction.UiArg));
         }
 
-        if (scriptFunction.PortalId > 0) {
-            if (session.Field.TryGetPortal(scriptFunction.PortalId, out FieldPortal? dstPortal)) {
-                session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
-            }
-            session.Send(NpcTalkPacket.MovePlayer(scriptFunction.PortalId));
-        }
-
         if (!string.IsNullOrEmpty(scriptFunction.MoveMapMovie)) {
             session.Send(NpcTalkPacket.Cutscene(scriptFunction.MoveMapMovie));
+        }
+
+        if (scriptFunction.PortalId > 0 && session.Field.TryGetPortal(scriptFunction.PortalId, out FieldPortal? dstPortal)) {
+            session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
         }
 
         if (scriptFunction.CollectItems.Count > 0) {

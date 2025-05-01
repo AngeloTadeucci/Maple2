@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
@@ -205,6 +203,38 @@ public class GameEvent : IByteSerializable {
                 writer.WriteInt(gallery.RevealDayLimit);
                 writer.WriteUnicodeString(gallery.Image);
                 writer.WriteLong(EndTime);
+                break;
+            case BingoEvent bingo:
+                writer.WriteInt(Id);
+                writer.WriteInt(bingo.Rewards.Length);
+                foreach (BingoEvent.BingoReward bingoReward in bingo.Rewards) {
+                    writer.WriteInt(bingoReward.Items.Length);
+                    foreach (RewardItem rewardItem in bingoReward.Items) {
+                        writer.Write<RewardItem>(rewardItem);
+                    }
+                }
+                writer.WriteInt(bingo.PencilItemId);
+                writer.WriteInt(bingo.PencilPlusItemId);
+                break;
+            case TimeRunEvent timeRun:
+                writer.WriteInt(Id);
+                writer.WriteInt(timeRun.StartItemId); // Guess
+
+                writer.WriteInt(timeRun.Quests.Sum(q => q.Distance));
+                writer.WriteInt(timeRun.Quests.Length);
+                foreach (TimeRunEvent.Quest quest in timeRun.Quests) {
+                    writer.WriteInt(quest.Id);
+                    writer.WriteInt(quest.Distance);
+                    writer.WriteShort((short) quest.OpeningDay);
+                }
+
+                writer.Write<RewardItem>(timeRun.FinalReward);
+                writer.WriteInt(timeRun.StepRewards.Count);
+                foreach ((int steps, RewardItem rewardItem) in timeRun.StepRewards) {
+                    writer.WriteInt(steps);
+                    writer.Write<RewardItem>(rewardItem);
+                }
+
                 break;
         }
     }
