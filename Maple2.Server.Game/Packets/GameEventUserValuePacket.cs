@@ -1,4 +1,5 @@
-﻿using Maple2.Model.Game;
+﻿using Maple2.Database.Extensions;
+using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -29,6 +30,20 @@ public static class GameEventUserValuePacket {
         pWriter.Write<Command>(Command.Update);
         pWriter.WriteByte();
         pWriter.WriteClass<GameEventUserValue>(userValue);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Test(int i) {
+        var pWriter = Packet.Of(SendOp.GameEventUserValue);
+        pWriter.Write<Command>(Command.Update);
+        pWriter.WriteByte();
+
+        //pWriter.WriteInt(1);
+        pWriter.WriteInt(i);
+        pWriter.WriteInt(700001);
+        pWriter.WriteUnicodeString("False");
+        pWriter.WriteLong(DateTime.Now.AddYears(1).ToEpochSeconds());
 
         return pWriter;
     }
