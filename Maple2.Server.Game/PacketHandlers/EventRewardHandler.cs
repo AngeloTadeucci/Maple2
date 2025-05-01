@@ -179,7 +179,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
 
         DateTime startTime = gameEvent.StartTime.FromEpochSeconds();
         // days since event started
-        int days = Math.Max(0, (int)(DateTime.UtcNow - startTime).TotalDays);
+        int days = Math.Max(0, (int) (DateTime.UtcNow - startTime).TotalDays);
         if (days >= bingoEvent.Numbers.Length) {
             Logger.Error("Bingo event is incorrectly set up. There are not enough days for the event.");
             return;
@@ -219,7 +219,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
 
         if (itemId == bingoEvent.PencilItemId) {
             DateTime startTime = gameEvent.StartTime.FromEpochSeconds();
-            int days = Math.Max(0, (int)(DateTime.UtcNow - startTime).TotalDays);
+            int days = Math.Max(0, (int) (DateTime.UtcNow - startTime).TotalDays);
             if (!bingoEvent.Numbers[days].Contains(bingoNumber)) {
                 return;
             }
