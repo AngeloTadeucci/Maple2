@@ -188,7 +188,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
         // This uid sets up what board layout the user will have.
         GameEventUserValue uid = session.GameEvent.Get(GameEventUserValueType.BingoUid, gameEvent.Id, gameEvent.EndTime);
         if (string.IsNullOrEmpty(uid.Value)) {
-            session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.BingoUid, uid.Value);
+            session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.BingoUid, Random.Shared.Next().ToString());
         }
 
         GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
