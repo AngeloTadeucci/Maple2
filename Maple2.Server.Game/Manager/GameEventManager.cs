@@ -130,7 +130,8 @@ public sealed class GameEventManager {
             throw new ArgumentOutOfRangeException(nameof(type), type, "Invalid game event type.");
         }
 
-        gameEventUserValue.Value = value.ToString() ?? throw new ArgumentException("Invalid new value");
+        string newValue = value.ToString() ?? throw new ArgumentException("Invalid value type.");
+        gameEventUserValue.SetValue(newValue);
         session.Send(GameEventUserValuePacket.Update(gameEventUserValue));
     }
 
@@ -162,7 +163,7 @@ public sealed class GameEventManager {
         IEnumerable<GameEventUserValue> accumulatedTimeValues =
             eventValues.Values.SelectMany(dict => dict.Values.Where(value => value.Type == GameEventUserValueType.AttendanceAccumulatedTime));
         foreach (GameEventUserValue userValue in accumulatedTimeValues) {
-            userValue.Value = (DateTime.Now.AddSeconds(userValue.Long()) - session.Player.Value.Character.LastModified).Seconds.ToString();
+            userValue.SetValue((DateTime.Now.AddSeconds(userValue.Long()) - session.Player.Value.Character.LastModified).Seconds.ToString());
         }
         db.SaveGameEventUserValues(session.CharacterId, eventValues.Values.SelectMany(value => value.Values).ToList());
     }

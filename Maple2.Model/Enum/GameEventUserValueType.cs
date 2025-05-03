@@ -28,4 +28,9 @@ public enum GameEventUserValueType {
     // Rock Paper Scissors Event
     RPSDailyMatches = 1800,
     RPSRewardsClaimed = 1801,
+
+    // Bingo - TODO: These are not the actual confirmed values. Just using it as a way to store this data for now.
+    BingoUid = 4000,
+    BingoRewardsClaimed = 4001,
+    BingoNumbersChecked = 4002,
 }

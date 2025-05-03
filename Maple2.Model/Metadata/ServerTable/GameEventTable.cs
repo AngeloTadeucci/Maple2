@@ -162,6 +162,59 @@ public record Gallery(
     int RevealDayLimit,
     string Image) : GameEventData;
 
+/// <summary>
+/// Bingo Event
+/// </summary>
+/// <param name="PencilItemId">Normal pencil item ID used for standard crossing out daily bingo numbers</param>
+/// <param name="PencilPlusItemId">Plus pencil item ID used for crossing out any number</param>
+/// <param name="Numbers">The bingo numbers selected per day. MUST have enough days for the amount of days the event will run for.</param>
+/// <param name="Rewards">The rewards for the amount of bingos you get.</param>
+public record BingoEvent(
+    int PencilItemId,
+    int PencilPlusItemId,
+    int[][] Numbers,
+    BingoEvent.BingoReward[] Rewards
+) : GameEventData {
+
+    public record BingoReward(
+        RewardItem[] Items);
+}
+
+/// <summary>
+/// Race Against Time Event
+/// </summary>
+/// <param name="StartItemId">Item needed to start the event.</param>
+/// <param name="Quests">All the quests from using the StartItemId. Determines the distance user will travel and the day the quest is available. The timer on the event UI is determined by the start time of the quests.</param>
+/// <param name="StepRewards">Rewards claimable for reaching a certain distance.</param>
+/// <param name="FinalReward">Final reward</param>
+public record TimeRunEvent(
+    int StartItemId,
+    TimeRunEvent.Quest[] Quests,
+    IReadOnlyDictionary<int, RewardItem> StepRewards,
+    RewardItem FinalReward) : GameEventData {
+    public record Quest(
+        int Id,
+        int Distance,
+        int OpeningDay);
+}
+
+
+/// <summary>
+/// Enables Maple Survival (Mushking Royale). Possibly does not work.
+/// </summary>
+public record MapleSurvivalOpenPeriod : GameEventData;
+
+
+/// <summary>
+/// Closes Maple Survival (Mushking Royale)
+/// </summary>
+public record ShutdownMapleSurvival : GameEventData;
+
+/// <summary>
+/// Creates a popup for a On Time event. Clicking Participate triggers the user to send /AddOntimeEvent
+/// </summary>
+public record Ontime : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -185,4 +238,9 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(UGCMapContractSale), "UGCMapContractSale")]
 [JsonDerivedType(typeof(UGCMapExtensionSale), "UGCMapExtensionSale")]
 [JsonDerivedType(typeof(Gallery), "Gallery")]
+[JsonDerivedType(typeof(BingoEvent), "BingoEvent")]
+[JsonDerivedType(typeof(TimeRunEvent), "TimeRunEvent")]
+[JsonDerivedType(typeof(MapleSurvivalOpenPeriod), "MapleSurvivalOpenPeriod")]
+[JsonDerivedType(typeof(ShutdownMapleSurvival), "ShutdownMapleSurvival")]
+[JsonDerivedType(typeof(Ontime), "Ontime")]
 public abstract record GameEventData;

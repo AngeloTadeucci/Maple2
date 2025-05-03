@@ -120,6 +120,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             case ItemFunction.ExpandInven:
                 HandleExpandInventory(session, item);
                 break;
+            case ItemFunction.QuestScroll:
+                HandleQuestScroll(session, item);
+                break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
@@ -615,5 +618,32 @@ public class ItemUseHandler : PacketHandler<GameSession> {
 
         session.Send(ItemUsePacket.ExpandInventory());
         session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private void HandleQuestScroll(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("questID")) {
+            Logger.Warning("QuestScroll item {ItemId} is missing questID parameter", item.Id);
+            return;
+        }
+
+        int[] questIds = xmlParameters["questID"].Split(',').Select(int.Parse).ToArray();
+        foreach (int questId in questIds) {
+            if (!session.QuestMetadata.TryGet(questId, out QuestMetadata? metadata)) {
+                Logger.Warning("QuestScroll item {ItemId} has invalid questID {QuestId}", item.Id, questId);
+                return;
+            }
+            if (!session.Quest.CanStart(metadata)) {
+                Logger.Warning("QuestScroll item {ItemId} has questID {QuestId} that cannot be started", item.Id, questId);
+                return;
+            }
+        }
+
+        foreach (int questId in questIds) {
+            session.Quest.Start(questId);
+        }
+
+        session.Item.Inventory.Consume(item.Uid, 1);
+        session.Send(ItemUsePacket.QuestScroll(item.Id));
     }
 }

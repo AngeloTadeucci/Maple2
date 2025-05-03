@@ -6,12 +6,12 @@ namespace Maple2.Model.Game;
 
 public class GameEventUserValue : IByteSerializable {
     public GameEventUserValueType Type { get; init; }
-    public string Value;
+    public string Value { get; private set; }
     public int EventId { get; init; }
     public long ExpirationTime { get; init; }
 
-    public GameEventUserValue() {
-        Value = string.Empty;
+    public GameEventUserValue(string value = "") {
+        Value = value;
     }
 
     public GameEventUserValue(GameEventUserValueType type, long expirationTime, int eventId) {
@@ -19,6 +19,10 @@ public class GameEventUserValue : IByteSerializable {
         Type = type;
         ExpirationTime = expirationTime;
         EventId = eventId;
+    }
+
+    public void SetValue(string value) {
+        Value = value;
     }
 
     public int Int() => int.TryParse(Value, out int result) ? result : 0;
