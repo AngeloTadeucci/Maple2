@@ -145,9 +145,15 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
         return info;
     }
 
-    public List<PlayerInfo> GetOnlinePlayerInfos() {
+    public PlayerInfo[] GetOnlinePlayerInfos() {
         return cache.Values
             .Where(player => player.Online)
-            .ToList();
+            .ToArray();
+    }
+
+    public PlayerInfo[] GetPlayersOnChannel(int channelId) {
+        return cache.Values
+            .Where(player => player.Channel == channelId)
+            .ToArray();
     }
 }
