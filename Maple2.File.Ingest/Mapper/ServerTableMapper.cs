@@ -1121,9 +1121,6 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     foreach (XmlNode childNode in value2Xml.FirstChild.ChildNodes) {
                         if (childNode.Name == "v") {
                             string valueType = childNode.Attributes?["type"]?.Value ?? string.Empty;
-                            if (int.TryParse(childNode.Attributes?["amount"]?.Value, out int amount)) {
-                            }
-
                             if (valueType == "merat_e") {
                                 string? amountStr = childNode.Attributes?["amount"]?.Value;
                                 if (!int.TryParse(amountStr, out int meratEAmount)) {
