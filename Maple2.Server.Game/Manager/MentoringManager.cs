@@ -31,7 +31,7 @@ public class MentoringManager : IDisposable {
         session.Send(MentorPacket.Init(session.Player));
 
         session.Send(MentorPacket.AssignReturningUser());
-      //  session.Send(MentorPacket.Load());
+        //  session.Send(MentorPacket.Load());
 
         //session.Send(MentorPacket.MyList());
         // session.Send(MentorPacket.Unknown12());

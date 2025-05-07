@@ -191,7 +191,7 @@ public sealed class QuestManager {
 
             if (quest.Metadata.Basic.Type == QuestType.MentoringMission && quest.Metadata.Mentoring != null) {
                 // if the required opening day hasn't passed yet, skip
-                if ( (DateTime.Now - quest.StartTime.FromEpochSeconds()).TotalDays < quest.Metadata.Mentoring.OpeningDay) {
+                if ((DateTime.Now - quest.StartTime.FromEpochSeconds()).TotalDays < quest.Metadata.Mentoring.OpeningDay) {
                     continue;
                 }
             }

@@ -19,7 +19,7 @@ public enum GameRankingType {
     UgcPersonalPreviousSeason = 62,
     Ugc = 63,
     UgcPreviousSeason = 64,
-    RaidPersonalClear= 71,
+    RaidPersonalClear = 71,
     RaidClear = 72,
     RaidEarlyVictory = 81,
     RaidShortestTime = 91,

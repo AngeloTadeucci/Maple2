@@ -1766,7 +1766,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                         seasonData.grade5,
                         seasonData.grade6,
                         seasonData.grade7,
-                    ]));;
+                    ]));
             }
 
             return results;

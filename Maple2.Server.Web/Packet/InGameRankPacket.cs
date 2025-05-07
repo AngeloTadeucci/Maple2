@@ -130,7 +130,7 @@ public static class InGameRankPacket {
         pWriter.WriteInt((int) JobCode.None); // job code
         pWriter.WriteInt(); // level
 
-        return pWriter;;
+        return pWriter;
     }
 
     public static ByteWriter RaidEarlyVictory() {

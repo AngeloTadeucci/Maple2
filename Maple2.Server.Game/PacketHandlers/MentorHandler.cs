@@ -58,12 +58,12 @@ public class MentorHandler : PacketHandler<GameSession> {
         session.Send(MentorPacket.MenteeInvitations());
         session.Send(MentorPacket.Load());
         //session.Send(MentorPacket.MyList());
-      //  session.Send(MentorPacket.LoginPoints());
-      //  session.Send(MentorPacket.DailyPoints());
-     //  session.Send(MentorPacket.Unknown12());
-     //   session.Send(MentorPacket.Unknown15(10));
-     //   session.Send(MentorPacket.MenteeInvitations());
-      //  session.Send(MentorPacket.Unknown16());
+        //  session.Send(MentorPacket.LoginPoints());
+        //  session.Send(MentorPacket.DailyPoints());
+        //  session.Send(MentorPacket.Unknown12());
+        //   session.Send(MentorPacket.Unknown15(10));
+        //   session.Send(MentorPacket.MenteeInvitations());
+        //  session.Send(MentorPacket.Unknown16());
         //session.Send(MentorPacket.UpdateRole(session.Player.ObjectId));
         //session.Send(MentorPacket.MenteeList());
     }
