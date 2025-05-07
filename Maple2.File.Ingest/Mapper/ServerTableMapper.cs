@@ -1018,16 +1018,61 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     Requirement: giftRequirement);
             case GameEventType.ReturnUser:
                 var requiredTime = DateTimeOffset.MinValue;
-                if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime requiredDateTime)) {
-                    requiredTime = new DateTimeOffset(requiredDateTime);
+                int daysInactive = 0;
+                if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime returnUserTime)) {
+                    requiredTime = new DateTimeOffset(returnUserTime);
+                } else if (int.TryParse(value1, out daysInactive)) {
                 }
 
                 return new ReturnUser(
-                    Season: int.TryParse(value3, out int season) ? season : 0,
-                    RequiredTime: requiredTime,
-                    QuestIds: string.IsNullOrEmpty(value4) ? Array.Empty<int>() : value4.Split(',').Select(int.Parse).ToArray(),
+                    SeasonId: int.TryParse(value3, out int season) ? season : 0,
+                    DateInactiveSince: requiredTime,
+                    DaysInactive: daysInactive,
+                    QuestIds: string.IsNullOrEmpty(value4) ? [] : value4.Split(',').Select(int.Parse).ToArray(),
                     RequiredLevel: int.TryParse(value1, out int levelRequirement) ? levelRequirement : 0,
                     RequiredUserValue: int.TryParse(value2, out int userValue) ? userValue : 0);
+            case GameEventType.NewUser:
+                var requiredNewUserTime = DateTimeOffset.MinValue;
+                if (DateTime.TryParseExact(value1, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime newUserTime)) {
+                    requiredNewUserTime = new DateTimeOffset(newUserTime);
+                }
+
+                return new NewUser(
+                    SeasonId: int.TryParse(value2, out int newUserSeason) ? newUserSeason : 0,
+                    DateCreatedBy: requiredNewUserTime);
+            case GameEventType.ReturnUserCandidate:
+                var unknownTime = DateTimeOffset.MinValue;
+                if (DateTime.TryParseExact(value4, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime requiredDateTime)) {
+                    unknownTime = new DateTimeOffset(requiredDateTime);
+                }
+                return new ReturnUserCandidate(
+                    Season: int.TryParse(value3, out int returnUserCandidateSeason) ? returnUserCandidateSeason : 0,
+                    SeasonId: int.TryParse(value2, out int returnUserCandidateSeasonId) ? returnUserCandidateSeasonId : 0,
+                    MinLevel: int.TryParse(value1, out int returnUserCandidateMinLevel) ? returnUserCandidateMinLevel : 0,
+                    UnknownDate: unknownTime);
+            case GameEventType.ActiveUser:
+                int[] value1Values = value1.Split(',').Select(int.Parse).ToArray();
+
+                value2Xml.LoadXml(value2);
+                int meret = 0;
+                if (value2Xml.FirstChild is { Name: "money" }) {
+                    foreach (XmlNode childNode in value2Xml.FirstChild.ChildNodes) {
+                        if (childNode.Name == "v") {
+                            string valueType = childNode.Attributes?["type"]?.Value ?? string.Empty;
+                            if (int.TryParse(childNode.Attributes?["amount"]?.Value, out int amount)) {
+                            }
+
+                            if (valueType == "merat_e") {
+                                meret = amount;
+                            }
+                        }
+                    }
+                }
+                return new ActiveUser(
+                    MailId: value1Values[0],
+                    MailDaysExpire: value1Values[1],
+                    Meret: meret,
+                    MinLevel: int.TryParse(value3, out int minLevel) ? minLevel : 0);
             case GameEventType.RPS:
                 value1Xml = new XmlDocument();
                 value1Xml.LoadXml(value1);

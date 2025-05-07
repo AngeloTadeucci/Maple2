@@ -349,3 +349,14 @@ message HeartbeatRequest {
 message HeartbeatResponse {
   bool success = 1;
 }
+
+message MentorRequest {
+  message Invite {
+    int64 receiver_id = 1;
+  }
+
+  int64 requester_id = 1;
+  oneof request {
+    Invite invite = 2;
+  }
+}

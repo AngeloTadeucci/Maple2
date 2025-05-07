@@ -22,6 +22,7 @@ internal class Character {
     public int ReturnMapId { get; set; }
     public short Channel { get; set; }
     public short ReturnChannel { get; set; }
+    public MentorRole MentorRole { get; set; }
     public required Experience Experience { get; set; }
     public required Profile Profile { get; set; }
     public required Cooldown Cooldown { get; set; }
@@ -75,6 +76,7 @@ internal class Character {
             DeleteTime = other.DeleteTime.FromEpochSeconds(),
             Channel = other.Channel,
             ReturnChannel = other.ReturnChannel,
+            MentorRole = other.MentorRole,
         };
     }
 
@@ -105,6 +107,7 @@ internal class Character {
             DeleteTime = other.DeleteTime.ToEpochSeconds(),
             Channel = other.Channel,
             ReturnChannel = other.ReturnChannel,
+            MentorRole = other.MentorRole,
         };
     }
 
@@ -112,6 +115,7 @@ internal class Character {
     public static implicit operator CharacterInfo?(Character? other) {
         return other == null ? null : new CharacterInfo(other.AccountId, other.Id, other.Name, other.Profile.Motto, other.Profile.Picture, other.Gender, other.Job, other.Level) {
             MapId = other.MapId,
+            Channel = other.Channel,
         };
     }
 

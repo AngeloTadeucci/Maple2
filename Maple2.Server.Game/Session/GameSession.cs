@@ -108,6 +108,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public DungeonManager Dungeon { get; set; } = null!;
     public AnimationManager Animation { get; set; } = null!;
     public RideManager Ride { get; set; } = null!;
+    public MentoringManager Mentoring { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -182,6 +183,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
         Dungeon = new DungeonManager(this);
         Ride = new RideManager(this);
+        Mentoring = new MentoringManager(this);
         CommandHandler.RegisterCommands(); // Refresh commands with proper permissions
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -323,12 +325,14 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         Dungeon.Load();
-        // InGameRank
+        Send(InGameRankPacket.Load());
         Send(FieldEnterPacket.Request(Player));
         Party = new PartyManager(World, this);
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
+        Send(MentorPacket.MyList());
+        Send(MentorPacket.Unknown12());
         Config.LoadChatStickers();
         // Mail
         Mail.Notify(true);

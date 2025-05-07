@@ -335,12 +335,12 @@ public static class FieldPacket {
         writer.WriteLong();
         #endregion
         writer.WriteInt(); // Unknown Count
-        writer.WriteByte(); // Mentor User Type
+        writer.Write<MentorRole>(character.MentorRole); // Mentor User Type
         writer.WriteBool(false);
         writer.WriteLong(); // Birthday
         writer.WriteInt(session.SuperChatId);
         writer.WriteInt();
-        writer.WriteLong(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        writer.WriteLong(DateTime.Now.ToEpochSeconds());
         writer.WriteInt(account.PrestigeLevel); // PrestigeLevel
         writer.WriteLong(character.LastModified.ToEpochSeconds());
         writer.WriteInt(1); // Unknown Count

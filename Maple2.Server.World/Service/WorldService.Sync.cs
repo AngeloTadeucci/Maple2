@@ -114,6 +114,7 @@ public partial class WorldService {
                 TotalHp = info.TotalHp,
             },
             DeathState = (int) info.DeathState,
+            MentorRole = (int) info.MentorRole,
             GuildName = info.GuildName,
             GuildId = info.GuildId,
             Home = new HomeUpdate {

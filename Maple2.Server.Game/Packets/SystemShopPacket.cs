@@ -8,6 +8,8 @@ public static class SystemShopPacket {
     private enum Command : byte {
         Arena = 3,
         Fishing = 4,
+        Mentee = 6,
+        Mentor = 7,
         Item = 10,
     }
 
@@ -22,6 +24,22 @@ public static class SystemShopPacket {
     public static ByteWriter Fishing() {
         var pWriter = Packet.Of(SendOp.SystemShop);
         pWriter.Write<Command>(Command.Fishing);
+        pWriter.WriteBool(true);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Mentee() {
+        var pWriter = Packet.Of(SendOp.SystemShop);
+        pWriter.Write<Command>(Command.Mentee);
+        pWriter.WriteBool(true);
+
+        return pWriter;
+    }
+
+    public static ByteWriter Mentor() {
+        var pWriter = Packet.Of(SendOp.SystemShop);
+        pWriter.Write<Command>(Command.Mentor);
         pWriter.WriteBool(true);
 
         return pWriter;

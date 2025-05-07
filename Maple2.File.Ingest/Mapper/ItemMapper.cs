@@ -6,6 +6,7 @@ using Maple2.File.Parser.Xml.Item;
 using Maple2.File.Parser.Xml.Table;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Slot = Maple2.File.Parser.Xml.Item.Slot;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -30,7 +31,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
         }
 
-        foreach ((int id, string name, ItemData data) in parser.Parse()) {
+        foreach ((int id, string name, ItemData data) in parser.Parse<ItemData>()) {
             int transferType = data.limit.transferType;
             int tradableCount = data.property.tradableCount;
             int tradableCountDeduction = data.property.tradableCountDeduction;

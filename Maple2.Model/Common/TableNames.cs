@@ -39,6 +39,7 @@ public static class TableNames {
     public const string BANNER = "banner.xml";
     public const string WEDDING = "wedding*.xml";
     public const string REWARD_CONTENT = "rewardcontent*.xml";
+    public const string SEASON_DATA = "seasondata*.xml";
 
     // Prestige / Adventure
     public const string PRESTIGE_LEVEL_ABILITY = "adventurelevelability.xml";
