@@ -78,12 +78,13 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<PlayerConfigLookUp>()
         .SingleInstance();
 
-    // Register WorldServer and inject ChannelClientLookup
+    // Register WorldServer and inject dependencies
     autofac.RegisterType<WorldServer>()
         .AsSelf()
         .OnActivated(e => {
-            var lookup = e.Context.Resolve<ChannelClientLookup>();
-            lookup.SetWorldServer(e.Instance);
+            var channelLookup = e.Context.Resolve<ChannelClientLookup>();
+            var playerInfoLookup = e.Context.Resolve<PlayerInfoLookup>();
+            channelLookup.InjectDependencies(e.Instance, playerInfoLookup);
         })
         .SingleInstance();
 });

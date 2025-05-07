@@ -129,6 +129,8 @@ public class CharacterInfo {
     public short Channel { get; set; } = -1;
     public long LastOnlineTime { get; set; }
 
+    public int RetryHeartbeat { get; set; } = 3;
+
     // Guild
     public long GuildId { get; set; }
     public string GuildName { get; set; }
