@@ -31,7 +31,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
         }
 
-        foreach ((int id, string name, ItemData data) in parser.Parse<ItemData>()) {
+        foreach ((int id, string name, ItemData data) in parser.Parse<ItemDataRoot>()) {
             int transferType = data.limit.transferType;
             int tradableCount = data.property.tradableCount;
             int tradableCountDeduction = data.property.tradableCountDeduction;
