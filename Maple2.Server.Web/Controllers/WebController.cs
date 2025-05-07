@@ -53,9 +53,9 @@ public class WebController : ControllerBase {
         int seasonId = packet.ReadInt(); // defined in season xmls
         string userName = packet.ReadUnicodeStringWithLength(); // search string
 
-        if (!Enum.IsDefined(type)) {
+        if (!Enum.IsDefined(typeof(GameRankingType), type)) {
             Log.Logger.Debug("Unimplemented ranking type: {Type}", type);
-            // return Results.BadRequest($"Invalid ranking type: {type}");
+            return Results.BadRequest($"Invalid ranking type: {type}");
         }
 
         Log.Logger.Debug("[Request]Rankings: type={Type}, unknown={unknown} accountId={AccountId} characterId={CharacterId}, characterIdSearch={characterIdSearch}, rankingId={RankingId}, seasonId={seasonId}, userName={UserName}", type, unknown, accountId, characterId, characterIdSearch, rankingId, seasonId, userName);
@@ -95,7 +95,6 @@ public class WebController : ControllerBase {
 
     [HttpPost("urq.aspx")]
     public async Task<IResult> Upload() {
-        Console.WriteLine("Upload");
         Stream bodyStream = Request.Body;
         var memoryStream = new MemoryStream();
         await bodyStream.CopyToAsync(memoryStream);

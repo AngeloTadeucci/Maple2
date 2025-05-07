@@ -171,6 +171,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(quest => quest.GoToNpc).HasJsonConversion();
         builder.Property(quest => quest.GoToDungeon).HasJsonConversion();
         builder.Property(quest => quest.Dispatch).HasJsonConversion();
+        builder.Property(quest => quest.Mentoring).HasJsonConversion();
     }
 
     private static void ConfigureRideMetadata(EntityTypeBuilder<RideMetadata> builder) {

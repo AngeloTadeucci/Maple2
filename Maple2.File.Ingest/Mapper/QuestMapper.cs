@@ -80,7 +80,7 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                     PortalId: data.dispatch.portal,
                     Script: data.dispatch.script
                 ),
-                Mentoring: new QuestMentoringMission(
+                Mentoring: data.mentoringMission == null? null : new QuestMentoringMission(
                     OpeningDay: data.mentoringMission.openingDay,
                     Season: data.mentoringMission.mentoringSeason
                 ),

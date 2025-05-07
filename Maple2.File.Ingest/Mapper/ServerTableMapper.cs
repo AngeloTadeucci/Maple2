@@ -36,28 +36,94 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     }
 
     protected override IEnumerable<ServerTableMetadata> Map() {
-        yield return new ServerTableMetadata { Name = ServerTableNames.INSTANCE_FIELD, Table = ParseInstanceField() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_CONDITION, Table = ParseScriptCondition() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_FUNCTION, Table = ParseScriptFunction() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.SCRIPT_EVENT, Table = ParseScriptEventConditionTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.JOB_CONDITION, Table = ParseJobCondition() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.BONUS_GAME, Table = ParseBonusGameTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX, Table = ParseGlobalItemDropTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.USER_STAT, Table = ParseUserStat() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.INDIVIDUAL_DROP_ITEM, Table = ParseIndividualItemDropTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.PRESTIGE_EXP, Table = ParsePrestigeExpTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.PRESTIGE_ID_EXP, Table = ParsePrestigeIdExpTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.TIME_EVENT, Table = ParseTimeEventTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.GAME_EVENT, Table = ParseGameEventTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.OX_QUIZ, Table = ParseOxQuizTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.ITEM_MERGE, Table = ParseItemMergeOptionTable() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.SHOP, Table = ParseShop() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.SHOP_ITEM, Table = ParseShopItems() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.BEAUTY_SHOP, Table = ParseBeautyShops() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.MERET_MARKET, Table = ParseMeretCustomShop() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.FISH, Table = ParseFish() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.COMBINE_SPAWN, Table = ParseCombineSpawn() };
-        yield return new ServerTableMetadata { Name = ServerTableNames.ENCHANT_OPTION, Table = ParseEnchantOption() };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.INSTANCE_FIELD,
+            Table = ParseInstanceField()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.SCRIPT_CONDITION,
+            Table = ParseScriptCondition()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.SCRIPT_FUNCTION,
+            Table = ParseScriptFunction()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.SCRIPT_EVENT,
+            Table = ParseScriptEventConditionTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.JOB_CONDITION,
+            Table = ParseJobCondition()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.BONUS_GAME,
+            Table = ParseBonusGameTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX,
+            Table = ParseGlobalItemDropTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.USER_STAT,
+            Table = ParseUserStat()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.INDIVIDUAL_DROP_ITEM,
+            Table = ParseIndividualItemDropTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.PRESTIGE_EXP,
+            Table = ParsePrestigeExpTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.PRESTIGE_ID_EXP,
+            Table = ParsePrestigeIdExpTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.TIME_EVENT,
+            Table = ParseTimeEventTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.GAME_EVENT,
+            Table = ParseGameEventTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.OX_QUIZ,
+            Table = ParseOxQuizTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.ITEM_MERGE,
+            Table = ParseItemMergeOptionTable()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.SHOP,
+            Table = ParseShop()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.SHOP_ITEM,
+            Table = ParseShopItems()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.BEAUTY_SHOP,
+            Table = ParseBeautyShops()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.MERET_MARKET,
+            Table = ParseMeretCustomShop()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.FISH,
+            Table = ParseFish()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.COMBINE_SPAWN,
+            Table = ParseCombineSpawn()
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.ENCHANT_OPTION,
+            Table = ParseEnchantOption()
+        };
 
     }
 
@@ -295,9 +361,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 );
                 if (!scriptDict.TryGetValue(scriptId, out Dictionary<int, ScriptFunctionMetadata>? functionDict)) {
                     functionDict = new Dictionary<int, ScriptFunctionMetadata> {
-                        {
-                            scriptFunction.functionID, metadata
-                        },
+                        { scriptFunction.functionID, metadata },
                     };
                     scriptDict.Add(scriptId, functionDict);
                 } else {
@@ -354,9 +418,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 );
                 if (!scriptDict.TryGetValue(scriptId, out Dictionary<int, ScriptFunctionMetadata>? functionDict)) {
                     functionDict = new Dictionary<int, ScriptFunctionMetadata> {
-                        {
-                            scriptFunction.functionID, metadata
-                        },
+                        { scriptFunction.functionID, metadata },
                     };
                     scriptDict.Add(scriptId, functionDict);
                 } else {
@@ -1063,7 +1125,12 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                             }
 
                             if (valueType == "merat_e") {
-                                meret = amount;
+                                string? amountStr = childNode.Attributes?["amount"]?.Value;
+                                if (!int.TryParse(amountStr, out int meratEAmount)) {
+                                    Console.WriteLine($"Failed to parse merat_e amount: {amountStr} for event type {type}");
+                                } else {
+                                    meret = meratEAmount;
+                                }
                             }
                         }
                     }
@@ -1502,7 +1569,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                     EnablePriceMultiplier: false, // not present in the table
                     DisableInstantRestock: shopInfo.resetButtonHide,
                     AccountWide: shopInfo.resetByAccount)
-                );
+            );
             results.Add(shopId, entry);
         }
         return new ShopTable(results);
@@ -1961,9 +2028,8 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 FailCount: scriptEventCondition.failCount,
                 DamageType: (EnchantDamageType) scriptEventCondition.isDamaged,
                 ResultType: (EnchantResult) scriptEventCondition.result
-                );
+            );
         }
         return new ScriptEventConditionTable(results);
     }
 }
-
