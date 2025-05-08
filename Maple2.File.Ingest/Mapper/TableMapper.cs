@@ -1756,8 +1756,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
             foreach ((int id, SeasonData seasonData) in seasonDataParser) {
                 results.Add(id, new SeasonDataTable.Entry(
                     Id: seasonData.seasonID,
-                    StartTime: DateTime.ParseExact(seasonData.eventStart, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture),
-                    EndTime: DateTime.ParseExact(seasonData.eventEnd, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture),
+                    StartTime: DateTime.TryParseExact(seasonData.eventStart, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startTime) ? startTime : DateTime.MinValue,
+                    EndTime: DateTime.TryParseExact(seasonData.eventEnd, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endTime) ? endTime : DateTime.MaxValue,
                     Grades: [
                         seasonData.grade1,
                         seasonData.grade2,
