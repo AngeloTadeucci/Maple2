@@ -91,11 +91,42 @@ public record BlueMarble(
 }
 
 public record ReturnUser(
-    int Season,
+    int SeasonId,
     int[] QuestIds,
     int RequiredUserValue,
-    DateTimeOffset RequiredTime,
+    DateTimeOffset DateInactiveSince,
+    int DaysInactive,
     int RequiredLevel) : GameEventData;
+
+public record NewUser(
+    int SeasonId,
+    DateTimeOffset DateCreatedBy) : GameEventData;
+
+public record ReturnUserCandidate(
+    int Season,
+    int SeasonId,
+    int MinLevel,
+    DateTimeOffset UnknownDate) : GameEventData;
+
+public record ActiveUser(
+    int MailId,
+    int MailDaysExpire,
+    int Meret,
+    int MinLevel
+    ) : GameEventData;
+
+/// <summary>
+/// Year round event that gives users a mail and an item.
+/// </summary>
+/// <param name="MailId">ID of the mail.</param>
+/// <param name="Item">Item given in mail.</param>
+/// <param name="MinDaysInactive">In the start of the event, the minimum amount of days a user has to be inactive.</param>
+/// <param name="CooldownDays">After the user has already been considered a Return User, there must be this amount of days before the user can be considered a Return User again.</param>
+public record ReturnUserYearRound(
+    int MailId,
+    RewardItem Item,
+    int MinDaysInactive,
+    int CooldownDays) : GameEventData;
 
 public record FieldEffect(
     int[] MapIds,
@@ -215,6 +246,15 @@ public record ShutdownMapleSurvival : GameEventData;
 /// </summary>
 public record Ontime : GameEventData;
 
+/// <summary>
+/// Sends a mail with an item to the user every day.
+/// </summary>
+/// <param name="MailId"></param>
+/// <param name="Item"></param>
+public record DailyLoginReward(
+    int MailId,
+    RewardItem Item) : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -229,6 +269,10 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(AttendGift), "AttendGift")]
 [JsonDerivedType(typeof(BlueMarble), "BlueMarble")]
 [JsonDerivedType(typeof(ReturnUser), "ReturnUser")]
+[JsonDerivedType(typeof(NewUser), "NewUser")]
+[JsonDerivedType(typeof(ReturnUserYearRound), "ReturnUserYearRound")]
+[JsonDerivedType(typeof(ReturnUserCandidate), "ReturnUserCandidate")]
+[JsonDerivedType(typeof(ActiveUser), "ActiveUser")]
 [JsonDerivedType(typeof(LoginNotice), "LoginNotice")]
 [JsonDerivedType(typeof(FieldEffect), "FieldEffect")]
 [JsonDerivedType(typeof(QuestTag), "QuestTag")]
@@ -243,4 +287,5 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(MapleSurvivalOpenPeriod), "MapleSurvivalOpenPeriod")]
 [JsonDerivedType(typeof(ShutdownMapleSurvival), "ShutdownMapleSurvival")]
 [JsonDerivedType(typeof(Ontime), "Ontime")]
+[JsonDerivedType(typeof(DailyLoginReward), "DailyLoginReward")]
 public abstract record GameEventData;

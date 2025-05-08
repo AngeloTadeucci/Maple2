@@ -92,7 +92,7 @@ public partial class GameStorage {
         }
 
         public long GetCharacterId(string name) {
-            return Context.Character.Where(character => character.Name == name)
+            return Context.Character.Where(character => character.Name.ToLower() == name.ToLower())
                 .Select(character => character.Id)
                 .FirstOrDefault();
         }
@@ -448,6 +448,7 @@ public partial class GameStorage {
         public Character? CreateCharacter(Character character) {
             Model.Character model = character;
             model.Id = 0;
+            model.Channel = -1;
 #if DEBUG
             model.Currency = new CharacterCurrency {
                 Meso = 999999999

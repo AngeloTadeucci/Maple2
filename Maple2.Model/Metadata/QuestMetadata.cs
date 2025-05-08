@@ -15,6 +15,7 @@ public record QuestMetadata(
     QuestMetadataGoToNpc GoToNpc,
     QuestMetadataGoToDungeon GoToDungeon,
     QuestDispatch? Dispatch,
+    QuestMentoringMission? Mentoring,
     QuestEventMissionType EventMissionType,
     ConditionMetadata[] Conditions) : ISearchResult;
 
@@ -84,4 +85,8 @@ public record QuestDispatch(
     int MapId,
     int PortalId,
     int Script);
+
+public record QuestMentoringMission(
+    int OpeningDay,
+    int Season);
 

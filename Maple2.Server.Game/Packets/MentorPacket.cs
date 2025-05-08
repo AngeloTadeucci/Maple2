@@ -3,6 +3,7 @@ using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -17,12 +18,21 @@ public static class MentorPacket {
         DeclineMentorInvite = 7,
         AssignMentor = 8,
         Load = 9,
-        Unknown10 = 10,
-        Unknown11 = 11,
+        LoginPoints = 10,
+        DailyPoints = 11,
         Unknown12 = 12,
         ReceiveMenteeInvite = 14,
         Unknown15 = 15,
         Unknown16 = 16,
+    }
+
+    public static ByteWriter Init(FieldPlayer player) {
+        var pWriter = Packet.Of(SendOp.Mentor);
+        pWriter.Write<MentorRole>(player.Value.Character.MentorRole);
+        pWriter.WriteInt(player.ObjectId);
+        pWriter.WriteLong(player.Value.Character.Id);
+        return pWriter;
+
     }
 
     public static ByteWriter UpdateRole(MentorRole role, int objectId) {
@@ -41,15 +51,15 @@ public static class MentorPacket {
         int count = 2;
         pWriter.WriteInt(count);
         for (int i = 0; i < count; i++) {
-            pWriter.WriteLong(4);
-            pWriter.WriteLong(6);
-            pWriter.WriteLong(1111);
-            pWriter.WriteUnicodeString("Test1");
-            pWriter.WriteShort(11);
-            pWriter.WriteUnicodeString("Test1B");
-            pWriter.WriteInt(1);
-            pWriter.WriteByte(2);
-            pWriter.WriteInt(1);
+            pWriter.WriteLong(4); // char id
+            pWriter.WriteLong(6); // account id
+            pWriter.WriteLong(1789798785); // timestamp?
+            pWriter.WriteUnicodeString("Test1"); // name
+            pWriter.WriteShort(12); // level
+            pWriter.WriteUnicodeString($""); // profile photo
+            pWriter.WriteInt(0);
+            pWriter.WriteBool(true); // online
+            pWriter.Write<Job>(Job.Knight);
         }
 
         return pWriter;
@@ -70,7 +80,7 @@ public static class MentorPacket {
             pWriter.WriteLong();
             pWriter.WriteUnicodeString("Test2");
             pWriter.WriteShort();
-            pWriter.WriteUnicodeString("Test2B");
+            pWriter.WriteUnicodeString("data/profiles/avatar/20000000003/0bd1edb5-7e52-482b-b773-d45098ae0fea.png");
             pWriter.WriteInt();
             pWriter.WriteByte();
             pWriter.WriteInt();
@@ -127,21 +137,21 @@ public static class MentorPacket {
         return pWriter;
     }
 
-    public static ByteWriter Unknown10() {
+    public static ByteWriter LoginPoints() {
         var pWriter = Packet.Of(SendOp.Mentor);
-        pWriter.Write<Command>(Command.Unknown10);
-        pWriter.WriteInt(324234);
-        pWriter.WriteLong(DateTime.Now.ToEpochSeconds());
+        pWriter.Write<Command>(Command.LoginPoints);
+        pWriter.WriteInt(100); // points received
+        pWriter.WriteLong(DateTime.Now.AddDays(-0).ToEpochSeconds());
 
         return pWriter;
     }
 
-    public static ByteWriter Unknown11() {
+    public static ByteWriter DailyPoints() {
         var pWriter = Packet.Of(SendOp.Mentor);
-        pWriter.Write<Command>(Command.Unknown11);
-        pWriter.WriteInt(1);
-        pWriter.WriteInt(2);
-        pWriter.WriteLong(5);
+        pWriter.Write<Command>(Command.DailyPoints);
+        pWriter.WriteInt(1000);
+        pWriter.WriteInt(0); // mentee points received today
+        pWriter.WriteLong(DateTime.Now.AddDays(+2).ToEpochSeconds()); // reset timestamp
 
         return pWriter;
     }
@@ -149,8 +159,8 @@ public static class MentorPacket {
     public static ByteWriter Unknown12() {
         var pWriter = Packet.Of(SendOp.Mentor);
         pWriter.Write<Command>(Command.Unknown12);
-        pWriter.WriteLong(69);
-        pWriter.WriteLong(420);
+        pWriter.WriteLong();
+        pWriter.WriteLong();
 
         return pWriter;
     }
@@ -189,8 +199,8 @@ public static class MentorPacket {
     public static ByteWriter Unknown16() {
         var pWriter = Packet.Of(SendOp.Mentor);
         pWriter.Write<Command>(Command.Unknown16);
-        pWriter.WriteBool(true); // true = Character is not a returning user
-        pWriter.WriteInt();
+        pWriter.WriteBool(false); // true = Character is not a returning user
+        pWriter.WriteInt(0);
 
         return pWriter;
     }

@@ -28,6 +28,12 @@ public class SystemShopHandler : PacketHandler<GameSession> {
             case Command.Fishing:
                 HandleFishing(session, packet);
                 break;
+            case Command.Mentee:
+                HandleMentee(session, packet);
+                break;
+            case Command.Mentor:
+                HandleMentor(session, packet);
+                break;
             case Command.Item:
                 HandleItem(session, packet);
                 break;
@@ -41,11 +47,11 @@ public class SystemShopHandler : PacketHandler<GameSession> {
             return;
         }
 
-        if (!session.NpcMetadata.TryGet(Constant.PvpArenaNpcId, out NpcMetadata? npc)) {
+        if (!session.NpcMetadata.TryGet(Constant.SystemShopNPCIDHonorToken, out NpcMetadata? npc)) {
             return;
         }
 
-        session.Shop.Load(npc.Basic.ShopId, Constant.PvpArenaNpcId);
+        session.Shop.Load(npc.Basic.ShopId, Constant.SystemShopNPCIDHonorToken);
         session.Send(SystemShopPacket.Arena());
     }
 
@@ -55,12 +61,42 @@ public class SystemShopHandler : PacketHandler<GameSession> {
             session.Shop.ClearActiveShop();
             return;
         }
-        if (!session.NpcMetadata.TryGet(Constant.FishingNpcId, out NpcMetadata? npc)) {
+        if (!session.NpcMetadata.TryGet(Constant.SystemShopNPCIDFishing, out NpcMetadata? npc)) {
             return;
         }
 
         session.Shop.Load(npc.Basic.ShopId, npc.Id);
         session.Send(SystemShopPacket.Fishing());
+    }
+
+    private void HandleMentee(GameSession session, IByteReader packet) {
+        bool openShop = packet.ReadBool();
+        if (!openShop) {
+            session.Shop.ClearActiveShop();
+            return;
+        }
+
+        if (!session.NpcMetadata.TryGet(Constant.SystemShopNPCIDMentee, out NpcMetadata? npc)) {
+            return;
+        }
+
+        session.Shop.Load(npc.Basic.ShopId, npc.Id);
+        session.Send(SystemShopPacket.Mentee());
+    }
+
+    private void HandleMentor(GameSession session, IByteReader packet) {
+        bool openShop = packet.ReadBool();
+        if (!openShop) {
+            session.Shop.ClearActiveShop();
+            return;
+        }
+
+        if (!session.NpcMetadata.TryGet(Constant.SystemShopNPCIDMentor, out NpcMetadata? npc)) {
+            return;
+        }
+
+        session.Shop.Load(npc.Basic.ShopId, npc.Id);
+        session.Send(SystemShopPacket.Mentor());
     }
 
     private void HandleItem(GameSession session, IByteReader packet) {

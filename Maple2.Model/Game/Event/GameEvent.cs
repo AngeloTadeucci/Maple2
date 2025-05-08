@@ -130,7 +130,7 @@ public class GameEvent : IByteSerializable {
                 break;
             case ReturnUser returnUser:
                 writer.WriteInt(Id);
-                writer.WriteInt(); // season?
+                writer.WriteInt(returnUser.SeasonId); // season?
                 writer.WriteLong(StartTime);
                 writer.WriteLong(EndTime);
                 writer.WriteInt(returnUser.QuestIds.Length);

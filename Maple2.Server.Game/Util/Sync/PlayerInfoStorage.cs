@@ -45,6 +45,8 @@ public class PlayerInfoStorage {
                 UpdateTime = response.UpdateTime,
                 GuildName = response.GuildName,
                 GuildId = response.GuildId,
+                MentorRole = (MentorRole) response.MentorRole,
+                DeathState = (DeathState) response.DeathState,
             };
             var trophy = new AchievementInfo {
                 Adventure = response.Trophy.Adventure,

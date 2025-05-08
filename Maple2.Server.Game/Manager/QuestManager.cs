@@ -189,6 +189,13 @@ public sealed class QuestManager {
                 continue;
             }
 
+            if (quest.Metadata.Basic.Type == QuestType.MentoringMission && quest.Metadata.Mentoring != null) {
+                // if the required opening day hasn't passed yet, skip
+                if ((DateTime.Now - quest.StartTime.FromEpochSeconds()).TotalDays < quest.Metadata.Mentoring.OpeningDay) {
+                    continue;
+                }
+            }
+
             foreach (Quest.Condition condition in quest.Conditions.Values.Where(condition => condition.Metadata.Type == type)) {
                 // Already meets the requirement and does not need to be updated
                 if (condition.Counter >= condition.Metadata.Value) {
@@ -412,9 +419,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            if (quest.Metadata.Basic.EventTag != string.Empty) {
-                session.Quest.Remove(quest);
-            }
+            session.Quest.Remove(quest);
         }
         session.Send(QuestPacket.Expired(questIds));
     }
