@@ -39,6 +39,14 @@ CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
 
+IConfigurationRoot configRoot = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", true, true)
+    .Build();
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(configRoot)
+    .CreateLogger();
+
 // Check for the --instanced parameter
 bool overrideInstanced = args.Contains("--instanced");
 
@@ -56,13 +64,10 @@ try {
     return;
 }
 
-IConfigurationRoot configRoot = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", true, true)
-    .Build();
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(configRoot)
-    .CreateLogger();
+if (response.GamePort == 0) {
+    Log.Error("Failed to add channel to World Server.");
+    return;
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options => {
