@@ -366,7 +366,7 @@ public class FieldNpc : Actor<Npc> {
 
         Field.Broadcast(NpcControlPacket.Control(this));
 
-        return base.CastSkill(id, level, uid, castTick, position,  direction, rotation, rotateZ, motionPoint);
+        return base.CastSkill(id, level, uid, castTick, position, direction, rotation, rotateZ, motionPoint);
     }
 
     public NpcTask CastAiSkill(int id, short level, int faceTarget, Vector3 facePos, long uid = 0) {
