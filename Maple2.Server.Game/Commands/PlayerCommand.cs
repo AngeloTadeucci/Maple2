@@ -157,10 +157,10 @@ public class PlayerCommand : GameCommand {
                 if (selectedJob == session.Player.Value.Character.Job) {
                     if (!awakening) {
                         // nothing to do
+                        ctx.ExitCode = 0;
                         return;
                     }
                     Awaken(ctx, jobCode);
-                    return;
                 } else {
                     if (awakening) {
                         Awaken(ctx, jobCode);

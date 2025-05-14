@@ -261,9 +261,9 @@ public sealed class AchievementManager {
                     throw new InvalidOperationException($"Failed to create achievement: {metadata.Id}");
                 }
                 if (metadata.AccountWide) {
-                    accountValues.Add(metadata.Id, achievement);
+                    accountValues.TryAdd(metadata.Id, achievement);
                 } else {
-                    characterValues.Add(metadata.Id, achievement);
+                    characterValues.TryAdd(metadata.Id, achievement);
                 }
             }
 
