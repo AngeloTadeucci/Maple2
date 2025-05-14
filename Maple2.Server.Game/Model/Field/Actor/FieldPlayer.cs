@@ -163,8 +163,6 @@ public class FieldPlayer : Actor<Player> {
             InBattle = false;
         }
 
-        //Console.WriteLine($"State: {State}");
-
         UpdateStateSkill();
 
         if (IsDead) {
