@@ -376,7 +376,7 @@ public sealed class NpcScriptManager {
         }
 
         if (!string.IsNullOrEmpty(scriptFunction.MoveMapMovie)) {
-            session.Send(NpcTalkPacket.Cutscene(scriptFunction.MoveMapMovie));
+            session.Send(NpcTalkPacket.Cutscene(scriptFunction.MoveMapMovie, scriptFunction.MoveMapId));
         }
 
         if (scriptFunction.PortalId > 0 && session.Field.TryGetPortal(scriptFunction.PortalId, out FieldPortal? dstPortal)) {

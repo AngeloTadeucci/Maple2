@@ -89,7 +89,7 @@ public partial class MovementState {
 
         Velocity = new Vector3(0, 0, 0);
 
-        SkillRecord? cast = actor.CastSkill(id, level, uid, motion);
+        SkillRecord? cast = actor.CastSkill(id, level, uid, (int) actor.Field.FieldTick, motionPoint: motion);
 
         if (cast is null) {
             task.Cancel();

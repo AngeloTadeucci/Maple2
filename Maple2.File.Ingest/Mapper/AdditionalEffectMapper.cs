@@ -158,13 +158,13 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
         resistances.AddIfNotDefault(BasicAttribute.AttackSpeed, status.resAspR);
 
         Debug.Assert(status.compulsionEventTypes.Length <= 1 && status.compulsionEventRate.Length <= 1);
-        var compulsionEventType = CompulsionEventType.None;
+        var compulsionEventType = BuffCompulsionEventType.None;
         if (status.compulsionEventTypes.Length > 0) {
-            compulsionEventType = (CompulsionEventType) status.compulsionEventTypes[0];
+            compulsionEventType = (BuffCompulsionEventType) status.compulsionEventTypes[0];
         }
 
         AdditionalEffectMetadataStatus.CompulsionEvent? compulsionEvent = null;
-        if (compulsionEventType != CompulsionEventType.None) {
+        if (compulsionEventType != BuffCompulsionEventType.None) {
             float compulsionEventRate = 0;
             if (status.compulsionEventRate.Length > 0) {
                 compulsionEventRate = status.compulsionEventRate[0];

@@ -32,7 +32,7 @@ public enum BuffCategory {
     Unknown4 = 4,
     EnemyDot = 6,
     Stunned = 7, // ?
-    Slow = 8, // ?
+    Slow = 8,
     BossResistance = 9,
     Unknown99 = 99,
     MonsterStunned = 1007, // ?
@@ -90,4 +90,11 @@ public enum InvokeEffectType : byte {
     ReduceSpiritCost = 56,
     // 57 (90050351) // Triggered from 10500061 (Sharp Eyes) -
     IncreaseHealing = 58,
+}
+
+public enum BuffCompulsionEventType : byte {
+    None = 0,
+    CritChanceOverride = 1,
+    EvasionChanceOverride = 2,
+    BlockChance = 3,
 }

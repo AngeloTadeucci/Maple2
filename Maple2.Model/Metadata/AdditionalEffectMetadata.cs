@@ -85,7 +85,7 @@ public record AdditionalEffectMetadataStatus(
     int ImmuneBreak,
     bool Invincible) {
 
-    public record CompulsionEvent(CompulsionEventType Type, float Rate, int[] SkillIds);
+    public record CompulsionEvent(BuffCompulsionEventType Type, float Rate, int[] SkillIds);
 
     public record StatConversion(BasicAttribute BaseAttribute, BasicAttribute ResultAttribute, float Rate);
 }

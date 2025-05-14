@@ -42,7 +42,7 @@ public record SkillMetadataProperty(
 
 public record SkillMetadataState(
     bool InBattle,
-    int SuperArmor,  // 0, 1, 3
+    SuperArmor SuperArmor,
     bool UseInGameTime,
     int CooldownGroupId,
     bool IgnoreReduceCooldown,
@@ -139,7 +139,7 @@ public record SkillMetadataArrow(
     bool Explosion,
     bool RayPhysXTest,
     SkillTargetType NonTarget,
-    int BounceType, // 2: chain, 3: pierce
+    BounceType BounceType,
     int BounceCount,
     float BounceRadius,
     bool BounceOverlap,

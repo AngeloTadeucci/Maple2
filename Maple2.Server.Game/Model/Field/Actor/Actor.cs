@@ -52,6 +52,12 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public Lua.Lua Lua { get; init; }
 
     /// <summary>
+    /// Counter for skill casting ID creation
+    /// </summary>
+    private int localIdCounter = 1;
+    protected int NextLocalId() => Interlocked.Increment(ref localIdCounter);
+
+    /// <summary>
     /// Tick duration of actor in the same position.
     /// </summary>
     public (Vector3 Position, long LastTick, long Duration) PositionTick { get; set; }
@@ -192,10 +198,16 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
         ApplyEffects(record.Attack.Skills, record.Caster, this, skillId: record.SkillId, targets: record.Targets.Values.ToArray());
         ApplyEffects(record.Attack.SkillsOnDamage, record.Caster, damage, record.Targets.Values.ToArray());
-        /*foreach (SkillEffectMetadata effect in record.Attack.Skills.Where(e => e.Splash != null)) {
-            // This should not be sent on init skill use from PLAYER because a Splash skill packet is sent from client to server.
-            // Field.AddSkill(record.Caster, effect, [record.Caster.Position], record.Caster.Rotation);
-        }*/
+        foreach (IActor target in record.Targets.Values) {
+            foreach (SkillEffectMetadata effect in record.Attack.Skills.Where(e => e.Splash != null)) {
+                Field.AddSkill(record.Caster, effect, [target.Position], record.Caster.Rotation);
+            }
+        }
+
+    }
+
+    public virtual void SkillAttackPoint(SkillRecord record, byte attackPoint) {
+
     }
 
     public virtual IActor GetTarget(SkillTargetType targetType, IActor caster, IActor target, IActor owner) {
@@ -304,19 +316,21 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
 
     public virtual void KeyframeEvent(string keyName) { }
 
-    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
+    public virtual SkillRecord? CastSkill(int id, short level, long uid, int castTick, in Vector3 position = default, in Vector3 direction = default, in Vector3 rotation = default, float rotateZ = 0f, byte motionPoint = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata)) {
             Logger.Error("Invalid skill use: {SkillId},{Level}", id, level);
             return null;
         }
 
         var record = new SkillRecord(metadata, uid, this) {
-            Position = Position,
-            Rotation = Rotation,
+            Position = position == default ? Position : position,
+            Rotation = Rotation == default ? Rotation : rotation,
             Rotate2Z = 2 * Rotation.Z,
+            ServerTick = castTick,
         };
 
         if (!record.TrySetMotionPoint(motionPoint)) {
+            Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);
             return null;
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Numerics;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -11,7 +12,6 @@ using Maple2.Tools.Collision;
 namespace Maple2.Server.Game.Model;
 
 public interface IActor : IFieldEntity {
-    protected static readonly ConcurrentDictionary<int, Buff> NoBuffs = new();
     public NpcMetadataStorage? NpcMetadata { get; init; }
     public BuffManager Buffs { get; }
 
@@ -31,7 +31,7 @@ public interface IActor : IFieldEntity {
 
     public virtual void TargetAttack(SkillRecord record) { }
 
-    public virtual SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) { return null; }
+    public virtual SkillRecord? CastSkill(int id, short level, long uid, int castTick, in Vector3 position = default, in Vector3 direction = default, in Vector3 rotation = default, float rotateZ = 0f, byte motionPoint = 0) { return null; }
     public virtual void KeyframeEvent(string keyName) { }
 }
 

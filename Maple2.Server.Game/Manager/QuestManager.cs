@@ -583,6 +583,51 @@ public sealed class QuestManager {
         Load();
     }
 
+    /// <summary>
+    /// Only used for debugging purposes. Completes all quests in the chapter silently.
+    /// </summary>
+    /// <param name="chapterId"></param>
+    public void DebugCompleteChapter(int chapterId) {
+        using GameStorage.Request db = session.GameStorage.Context();
+        IEnumerable<int> questIds = session.QuestMetadata.GetQuestsByChapter(chapterId).Select(q => q.Id);
+        foreach (int questId in questIds) {
+            if (TryGetQuest(questId, out Quest? quest)) {
+                if (quest.State == QuestState.Completed) {
+                    continue;
+                }
+
+                quest.State = QuestState.Completed;
+                quest.CompletionCount++;
+                quest.EndTime = DateTime.Now.ToEpochSeconds();
+            } else {
+                if (!session.QuestMetadata.TryGet(questId, out QuestMetadata? metadata)) {
+                    continue;
+                }
+                var newQuest = new Quest(metadata) {
+                    State = QuestState.Completed,
+                    StartTime = DateTime.Now.ToEpochSeconds(),
+                    EndTime = DateTime.Now.ToEpochSeconds() + 1,
+                    CompletionCount = 1,
+                    Track = true,
+                };
+
+                for (int i = 0; i < newQuest.Metadata.Conditions.Length; i++) {
+                    newQuest.Conditions.Add(i, new Quest.Condition(newQuest.Metadata.Conditions[i]));
+                    newQuest.Conditions[i].Counter = (int) newQuest.Conditions[i].Metadata.Value;
+                }
+
+                long ownerId = newQuest.Metadata.Basic.Account > 0 ? session.AccountId : session.CharacterId;
+                newQuest = db.CreateQuest(ownerId, newQuest);
+                if (newQuest == null) {
+                    logger.Error("Failed to create quest entry {questId}", metadata.Id);
+                    continue;
+                }
+                Add(newQuest);
+            }
+        }
+
+        Load();
+    }
     public void Save(GameStorage.Request db) {
         db.SaveQuests(session.AccountId, accountValues.Values);
         db.SaveQuests(session.CharacterId, characterValues.Values);
