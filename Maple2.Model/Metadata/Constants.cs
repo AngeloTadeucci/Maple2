@@ -102,6 +102,7 @@ public static class Constant {
     public const int Grade1WeddingCouponItemId = 20303166;
     public const int Grade2WeddingCouponItemId = 20303167;
     public const int Grade3WeddingCouponItemId = 20303168;
+    public const int MinStatIntervalTick = 100;
 
     public const int MaxMentees = 3;
 

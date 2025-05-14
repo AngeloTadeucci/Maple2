@@ -32,6 +32,8 @@ public class SkillRecord {
     public string HoldString = string.Empty;
     public long ItemUid;
 
+    public long StateNextTick; // Used for state skills only
+
     public ConcurrentDictionary<int, IActor> Targets;
 
     public SkillRecord(SkillMetadata metadata, long castUid, IActor caster) {

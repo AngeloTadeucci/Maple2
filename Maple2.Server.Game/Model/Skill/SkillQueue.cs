@@ -1,4 +1,6 @@
-﻿namespace Maple2.Server.Game.Model.Skill;
+﻿using Maple2.Model.Enum;
+
+namespace Maple2.Server.Game.Model.Skill;
 
 // Used to keep track and lookup pending skills
 // This is a circular array and will overwrite old pending skills
@@ -6,6 +8,7 @@ public class SkillQueue {
     private const int MAX_PENDING = 3;
 
     private readonly SkillRecord?[] casts;
+    public SkillRecord? StateSkill;
     private int index;
 
     public SkillQueue() {
@@ -15,6 +18,10 @@ public class SkillQueue {
 
     public void Add(SkillRecord cast) {
         casts[index] = cast;
+
+        if (cast.Metadata.Property.State != ActorState.None) {
+            StateSkill = cast;
+        }
 
         index = (index + 1) % MAX_PENDING;
     }

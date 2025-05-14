@@ -29,7 +29,7 @@ public class SkillHandler : PacketHandler<GameSession> {
     private enum SubCommand : byte {
         Point = 0,
         Target = 1,
-        Splash = 2,
+        CubeMagicPath = 2,
     }
 
     #region Autofac Autowired
@@ -54,8 +54,8 @@ public class SkillHandler : PacketHandler<GameSession> {
                     case SubCommand.Target:
                         HandleTarget(session, packet);
                         return;
-                    case SubCommand.Splash:
-                        HandleSplash(session, packet);
+                    case SubCommand.CubeMagicPath:
+                        HandleCubeMagicPath(session, packet);
                         return;
                 }
                 return;
@@ -85,28 +85,19 @@ public class SkillHandler : PacketHandler<GameSession> {
                 return;
             }
         }
-
-        if (!SkillMetadata.TryGet(skillId, level, out SkillMetadata? metadata)) {
-            Logger.Error("Invalid skill use: {SkillId},{Level}", skillId, level);
-            return;
-        }
-
-        var record = new SkillRecord(metadata, skillUid, session.Player) {
-            ServerTick = serverTick,
-        };
         byte motionPoint = packet.ReadByte();
-        if (!record.TrySetMotionPoint(motionPoint)) {
-            Logger.Error("Invalid MotionPoint({MotionPoint}) for {Record}", motionPoint, record);
+        var position = packet.Read<Vector3>();
+        var direction = packet.Read<Vector3>();
+        var rotation = packet.Read<Vector3>();
+        float rotate2Z = packet.ReadFloat(); // Rotation2Z
+
+        SkillRecord? record = session.Player.CastSkill(skillId, level, skillUid, serverTick, position, direction, rotation, rotate2Z, motionPoint);
+        if (record == null) {
             return;
         }
 
-        SkillMetadataMotionProperty motion = metadata.Data.Motions.First().MotionProperty;
-        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, metadata);
-
-        record.Position = packet.Read<Vector3>();
-        record.Direction = packet.Read<Vector3>();
-        record.Rotation = packet.Read<Vector3>();
-        record.Rotate2Z = packet.ReadFloat(); // Rotation2Z
+        SkillMetadataMotionProperty motion = record.Metadata.Data.Motions.First().MotionProperty;
+        session.Animation.TryPlaySequence(motion.SequenceName, motion.SequenceSpeed, AnimationType.Skill, record.Metadata);
 
         packet.ReadInt(); // ClientTick
         record.Unknown = packet.ReadBool(); // UnkBool
@@ -128,16 +119,16 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         long startTick = session.Field.FieldTick;
-        session.Player.InBattle = metadata.State.InBattle;
+        session.Player.InBattle = record.Metadata.State.InBattle;
         session.Player.ActiveSkills.Add(record);
         session.Field.Broadcast(SkillPacket.Use(record));
         session.Field.Broadcast(StatsPacket.Init(session.Player));
 
-        session.Player.ApplyEffects(metadata.Data.Skills, session.Player, session.Player, EventConditionType.Activate, skillId: metadata.Id, targets: [session.Player]);
-        session.Buffs.TriggerEvent(session.Player, session.Player, session.Player, EventConditionType.OnSkillCasted, skillId: metadata.Id);
+        session.Player.ApplyEffects(record.Metadata.Data.Skills, session.Player, session.Player, EventConditionType.Activate, skillId: record.SkillId, targets: [session.Player]);
+        session.Buffs.TriggerEvent(session.Player, session.Player, session.Player, EventConditionType.OnSkillCasted, skillId: record.SkillId);
 
         session.ConditionUpdate(ConditionType.skill, codeLong: skillId, targetLong: session.Field.MapId);
-        session.Config.SaveSkillCooldown(metadata, startTick);
+        session.Config.SaveSkillCooldown(record.Metadata, startTick);
     }
 
     private void HandlePoint(GameSession session, IByteReader packet) {
@@ -265,7 +256,7 @@ public class SkillHandler : PacketHandler<GameSession> {
         session.Player.TargetAttack(record);
     }
 
-    private void HandleSplash(GameSession session, IByteReader packet) {
+    private void HandleCubeMagicPath(GameSession session, IByteReader packet) {
         long skillUid = packet.ReadLong();
         SkillRecord? record = session.Player.ActiveSkills.Get(skillUid);
         if (record == null) {
@@ -284,13 +275,13 @@ public class SkillHandler : PacketHandler<GameSession> {
             Logger.Error("Unhandled skill-MagicPath value1({Value}): {Record}", unknown1, record);
         }
 
-        int unknown2 = packet.ReadInt(); // Unknown(0)
-        if (unknown2 != 0) {
-            Logger.Error("Unhandled skill-MagicPath value2({Value}): {Record}", unknown2, record);
+        int attackIndex = packet.ReadInt(); // Unknown(0)
+        if (attackIndex != 0) {
+            Logger.Error("Unhandled skill-MagicPath attackIndex ({Value}): {Record}", attackIndex, record);
         }
 
         if (session.Player.DebugSkills) {
-            session.Send(NoticePacket.Message($"Skill.Attack.Region: {skillUid}; AttackPoint: {attackPoint}; UnkInt: {unknown1}; UnkInt: {unknown2}"));
+            session.Send(NoticePacket.Message($"Skill.Attack.Region: {skillUid}; AttackPoint: {attackPoint}; UnkInt: {unknown1}; UnkInt: {attackIndex}"));
         }
 
         record.Position = packet.Read<Vector3>();
@@ -330,13 +321,7 @@ public class SkillHandler : PacketHandler<GameSession> {
         bool isRelease = packet.ReadBool();
         int unk3 = packet.ReadInt();
 
-        /* TODO: Consume when new iteration
-         if (!session.Player.SkillCastConsume(record)) {
-            session.Send(SkillUseFailedPacket.Fail(record));
-            return;
-        }*/
-
-        //session.Field?.Broadcast(SkillPacket.Sync(record), session);
+        session.Field?.Broadcast(SkillPacket.Sync(record), session);
 
         if (session.Player.DebugSkills) {
             session.Send(NoticePacket.Message($"Skill.Sync: {skillId},{skillUid}; AttackPoint: {motionPoint}; IsCharge: {isCharge}; IsReleased: {isRelease}; UnkInt: {unk3}; Direction: {direction}"));
@@ -361,6 +346,11 @@ public class SkillHandler : PacketHandler<GameSession> {
             session.Send(NoticePacket.Message($"Skill.SyncTick: {skillUid}"));
         }
 
+        if (!session.Player.SkillCastConsume(record)) {
+            session.Send(SkillUseFailedPacket.Fail(record));
+            return;
+        }
+
         string skillSequence = record.Motion.MotionProperty.SequenceName;
         string playingSequence = session.Player.Animation.PlayingSequence?.Name ?? "";
 
@@ -381,7 +371,7 @@ public class SkillHandler : PacketHandler<GameSession> {
         }
 
         session.Player.InBattle = true;
-        session.Field?.Broadcast(SkillPacket.Cancel(record), session);
+        session.Field.Broadcast(SkillPacket.Cancel(record));
 
         if (session.Player.DebugSkills) {
             session.Send(NoticePacket.Message($"Skill.Cancel: {skillUid}"));

@@ -353,7 +353,7 @@ public class FieldNpc : Actor<Npc> {
         }
     }
 
-    public override SkillRecord? CastSkill(int id, short level, long uid = 0, byte motionPoint = 0) {
+    public override SkillRecord? CastSkill(int id, short level, long uid, int castTick, in Vector3 position = default, in Vector3 direction = default, in Vector3 rotation = default, float rotateZ = 0f, byte motionPoint = 0) {
         if (!Field.SkillMetadata.TryGet(id, level, out SkillMetadata? metadata) || metadata.Data.Motions.Length <= motionPoint) {
             Logger.Error("Invalid skill use: {SkillId},{Level},{motionPoint}", id, level, motionPoint);
             return null;
@@ -361,14 +361,12 @@ public class FieldNpc : Actor<Npc> {
 
         if (uid == 0) {
             // The client derives the player's skill cast skillSn/uid using this formula so I'm using it here for mob casts for parity.
-            uid = (long) ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds * 100000) % (long) 1e14;
+            uid = (long) NextLocalId() << 32 | (uint) Environment.TickCount;
         }
 
         Field.Broadcast(NpcControlPacket.Control(this));
 
-        var cast = base.CastSkill(id, level, uid, motionPoint);
-
-        return cast;
+        return base.CastSkill(id, level, uid, castTick, position, direction, rotation, rotateZ, motionPoint);
     }
 
     public NpcTask CastAiSkill(int id, short level, int faceTarget, Vector3 facePos, long uid = 0) {

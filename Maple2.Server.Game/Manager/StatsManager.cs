@@ -180,8 +180,9 @@ public class StatsManager {
             foreach ((BasicAttribute valueBasicAttribute, long value) in buff.Metadata.Status.Values) {
                 Values[valueBasicAttribute].AddTotal(value);
             }
-            foreach ((BasicAttribute ratespecialAttribute, float rate) in buff.Metadata.Status.Rates) {
-                Values[ratespecialAttribute].AddRate(rate);
+            foreach ((BasicAttribute rateBasicAttribute, float rate) in buff.Metadata.Status.Rates) {
+                // ensure regen intervals do not drop below 0.1
+                Values[rateBasicAttribute].AddRate(rate);
             }
             foreach ((SpecialAttribute valueSpecialAttribute, float value) in buff.Metadata.Status.SpecialValues) {
                 Values[valueSpecialAttribute].AddTotal((long) value);

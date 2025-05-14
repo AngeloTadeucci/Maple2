@@ -64,6 +64,7 @@ public class FieldPlayer : Actor<Player> {
     private long StateSyncTrackingTick { get; set; }
 
     public Tombstone? Tombstone { get; set; }
+
     public DeathState DeathState {
         get => Value.Character.DeathState;
         set {
@@ -140,6 +141,7 @@ public class FieldPlayer : Actor<Player> {
 
     public override void Update(long tickCount) {
         base.Update(tickCount);
+        Session.GameEvent.Update(tickCount);
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
@@ -161,44 +163,70 @@ public class FieldPlayer : Actor<Player> {
             InBattle = false;
         }
 
-        if (!IsDead) {
-            // Loops through each registered regen stat and applies regen
-            var statsToRemove = new List<BasicAttribute>();
-            foreach (BasicAttribute attribute in regenStats.Keys) {
-                Stat stat = Stats.Values[attribute];
-                Stat regen = Stats.Values[regenStats[attribute].Item1];
-                Stat interval = Stats.Values[regenStats[attribute].Item2];
+        UpdateStateSkill();
 
-                if (stat.Current >= stat.Total) {
-                    // Removes stat from regen stats so it won't be listened for
-                    statsToRemove.Add(attribute);
-                    continue;
-                }
+        if (IsDead) {
+            return;
+        }
+        // Loops through each registered regen stat and applies regen
+        var statsToRemove = new List<BasicAttribute>();
+        foreach (BasicAttribute attribute in regenStats.Keys) {
+            Stat stat = Stats.Values[attribute];
+            Stat regen = Stats.Values[regenStats[attribute].Item1];
+            Stat interval = Stats.Values[regenStats[attribute].Item2];
 
-                lastRegenTime.TryGetValue(attribute, out long regenTime);
-
-                if (tickCount - regenTime > interval.Base) {
-                    lastRegenTime[attribute] = tickCount;
-                    switch (attribute) {
-                        case BasicAttribute.Health:
-                            RecoverHp((int) regen.Total);
-                            continue;
-                        case BasicAttribute.Spirit:
-                            RecoverSp((int) regen.Total);
-                            continue;
-                        case BasicAttribute.Stamina:
-                            RecoverStamina((int) regen.Total);
-                            continue;
-                    }
-                    Session.Send(StatsPacket.Update(this, attribute));
-                }
+            if (stat.Current >= stat.Total) {
+                // Removes stat from regen stats so it won't be listened for
+                statsToRemove.Add(attribute);
+                continue;
             }
-            foreach (BasicAttribute attribute in statsToRemove) {
-                regenStats.Remove(attribute);
+
+            lastRegenTime.TryGetValue(attribute, out long regenTime);
+
+            if (tickCount - regenTime > Math.Max(interval.Current, Constant.MinStatIntervalTick)) {
+                lastRegenTime[attribute] = tickCount;
+                switch (attribute) {
+                    case BasicAttribute.Health:
+                        RecoverHp((int) regen.Total);
+                        continue;
+                    case BasicAttribute.Spirit:
+                        RecoverSp((int) regen.Total);
+                        continue;
+                    case BasicAttribute.Stamina:
+                        RecoverStamina((int) regen.Total);
+                        continue;
+                }
+                Session.Send(StatsPacket.Update(this, attribute));
             }
         }
+        foreach (BasicAttribute attribute in statsToRemove) {
+            regenStats.Remove(attribute);
+        }
+        CheckRegen();
+        return;
 
-        Session.GameEvent.Update(tickCount);
+        void UpdateStateSkill() {
+            SkillRecord? stateSkill = ActiveSkills.StateSkill;
+            if (stateSkill == null) {
+                return;
+            }
+
+            if (stateSkill.StateNextTick > tickCount) {
+                return;
+            }
+
+            if (stateSkill.Metadata.Property.State != State) {
+                Field.Broadcast(SkillPacket.Cancel(stateSkill));
+                ActiveSkills.StateSkill = null;
+                return;
+            }
+
+            stateSkill.StateNextTick = tickCount + (int) TimeSpan.FromSeconds(Math.Max(0.01f, stateSkill.Motion.MotionProperty.SequenceSpeed)).TotalMilliseconds;
+            if (!SkillCastConsume(stateSkill)) {
+                ActiveSkills.StateSkill = null;
+                Field.Broadcast(SkillPacket.Cancel(stateSkill));
+            }
+        }
     }
 
     public void OnStateSync(StateSync stateSync) {
@@ -512,19 +540,19 @@ public class FieldPlayer : Actor<Player> {
 
     public void CheckRegen() {
         // Health
-        var health = Stats.Values[BasicAttribute.Health];
+        Stat health = Stats.Values[BasicAttribute.Health];
         if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
         }
 
         // Spirit
-        var spirit = Stats.Values[BasicAttribute.Spirit];
+        Stat spirit = Stats.Values[BasicAttribute.Spirit];
         if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
         }
 
         // Stamina
-        var stamina = Stats.Values[BasicAttribute.Stamina];
+        Stat stamina = Stats.Values[BasicAttribute.Stamina];
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }

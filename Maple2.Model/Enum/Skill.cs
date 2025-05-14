@@ -184,9 +184,9 @@ public enum EventConditionType {
 
 public enum CompulsionType {
     None = 0,
-    Critical = 1,
-    Evasion = 2,
-    Block = 3,
+    Hit = 1,
+    Critical = 2,
+    Interrupt = 3, // unconfirmed
 }
 
 public enum TargetType {
@@ -199,4 +199,20 @@ public enum TargetType {
     Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
 
     HungryMobs = 8
+}
+
+public enum BounceType {
+    None = 0,
+    Range = 1, // within range
+    Chain = 2, // Bounce continues as long as another entity is in range of the last bounce
+    Pierce = 3, // Linear
+    Boomerang = 4, // Shield Toss, Shadow Cutter
+    Unknown5 = 5,
+}
+
+[Flags]
+public enum SuperArmor {
+    None = 0,
+    StunImmunity = 1,
+    KnockbackImmunity = 2,
 }

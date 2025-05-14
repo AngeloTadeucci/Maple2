@@ -83,7 +83,7 @@ public class PlayerCommand : GameCommand {
 
         private void Handle(InvocationContext ctx, long exp) {
             try {
-                session.Exp.AddExp(ExpType.none, exp);
+                session.Exp.AddExp(ExpType.expDrop, exp);
 
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
@@ -138,51 +138,127 @@ public class PlayerCommand : GameCommand {
 
         private void Handle(InvocationContext ctx, JobCode jobCode, bool awakening) {
             try {
-                Job job = jobCode switch {
+                Job selectedJob = jobCode switch {
                     JobCode.Newbie => Job.Newbie,
-                    JobCode.Knight => awakening ? Job.KnightII : Job.Knight,
-                    JobCode.Berserker => awakening ? Job.BerserkerII : Job.Berserker,
-                    JobCode.Wizard => awakening ? Job.WizardII : Job.Wizard,
-                    JobCode.Priest => awakening ? Job.PriestII : Job.Priest,
-                    JobCode.Archer => awakening ? Job.ArcherII : Job.Archer,
-                    JobCode.HeavyGunner => awakening ? Job.HeavyGunnerII : Job.HeavyGunner,
-                    JobCode.Thief => awakening ? Job.ThiefII : Job.Thief,
-                    JobCode.Assassin => awakening ? Job.AssassinII : Job.Assassin,
-                    JobCode.RuneBlader => awakening ? Job.RuneBladerII : Job.RuneBlader,
-                    JobCode.Striker => awakening ? Job.StrikerII : Job.Striker,
-                    JobCode.SoulBinder => awakening ? Job.SoulBinderII : Job.SoulBinder,
-                    _ => throw new ArgumentException($"Invalid JobCode: {jobCode}")
+                    JobCode.Knight => Job.Knight,
+                    JobCode.Berserker => Job.Berserker,
+                    JobCode.Wizard => Job.Wizard,
+                    JobCode.Priest => Job.Priest,
+                    JobCode.Archer => Job.Archer,
+                    JobCode.HeavyGunner => Job.HeavyGunner,
+                    JobCode.Thief => Job.Thief,
+                    JobCode.Assassin => Job.Assassin,
+                    JobCode.RuneBlader => Job.RuneBlader,
+                    JobCode.Striker => Job.Striker,
+                    JobCode.SoulBinder => Job.SoulBinder,
+                    _ => throw new ArgumentException($"Invalid JobCode: {jobCode}"),
                 };
 
-                Job currentJob = session.Player.Value.Character.Job;
-                if (currentJob.Code() != job.Code()) {
-                    foreach (SkillTab skillTab in session.Config.Skill.SkillBook.SkillTabs) {
-                        skillTab.Skills.Clear();
+                if (selectedJob == session.Player.Value.Character.Job) {
+                    if (!awakening) {
+                        // nothing to do
+                        ctx.ExitCode = 0;
+                        return;
                     }
-                } else if (job < currentJob) {
-                    foreach (SkillTab skillTab in session.Config.Skill.SkillBook.SkillTabs) {
-                        foreach (int skillId in skillTab.Skills.Keys.ToList()) {
-                            if (session.Config.Skill.SkillInfo.GetMainSkill(skillId, SkillRank.Awakening) != null) {
-                                skillTab.Skills.Remove(skillId);
-                            }
-                        }
+                    Awaken(ctx, jobCode);
+                } else {
+                    if (awakening) {
+                        Awaken(ctx, jobCode);
+                    } else {
+                        JobAdvance(selectedJob);
                     }
-                    session.Config.Skill.ResetSkills(SkillRank.Awakening);
                 }
-
-                session.Player.Value.Character.Job = job;
-                session.Config.Skill.SkillInfo.SetJob(job);
-
-                session.Player.Buffs.Clear();
-                session.Player.Buffs.Initialize();
-                session.Player.Buffs.LoadFieldBuffs();
-                session.Stats.Refresh();
-                session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
+        }
+
+        private void Awaken(InvocationContext ctx, JobCode jobCode) {
+            Job awakenedJob = jobCode switch {
+                JobCode.Newbie => Job.Newbie,
+                JobCode.Knight => Job.KnightII,
+                JobCode.Berserker => Job.BerserkerII,
+                JobCode.Wizard => Job.WizardII,
+                JobCode.Priest => Job.PriestII,
+                JobCode.Archer => Job.ArcherII,
+                JobCode.HeavyGunner => Job.HeavyGunnerII,
+                JobCode.Thief => Job.ThiefII,
+                JobCode.Assassin => Job.AssassinII,
+                JobCode.RuneBlader => Job.RuneBladerII,
+                JobCode.Striker => Job.StrikerII,
+                JobCode.SoulBinder => Job.SoulBinderII,
+                _ => throw new ArgumentException($"Invalid JobCode: {jobCode}"),
+            };
+            Job baseJob = jobCode switch {
+                JobCode.Newbie => Job.Newbie,
+                JobCode.Knight => Job.Knight,
+                JobCode.Berserker => Job.Berserker,
+                JobCode.Wizard => Job.Wizard,
+                JobCode.Priest => Job.Priest,
+                JobCode.Archer => Job.Archer,
+                JobCode.HeavyGunner => Job.HeavyGunner,
+                JobCode.Thief => Job.Thief,
+                JobCode.Assassin => Job.Assassin,
+                JobCode.RuneBlader => Job.RuneBlader,
+                JobCode.Striker => Job.Striker,
+                JobCode.SoulBinder => Job.SoulBinder,
+                _ => throw new ArgumentException($"Invalid JobCode: {jobCode}"),
+            };
+
+            if (!session.TableMetadata.ChangeJobTable.Entries.TryGetValue(baseJob, out ChangeJobMetadata? changeJobMetadata)) {
+                ctx.Console.Error.WriteLine($"Invalid JobCode: {jobCode}");
+                return;
+            }
+
+            if (!session.QuestMetadata.TryGet(changeJobMetadata.StartQuestId, out QuestMetadata? startQuestMetadata)) {
+                ctx.Console.Error.WriteLine($"Invalid StartQuestId for awakening: {changeJobMetadata.StartQuestId}");
+                return;
+            }
+            session.Quest.DebugCompleteChapter(startQuestMetadata.Basic.ChapterId);
+            JobAdvance(awakenedJob);
+            UnlockMasterSkills();
+        }
+
+        private void JobAdvance(Job job) {
+            Job currentJob = session.Player.Value.Character.Job;
+            if (currentJob.Code() != job.Code()) {
+                foreach (SkillTab skillTab in session.Config.Skill.SkillBook.SkillTabs) {
+                    skillTab.Skills.Clear();
+                }
+            } else if (job < currentJob) {
+                foreach (SkillTab skillTab in session.Config.Skill.SkillBook.SkillTabs) {
+                    foreach (int skillId in skillTab.Skills.Keys.ToList()) {
+                        if (session.Config.Skill.SkillInfo.GetMainSkill(skillId, SkillRank.Awakening) != null) {
+                            skillTab.Skills.Remove(skillId);
+                        }
+                    }
+                }
+                session.Config.Skill.ResetSkills(SkillRank.Awakening);
+            }
+
+            session.Player.Value.Character.Job = job;
+            session.Config.Skill.SkillInfo.SetJob(job);
+
+            session.Player.Buffs.Clear();
+            session.Player.Buffs.Initialize();
+            session.Player.Buffs.LoadFieldBuffs();
+            session.Stats.Refresh();
+            session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
+        }
+
+        private void UnlockMasterSkills() {
+            const int masterSkillQuestId = 40002795;
+            if (session.Quest.TryGetQuest(masterSkillQuestId, out Quest? quest) && quest.State == QuestState.Completed) {
+                return;
+            }
+
+            session.Quest.Start(masterSkillQuestId, true);
+            if (!session.Quest.TryGetQuest(masterSkillQuestId, out quest)) {
+                return;
+            }
+            session.Quest.Complete(quest, true);
         }
     }
 
@@ -424,21 +500,12 @@ public class PlayerCommand : GameCommand {
         }
 
         private void UnlockAllTrophies(InvocationContext ctx) {
-            try {
-                ICollection<AchievementMetadata> achievementMetadataCollection = achievementMetadataStorage.GetAll();
-                foreach (AchievementMetadata metadata in achievementMetadataCollection) {
-                    int trophyId = metadata.Id;
-                    int maxGrade = metadata.Grades.Keys.Max();
+            ctx.Console.Out.WriteLine($"Unlocking all trophies... This may take a few seconds");
+            session.Achievement.DebugCompleteAllTrophies();
+            session.Achievement.Load();
 
-                    UnlockTrophy(trophyId, metadata, maxGrade);
-                }
-
-                ctx.Console.Out.WriteLine("All trophies have been successfully unlocked to their maximum grades.");
-                ctx.ExitCode = 0;
-            } catch (Exception ex) {
-                ctx.Console.Error.WriteLine($"Failed to unlock all trophies: {ex.Message}");
-                ctx.ExitCode = 1;
-            }
+            ctx.Console.Out.WriteLine("All trophies have been successfully unlocked to their maximum grades.");
+            ctx.ExitCode = 0;
         }
 
         private void UnlockSingleTrophy(InvocationContext ctx, int trophyId, short grade) {

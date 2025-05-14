@@ -26,7 +26,7 @@ public class BuffManager : IUpdatable {
     public IActor Actor { get; private set; }
     private readonly ConcurrentDictionary<int, List<Buff>> buffs = [];
     public IDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>> Invokes { get; init; }
-    public IDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
+    public IDictionary<BuffCompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>> Compulsions { get; init; }
     private Dictionary<BasicAttribute, float> Resistances { get; } = new();
     public ConcurrentDictionary<int, long> CooldownTimes { get; } = new(); // TODO: Cache this
     public ReflectRecord? Reflect;
@@ -35,7 +35,7 @@ public class BuffManager : IUpdatable {
     public BuffManager(IActor actor) {
         Actor = actor;
         Invokes = new ConcurrentDictionary<InvokeEffectType, IDictionary<int, InvokeRecord>>();
-        Compulsions = new ConcurrentDictionary<CompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>>();
+        Compulsions = new ConcurrentDictionary<BuffCompulsionEventType, IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>>();
     }
 
     public void Initialize() {
@@ -156,8 +156,6 @@ public class BuffManager : IUpdatable {
         SetShield(buff);
         SetUpdates(buff);
         ModifyBuffStackCount(buff);
-
-        owner.ApplyEffects(buff.Metadata.Skills, caster, owner, type, skillId: id, buffId: id, targets: [owner]);
 
         // refresh stats if needed
         if (buff.Metadata.Status.Values.Any() || buff.Metadata.Status.Rates.Any() || buff.Metadata.Status.SpecialValues.Any() || buff.Metadata.Status.SpecialRates.Any()) {
@@ -286,7 +284,7 @@ public class BuffManager : IUpdatable {
             return;
         }
 
-        CompulsionEventType eventType = buff.Metadata.Status.Compulsion.Type;
+        BuffCompulsionEventType eventType = buff.Metadata.Status.Compulsion.Type;
         if (Compulsions.TryGetValue(eventType, out IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>? nestedCompulsionDic)) {
             Compulsions.RemoveAll(buff.Id);
 
@@ -301,7 +299,7 @@ public class BuffManager : IUpdatable {
         });
     }
 
-    public float TotalCompulsionRate(CompulsionEventType type, int skillId = 0) {
+    public float TotalCompulsionRate(BuffCompulsionEventType type, int skillId = 0) {
         if (!Compulsions.TryGetValue(type, out IDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent>? nestedCompulsionDic)) {
             return 0;
         }

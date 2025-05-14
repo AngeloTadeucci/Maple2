@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Maple2.Server.Core.Constants;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,8 +8,9 @@ namespace Maple2.Server.World.Migrations {
     public partial class InteractCubeFix : Migration {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder) {
-            migrationBuilder.Sql("DELETE FROM `game-server`.`ugcmap-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
-            migrationBuilder.Sql("DELETE FROM `game-server`.`home-layout-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
+            var dbName = Environment.GetEnvironmentVariable("GaME_DB_NAME");
+            migrationBuilder.Sql($"DELETE FROM `{dbName}`.`ugcmap-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
+            migrationBuilder.Sql($"DELETE FROM `{dbName}`.`home-layout-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
         }
 
         /// <inheritdoc />

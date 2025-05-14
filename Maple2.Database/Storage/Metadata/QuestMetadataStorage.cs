@@ -61,6 +61,10 @@ public class QuestMetadataStorage(MetadataContext context) : MetadataStorage<int
         return GetQuests().Where(x => x.Basic.Type == type);
     }
 
+    public IEnumerable<QuestMetadata> GetQuestsByChapter(int chapterId) {
+        return GetQuests().Where(x => x.Basic.ChapterId == chapterId);
+    }
+
     public List<QuestMetadata> Search(string name) {
         return GetQuests().Where(x => x.Name != null && x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
     }
