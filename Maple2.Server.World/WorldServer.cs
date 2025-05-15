@@ -72,13 +72,15 @@ public class WorldServer {
                         }, cancellationToken: tokenSource.Token);
                         if (response is { Success: false }) {
                             playerInfo.Channel = -1;
-                            channel.UpdatePlayer(new PlayerUpdateRequest {
-                                AccountId = playerInfo.AccountId,
-                                CharacterId = playerInfo.CharacterId,
-                                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                                Channel = -1,
-                                Async = true,
-                            });
+                            foreach ((int id, ChannelClient channelClient) in channelClients) {
+                                channelClient.UpdatePlayer(new PlayerUpdateRequest {
+                                    AccountId = playerInfo.AccountId,
+                                    CharacterId = playerInfo.CharacterId,
+                                    LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+                                    Channel = -1,
+                                    Async = true,
+                                });
+                            }
                             continue;
                         }
                         playerInfo.RetryHeartbeat = 3;
