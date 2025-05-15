@@ -71,16 +71,13 @@ public class WorldServer {
                             CharacterId = playerInfo.CharacterId,
                         }, cancellationToken: tokenSource.Token);
                         if (response is { Success: false }) {
-                            playerInfo.Channel = -1;
-                            foreach ((int id, ChannelClient channelClient) in channelClients) {
-                                channelClient.UpdatePlayer(new PlayerUpdateRequest {
-                                    AccountId = playerInfo.AccountId,
-                                    CharacterId = playerInfo.CharacterId,
-                                    LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                                    Channel = -1,
-                                    Async = true,
-                                });
-                            }
+                            playerInfoLookup.Update(new PlayerUpdateRequest {
+                                AccountId = playerInfo.AccountId,
+                                CharacterId = playerInfo.CharacterId,
+                                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+                                Channel = -1,
+                                Async = true,
+                            });
                             continue;
                         }
                         playerInfo.RetryHeartbeat = 3;
@@ -89,8 +86,7 @@ public class WorldServer {
                             playerInfo.RetryHeartbeat--;
                             continue;
                         }
-                        playerInfo.Channel = -1;
-                        channel.UpdatePlayer(new PlayerUpdateRequest {
+                        playerInfoLookup.Update(new PlayerUpdateRequest {
                             AccountId = playerInfo.AccountId,
                             CharacterId = playerInfo.CharacterId,
                             LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
