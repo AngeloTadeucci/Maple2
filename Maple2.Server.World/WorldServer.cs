@@ -67,17 +67,26 @@ public class WorldServer {
                     if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) continue;
 
                     try {
-                        channel.Heartbeat(new HeartbeatRequest {
+                        HeartbeatResponse? response = channel.Heartbeat(new HeartbeatRequest {
                             CharacterId = playerInfo.CharacterId,
                         }, cancellationToken: tokenSource.Token);
+                        if (response is { Success: false }) {
+                            playerInfoLookup.Update(new PlayerUpdateRequest {
+                                AccountId = playerInfo.AccountId,
+                                CharacterId = playerInfo.CharacterId,
+                                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+                                Channel = -1,
+                                Async = true,
+                            });
+                            continue;
+                        }
                         playerInfo.RetryHeartbeat = 3;
                     } catch (RpcException) {
                         if (playerInfo.RetryHeartbeat >= 0) {
                             playerInfo.RetryHeartbeat--;
                             continue;
                         }
-                        playerInfo.Channel = -1;
-                        channel.UpdatePlayer(new PlayerUpdateRequest {
+                        playerInfoLookup.Update(new PlayerUpdateRequest {
                             AccountId = playerInfo.AccountId,
                             CharacterId = playerInfo.CharacterId,
                             LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
