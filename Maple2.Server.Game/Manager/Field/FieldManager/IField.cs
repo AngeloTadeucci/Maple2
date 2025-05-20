@@ -35,7 +35,6 @@ public interface IField : IDisposable {
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public ServerTableMetadataStorage ServerTableMetadata { get; init; }
     public ItemStatsCalculator ItemStatsCalc { get; init; }
-    public Lua.Lua Lua { get; init; }
     public IGraphicsContext DebugGraphicsContext { get; init; }
     // ReSharper restore All
     #endregion

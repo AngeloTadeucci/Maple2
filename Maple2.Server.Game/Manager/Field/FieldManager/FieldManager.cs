@@ -49,7 +49,6 @@ public partial class FieldManager : IField {
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public RideMetadataStorage RideMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
-    public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
     public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All

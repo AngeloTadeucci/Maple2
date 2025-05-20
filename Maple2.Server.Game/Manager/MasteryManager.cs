@@ -5,6 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -15,13 +16,11 @@ namespace Maple2.Server.Game.Manager;
 public class MasteryManager {
 
     private readonly GameSession session;
-    private readonly Lua.Lua lua;
     private Mastery Mastery => session.Player.Value.Character.Mastery;
     private IDictionary<int, int> gatheringCounts => session.Config.GatheringCounts;
 
-    public MasteryManager(GameSession session, Lua.Lua lua) {
+    public MasteryManager(GameSession session) {
         this.session = session;
-        this.lua = lua;
     }
 
     public int this[MasteryType type] {
@@ -131,7 +130,7 @@ public class MasteryManager {
         if (session.Field is HomeFieldManager homeField) {
             myHome = homeField.OwnerId == session.AccountId ? 1 : 0;
         }
-        float successRate = lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
+        float successRate = Lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
 
         int gatheringAmount = 0;
         BeforeConditionUpdate(recipeMetadata);

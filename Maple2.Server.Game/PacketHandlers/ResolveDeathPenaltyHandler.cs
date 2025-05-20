@@ -2,6 +2,7 @@
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Session;
 
@@ -21,7 +22,7 @@ public class ResolveDeathPenaltyHandler : PacketHandler<GameSession> {
         }
 
         int mode = session.Field.Metadata.Property.Continent == Continent.ShadowWorld ? 1 : 0;
-        int cost = session.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, mode);
+        int cost = Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, mode);
         if (session.Currency.Meso < cost) {
             return;
         }

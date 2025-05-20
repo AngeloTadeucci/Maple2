@@ -70,7 +70,6 @@ public sealed partial class GameSession : Core.Network.Session {
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public required RideMetadataStorage RideMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { get; init; }
-    public required Lua.Lua Lua { get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
     // ReSharper restore All
@@ -158,17 +157,17 @@ public sealed partial class GameSession : Core.Network.Session {
         Player = new FieldPlayer(this, player);
         Animation = new AnimationManager(this);
         Currency = new CurrencyManager(this);
-        Mastery = new MasteryManager(this, Lua);
+        Mastery = new MasteryManager(this);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
         Config = new ConfigManager(db, this);
         Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
-        ItemEnchant = new ItemEnchantManager(this, Lua);
+        ItemEnchant = new ItemEnchantManager(this);
         ItemMerge = new ItemMergeManager(this);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
         GameEvent = new GameEventManager(this);
-        Exp = new ExperienceManager(this, Lua);
+        Exp = new ExperienceManager(this);
         Achievement = new AchievementManager(this);
         Quest = new QuestManager(this);
         Shop = new ShopManager(this);
@@ -177,7 +176,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Item = new ItemManager(db, this, ItemStatsCalc);
         Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
-        BlackMarket = new BlackMarketManager(this, Lua);
+        BlackMarket = new BlackMarketManager(this);
         Survival = new SurvivalManager(this);
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);

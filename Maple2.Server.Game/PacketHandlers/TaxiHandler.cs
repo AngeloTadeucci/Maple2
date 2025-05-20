@@ -6,6 +6,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -30,7 +31,6 @@ public class TaxiHandler : PacketHandler<GameSession> {
     public required MapMetadataStorage MapMetadata { private get; init; }
     public required MapEntityStorage EntityMetadata { private get; init; }
     public required WorldMapGraphStorage WorldMapGraph { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 
