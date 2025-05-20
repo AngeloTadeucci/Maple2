@@ -70,6 +70,10 @@ public partial class GameStorage {
             return (model, characters);
         }
 
+        public void SetAllCharacterToOffline() {
+            Context.Database.ExecuteSqlRaw("UPDATE `character` SET Channel = -1");
+        }
+
         //  If accountId is specified, only characters for the account will be returned.
         public Character? GetCharacter(long characterId, long accountId = -1) {
             if (accountId < 0) {
