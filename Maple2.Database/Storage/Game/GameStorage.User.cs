@@ -71,13 +71,7 @@ public partial class GameStorage {
         }
 
         public void SetAllCharacterToOffline() {
-            List<Model.Character> characters = Context.Character.ToList();
-
-            foreach (Character character in characters) {
-                character.Channel = -1;
-                Context.Character.Update(character);
-            }
-            Context.SaveChanges();
+            Context.Database.ExecuteSqlRaw("UPDATE `character` SET Channel = -1");
         }
 
         //  If accountId is specified, only characters for the account will be returned.
