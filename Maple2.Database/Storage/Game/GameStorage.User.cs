@@ -70,6 +70,16 @@ public partial class GameStorage {
             return (model, characters);
         }
 
+        public void SetAllCharacterToOffline() {
+            List<Model.Character> characters = Context.Character.ToList();
+
+            foreach (Character character in characters) {
+                character.Channel = -1;
+                Context.Character.Update(character);
+            }
+            Context.SaveChanges();
+        }
+
         //  If accountId is specified, only characters for the account will be returned.
         public Character? GetCharacter(long characterId, long accountId = -1) {
             if (accountId < 0) {

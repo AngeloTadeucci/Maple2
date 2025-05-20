@@ -45,6 +45,8 @@ public class WorldServer {
         scheduler.Start();
         memoryStringBoards = [];
 
+        SetAllCharacterToOffline();
+
         StartDailyReset();
         StartWorldEvents();
         ScheduleGameEvents();
@@ -53,6 +55,11 @@ public class WorldServer {
 
         heartbeatThread = new Thread(Heartbeat);
         heartbeatThread.Start();
+    }
+
+    private void SetAllCharacterToOffline() {
+        using GameStorage.Request db = gameStorage.Context();
+        db.SetAllCharacterToOffline();
     }
 
     private void Heartbeat() {
