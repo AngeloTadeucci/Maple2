@@ -8,7 +8,6 @@ using Autofac.Features.AttributeFilters;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Maple2.Database.Storage;
-using Maple2.Lua;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Core.Network;
@@ -113,7 +112,6 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<GameSession>()
         .PropertiesAutowired()
         .AsSelf();
-    autofac.RegisterInstance(new Lua(Target.LOCALE));
     autofac.RegisterType<ItemStatsCalculator>()
         .PropertiesAutowired()
         .SingleInstance();
