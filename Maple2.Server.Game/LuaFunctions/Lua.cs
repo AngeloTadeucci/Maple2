@@ -569,20 +569,13 @@ public static class Lua {
     }
 
     public static string CalcKillCountMsg(int killCount) {
-        switch (killCount) {
-            case 30:
-                return "s_killcount_msg1";
-            case 40:
-                return "s_killcount_msg2";
-            case 50:
-                return "s_killcount_msg3";
-            case 100: {
-                int randomValue = Random.Shared.Next(4, 6); // Random between 4 and 5 inclusive
-                return $"s_killcount_msg{randomValue}";
-            }
-            default:
-                return "";
-        }
+        return killCount switch {
+            30 => "s_killcount_msg1",
+            40 => "s_killcount_msg2",
+            50 => "s_killcount_msg3",
+            100 => $"s_killcount_msg{Random.Shared.Next(4, 6)}",
+            _ => string.Empty,
+        };
     }
 
     public static int CalcKillCount(int myLevel, int targetLevel, int timeElapsed, int killCount) {
