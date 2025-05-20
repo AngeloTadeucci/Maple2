@@ -3,6 +3,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Formulas;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -87,8 +88,7 @@ public class StatsManager {
     /// <returns>Critical damage</returns>
     public float GetCriticalDamage(float targetCriticalDamageResistance, int mode = 0) {
         float criticalDamage = Actor switch {
-            FieldPlayer player => player.Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
-            FieldNpc npc => npc.Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
+            FieldPlayer or FieldNpc => Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
             _ => 0
         };
         //TODO: Apply target's resistance. Need to figure out formula for this.
@@ -103,8 +103,8 @@ public class StatsManager {
     /// <returns>DamageType. If successful crit, returns DamageType.Critical. else returns DamageType.Normal</returns>
     public DamageType GetCriticalRate(long targetCriticalEvasion, double casterCriticalOverride) {
         float criticalChance = Actor switch {
-            FieldPlayer player => player.Lua.CalcPlayerCritRate((int) player.Value.Character.Job.Code(), player.Stats.Values[BasicAttribute.Luck].Total, player.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion, 0, 0),
-            FieldNpc npc => npc.Lua.CalcNpcCritRate(npc.Stats.Values[BasicAttribute.Luck].Total, npc.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion),
+            FieldPlayer player => Lua.CalcPlayerCritRate((int) player.Value.Character.Job.Code(), player.Stats.Values[BasicAttribute.Luck].Total, player.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion, 0, 0),
+            FieldNpc npc => Lua.CalcNpcCritRate(npc.Stats.Values[BasicAttribute.Luck].Total, npc.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion),
             _ => 0
         };
 
@@ -158,7 +158,7 @@ public class StatsManager {
                 AddItemStats(item.Stats);
             }
             Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
-            Values.GearScore += player.Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
+            Values.GearScore += Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
             player.Session.Dungeon.UpdateDungeonEnterLimit();
             player.Session.ConditionUpdate(ConditionType.item_gear_score, counter: Values.GearScore);
 
@@ -206,6 +206,9 @@ public class StatsManager {
     private void AddItemStats(ItemStats stats) {
         for (int type = 0; type < ItemStats.TYPE_COUNT; type++) {
             foreach ((BasicAttribute attribute, BasicOption option) in stats[(ItemStats.Type) type].Basic) {
+                if (attribute is BasicAttribute.CriticalDamage) {
+                    Log.Logger.Information("Adding {attribute} {option} to {actor}", attribute, option, Actor);
+                }
                 Values[attribute].AddTotal(option);
             }
             foreach ((SpecialAttribute attribute, SpecialOption option) in stats[(ItemStats.Type) type].Special) {

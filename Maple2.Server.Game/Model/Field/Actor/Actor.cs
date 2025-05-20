@@ -49,7 +49,6 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     public SkillQueue ActiveSkills { get; init; }
 
     public virtual BuffManager Buffs { get; }
-    public Lua.Lua Lua { get; init; }
 
     /// <summary>
     /// Counter for skill casting ID creation
@@ -73,7 +72,6 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         SkillState = new SkillState(this);
         Stats = new StatsManager(this);
         PositionTick = new ValueTuple<Vector3, long, long>(Vector3.Zero, 0, 0);
-        Lua = new Lua.Lua(Target.LOCALE);
         ActiveSkills = new SkillQueue();
     }
 

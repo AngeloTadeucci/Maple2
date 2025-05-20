@@ -2,6 +2,7 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -12,7 +13,6 @@ namespace Maple2.Server.Game.Manager;
 
 public sealed class ExperienceManager {
     private readonly GameSession session;
-    private readonly Lua.Lua lua;
     private long Exp {
         get => session.Player.Value.Character.Exp;
         set => session.Player.Value.Character.Exp = value;
@@ -52,9 +52,8 @@ public sealed class ExperienceManager {
 
     private int ChainKillCount { get; set; }
 
-    public ExperienceManager(GameSession session, Lua.Lua lua) {
+    public ExperienceManager(GameSession session) {
         this.session = session;
-        this.lua = lua;
         Init();
     }
 
@@ -75,7 +74,7 @@ public sealed class ExperienceManager {
         FieldNpc fieldNpc = (npc as FieldNpc)!;
         // TODO: Check if there are level requirements for Chain Kill Count to count ?
         ChainKillCount++;
-        float expRate = lua.CalcKillCountBonusExpRate(ChainKillCount);
+        float expRate = Lua.CalcKillCountBonusExpRate(ChainKillCount);
 
         // TODO: Using table ID 2. Need confirmation if particular maps (or dungeons) use a different table
         long expGained = fieldNpc.Value.Metadata.Basic.CustomExp;

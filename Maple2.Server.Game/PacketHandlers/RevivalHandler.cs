@@ -4,6 +4,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -58,12 +59,12 @@ public class RevivalHandler : PacketHandler<GameSession> {
             }
             session.Send(NoticePacket.Notice(NoticePacket.Flags.Alert | NoticePacket.Flags.Message, StringCode.s_revival_use_coupon));
         } else {
-            int totalMaxCount = session.Lua.GetMesoRevivalDailyMaxCount();
+            int totalMaxCount = Lua.GetMesoRevivalDailyMaxCount();
             if (session.Config.InstantReviveCount >= totalMaxCount) {
                 return;
             }
 
-            int cost = session.Lua.CalcRevivalPrice((ushort) session.Player.Value.Character.Level);
+            int cost = Lua.CalcRevivalPrice((ushort) session.Player.Value.Character.Level);
             if (session.Currency.Meso < cost) {
                 // Client sends error
                 return;

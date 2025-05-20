@@ -5,6 +5,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -13,15 +14,12 @@ using Serilog;
 namespace Maple2.Server.Game.Manager;
 
 public sealed class BlackMarketManager {
-    private readonly Lua.Lua lua;
-
     private readonly GameSession session;
 
     private readonly ILogger logger = Log.Logger.ForContext<BlackMarketManager>();
 
-    public BlackMarketManager(GameSession session, Lua.Lua lua) {
+    public BlackMarketManager(GameSession session) {
         this.session = session;
-        this.lua = lua;
     }
 
     public void LoadMyListings() {
@@ -47,8 +45,8 @@ public sealed class BlackMarketManager {
             return;
         }
 
-        float depositPercent = lua.CalcBlackMarketRegisterDepositPercent();
-        long depositFee = lua.CalcBlackMarketRegisterDeposit((long) (price * quantity * depositPercent));
+        float depositPercent = Lua.CalcBlackMarketRegisterDepositPercent();
+        long depositFee = Lua.CalcBlackMarketRegisterDeposit((long) (price * quantity * depositPercent));
 
         if (session.Currency.CanAddMeso(-depositFee) != -depositFee) {
             session.Send(BlackMarketPacket.Error(BlackMarketError.s_err_lack_meso));
@@ -270,7 +268,7 @@ public sealed class BlackMarketManager {
     private Mail? CreateSellerMail(BlackMarketListing listing, int quantity) {
         using GameStorage.Request db = session.GameStorage.Context();
 
-        float costRate = lua.CalcBlackMarketCostRate();
+        float costRate = Lua.CalcBlackMarketCostRate();
         long tax = (long) (costRate * (quantity * listing.Price));
 
         bool sellerIsPremium = false;
