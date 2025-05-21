@@ -446,13 +446,6 @@ public class FieldPlayer : Actor<Player> {
         stat.Add(-amount);
         Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
-        if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Health)) {
-                regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
-            }
-            lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
-        }
-
         Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
             AccountId = Session.AccountId,
             CharacterId = Session.CharacterId,
@@ -491,13 +484,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stats.Values[BasicAttribute.Spirit].Add(-amount);
-
-        if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Spirit)) {
-                regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
-            }
-            // lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoverySPWaitTick; - Not applicable for SP?
-        }
         Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Spirit));
     }
 
@@ -528,13 +514,6 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stats.Values[BasicAttribute.Stamina].Add(-amount);
-
-        if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Stamina) && !noRegen) {
-                regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
-            }
-            lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryEPWaitTick;
-        }
         Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Stamina));
     }
 
@@ -543,18 +522,21 @@ public class FieldPlayer : Actor<Player> {
         Stat health = Stats.Values[BasicAttribute.Health];
         if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
+            lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
 
         // Spirit
         Stat spirit = Stats.Values[BasicAttribute.Spirit];
         if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
+            //lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoveryHPWaitTick;  - Not applicable for SP?
         }
 
         // Stamina
         Stat stamina = Stats.Values[BasicAttribute.Stamina];
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
+            lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
     }
 
