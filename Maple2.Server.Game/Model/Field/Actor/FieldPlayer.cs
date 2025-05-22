@@ -339,7 +339,7 @@ public class FieldPlayer : Actor<Player> {
                     Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
                 }
                 break;
-            // TODO: Any more condition states?
+                // TODO: Any more condition states?
         }
 
         Field?.EnsurePlayerPosition(this);
