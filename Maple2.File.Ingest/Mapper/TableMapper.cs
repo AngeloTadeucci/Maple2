@@ -889,7 +889,10 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 MinLevel: scroll.minLv,
                 MaxLevel: scroll.maxLv,
                 ItemTypes: scroll.slot,
-                Rarities: scroll.rank));
+                Rarities: scroll.rank,
+                RollAttribute: scroll.addOpKind == 1,
+                RollValueType: (RollValueType) scroll.addOpValue,
+                OnlyPet: scroll.onlyPet));
         }
 
         return new ItemRemakeScrollTable(results);

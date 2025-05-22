@@ -61,7 +61,7 @@ public class ChangeAttributesHandler : PacketHandler<GameSession> {
 
         lock (session.Item) {
             // Validate item being changed + lock attributes/lock item if necessary.
-            Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear)
+            Item? item = session.Item.GetGear(itemUid)
                          ?? session.Item.Inventory.Get(itemUid, InventoryType.Pets);
             if (item == null) {
                 session.Send(ChangeAttributesPacket.Error(s_itemremake_error_server_not_in_inven));
@@ -166,7 +166,7 @@ public class ChangeAttributesHandler : PacketHandler<GameSession> {
         }
 
         lock (session.Item) {
-            Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear)
+            Item? item = session.Item.GetGear(itemUid)
                          ?? session.Item.Inventory.Get(itemUid, InventoryType.Pets);
             if (item == null) {
                 session.Send(ChangeAttributesPacket.Error(s_itemremake_error_server_not_in_inven));

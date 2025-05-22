@@ -1,4 +1,4 @@
-﻿using Maple2.Model;
+using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -157,6 +157,14 @@ public class StatsManager {
             if (item.Stats != null) {
                 AddItemStats(item.Stats);
             }
+
+            // 新增：把强化属性加到角色属性里
+            if (item.Enchant != null && item.Enchant.BasicOptions != null) {
+                foreach (var kvp in item.Enchant.BasicOptions) {
+                    Values[kvp.Key].AddTotal(kvp.Value);
+                }
+            }
+
             Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
             Values.GearScore += Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
             player.Session.Dungeon.UpdateDungeonEnterLimit();
