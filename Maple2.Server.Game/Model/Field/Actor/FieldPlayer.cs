@@ -339,7 +339,7 @@ public class FieldPlayer : Actor<Player> {
                     Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
                 }
                 break;
-                // TODO: Any more condition states?
+            // TODO: Any more condition states?
         }
 
         Field?.EnsurePlayerPosition(this);
@@ -444,6 +444,9 @@ public class FieldPlayer : Actor<Player> {
 
         Stat stat = Stats.Values[BasicAttribute.Health];
         stat.Add(-amount);
+        if (!IsDead) {
+            lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
+        }
         Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
         Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
@@ -514,6 +517,9 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stats.Values[BasicAttribute.Stamina].Add(-amount);
+        if (!IsDead) {
+            lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryEPWaitTick;
+        }
         Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Stamina));
     }
 
@@ -522,27 +528,22 @@ public class FieldPlayer : Actor<Player> {
         Stat health = Stats.Values[BasicAttribute.Health];
         if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
-            lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
 
         // Spirit
         Stat spirit = Stats.Values[BasicAttribute.Spirit];
         if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
-            //lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoveryHPWaitTick;  - Not applicable for SP?
         }
 
         // Stamina
         Stat stamina = Stats.Values[BasicAttribute.Stamina];
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
-            lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
     }
 
-    public override void KeyframeEvent(string keyName) {
-
-    }
+    public override void KeyframeEvent(string keyName) { }
 
     public void MoveToPosition(Vector3 position, Vector3 rotation) {
         if (!Field.ValidPosition(position)) {
@@ -561,8 +562,8 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public void FallDamage(float distance) {
-        double distanceScalingFactor = 0.04813;      // base distance scaling factor
-        double hpRatioExponent = 1.087;        // HP ratio exponent for diminishing returns
+        double distanceScalingFactor = 0.04813; // base distance scaling factor
+        double hpRatioExponent = 1.087; // HP ratio exponent for diminishing returns
         double currentHp = Stats.Values[BasicAttribute.Health].Current;
         double maxHp = Stats.Values[BasicAttribute.Health].Total;
         double distanceFactor = distanceScalingFactor * Math.Exp(0.0046 * distance);
@@ -648,4 +649,3 @@ public class FieldPlayer : Actor<Player> {
         return true;
     }
 }
-
