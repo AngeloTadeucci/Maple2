@@ -159,11 +159,6 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
                 }
             }
 
-            if (item.Metadata.Limit.TransferType is TransferType.BindPet) {
-                item.Transfer?.Bind(session.Player.Value.Character);
-                session.Send(ItemInventoryPacket.UpdateItem(item));
-            }
-
             // Try to consume both items.
             bool consumedScroll = session.Item.Inventory.Consume(scroll.Uid, 1);
             bool consumedLock = lockItem == null || session.Item.Inventory.Consume(lockItem.Uid, 1);
@@ -186,6 +181,11 @@ public class ChangeAttributesScrollHandler : PacketHandler<GameSession> {
                         : ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_consume_scroll
                 ));
                 return;
+            }
+
+            if (item.Metadata.Limit.TransferType is TransferType.BindPet) {
+                item.Transfer?.Bind(session.Player.Value.Character);
+                session.Send(ItemInventoryPacket.UpdateItem(item));
             }
 
             session.ChangeAttributesItem = changeItem;
