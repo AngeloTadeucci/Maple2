@@ -83,9 +83,9 @@ public class GameServer : Server<GameSession> {
         }
     }
 
-    public IEnumerable<GameSession> GetSessions() {
+    public List<GameSession> GetSessions() {
         lock (mutex) {
-            return sessions.Values;
+            return sessions.Values.ToList();
         }
     }
 
