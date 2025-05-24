@@ -2,11 +2,12 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Serilog;
 
-namespace Maple2.Server.Game.Manager.Config;
+namespace Maple2.Server.Game.Manager;
 
 public class SkillManager {
     private readonly GameSession session;
