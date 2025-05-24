@@ -37,7 +37,8 @@ public class InventoryManager {
             if (tabs.TryGetValue(type, out ItemCollection? items)) {
                 foreach (Item item in load) {
                     if (items.Add(item).Count == 0) {
-                        Log.Error("Failed to add item:{Uid}", item.Uid);
+                        Log.Error("Failed to add item:{Uid} to ItemCollection (Size:{Size}, OpenSlots:{OpenSlots}, Count:{Count})",
+                            item.Uid, items.Size, items.OpenSlots, items.Count);
                     }
                 }
             }

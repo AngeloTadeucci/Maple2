@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
@@ -11,7 +10,7 @@ using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 
-namespace Maple2.Server.Game.Manager.Config;
+namespace Maple2.Server.Game.Manager;
 
 public class BuffManager : IUpdatable {
     #region ObjectId
