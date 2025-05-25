@@ -35,9 +35,13 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
         events = new ConcurrentQueue<PlayerInfoUpdateEvent>();
 
         Task.Factory.StartNew(() => {
-            while (!tokenSource.Token.IsCancellationRequested) {
-                Thread.Sleep(syncInterval);
-                Sync();
+            try {
+                while (!tokenSource.Token.IsCancellationRequested) {
+                    Thread.Sleep(syncInterval);
+                    Sync();
+                }
+            } catch (ObjectDisposedException) {
+                // Expected during shutdown, safe to ignore
             }
         }, tokenSource.Token);
     }

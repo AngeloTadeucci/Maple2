@@ -65,7 +65,7 @@ public class WorldServer {
     private void Heartbeat() {
         while (!tokenSource.Token.IsCancellationRequested) {
             try {
-                Thread.Sleep(TimeSpan.FromSeconds(30));
+                Task.Delay(TimeSpan.FromSeconds(30), tokenSource.Token).Wait(tokenSource.Token);
 
                 login.Heartbeat(new HeartbeatRequest(), cancellationToken: tokenSource.Token);
 
@@ -103,8 +103,8 @@ public class WorldServer {
                     }
 
                 }
-            } catch (TaskCanceledException) {
-                break; // graceful shutdown
+            } catch (OperationCanceledException) {
+                break;
             } catch (Exception ex) {
                 logger.Warning(ex, "Heartbeat loop error");
             }
