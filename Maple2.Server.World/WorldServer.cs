@@ -113,7 +113,11 @@ public class WorldServer {
 
     private void Loop() {
         while (!tokenSource.Token.IsCancellationRequested) {
-            scheduler.InvokeAll();
+            try {
+                scheduler.InvokeAll();
+            } catch (Exception e) {
+                logger.Error(e, "Error in world server loop");
+            }
             try {
                 Task.Delay(TimeSpan.FromMinutes(1), tokenSource.Token).Wait();
             } catch { /* do nothing */

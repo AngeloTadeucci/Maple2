@@ -171,7 +171,7 @@ public class BuffManager : IUpdatable {
             buff.Disable();
         }
 
-        logger.Information("{Id} AddBuff to {ObjectId}: {SkillId},{Level} for {Tick}ms", buff.ObjectId, owner.ObjectId, id, level, buff.EndTick - buff.StartTick);
+        logger.Verbose("{Id} AddBuff to {ObjectId}: {SkillId},{Level} for {Tick}ms", buff.ObjectId, owner.ObjectId, id, level, buff.EndTick - buff.StartTick);
         if (owner is FieldPlayer player) {
             if (additionalEffect.Property.Exp > 0) { // Assuming this doesnt proc s
                 player.Session.Exp.AddStaticExp(additionalEffect.Property.Exp);
@@ -241,7 +241,7 @@ public class BuffManager : IUpdatable {
 
     private void SetReflect(Buff buff) {
         if (buff.Metadata.Reflect.EffectId == 0 || !Actor.Field.SkillMetadata.TryGetEffect(buff.Metadata.Reflect.EffectId, buff.Metadata.Reflect.EffectLevel,
-                out AdditionalEffectMetadata? _)) {
+            out AdditionalEffectMetadata? _)) {
             return;
         }
 
@@ -525,7 +525,7 @@ public class BuffManager : IUpdatable {
         //TODO: Check if buff is removable/should be removed
         bool refreshStats = false;
         List<Buff> buffsToRemove = [];
-        var buffsEnum = EnumerateBuffs();
+        List<Buff> buffsEnum = EnumerateBuffs();
         foreach (Buff buff in buffsEnum) {
             if (buff.Id != id) {
                 continue;
@@ -539,7 +539,8 @@ public class BuffManager : IUpdatable {
                 Resistances[attribute] = Math.Max(0, Resistances[attribute] - value);
             }
 
-            if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 || buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {
+            if (buff.Metadata.Status.Values.Count > 0 || buff.Metadata.Status.Rates.Count > 0 ||
+                buff.Metadata.Status.SpecialValues.Count > 0 || buff.Metadata.Status.SpecialRates.Count > 0) {
                 if (Actor is FieldPlayer player) {
                     refreshStats = true;
                 }
@@ -553,6 +554,7 @@ public class BuffManager : IUpdatable {
 
         Invokes.RemoveAll(id);
         Compulsions.RemoveAll(id);
+
         foreach (Buff buff in buffsToRemove) {
             RemoveInternal(buff);
             Actor.Field.Broadcast(BuffPacket.Remove(buff));
@@ -571,10 +573,16 @@ public class BuffManager : IUpdatable {
         return true;
 
         void RemoveInternal(Buff buffToRemove) {
-            if (buffs.TryGetValue(buffToRemove.Id, out List<Buff>? buffList)) {
+            if (!buffs.TryGetValue(buffToRemove.Id, out List<Buff>? buffList)) {
+                logger.Error("Buff {Id} doesn't exist in buffs {Buffs}. Buffs to remove {BuffsToRemove}", buffToRemove.Id, buffs, buffsToRemove);
+                return;
+            }
+            if (buffList.Contains(buffToRemove)) {
                 if (!buffList.Remove(buffToRemove)) {
                     logger.Error("Failed to remove buff {Id} from {Object}", buffToRemove.Id, Actor.ObjectId);
                 }
+            } else {
+                logger.Error("Buff {Id} doesn't exist in buff list {BuffList}. Buffs to remove {BuffsToRemove}", buffToRemove.Id, buffList, buffsToRemove);
             }
         }
     }

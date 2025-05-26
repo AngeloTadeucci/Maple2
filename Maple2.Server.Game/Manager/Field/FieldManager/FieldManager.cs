@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using DotRecast.Core.Numerics;
+using DotRecast.Detour;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -303,14 +305,21 @@ public partial class FieldManager : IField {
     }
 
     public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
-        var pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
+        RcVec3f pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
         return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
     }
 
-    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
-        var status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
+    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position, [CallerMemberName] string caller = "") {
+        if (point.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+            nearestRef = 0;
+            position = default;
+            logger.Error("Invalid point {Point} in field {MapId} called by {Caller}", point, MapId, caller);
+            return false;
+        }
+
+        DtStatus status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
         if (status.Failed()) {
-            logger.Error("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
+            logger.Warning("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
             return false;
         }
 
