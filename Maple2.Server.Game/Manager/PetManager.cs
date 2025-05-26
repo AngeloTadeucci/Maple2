@@ -10,7 +10,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Serilog;
 
-namespace Maple2.Server.Game.Manager.Config;
+namespace Maple2.Server.Game.Manager;
 
 public sealed class PetManager : IDisposable {
     private readonly GameSession session;
