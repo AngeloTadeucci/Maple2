@@ -570,8 +570,11 @@ public sealed partial class GameSession : Core.Network.Session {
         long meso = 0;
         if (baseMetadata.MesoTableId > 0) {
             if (baseMetadata.MesoTableId > 100000 && TableMetadata.RewardContentTable.MesoStaticEntries.TryGetValue(baseMetadata.MesoTableId, out meso)) {
+                // Static meso entry found
             } else if (TableMetadata.RewardContentTable.MesoEntries.TryGetValue(baseMetadata.MesoTableId, out Dictionary<int, long>? mesoTable)) {
-                meso = mesoTable[Player.Value.Character.Level];
+                if (!mesoTable.TryGetValue(Player.Value.Character.Level, out meso)) {
+                    Logger.Error("Failed to find meso for level {Level} in table {TableId}", Player.Value.Character.Level, baseMetadata.MesoTableId);
+                }
             }
             if (baseMetadata.MesoFactor > 0f) {
                 meso = (long) (meso * baseMetadata.MesoFactor);
