@@ -46,7 +46,7 @@ public class GlobalPortalManager : IDisposable {
                     continue;
                 }
                 RoomIds[i] = response.Field.RoomId;
-            } catch (RpcException rpcException){
+            } catch (RpcException rpcException) {
                 // If the channel is not available, we cannot create the field.
                 if (rpcException.StatusCode == StatusCode.Unavailable) {
                     Log.Error("Channel {Channel} is unavailable for creating global portal fields: {Message}", Channel, rpcException.Message);
