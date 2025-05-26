@@ -165,6 +165,12 @@ public class StatsManager {
                 }
             }
 
+            if (item.LimitBreak is not null) {
+                foreach (KeyValuePair<BasicAttribute, BasicOption> kvp in item.LimitBreak.BasicOptions) {
+                    Values[kvp.Key].AddTotal(kvp.Value);
+                }
+            }
+
             Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
             Values.GearScore += Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
             player.Session.Dungeon.UpdateDungeonEnterLimit();
