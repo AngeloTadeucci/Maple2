@@ -137,12 +137,14 @@ public partial class FieldManager : IField {
         }
 
         // Create default to place liftable cubes
-        Plots[0] = new Plot(new UgcMapGroup(0,
-            0,
-            0,
-            new UgcMapGroup.Cost(0, 0, 0),
-            new UgcMapGroup.Cost(0, 0, 0),
-            new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
+        if (MapId is not Constant.DefaultHomeMapId) {
+            Plots[0] = new Plot(new UgcMapGroup(0,
+                0,
+                0,
+                new UgcMapGroup.Cost(0, 0, 0),
+                new UgcMapGroup.Cost(0, 0, 0),
+                new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
+        }
 
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
             AddTrigger(trigger);
