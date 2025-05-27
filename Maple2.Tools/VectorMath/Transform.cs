@@ -16,7 +16,12 @@ public class Transform {
     // Describes the position. Matrix components: M41 - M43
     public Vector3 Position {
         get { return Transformation.Translation; }
-        set { Transformation.Translation = value; }
+        set {
+            if (value.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || value.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || value.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+                throw new ArgumentException("Position contains invalid float values: " + value);
+            }
+            Transformation.Translation = value;
+        }
     }
 
     // Describes the rotation with Euler angles in MS2's space.
