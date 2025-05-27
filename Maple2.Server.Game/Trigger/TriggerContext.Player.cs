@@ -210,7 +210,7 @@ public partial class TriggerContext {
             Random.Shared.Shuffle(states);
         }
 
-        Field.States[triggerId] =Owner.GetStates(states);
+        Field.States[triggerId] = Owner.GetStates(states);
     }
 
     #region Conditions

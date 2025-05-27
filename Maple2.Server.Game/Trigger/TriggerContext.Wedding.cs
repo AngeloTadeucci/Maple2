@@ -26,7 +26,7 @@ public partial class TriggerContext {
         return false;
     }
 
-    public bool WeddingHallState(string state,bool success) {
+    public bool WeddingHallState(string state, bool success) {
         return state == string.Empty;
     }
 

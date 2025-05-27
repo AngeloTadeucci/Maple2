@@ -398,10 +398,10 @@ public partial class GameStorage {
                 attribute => allocation[attribute]);
             config.StatPoints = statSources.Points;
             config.SkillPoint = skillPoint.Points.SelectMany(point => point.Value.Ranks.Select(rankPoint => new Model.SkillPoint {
-                    Source = point.Key,
-                    Rank = rankPoint.Key,
-                    Points = rankPoint.Value,
-                }))
+                Source = point.Key,
+                Rank = rankPoint.Key,
+                Points = rankPoint.Value,
+            }))
                 .ToList();
             config.GatheringCounts = gatheringCounts;
             config.GuideRecords = guideRecords;
