@@ -24,14 +24,9 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         if (metadata == null) {
             throw new ArgumentException($"Trigger {Value.Name} not found in {Field.Metadata.XBlock}");
         }
-        Stopwatch stopwatch = Stopwatch.StartNew();
 
         var document = new XmlDocument();
         document.LoadXml(metadata.Xml);
-
-        stopwatch.Stop();
-        Log.Logger.Information("[Trigger] {Name} loaded in {Elapsed}ms", Value.Name, stopwatch.ElapsedMilliseconds);
-
         triggerDocument = document;
 
         XmlElement? root = document.DocumentElement;
@@ -39,9 +34,9 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
             throw new ArgumentException($"Trigger {Value.Name} has no <ms2> root element in {Field.Metadata.XBlock}");
         }
 
-        XmlNode? initialState = root.ChildNodes[0];
+        XmlNode? initialState = root.SelectSingleNode("state");
         if (initialState is not { Name: "state" }) {
-            throw new ArgumentException($"Trigger {Value.Name} has no initial_state in {Field.Metadata.XBlock}");
+            throw new ArgumentException($"Trigger {Value.Name} has no initial_state in {Field.Metadata.XBlock}, ChildNodes[0] is {initialState?.Name ?? "null"}");
         }
 
         nextState = new TriggerState(initialState, Context);

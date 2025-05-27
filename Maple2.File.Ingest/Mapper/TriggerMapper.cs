@@ -93,9 +93,6 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
             }
 
             foreach (XmlAttribute xmlAttribute in nodeParams) {
-                if (overrideValue.Names.Count == 0) {
-                    continue;
-                }
                 overrideValue.Names.TryGetValue(TriggerTranslate.ToSnakeCase(xmlAttribute.Name), out string? newName);
                 if (newName is null) {
                     if (xmlAttribute.Name != TriggerTranslate.ToSnakeCase(xmlAttribute.Name)) {
