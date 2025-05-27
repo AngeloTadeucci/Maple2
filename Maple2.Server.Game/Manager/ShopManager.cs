@@ -9,7 +9,6 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
-using Microsoft.Scripting.Utils;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;

@@ -31,6 +31,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<NxsMeshMetadata> NXSMeshMetadata { get; set; } = null!;
     public DbSet<FunctionCubeMetadata> FunctionCubeMetadata { get; set; } = null!;
     public DbSet<MapDataMetadata> MapDataMetadata { get; set; } = null!;
+    public DbSet<TriggerMetadata> TriggerMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -57,6 +58,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
         modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
         modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
+        modelBuilder.Entity<TriggerMetadata>(ConfigureTriggerMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -249,5 +251,13 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.HasKey(cube => cube.Id);
         builder.Property(cube => cube.AutoStateChange).HasJsonConversion();
         builder.Property(cube => cube.Nurturing).HasJsonConversion();
+    }
+
+    private static void ConfigureTriggerMetadata(EntityTypeBuilder<TriggerMetadata> builder) {
+        builder.ToTable("trigger");
+        builder.HasKey(trigger => new {
+            trigger.MapXBlock,
+            trigger.Name,
+        });
     }
 }

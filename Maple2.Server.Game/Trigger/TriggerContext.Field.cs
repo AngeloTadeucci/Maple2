@@ -5,7 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
@@ -504,11 +504,11 @@ public partial class TriggerContext {
     #endregion
 
     #region Conditions
-    public bool DetectLiftableObject(int[] boxIds, int itemId) {
+    public bool DetectLiftableObject(int[] boxIds, int itemId, bool negate) {
         DebugLog("[DetectLiftableObject] boxIds:{Ids}, itemId:{ItemId}", string.Join(", ", boxIds), itemId);
 
         if (itemId == 0) {
-            return false;
+            return negate;
         }
 
         IEnumerable<TriggerBox> boxes = boxIds
@@ -519,23 +519,23 @@ public partial class TriggerContext {
         var liftables = Field.EnumerateLiftables().Where(x => x.Value.ItemId == itemId && (x.State == LiftableState.Default || x.State == LiftableState.Disabled));
         foreach (FieldLiftable liftable in liftables) {
             if (boxes.Any(box => box.Contains(liftable.Position))) {
-                return true;
+                return !negate;
             }
         }
 
-        return false;
+        return negate;
     }
 
     public bool ObjectInteracted(int[] interactIds, int stateValue) {
         var state = (InteractState) stateValue;
         DebugLog("[ObjectInteracted] interactIds:{Ids}, state:{State}", string.Join(", ", interactIds), state);
         foreach (FieldInteract interact in Field.EnumerateInteract()) {
-            if (interactIds.Contains(interact.Value.Id) && interact.State != state) {
-                return false;
+            if (interactIds.Contains(interact.Value.Id) && interact.State == state) {
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     public bool PvpZoneEnded(int boxId) {
