@@ -307,7 +307,13 @@ public partial class FieldManager : IField {
         return FindNearestPoly(position, out long nearestRef, out _) && nearestRef != 0;
     }
 
-    public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
+    public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position, [CallerMemberName] string caller = "") {
+        if (point.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+            nearestRef = 0;
+            position = default;
+            logger.Error("Invalid point {Point} in field {MapId} called by {Caller}", point, MapId, caller);
+            return false;
+        }
         RcVec3f pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
         return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
     }
