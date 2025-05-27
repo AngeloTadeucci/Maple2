@@ -202,7 +202,7 @@ public sealed partial class GameSession : Core.Network.Session {
             case MigrationType.DecorPlanner:
             case MigrationType.BlueprintDesigner:
                 player.Home.EnterPlanner((PlotMode) migrationType);
-                fieldManager.Plots.First().Value.SetPlannerMode((PlotMode) migrationType);
+                Housing.GetFieldPlot()?.SetPlannerMode((PlotMode) migrationType);
                 break;
             case MigrationType.Dungeon:
                 if (fieldManager is not DungeonFieldManager dungeonField) {
@@ -486,7 +486,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public void ReturnField() {
         Player player = Player.Value;
-        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
+        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && (Player.Session.Housing.GetFieldPlot()?.IsPlanner ?? false)) {
             MigrateToPlanner(PlotMode.Normal);
             return;
         }
