@@ -90,7 +90,7 @@ public partial class FieldManager {
     }
 
     public void PlaceCube(GameSession session, HeldCube cubeItem, in Vector3B position, float rotation) {
-        Plot? plot = session.Field.Plots[0];
+        Plot? plot = session.Housing.GetFieldPlot();
         if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? itemMetadata)) {
             logger.Error("Failed to get item metadata for cube {cubeId}.", cubeItem.ItemId);
             return;
