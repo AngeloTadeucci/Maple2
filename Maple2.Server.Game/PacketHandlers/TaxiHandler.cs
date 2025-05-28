@@ -160,7 +160,7 @@ public class TaxiHandler : PacketHandler<GameSession> {
         session.ConditionUpdate(ConditionType.taxifind);
     }
 
-    private static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
+    public static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
         MapMetadataCashCall currentCashCall = session.Field.Metadata.CashCall;
         if (!currentCashCall.TaxiDeparture) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_departure));

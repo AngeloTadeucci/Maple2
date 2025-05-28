@@ -123,11 +123,15 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             case ItemFunction.QuestScroll:
                 HandleQuestScroll(session, item);
                 break;
+            case ItemFunction.CallAirTaxi:
+                HandleCallAirTaxi(session, packet, item);
+                break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
         }
     }
+
     private void HandleBlueprintImport(GameSession session, Item item) {
         if (item.Blueprint is null) {
             Logger.Error("Item {ItemUid} is missing blueprint", item.Uid);
@@ -337,7 +341,8 @@ public class ItemUseHandler : PacketHandler<GameSession> {
                 CharacterId = receiverInfo.CharacterId,
                 MailId = receiverMail.Id,
             });
-        } catch { /* ignored */ }
+        } catch { /* ignored */
+        }
 
         session.Item.Inventory.Add(selfBadge, true);
         session.Send(NoticePacket.MessageBox(new InterfaceText(StringCode.s_couple_effect_mail_send_partner, receiverInfo.Name)));
@@ -645,5 +650,26 @@ public class ItemUseHandler : PacketHandler<GameSession> {
 
         session.Item.Inventory.Consume(item.Uid, 1);
         session.Send(ItemUsePacket.QuestScroll(item.Id));
+    }
+
+    private void HandleCallAirTaxi(GameSession session, IByteReader packet, Item item) {
+        string mapIdString = packet.ReadUnicodeString();
+
+        if (!int.TryParse(mapIdString, out int mapId)) {
+            Logger.Warning("Invalid map ID: {MapId}", mapIdString);
+            return;
+        }
+
+        if (!TaxiHandler.CheckMapCashCall(session, mapId, session.Field.MapMetadata)) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Consume(item.Uid, 1)) {
+            return;
+        }
+
+        session.Send(session.PrepareField(mapId)
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 }
