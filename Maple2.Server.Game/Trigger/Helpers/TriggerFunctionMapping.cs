@@ -44,7 +44,7 @@ public static class TriggerFunctionMapping {
         { "change_background", (ctx, attrs) => ctx.ChangeBackground(attrs?["dds"]?.Value ?? string.Empty) },
         { "change_monster", (ctx, attrs) => ctx.ChangeMonster(ParseInt(attrs?["from_spawn_id"]?.Value), ParseInt(attrs?["to_spawn_id"]?.Value)) },
         { "close_cinematic", (ctx, _) => ctx.CloseCinematic() },
-        { "create_field_game", (ctx, attrs) => ctx.CreateFieldGame((FieldGame) Enum.Parse(typeof(FieldGame), attrs?["type"]?.Value ?? "Unknown", true), ParseBool(attrs?["reset"]?.Value)) },
+        { "create_field_game", (ctx, attrs) => ctx.CreateFieldGame(ParseFieldGame(attrs?["type"]?.Value), ParseBool(attrs?["reset"]?.Value)) },
         { "create_item", (ctx, attrs) => ctx.CreateItem(ParseIntArray(attrs?["spawn_ids"]?.Value), ParseInt(attrs?["trigger_id"]?.Value), ParseInt(attrs?["item_id"]?.Value), ParseInt(attrs?["arg5"]?.Value)) },
         { "create_widget", (ctx, attrs) => ctx.CreateWidget(attrs?["type"]?.Value ?? string.Empty) },
         { "dark_stream_clear_round", (ctx, attrs) => ctx.DarkStreamClearRound(ParseInt(attrs?["round"]?.Value)) },
@@ -71,7 +71,7 @@ public static class TriggerFunctionMapping {
         { "end_mini_game", (ctx, attrs) => ctx.EndMiniGame(ParseInt(attrs?["winner_box_id"]?.Value), attrs?["game_name"]?.Value ?? string.Empty, ParseBool(attrs?["is_only_winner"]?.Value)) },
         { "end_mini_game_round", (ctx, attrs) => ctx.EndMiniGameRound(ParseInt(attrs?["winner_box_id"]?.Value), ParseFloat(attrs?["exp_rate"]?.Value), ParseFloat(attrs?["meso"]?.Value), ParseBool(attrs?["is_only_winner"]?.Value), ParseBool(attrs?["is_gain_loser_bonus"]?.Value), attrs?["game_name"]?.Value ?? string.Empty) },
         { "face_emotion", (ctx, attrs) => ctx.FaceEmotion(ParseInt(attrs?["spawn_id"]?.Value), attrs?["emotion_name"]?.Value ?? string.Empty) },
-        { "field_game_constant", (ctx, attrs) => ctx.FieldGameConstant(attrs?["key"]?.Value ?? string.Empty, attrs?["value"]?.Value ?? string.Empty, attrs?["feature"]?.Value ?? string.Empty, (Locale) Enum.Parse(typeof(Locale), attrs?["locale"]?.Value ?? "ALL", true)) },
+        { "field_game_constant", (ctx, attrs) => ctx.FieldGameConstant(attrs?["key"]?.Value ?? string.Empty, attrs?["value"]?.Value ?? string.Empty, attrs?["feature"]?.Value ?? string.Empty, ParseLocale(attrs?["locale"]?.Value)) },
         { "field_game_message", (ctx, attrs) => ctx.FieldGameMessage(ParseInt(attrs?["custom"]?.Value), attrs?["type"]?.Value ?? string.Empty, ParseBool(attrs?["arg1"]?.Value), attrs?["script"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value)) },
         { "field_war_end", (ctx, attrs) => ctx.FieldWarEnd(ParseBool(attrs?["is_clear"]?.Value)) },
         { "give_exp", (ctx, attrs) => ctx.GiveExp(ParseInt(attrs?["box_id"]?.Value), ParseFloat(attrs?["rate"]?.Value), ParseBool(attrs?["arg3"]?.Value)) },
@@ -108,8 +108,9 @@ public static class TriggerFunctionMapping {
         { "play_scene_movie", (ctx, attrs) => ctx.PlaySceneMovie(attrs?["file_name"]?.Value ?? string.Empty, ParseInt(attrs?["movie_id"]?.Value), attrs?["skip_type"]?.Value ?? string.Empty) },
         { "play_system_sound_by_user_tag", (ctx, attrs) => ctx.PlaySystemSoundByUserTag(ParseInt(attrs?["user_tag_id"]?.Value), attrs?["sound_key"]?.Value ?? string.Empty) },
         { "play_system_sound_in_box", (ctx, attrs) => ctx.PlaySystemSoundInBox(attrs?["sound"]?.Value ?? string.Empty, ParseIntArray(attrs?["box_ids"]?.Value)) }, {
-            "random_additional_effect", (ctx, attrs) => ctx.RandomAdditionalEffect(attrs?["target"]?.Value ?? string.Empty, ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["spawn_id"]?.Value), ParseInt(attrs?["target_count"]?.Value), ParseInt(attrs?["tick"]?.Value), ParseInt(attrs?["wait_tick"]?.Value), attrs?["target_effect"]?.Value ?? string.Empty,
-                ParseInt(attrs?["additional_effect_id"]?.Value))
+            "random_additional_effect", (ctx, attrs) =>
+                ctx.RandomAdditionalEffect(attrs?["target"]?.Value ?? string.Empty, ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["spawn_id"]?.Value),
+                    ParseInt(attrs?["target_count"]?.Value), ParseInt(attrs?["tick"]?.Value), ParseInt(attrs?["wait_tick"]?.Value), attrs?["target_effect"]?.Value ?? string.Empty, ParseInt(attrs?["additional_effect_id"]?.Value))
         },
         { "remove_balloon_talk", (ctx, attrs) => ctx.RemoveBalloonTalk(ParseInt(attrs?["spawn_id"]?.Value)) },
         { "remove_buff", (ctx, attrs) => ctx.RemoveBuff(ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["skill_id"]?.Value), ParseBool(attrs?["is_player"]?.Value)) },
@@ -137,7 +138,7 @@ public static class TriggerFunctionMapping {
         { "set_effect", (ctx, attrs) => ctx.SetEffect(ParseIntArray(attrs?["trigger_ids"]?.Value), ParseBool(attrs?["visible"]?.Value), ParseInt(attrs?["start_delay"]?.Value), ParseInt(attrs?["interval"]?.Value)) },
         { "set_event_ui_countdown", (ctx, attrs) => ctx.SetEventUiCountdown(attrs?["script"]?.Value ?? string.Empty, ParseIntArray(attrs?["round_countdown"]?.Value), attrs?["box_ids"]?.Value.Split(',') ?? []) },
         { "set_event_ui_round", (ctx, attrs) => ctx.SetEventUiRound(ParseIntArray(attrs?["rounds"]?.Value), ParseInt(attrs?["v_offset"]?.Value), ParseInt(attrs?["arg3"]?.Value)) },
-        { "set_event_ui_script", (ctx, attrs) => ctx.SetEventUiScript((BannerType) Enum.Parse(typeof(BannerType), attrs?["type"]?.Value ?? "Lose", true), attrs?["script"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), attrs?["box_ids"]?.Value.Split(',') ?? []) },
+        { "set_event_ui_script", (ctx, attrs) => ctx.SetEventUiScript(ParseBannerType(attrs?["type"]?.Value), attrs?["script"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), attrs?["box_ids"]?.Value.Split(',') ?? []) },
         { "set_gravity", (ctx, attrs) => ctx.SetGravity(ParseFloat(attrs?["gravity"]?.Value)) },
         { "set_interact_object", (ctx, attrs) => ctx.SetInteractObject(ParseIntArray(attrs?["trigger_ids"]?.Value), ParseInt(attrs?["state"]?.Value), ParseBool(attrs?["arg4"]?.Value), ParseBool(attrs?["arg3"]?.Value)) },
         { "set_ladder", (ctx, attrs) => ctx.SetLadder(ParseIntArray(attrs?["trigger_ids"]?.Value), ParseBool(attrs?["visible"]?.Value), ParseBool(attrs?["enable"]?.Value), ParseInt(attrs?["fade"]?.Value)) },
@@ -175,8 +176,8 @@ public static class TriggerFunctionMapping {
         { "set_visible_ui", (ctx, attrs) => ctx.SetVisibleUi(attrs?["ui_names"]?.Value.Split(',') ?? [], ParseBool(attrs?["visible"]?.Value)) },
         { "shadow_expedition_close_boss_gauge", (ctx, _) => ctx.ShadowExpeditionCloseBossGauge() },
         { "shadow_expedition_open_boss_gauge", (ctx, attrs) => ctx.ShadowExpeditionOpenBossGauge(ParseInt(attrs?["max_gauge_point"]?.Value), attrs?["title"]?.Value ?? string.Empty) }, {
-            "show_caption", (ctx, attrs) => ctx.ShowCaption(attrs?["type"]?.Value ?? string.Empty, attrs?["title"]?.Value ?? string.Empty, attrs?["desc"]?.Value ?? string.Empty, ParseAlign(attrs?["align"]?.Value), ParseFloat(attrs?["offset_rate_x"]?.Value), ParseFloat(attrs?["offset_rate_y"]?.Value), ParseInt(attrs?["duration"]?.Value),
-                ParseFloat(attrs?["scale"]?.Value))
+            "show_caption", (ctx, attrs) => ctx.ShowCaption(attrs?["type"]?.Value ?? string.Empty, attrs?["title"]?.Value ?? string.Empty, attrs?["desc"]?.Value ?? string.Empty,
+                ParseAlign(attrs?["align"]?.Value), ParseFloat(attrs?["offset_rate_x"]?.Value), ParseFloat(attrs?["offset_rate_y"]?.Value), ParseInt(attrs?["duration"]?.Value), ParseFloat(attrs?["scale"]?.Value))
         },
         { "show_count_ui", (ctx, attrs) => ctx.ShowCountUi(attrs?["text"]?.Value ?? string.Empty, ParseInt(attrs?["stage"]?.Value), ParseInt(attrs?["count"]?.Value), ParseInt(attrs?["sound_type"]?.Value)) },
         { "show_event_result", (ctx, attrs) => ctx.ShowEventResult(attrs?["type"]?.Value ?? string.Empty, attrs?["text"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), ParseInt(attrs?["user_tag_id"]?.Value), ParseInt(attrs?["trigger_box_id"]?.Value), ParseBool(attrs?["is_outside"]?.Value)) },
@@ -200,7 +201,7 @@ public static class TriggerFunctionMapping {
         { "user_tag_symbol", (ctx, attrs) => ctx.UserTagSymbol(attrs?["symbol1"]?.Value ?? string.Empty, attrs?["symbol2"]?.Value ?? string.Empty) },
         { "user_value_to_number_mesh", (ctx, attrs) => ctx.UserValueToNumberMesh(attrs?["key"]?.Value ?? string.Empty, ParseInt(attrs?["start_mesh_id"]?.Value), ParseInt(attrs?["digit_count"]?.Value)) },
         { "visible_my_pc", (ctx, attrs) => ctx.VisibleMyPc(ParseBool(attrs?["is_visible"]?.Value)) },
-        { "weather", (ctx, attrs) => ctx.Weather((Weather) Enum.Parse(typeof(Weather), attrs?["weather_type"]?.Value ?? "Clear", true)) },
+        { "weather", (ctx, attrs) => ctx.Weather(ParseWeather(attrs?["weather_type"]?.Value)) },
         { "wedding_broken", (ctx, _) => ctx.WeddingBroken() },
         { "wedding_move_user", (ctx, attrs) => ctx.WeddingMoveUser(attrs?["entry_type"]?.Value ?? string.Empty, ParseInt(attrs?["map_id"]?.Value), ParseIntArray(attrs?["portal_ids"]?.Value), ParseInt(attrs?["box_id"]?.Value)) },
         { "wedding_mutual_agree", (ctx, attrs) => ctx.WeddingMutualAgree(attrs?["agree_type"]?.Value ?? string.Empty) },
@@ -220,7 +221,7 @@ public static class TriggerFunctionMapping {
         { "check_any_user_additional_effect", (ctx, attrs) => ctx.CheckAnyUserAdditionalEffect(ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["additional_effect_id"]?.Value), ParseInt(attrs?["level"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "check_dungeon_lobby_user_count", (ctx, attrs) => ctx.CheckDungeonLobbyUserCount(ParseBool(attrs?["negate"]?.Value)) },
         { "check_npc_additional_effect", (ctx, attrs) => ctx.CheckNpcAdditionalEffect(ParseInt(attrs?["spawn_id"]?.Value), ParseInt(attrs?["additional_effect_id"]?.Value), ParseInt(attrs?["level"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
-        { "npc_damage", (ctx, attrs) => ctx.NpcDamage(ParseInt(attrs?["spawn_id"]?.Value), ParseInt(attrs?["damageRate"]?.Value), ParseOperatorType(attrs?["operator"]?.Value)) },
+        { "npc_damage", (ctx, attrs) => ctx.NpcDamage(ParseInt(attrs?["spawn_id"]?.Value), ParseFloat(attrs?["damageRate"]?.Value), ParseOperatorType(attrs?["operator"]?.Value)) },
         { "npc_extra_data", (ctx, attrs) => ctx.NpcExtraData(ParseInt(attrs?["spawn_point_id"]?.Value), attrs?["extra_data_key"]?.Value ?? string.Empty, ParseInt(attrs?["extra_data_value"]?.Value), ParseOperatorType(attrs?["operator"]?.Value)) },
         { "npc_hp", (ctx, attrs) => ctx.NpcHp(ParseInt(attrs?["spawn_id"]?.Value), ParseBool(attrs?["is_relative"]?.Value), ParseInt(attrs?["value"]?.Value), ParseCompareType(attrs?["compare_type"]?.Value)) },
         { "check_same_user_tag", (ctx, attrs) => ctx.CheckSameUserTag(ParseInt(attrs?["box_id"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
@@ -230,7 +231,7 @@ public static class TriggerFunctionMapping {
         { "day_of_week", (ctx, attrs) => ctx.DayOfWeek(ParseIntArray(attrs?["day_of_weeks"]?.Value), attrs?["desc"]?.Value ?? string.Empty, ParseBool(attrs?["negate"]?.Value)) },
         { "detect_liftable_object", (ctx, attrs) => ctx.DetectLiftableObject(ParseIntArray(attrs?["box_ids"]?.Value), ParseInt(attrs?["item_id"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "dungeon_play_time", (ctx, attrs) => ctx.DungeonPlayTime(ParseInt(attrs?["play_seconds"]?.Value)) },
-        { "dungeon_state", (ctx, attrs) => ctx.DungeonState(attrs?["play_seconds"]?.Value ?? string.Empty) },
+        { "dungeon_state", (ctx, attrs) => ctx.DungeonState(attrs?["check_state"]?.Value ?? string.Empty) },
         { "dungeon_first_user_mission_score", (ctx, attrs) => ctx.DungeonFirstUserMissionScore(ParseInt(attrs?["score"]?.Value), ParseOperatorType(attrs?["operator"]?.Value)) },
         { "dungeon_id", (ctx, attrs) => ctx.DungeonId(ParseInt(attrs?["dungeon_id"]?.Value)) },
         { "dungeon_level", (ctx, attrs) => ctx.DungeonLevel(ParseInt(attrs?["level"]?.Value)) },
@@ -263,6 +264,26 @@ public static class TriggerFunctionMapping {
         { "wedding_mutual_agree_result", (ctx, attrs) => ctx.WeddingMutualAgreeResult(attrs?["agree_type"]?.Value ?? string.Empty) },
         { "widget_value", (ctx, attrs) => ctx.WidgetValue(attrs?["type"]?.Value ?? string.Empty, attrs?["widget_name"]?.Value ?? string.Empty, ParseInt(attrs?["condition"]?.Value), ParseBool(attrs?["negate"]?.Value), attrs?["desc"]?.Value ?? string.Empty) },
     };
+
+    private static Weather ParseWeather(string? value) {
+        if (string.IsNullOrEmpty(value)) return Weather.Clear;
+        return (Weather) Enum.Parse(typeof(Weather), value, true);
+    }
+
+    private static BannerType ParseBannerType(string? value) {
+        if (string.IsNullOrEmpty(value)) return BannerType.Lose;
+        return (BannerType) Enum.Parse(typeof(BannerType), value, true);
+    }
+
+    private static Locale ParseLocale(string? value) {
+        if (string.IsNullOrEmpty(value)) return Locale.ALL;
+        return (Locale) Enum.Parse(typeof(Locale), value, true);
+    }
+
+    private static FieldGame ParseFieldGame(string? value) {
+        if (string.IsNullOrEmpty(value)) return FieldGame.Unknown;
+        return (FieldGame) Enum.Parse(typeof(FieldGame), value, true);
+    }
 
     private static Align ParseAlign(string? align) {
         if (string.IsNullOrEmpty(align)) return Align.center;
