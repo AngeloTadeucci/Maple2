@@ -140,11 +140,10 @@ public partial class TriggerContext : ITriggerContext {
         return Field.Players.Count == count;
     }
 
-    public bool CountUsers(int boxId, int userTagId, OperatorType operatorType, bool negate) {
+    public bool CountUsers(int boxId, int userTagId, int minUsers, OperatorType operatorType, bool negate) {
         DebugLog("[GetUserCount] boxId:{BoxId}, userTagId:{TagId}", boxId, userTagId);
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
             return negate;
-            // If box doesn't exist, negate means we want to return true.
         }
 
         int count;
@@ -155,11 +154,11 @@ public partial class TriggerContext : ITriggerContext {
         }
 
         bool result = operatorType switch {
-            OperatorType.Greater => count > 0,
-            OperatorType.GreaterEqual => count >= 0,
-            OperatorType.Equal => count == 0,
-            OperatorType.LessEqual => count <= 0,
-            OperatorType.Less => count < 0,
+            OperatorType.Greater => count > minUsers,
+            OperatorType.GreaterEqual => count >= minUsers,
+            OperatorType.Equal => count == minUsers,
+            OperatorType.LessEqual => count <= minUsers,
+            OperatorType.Less => count < minUsers,
             _ => false,
         };
         return negate ? !result : result;

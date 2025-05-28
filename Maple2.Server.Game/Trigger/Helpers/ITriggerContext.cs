@@ -157,7 +157,7 @@ public interface ITriggerContext {
     public void SetQuestComplete(int questId);
     public void SetRandomMesh(int[] triggerIds, bool visible, int startDelay, int interval, int fade);
     public void SetRope(int triggerId, bool visible, bool enable, int fade);
-    public void SetSceneSkip(string state, string action);
+    public void SetSceneSkip(string state, string nextState);
     public void SetSkill(int[] triggerIds, bool enable);
     public void SetSkip(string state);
     public void SetSound(int triggerId, bool enable);
@@ -219,7 +219,7 @@ public interface ITriggerContext {
     public bool CheckSameUserTag(int boxId, bool negate);
     public bool CheckUser(bool negate);
     public bool UserCount(int count);
-    public bool CountUsers(int boxId, int userTagId, OperatorType operatorType, bool negate);
+    public bool CountUsers(int boxId, int userTagId, int minUsers, OperatorType operatorType, bool negate);
     public bool DayOfWeek(int[] dayOfWeeks, string desc, bool negate);
     public bool DetectLiftableObject(int[] boxIds, int itemId, bool negate);
     public bool DungeonPlayTime(int playSeconds);

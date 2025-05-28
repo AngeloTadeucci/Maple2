@@ -226,7 +226,7 @@ public static class TriggerFunctionMapping {
         { "check_same_user_tag", (ctx, attrs) => ctx.CheckSameUserTag(ParseInt(attrs?["box_id"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "check_user", (ctx, attrs) => ctx.CheckUser(ParseBool(attrs?["negate"]?.Value)) },
         { "user_count", (ctx, attrs) => ctx.UserCount(ParseInt(attrs?["check_count"]?.Value)) },
-        { "count_users", (ctx, attrs) => ctx.CountUsers(ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["user_tag_id"]?.Value), ParseOperatorType(attrs?["operator"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
+        { "count_users", (ctx, attrs) => ctx.CountUsers(ParseInt(attrs?["box_id"]?.Value), ParseInt(attrs?["user_tag_id"]?.Value), ParseInt(attrs?["min_users"]?.Value), ParseOperatorType(attrs?["operator"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "day_of_week", (ctx, attrs) => ctx.DayOfWeek(ParseIntArray(attrs?["day_of_weeks"]?.Value), attrs?["desc"]?.Value ?? string.Empty, ParseBool(attrs?["negate"]?.Value)) },
         { "detect_liftable_object", (ctx, attrs) => ctx.DetectLiftableObject(ParseIntArray(attrs?["box_ids"]?.Value), ParseInt(attrs?["item_id"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "dungeon_play_time", (ctx, attrs) => ctx.DungeonPlayTime(ParseInt(attrs?["play_seconds"]?.Value)) },
@@ -265,15 +265,18 @@ public static class TriggerFunctionMapping {
     };
 
     private static Align ParseAlign(string? align) {
-        return (Align) Enum.Parse(typeof(Align), align ?? "center", true);
+        if (string.IsNullOrEmpty(align)) return Align.center;
+        return (Align) Enum.Parse(typeof(Align), align, true);
     }
 
     private static OperatorType ParseOperatorType(string? operatorType) {
-        return (OperatorType) Enum.Parse(typeof(OperatorType), operatorType ?? "Equal", true);
+        if (string.IsNullOrEmpty(operatorType)) return OperatorType.GreaterEqual;
+        return (OperatorType) Enum.Parse(typeof(OperatorType), operatorType, true);
     }
 
     private static CompareType ParseCompareType(string? compareType) {
-        return (CompareType) Enum.Parse(typeof(CompareType), compareType ?? "Equal", true);
+        if (string.IsNullOrEmpty(compareType)) return CompareType.higher;
+        return (CompareType) Enum.Parse(typeof(CompareType), compareType, true);
     }
 
     public static int[] ParseIntArray(string? value) {

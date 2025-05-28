@@ -70,7 +70,7 @@ public partial class TriggerContext {
     }
 
     public void SetSceneSkip(string state, string nextState) {
-        WarnLog("[SetSceneSkip] state:{State}, nextState:{NextState}", nameof(state), nextState);
+        WarnLog("[SetSceneSkip] state:{State}, nextState:{NextState}", state, nextState);
         skipState = Owner.GetState(state);
         Broadcast(CinematicPacket.SetSkipScene(nextState));
     }

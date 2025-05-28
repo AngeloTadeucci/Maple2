@@ -168,7 +168,9 @@ public partial class TriggerContext {
         WarnLog("[SetNpcRotation] spawnId:{SpawnId}, rotation:{Rotation}", spawnId, rotation);
         foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
-                npc.Rotation = npc.Rotation with { Z = rotation };
+                npc.Rotation = npc.Rotation with {
+                    Z = rotation
+                };
             }
         }
     }
@@ -186,17 +188,19 @@ public partial class TriggerContext {
     public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, int level, bool negate) {
         DebugLog("[CheckNpcAdditionalEffect] spawnId:{SpawnId}, additionalEffectId:{EffectId}, level:{Level}", spawnId, additionalEffectId, level);
         IEnumerable<IActor> actors = Field.GetActorsBySpawnId(spawnId);
+        bool hasAnyBuff = false;
         foreach (IActor actor in actors) {
             if (actor is not FieldNpc) {
                 continue;
             }
-            if (negate) {
-                return !actor.Buffs.HasBuff(additionalEffectId, (short) level);
-            }
-            return actor.Buffs.HasBuff(additionalEffectId, (short) level);
+
+            if (!actor.Buffs.HasBuff(additionalEffectId, (short) level)) continue;
+
+            hasAnyBuff = true;
+            break;
         }
 
-        return negate;
+        return negate ? !hasAnyBuff : hasAnyBuff;
     }
 
     public bool MonsterDead(int[] spawnIds, bool autoTarget) {
