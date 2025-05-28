@@ -90,11 +90,11 @@ public partial class FieldManager {
     }
 
     public void PlaceCube(GameSession session, HeldCube cubeItem, in Vector3B position, float rotation) {
-        Plot? plot = session.Field.Plots[0];
         if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? itemMetadata)) {
             logger.Error("Failed to get item metadata for cube {cubeId}.", cubeItem.ItemId);
             return;
         }
+        Plot? plot;
         switch (session.HeldCube) {
             case PlotCube _:
                 if (itemMetadata.Install is null || itemMetadata.Housing is null) {
@@ -135,6 +135,8 @@ public partial class FieldManager {
                 }
                 break;
             case LiftableCube liftable:
+                plot = session.Field.Plots[0];
+
                 FieldLiftable? fieldLiftable = session.Field.AddLiftable($"4_{position.ConvertToInt()}", liftable.Liftable);
                 if (fieldLiftable == null) {
                     return;
