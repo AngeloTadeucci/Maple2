@@ -6,6 +6,7 @@ using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.IO.Crypto.Common;
 using Maple2.Model.Metadata;
+using Maple2.Tools;
 using static System.Char;
 
 
@@ -29,11 +30,20 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
 
             var trigger = new TriggerMetadata(folderName, triggerName, xml);
 
-            if (false) { // for debugging purposes
-                // write the xml file to the solution directory
-                string filePathName = Path.Combine("Triggers", folderName, $"{triggerName}.xml");
+            if (Constant.DebugTriggers) { // for debugging purposes
+                string filePathName = Path.Combine(Paths.DEBUG_TRIGGERS_DIR, folderName, $"{triggerName}.xml");
                 Directory.CreateDirectory(Path.GetDirectoryName(filePathName)!);
-                System.IO.File.WriteAllText(filePathName, xml);
+
+                var formattedXml = new XmlDocument();
+                formattedXml.LoadXml(xml);
+                var settings = new XmlWriterSettings {
+                    Indent = true,
+                    NewLineOnAttributes = false,
+                    OmitXmlDeclaration = true,
+                };
+
+                using var writer = XmlWriter.Create(filePathName, settings);
+                formattedXml.Save(writer);
             }
             yield return trigger;
         }

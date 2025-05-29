@@ -5,6 +5,7 @@ using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Trigger;
 using Maple2.Server.Game.Trigger.Helpers;
+using Maple2.Tools;
 using Serilog;
 
 namespace Maple2.Server.Game.Model;
@@ -19,14 +20,23 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
 
     public FieldTrigger(FieldManager field, int objectId, TriggerModel value) : base(field, objectId, value) {
         Context = new TriggerContext(this);
-
-        field.TriggerMetadata.TryGet(Field.Metadata.XBlock, Value.Name.ToLower(), out TriggerMetadata? metadata);
-        if (metadata == null) {
-            throw new ArgumentException($"Trigger {Value.Name} not found in {Field.Metadata.XBlock}");
+        var document = new XmlDocument();
+        string xml;
+        if (!Constant.DebugTriggers) {
+            field.TriggerMetadata.TryGet(Field.Metadata.XBlock, Value.Name.ToLower(), out TriggerMetadata? metadata);
+            if (metadata == null) {
+                throw new ArgumentException($"Trigger {Value.Name} not found in {Field.Metadata.XBlock}");
+            }
+            xml = metadata.Xml;
+        } else {
+            string triggerFilePath = Path.Combine(Paths.DEBUG_TRIGGERS_DIR, Field.Metadata.XBlock, Value.Name.ToLower() + ".xml");
+            if (!File.Exists(triggerFilePath)) {
+                throw new ArgumentException($"You are running DebugTriggers, but the trigger file does not exist: {triggerFilePath}");
+            }
+            xml = File.ReadAllText(triggerFilePath);
         }
 
-        var document = new XmlDocument();
-        document.LoadXml(metadata.Xml);
+        document.LoadXml(xml);
         triggerDocument = document;
 
         XmlElement? root = document.DocumentElement;
@@ -36,7 +46,7 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
 
         XmlNode? initialState = root.SelectSingleNode("state");
         if (initialState is not { Name: "state" }) {
-            throw new ArgumentException($"Trigger {Value.Name} has no initial_state in {Field.Metadata.XBlock}, ChildNodes[0] is {initialState?.Name ?? "null"}");
+            throw new ArgumentException($"Trigger {Value.Name} has no <state> element in {Field.Metadata.XBlock}");
         }
 
         nextState = new TriggerState(initialState, Context);

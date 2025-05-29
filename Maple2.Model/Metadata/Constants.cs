@@ -116,6 +116,8 @@ public static class Constant {
 
     public const int MaxAllowedLatency = 2000;
 
+    public const bool DebugTriggers = false; // Set to true to enable debug triggers. (It'll write triggers to files and load triggers from files instead of DB)
+
     public static IReadOnlyDictionary<string, int> ContentRewards { get; } = new Dictionary<string, int> {
         {"miniGame", 1005},
         {"dungeonHelper", 1006},
