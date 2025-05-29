@@ -81,8 +81,16 @@ public partial class FieldManager {
                     throw new InvalidOperationException($"Failed to save plot cubes: {plot.Id}");
                 }
 
+                List<PlotCube> portalCubes = plot.Cubes.Values.Where(c => c.Interact?.PortalSettings is not null).ToList();
+
                 plot.Cubes.Clear();
                 foreach (PlotCube result in results) {
+                    if (result.Interact?.PortalSettings is not null) {
+                        PlotCube? existingCube = portalCubes.Find(x => x.Position == result.Position && x.ItemId == result.ItemId);
+                        if (existingCube is not null) {
+                            result.Interact = existingCube.Interact;
+                        }
+                    }
                     plot.Cubes.Add(result.Position, result);
                 }
             }
