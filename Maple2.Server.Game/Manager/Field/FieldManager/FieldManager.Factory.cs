@@ -46,7 +46,6 @@ public partial class FieldManager {
             this.context = context;
             mapLocks = new ConcurrentDictionary<int, SemaphoreSlim>();
 
-
             cancel = new CancellationTokenSource();
             thread = new Thread(DisposeLoop);
             thread.Start();
@@ -64,7 +63,6 @@ public partial class FieldManager {
             } finally {
                 mapLock.Release();
             }
-            field?.Init();
             return field;
         }
 
@@ -110,6 +108,7 @@ public partial class FieldManager {
 
             var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata);
             context.InjectProperties(field);
+            field.Init();
 
             // Add to fields
             AddField(field);
@@ -138,6 +137,7 @@ public partial class FieldManager {
 
             var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata);
             context.InjectProperties(field);
+            field.Init();
 
             return field;
         }
