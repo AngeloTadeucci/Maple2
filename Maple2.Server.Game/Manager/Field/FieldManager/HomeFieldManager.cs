@@ -2,6 +2,7 @@
 using Maple2.Model.Common;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Manager.Field;
 
@@ -22,6 +23,10 @@ public class HomeFieldManager : FieldManager {
         using GameStorage.Request db = GameStorage.Context();
         foreach (Plot plot in db.LoadPlotsForMap(MapId, OwnerId)) {
             Plots[plot.Number] = plot;
+        }
+
+        foreach (FieldPortal portal in GetPortals()) {
+            RemovePortal(portal.ObjectId);
         }
 
         Plots.Values
