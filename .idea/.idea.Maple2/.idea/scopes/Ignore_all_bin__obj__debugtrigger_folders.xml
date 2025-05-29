@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Ignore all bin, obj, debugtrigger folders" pattern="!file:*/bin//*&amp;&amp;!file:*/obj//*&amp;&amp;!file:Maple2.Server.Game/DebugTriggers//*" />
+</component>

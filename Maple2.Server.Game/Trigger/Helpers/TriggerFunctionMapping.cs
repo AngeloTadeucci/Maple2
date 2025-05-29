@@ -301,7 +301,30 @@ public static class TriggerFunctionMapping {
     }
 
     public static int[] ParseIntArray(string? value) {
-        return string.IsNullOrEmpty(value) ? [] : value.Split(',').Select(int.Parse).ToArray();
+        if (string.IsNullOrEmpty(value)) return [];
+        if (value is "all") return [-1]; // Special case for "all" to indicate all IDs.
+        // Handles ranges and comma-separated values and mixed usage.
+        if (value.Contains(',')) {
+            var result = new List<int>();
+            foreach (string part in value.Split(',')) {
+                if (part.Contains('-')) {
+                    string[] rangeParts = part.Split('-');
+                    if (rangeParts.Length == 2 && int.TryParse(rangeParts[0], out int start) && int.TryParse(rangeParts[1], out int end)) {
+                        result.AddRange(Enumerable.Range(start, end - start + 1));
+                    }
+                } else if (int.TryParse(part, out int singleValue)) {
+                    result.Add(singleValue);
+                }
+            }
+            return result.ToArray();
+        }
+        if (value.Contains('-')) {
+            string[] parts = value.Split('-');
+            if (parts.Length == 2 && int.TryParse(parts[0], out int start) && int.TryParse(parts[1], out int end)) {
+                return Enumerable.Range(start, end - start + 1).ToArray();
+            }
+        }
+        return value.Split(',').Select(int.Parse).ToArray();
     }
 
     public static int ParseInt(string? value) => int.TryParse(value, out int v) ? v : 0;

@@ -53,8 +53,13 @@ public class ParseXmlTests {
             Assert.That(TriggerFunctionMapping.ParseIntArray("1,2,3"), Is.EqualTo(new[] { 1, 2, 3 }));
             Assert.That(TriggerFunctionMapping.ParseIntArray(""), Is.Empty);
             Assert.That(TriggerFunctionMapping.ParseIntArray(null), Is.Empty);
+            Assert.That(TriggerFunctionMapping.ParseIntArray("1,2,a"), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("1-5"), Is.EqualTo(new[] { 1, 2, 3, 4, 5 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("1-5,9,10"), Is.EqualTo(new[] { 1, 2, 3, 4, 5, 9, 10 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("a,b,c"), Is.Empty);
+            Assert.That(TriggerFunctionMapping.ParseIntArray("5"), Is.EqualTo(new[] { 5 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("all"), Is.EqualTo(new[] { -1 }));
         });
-        Assert.Throws<FormatException>(() => TriggerFunctionMapping.ParseIntArray("a,b,c"));
     }
 
     [Test]
