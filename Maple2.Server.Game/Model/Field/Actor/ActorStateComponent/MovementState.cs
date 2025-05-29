@@ -206,7 +206,7 @@ public partial class MovementState {
             return;
         }
 
-        long tickDelta = Math.Min(lastTick == 0 ? 0 : tickCount - lastTick, 20);
+        long tickDelta = Math.Min(lastTick == 0 ? 0 : tickCount - lastTick, 200);
 
         RemoveDebugMarker(debugNpc, tickCount);
         RemoveDebugMarker(debugTarget, tickCount);

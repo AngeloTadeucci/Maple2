@@ -14,6 +14,7 @@ public partial class MovementState {
         ToTarget,
         FromTarget
     }
+
     private Vector3 walkDirection;
     private Vector3 walkTargetPosition;
     private float walkTargetDistance;
@@ -86,7 +87,6 @@ public partial class MovementState {
         UpdateMoveSpeed(speedOverride);
 
         float delta = (float) tickDelta / 1000;
-
         if (walkType == WalkType.Direction) {
             StateWalkDirectionUpdate(tickCount, tickDelta, delta);
             return;
@@ -106,7 +106,7 @@ public partial class MovementState {
             }
 
             if (reachedFlying) {
-                Velocity = new Vector3(0, 0, 0);
+                Velocity = Vector3.Zero;
                 walkTask?.Completed();
             }
             return;
@@ -199,4 +199,3 @@ public partial class MovementState {
         }
     }
 }
-
