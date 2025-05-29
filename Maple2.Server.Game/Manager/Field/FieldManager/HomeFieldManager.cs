@@ -25,10 +25,6 @@ public class HomeFieldManager : FieldManager {
             Plots[plot.Number] = plot;
         }
 
-        foreach (FieldPortal portal in GetPortals()) {
-            RemovePortal(portal.ObjectId);
-        }
-
         Plots.Values
             .SelectMany(c => c.Cubes.Values)
             .Where(p => p.Interact?.PortalSettings is not null)
