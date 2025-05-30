@@ -5,6 +5,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -25,7 +26,6 @@ public class ChangeAttributesHandler : PacketHandler<GameSession> {
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -61,7 +61,7 @@ public class ChangeAttributesHandler : PacketHandler<GameSession> {
 
         lock (session.Item) {
             // Validate item being changed + lock attributes/lock item if necessary.
-            Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear)
+            Item? item = session.Item.GetGear(itemUid)
                          ?? session.Item.Inventory.Get(itemUid, InventoryType.Pets);
             if (item == null) {
                 session.Send(ChangeAttributesPacket.Error(s_itemremake_error_server_not_in_inven));
@@ -166,7 +166,7 @@ public class ChangeAttributesHandler : PacketHandler<GameSession> {
         }
 
         lock (session.Item) {
-            Item? item = session.Item.Inventory.Get(itemUid, InventoryType.Gear)
+            Item? item = session.Item.GetGear(itemUid)
                          ?? session.Item.Inventory.Get(itemUid, InventoryType.Pets);
             if (item == null) {
                 session.Send(ChangeAttributesPacket.Error(s_itemremake_error_server_not_in_inven));

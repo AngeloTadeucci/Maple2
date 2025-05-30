@@ -5,6 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
+using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Collision;
@@ -26,7 +27,7 @@ public class FieldPlayer : Actor<Player> {
             if (state == value) return;
             state = value;
             Flag |= PlayerObjectFlag.State;
-            stateSyncTimeTracking = 0; // Reset time tracking on state change
+            StateSyncTimeTracking = 0; // Reset time tracking on state change
         }
     }
     private bool isDead;
@@ -59,10 +60,11 @@ public class FieldPlayer : Actor<Player> {
     private readonly Dictionary<BasicAttribute, long> lastRegenTime;
 
     private readonly Dictionary<ActorState, float> stateSyncDistanceTracking;
-    private long stateSyncTimeTracking { get; set; }
-    private long stateSyncTrackingTick { get; set; }
+    private long StateSyncTimeTracking { get; set; }
+    private long StateSyncTrackingTick { get; set; }
 
     public Tombstone? Tombstone { get; set; }
+
     public DeathState DeathState {
         get => Value.Character.DeathState;
         set {
@@ -99,8 +101,8 @@ public class FieldPlayer : Actor<Player> {
         lastRegenTime = new Dictionary<BasicAttribute, long>();
 
         stateSyncDistanceTracking = new Dictionary<ActorState, float>();
-        stateSyncTimeTracking = 0;
-        stateSyncTrackingTick = Environment.TickCount64;
+        StateSyncTimeTracking = 0;
+        StateSyncTrackingTick = Environment.TickCount64;
 
         scheduler = new EventQueue();
         scheduler.Start();
@@ -139,6 +141,7 @@ public class FieldPlayer : Actor<Player> {
 
     public override void Update(long tickCount) {
         base.Update(tickCount);
+        Session.GameEvent.Update(tickCount);
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
@@ -156,48 +159,74 @@ public class FieldPlayer : Actor<Player> {
             return;
         }
 
-        if (InBattle && tickCount - battleTick > 2000) {
+        if (InBattle && tickCount - battleTick > Constant.UserBattleDurationTick) {
             InBattle = false;
         }
 
-        if (!IsDead) {
-            // Loops through each registered regen stat and applies regen
-            var statsToRemove = new List<BasicAttribute>();
-            foreach (BasicAttribute attribute in regenStats.Keys) {
-                Stat stat = Stats.Values[attribute];
-                Stat regen = Stats.Values[regenStats[attribute].Item1];
-                Stat interval = Stats.Values[regenStats[attribute].Item2];
+        UpdateStateSkill();
 
-                if (stat.Current >= stat.Total) {
-                    // Removes stat from regen stats so it won't be listened for
-                    statsToRemove.Add(attribute);
-                    continue;
-                }
+        if (IsDead) {
+            return;
+        }
+        // Loops through each registered regen stat and applies regen
+        var statsToRemove = new List<BasicAttribute>();
+        foreach (BasicAttribute attribute in regenStats.Keys) {
+            Stat stat = Stats.Values[attribute];
+            Stat regen = Stats.Values[regenStats[attribute].Item1];
+            Stat interval = Stats.Values[regenStats[attribute].Item2];
 
-                lastRegenTime.TryGetValue(attribute, out long regenTime);
-
-                if (tickCount - regenTime > interval.Base) {
-                    lastRegenTime[attribute] = tickCount;
-                    switch (attribute) {
-                        case BasicAttribute.Health:
-                            RecoverHp((int) regen.Total);
-                            continue;
-                        case BasicAttribute.Spirit:
-                            RecoverSp((int) regen.Total);
-                            continue;
-                        case BasicAttribute.Stamina:
-                            RecoverStamina((int) regen.Total);
-                            continue;
-                    }
-                    Session.Send(StatsPacket.Update(this, attribute));
-                }
+            if (stat.Current >= stat.Total) {
+                // Removes stat from regen stats so it won't be listened for
+                statsToRemove.Add(attribute);
+                continue;
             }
-            foreach (BasicAttribute attribute in statsToRemove) {
-                regenStats.Remove(attribute);
+
+            lastRegenTime.TryGetValue(attribute, out long regenTime);
+
+            if (tickCount - regenTime > Math.Max(interval.Current, Constant.MinStatIntervalTick)) {
+                lastRegenTime[attribute] = tickCount;
+                switch (attribute) {
+                    case BasicAttribute.Health:
+                        RecoverHp((int) regen.Total);
+                        continue;
+                    case BasicAttribute.Spirit:
+                        RecoverSp((int) regen.Total);
+                        continue;
+                    case BasicAttribute.Stamina:
+                        RecoverStamina((int) regen.Total);
+                        continue;
+                }
+                Session.Send(StatsPacket.Update(this, attribute));
             }
         }
+        foreach (BasicAttribute attribute in statsToRemove) {
+            regenStats.Remove(attribute);
+        }
+        CheckRegen();
+        return;
 
-        Session.GameEvent.Update(tickCount);
+        void UpdateStateSkill() {
+            SkillRecord? stateSkill = ActiveSkills.StateSkill;
+            if (stateSkill == null) {
+                return;
+            }
+
+            if (stateSkill.StateNextTick > tickCount) {
+                return;
+            }
+
+            if (stateSkill.Metadata.Property.State != State) {
+                Field.Broadcast(SkillPacket.Cancel(stateSkill));
+                ActiveSkills.StateSkill = null;
+                return;
+            }
+
+            stateSkill.StateNextTick = tickCount + (int) TimeSpan.FromSeconds(Math.Max(0.01f, stateSkill.Motion.MotionProperty.SequenceSpeed)).TotalMilliseconds;
+            if (!SkillCastConsume(stateSkill)) {
+                ActiveSkills.StateSkill = null;
+                Field.Broadcast(SkillPacket.Cancel(stateSkill));
+            }
+        }
     }
 
     public void OnStateSync(StateSync stateSync) {
@@ -206,8 +235,8 @@ public class FieldPlayer : Actor<Player> {
         }
 
         float syncDistance = Vector3.Distance(Position, stateSync.Position); // distance between old player position and new state sync position
-        long syncTick = Field.FieldTick - stateSyncTrackingTick; // time elapsed since last state sync
-        stateSyncTrackingTick = Field.FieldTick;
+        long syncTick = Field.FieldTick - StateSyncTrackingTick; // time elapsed since last state sync
+        StateSyncTrackingTick = Field.FieldTick;
 
         Position = stateSync.Position;
         Rotation = new Vector3(0, 0, stateSync.Rotation / 10f);
@@ -235,9 +264,9 @@ public class FieldPlayer : Actor<Player> {
         }
 
         bool UpdateStateSyncTimeTracking() {
-            stateSyncTimeTracking += syncTick;
-            if (stateSyncTimeTracking >= 1000) {
-                stateSyncTimeTracking = 0;
+            StateSyncTimeTracking += syncTick;
+            if (StateSyncTimeTracking >= 1000) {
+                StateSyncTimeTracking = 0;
                 return true;
             }
             return false;
@@ -415,14 +444,10 @@ public class FieldPlayer : Actor<Player> {
 
         Stat stat = Stats.Values[BasicAttribute.Health];
         stat.Add(-amount);
-        Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
-
         if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Health)) {
-                regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
-            }
             lastRegenTime[BasicAttribute.Health] = Field.FieldTick + Constant.RecoveryHPWaitTick;
         }
+        Session.Send(StatsPacket.Update(this, BasicAttribute.Health));
 
         Session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
             AccountId = Session.AccountId,
@@ -433,6 +458,7 @@ public class FieldPlayer : Actor<Player> {
             },
             Async = true,
         });
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Health));
     }
 
     /// <summary>
@@ -461,13 +487,7 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stats.Values[BasicAttribute.Spirit].Add(-amount);
-
-        if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Spirit)) {
-                regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
-            }
-            // lastRegenTime[BasicAttribute.Spirit] = Field.FieldTick + Constant.RecoverySPWaitTick; - Not applicable for SP?
-        }
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Spirit));
     }
 
     /// <summary>
@@ -497,38 +517,33 @@ public class FieldPlayer : Actor<Player> {
         }
 
         Stats.Values[BasicAttribute.Stamina].Add(-amount);
-
         if (!IsDead) {
-            if (!regenStats.ContainsKey(BasicAttribute.Stamina) && !noRegen) {
-                regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
-            }
             lastRegenTime[BasicAttribute.Stamina] = Field.FieldTick + Constant.RecoveryEPWaitTick;
         }
+        Field.Broadcast(StatsPacket.Update(this, BasicAttribute.Stamina));
     }
 
     public void CheckRegen() {
         // Health
-        var health = Stats.Values[BasicAttribute.Health];
+        Stat health = Stats.Values[BasicAttribute.Health];
         if (health.Current < health.Total && !regenStats.ContainsKey(BasicAttribute.Health)) {
             regenStats.Add(BasicAttribute.Health, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.HpRegen, BasicAttribute.HpRegenInterval));
         }
 
         // Spirit
-        var spirit = Stats.Values[BasicAttribute.Spirit];
+        Stat spirit = Stats.Values[BasicAttribute.Spirit];
         if (spirit.Current < spirit.Total && !regenStats.ContainsKey(BasicAttribute.Spirit)) {
             regenStats.Add(BasicAttribute.Spirit, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.SpRegen, BasicAttribute.SpRegenInterval));
         }
 
         // Stamina
-        var stamina = Stats.Values[BasicAttribute.Stamina];
+        Stat stamina = Stats.Values[BasicAttribute.Stamina];
         if (stamina.Current < stamina.Total && !regenStats.ContainsKey(BasicAttribute.Stamina)) {
             regenStats.Add(BasicAttribute.Stamina, new Tuple<BasicAttribute, BasicAttribute>(BasicAttribute.StaminaRegen, BasicAttribute.StaminaRegenInterval));
         }
     }
 
-    public override void KeyframeEvent(string keyName) {
-
-    }
+    public override void KeyframeEvent(string keyName) { }
 
     public void MoveToPosition(Vector3 position, Vector3 rotation) {
         if (!Field.ValidPosition(position)) {
@@ -547,8 +562,8 @@ public class FieldPlayer : Actor<Player> {
     }
 
     public void FallDamage(float distance) {
-        double distanceScalingFactor = 0.04813;      // base distance scaling factor
-        double hpRatioExponent = 1.087;        // HP ratio exponent for diminishing returns
+        double distanceScalingFactor = 0.04813; // base distance scaling factor
+        double hpRatioExponent = 1.087; // HP ratio exponent for diminishing returns
         double currentHp = Stats.Values[BasicAttribute.Health].Current;
         double maxHp = Stats.Values[BasicAttribute.Health].Total;
         double distanceFactor = distanceScalingFactor * Math.Exp(0.0046 * distance);
@@ -570,5 +585,67 @@ public class FieldPlayer : Actor<Player> {
             }
         }
     }
-}
 
+    public override bool SkillCastConsume(SkillRecord record) {
+        if (!base.SkillCastConsume(record)) {
+            return false;
+        }
+
+        SkillMetadata metadata = record.Metadata;
+
+        if (metadata.Data.Consume.Meso > 0) {
+            if (Session.Currency.Meso < metadata.Data.Consume.Meso) {
+                Logger.Error("Not enough meso to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            Session.Currency.Meso -= metadata.Data.Consume.Meso;
+        }
+
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Spirit, out long spiritCost)) {
+            (int invokeValue, float invokeRate) = Buffs.GetInvokeValues(InvokeEffectType.ReduceSpiritCost, metadata.Id, metadata.Property.SkillGroup);
+            int finalSpriteCost = Math.Max(0, (int) (-invokeValue + (1 - invokeRate) * spiritCost));
+            if (Stats.Values[BasicAttribute.Spirit].Current < finalSpriteCost) {
+                Logger.Error("Not enough spirit to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            ConsumeSp(finalSpriteCost);
+        }
+
+        if (metadata.Data.Consume.Stat.TryGetValue(BasicAttribute.Stamina, out long staminaCost)) {
+            if (Stats.Values[BasicAttribute.Stamina].Current < staminaCost) {
+                Logger.Error("Not enough stamina to cast skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+            ConsumeStamina((int) staminaCost);
+        }
+
+        if (metadata.Data.Consume.HpRate != 0) {
+            long hp = Stats.Values[BasicAttribute.Health].Current;
+            // HpRate is a negative value in decimal form (e.g., -0.01 for 1%)
+            int hpToConsume = (int) (hp * Math.Abs(metadata.Data.Consume.HpRate));
+            if (hpToConsume > 0) {
+                ConsumeHp(hpToConsume);
+            }
+        }
+
+        if (metadata.Data.Consume.UseItem) {
+            if (record.ItemUid == 0) {
+                Logger.Error("Invalid item uid for skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+
+            Item? item = Session.Item.Inventory.Get(record.ItemUid);
+            if (item == null) {
+                Logger.Error("Invalid item uid for skill: {SkillId},{Level}", metadata.Id, metadata.Level);
+                return false;
+            }
+
+            if (!Session.Item.Inventory.Consume(item.Uid, 1)) {
+                Logger.Error("Failed to consume item {itemId} for skill: {SkillId},{Level}", item.Id, metadata.Id, metadata.Level);
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

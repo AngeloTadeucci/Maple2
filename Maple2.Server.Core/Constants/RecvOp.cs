@@ -1,6 +1,7 @@
 ﻿namespace Maple2.Server.Core.Constants;
 
-public enum RecvOp : ushort {
+public enum RecvOp : ushort
+{
     Null = 0x000,
     ResponseVersion = 0x0001,
     Patch = 0x0002,

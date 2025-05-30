@@ -76,8 +76,6 @@ public static class Constant {
     public const int HairPaletteId = 2;
     public const int MaxBuyBackItems = 12;
     public const DayOfWeek ResetDay = DayOfWeek.Thursday;
-    public const int PvpArenaNpcId = 11001562;
-    public const int FishingNpcId = 11001609;
     public const int PartyMaxCapacity = 10;
     public const int PartyMinCapacity = 4;
     public const int GroupChatMaxCapacity = 20;
@@ -104,6 +102,9 @@ public static class Constant {
     public const int Grade1WeddingCouponItemId = 20303166;
     public const int Grade2WeddingCouponItemId = 20303167;
     public const int Grade3WeddingCouponItemId = 20303168;
+    public const int MinStatIntervalTick = 100;
+
+    public const int MaxMentees = 3;
 
     public const long FurnishingBaseId = 2870000000000000000;
     public const bool AllowWaterOnGround = false;
@@ -112,6 +113,8 @@ public static class Constant {
 
     public const bool EnableRollEverywhere = false;
     public const bool HideHomeCommands = true;
+
+    public const int MaxAllowedLatency = 2000;
 
     public static IReadOnlyDictionary<string, int> ContentRewards { get; } = new Dictionary<string, int> {
         {"miniGame", 1005},
@@ -941,6 +944,15 @@ public static class Constant {
     public const int RecoverySPWaitTick = 1000;
     public const int RecoveryEPWaitTick = 1000;
     public const float FallBoundingAddedDistance = 750f;
+
+    public const int UserBattleDurationTick = 5000;
+
+    public const int SystemShopNPCIDConstruct = 11000486;
+    public const int SystemShopNpcIDUGCDesign = 11000166;
+    public const int SystemShopNPCIDHonorToken = 11001562;
+    public const int SystemShopNPCIDFishing = 11001609;
+    public const int SystemShopNPCIDMentor = 11003561;
+    public const int SystemShopNPCIDMentee = 11003562;
     #endregion
 }
 

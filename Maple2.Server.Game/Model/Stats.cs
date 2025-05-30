@@ -2,6 +2,7 @@
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Formulas;
+using Serilog;
 
 namespace Maple2.Server.Game.Model;
 
@@ -167,14 +168,14 @@ public sealed class Stat {
     }
 
     public void AddBase(long amount) {
-        Total += amount;
-        Base += amount;
-        Current += amount;
+        Total = Math.Max(0, Total + amount);
+        Base = Math.Max(0, Base + amount);
+        Current = Math.Max(0, Current + amount);
     }
 
     public void AddTotal(long amount) {
-        Total += amount;
-        Current += amount;
+        Total = Math.Max(0, Total + amount);
+        Current = Math.Max(0, Current + amount);
     }
 
     public void AddTotal(BasicOption option) {

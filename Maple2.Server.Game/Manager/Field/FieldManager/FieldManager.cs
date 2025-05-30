@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using DotRecast.Core.Numerics;
+using DotRecast.Detour;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
@@ -49,7 +51,6 @@ public partial class FieldManager : IField {
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public RideMetadataStorage RideMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
-    public Lua.Lua Lua { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
     public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All
@@ -90,7 +91,7 @@ public partial class FieldManager : IField {
         TriggerObjects = new TriggerCollection(entities);
 
         Scheduler = new EventQueue();
-        FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
+        FieldActor = new FieldActor(this, NextLocalId(), metadata, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
         Ai = new AiManager(this);
@@ -116,6 +117,7 @@ public partial class FieldManager : IField {
         }
 
         initialized = true;
+        FieldTick = Environment.TickCount64;
 
         if (MapData.TryGet(Metadata.XBlock, out FieldAccelerationStructure? accelerationStructure)) {
             AccelerationStructure = accelerationStructure;
@@ -135,12 +137,14 @@ public partial class FieldManager : IField {
         }
 
         // Create default to place liftable cubes
-        Plots[0] = new Plot(new UgcMapGroup(0,
-            0,
-            0,
-            new UgcMapGroup.Cost(0, 0, 0),
-            new UgcMapGroup.Cost(0, 0, 0),
-            new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
+        if (MapId is not Constant.DefaultHomeMapId) {
+            Plots[0] = new Plot(new UgcMapGroup(0,
+                0,
+                0,
+                new UgcMapGroup.Cost(0, 0, 0),
+                new UgcMapGroup.Cost(0, 0, 0),
+                new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
+        }
 
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
             AddTrigger(trigger);
@@ -303,14 +307,21 @@ public partial class FieldManager : IField {
     }
 
     public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
-        var pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
+        RcVec3f pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
         return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
     }
 
-    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position) {
-        var status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
+    public bool FindNearestPoly(RcVec3f point, out long nearestRef, out RcVec3f position, [CallerMemberName] string caller = "") {
+        if (point.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+            nearestRef = 0;
+            position = default;
+            logger.Error("Invalid point {Point} in field {MapId} called by {Caller}", point, MapId, caller);
+            return false;
+        }
+
+        DtStatus status = Navigation.Crowd.GetNavMeshQuery().FindNearestPoly(point, new RcVec3f(2, 4, 2), Navigation.Crowd.GetFilter(0), out nearestRef, out position, out _);
         if (status.Failed()) {
-            logger.Error("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
+            logger.Warning("Failed to find nearest poly from position {Source} in field {MapId}", point, MapId);
             return false;
         }
 
@@ -452,14 +463,14 @@ public partial class FieldManager : IField {
         Portal srcPortal = fieldPortal;
         switch (srcPortal.Type) {
             case PortalType.InHome:
-                PlotCube? cubePortal = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+                PlotCube? cubePortal = session.Housing.GetFieldPlot()?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
                 if (cubePortal is null) {
                     return false;
                 }
 
                 switch (cubePortal.Interact!.PortalSettings!.Destination) {
                     case CubePortalDestination.PortalInHome:
-                        PlotCube? destinationCube = Plots.First().Value.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
+                        PlotCube? destinationCube = session.Housing.GetFieldPlot()?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
                         if (destinationCube is null) {
                             return false;
                         }
@@ -570,14 +581,22 @@ public partial class FieldManager : IField {
         }
     }
 
-    public void VibrateObjects(SkillRecord record, Vector3 position) {
-        float rangeDistance = record.Attack.Range.Distance;
+    public void VibrateObjects(DamageRecord record, Vector3 position) {
+        if (record.AttackMetadata.BrokenOffence == 0) {
+            // No items are going to vibrate/break.
+            return;
+        }
+
+        float rangeDistance = record.AttackMetadata.Range.Distance;
         if (AccelerationStructure is null) {
             return;
         }
 
         List<FieldVibrateEntity> vibrateObjects = AccelerationStructure.QueryVibrateObjectsCenterList(position, 2 * new Vector3(rangeDistance, rangeDistance, rangeDistance));
         foreach (FieldVibrateEntity vibrate in vibrateObjects) {
+            if (vibrate.BreakDefense < record.AttackMetadata.BrokenOffence) {
+                // TODO Keep a record of when the vibrate object was broken. Don't send if it's currently broken and respawning.
+            }
             Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
     }

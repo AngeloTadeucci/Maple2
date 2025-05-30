@@ -5,9 +5,9 @@ public readonly record struct ItemType(byte Group, byte Type) {
 
     public bool IsSkin => Group is 0 && Type is 0;
     public bool IsHair => Group is 1 && Type is 2;
-    public bool IsFace => Group is 0 && Type is 3;
-    public bool IsDecal => Group is 0 && Type is 4;
-    public bool IsEar => Group is 0 && Type is 5;
+    public bool IsFace => Group is 1 && Type is 3;
+    public bool IsDecal => Group is 1 && Type is 4;
+    public bool IsEar => Group is 1 && Type is 5;
 
     public bool IsAccessory => Group is 1 && Type is 12 or >= 18 and <= 21;
     public bool IsEarring => Group is 1 && Type is 12;

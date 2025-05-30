@@ -53,4 +53,5 @@ public class Character {
     public long DeathTick;
     public DeathState DeathState;
     public long PremiumTime;
+    public MentorRole MentorRole;
 }

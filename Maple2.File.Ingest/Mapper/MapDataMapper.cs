@@ -141,6 +141,8 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
                             Bounds: entityBounds,
+                            BreakDefense: vibrate.brokenDefence,
+                            BreakTick: vibrate.brokenTick,
                             VibrateIndex: vibrateObjectId++);
 
                         break;

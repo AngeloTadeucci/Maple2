@@ -77,7 +77,7 @@ public enum SkillRegion {
     HoleCylinder = 4,
 }
 
-public enum SkillEntity {
+public enum SkillTargetType {
     None = 0,
     Owner = 1,
     Target = 2,
@@ -87,6 +87,29 @@ public enum SkillEntity {
     RegionBuff = 6,
     RegionDebuff = 7,
     RegionPet = 8,
+}
+
+public enum ApplyTargetType {
+    None = 0,
+    Hostile = 1,
+    Friendly = 2,
+    Player1 = 3, // Unknown,
+    RegionBuff = 5, // Includes speed pads in Crazy Runners
+    RegionBuff2 = 6, // Includes Healing spots
+    Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
+    HungryMobs = 8
+}
+
+public enum SkillTarget {
+    Self = 0,
+    Owner = 1,
+    Target = 2,
+}
+
+public enum SkillOwner {
+    Self = 0, // ?
+    Caster = 1,
+    RegionOwner = 5,
 }
 
 //   1:
@@ -154,15 +177,42 @@ public enum EventConditionType {
     OnEffectRemoved = 17, // owner
     OnLifeSkillGather = 18, // owner
     OnAttackMiss = 19, // owner,
-
-    UnknownKritiasPuzzleEvent = 20, // owner
+    OnEmote = 20, // owner
     UnknownWizardEvent = 102,
     UnknownStrikerEvent = 103, // owner
 }
 
 public enum CompulsionType {
     None = 0,
-    Unknown1 = 1,
+    Hit = 1,
     Critical = 2,
-    Unknown3 = 3,
+    Interrupt = 3, // unconfirmed
+}
+
+public enum TargetType {
+    Self = 0, // used on skill attacks whos sole purpose is deploying a region skill/self buff
+    Hostile = 1,
+    Friendly = 2,
+    Player1 = 3, // Unknown,
+    Player2 = 5, // Unknown,
+    Player3 = 6, // Unknown, Recovery
+    Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
+
+    HungryMobs = 8
+}
+
+public enum BounceType {
+    None = 0,
+    Range = 1, // within range
+    Chain = 2, // Bounce continues as long as another entity is in range of the last bounce
+    Pierce = 3, // Linear
+    Boomerang = 4, // Shield Toss, Shadow Cutter
+    Unknown5 = 5,
+}
+
+[Flags]
+public enum SuperArmor {
+    None = 0,
+    StunImmunity = 1,
+    KnockbackImmunity = 2,
 }

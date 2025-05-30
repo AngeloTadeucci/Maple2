@@ -128,6 +128,9 @@ public sealed class AchievementManager {
             GiveReward(achievement);
 
             session.Send(AchievementPacket.Update(achievement));
+            session.ConditionUpdate(ConditionType.revise_achieve_multi_grade, codeLong: achievement.Id, targetLong: achievement.CurrentGrade);
+            session.ConditionUpdate(ConditionType.revise_achieve_single_grade, codeLong: achievement.Id, targetLong: achievement.CurrentGrade);
+            session.ConditionUpdate(ConditionType.hero_achieve, codeLong: achievement.Id, targetLong: achievement.CurrentGrade);
             if (!achievement.Metadata.Grades.TryGetValue(achievement.CurrentGrade, out grade)) {
                 break;
             }
@@ -239,6 +242,42 @@ public sealed class AchievementManager {
         }
 
         return achievement.Grades.ContainsKey(grade);
+    }
+
+    public void DebugCompleteAllTrophies() {
+        ICollection<AchievementMetadata> achievementMetadataCollection = session.AchievementMetadata.GetAll();
+        foreach (AchievementMetadata metadata in achievementMetadataCollection) {
+            int trophyId = metadata.Id;
+            int maxGrade = metadata.Grades.Keys.Max();
+
+            if (!TryGetAchievement(trophyId, out Achievement? achievement)) {
+                achievement = new Achievement(metadata) {
+                    CurrentGrade = metadata.Grades.Keys.Min(),
+                    RewardGrade = metadata.Grades.Keys.Min(),
+                };
+                GameStorage.Request db = session.GameStorage.Context();
+                achievement = db.CreateAchievement(metadata.AccountWide ? session.AccountId : session.CharacterId, achievement);
+                if (achievement == null) {
+                    throw new InvalidOperationException($"Failed to create achievement: {metadata.Id}");
+                }
+                if (metadata.AccountWide) {
+                    accountValues.TryAdd(metadata.Id, achievement);
+                } else {
+                    characterValues.TryAdd(metadata.Id, achievement);
+                }
+            }
+
+            for (int grade = achievement.CurrentGrade; grade <= maxGrade; grade++) {
+                if (achievement.Grades.ContainsKey(grade)) {
+                    achievement.Grades[grade] = DateTime.Now.ToEpochSeconds();
+                    GiveReward(achievement);
+                    continue;
+                }
+                achievement.Grades.Add(grade, DateTime.Now.ToEpochSeconds());
+                GiveReward(achievement);
+            }
+            achievement.CurrentGrade = maxGrade;
+        }
     }
 
     public void Save(GameStorage.Request db) {

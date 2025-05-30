@@ -4,6 +4,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
@@ -21,7 +22,7 @@ public class HomeDoctorHandler : PacketHandler<GameSession> {
             return;
         }
 
-        int cost = session.Field.Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, 0);
+        int cost = Lua.CalcResolvePenaltyPrice((ushort) session.Player.Value.Character.Level, session.Config.DeathCount, 0);
         if (session.Currency.Meso < cost) {
             return;
         }

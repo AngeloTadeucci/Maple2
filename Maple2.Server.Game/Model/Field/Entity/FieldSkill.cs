@@ -14,8 +14,9 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     public IActor Caster { get; init; }
     public int Interval { get; }
     public int FireCount { get; private set; }
-    public bool Enabled => FireCount < 0 || NextTick <= endTick || Environment.TickCount64 <= endTick;
+    public bool Enabled => FireCount < 0 || NextTick <= endTick || Field.FieldTick <= endTick;
     public bool Active { get; private set; } = true;
+    public int TriggerId { get; init; }
 
     public readonly Vector3[] Points;
     public readonly bool UseDirection;
@@ -30,7 +31,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         Points = points;
         Interval = interval;
         FireCount = -1;
-        NextTick = Environment.TickCount64 + interval;
+        NextTick = Field.FieldTick + interval;
     }
 
     public FieldSkill(FieldManager field, int objectId, IActor caster,
@@ -41,7 +42,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         FireCount = fireCount;
         UseDirection = splash.UseDirection;
 
-        long baseTick = Environment.TickCount64;
+        long baseTick = Field.FieldTick;
         if (splash.ImmediateActive) {
             NextTick = baseTick;
             endTick = baseTick + splash.RemoveDelay + (FireCount - 1) * splash.Interval;
@@ -70,14 +71,14 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             foreach (SkillMetadataMotion motion in Value.Data.Motions) {
                 foreach (SkillMetadataAttack attack in motion.Attacks) {
                     Prism[] prisms = Points.Select(point => attack.Range.GetPrism(point, UseDirection ? Rotation.Z : 0)).ToArray();
-                    if (Field.GetTargets(prisms, attack.Range.ApplyTarget, attack.TargetCount).Any()) {
+                    if (Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount).Any()) {
                         Active = true;
                         goto activated;
                     }
                 }
             }
 
-            NextTick = Environment.TickCount64 + Interval;
+            NextTick = Field.FieldTick + Interval;
             return;
         }
 
@@ -111,7 +112,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                 };
                 var targetRecords = new List<TargetRecord>();
                 if (attack.Arrow.BounceType > 0) {
-                    IActor[] targets = Array.Empty<IActor>();
+                    IActor[] targets = [];
                     var bounceTargets = new List<IActor>();
                     Vector3 position = Position;
                     long prevTargetUid = 0;
@@ -122,8 +123,8 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         var prism = new Prism(circle, position.Z, box.Z);
 
                         targets = attack.Arrow.BounceOverlap
-                            ? Field.GetTargets([prism], record.Attack.Range.ApplyTarget, 1, targets).ToArray()
-                            : Field.GetTargets([prism], record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
+                            ? Field.GetTargets(Caster, [prism], record.Attack.Range.ApplyTarget, 1, targets).ToArray()
+                            : Field.GetTargets(Caster, [prism], record.Attack.Range.ApplyTarget, 1, bounceTargets).ToArray();
                         if (targets.Length <= 0) {
                             break;
                         }
@@ -147,15 +148,16 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                         IActor target = bounceTargets[t];
                         record.TargetUid = targetRecords[t].Uid;
                         record.Position = target.Position;
-                        record.Targets = new[] { target };
+                        record.Targets.TryAdd(target.ObjectId, target);
 
                         // TODO: There should be some delay between bounces.
                         target.TargetAttack(record);
-                        ApplyEffect(attack, target);
+                        Caster.ApplyEffects(attack.SkillsOnDamage, Caster, damage, targets: record.Targets.Values.ToArray());
+                        Caster.ApplyEffects(attack.Skills, Caster, Caster, skillId: Value.Id, targets: targets);
                     }
                 } else {
                     Prism[] prisms = Points.Select(point => attack.Range.GetPrism(point, UseDirection ? Rotation.Z : 0)).ToArray();
-                    IActor[] targets = Field.GetTargets(prisms, attack.Range.ApplyTarget, attack.TargetCount).ToArray();
+                    IActor[] targets = Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount).ToArray();
                     // if (targets.Length > 0) {
                     //     logger.Debug("[{Tick}] {ObjectId}:{AttackPoint} Targeting: {Count}/{Limit} {Type}",
                     //         NextTick, ObjectId, attack.Point, targets.Length, attack.TargetCount, attack.Range.ApplyTarget);
@@ -172,8 +174,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                     //     }
                     // }
 
-                    Field.VibrateObjects(record, Position);
-
+                    Field.VibrateObjects(damage, Position);
                     foreach (IActor target in targets) {
                         target.ApplyDamage(Caster, damage, attack);
                         // TODO: Set PrevUid?
@@ -185,9 +186,11 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                     }
                     if (targetRecords.Count > 0) {
                         Field.Broadcast(SkillDamagePacket.Target(record, targetRecords));
+                        Field.Broadcast(SkillDamagePacket.Region(damage));
                     }
-                    Field.Broadcast(SkillDamagePacket.Region(damage));
-                    ApplyEffect(attack, targets);
+
+                    Caster.ApplyEffects(attack.SkillsOnDamage, Caster, damage, targets: targets);
+                    Caster.ApplyEffects(attack.Skills, Caster, Caster, skillId: Value.Id, targets: targets);
                 }
 
                 if (attack.Skills.Any(effect => effect.Splash != null)) {
@@ -202,29 +205,6 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         } else {
             FireCount--;
             NextTick += Interval;
-        }
-    }
-
-    private void ApplyEffect(SkillMetadataAttack attack, params IActor[] targets) {
-        foreach (SkillEffectMetadata effect in attack.Skills.Where(effect => effect.Condition != null)) {
-            if (effect.Condition == null) {
-                logger.Fatal("Invalid Condition-Skill being handled: {Effect}", effect);
-                continue;
-            }
-
-            switch (effect.Condition.Target) {
-                case SkillEntity.Owner:
-                    foreach (IActor target in targets) {
-                        target.ApplyEffect(Caster, target, effect, Field.FieldTick);
-                    }
-                    break;
-                case SkillEntity.Target:
-                    Caster.ApplyEffect(Caster, Caster, effect, Field.FieldTick);
-                    break;
-                default:
-                    logger.Error("Invalid FieldSkill Target: {Target}", effect.Condition.Target);
-                    break;
-            }
         }
     }
 }

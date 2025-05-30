@@ -6,6 +6,7 @@ using Maple2.File.Parser.Xml.Item;
 using Maple2.File.Parser.Xml.Table;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Slot = Maple2.File.Parser.Xml.Item.Slot;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -19,7 +20,6 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
     }
 
     protected override IEnumerable<ItemMetadata> Map() {
-        IEnumerable<(int Id, ItemExtraction Extraction)> itemExtractionData = tableParser.ParseItemExtraction();
         Dictionary<int, int> itemExtractionTryCount = tableParser.ParseItemExtraction()
             .ToDictionary(entry => entry.Id, entry => entry.Extraction.TryCount);
 
@@ -31,7 +31,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
         }
 
-        foreach ((int id, string name, ItemData data) in parser.Parse()) {
+        foreach ((int id, string name, ItemData data) in parser.Parse<ItemDataRoot>()) {
             int transferType = data.limit.transferType;
             int tradableCount = data.property.tradableCount;
             int tradableCountDeduction = data.property.tradableCountDeduction;
@@ -112,7 +112,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             ItemMetadataFunction? function = string.IsNullOrWhiteSpace(data.function.name) ? null : new ItemMetadataFunction(
                 Type: Enum.Parse<ItemFunction>(data.function.name),
                 Name: data.function.name, // Temp duplicate data makes it easier to read DB
-                Parameters: data.function.parameter);
+                Parameters: data.function.parameter,
+                OnlyShadowWorld: data.function.onlyShadowContinent == 1);
 
             bool hasOption = data.option.@static > 0 || data.option.constant > 0 || data.option.random > 0 || data.option.optionID > 0;
             int levelFactor = (int) data.option.optionLevelFactor;

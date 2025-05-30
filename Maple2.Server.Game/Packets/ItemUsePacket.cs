@@ -10,7 +10,26 @@ public static class ItemUsePacket {
         MaxInventory = 1,
         CharacterSlotAdded = 2,
         MaxCharacterSlots = 3,
+        QuestScroll = 4,
         BeautyCoupon = 6,
+    }
+
+    // s_msg_expand_inven_complete
+    // - Your inventory has been expanded.
+    public static ByteWriter ExpandInventory() {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.ExpandInventory);
+
+        return pWriter;
+    }
+
+    // s_msg_expand_inven_already_maximum
+    // - You cannot expand your inventory any further.
+    public static ByteWriter MaxInventory() {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.MaxInventory);
+
+        return pWriter;
     }
 
     // s_msg_expand_character_slot_complete
@@ -28,6 +47,13 @@ public static class ItemUsePacket {
         var pWriter = Packet.Of(SendOp.ItemUse);
         pWriter.Write<Command>(Command.MaxCharacterSlots);
 
+        return pWriter;
+    }
+
+    public static ByteWriter QuestScroll(int itemId) {
+        var pWriter = Packet.Of(SendOp.ItemUse);
+        pWriter.Write<Command>(Command.QuestScroll);
+        pWriter.WriteInt(itemId);
         return pWriter;
     }
 

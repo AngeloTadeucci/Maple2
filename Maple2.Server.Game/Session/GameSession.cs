@@ -44,6 +44,11 @@ public sealed partial class GameSession : Core.Network.Session {
     public readonly CommandRouter CommandHandler;
     public readonly EventQueue Scheduler;
 
+    public int ServerTick;
+    public int ClientTick;
+
+    public int Latency;
+
     public long AccountId { get; private set; }
     public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
@@ -65,7 +70,6 @@ public sealed partial class GameSession : Core.Network.Session {
     public required FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public required RideMetadataStorage RideMetadata { get; init; }
     public required FieldManager.Factory FieldFactory { get; init; }
-    public required Lua.Lua Lua { private get; init; }
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
     // ReSharper restore All
@@ -103,6 +107,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public DungeonManager Dungeon { get; set; } = null!;
     public AnimationManager Animation { get; set; } = null!;
     public RideManager Ride { get; set; } = null!;
+    public MentoringManager Mentoring { get; set; } = null!;
 
 
     public GameSession(TcpClient tcpClient, GameServer server, IComponentContext context) : base(tcpClient) {
@@ -152,17 +157,17 @@ public sealed partial class GameSession : Core.Network.Session {
         Player = new FieldPlayer(this, player);
         Animation = new AnimationManager(this);
         Currency = new CurrencyManager(this);
-        Mastery = new MasteryManager(this, Lua);
+        Mastery = new MasteryManager(this);
         Stats = new StatsManager(Player, ServerTableMetadata.UserStatTable);
         Config = new ConfigManager(db, this);
         Housing = new HousingManager(this, TableMetadata);
         Mail = new MailManager(this);
-        ItemEnchant = new ItemEnchantManager(this, Lua);
+        ItemEnchant = new ItemEnchantManager(this);
         ItemMerge = new ItemMergeManager(this);
         ItemBox = new ItemBoxManager(this);
         Beauty = new BeautyManager(this);
         GameEvent = new GameEventManager(this);
-        Exp = new ExperienceManager(this, Lua);
+        Exp = new ExperienceManager(this);
         Achievement = new AchievementManager(this);
         Quest = new QuestManager(this);
         Shop = new ShopManager(this);
@@ -171,12 +176,13 @@ public sealed partial class GameSession : Core.Network.Session {
         Item = new ItemManager(db, this, ItemStatsCalc);
         Buffs = new BuffManager(Player);
         UgcMarket = new UgcMarketManager(this);
-        BlackMarket = new BlackMarketManager(this, Lua);
+        BlackMarket = new BlackMarketManager(this);
         Survival = new SurvivalManager(this);
         Marriage = new MarriageManager(this);
         Fishing = new FishingManager(this, TableMetadata, ServerTableMetadata);
         Dungeon = new DungeonManager(this);
         Ride = new RideManager(this);
+        Mentoring = new MentoringManager(this);
         CommandHandler.RegisterCommands(); // Refresh commands with proper permissions
         GroupChatInfoResponse groupChatInfoRequest = World.GroupChatInfo(new GroupChatInfoRequest {
             CharacterId = CharacterId,
@@ -196,7 +202,7 @@ public sealed partial class GameSession : Core.Network.Session {
             case MigrationType.DecorPlanner:
             case MigrationType.BlueprintDesigner:
                 player.Home.EnterPlanner((PlotMode) migrationType);
-                fieldManager.Plots.First().Value.SetPlannerMode((PlotMode) migrationType);
+                Housing.GetFieldPlot()?.SetPlannerMode((PlotMode) migrationType);
                 break;
             case MigrationType.Dungeon:
                 if (fieldManager is not DungeonFieldManager dungeonField) {
@@ -318,12 +324,14 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(GameEventPacket.Load(server.GetEvents().ToArray()));
         Send(BannerListPacket.Load(server.GetSystemBanners()));
         Dungeon.Load();
-        // InGameRank
+        Send(InGameRankPacket.Load());
         Send(FieldEnterPacket.Request(Player));
         Party = new PartyManager(World, this);
         Send(HomeCommandPacket.LoadHome(AccountId));
         // ResponseCube
         // Mentor
+        Send(MentorPacket.MyList());
+        Send(MentorPacket.Unknown12());
         Config.LoadChatStickers();
         // Mail
         Mail.Notify(true);
@@ -347,7 +355,6 @@ public sealed partial class GameSession : Core.Network.Session {
         GuideObject = null;
         HeldCube = null;
         HeldLiftup = null;
-        ActiveSkills.Clear();
         NpcScript = null;
         MiniGameRecord = null;
 
@@ -481,7 +488,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public void ReturnField() {
         Player player = Player.Value;
-        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && Player.Field.Plots.First().Value.IsPlanner) {
+        if (player.Home.IsHomeSetup && !Player.Field.Plots.IsEmpty && (Player.Session.Housing.GetFieldPlot()?.IsPlanner ?? false)) {
             MigrateToPlanner(PlotMode.Normal);
             return;
         }
@@ -565,8 +572,11 @@ public sealed partial class GameSession : Core.Network.Session {
         long meso = 0;
         if (baseMetadata.MesoTableId > 0) {
             if (baseMetadata.MesoTableId > 100000 && TableMetadata.RewardContentTable.MesoStaticEntries.TryGetValue(baseMetadata.MesoTableId, out meso)) {
+                // Static meso entry found
             } else if (TableMetadata.RewardContentTable.MesoEntries.TryGetValue(baseMetadata.MesoTableId, out Dictionary<int, long>? mesoTable)) {
-                meso = mesoTable[Player.Value.Character.Level];
+                if (!mesoTable.TryGetValue(Player.Value.Character.Level, out meso)) {
+                    Logger.Error("Failed to find meso for level {Level} in table {TableId}", Player.Value.Character.Level, baseMetadata.MesoTableId);
+                }
             }
             if (baseMetadata.MesoFactor > 0f) {
                 meso = (long) (meso * baseMetadata.MesoFactor);
@@ -714,7 +724,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 CharacterId = CharacterId,
                 LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
                 MapId = 0,
-                Channel = 0,
+                Channel = -1,
                 Async = true,
             });
 
@@ -725,7 +735,7 @@ public sealed partial class GameSession : Core.Network.Session {
             Scheduler.Stop();
             server.OnDisconnected(this);
             LeaveField();
-            Player.Value.Character.Channel = 0;
+            Player.Value.Character.Channel = -1;
             Player.Value.Account.Online = false;
             State = SessionState.Disconnected;
             Complete();

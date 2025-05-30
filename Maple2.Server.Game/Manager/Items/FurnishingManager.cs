@@ -152,6 +152,23 @@ public class FurnishingManager {
         return true;
     }
 
+    public long AddCube(HeldCube cube) {
+        const int amount = 1;
+        lock (session.Item) {
+            int count = storage.Count;
+            long itemUid = AddStorage(cube);
+            if (itemUid == 0) {
+                return 0;
+            }
+
+            session.Send(FurnishingStoragePacket.Purchase(cube.ItemId, amount));
+            if (storage.Count != count) {
+                session.Send(FurnishingStoragePacket.Count(storage.Count));
+            }
+            return itemUid;
+        }
+    }
+
     // TODO: NOTE - This should also be called for opening a furnishing box
     public long AddCube(int id) {
         const int amount = 1;
@@ -193,7 +210,7 @@ public class FurnishingManager {
                 return false;
             }
 
-            long itemUid = AddStorage(cube.ItemId);
+            long itemUid = AddStorage(cube);
             if (itemUid == 0) {
                 logger.Fatal("Failed to return cube: {CubeId} to storage", cube.Id);
                 throw new InvalidOperationException($"Failed to return cube: {cube.Id} to storage");
@@ -201,6 +218,15 @@ public class FurnishingManager {
 
             return true;
         }
+    }
+
+    private long AddStorage(HeldCube cube) {
+        Item? item = session.Field.ItemDrop.CreateItem(cube.ItemId);
+        if (item == null) {
+            return 0;
+        }
+
+        return AddStorage(item, cube.Template);
     }
 
     private long AddStorage(int itemId) {
@@ -212,28 +238,26 @@ public class FurnishingManager {
         return AddStorage(item);
     }
 
-    public long AddStorage(Item? item) {
+    public long AddStorage(Item item, UgcItemLook? template = null) {
         const int amount = 1;
-        if (item == null) {
-            return 0;
-        }
+
         lock (session.Item) {
-            Item? stored = storage.FirstOrDefault(existing => existing.Id == item.Id);
+            Item? stored = storage.FirstOrDefault(existing => existing.Id == item.Id && existing.Template?.Url == template?.Url);
             if (stored == null) {
                 item.Group = ItemGroup.Furnishing;
                 using GameStorage.Request db = session.GameStorage.Context();
-                item = db.CreateItem(session.AccountId, item);
-                if (item == null) {
+                Item? newItem = db.CreateItem(session.AccountId, item);
+                if (newItem == null) {
                     return 0;
                 }
 
-                if (storage.Add(item).Count <= 0) {
-                    db.SaveItems(0, item);
+                if (storage.Add(newItem).Count <= 0) {
+                    db.SaveItems(0, newItem);
                     return 0;
                 }
 
-                session.Send(FurnishingStoragePacket.Add(item));
-                return item.Uid;
+                session.Send(FurnishingStoragePacket.Add(newItem));
+                return newItem.Uid;
             }
 
             if (stored.Amount + amount > item.Metadata.Property.SlotMax) {
@@ -268,6 +292,20 @@ public class FurnishingManager {
 
         session.Send(FurnishingInventoryPacket.Remove(uid));
         return true;
+    }
+
+    public void RemoveItem(long itemUid) {
+        lock (session.Item) {
+            Item? item = storage.Get(itemUid);
+            if (item is null) {
+                return;
+            }
+
+            item.Amount = 0;
+
+            session.Send(FurnishingStoragePacket.Remove(itemUid));
+            return;
+        }
     }
 
     public void SendStorageCount() {

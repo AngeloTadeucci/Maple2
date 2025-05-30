@@ -2,11 +2,12 @@
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Serilog;
 
-namespace Maple2.Server.Game.Manager.Config;
+namespace Maple2.Server.Game.Manager;
 
 public class SkillManager {
     private readonly GameSession session;
@@ -51,8 +52,7 @@ public class SkillManager {
 
             logger.Information("Applying passive skill {Name}: {SkillId},{Level}", metadata.Name, metadata.Id, metadata.Level);
             foreach (SkillEffectMetadata effect in metadata.Data.Skills) {
-                if (effect.Condition is not { Target: SkillEntity.Owner }) {
-                    Console.WriteLine($"Skipping effect {effect}");
+                if (effect.Condition is not { Target: SkillTargetType.Owner }) {
                     continue;
                 }
 

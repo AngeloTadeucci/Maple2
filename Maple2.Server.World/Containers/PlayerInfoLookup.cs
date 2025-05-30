@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
+using Maple2.Server.Channel.Service;
 using Maple2.Server.Core.Sync;
 using Serilog;
 
@@ -34,9 +35,13 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
         events = new ConcurrentQueue<PlayerInfoUpdateEvent>();
 
         Task.Factory.StartNew(() => {
-            while (!tokenSource.Token.IsCancellationRequested) {
-                Thread.Sleep(syncInterval);
-                Sync();
+            try {
+                while (!tokenSource.Token.IsCancellationRequested) {
+                    Thread.Sleep(syncInterval);
+                    Sync();
+                }
+            } catch (ObjectDisposedException) {
+                // Expected during shutdown, safe to ignore
             }
         }, tokenSource.Token);
     }
@@ -60,8 +65,9 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
     // Try to get a cached player by account id and that's online, since we need a ChannelClient to notify.
     // If the player is not cached just return false since it was never online.
     // This is a very specific use case, and should be used with caution, mainly used for account wide mail notifications.
-    public PlayerInfo? TryGetByAccountId(long accountId) {
-        return cache.Values.FirstOrDefault(player => player.AccountId == accountId && player.Online);
+    public bool TryGetByAccountId(long accountId, [NotNullWhen(true)] out PlayerInfo? info) {
+        info = cache.Values.FirstOrDefault(player => player.AccountId == accountId && player.Online);
+        return info is not null;
     }
 
     public bool Update(PlayerUpdateRequest request) {
@@ -141,5 +147,17 @@ public class PlayerInfoLookup : IPlayerInfoProvider, IDisposable {
     public PlayerInfo? GetPlayerInfo(long id) {
         TryGet(id, out PlayerInfo? info);
         return info;
+    }
+
+    public PlayerInfo[] GetOnlinePlayerInfos() {
+        return cache.Values
+            .Where(player => player.Online)
+            .ToArray();
+    }
+
+    public PlayerInfo[] GetPlayersOnChannel(int channelId) {
+        return cache.Values
+            .Where(player => player.Channel == channelId)
+            .ToArray();
     }
 }

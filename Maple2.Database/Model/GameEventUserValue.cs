@@ -24,9 +24,8 @@ internal class GameEventUserValue {
 
     [return: NotNullIfNotNull(nameof(other))]
     public static implicit operator Maple2.Model.Game.GameEventUserValue?(GameEventUserValue? other) {
-        return other == null ? null : new Maple2.Model.Game.GameEventUserValue {
+        return other == null ? null : new Maple2.Model.Game.GameEventUserValue(other.Value) {
             Type = other.Type,
-            Value = other.Value,
             EventId = other.EventId,
             ExpirationTime = other.ExpirationTime,
         };

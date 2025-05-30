@@ -8,7 +8,6 @@ using Autofac.Features.AttributeFilters;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Maple2.Database.Storage;
-using Maple2.Lua;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Core.Network;
@@ -39,6 +38,14 @@ CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
 
+IConfigurationRoot configRoot = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", true, true)
+    .Build();
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(configRoot)
+    .CreateLogger();
+
 // Check for the --instanced parameter
 bool overrideInstanced = args.Contains("--instanced");
 
@@ -56,13 +63,10 @@ try {
     return;
 }
 
-IConfigurationRoot configRoot = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", true, true)
-    .Build();
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(configRoot)
-    .CreateLogger();
+if (response.GamePort == 0) {
+    Log.Error("Failed to add channel to World Server.");
+    return;
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options => {
@@ -108,7 +112,6 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<GameSession>()
         .PropertiesAutowired()
         .AsSelf();
-    autofac.RegisterInstance(new Lua(Target.LOCALE));
     autofac.RegisterType<ItemStatsCalculator>()
         .PropertiesAutowired()
         .SingleInstance();

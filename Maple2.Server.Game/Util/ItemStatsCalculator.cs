@@ -6,6 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Tools.Extensions;
 using Maple2.Server.Core.Formulas;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Tools;
 using Serilog;
 
@@ -15,7 +16,6 @@ public sealed class ItemStatsCalculator {
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required TableMetadataStorage TableMetadata { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 

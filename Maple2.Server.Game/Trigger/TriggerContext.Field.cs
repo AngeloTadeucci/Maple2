@@ -325,17 +325,21 @@ public partial class TriggerContext {
     public void SetSkill(int[] triggerIds, bool enabled) {
         DebugLog("[SetSkill] triggerIds:{Ids}, enabled:{Enabled}", string.Join(", ", triggerIds), enabled);
         foreach (int triggerId in triggerIds) {
-            Ms2TriggerSkill? skill = Field.Entities.Trigger.Skills.FirstOrDefault(x => x.TriggerId == triggerId);
-            if (skill == null) {
-                continue;
-            }
+            if (enabled) {
+                Ms2TriggerSkill? skill = Field.Entities.Trigger.Skills.FirstOrDefault(x => x.TriggerId == triggerId);
+                if (skill == null) {
+                    continue;
+                }
 
-            if (!Field.SkillMetadata.TryGet(skill.SkillId, skill.Level, out var skillMetadata)) {
-                logger.Warning("Invalid skill: {Id}", skill.SkillId);
-                continue;
-            }
+                if (!Field.SkillMetadata.TryGet(skill.SkillId, skill.Level, out SkillMetadata? skillMetadata)) {
+                    logger.Warning("Invalid skill: {Id}", skill.SkillId);
+                    continue;
+                }
 
-            Field.AddSkill(skillMetadata, 0, skill.Position, skill.Rotation);
+                Field.AddSkill(skillMetadata, (int) TimeSpan.FromMilliseconds(150).TotalMilliseconds, skill.Position, skill.Rotation, triggerId);
+            } else {
+                Field.RemoveSkillByTriggerId(triggerId);
+            }
         }
     }
 

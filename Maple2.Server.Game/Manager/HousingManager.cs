@@ -541,7 +541,7 @@ public class HousingManager {
         }
 
         if (!session.Item.Furnishing.TryPlaceCube(cube.Id, out result)) {
-            long itemUid = session.Item.Furnishing.AddCube(cube.ItemId);
+            long itemUid = session.Item.Furnishing.AddCube(cube);
             if (itemUid == 0) {
                 session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_for_sale));
                 return false;

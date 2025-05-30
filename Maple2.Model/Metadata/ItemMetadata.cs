@@ -81,7 +81,8 @@ public record ItemMetadataSkill(
 public record ItemMetadataFunction(
     ItemFunction Type,
     string Name,
-    string Parameters);
+    string Parameters,
+    bool OnlyShadowWorld);
 
 public record ItemMetadataAdditionalEffect(
     int Id,

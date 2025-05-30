@@ -57,16 +57,7 @@ public class BuffCommand : GameCommand {
                     if (remove) {
                         player.Buffs.Remove(buffId, session.Player.ObjectId);
                     } else {
-                        player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, duration);
-                        if (stack > 1) {
-                            List<Buff> buffs = player.Buffs.EnumerateBuffs(buffId);
-                            foreach (Buff buff in buffs) {
-                                if (buff.Stack(stack)) {
-                                    session.Field?.Broadcast(BuffPacket.Update(buff));
-                                }
-                            }
-
-                        }
+                        player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, stacks: stack, durationMs: duration);
                     }
 
                 }
@@ -82,28 +73,13 @@ public class BuffCommand : GameCommand {
                     player.Buffs.Remove(buffId, session.Player.ObjectId);
                     return;
                 }
-                player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, duration);
-                if (stack > 1) {
-                    List<Buff> buffs = player.Buffs.EnumerateBuffs(buffId);
-                    foreach (Buff buff in buffs) {
-                        if (buff.Stack(stack)) {
-                            session.Field?.Broadcast(BuffPacket.Update(buff));
-                        }
-                    }
-                }
+                player.Buffs.AddBuff(session.Player, player, buffId, (short) level, startTick, stacks: stack, durationMs: duration);
             } else {
                 if (remove) {
                     session.Player.Buffs.Remove(buffId, session.Player.ObjectId);
                     return;
                 }
-                session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, startTick, duration);
-                if (stack > 1) {
-                    foreach (Buff buff in session.Player.Buffs.EnumerateBuffs(buffId)) {
-                        if (buff.Stack(stack)) {
-                            session.Field.Broadcast(BuffPacket.Update(buff));
-                        }
-                    }
-                }
+                session.Player.Buffs.AddBuff(session.Player, session.Player, buffId, (short) level, startTick, stacks: stack, durationMs: duration);
             }
 
             ctx.ExitCode = 0;

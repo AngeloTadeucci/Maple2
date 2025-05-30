@@ -273,6 +273,10 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
         return vibrateObjects;
     }
+
+    public FieldVibrateEntity? GetVibrateEntity(string entityId) {
+        return vibrateEntities.FirstOrDefault(vibrateEntity => vibrateEntity.Id.Id == entityId);
+    }
     #endregion
 
     #region Initialization
@@ -570,6 +574,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 Rotation: new Vector3(0, 0, 0),
                 Scale: 1,
                 Bounds: new BoundingBox3(),
+                BreakDefense: 0,
+                BreakTick: 0,
                 VibrateIndex: i));
         }
 
@@ -759,6 +765,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         switch (entity) {
             case FieldVibrateEntity vibrateEntity:
                 writer.Write(vibrateEntity.VibrateIndex);
+                writer.WriteInt(vibrateEntity.BreakDefense);
+                writer.WriteInt(vibrateEntity.BreakTick);
                 break;
             case FieldSpawnTile spawnTile:
                 break;
@@ -811,6 +819,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 Rotation: new Vector3(0, 0, 0),
                 Scale: 1,
                 Bounds: new BoundingBox3(),
+                BreakDefense: 0,
+                BreakTick: 0,
                 VibrateIndex: i));
         }
 
@@ -904,7 +914,9 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    VibrateIndex: reader.ReadInt());
+                    VibrateIndex: reader.ReadInt(),
+                    BreakDefense: reader.ReadInt(),
+                    BreakTick: reader.ReadInt());
             case FieldEntityType.SpawnTile:
                 return new FieldSpawnTile(
                     Id: id,

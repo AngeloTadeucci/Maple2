@@ -5,6 +5,9 @@ using System.Net;
 using Grpc.Core;
 using Grpc.Health.V1;
 using Grpc.Net.Client;
+using Maple2.Database.Extensions;
+using Maple2.Database.Storage;
+using Maple2.Model.Game;
 using Maple2.Server.Core.Constants;
 using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
@@ -17,14 +20,18 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 #else
     private static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(5);
 #endif
+
     private WorldServer worldServer = null!;
+    private PlayerInfoLookup playerInfoLookup = null!;
+
     private enum ChannelStatus {
         Active,
-        Inactive
+        Inactive,
     }
 
-    public void SetWorldServer(WorldServer worldServer) {
-        this.worldServer = worldServer;
+    public void InjectDependencies(WorldServer worldSv, PlayerInfoLookup playerInfo) {
+        worldServer = worldSv;
+        playerInfoLookup = playerInfo;
     }
 
     private class Channel {
@@ -192,8 +199,9 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                         break;
                     default:
                         if (channel.Status is ChannelStatus.Active) {
-                            logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
                             channel.Status = ChannelStatus.Inactive;
+                            logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
+                            UpdateAllPlayersToOffline(channel.Id);
 #if !DEBUG
                             await cancellationTokenSource.CancelAsync();
 #endif
@@ -206,6 +214,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 }
                 if (channel.Status is ChannelStatus.Active) {
                     logger.Information("Channel {Channel} has become inactive", channel.Id);
+                    UpdateAllPlayersToOffline(channel.Id);
 #if !DEBUG
                     await cancellationTokenSource.CancelAsync();
 #endif
@@ -232,5 +241,23 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
     IEnumerator IEnumerable.GetEnumerator() {
         return GetEnumerator();
+    }
+
+    private void UpdateAllPlayersToOffline(int channelId) {
+        foreach (PlayerInfo playerInfo in playerInfoLookup.GetPlayersOnChannel(channelId)) {
+            playerInfo.Channel = -1;
+            foreach ((int id, ChannelClient channelClient) in this) {
+                if (id == channelId) {
+                    continue;
+                }
+                channelClient.UpdatePlayer(new PlayerUpdateRequest {
+                    AccountId = playerInfo.AccountId,
+                    CharacterId = playerInfo.CharacterId,
+                    LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+                    Channel = -1,
+                    Async = true,
+                });
+            }
+        }
     }
 }

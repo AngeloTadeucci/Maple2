@@ -21,7 +21,7 @@ public partial class GameStorage {
                     .Where(map => map.MapId == mapId && map.OwnerId == ownerId);
             } else {
                 query = Context.UgcMap.Include(map => map.Cubes)
-                    .Where(map => map.MapId == mapId);
+                    .Where(map => map.MapId == mapId && map.MapId != Constant.DefaultHomeMapId);
             }
 
             return query.AsEnumerable()

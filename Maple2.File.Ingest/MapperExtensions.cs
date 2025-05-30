@@ -243,18 +243,16 @@ public static class MapperExtensions {
                 Independent: trigger.independent,
                 Chain: trigger.chain ? new SkillEffectMetadataChain(trigger.chainDistance) : null);
         } else {
-            var owner = SkillEntity.Owner;
-            if (trigger.skillOwner > 0 && Enum.IsDefined<SkillEntity>((SkillEntity) trigger.skillOwner)) {
-                owner = (SkillEntity) trigger.skillOwner;
+            var owner = SkillTargetType.Owner;
+            if (trigger.skillOwner > 0 && Enum.IsDefined<SkillTargetType>((SkillTargetType) trigger.skillOwner)) {
+                owner = (SkillTargetType) trigger.skillOwner;
             }
             condition = new SkillEffectMetadataCondition(
                 Condition: trigger.beginCondition.Convert(),
                 Owner: owner,
-                Target: (SkillEntity) trigger.skillTarget,
+                Target: (SkillTargetType) trigger.skillTarget,
                 OverlapCount: trigger.overlapCount,
-                RandomCast: trigger.randomCast,
-                ActiveByIntervalTick: trigger.activeByIntervalTick,
-                DependOnDamageCount: trigger.dependOnDamageCount);
+                RandomCast: trigger.randomCast);
         }
 
         SkillEffectMetadata.Skill[] skills;
@@ -335,10 +333,10 @@ public static class MapperExtensions {
             DurationWithoutDamage: (int) TimeSpan.FromSeconds(beginCondition.requireDurationWithoutDamage).TotalMilliseconds,
             OnlyShadowWorld: beginCondition.onlyShadowWorld || beginCondition.isShadowWorld,
             OnlyFlyableMap: beginCondition.onlyFlyableMap,
-            OnlySurvival: beginCondition.allowMapleSurvival,
             AllowDead: beginCondition.allowDeadState,
             AllowOnBattleMount: beginCondition.allowBattleRidingState,
             OnlyOnBattleMount: beginCondition.onlyBattleRidingState,
+            AllowOnSurvival: beginCondition.allowMapleSurvival,
             DungeonGroupType: beginCondition.requireDungeonRoomGroupTypes
                 .Where(type => Enum.TryParse<DungeonGroupType>(type.type, true, out DungeonGroupType _))
                 .Select(type => Enum.Parse<DungeonGroupType>(type.type, true))

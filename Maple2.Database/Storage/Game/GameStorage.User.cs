@@ -70,6 +70,10 @@ public partial class GameStorage {
             return (model, characters);
         }
 
+        public void SetAllCharacterToOffline() {
+            Context.Database.ExecuteSqlRaw("UPDATE `character` SET Channel = -1");
+        }
+
         //  If accountId is specified, only characters for the account will be returned.
         public Character? GetCharacter(long characterId, long accountId = -1) {
             if (accountId < 0) {
@@ -92,7 +96,7 @@ public partial class GameStorage {
         }
 
         public long GetCharacterId(string name) {
-            return Context.Character.Where(character => character.Name == name)
+            return Context.Character.Where(character => character.Name.ToLower() == name.ToLower())
                 .Select(character => character.Id)
                 .FirstOrDefault();
         }
@@ -448,6 +452,7 @@ public partial class GameStorage {
         public Character? CreateCharacter(Character character) {
             Model.Character model = character;
             model.Id = 0;
+            model.Channel = -1;
 #if DEBUG
             model.Currency = new CharacterCurrency {
                 Meso = 999999999

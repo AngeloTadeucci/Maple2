@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -35,6 +36,9 @@ public class LoginSession : Core.Network.Session {
 
     private Account account = null!;
 
+    public int ServerTick;
+    public int ClientTick;
+
     public LoginSession(TcpClient tcpClient, LoginServer server) : base(tcpClient) {
         Server = server;
         State = SessionState.ChangeMap;
@@ -43,14 +47,6 @@ public class LoginSession : Core.Network.Session {
     public void Init(long accountId, Guid machineId) {
         AccountId = accountId;
         MachineId = machineId;
-
-        // Account is already logged into login server.
-        if (Server.GetSession(accountId, out LoginSession? existing) && existing != this) {
-            Send(LoginResultPacket.Error((byte) LoginResponse.Types.Code.AlreadyLogin, "", accountId));
-            existing.Disconnect();
-            Disconnect();
-            return;
-        }
 
         State = SessionState.Connected;
         Server.OnConnected(this);
@@ -115,7 +111,9 @@ public class LoginSession : Core.Network.Session {
 
         Send(CharacterListPacket.SetMax(account.MaxCharacters, Constant.ServerMaxCharacters));
         Send(CharacterListPacket.AppendEntry(account, character,
-            new Dictionary<ItemGroup, List<Item>> { { ItemGroup.Outfit, outfits } }));
+            new Dictionary<ItemGroup, List<Item>> {
+                { ItemGroup.Outfit, outfits }
+            }));
     }
 
     #region Dispose

@@ -53,8 +53,10 @@ builder.Logging.AddSerilog(dispose: true);
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
-    // Database
+    // Database modules
     autofac.RegisterModule<WebDbModule>();
+    autofac.RegisterModule<DataDbModule>();
+    autofac.RegisterModule<GameDbModule>();
 });
 
 WebApplication app = builder.Build();

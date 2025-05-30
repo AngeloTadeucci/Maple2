@@ -22,6 +22,9 @@ public static class PlayerInfoUpdateExtensions {
             if (update.Request.HasGuildName) {
                 info.GuildName = update.Request.GuildName;
             }
+            if (update.Request.HasMentorRole) {
+                info.MentorRole = (MentorRole) update.Request.MentorRole;
+            }
         }
         if (update.Type.HasFlag(UpdateField.PremiumTime) && update.Request.HasPremiumTime) {
             info.PremiumTime = update.Request.PremiumTime;
@@ -84,6 +87,7 @@ public static class PlayerInfoUpdateExtensions {
             self.Picture = other.Picture;
             self.GuildId = other.GuildId;
             self.GuildName = other.GuildName;
+            self.MentorRole = other.MentorRole;
         }
         if (type.HasFlag(UpdateField.Job)) {
             self.Job = other.Job;
@@ -139,6 +143,7 @@ public static class PlayerInfoUpdateExtensions {
             request.LastOnlineTime = info.LastOnlineTime;
             request.GuildId = info.GuildId;
             request.GuildName = info.GuildName;
+            request.MentorRole = (int) info.MentorRole;
         }
         if (type.HasFlag(UpdateField.Job)) {
             request.Job = (int) info.Job;
