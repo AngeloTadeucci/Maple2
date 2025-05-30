@@ -488,4 +488,8 @@ public class FieldNpc : Actor<Npc> {
         Patrol = null;
         currentWaypointIndex = 0;
     }
+
+    public override string ToString() {
+        return $"FieldNpc(Id: {Value.Metadata.Id}, Name: {Value.Metadata.Name}, State: {State}, SequenceId: {SequenceId}, SequenceCounter: {SequenceCounter})";
+    }
 }
