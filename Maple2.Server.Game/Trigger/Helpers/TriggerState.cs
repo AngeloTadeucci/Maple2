@@ -110,18 +110,16 @@ public class TriggerState {
             }
 
             switch (conditionName) {
-                case "any_one": {
+                case "any_one":
                     foreach (XmlNode child in childConditions) {
                         if (CallCondition(child)) return true;
                     }
                     return false;
-                }
-                case "all_of": {
+                case "all_of":
                     foreach (XmlNode child in childConditions) {
                         if (!CallCondition(child)) return false;
                     }
                     return true;
-                }
                 case "true":
                 case "always":
                     return true;
