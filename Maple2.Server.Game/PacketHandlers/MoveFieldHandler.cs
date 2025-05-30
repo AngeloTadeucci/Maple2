@@ -4,7 +4,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
@@ -13,7 +13,7 @@ using PlotMode = Maple2.Model.Enum.PlotMode;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class MoveFieldHandler : PacketHandler<GameSession> {
+public class MoveFieldHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestMoveField;
 
     private enum Command : byte {

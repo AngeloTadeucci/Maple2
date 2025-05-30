@@ -2,7 +2,7 @@
 using Maple2.Model.Error;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -10,7 +10,7 @@ using static Maple2.Model.Error.BuddyEmoteError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class BuddyEmoteHandler : PacketHandler<GameSession> {
+public class BuddyEmoteHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.BuddyEmote;
 
     private enum Command : byte {

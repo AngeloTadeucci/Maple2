@@ -2,7 +2,7 @@
 using Grpc.Core;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -11,7 +11,7 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class QuitHandler : PacketHandler<GameSession> {
+public class QuitHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestQuit;
 
     #region Autofac Autowired

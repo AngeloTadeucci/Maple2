@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using DotRecast.Core.Numerics;
@@ -18,6 +19,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -66,6 +68,7 @@ public partial class FieldManager : IField {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
+    private readonly List<(FieldPacketHandler handler, GameSession session, IByteReader reader)> queuedPackets;
     private bool initialized;
     public bool Disposed { get; private set; }
 
@@ -93,6 +96,7 @@ public partial class FieldManager : IField {
         FieldActor = new FieldActor(this, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
+        queuedPackets = new();
         Ai = new AiManager(this);
         RoomId = NextGlobalId();
 
@@ -249,6 +253,22 @@ public partial class FieldManager : IField {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
+    public void QueuePacket(FieldPacketHandler handler, GameSession session, IByteReader reader) {
+        lock (queuedPackets) {
+            queuedPackets.Add((handler, session, reader));
+        }
+    }
+
+    private void ProcessPackets() {
+        lock (queuedPackets) {
+            foreach ((FieldPacketHandler handler, GameSession session, IByteReader reader) packet in queuedPackets) {
+                packet.handler.Handle(packet.session, packet.reader);
+            }
+
+            queuedPackets.Clear();
+        }
+    }
+
     private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
             if (!(DebugRenderer?.IsActive ?? false)) {
@@ -261,6 +281,8 @@ public partial class FieldManager : IField {
     }
 
     public void Update() {
+        ProcessPackets();
+
         if (Players.IsEmpty) {
             return;
         }

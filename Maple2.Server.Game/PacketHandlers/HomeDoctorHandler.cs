@@ -2,13 +2,13 @@
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class HomeDoctorHandler : PacketHandler<GameSession> {
+public class HomeDoctorHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestHomeDoctor;
 
     public override void Handle(GameSession session, IByteReader packet) {

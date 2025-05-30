@@ -24,6 +24,11 @@ public class PacketRouter<T> where T : Session {
         var op = reader.Read<RecvOp>();
         PacketHandler<T>? handler = handlers.GetValueOrDefault(op);
         if (sender is T session) {
+            // Let another system schedule when to call Handle
+            if (handler?.TryHandleDeferred(session, reader) ?? false) {
+                return;
+            }
+
             handler?.Handle(session, reader);
         }
     }
