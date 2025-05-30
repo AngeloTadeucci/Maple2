@@ -1,5 +1,4 @@
-﻿
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Enum;
 using System.Numerics;
@@ -15,6 +14,7 @@ public partial class MovementState {
         ToTarget,
         FromTarget
     }
+
     private Vector3 walkDirection;
     private Vector3 walkTargetPosition;
     private float walkTargetDistance;
@@ -25,6 +25,7 @@ public partial class MovementState {
     private AnimationSequenceMetadata? walkSequence = null;
     private float walkSpeed;
     private NpcTask? walkTask = null;
+    private bool isFlying;
 
     private void UpdateMoveSpeed(float speed) {
         Stat moveSpeed = actor.Stats.Values[BasicAttribute.MovementSpeed];
@@ -86,10 +87,28 @@ public partial class MovementState {
         UpdateMoveSpeed(speedOverride);
 
         float delta = (float) tickDelta / 1000;
-
         if (walkType == WalkType.Direction) {
             StateWalkDirectionUpdate(tickCount, tickDelta, delta);
+            return;
+        }
 
+        // --- FLYING ADVANCE LOGIC ---
+        // If isFlying, use direct advance
+        if (walkSequence != null && isFlying) {
+            Vector3 target = walkTargetPosition;
+            (Vector3 newPos, bool reachedFlying) = actor.Navigation.FlyAdvance(actor.Position, target, Speed, delta);
+
+            Velocity = (newPos - actor.Position) / delta;
+            actor.Position = newPos;
+
+            if (walkLookWhenDone && (target - actor.Position).LengthSquared() > 0) {
+                actor.Transform.LookTo(Vector3.Normalize(target - actor.Position));
+            }
+
+            if (reachedFlying) {
+                Velocity = Vector3.Zero;
+                walkTask?.Completed();
+            }
             return;
         }
 
