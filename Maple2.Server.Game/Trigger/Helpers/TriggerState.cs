@@ -83,54 +83,63 @@ public class TriggerState {
         string actionName = actionNode.Attributes?["name"]?.Value ?? "";
         TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Action<ITriggerContext, XmlAttributeCollection?>? actionFunc);
         if (actionFunc is not null) {
-            actionFunc(triggerContext, actionNode.Attributes);
+            try {
+                actionFunc(triggerContext, actionNode.Attributes);
+            } catch (Exception e) {
+                Log.Logger.Error(e, "CallAction: error executing action '{ActionName}', Node: {Node}", actionName, actionNode.OuterXml);
+            }
             return;
         }
         Log.Logger.Error("CallAction: action function not found for action '{ActionName}'", actionName);
     }
 
     private bool CallCondition(XmlNode conditionNode) {
-        string actionName = conditionNode.Attributes?["name"]?.Value ?? "";
+        string conditionName = conditionNode.Attributes?["name"]?.Value ?? "";
 
         // Handle group conditions
-        if (actionName is "any_one" or "all_of" or "true" or "always") {
+        if (conditionName is "any_one" or "all_of" or "true" or "always") {
             XmlNode? groupNode = conditionNode.SelectSingleNode("group");
             if (groupNode == null) {
-                Log.Logger.Error("CallCondition: group node not found for grouped condition '{ActionName}'", actionName);
+                Log.Logger.Error("CallCondition: group node not found for grouped condition '{ActionName}'", conditionName);
                 return false;
             }
             XmlNodeList? childConditions = groupNode.SelectNodes("condition");
             if (childConditions == null || childConditions.Count == 0) {
-                Log.Logger.Error("CallCondition: no child conditions in group for '{ActionName}'", actionName);
+                Log.Logger.Error("CallCondition: no child conditions in group for '{ActionName}'", conditionName);
                 return false;
             }
 
-            switch (actionName) {
+            switch (conditionName) {
                 case "any_one": {
-                        foreach (XmlNode child in childConditions) {
-                            if (CallCondition(child)) return true;
-                        }
-                        return false;
+                    foreach (XmlNode child in childConditions) {
+                        if (CallCondition(child)) return true;
                     }
+                    return false;
+                }
                 case "all_of": {
-                        foreach (XmlNode child in childConditions) {
-                            if (!CallCondition(child)) return false;
-                        }
-                        return true;
+                    foreach (XmlNode child in childConditions) {
+                        if (!CallCondition(child)) return false;
                     }
+                    return true;
+                }
                 case "true":
                 case "always":
                     return true;
             }
         }
 
-        TriggerFunctionMapping.ConditionMap.TryGetValue(actionName, out Func<ITriggerContext, XmlAttributeCollection?, bool>? conditionFunc);
+        TriggerFunctionMapping.ConditionMap.TryGetValue(conditionName, out Func<ITriggerContext, XmlAttributeCollection?, bool>? conditionFunc);
         if (conditionFunc is not null) {
-            bool result = conditionFunc(triggerContext, conditionNode.Attributes);
-            return result;
+            try {
+                bool result = conditionFunc(triggerContext, conditionNode.Attributes);
+                return result;
+            } catch (Exception e) {
+                Log.Logger.Error(e, "CallCondition: error executing condition '{ConditionName}', Node: {Node}", conditionName, conditionNode.OuterXml);
+                return false;
+            }
         }
 
-        Log.Logger.Error("CallCondition: condition function not found for action '{ActionName}'", actionName);
+        Log.Logger.Error("CallCondition: condition function not found for action '{ConditionName}'", conditionName);
         return false;
     }
 }
