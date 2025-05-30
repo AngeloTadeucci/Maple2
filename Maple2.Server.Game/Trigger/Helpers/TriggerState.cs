@@ -97,7 +97,7 @@ public class TriggerState {
         string conditionName = conditionNode.Attributes?["name"]?.Value ?? "";
 
         // Handle group conditions
-        if (conditionName is "any_one" or "all_of" or "true" or "always") {
+        if (conditionName is "any_one" or "all_of" or "true") {
             XmlNode? groupNode = conditionNode.SelectSingleNode("group");
             if (groupNode == null) {
                 Log.Logger.Error("CallCondition: group node not found for grouped condition '{ActionName}'", conditionName);
@@ -121,9 +121,10 @@ public class TriggerState {
                     }
                     return true;
                 case "true":
-                case "always":
                     return true;
             }
+        } else if (conditionName is "always") {
+            return true;
         }
 
         TriggerFunctionMapping.ConditionMap.TryGetValue(conditionName, out Func<ITriggerContext, XmlAttributeCollection?, bool>? conditionFunc);
