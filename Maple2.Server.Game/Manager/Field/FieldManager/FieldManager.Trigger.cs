@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Widget;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 
 namespace Maple2.Server.Game.Manager.Field;
 
@@ -15,7 +15,7 @@ public partial class FieldManager {
     public readonly Dictionary<string, TickTimer> Timers = new();
     public readonly Dictionary<string, int> UserValues = new();
     public readonly Dictionary<string, Widget> Widgets = new();
-    public readonly Dictionary<int, List<object>> States = new();
+    public readonly Dictionary<int, List<TriggerState>> States = new();
 
     public FieldTrigger? AddTrigger(TriggerModel trigger) {
         try {

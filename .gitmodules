@@ -1,6 +1,3 @@
-[submodule "Maple2.Server.Game/Scripting/Scripts"]
-	path = Maple2.Server.Game/Scripting/Scripts
-	url = https://github.com/AngeloTadeucci/maple2-scripts.git
 [submodule "Maple2.Server.Game/Navmeshes"]
 	path = Maple2.Server.Game/Navmeshes
 	url = https://github.com/AngeloTadeucci/Maple2.Navmeshes

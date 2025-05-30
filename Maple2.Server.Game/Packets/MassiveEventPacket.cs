@@ -2,7 +2,7 @@
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;

@@ -1,4 +1,4 @@
-﻿namespace Maple2.Server.Game.Scripting.Trigger;
+﻿namespace Maple2.Server.Game.Trigger.Helpers;
 
 // ReSharper disable InconsistentNaming
 public enum Align { center = 0, left = 1, right = 2, bottomLeft = 3, bottomRight = 4, topCenter = 5, centerLeft = 6, centerRight = 7 }
@@ -15,3 +15,7 @@ public enum Weather { Clear = 0, Snow = 1, HeavySnow = 2, Rain = 3, HeavyRain = 
 public enum BannerType : byte { Lose = 0, GameOver = 1, Winner = 2, Bonus = 3, Draw = 4, Success = 5, Text = 6, Fail = 7, Countdown = 8, }
 
 public enum SideNpcTalkType : byte { Default = 0, Movie = 1, CutIn = 2, TalkBottom = 3, Invasion = 4, Wedding = 5 }
+
+public enum OperatorType { Greater, GreaterEqual, Equal, LessEqual, Less };
+
+public enum CompareType { lowerEqual, lower, higher, higherEqual };

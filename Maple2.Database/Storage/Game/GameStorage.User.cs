@@ -1,4 +1,5 @@
-﻿using Maple2.Database.Extensions;
+﻿using System.Text.Json;
+using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -396,13 +397,11 @@ public partial class GameStorage {
                 attribute => attribute,
                 attribute => allocation[attribute]);
             config.StatPoints = statSources.Points;
-            config.SkillPoint = skillPoint.Points.SelectMany(
-                    point => point.Value.Ranks.Select(
-                        rankPoint => new Model.SkillPoint {
-                            Source = point.Key,
-                            Rank = rankPoint.Key,
-                            Points = rankPoint.Value,
-                        }))
+            config.SkillPoint = skillPoint.Points.SelectMany(point => point.Value.Ranks.Select(rankPoint => new Model.SkillPoint {
+                Source = point.Key,
+                Rank = rankPoint.Key,
+                Points = rankPoint.Value,
+            }))
                 .ToList();
             config.GatheringCounts = gatheringCounts;
             config.GuideRecords = guideRecords;

@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Maple2.Server.Game/Navmeshes" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Maple2.Server.Game/Scripting/Scripts" vcs="Git" />
   </component>
 </project>
