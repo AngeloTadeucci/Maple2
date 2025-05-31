@@ -67,16 +67,19 @@ public class WeddingHall : IByteSerializable, IByteDeserializable {
         writer.WriteUnicodeString(ReserverName);
         writer.WriteUnicodeString(PartnerName);
 
-        writer.WriteLong();
+        // WeddingHallReservationFee
         writer.WriteLong();
         writer.WriteLong();
         writer.WriteLong();
         writer.WriteLong();
 
+        writer.WriteLong();
+        writer.WriteInt();
+
         writer.WriteInt(GuestList.Count);
-        /*foreach ((long characterId, long accountId) in GuestList) {
+        foreach ((long characterId, long accountId) in GuestList) {
             writer.WriteLong(accountId);
             writer.WriteLong(characterId);
-        }*/
+        }
     }
 }
