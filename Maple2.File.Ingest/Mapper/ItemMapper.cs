@@ -13,10 +13,12 @@ namespace Maple2.File.Ingest.Mapper;
 public class ItemMapper : TypeMapper<ItemMetadata> {
     private readonly ItemParser parser;
     private readonly TableParser tableParser;
+    private readonly bool newXml;
 
-    public ItemMapper(M2dReader xmlReader) {
+    public ItemMapper(M2dReader xmlReader, bool newXml) {
         parser = new ItemParser(xmlReader);
         tableParser = new TableParser(xmlReader);
+        this.newXml = newXml;
     }
 
     protected override IEnumerable<ItemMetadata> Map() {
