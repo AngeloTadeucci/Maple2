@@ -16,7 +16,7 @@ using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-const string locale = "NA";
+string locale = "NA";
 const string env = "Live";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -39,6 +39,16 @@ foreach (string? arg in args) {
 CultureInfo.CurrentCulture = new("en-US");
 
 DotEnv.Load();
+
+string? localeEnv = Environment.GetEnvironmentVariable("LOCALE");
+if (localeEnv == null) {
+    throw new ArgumentException("LOCALE environment variable was not set");
+}
+
+if (!bool.TryParse(Environment.GetEnvironmentVariable("NEWXML"), out bool newXml)) {
+    Console.WriteLine("NEWXML environment variable was not set. Defaulting to false.");
+    newXml = false;
+}
 
 string? ms2Root = Environment.GetEnvironmentVariable("MS2_DATA_FOLDER");
 if (ms2Root == null) {
@@ -193,7 +203,7 @@ UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
-UpdateDatabase(metadataContext, new ItemMapper(xmlReader));
+UpdateDatabase(metadataContext, new ItemMapper(xmlReader, newXml));
 UpdateDatabase(metadataContext, new NpcMapper(xmlReader));
 UpdateDatabase(metadataContext, new PetMapper(xmlReader));
 UpdateDatabase(metadataContext, new MapMapper(xmlReader));
