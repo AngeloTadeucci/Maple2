@@ -801,6 +801,26 @@ public sealed partial class GameSession : Core.Network.Session {
                 club.Dispose();
             }
 
+            SaveCacheConfig();
+            using (GameStorage.Request db = GameStorage.Context()) {
+                db.BeginTransaction();
+                db.SavePlayer(Player);
+                UgcMarket.Save(db);
+                Config.Save(db);
+                Shop.Save(db);
+                Item.Save(db);
+                Survival.Save(db);
+                Housing.Save(db);
+                GameEvent.Save(db);
+                Achievement.Save(db);
+                Quest.Save(db);
+                Dungeon.Save(db);
+                Marriage.Save(db);
+
+                db.Commit();
+                db.SaveChanges();
+            }
+
             Player.Dispose();
             base.Dispose(disposing);
         }

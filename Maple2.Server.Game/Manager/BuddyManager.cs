@@ -471,6 +471,15 @@ public class BuddyManager : IDisposable {
         session.Send(BuddyPacket.Remove(self));
     }
 
+    public Buddy? GetBuddy(long characterId) {
+        foreach (Buddy buddy in buddies.Values) {
+            if (buddy.Info.CharacterId == characterId) {
+                return buddy;
+            }
+        }
+        return null;
+    }
+
     private bool TryGet(long buddyId, [NotNullWhen(true)] out Buddy? result) {
         foreach (Buddy buddy in buddies.Values) {
             if (buddyId == buddy.Info.CharacterId) {

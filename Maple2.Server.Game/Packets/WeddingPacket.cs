@@ -1,5 +1,6 @@
 ﻿using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Wedding;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
@@ -24,7 +25,7 @@ public static class WeddingPacket {
         DeclineReservationChange = 21,
         AcceptReservationChange = 22,
         Unknown23 = 23,
-        SearchInvitee = 27,
+        SearchUser = 27,
         SendInvite = 29,
         StartCeremony = 30,
     }
@@ -138,6 +139,21 @@ public static class WeddingPacket {
         pWriter.Write<Command>(Command.AcceptReservationChange);
         pWriter.WriteClass<WeddingHall>(hall);
         pWriter.WriteLong(differenceCost);
+
+        return pWriter;
+    }
+
+    public static ByteWriter SearchUser(WeddingGuest guest) {
+        var pWriter = Packet.Of(SendOp.Wedding);
+        pWriter.Write<Command>(Command.SearchUser);
+        pWriter.WriteClass<WeddingGuest>(guest);
+
+        return pWriter;
+    }
+
+    public static ByteWriter SendInvite() {
+        var pWriter = Packet.Of(SendOp.Wedding);
+        pWriter.Write<Command>(Command.SendInvite);
 
         return pWriter;
     }

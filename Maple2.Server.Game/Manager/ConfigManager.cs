@@ -255,7 +255,7 @@ public class ConfigManager {
     public void LoadChatStickers() {
         List<ChatSticker> stickers = [];
         foreach (KeyValuePair<int, long> set in session.Player.Value.Unlock.StickerSets) {
-            stickers.Add(new(set.Key, set.Value));
+            stickers.Add(new ChatSticker(set.Key, set.Value));
         }
         session.Send(ChatStickerPacket.Load(favoriteStickers.ToList(), stickers));
     }

@@ -189,7 +189,7 @@ public static class Constant {
     #region client constants
     public const int MaxClosetMaxCount = 5;
     public const int MaxClosetTabNameLength = 10;
-    public const int WeddingProposeItemID = 11600482;
+    public const int WeddingProposeItemID = 20001697;
     public const int WeddingInvitationMaxCount = 70;
     public const int WeddingProposeCooltime = 2;
     public const int WeddingDivorceFieldID = 84000002;
@@ -210,7 +210,6 @@ public static class Constant {
     public const float UGCShopProfitFee = 0.25f;
     public const int UGCShopProfitDelayDays = 10;
     public const int PartyFinderListingsPageCount = 12;
-    public const int ProposalItemId = 11600482;
     #endregion
 
     #region table/constants.xml

@@ -3,6 +3,7 @@ using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
+using Maple2.Model.Game.Wedding;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;
@@ -227,9 +228,66 @@ public class WeddingHandler : FieldPacketHandler {
 
     private static void HandleInvitationFindUser(GameSession session, IByteReader packet) {
         string inviteeName = packet.ReadUnicodeString();
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        long characterId = db.GetCharacterId(inviteeName);
+        if (characterId == 0) {
+            session.Send(WeddingPacket.SearchUser(WeddingGuest.Default));
+            return;
+        }
+
+        if (!session.PlayerInfo.GetOrFetch(characterId, out PlayerInfo? inviteeInfo)) {
+            session.Send(WeddingPacket.SearchUser(WeddingGuest.Default));
+            return;
+        }
+
+        session.Send(WeddingPacket.SearchUser(new WeddingGuest {
+            AccountId = inviteeInfo.AccountId,
+            CharacterId = inviteeInfo.CharacterId,
+            Name = inviteeInfo.Name,
+        }));
     }
 
     private static void HandleSendInvitation(GameSession session, IByteReader packet) {
+        if (session.Marriage.WeddingHall.Id == 0) {
+            session.Send(WeddingPacket.Error(WeddingError.s_wedding_result_err_invalid_wedding_hall));
+            return;
+        }
+
         int inviteCount = packet.ReadInt();
+
+
+        List<PlayerInfo> users = [];
+        using GameStorage.Request db = session.GameStorage.Context();
+        for (int i = 0; i < inviteCount; i++) {
+            var inviteType = packet.Read<GuestInviteType>();
+            long accountId = packet.ReadLong();
+            long characterId = packet.ReadLong();
+            string name = packet.ReadUnicodeString();
+
+            switch (inviteType) {
+                case GuestInviteType.Buddy:
+                    Buddy? buddy = session.Buddy.GetBuddy(characterId);
+                    if (buddy == null) {
+                        continue;
+                    }
+                    users.Add(buddy.Info);
+                    break;
+                case GuestInviteType.Guild:
+                    // TODO: Guild
+                    break;
+                case GuestInviteType.Direct:
+                    if (!session.PlayerInfo.GetOrFetch(characterId, out PlayerInfo? info)) {
+                        continue;
+                    }
+                    users.Add(info);
+                    break;
+            }
+        }
+
+        WeddingError error = session.Marriage.SendInvites(users);
+        if (error != WeddingError.none) {
+            session.Send(WeddingPacket.Error(error));
+        }
     }
 }

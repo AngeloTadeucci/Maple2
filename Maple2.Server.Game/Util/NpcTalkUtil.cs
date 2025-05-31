@@ -25,11 +25,12 @@ public static class NpcTalkUtil {
                 }
 
                 List<ScriptState> scriptStates = [];
+                List<ScriptState> conditionLessScriptStates = [];
                 session.ServerTableMetadata.ScriptConditionTable.Entries.TryGetValue(metadata.Id, out Dictionary<int, ScriptConditionMetadata>? scriptConditions);
                 // Check if player meets the requirements for each pick script.
                 foreach (ScriptState scriptState in metadata.States.Values.Where(state => state.Pick)) {
                     if (scriptConditions == null) {
-                        scriptStates.Add(scriptState);
+                        conditionLessScriptStates.Add(scriptState);
                         continue;
                     }
 
@@ -40,7 +41,7 @@ public static class NpcTalkUtil {
                     }
 
                     if (!scriptConditions.TryGetValue(scriptState.Id, out ScriptConditionMetadata? scriptCondition)) {
-                        scriptStates.Add(scriptState);
+                        conditionLessScriptStates.Add(scriptState);
                         continue;
                     }
 
@@ -49,6 +50,9 @@ public static class NpcTalkUtil {
                     }
                 }
 
+                if (scriptStates.Count == 0) {
+                    return conditionLessScriptStates.Count == 0 ? null : conditionLessScriptStates[Random.Shared.Next(conditionLessScriptStates.Count)];
+                }
                 return scriptStates.Count == 0 ? null : scriptStates[Random.Shared.Next(scriptStates.Count)];
             case ScriptStateType.Quest:
                 SortedDictionary<int, QuestMetadata> quests = session.Quest.GetAvailableQuests(npcId);
@@ -220,6 +224,14 @@ public static class NpcTalkUtil {
         }
 
         if (scriptCondition.DeathPenalty && session.Config.DeathPenaltyEndTick < session.Field.FieldTick) {
+            return false;
+        }
+
+        if (scriptCondition.Wedding.UserState != null && session.Marriage.Marriage.Status != scriptCondition.Wedding.UserState) {
+            return false;
+        }
+
+        if (scriptCondition.Wedding.HasReservation is true && session.Marriage.WeddingHall.Id == 0) {
             return false;
         }
 

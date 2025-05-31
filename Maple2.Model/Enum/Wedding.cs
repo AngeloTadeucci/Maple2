@@ -39,3 +39,9 @@ public enum WeddingHallState {
     weddingComplete,
 
 }
+
+public enum GuestInviteType : short {
+    Buddy = 1,
+    Guild = 0,
+    Direct = 2,
+}

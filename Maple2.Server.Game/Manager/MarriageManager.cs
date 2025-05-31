@@ -152,7 +152,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError Propose(FieldPlayer target) {
-        if (!session.Item.Inventory.Find(Constant.ProposalItemId).Any()) {
+        if (!session.Item.Inventory.Find(Constant.WeddingProposeItemID).Any()) {
             return WeddingError.s_wedding_result_err_not_find_propose_item;
         }
 
@@ -169,7 +169,7 @@ public sealed class MarriageManager {
             return WeddingError.s_wedding_result_err_not_buddy;
         }
 
-        if (!target.Session.Item.Inventory.Find(Constant.ProposalItemId).Any()) {
+        if (!target.Session.Item.Inventory.Find(Constant.WeddingProposeItemID).Any()) {
             return WeddingError.s_wedding_result_err_not_find_propose_item;
         }
 
@@ -178,12 +178,12 @@ public sealed class MarriageManager {
 
     public WeddingError AcceptProposal(FieldPlayer target) {
         // Find the proposal items of each player
-        Item? proposalItem = session.Item.Inventory.Find(Constant.ProposalItemId).FirstOrDefault();
+        Item? proposalItem = session.Item.Inventory.Find(Constant.WeddingProposeItemID).FirstOrDefault();
         if (proposalItem == null) {
             return WeddingError.s_wedding_result_err_not_find_propose_item;
         }
 
-        Item? otherProposalItem = target.Session.Item.Inventory.Find(Constant.ProposalItemId).FirstOrDefault();
+        Item? otherProposalItem = target.Session.Item.Inventory.Find(Constant.WeddingProposeItemID).FirstOrDefault();
         if (otherProposalItem == null) {
             return WeddingError.s_wedding_result_err_not_find_propose_item;
         }
@@ -602,6 +602,54 @@ public sealed class MarriageManager {
         return Math.Max(0, unconfirmedHallData.MeretCost - currentHallData.MeretCost);
     }
 
+    public WeddingError SendInvites(List<PlayerInfo> players) {
+        int maxMesoCost = players.Count * Constant.WeddingInvitationMeso;
+        if (session.Currency.Meso < maxMesoCost) {
+            return WeddingError.s_wedding_result_lack_meso_invitation;
+        }
+
+        using GameStorage.Request db = session.GameStorage.Context();
+        foreach (PlayerInfo player in players) {
+            if (WeddingHall.GuestList.Count >= Constant.WeddingInvitationMaxCount) {
+                return WeddingError.s_wedding_result_wedding_invitation_count;
+            }
+            if (WeddingHall.GuestList.ContainsKey(player.CharacterId)) {
+                continue;
+            }
+
+            var mail = new Mail {
+                ReceiverId = player.CharacterId,
+                SenderId = session.CharacterId,
+                Type = MailType.WeddingInvite,
+                SenderName = session.PlayerName,
+            };
+
+            mail.SetTitle(StringCode.s_wedding_mail_title_receiver);
+            mail.SetContent(StringCode.s_wedding_mail_contents_receiver);
+            mail.SetWeddingInvite(session.Marriage.WeddingHall);
+
+            mail = db.CreateMail(mail);
+            if (mail == null) {
+                logger.Error("Failed to create mail for wedding invite for {CharacterId}", player.CharacterId);
+                return WeddingError.s_wedding_result_err_system;
+            }
+
+            WeddingHall.GuestList.TryAdd(player.CharacterId, player.AccountId);
+
+            try {
+                session.World.MailNotification(new MailNotificationRequest {
+                    CharacterId = player.CharacterId,
+                    MailId = mail.Id,
+                });
+            } catch { /* ignored */
+            }
+        }
+
+        db.SaveWeddingHall(WeddingHall);
+        session.Send(WeddingPacket.SendInvite());
+        return WeddingError.none;
+    }
+
     #region PlayerInfo Events
     private void BeginListen(MarriagePartner partner) {
         if (Marriage.Id == 0) {
@@ -646,4 +694,9 @@ public sealed class MarriageManager {
         return false;
     }
     #endregion
+
+    public void Save(GameStorage.Request db) {
+        db.SaveMarriage(Marriage);
+        db.SaveWeddingHall(WeddingHall);
+    }
 }
