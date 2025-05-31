@@ -310,6 +310,7 @@ public static class TriggerFunctionMapping {
                 if (part.Contains('-')) {
                     string[] rangeParts = part.Split('-');
                     if (rangeParts.Length == 2 && int.TryParse(rangeParts[0], out int start) && int.TryParse(rangeParts[1], out int end)) {
+                        if (start > end) (start, end) = (end, start);
                         result.AddRange(Enumerable.Range(start, end - start + 1));
                     }
                 } else if (int.TryParse(part, out int singleValue)) {
@@ -321,6 +322,7 @@ public static class TriggerFunctionMapping {
         if (value.Contains('-')) {
             string[] parts = value.Split('-');
             if (parts.Length == 2 && int.TryParse(parts[0], out int start) && int.TryParse(parts[1], out int end)) {
+                if (start > end) (start, end) = (end, start);
                 return Enumerable.Range(start, end - start + 1).ToArray();
             }
         }
