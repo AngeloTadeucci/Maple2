@@ -766,6 +766,8 @@ public sealed partial class GameSession : Core.Network.Session {
                 Achievement.Save(db);
                 Quest.Save(db);
                 Dungeon.Save(db);
+                Marriage.Save(db);
+
                 db.Commit();
                 db.SaveChanges();
             }

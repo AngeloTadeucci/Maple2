@@ -128,6 +128,11 @@ public partial class GameStorage {
             return marriage == null ? null : model.Convert(marriage);
         }
 
+        public bool SaveWeddingHall(WeddingHall hall) {
+            Context.WeddingHall.Update(hall);
+            return Context.TrySaveChanges();
+        }
+
         public bool DeleteWeddingHall(long hallId) {
             Model.WeddingHall? hall = Context.WeddingHall.Find(hallId);
             if (hall == null) {
