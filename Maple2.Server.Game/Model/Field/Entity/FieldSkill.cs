@@ -66,7 +66,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             return;
         }
 
-        if (FireCount < 0) {
+        if (FireCount == 0) {
             // Finished firing, remove skill
             Field.RemoveSkill(ObjectId);
             return;
