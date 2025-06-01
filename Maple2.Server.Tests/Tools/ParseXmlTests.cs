@@ -59,6 +59,8 @@ public class ParseXmlTests {
             Assert.That(TriggerFunctionMapping.ParseIntArray("a,b,c"), Is.Empty);
             Assert.That(TriggerFunctionMapping.ParseIntArray("5"), Is.EqualTo(new[] { 5 }));
             Assert.That(TriggerFunctionMapping.ParseIntArray("all"), Is.EqualTo(new[] { -1 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("5-1"), Is.EqualTo(new[] { 1, 2, 3, 4, 5 }));
+            Assert.That(TriggerFunctionMapping.ParseIntArray("10-8,3"), Is.EqualTo(new[] { 8, 9, 10, 3 }));
         });
     }
 
