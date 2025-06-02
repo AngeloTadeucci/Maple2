@@ -1,4 +1,5 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using System.Buffers;
+using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Serilog;
@@ -20,7 +21,11 @@ public abstract class FieldPacketHandler : PacketHandler<GameSession> {
             return false;
         }
 
-        session.Field.QueuePacket(this, session, reader);
+        byte[] bufferCopy = ArrayPool<byte>.Shared.Rent(packet.Length);
+        Array.Copy(packet.Buffer, bufferCopy, packet.Length);
+        var packetCopy = new ByteReader(bufferCopy, packet.Position);
+
+        session.Field.QueuePacket(this, session, packetCopy);
 
         return true;
     }

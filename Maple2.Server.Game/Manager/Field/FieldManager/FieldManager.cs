@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.CommandLine;
+﻿using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -70,7 +69,7 @@ public partial class FieldManager : IField {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
-    private readonly List<(FieldPacketHandler handler, GameSession session, IByteReader reader)> queuedPackets;
+    private readonly List<(FieldPacketHandler handler, GameSession session, ByteReader reader)> queuedPackets;
     private bool initialized;
     public bool Disposed { get; private set; }
 
@@ -258,7 +257,7 @@ public partial class FieldManager : IField {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
-    public void QueuePacket(FieldPacketHandler handler, GameSession session, IByteReader reader) {
+    public void QueuePacket(FieldPacketHandler handler, GameSession session, ByteReader reader) {
         lock (queuedPackets) {
             queuedPackets.Add((handler, session, reader));
         }
@@ -266,8 +265,15 @@ public partial class FieldManager : IField {
 
     private void ProcessPackets() {
         lock (queuedPackets) {
-            foreach ((FieldPacketHandler handler, GameSession session, IByteReader reader) packet in queuedPackets) {
-                packet.handler.Handle(packet.session, packet.reader);
+            foreach ((FieldPacketHandler handler, GameSession session, ByteReader reader) packet in queuedPackets) {
+                try {
+                    if (packet.session.State is SessionState.Disconnected) {
+                        continue;
+                    }
+                    packet.handler.Handle(packet.session, packet.reader);
+                } finally {
+                    ArrayPool<byte>.Shared.Return(packet.reader.Buffer);
+                }
             }
 
             queuedPackets.Clear();
@@ -510,17 +516,15 @@ public partial class FieldManager : IField {
                     case CubePortalDestination.SelectedMap:
                         session.MigrateOutOfInstance(srcPortal.TargetMapId);
                         return true;
-                    case CubePortalDestination.FriendHome: {
-                            using GameStorage.Request db = session.GameStorage.Context();
-                            Home? home = db.GetHome(fieldPortal.HomeId);
-                            if (home is null) {
-                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
-                                return false;
-                            }
-
-                            session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
-                            return true;
+                    case CubePortalDestination.FriendHome:
+                        Home? home = GetHome(session, fieldPortal);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
                         }
+
+                        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
+                        return true;
                 }
                 return false;
             case PortalType.LeaveDungeon:
@@ -629,6 +633,12 @@ public partial class FieldManager : IField {
             }
             Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
+    }
+
+    private static Home? GetHome(GameSession session, FieldPortal fieldPortal) {
+        using GameStorage.Request db = session.GameStorage.Context();
+        Home? home = db.GetHome(fieldPortal.HomeId);
+        return home;
     }
 
     #region DebugUtils

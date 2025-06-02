@@ -23,14 +23,14 @@ public class PacketRouter<T> where T : Session {
     public void OnPacket(object? sender, IByteReader reader) {
         var op = reader.Read<RecvOp>();
         PacketHandler<T>? handler = handlers.GetValueOrDefault(op);
-        if (sender is T session) {
-            // Let another system schedule when to call Handle
-            if (handler?.TryHandleDeferred(session, reader) ?? false) {
-                return;
-            }
+        if (sender is not T session) return;
 
-            handler?.Handle(session, reader);
+        // Let another system schedule when to call Handle
+        if (handler?.TryHandleDeferred(session, reader) ?? false) {
+            return;
         }
+
+        handler?.Handle(session, reader);
     }
 
     private void Register(ImmutableDictionary<RecvOp, PacketHandler<T>>.Builder builder, PacketHandler<T> packetHandler) {
