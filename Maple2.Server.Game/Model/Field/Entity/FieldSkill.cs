@@ -66,6 +66,12 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             return;
         }
 
+        if (FireCount == 0) {
+            // Finished firing, remove skill
+            Field.RemoveSkill(ObjectId);
+            return;
+        }
+
         // Check Activation for OnlySensingActive
         if (!Active) {
             foreach (SkillMetadataMotion motion in Value.Data.Motions) {

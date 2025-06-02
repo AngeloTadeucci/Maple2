@@ -648,4 +648,12 @@ public class FieldPlayer : Actor<Player> {
 
         return true;
     }
+
+    public override string ToString() {
+        return $"FieldPlayer: {Value.Character.Name} ({ObjectId}) at {Position} in {Field.Metadata.Name} ({Field.Metadata.Id})" +
+               $"\n  State: {State}, SubState: {SubState}, Flag: {Flag}, IsDead: {IsDead}" +
+               $"\n  Position: {Position}, Rotation: {Rotation}, LastGroundPosition: {LastGroundPosition}" +
+               $"\n  AdminPermissions: {AdminPermissions}, TagId: {TagId}" +
+               $"\n  DebugAi: {DebugAi}, DebugSkills: {DebugSkills}";
+    }
 }

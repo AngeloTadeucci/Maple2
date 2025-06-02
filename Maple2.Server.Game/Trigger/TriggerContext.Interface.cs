@@ -5,7 +5,7 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
@@ -194,13 +194,18 @@ public partial class TriggerContext {
     }
 
     #region Conditions
-    public int WidgetValue(string type, string name, string desc) {
-        DebugLog("[WidgetValue] type:{Type}, name:{Name}, desc:{Desc}", type, name, desc);
+    public bool WidgetValue(string type, string widgetName, int condition, bool negate, string desc = "") {
+        DebugLog("[WidgetValue] type:{Type}, widgetName:{Name}, desc:{Desc}", type, widgetName, desc);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
-            return 0;
+            return negate;
         }
 
-        return widget.Conditions.GetValueOrDefault(name);
+
+        bool result = widget.Conditions.GetValueOrDefault(widgetName) == condition;
+        if (negate) {
+            return !result;
+        }
+        return result;
     }
     #endregion
 }

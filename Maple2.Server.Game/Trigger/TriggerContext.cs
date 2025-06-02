@@ -4,35 +4,30 @@ using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 using Maple2.Tools.Scheduler;
-using Microsoft.Scripting.Hosting;
 using Serilog;
 using Serilog.Core;
 
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext : ITriggerContext {
-    private readonly ScriptEngine engine;
-    private readonly FieldTrigger owner;
+    public readonly FieldTrigger Owner;
     private readonly ILogger logger = Log.Logger.ForContext<TriggerContext>();
 
-    public readonly ScriptScope Scope;
-    private FieldManager Field => owner.Field;
-    private TriggerCollection Objects => owner.Field.TriggerObjects;
+    private FieldManager Field => Owner.Field;
+    private TriggerCollection Objects => Owner.Field.TriggerObjects;
 
     private float currentRandom = float.MaxValue;
 
     // Skip state class reference, must instantiate before using.
-    private dynamic? skipState;
+    private TriggerState? skipState;
     public readonly EventQueue Events;
     public long StartTick;
 
-    public TriggerContext(ScriptEngine engine, FieldTrigger owner) {
-        this.engine = engine;
-        this.owner = owner;
+    public TriggerContext(FieldTrigger owner) {
+        this.Owner = owner;
 
-        Scope = engine.CreateScope();
         Events = new EventQueue();
         Events.Start();
         StartTick = Environment.TickCount64;
@@ -44,13 +39,8 @@ public partial class TriggerContext : ITriggerContext {
             return false;
         }
 
-        state = CreateState(skipState);
+        state = skipState;
         return true;
-    }
-
-    public TriggerState? CreateState(dynamic stateClass) {
-        dynamic? state = engine.Operations.CreateInstance(stateClass, this);
-        return state == null ? null : new TriggerState(state);
     }
 
     private void Broadcast(ByteWriter packet) => Field.Broadcast(packet);
@@ -81,106 +71,158 @@ public partial class TriggerContext : ITriggerContext {
             return;
         }
 
-        logAction($"{owner.Value.Name} {messageTemplate}", args);
+        logAction($"{Owner.Value.Name} {messageTemplate}", args);
         lastDebugKey = key;
     }
 
     // Accessors
-    public int ShadowExpeditionPoints() {
+    public bool ShadowExpeditionPoints(int score) {
         ErrorLog("[GetShadowExpeditionPoints]");
-        return 0;
+        return 0 >= score;
     }
 
-    public int DungeonVariable(int id) {
+    public bool DungeonVariable(int id, int value) {
         ErrorLog("[GetDungeonVariable] id:{Id}", id);
-        return 0;
+        return false;
     }
 
-    public float NpcDamage(int spawnPointId) {
-        ErrorLog("[GetNpcDamageRate] spawnPointId:{Id}", spawnPointId);
-        return 1.0f;
+    public bool NpcDamage(int spawnPointId, float damage, OperatorType operatorType) {
+        ErrorLog("[GetNpcDamageRate] spawnPointId:{Id}, damage:{Damage}, operatorType:{Operator}", spawnPointId, damage, operatorType);
+        return operatorType switch {
+            OperatorType.Greater => damage > 1.0f,
+            OperatorType.GreaterEqual => damage >= 1.0f,
+            OperatorType.Equal => Math.Abs(damage - 1.0f) < 0.0001f,
+            OperatorType.LessEqual => damage <= 1.0f,
+            OperatorType.Less => damage < 1.0f,
+            _ => false,
+        };
     }
 
-    public int NpcHp(int spawnPointId, bool isRelative) {
-        ErrorLog("[GetNpcHpRate] spawnPointId:{Id}", spawnPointId);
-        return 100;
+    public bool NpcHp(int spawnPointId, bool isRelative, int value, CompareType compareType) {
+        ErrorLog("[GetNpcHpRate] spawnPointId:{Id}, isRelative:{IsRelative}, value:{Value}, compareType:{CompareType}", spawnPointId, isRelative, value, compareType);
+        return compareType switch {
+            CompareType.lower => value > 100,
+            CompareType.lowerEqual => value >= 100,
+            CompareType.higher => value < 100,
+            CompareType.higherEqual => value <= 100,
+            _ => false,
+        };
     }
 
-    public int DungeonId() {
+    public bool DungeonId(int dungeonId) {
         ErrorLog("[GetDungeonId]");
-        return 0;
+        return dungeonId == 0;
     }
 
-    public int DungeonLevel() {
+    public bool DungeonLevel(int level) {
         ErrorLog("[GetDungeonLevel]");
-        return 3;
+        return level == 3;
     }
 
-    public int DungeonMaxUserCount() {
+    public bool DungeonMaxUserCount(int value) {
         ErrorLog("[GetDungeonMaxUserCount]");
-        return 1;
+        return value == 1;
     }
 
-    public int DungeonRound() {
+    public bool DungeonRound(int round) {
         ErrorLog("[GetDungeonRoundsRequired]");
-        return int.MaxValue;
+        return int.MaxValue == round;
     }
 
-    public bool CheckUser() {
+    public bool CheckUser(bool negate) {
+        if (negate) {
+            return Field.Players.IsEmpty;
+        }
         return !Field.Players.IsEmpty;
     }
 
-    public int UserCount() {
-        return Field.Players.Count;
+    public bool UserCount(int count) {
+        return Field.Players.Count == count;
     }
 
-    public int CountUsers(int boxId, int userTagId) {
+    public bool CountUsers(int boxId, int userTagId, int minUsers, OperatorType operatorType, bool negate) {
         DebugLog("[GetUserCount] boxId:{BoxId}, userTagId:{TagId}", boxId, userTagId);
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
-            return 0;
+            return negate;
         }
 
+        int count;
         if (userTagId > 0) {
-            return Field.Players.Values.Count(player => player.TagId == userTagId && box.Contains(player.Position));
+            count = Field.Players.Values.Count(player => player.TagId == userTagId && box.Contains(player.Position));
+        } else {
+            count = Field.Players.Values.Count(player => box.Contains(player.Position));
         }
 
-        return Field.Players.Values.Count(player => box.Contains(player.Position));
+        bool result = operatorType switch {
+            OperatorType.Greater => count > minUsers,
+            OperatorType.GreaterEqual => count >= minUsers,
+            OperatorType.Equal => count == minUsers,
+            OperatorType.LessEqual => count <= minUsers,
+            OperatorType.Less => count < minUsers,
+            _ => false,
+        };
+        return negate ? !result : result;
     }
 
-    public int NpcExtraData(int spawnId, string extraDataKey) {
-        WarnLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}", spawnId, extraDataKey);
+    public bool NpcExtraData(int spawnId, string extraDataKey, int extraDataValue, OperatorType operatorType) {
+        WarnLog("[GetNpcExtraData] spawnId:{SpawnId}, extraDataKey:{Key}, extraDataValue:{Value}, operatorType:{Operator}", spawnId, extraDataKey, extraDataValue, operatorType);
         var npc = Field.EnumerateNpcs().FirstOrDefault(npc => npc.SpawnPointId == spawnId);
         if (npc is null) {
-            return 0;
+            return false;
         }
-
-        return npc.AiExtraData.GetValueOrDefault(extraDataKey, 0);
+        int extraData = npc.AiExtraData.GetValueOrDefault(extraDataKey, 0);
+        return operatorType switch {
+            OperatorType.Greater => extraData > extraDataValue,
+            OperatorType.GreaterEqual => extraData >= extraDataValue,
+            OperatorType.Equal => extraData == extraDataValue,
+            OperatorType.LessEqual => extraData <= extraDataValue,
+            OperatorType.Less => extraData < extraDataValue,
+            _ => false,
+        };
     }
 
-    public int DungeonPlayTime() {
+    public bool DungeonPlayTime(int playSeconds) {
         ErrorLog("[GetDungeonPlayTime]");
-        return 0;
+        return playSeconds == 0;
     }
 
     // Scripts seem to just check if this is "Fail"
-    public string DungeonState() {
+    public bool DungeonState(string checkState) {
         ErrorLog("[GetDungeonState]");
-        return "";
+        return checkState == "";
     }
 
-    public int DungeonFirstUserMissionScore() {
+    public bool DungeonFirstUserMissionScore(int score, OperatorType operatorType) {
         ErrorLog("[GetDungeonFirstUserMissionScore]");
-        return 0;
+        return operatorType switch {
+            OperatorType.Greater => score > 0,
+            OperatorType.GreaterEqual => score >= 0,
+            OperatorType.Equal => score == 0,
+            OperatorType.LessEqual => score <= 0,
+            OperatorType.Less => score < 0,
+            _ => false,
+        };
     }
 
-    public int ScoreBoardScore() {
+    public bool ScoreBoardScore(int score, OperatorType operatorType) {
         ErrorLog("[GetScoreBoardScore]");
-        return 0;
+        return operatorType switch {
+            OperatorType.Greater => score > 0,
+            OperatorType.GreaterEqual => score >= 0,
+            OperatorType.Equal => score == 0,
+            OperatorType.LessEqual => score <= 0,
+            OperatorType.Less => score < 0,
+            _ => false,
+        };
     }
 
-    public int UserValue(string key) {
+    public bool UserValue(string key, int value, bool negate) {
         WarnLog("[GetUserValue] key:{Key}", key);
-        return Field.UserValues.GetValueOrDefault(key, 0);
+        int userValue = Field.UserValues.GetValueOrDefault(key, 0);
+        if (negate) {
+            return userValue != value;
+        }
+        return userValue == value;
     }
 
     public void DebugString(string value, string feature) {
@@ -192,8 +234,11 @@ public partial class TriggerContext : ITriggerContext {
     }
 
     #region Conditions
-    public int DayOfWeek(string description) {
-        return (int) DateTime.UtcNow.DayOfWeek + 1;
+    public bool DayOfWeek(int[] dayOfWeeks, string description, bool negate) {
+        if (negate) {
+            return !dayOfWeeks.Contains((int) DateTime.UtcNow.DayOfWeek + 1);
+        }
+        return dayOfWeeks.Contains((int) DateTime.UtcNow.DayOfWeek + 1);
     }
 
     public bool RandomCondition(float rate, string description) {

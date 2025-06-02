@@ -113,9 +113,14 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
                 targetRecord.AddDamage(DamageType.Normal, attack.Damage.Value);
                 damageAmount -= attack.Damage.Value;
             } else {
-                (DamageType damageTypeResult, double damageResult) = DamageCalculator.CalculateDamage(caster, this, damage.Properties);
-                targetRecord.AddDamage(damageTypeResult, (long) damageResult);
-                damageAmount -= (long) damageResult;
+                try {
+                    (DamageType damageTypeResult, double damageResult) = DamageCalculator.CalculateDamage(caster, this, damage.Properties);
+                    targetRecord.AddDamage(damageTypeResult, (long) damageResult);
+                    damageAmount -= (long) damageResult;
+                } catch (Exception e) {
+                    Logger.Error(e, "Error calculating damage for {Caster} on {Target} with attack {Attack}", caster, this, attack);
+                    damageAmount = 0; // No damage dealt
+                }
             }
         }
 

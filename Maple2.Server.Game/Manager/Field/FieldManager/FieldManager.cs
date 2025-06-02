@@ -52,6 +52,7 @@ public partial class FieldManager : IField {
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public RideMetadataStorage RideMetadata { get; init; } = null!;
+    public TriggerScriptMetadata TriggerMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
     public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
@@ -329,6 +330,12 @@ public partial class FieldManager : IField {
     }
 
     public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
+        if (point.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+            nearestRef = 0;
+            position = default;
+            logger.Error("Invalid point {Point} in field {MapId}", point, MapId);
+            return false;
+        }
         RcVec3f pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
         return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
     }
