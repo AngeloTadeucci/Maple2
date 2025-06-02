@@ -23,11 +23,6 @@
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="Grpc.AspNetCore.Server" Version="2.67.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
-        <PackageReference Include="IronPython" Version="3.4.1" />
-        <PackageReference Include="IronPython.StdLib" Version="3.4.1">
-            <!--            <ExcludeAssets>contentFiles</ExcludeAssets>-->
-        </PackageReference>
-        <PackageReference Include="Maple2.Lua" Version="2.0.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
         <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
         <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
@@ -44,16 +39,10 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDockerBuild)' == 'true'">
-        <None Remove="Scripting/Scripts/Trigger/**/*.py" />
         <None Remove="Navmeshes/**/*.navmesh" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDockerBuild)' != 'true'">
-        <None Update="Scripting/Scripts/Trigger/**/*.py">
-            <ParentDir>$([System.IO.Path]::GetFileName($([System.String]::Copy('%(RecursiveDir)').Replace('\', '/').TrimEnd('/'))))</ParentDir>
-            <TargetPath>Scripts/Trigger/%(ParentDir)/%(Filename)%(Extension)</TargetPath>
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="Navmeshes/**/*.navmesh">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -61,10 +50,6 @@
 
     <ItemGroup>
         <None Update="appsettings.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="Scripting/Scripts/Trigger/trigger_api.py">
-            <TargetPath>Scripts/Trigger/trigger_api.py</TargetPath>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

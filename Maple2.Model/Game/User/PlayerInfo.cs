@@ -33,6 +33,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
             DungeonEnterLimits = player.Character.DungeonEnterLimits,
             GuildId = player.Character.GuildId,
             GuildName = player.Character.GuildName,
+            MentorRole = player.Character.MentorRole,
+            Channel = player.Character.Channel,
         };
     }
 
@@ -41,6 +43,8 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         AchievementInfo = achievementInfo;
         ClubIds = new List<long>(clubsIds);
         DungeonEnterLimits = [];
+        MentorRole = character.MentorRole;
+        Channel = character.Channel;
     }
 
     public PlayerInfo Clone() {
@@ -94,7 +98,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
         writer.WriteLong();
         writer.WriteLong();
         writer.WriteInt();
-        writer.WriteByte();
+        writer.Write<MentorRole>(MentorRole);
         writer.WriteBool(false);
         writer.WriteLong(); // Birthday
         writer.WriteInt(); // SuperChatId
@@ -126,15 +130,16 @@ public class CharacterInfo {
     public DeathState DeathState { get; set; }
     // Location
     public int MapId { get; set; }
-    public short Channel { get; set; }
+    public short Channel { get; set; } = -1;
     public long LastOnlineTime { get; set; }
-
+    public int RetryHeartbeat { get; set; } = 3;
     // Guild
     public long GuildId { get; set; }
     public string GuildName { get; set; }
 
     public long UpdateTime { get; set; }
-    public bool Online => Channel != 0;
+    public bool Online => Channel >= 0;
+    public MentorRole MentorRole { get; set; }
 
     public CharacterInfo(long accountId, long characterId, string name, string motto, string picture, Gender gender, Job job, short level) {
         AccountId = accountId;
@@ -161,6 +166,7 @@ public class CharacterInfo {
         LastOnlineTime = other.LastOnlineTime;
         GuildId = other.GuildId;
         GuildName = other.GuildName;
+        MentorRole = other.MentorRole;
     }
 
     public static implicit operator CharacterInfo(Player player) {
@@ -177,6 +183,7 @@ public class CharacterInfo {
             Channel = player.Character.Channel,
             GuildId = player.Character.GuildId,
             GuildName = player.Character.GuildName,
+            MentorRole = player.Character.MentorRole,
         };
     }
 }

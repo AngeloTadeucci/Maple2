@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
 using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.Skill;
@@ -15,9 +17,12 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
     }
 
     protected override IEnumerable<StoredSkillMetadata> Map() {
+        List<long> magicPaths = [];
+        List<long> cubeMagicPaths = [];
         foreach ((int id, string name, SkillData data) in parser.Parse()) {
             if (data.basic == null) continue; // Old_JobChange_01
             Debug.Assert(data.basic.kinds.groupIDs.Length <= 1);
+
 
             // Note: 90000775 has cubeMagicPathID="2147483647" which should be cubeMagicPathID="9000073111"
             Dictionary<short, SkillMetadataLevel> levels = data.level.ToDictionary(
@@ -64,8 +69,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                 Overlap: attack.arrowProperty.overlap,
                                 Explosion: attack.arrowProperty.explosion,
                                 RayPhysXTest: attack.arrowProperty.rayPhysxTest,
-                                NonTarget: (SkillEntity) attack.arrowProperty.nonTarget,
-                                BounceType: attack.arrowProperty.bounceType,
+                                NonTarget: (SkillTargetType) attack.arrowProperty.nonTarget,
+                                BounceType: (BounceType) attack.arrowProperty.bounceType,
                                 BounceCount: attack.arrowProperty.bounceCount,
                                 BounceRadius: attack.arrowProperty.bounceRadius,
                                 BounceOverlap: attack.arrowProperty.bounceType > 0 && attack.arrowProperty.bounceOverlap,
@@ -95,7 +100,8 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                                     PriorityHitImmune: attack.damageProperty.pushPriorityHitImmune
                                 ) : null
                             ),
-                            Skills: attack.conditionSkill.Select(skill => skill.Convert()).ToArray()
+                            Skills: attack.conditionSkill.Where(skill => !skill.dependOnDamageCount).Select(skill => skill.Convert()).ToArray(),
+                            SkillsOnDamage: attack.conditionSkill.Where(skill => skill.dependOnDamageCount).Select(skill => skill.Convert()).ToArray()
                         )).ToArray(),
                         AttackPoints: motion.CollectAttackPoints()
                     )).ToArray()
@@ -110,6 +116,14 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     RangeType: (RangeType) data.basic.kinds.rangeType,
                     AttackType: (AttackType) data.basic.ui.attackType,
                     Element: (Element) data.basic.kinds.element,
+                    State: string.IsNullOrEmpty(data.basic.kinds.state)
+                        ? ActorState.None
+                        : Enum.GetValues<ActorState>()
+                            .FirstOrDefault(enumValue =>
+                                enumValue.GetType()
+                                    .GetField(enumValue.ToString())
+                                    ?.GetCustomAttribute<DescriptionAttribute>()
+                                    ?.Description == data.basic.kinds.state),
                     ContinueSkill: data.basic.kinds.continueSkill,
                     SpRecoverySkill: data.basic.kinds.spRecoverySkill,
                     ImmediateActive: data.basic.kinds.immediateActive,
@@ -121,7 +135,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
                     MaxLevel: levels.Keys.Max()),
                 State: new SkillMetadataState(
                     InBattle: data.basic.stateAttr.battle == 1,
-                    SuperArmor: data.basic.stateAttr.superArmor,
+                    SuperArmor: (SuperArmor) data.basic.stateAttr.superArmor,
                     UseInGameTime: data.basic.stateAttr.useInGameTime == 1,
                     IgnoreReduceCooldown: data.basic.stateAttr.ignoreReduceCooldown == 1,
                     CooldownGroupId: data.basic.stateAttr.cooldownGroupID,
@@ -136,6 +150,7 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
             Type: region.rangeType switch {
                 "box" => SkillRegion.Box,
                 "cylinder" => SkillRegion.Cylinder,
+                "circle" => SkillRegion.Cylinder,
                 "frustum" => SkillRegion.Frustum,
                 "hole_cylinder" => SkillRegion.HoleCylinder,
                 "1200" => SkillRegion.None, // skill/60/60012051.xml
@@ -148,9 +163,9 @@ public class SkillMapper : TypeMapper<StoredSkillMetadata> {
             RotateZDegree: region.rangeZRotateDegree,
             RangeAdd: region.rangeAdd,
             RangeOffset: region.rangeOffset,
-            IncludeCaster: (SkillEntity) region.includeCaster,
-            ApplyTarget: (SkillEntity) region.applyTarget,
-            CastTarget: (SkillEntity) region.castTarget
+            IncludeCaster: (SkillTargetType) region.includeCaster,
+            ApplyTarget: (ApplyTargetType) region.applyTarget,
+            CastTarget: (SkillTargetType) region.castTarget
         );
     }
 }

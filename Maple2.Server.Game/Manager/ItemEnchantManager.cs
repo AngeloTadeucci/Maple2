@@ -52,7 +52,6 @@ public class ItemEnchantManager {
     }
 
     private readonly GameSession session;
-    private readonly Lua.Lua lua;
     private readonly ILogger logger = Log.Logger.ForContext<ItemEnchantManager>();
 
     public EnchantType Type { get; private set; }
@@ -67,9 +66,8 @@ public class ItemEnchantManager {
     private EnchantResult enchantResult;
 
 
-    public ItemEnchantManager(GameSession session, Lua.Lua lua) {
+    public ItemEnchantManager(GameSession session) {
         this.session = session;
-        this.lua = lua;
 
         catalysts = new List<IngredientInfo>();
         fodders = new Dictionary<long, Item>();

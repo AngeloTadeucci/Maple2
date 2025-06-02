@@ -10,12 +10,12 @@ namespace Maple2.Server.Game.Util;
 public static class DamageCalculator {
     public static (DamageType, long) CalculateDamage(IActor caster, IActor target, DamagePropertyRecord property) {
         // Check block
-        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.BlockChance, property.SkillId))) {
+        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(BuffCompulsionEventType.BlockChance, property.SkillId))) {
             return (DamageType.Block, 0);
         }
 
         // Check evase
-        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(CompulsionEventType.EvasionChanceOverride, property.SkillId))) {
+        if (Damage.TriggerCompulsionEvent(target.Buffs.TotalCompulsionRate(BuffCompulsionEventType.EvasionChanceOverride, property.SkillId))) {
             return (DamageType.Miss, 0);
         }
 
@@ -80,7 +80,7 @@ public static class DamageCalculator {
             }
 
             if (damageType != DamageType.Critical) {
-                damageType = caster.Stats.GetCriticalRate(target.Stats.Values[BasicAttribute.CriticalEvasion].Total, caster.Buffs.TotalCompulsionRate(CompulsionEventType.CritChanceOverride, property.SkillId));
+                damageType = caster.Stats.GetCriticalRate(target.Stats.Values[BasicAttribute.CriticalEvasion].Total, caster.Buffs.TotalCompulsionRate(BuffCompulsionEventType.CritChanceOverride, property.SkillId));
             }
         }
 

@@ -44,32 +44,34 @@ public class UserChatHandler : FieldPacketHandler {
         switch (type) {
             case ChatType.Normal:
                 HandleNormal(session, message, itemUids);
-                return;
+                break;
             case ChatType.WhisperTo:
                 HandleWhisper(session, message, recipient, itemUids);
-                return;
+                break;
             case ChatType.Party:
                 HandleParty(session, message, itemUids);
-                return;
+                break;
             case ChatType.Guild:
                 HandleGuild(session, message, itemUids);
-                return;
+                break;
             case ChatType.World:
                 HandleWorld(session, message, itemUids);
-                return;
+                break;
             case ChatType.Channel:
                 HandleChannel(session, message, itemUids);
-                return;
+                break;
             case ChatType.Super:
                 HandleSuper(session, message, itemUids);
-                return;
+                break;
             case ChatType.Club:
                 HandleClub(session, message, clubId, itemUids);
-                return;
+                break;
             case ChatType.Wedding:
                 HandleWedding(session, message, itemUids);
-                return;
+                break;
         }
+
+        session.ConditionUpdate(ConditionType.chat, targetLong: session.Field.MapId);
     }
 
     private static void HandleNormal(GameSession session, string message, ICollection<long> itemUids) {

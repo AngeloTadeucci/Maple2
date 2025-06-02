@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Text;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using Maple2.PacketLib.Tools;
 
@@ -141,5 +142,33 @@ public static class PacketExtensions {
         writer.WriteByte((byte) (value >> 16));
         writer.WriteByte((byte) (value >> 8));
         writer.WriteByte((byte) (value));
+    }
+
+    public static T WriteUnicodeStringWithLength<T>(this T writer, string value = "") where T : IByteWriter {
+        if (string.IsNullOrEmpty(value)) {
+            writer.WriteInt(0);
+            return writer;
+        }
+
+        byte[] stringBytes = Encoding.Unicode.GetBytes(value);
+        writer.WriteInt(stringBytes.Length);
+        writer.WriteBytes(stringBytes);
+        return writer;
+    }
+
+    // Read a Unicode string with a 4-byte byte length prefix
+    public static string ReadUnicodeStringWithLength(this IByteReader reader) {
+        // Read the 4-byte length prefix (byte count)
+        int byteLength = reader.ReadInt();
+
+        if (byteLength <= 0) {
+            return string.Empty;
+        }
+
+        // Read the specified number of bytes
+        byte[] stringBytes = reader.ReadBytes(byteLength);
+
+        // Convert bytes to string using UTF-16LE encoding
+        return Encoding.Unicode.GetString(stringBytes);
     }
 }

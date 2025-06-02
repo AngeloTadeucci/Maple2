@@ -41,7 +41,7 @@ public class PacketStructureResolver {
         // Parse opCode: 81 0081 0x81 0x0081
         ushort opCode;
         string firstArg = args[0];
-        if (firstArg.ToLower().StartsWith("0x")) {
+        if (firstArg.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase)) {
             opCode = Convert.ToUInt16(firstArg, 16);
         } else {
             switch (firstArg.Length) {
@@ -61,8 +61,8 @@ public class PacketStructureResolver {
             }
         }
 
-        PacketStructureResolver resolver = new(opCode);
-        DirectoryInfo dir = Directory.CreateDirectory($"{Paths.SOLUTION_DIR}/PacketStructures");
+        var resolver = new PacketStructureResolver(opCode);
+        DirectoryInfo dir = Directory.CreateDirectory(Path.Combine(Paths.SOLUTION_DIR, "PacketStructures"));
 
         string filePath = $"{dir.FullName}/{resolver.opCode:X4} - {resolver.packetName}.txt";
         if (!File.Exists(filePath)) {
@@ -75,7 +75,7 @@ public class PacketStructureResolver {
 
         string[] fileLines = File.ReadAllLines(filePath);
         foreach (string line in fileLines) {
-            if (string.IsNullOrEmpty(line) || line.StartsWith('#') || line.StartsWith("ByteWriter")) {
+            if (string.IsNullOrEmpty(line) || line.StartsWith('#') || line.StartsWith("ByteWriter") || line.StartsWith("//")) {
                 continue;
             }
 
@@ -85,6 +85,9 @@ public class PacketStructureResolver {
             valueAsString = string.IsNullOrEmpty(valueAsString) ? "0" : valueAsString;
             try {
                 switch (type) {
+                    case "Bool":
+                        resolver.packet.WriteBool(bool.Parse(valueAsString));
+                        break;
                     case "Byte":
                         resolver.packet.WriteByte(byte.Parse(valueAsString));
                         break;
@@ -145,8 +148,8 @@ public class PacketStructureResolver {
         new SockHintInfo(info.Hint, defaultValue).Update(packet);
         string hint = info.Hint.GetCode() + " - " + info.Offset + "\r\n";
 
-        DirectoryInfo dir = Directory.CreateDirectory($"{Paths.SOLUTION_DIR}/PacketStructures");
-        StreamWriter file = File.AppendText($"{dir.FullName}/{opCode:X4} - {packetName}.txt");
+        DirectoryInfo dir = Directory.CreateDirectory(Path.Combine(Paths.SOLUTION_DIR, "PacketStructures"));
+        StreamWriter file = File.AppendText(Path.Combine(dir.FullName, $"{opCode:X4} - {packetName}.txt"));
         file.Write(hint);
         file.Close();
 

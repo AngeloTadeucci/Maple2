@@ -98,10 +98,11 @@ public static class NpcTalkPacket {
         return pWriter;
     }
 
-    public static ByteWriter Cutscene(string movieString) {
+    public static ByteWriter Cutscene(string movieString, int mapId) {
         var pWriter = Packet.Of(SendOp.NpcTalk);
         pWriter.Write<Command>(Command.Action);
         pWriter.Write<NpcTalkAction>(NpcTalkAction.Cutscene);
+        pWriter.WriteInt(mapId);
         pWriter.WriteUnicodeString(movieString);
 
         return pWriter;

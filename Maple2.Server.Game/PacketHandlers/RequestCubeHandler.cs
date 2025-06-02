@@ -303,6 +303,7 @@ public class RequestCubeHandler : FieldPacketHandler {
 
         session.HeldLiftup = weapon;
         session.Field.Broadcast(CubePacket.LiftupObject(session.Player, session.HeldLiftup));
+        session.Player.InBattle = true;
     }
 
     private void HandleLiftupDrop(GameSession session) {

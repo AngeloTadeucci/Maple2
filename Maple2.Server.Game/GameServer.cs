@@ -83,9 +83,9 @@ public class GameServer : Server<GameSession> {
         }
     }
 
-    public IEnumerable<GameSession> GetSessions() {
+    public List<GameSession> GetSessions() {
         lock (mutex) {
-            return sessions.Values;
+            return sessions.Values.ToList();
         }
     }
 
@@ -123,8 +123,10 @@ public class GameServer : Server<GameSession> {
             return;
         }
 
-        foreach (GameSession session in sessions.Values) {
-            session.Send(GameEventPacket.Add(gameEvent));
+        lock (mutex) {
+            foreach (GameSession session in sessions.Values) {
+                session.Send(GameEventPacket.Add(gameEvent));
+            }
         }
     }
 
@@ -133,8 +135,10 @@ public class GameServer : Server<GameSession> {
             return;
         }
 
-        foreach (GameSession session in sessions.Values) {
-            session.Send(GameEventPacket.Remove(gameEvent.Id));
+        lock (mutex) {
+            foreach (GameSession session in sessions.Values) {
+                session.Send(GameEventPacket.Remove(gameEvent.Id));
+            }
         }
     }
 
@@ -159,8 +163,10 @@ public class GameServer : Server<GameSession> {
     }
 
     public void DailyReset() {
-        foreach (GameSession session in sessions.Values) {
-            session.DailyReset();
+        lock (mutex) {
+            foreach (GameSession session in sessions.Values) {
+                session.DailyReset();
+            }
         }
     }
 
@@ -183,8 +189,10 @@ public class GameServer : Server<GameSession> {
     }
 
     public void Broadcast(ByteWriter packet) {
-        foreach (GameSession session in sessions.Values) {
-            session.Send(packet);
+        lock (mutex) {
+            foreach (GameSession session in sessions.Values) {
+                session.Send(packet);
+            }
         }
     }
 

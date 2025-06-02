@@ -26,6 +26,7 @@ public class QuestHandler : FieldPacketHandler {
         GoToDungeon = 13,
         SkyFortress = 14,
         MapleGuide = 16,
+        EpicRestart = 17,
         ResumeDungeon = 19,
         Dispatch = 20,
         RemoteComplete = 24, // Maybe? This is mainly used for Navigator

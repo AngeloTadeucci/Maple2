@@ -73,6 +73,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(effect => effect.Shield).HasJsonConversion();
         builder.Property(effect => effect.InvokeEffect).HasJsonConversion();
         builder.Property(effect => effect.Skills).HasJsonConversion();
+        builder.Property(effect => effect.TickSkills).HasJsonConversion();
         builder.Property(effect => effect.ModifyOverlapCount).HasJsonConversion();
     }
 
@@ -170,6 +171,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(quest => quest.GoToNpc).HasJsonConversion();
         builder.Property(quest => quest.GoToDungeon).HasJsonConversion();
         builder.Property(quest => quest.Dispatch).HasJsonConversion();
+        builder.Property(quest => quest.Mentoring).HasJsonConversion();
     }
 
     private static void ConfigureRideMetadata(EntityTypeBuilder<RideMetadata> builder) {

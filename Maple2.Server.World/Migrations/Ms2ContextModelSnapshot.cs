@@ -295,6 +295,9 @@ namespace Maple2.Server.World.Migrations
                         .IsRequired()
                         .HasColumnType("json");
 
+                    b.Property<byte>("MentorRole")
+                        .HasColumnType("tinyint unsigned");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(255)");

@@ -3,7 +3,7 @@ using Maple2.Tools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Maple2.Server.Web.Controllers;
+namespace Maple2.Server.Web.Controllers.Ugc;
 
 [Route("/data/profiles")]
 public class ProfileController : ControllerBase {

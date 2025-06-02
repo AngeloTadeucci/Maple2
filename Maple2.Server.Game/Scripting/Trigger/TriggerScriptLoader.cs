@@ -38,7 +38,13 @@ public partial class TriggerScriptLoader {
         // Script "compilation" needs to be synchronized.
         lock (engine) {
             foreach (ScriptSource script in scripts) {
-                script.Execute(context.Scope);
+                try {
+                    script.Execute(context.Scope);
+                } catch (Exception e) {
+                    logger.Error(e, "Error executing script {Script} in context {Context}", script.GetCode(), context);
+                    state = null;
+                    return false;
+                }
             }
         }
 

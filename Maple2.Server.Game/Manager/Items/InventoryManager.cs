@@ -37,7 +37,8 @@ public class InventoryManager {
             if (tabs.TryGetValue(type, out ItemCollection? items)) {
                 foreach (Item item in load) {
                     if (items.Add(item).Count == 0) {
-                        Log.Error("Failed to add item:{Uid}", item.Uid);
+                        Log.Error("Failed to add item:{Uid} to ItemCollection (Size:{Size}, OpenSlots:{OpenSlots}, Count:{Count})",
+                            item.Uid, items.Size, items.OpenSlots, items.Count);
                     }
                 }
             }
@@ -260,8 +261,8 @@ public class InventoryManager {
                 break;
             // case 90000011: // Meret (Secondary)
             // case 90000015: // GameMeret (Secondary)
-            // case 90000016: // EventMeret (Secondary)
-            // case 90000020: // RedMeret
+            case 90000016: // EventMeret (Secondary)
+            case 90000020: // RedMeret
             case 90000004: // Meret
                 session.Currency.Meret += add.Amount;
                 break;
@@ -272,8 +273,12 @@ public class InventoryManager {
                 session.Exp.AddExp(ExpType.expDrop, additionalExp: add.Amount);
                 break;
             case 90000009: // SpiritOrb
+                session.Stats.Values[BasicAttribute.Spirit].Add(add.Amount);
+                session.Send(StatsPacket.Update(session.Player, BasicAttribute.Spirit));
                 break;
             case 90000010: // StaminaOrb
+                session.Stats.Values[BasicAttribute.Stamina].Add(add.Amount);
+                session.Send(StatsPacket.Update(session.Player, BasicAttribute.Stamina));
                 break;
             case 90000013: // Rue
                 session.Currency[CurrencyType.Rue] += add.Amount;
@@ -510,38 +515,44 @@ public class InventoryManager {
         }
     }
 
-    public void Expand(InventoryType type) {
+    public bool Expand(InventoryType type, int expandRowCount = Constant.InventoryExpandRowCount) {
+        // if expandRowCount is not divisible by 6, return false
+        if (expandRowCount % 6 != 0) {
+            return false;
+        }
+
         lock (session.Item) {
             if (!tabs.TryGetValue(type, out ItemCollection? items)) {
                 session.Send(ItemInventoryPacket.Error(s_item_err_not_active_tab));
-                return;
+                return false;
             }
 
-            short newExpand = (short) (session.Player.Value.Unlock.Expand[type] + Constant.InventoryExpandRowCount);
+            short newExpand = (short) (session.Player.Value.Unlock.Expand[type] + expandRowCount);
             if (newExpand > MaxExpandSize(type)) {
                 // There is client side validation for this, but if the server side limits mismatch, use this error.
                 session.Send(NoticePacket.MessageBox(StringCode.s_inventory_err_expand_max));
-                return;
+                return false;
             }
 
             if (session.Currency.Meret < Constant.InventoryExpandPrice1Row) {
                 session.Send(ItemInventoryPacket.Error(s_cannot_charge_merat));
-                return;
+                return false;
             }
 
             if (!items.Expand((short) (BaseSize(type) + newExpand))) {
-                return;
+                return false;
             }
 
             session.Currency.Meret -= Constant.InventoryExpandPrice1Row;
             if (session.Player.Value.Unlock.Expand.ContainsKey(type)) {
                 session.Player.Value.Unlock.Expand[type] = newExpand;
             } else {
-                session.Player.Value.Unlock.Expand[type] = Constant.InventoryExpandRowCount;
+                session.Player.Value.Unlock.Expand[type] = (short) expandRowCount;
             }
 
             session.Send(ItemInventoryPacket.ExpandCount(type, newExpand));
             session.Send(ItemInventoryPacket.ExpandComplete());
+            return true;
         }
     }
 

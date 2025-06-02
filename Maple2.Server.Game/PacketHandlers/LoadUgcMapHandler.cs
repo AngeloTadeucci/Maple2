@@ -50,7 +50,10 @@ public class LoadUgcMapHandler : FieldPacketHandler {
         }
 
         // Check if current plot is planner
-        Plot indoor = session.Field.Plots.First().Value;
+        Plot? indoor = session.Housing.GetFieldPlot();
+        if (indoor is null) {
+            return;
+        }
         if (indoor.IsPlanner) {
             home.EnterPlanner(indoor.PlotMode);
         }

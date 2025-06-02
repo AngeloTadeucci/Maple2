@@ -12,9 +12,9 @@ public static class RequestPacket {
         return Packet.Of(SendOp.RequestKey);
     }
 
-    public static ByteWriter Heartbeat(int key) {
+    public static ByteWriter Heartbeat() {
         var pWriter = Packet.Of(SendOp.RequestHeartbeat);
-        pWriter.WriteInt(key);
+        pWriter.WriteInt(Environment.TickCount);
 
         return pWriter;
     }

@@ -30,7 +30,6 @@ public class ItemDismantleHandler : FieldPacketHandler {
     // ReSharper disable MemberCanBePrivate.Global
     public required ItemMetadataStorage ItemMetadata { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 

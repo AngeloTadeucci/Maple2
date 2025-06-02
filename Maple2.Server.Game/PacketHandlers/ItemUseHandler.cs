@@ -39,6 +39,10 @@ public class ItemUseHandler : FieldPacketHandler {
             return;
         }
 
+        if (item.Metadata.Function?.OnlyShadowWorld == true && session.Field.Metadata.Property.Continent != Continent.ShadowWorld) {
+            return;
+        }
+
         switch (item.Metadata.Function?.Type) {
             case ItemFunction.BlueprintImport:
                 HandleBlueprintImport(session, item);
@@ -107,11 +111,27 @@ public class ItemUseHandler : FieldPacketHandler {
             case ItemFunction.LevelPotion:
                 HandleLevelPotion(session, item);
                 break;
+            case ItemFunction.HongBao:
+                HandleHongBao(session, item);
+                break;
+            case ItemFunction.AddAdditionalEffect:
+                HandleAddAdditionalEffect(session, item);
+                break;
+            case ItemFunction.ExpandInven:
+                HandleExpandInventory(session, item);
+                break;
+            case ItemFunction.QuestScroll:
+                HandleQuestScroll(session, item);
+                break;
+            case ItemFunction.CallAirTaxi:
+                HandleCallAirTaxi(session, packet, item);
+                break;
             default:
                 Logger.Warning("Unhandled item function: {Name}", item.Metadata.Function?.Type);
                 return;
         }
     }
+
     private void HandleBlueprintImport(GameSession session, Item item) {
         if (item.Blueprint is null) {
             Logger.Error("Item {ItemUid} is missing blueprint", item.Uid);
@@ -321,7 +341,8 @@ public class ItemUseHandler : FieldPacketHandler {
                 CharacterId = receiverInfo.CharacterId,
                 MailId = receiverMail.Id,
             });
-        } catch { /* ignored */ }
+        } catch { /* ignored */
+        }
 
         session.Item.Inventory.Add(selfBadge, true);
         session.Send(NoticePacket.MessageBox(new InterfaceText(StringCode.s_couple_effect_mail_send_partner, receiverInfo.Name)));
@@ -544,5 +565,111 @@ public class ItemUseHandler : FieldPacketHandler {
         });
 
         session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private static void HandleHongBao(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("itemId") || !int.TryParse(xmlParameters["itemId"], out int itemId) ||
+            !xmlParameters.ContainsKey("totalCount") || !int.TryParse(xmlParameters["totalCount"], out int totalCount) ||
+            !xmlParameters.ContainsKey("totalUser") || !int.TryParse(xmlParameters["totalUser"], out int totalUser) ||
+            !xmlParameters.ContainsKey("durationSec") || !int.TryParse(xmlParameters["durationSec"], out int durationSec)) {
+            return;
+        }
+        session.Item.Inventory.Consume(item.Uid, 1);
+        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
+    }
+
+    private void HandleAddAdditionalEffect(GameSession session, Item item) {
+        int[] parameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
+        if (parameters.Length < 2) {
+            return;
+        }
+
+        int effectId = parameters[0];
+        short effectLevel = (short) parameters[1];
+        session.Player.Buffs.AddBuff(session.Player, session.Player, effectId, effectLevel, session.Field.FieldTick, notifyField: true);
+        session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private void HandleExpandInventory(GameSession session, Item item) {
+        string[] parameters = item.Metadata.Function?.Parameters.Split(',') ?? [];
+        if (parameters.Length < 2) {
+            return;
+        }
+
+        int amount = int.Parse(parameters[0]);
+        InventoryType inventoryType = parameters[1] switch {
+            "game" => InventoryType.Gear,
+            "mastery" => InventoryType.LifeSkill,
+            "summon" => InventoryType.Mount,
+            "misc" => InventoryType.Misc,
+            "skin" => InventoryType.Outfit,
+            "gem" => InventoryType.Gemstone,
+            "material" => InventoryType.Catalyst,
+            "quest" => InventoryType.Quest,
+            "life" => InventoryType.FishingMusic,
+            "coin" => InventoryType.Currency,
+            "pet" => InventoryType.Pets,
+            "activeSkill" => InventoryType.Consumable,
+            "badge" => InventoryType.Badge,
+            "piece" => InventoryType.Fragment,
+            _ => InventoryType.Misc,
+        };
+
+        if (!session.Item.Inventory.Expand(inventoryType, amount)) {
+            session.Send(ItemUsePacket.MaxInventory());
+            return;
+        }
+
+        session.Send(ItemUsePacket.ExpandInventory());
+        session.Item.Inventory.Consume(item.Uid, 1);
+    }
+
+    private void HandleQuestScroll(GameSession session, Item item) {
+        Dictionary<string, string> xmlParameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+        if (!xmlParameters.ContainsKey("questID")) {
+            Logger.Warning("QuestScroll item {ItemId} is missing questID parameter", item.Id);
+            return;
+        }
+
+        int[] questIds = xmlParameters["questID"].Split(',').Select(int.Parse).ToArray();
+        foreach (int questId in questIds) {
+            if (!session.QuestMetadata.TryGet(questId, out QuestMetadata? metadata)) {
+                Logger.Warning("QuestScroll item {ItemId} has invalid questID {QuestId}", item.Id, questId);
+                return;
+            }
+            if (!session.Quest.CanStart(metadata)) {
+                Logger.Warning("QuestScroll item {ItemId} has questID {QuestId} that cannot be started", item.Id, questId);
+                return;
+            }
+        }
+
+        foreach (int questId in questIds) {
+            session.Quest.Start(questId);
+        }
+
+        session.Item.Inventory.Consume(item.Uid, 1);
+        session.Send(ItemUsePacket.QuestScroll(item.Id));
+    }
+
+    private void HandleCallAirTaxi(GameSession session, IByteReader packet, Item item) {
+        string mapIdString = packet.ReadUnicodeString();
+
+        if (!int.TryParse(mapIdString, out int mapId)) {
+            Logger.Warning("Invalid map ID: {MapId}", mapIdString);
+            return;
+        }
+
+        if (!TaxiHandler.CheckMapCashCall(session, mapId, session.Field.MapMetadata)) {
+            return;
+        }
+
+        if (!session.Item.Inventory.Consume(item.Uid, 1)) {
+            return;
+        }
+
+        session.Send(session.PrepareField(mapId)
+            ? FieldEnterPacket.Request(session.Player)
+            : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 }

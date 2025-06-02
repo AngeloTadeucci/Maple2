@@ -6,6 +6,7 @@ using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using static Maple2.Model.Error.ItemSocketError;
@@ -31,7 +32,6 @@ public class ItemSocketHandler : FieldPacketHandler {
     // ReSharper disable MemberCanBePrivate.Global
     public required ItemMetadataStorage ItemMetadata { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 

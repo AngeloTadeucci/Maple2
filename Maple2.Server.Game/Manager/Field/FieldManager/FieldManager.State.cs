@@ -8,6 +8,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
@@ -43,6 +44,8 @@ public partial class FieldManager {
     private readonly ConcurrentDictionary<int, FieldSpawnGroup> fieldSpawnGroups = new();
     private readonly ConcurrentDictionary<int, FieldSkill> fieldSkills = new();
     private readonly ConcurrentDictionary<int, FieldPortal> fieldPortals = new();
+
+    private readonly ConcurrentDictionary<int, HongBao> hongBaos = new();
 
     private string? background;
     private readonly ConcurrentDictionary<FieldProperty, IFieldProperty> fieldProperties = new();
@@ -323,7 +326,7 @@ public partial class FieldManager {
                 continue;
             }
 
-            int spawnWeight = Lua.CalcNpcSpawnWeight(npc.Basic.MainTags.Length, npc.Basic.SubTags.Length, npc.Basic.RareDegree, npc.Basic.Difficulty);
+            int spawnWeight = (int) Lua.CalcNpcSpawnWeight(npc.Basic.MainTags.Length, npc.Basic.SubTags.Length, npc.Basic.RareDegree, npc.Basic.Difficulty);
             spawnNpcs.Add(npc, spawnWeight);
         }
 
@@ -408,10 +411,11 @@ public partial class FieldManager {
         Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
     }
 
-    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default) {
+    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
         var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, metadata, interval, position) {
             Position = position,
             Rotation = rotation,
+            TriggerId = triggerId,
         };
 
         fieldSkills[fieldSkill.ObjectId] = fieldSkill;
@@ -474,26 +478,46 @@ public partial class FieldManager {
         }
     }
 
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null) {
-        switch (entity) {
-            case SkillEntity.Target:
-            case SkillEntity.Attacker:
-            case SkillEntity.RegionBuff:
-            case SkillEntity.RegionDebuff:
-                return prisms.Filter(Players.Values, limit, ignore);
-            case SkillEntity.Owner:
-                return prisms.Filter(Mobs.Values, limit, ignore);
-            case SkillEntity.RegionPet:
+    public IEnumerable<IActor> GetTargets(IActor caster, Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null) {
+        switch (targetType) {
+            case ApplyTargetType.Friendly:
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
+            case ApplyTargetType.Hostile:
+                if (caster is FieldNpc) {
+                    return prisms.Filter(Players.Values, limit, ignore);
+                } else if (caster is FieldPlayer) {
+                    //TODO Include other players if PVP is Active
+                    return prisms.Filter(Mobs.Values, limit, ignore);
+                }
+                Log.Debug("Unhandled ApplyTargetType:{Entity} for {caster.GetType()}", targetType, caster.GetType());
+                return [];
+            case ApplyTargetType.HungryMobs:
                 return prisms.Filter(Pets.Values.Where(pet => pet.OwnerId == 0), limit, ignore);
+            case ApplyTargetType.RegionBuff:
+            case ApplyTargetType.RegionBuff2:
+                return prisms.Filter(Players.Values, limit, ignore);
             default:
-                Log.Debug("Unhandled SkillEntity:{Entity}", entity);
-                return Array.Empty<IActor>();
+                Log.Debug("Unhandled SkillEntity:{Entity}", targetType);
+                return [];
         }
     }
 
     public void RemoveSkill(int objectId) {
         if (fieldSkills.Remove(objectId, out _)) {
             Broadcast(RegionSkillPacket.Remove(objectId));
+        }
+    }
+
+    public void RemoveSkillByTriggerId(int triggerId) {
+        foreach (FieldSkill fieldSkill in fieldSkills.Values.Where(skill => skill.TriggerId == triggerId)) {
+            fieldSkills.Remove(fieldSkill.ObjectId, out _);
+            Broadcast(RegionSkillPacket.Remove(fieldSkill.ObjectId));
         }
     }
     #endregion
@@ -543,7 +567,7 @@ public partial class FieldManager {
             Continent.Kritias => "Eff_ks_magichole_portal_A01",
             _ => "Eff_event_portal_A01",
         };
-        fieldPortal.EndTick = (int) (Environment.TickCount64 + TimeSpan.FromSeconds(30).TotalMilliseconds);
+        fieldPortal.EndTick = (int) (FieldTick + TimeSpan.FromSeconds(30).TotalMilliseconds);
         Broadcast(PortalPacket.Add(fieldPortal));
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
     }
@@ -551,6 +575,32 @@ public partial class FieldManager {
     public void SetRoomTimer(RoomTimerType type, int duration) {
         RoomTimer = new RoomTimer(this, type, duration);
     }
+
+    public void AddHongBao(FieldPlayer owner, int sourceItemId, int itemId, int totalUser, int durationSec, int itemCount) {
+        var hongBao = new HongBao(this, owner, sourceItemId, NextLocalId(), itemId, totalUser, FieldTick, durationSec, itemCount);
+        if (!hongBaos.TryAdd(hongBao.ObjectId, hongBao)) {
+            logger.Error("Failed to add hongbao {ObjectId}", hongBao.ObjectId);
+            return;
+        }
+
+        Item? item = hongBao.Claim(owner);
+        if (item == null) {
+            return;
+        }
+        if (!owner.Session.Item.Inventory.Add(item, true)) {
+            owner.Session.Item.MailItem(item);
+        }
+        Broadcast(PlayerHostPacket.UseHongBao(hongBao, item.Amount));
+    }
+
+    public void RemoveHongBao(int objectId) {
+        hongBaos.TryRemove(objectId, out _);
+    }
+
+    public bool TryGetHongBao(int objectId, [NotNullWhen(true)] out HongBao? hongBao) {
+        return hongBaos.TryGetValue(objectId, out hongBao);
+    }
+
 
     #region Player Managed
     // GuideObject is not added to the field, it will be managed by |GameSession.State|

@@ -23,6 +23,7 @@ using GuildBuff = Maple2.File.Parser.Xml.Table.GuildBuff;
 using GuildNpc = Maple2.File.Parser.Xml.Table.GuildNpc;
 using GuildNpcType = Maple2.Model.Enum.GuildNpcType;
 using InteractObject = Maple2.File.Parser.Xml.Table.InteractObject;
+using ItemOptionConstant = Maple2.Model.Metadata.ItemOptionConstant;
 using ItemSocket = Maple2.File.Parser.Xml.Table.ItemSocket;
 using JobTable = Maple2.Model.Metadata.JobTable;
 using MagicPath = Maple2.Model.Metadata.MagicPath;
@@ -80,6 +81,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = TableNames.MASTERY_UGC_HOUSING, Table = ParseMasteryUgcHousingTable() };
         yield return new TableMetadata { Name = TableNames.UGC_HOUSING_POINT_REWARD, Table = ParseUgcHousingPointRewardTable() };
         yield return new TableMetadata { Name = TableNames.REWARD_CONTENT, Table = ParseRewardContentTable() };
+        yield return new TableMetadata { Name = TableNames.SEASON_DATA, Table = ParseSeasonDataTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = TableNames.WEDDING, Table = ParseWeddingTable() };
@@ -887,7 +889,10 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 MinLevel: scroll.minLv,
                 MaxLevel: scroll.maxLv,
                 ItemTypes: scroll.slot,
-                Rarities: scroll.rank));
+                Rarities: scroll.rank,
+                RollAttribute: scroll.addOpKind == 1,
+                RollValueType: (RollValueType) scroll.addOpValue,
+                OnlyPet: scroll.onlyPet));
         }
 
         return new ItemRemakeScrollTable(results);
@@ -1734,5 +1739,40 @@ public class TableMapper : TypeMapper<TableMetadata> {
         }
 
         return new RewardContentTable(baseResults, itemResults, mesoStaticResults, mesoResults, expStaticResults);
+    }
+
+    private SeasonDataTable ParseSeasonDataTable() {
+        return new SeasonDataTable(
+            Arcade: ParseSeasonData(parser.ParseSeasonDataArcade()),
+            Boss: ParseSeasonData(parser.ParseSeasonDataBossColosseum()),
+            DarkDescent: ParseSeasonData(parser.ParseSeasonDataDarkStream()),
+            GuildPvp: ParseSeasonData(parser.ParseSeasonDataGuildPvp()),
+            Survival: ParseSeasonData(parser.ParseSeasonDataMapleSurvival()),
+            SurvivalSquad: ParseSeasonData(parser.ParseSeasonDataMapleSurvivalSquad()),
+            Pvp: ParseSeasonData(parser.ParseSeasonDataPvp()),
+            UgcMapCommendation: ParseSeasonData(parser.ParseSeasonDataUgcMapCommendation()),
+            WorldChampionship: ParseSeasonData(parser.ParseSeasonDataWorldChampion()));
+
+        IReadOnlyDictionary<int, SeasonDataTable.Entry> ParseSeasonData(IEnumerable<(int, SeasonData)> seasonDataParser) {
+            var results = new Dictionary<int, SeasonDataTable.Entry>();
+
+            foreach ((int id, SeasonData seasonData) in seasonDataParser) {
+                results.Add(id, new SeasonDataTable.Entry(
+                    Id: seasonData.seasonID,
+                    StartTime: DateTime.TryParseExact(seasonData.eventStart, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startTime) ? startTime : DateTime.MinValue,
+                    EndTime: DateTime.TryParseExact(seasonData.eventEnd, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endTime) ? endTime : DateTime.MaxValue,
+                    Grades: [
+                        seasonData.grade1,
+                        seasonData.grade2,
+                        seasonData.grade3,
+                        seasonData.grade4,
+                        seasonData.grade5,
+                        seasonData.grade6,
+                        seasonData.grade7,
+                    ]));
+            }
+
+            return results;
+        }
     }
 }

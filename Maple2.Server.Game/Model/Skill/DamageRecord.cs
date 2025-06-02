@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 
@@ -21,7 +22,7 @@ public class DamageRecord {
     public Vector3 Position;
     public Vector3 Direction;
 
-    public readonly List<DamageRecordTarget> Targets;
+    public readonly ConcurrentDictionary<int, DamageRecordTarget> Targets; // Target's ObjectId as key
 
     public DamageRecord(SkillMetadata skillMetadata, SkillMetadataAttack attackMetadata) {
         SkillMetadata = skillMetadata;

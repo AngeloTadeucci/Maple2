@@ -1,15 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
+using Maple2.Database.Model.Ranking;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
+using Maple2.Server.Web.Packet;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Serilog;
 using Serilog.Core;
+using Enum = System.Enum;
 
 namespace Maple2.Server.Web.Controllers;
 
@@ -17,9 +27,70 @@ namespace Maple2.Server.Web.Controllers;
 public class WebController : ControllerBase {
 
     private readonly WebStorage webStorage;
+    private readonly GameStorage gameStorage;
 
-    public WebController(WebStorage webStorage) {
+    public WebController(WebStorage webStorage, GameStorage gameStorage) {
         this.webStorage = webStorage;
+        this.gameStorage = gameStorage;
+    }
+
+    [HttpPost("irrq.aspx")]
+    public async Task<IResult> Rankings() {
+        Stream bodyStream = Request.Body;
+        var memoryStream = new MemoryStream();
+        await bodyStream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0; // reset position to beginning of stream before returning
+        if (memoryStream.Length == 0) {
+            return Results.BadRequest("Request was empty");
+        }
+        IByteReader packet = new ByteReader(memoryStream.ToArray());
+        var type = packet.Read<GameRankingType>();
+        int unknown = packet.ReadInt(); // start page maybe?
+        long accountId = packet.ReadLong();
+        long characterId = packet.ReadLong();
+        long characterIdSearch = packet.ReadLong(); // parameter
+        int rankingId = packet.ReadInt(); // boss ranking id like 23200007
+        int seasonId = packet.ReadInt(); // defined in season xmls
+        string userName = packet.ReadUnicodeStringWithLength(); // search string
+
+        if (!Enum.IsDefined(typeof(GameRankingType), type)) {
+            Log.Logger.Debug("Unimplemented ranking type: {Type}", type);
+            return Results.BadRequest($"Invalid ranking type: {type}");
+        }
+
+        Log.Logger.Debug("[Request]Rankings: type={Type}, unknown={unknown} accountId={AccountId} characterId={CharacterId}, characterIdSearch={characterIdSearch}, rankingId={RankingId}, seasonId={seasonId}, userName={UserName}", type, unknown, accountId, characterId, characterIdSearch, rankingId, seasonId, userName);
+
+        ByteWriter pWriter = type switch {
+            GameRankingType.Trophy => Trophy(userName),
+            GameRankingType.PersonalTrophy => PersonalTrophy(characterId),
+            _ => new ByteWriter(),
+        };
+
+        return Results.File(ZlibCompress(pWriter), "application/octet-stream");
+    }
+
+    [HttpPost("ruq.aspx")]
+    public async Task<IResult> Info() {
+        Stream bodyStream = Request.Body;
+        var memoryStream = new MemoryStream();
+        await bodyStream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0; // reset position to beginning of stream before returning
+        if (memoryStream.Length == 0) {
+            return Results.BadRequest("Request was empty");
+        }
+        IByteReader packet = new ByteReader(memoryStream.ToArray());
+        int header = packet.ReadInt(); // 0?
+        long accountId = packet.ReadLong();
+        long characterId = packet.ReadLong();
+        int unknown = packet.ReadInt(); // 5 if mentee ?
+
+
+        if (unknown != 5) {
+            Log.Logger.Debug("Unimplemented info type: {Type}", unknown);
+            return Results.BadRequest($"Invalid info type: {unknown}");
+        }
+
+        return Results.File(ZlibCompress(MenteeList(accountId, characterId)), "application/octet-stream");
     }
 
     [HttpPost("urq.aspx")]
@@ -72,6 +143,7 @@ public class WebController : ControllerBase {
         };
     }
 
+    #region Ugc
     private static IResult UploadProfileAvatar(byte[] fileBytes, long characterId) {
         string filePath = Path.Combine(Paths.WEB_DATA_DIR, "profiles", characterId.ToString());
         try {
@@ -209,4 +281,55 @@ public class WebController : ControllerBase {
         Log.Logger.Warning("Invalid upload mode: {Mode}", mode);
         return Results.BadRequest($"Invalid upload mode: {mode}");
     }
+    #endregion
+
+    #region Ranking
+    public ByteWriter Trophy(string userName) {
+        List<TrophyRankInfo> rankInfos = [];
+        using GameStorage.Request db = gameStorage.Context();
+        if (!string.IsNullOrEmpty(userName)) {
+            TrophyRankInfo? info = db.GetTrophyRankInfo(userName);
+            if (info != null) {
+                rankInfos.Add(info);
+            }
+        } else {
+            IList<TrophyRankInfo> infos = db.GetTrophyRankings();
+            rankInfos.AddRange(infos);
+        }
+
+        return InGameRankPacket.Trophy(rankInfos);
+    }
+
+    public ByteWriter PersonalTrophy(long characterId) {
+        using GameStorage.Request db = gameStorage.Context();
+        TrophyRankInfo? info = db.GetTrophyRankInfo(characterId);
+        return InGameRankPacket.PersonalRank(GameRankingType.PersonalTrophy, info?.Rank ?? 0);
+
+    }
+    #endregion
+
+    public ByteWriter MenteeList(long accountId, long characterId) {
+        using GameStorage.Request db = gameStorage.Context();
+        IList<long> list = db.GetMentorList(accountId, characterId);
+
+        IList<PlayerInfo> players = new List<PlayerInfo>();
+        foreach (long menteeId in list) {
+            PlayerInfo? playerInfo = db.GetPlayerInfo(menteeId);
+            if (playerInfo != null) {
+                players.Add(playerInfo);
+            }
+        }
+
+        return MentorPacket.MenteeList(players);
+    }
+
+    private static byte[] ZlibCompress(ByteWriter writer) {
+        using var outputStream = new MemoryStream();
+        using (var zlibStream = new ZLibStream(outputStream, CompressionLevel.Optimal, leaveOpen: true)) {
+            zlibStream.Write(writer.Buffer, 0, writer.Length);
+        }
+
+        return outputStream.ToArray();
+    }
+
 }

@@ -1,7 +1,9 @@
-﻿using Maple2.Database.Storage;
+﻿using Grpc.Core;
+using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
+using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 
 namespace Maple2.Server.World.Containers;
@@ -32,17 +34,28 @@ public class GlobalPortalManager : IDisposable {
         Channel = ChannelClients.FirstChannel();
 
         for (int i = 0; i < RoomIds.Length; i++) {
-            TimeEventResponse? response = client.TimeEvent(new TimeEventRequest {
-                GetField = new TimeEventRequest.Types.GetField {
-                    MapId = Portal.Metadata.Entries[i].MapId,
-                    RoomId = 0,
-                },
-            });
+            try {
+                TimeEventResponse? response = client.TimeEvent(new TimeEventRequest {
+                    GetField = new TimeEventRequest.Types.GetField {
+                        MapId = Portal.Metadata.Entries[i].MapId,
+                        RoomId = 0,
+                    },
+                });
 
-            if (response.Field == null) {
-                continue;
+                if (response.Field == null) {
+                    continue;
+                }
+                RoomIds[i] = response.Field.RoomId;
+            } catch (RpcException rpcException) {
+                // If the channel is not available, we cannot create the field.
+                if (rpcException.StatusCode == StatusCode.Unavailable) {
+                    Log.Error("Channel {Channel} is unavailable for creating global portal fields: {Message}", Channel, rpcException.Message);
+                    return;
+                }
+                Log.Error(rpcException, "Error creating global portal field for channel {Channel}: {Message}", Channel, rpcException.Message);
+            } catch (Exception e) {
+                Log.Error(e, "Unexpected error creating global portal field for channel {Channel}", Channel);
             }
-            RoomIds[i] = response.Field.RoomId;
         }
 
         foreach ((int channelId, ChannelClient channelClient) in ChannelClients) {

@@ -91,11 +91,42 @@ public record BlueMarble(
 }
 
 public record ReturnUser(
-    int Season,
+    int SeasonId,
     int[] QuestIds,
     int RequiredUserValue,
-    DateTimeOffset RequiredTime,
+    DateTimeOffset DateInactiveSince,
+    int DaysInactive,
     int RequiredLevel) : GameEventData;
+
+public record NewUser(
+    int SeasonId,
+    DateTimeOffset DateCreatedBy) : GameEventData;
+
+public record ReturnUserCandidate(
+    int Season,
+    int SeasonId,
+    int MinLevel,
+    DateTimeOffset UnknownDate) : GameEventData;
+
+public record ActiveUser(
+    int MailId,
+    int MailDaysExpire,
+    int Meret,
+    int MinLevel
+    ) : GameEventData;
+
+/// <summary>
+/// Year round event that gives users a mail and an item.
+/// </summary>
+/// <param name="MailId">ID of the mail.</param>
+/// <param name="Item">Item given in mail.</param>
+/// <param name="MinDaysInactive">In the start of the event, the minimum amount of days a user has to be inactive.</param>
+/// <param name="CooldownDays">After the user has already been considered a Return User, there must be this amount of days before the user can be considered a Return User again.</param>
+public record ReturnUserYearRound(
+    int MailId,
+    RewardItem Item,
+    int MinDaysInactive,
+    int CooldownDays) : GameEventData;
 
 public record FieldEffect(
     int[] MapIds,
@@ -162,6 +193,68 @@ public record Gallery(
     int RevealDayLimit,
     string Image) : GameEventData;
 
+/// <summary>
+/// Bingo Event
+/// </summary>
+/// <param name="PencilItemId">Normal pencil item ID used for standard crossing out daily bingo numbers</param>
+/// <param name="PencilPlusItemId">Plus pencil item ID used for crossing out any number</param>
+/// <param name="Numbers">The bingo numbers selected per day. MUST have enough days for the amount of days the event will run for.</param>
+/// <param name="Rewards">The rewards for the amount of bingos you get.</param>
+public record BingoEvent(
+    int PencilItemId,
+    int PencilPlusItemId,
+    int[][] Numbers,
+    BingoEvent.BingoReward[] Rewards
+) : GameEventData {
+
+    public record BingoReward(
+        RewardItem[] Items);
+}
+
+/// <summary>
+/// Race Against Time Event
+/// </summary>
+/// <param name="StartItemId">Item needed to start the event.</param>
+/// <param name="Quests">All the quests from using the StartItemId. Determines the distance user will travel and the day the quest is available. The timer on the event UI is determined by the start time of the quests.</param>
+/// <param name="StepRewards">Rewards claimable for reaching a certain distance.</param>
+/// <param name="FinalReward">Final reward</param>
+public record TimeRunEvent(
+    int StartItemId,
+    TimeRunEvent.Quest[] Quests,
+    IReadOnlyDictionary<int, RewardItem> StepRewards,
+    RewardItem FinalReward) : GameEventData {
+    public record Quest(
+        int Id,
+        int Distance,
+        int OpeningDay);
+}
+
+
+/// <summary>
+/// Enables Maple Survival (Mushking Royale). Possibly does not work.
+/// </summary>
+public record MapleSurvivalOpenPeriod : GameEventData;
+
+
+/// <summary>
+/// Closes Maple Survival (Mushking Royale)
+/// </summary>
+public record ShutdownMapleSurvival : GameEventData;
+
+/// <summary>
+/// Creates a popup for a On Time event. Clicking Participate triggers the user to send /AddOntimeEvent
+/// </summary>
+public record Ontime : GameEventData;
+
+/// <summary>
+/// Sends a mail with an item to the user every day.
+/// </summary>
+/// <param name="MailId"></param>
+/// <param name="Item"></param>
+public record DailyLoginReward(
+    int MailId,
+    RewardItem Item) : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -176,6 +269,10 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(AttendGift), "AttendGift")]
 [JsonDerivedType(typeof(BlueMarble), "BlueMarble")]
 [JsonDerivedType(typeof(ReturnUser), "ReturnUser")]
+[JsonDerivedType(typeof(NewUser), "NewUser")]
+[JsonDerivedType(typeof(ReturnUserYearRound), "ReturnUserYearRound")]
+[JsonDerivedType(typeof(ReturnUserCandidate), "ReturnUserCandidate")]
+[JsonDerivedType(typeof(ActiveUser), "ActiveUser")]
 [JsonDerivedType(typeof(LoginNotice), "LoginNotice")]
 [JsonDerivedType(typeof(FieldEffect), "FieldEffect")]
 [JsonDerivedType(typeof(QuestTag), "QuestTag")]
@@ -185,4 +282,10 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(UGCMapContractSale), "UGCMapContractSale")]
 [JsonDerivedType(typeof(UGCMapExtensionSale), "UGCMapExtensionSale")]
 [JsonDerivedType(typeof(Gallery), "Gallery")]
+[JsonDerivedType(typeof(BingoEvent), "BingoEvent")]
+[JsonDerivedType(typeof(TimeRunEvent), "TimeRunEvent")]
+[JsonDerivedType(typeof(MapleSurvivalOpenPeriod), "MapleSurvivalOpenPeriod")]
+[JsonDerivedType(typeof(ShutdownMapleSurvival), "ShutdownMapleSurvival")]
+[JsonDerivedType(typeof(Ontime), "Ontime")]
+[JsonDerivedType(typeof(DailyLoginReward), "DailyLoginReward")]
 public abstract record GameEventData;

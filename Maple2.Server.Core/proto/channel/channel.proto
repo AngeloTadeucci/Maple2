@@ -42,6 +42,10 @@ service Channel {
   rpc PlayerWarp(maple2.PlayerWarpRequest) returns (maple2.PlayerWarpResponse);
   // Admin
   rpc Admin(maple2.AdminRequest) returns (maple2.AdminResponse);
+  // Disconnect
+  rpc Disconnect(maple2.DisconnectRequest) returns (maple2.DisconnectResponse);
+  // Heartbeat
+  rpc Heartbeat(maple2.HeartbeatRequest) returns (maple2.HeartbeatResponse);
 }
 
 message GuildRequest {

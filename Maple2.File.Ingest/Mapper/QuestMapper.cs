@@ -80,6 +80,10 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                     PortalId: data.dispatch.portal,
                     Script: data.dispatch.script
                 ),
+                Mentoring: data.mentoringMission == null ? null : new QuestMentoringMission(
+                    OpeningDay: data.mentoringMission.openingDay,
+                    Season: data.mentoringMission.mentoringSeason
+                ),
                 EventMissionType: Enum.TryParse(data.eventMission.@event, true, out QuestEventMissionType eventMissionType) ? eventMissionType : QuestEventMissionType.none,
                 Conditions: data.condition.Select(condition => new ConditionMetadata(
                     Type: (ConditionType) condition.type,

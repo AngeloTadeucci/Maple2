@@ -90,6 +90,7 @@ public class MailHandler : FieldPacketHandler {
             return;
         }
 
+        session.ConditionUpdate(ConditionType.send_mail);
         session.Send(MailPacket.Send(mail.Id));
         try {
             session.World.MailNotification(new MailNotificationRequest {

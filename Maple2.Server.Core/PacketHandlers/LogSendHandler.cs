@@ -32,8 +32,10 @@ public abstract class LogSendHandler<T> : PacketHandler<T> where T : Session {
                     string debug = packet.ReadUnicodeString();
                     try {
                         SockExceptionInfo exceptionInfo = ErrorParserHelper.Parse(debug);
-                        Logger.Error("[{message}] [SendOp: {sendOp}] [Offset: {offset}] [Hint: {hint}]",
-                            message, exceptionInfo.SendOp, exceptionInfo.Offset, exceptionInfo.Hint);
+                        byte[]? lastPacket = session.GetLastSentPacket(exceptionInfo.SendOp);
+
+                        Logger.Error("[{message}] [SendOp: {sendOp}] [Offset: {offset}] [Hint: {hint}] [LastPacket:\n{packetDump}]",
+                            message, exceptionInfo.SendOp, exceptionInfo.Offset, exceptionInfo.Hint, lastPacket?.ToHexString(lastPacket.Length, ' ') ?? "No packet found");
                     } catch (ArgumentException) {
                         Logger.Error("[{Message}] {Debug}", message, debug);
                     }

@@ -5,12 +5,13 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
 
-namespace Maple2.Server.Game.Manager.Config;
+namespace Maple2.Server.Game.Manager;
 
 public class ConfigManager {
     private const int TOTAL_HOT_BARS = 3;

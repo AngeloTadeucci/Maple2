@@ -35,7 +35,6 @@ public interface IField : IDisposable {
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; }
     public ServerTableMetadataStorage ServerTableMetadata { get; init; }
     public ItemStatsCalculator ItemStatsCalc { get; init; }
-    public Lua.Lua Lua { get; init; }
     public IGraphicsContext DebugGraphicsContext { get; init; }
     // ReSharper restore All
     #endregion
@@ -59,10 +58,10 @@ public interface IField : IDisposable {
     public long FieldTick { get; }
     public virtual void Init() { }
 
-    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default);
+    public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0);
     public void AddSkill(SkillRecord record);
     public void AddSkill(IActor caster, SkillEffectMetadata effect, Vector3[] points, in Vector3 rotation = default);
-    public IEnumerable<IActor> GetTargets(Prism[] prisms, SkillEntity entity, int limit, ICollection<IActor>? ignore = null);
+    public IEnumerable<IActor> GetTargets(IActor actor, Prism[] prisms, ApplyTargetType targetType, int limit, ICollection<IActor>? ignore = null);
     public void RemoveSkill(int objectId);
     public void Broadcast(ByteWriter packet, GameSession? sender = null);
     public void BroadcastAiMessage(ByteWriter packet);

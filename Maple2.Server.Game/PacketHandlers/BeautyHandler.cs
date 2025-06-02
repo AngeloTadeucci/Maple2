@@ -201,7 +201,7 @@ public class BeautyHandler : FieldPacketHandler {
             }
         }
 
-        if (ModifyBeauty(session, packet, session.BeautyShop.Metadata.Category, entry.Id)) {
+        if (ModifyBeauty(session, packet, entry.Id)) {
             session.ConditionUpdate(ConditionType.beauty_add, codeLong: itemId);
         }
     }
@@ -221,11 +221,12 @@ public class BeautyHandler : FieldPacketHandler {
             return;
         }
 
-        // Mirror NPC. Only for cap rotation/positioning
-        if (cosmetic.Metadata.SlotNames.Contains(EquipSlot.CP)) {
+        // Only for cap rotation/positioning. Used in mirror npc and also when changing hair while hat is equipped.
+        if (cosmetic.Type.IsHat) {
             var appearance = packet.ReadClass<CapAppearance>();
             cosmetic.Appearance = appearance;
             session.Field?.Broadcast(ItemUpdatePacket.Update(session.Player, cosmetic));
+            return;
         }
 
         if (useVoucher) {
@@ -239,7 +240,7 @@ public class BeautyHandler : FieldPacketHandler {
         }
 
         EquipColor? startColor = cosmetic.Appearance?.Color;
-        if (ModifyBeauty(session, packet, session.BeautyShop.Metadata.Category, cosmetic.Id) && startColor != null) {
+        if (ModifyBeauty(session, packet, cosmetic.Id) && startColor != null) {
             Item newCosmetic = session.Item.Equips.Get(cosmetic.Metadata.SlotNames.First())!;
             if (!Equals(newCosmetic.Appearance?.Color, startColor)) {
                 session.ConditionUpdate(ConditionType.beauty_change_color, codeLong: cosmetic.Id);
@@ -561,20 +562,22 @@ public class BeautyHandler : FieldPacketHandler {
         return true;
     }
 
-    private static bool ModifyBeauty(GameSession session, IByteReader packet, BeautyShopCategory category, int itemId) {
+    private static bool ModifyBeauty(GameSession session, IByteReader packet, int itemId) {
         Item? newCosmetic = session.Field.ItemDrop.CreateItem(itemId, 1, 1);
         if (newCosmetic == null) {
             return false;
         }
 
-        newCosmetic.Appearance = category switch {
-            BeautyShopCategory.Hair => packet.ReadClass<HairAppearance>(),
-            BeautyShopCategory.Makeup => packet.ReadClass<DecalAppearance>(),
-            BeautyShopCategory.Face => packet.ReadClass<ItemAppearance>(),
-            BeautyShopCategory.Dye => packet.ReadClass<ItemAppearance>(),
-            BeautyShopCategory.Skin => packet.ReadClass<ItemAppearance>(),
-            _ => ItemAppearance.Default,
-        };
+        if (newCosmetic.Type.IsHair) {
+            newCosmetic.Appearance = packet.ReadClass<HairAppearance>();
+        } else if (newCosmetic.Type.IsDecal) {
+            newCosmetic.Appearance = packet.ReadClass<DecalAppearance>();
+        } else if (newCosmetic.Type.IsHat) {
+            newCosmetic.Appearance = packet.ReadClass<CapAppearance>();
+        } else {
+            newCosmetic.Appearance = packet.ReadClass<ItemAppearance>();
+        }
+
         using GameStorage.Request db = session.GameStorage.Context();
         newCosmetic = db.CreateItem(session.CharacterId, newCosmetic);
         if (newCosmetic == null) {

@@ -6,6 +6,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -30,7 +31,6 @@ public class TaxiHandler : FieldPacketHandler {
     public required MapMetadataStorage MapMetadata { private get; init; }
     public required MapEntityStorage EntityMetadata { private get; init; }
     public required WorldMapGraphStorage WorldMapGraph { private get; init; }
-    public required Lua.Lua Lua { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -88,6 +88,8 @@ public class TaxiHandler : FieldPacketHandler {
         }
         session.Currency.Meso -= cost;
 
+        session.ConditionUpdate(ConditionType.taxiuse);
+        session.ConditionUpdate(ConditionType.taxifee, counter: cost);
         Vector3 position = entities.Taxi.Position.Offset(-VectorExtensions.BLOCK_SIZE, entities.Taxi.Rotation);
         Vector3 rotation = entities.Taxi.Rotation;
         session.Send(session.PrepareField(mapId, position: position, rotation: rotation)
@@ -158,7 +160,7 @@ public class TaxiHandler : FieldPacketHandler {
         session.ConditionUpdate(ConditionType.taxifind);
     }
 
-    private static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
+    public static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
         MapMetadataCashCall currentCashCall = session.Field.Metadata.CashCall;
         if (!currentCashCall.TaxiDeparture) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_departure));

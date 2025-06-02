@@ -83,7 +83,7 @@ public sealed class FieldPet : FieldNpc {
             }
         }
 
-        damage.Targets.Add(targetRecord);
+        damage.Targets.TryAdd(ObjectId, targetRecord);
     }
 
     protected override void Remove(int delay) => Field.RemovePet(ObjectId, delay);

@@ -13,12 +13,10 @@ public record SkillEffectMetadata(
 
 public record SkillEffectMetadataCondition(
     BeginCondition Condition,
-    SkillEntity Owner,        // 1,2,3,5
-    SkillEntity Target,       // 1,2,3,4
+    SkillTargetType Owner,        // 1,2,3,5
+    SkillTargetType Target,       // 1,2,3,4
     int OverlapCount,         // Skill only
-    bool DependOnDamageCount, // Skill only
-    bool RandomCast,          // AdditionalEffect only
-    bool ActiveByIntervalTick // AdditionalEffect only
+    bool RandomCast          // AdditionalEffect only
 );
 
 public record SkillEffectMetadataSplash(

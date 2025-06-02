@@ -46,7 +46,6 @@ public partial class FieldManager {
             this.context = context;
             mapLocks = new ConcurrentDictionary<int, SemaphoreSlim>();
 
-
             cancel = new CancellationTokenSource();
             thread = new Thread(DisposeLoop);
             thread.Start();
@@ -64,7 +63,6 @@ public partial class FieldManager {
             } finally {
                 mapLock.Release();
             }
-            field?.Init();
             return field;
         }
 
@@ -110,6 +108,7 @@ public partial class FieldManager {
 
             var field = new FieldManager(metadata, ugcMetadata, entities, NpcMetadata);
             context.InjectProperties(field);
+            field.Init();
 
             // Add to fields
             AddField(field);
@@ -138,6 +137,7 @@ public partial class FieldManager {
 
             var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata);
             context.InjectProperties(field);
+            field.Init();
 
             return field;
         }
@@ -349,16 +349,13 @@ public partial class FieldManager {
 
         private FieldManager? GetInternal(int mapId, long ownerId = 0, int roomId = 0) {
             if (roomId != 0) { // Specified room
-                FieldManager? foundField = FindRoom(mapId, roomId);
+                FieldManager? foundField = FindRoom();
                 if (foundField != null) {
                     return foundField;
                 }
             }
 
             if (ServerTableMetadata.InstanceFieldTable.Entries.TryGetValue(mapId, out InstanceFieldMetadata? metadata)) {
-                if (ownerId == 0 && roomId == 0) {
-                    return Create(mapId);
-                }
                 switch (metadata.Type) {
                     case InstanceType.ugcMap: // this is both homes and UGD. Currently just doing homes.
                         if (roomId != 0) { // User wants to go into decorplanner or blueprint designer
@@ -370,6 +367,16 @@ public partial class FieldManager {
                         return homeField;
                     case InstanceType.DungeonLobby:
                         return Create(mapId, ownerId: ownerId, roomId: roomId); // TODO: this should never happen.
+                    case InstanceType.channelScale:
+                        if (fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? scalingFields) && !scalingFields.IsEmpty) {
+                            return scalingFields.Values.FirstOrDefault(f => !f.Disposed);
+                        }
+                        break;
+                    default:
+                        if (ownerId == 0 && roomId == 0) {
+                            return Create(mapId);
+                        }
+                        break;
                 }
             }
 
@@ -377,7 +384,7 @@ public partial class FieldManager {
                 return Create(mapId, ownerId: ownerId, roomId: roomId);
             }
 
-            if (roomId == 0 && mapFields.Count > 0) {
+            if (roomId == 0 && !mapFields.IsEmpty) {
                 FieldManager? firstField = mapFields.Values.FirstOrDefault();
                 if (firstField != null) {
                     return firstField;
@@ -387,7 +394,7 @@ public partial class FieldManager {
             return mapFields.TryGetValue(roomId, out FieldManager? field) ? field :
                 Create(mapId, ownerId: ownerId, roomId: roomId);
 
-            FieldManager? FindRoom(int mapId, int roomId) {
+            FieldManager? FindRoom() {
                 if (fields.TryGetValue(mapId, out ConcurrentDictionary<int, FieldManager>? roomFields) && roomFields.TryGetValue(roomId, out FieldManager? field)) {
                     return field;
                 }
