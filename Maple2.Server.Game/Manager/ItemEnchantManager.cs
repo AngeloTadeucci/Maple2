@@ -517,12 +517,6 @@ public class ItemEnchantManager {
                 return false;
             }
             session.Currency.Meso -= mesoCost;
-
-            if (!session.Item.Inventory.Consume(catalysts)) {
-                session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_lack_ingredient));
-                return false;
-            }
-
             return true;
         }
     }
