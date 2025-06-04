@@ -45,10 +45,6 @@ public class Stats {
     /// Clears and sets static stats.
     /// </summary>
     public void SetStaticStats(IReadOnlyDictionary<BasicAttribute, long> statsDictionary) {
-        foreach (Stat stat in basicValues.Values) {
-            stat.AddBase(-stat.Base);
-            stat.AddTotal(-stat.Total);
-        }
         ClearStats();
         foreach (BasicAttribute attribute in statsDictionary.Keys) {
             this[attribute].AddBase(statsDictionary[attribute]);
