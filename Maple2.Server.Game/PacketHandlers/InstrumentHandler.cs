@@ -101,7 +101,6 @@ public class InstrumentHandler : PacketHandler<GameSession> {
 
         long itemUid = packet.ReadLong();
         if (!TryUseInstrument(session, itemUid, Environment.TickCount64, false, out session.Instrument)) {
-
             return;
         }
 
