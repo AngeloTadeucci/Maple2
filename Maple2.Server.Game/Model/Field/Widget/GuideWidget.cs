@@ -10,7 +10,7 @@ public class GuideWidget : Widget {
     }
 
     public override bool Check(string name, string arg) {
-        return Conditions.GetValueOrDefault(name) == 1;
+        return int.TryParse(arg, out int value) && Conditions.GetValueOrDefault(name) == value;
     }
 
     public override void Action(string function, int numericArg, string stringArg) {

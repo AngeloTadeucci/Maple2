@@ -91,6 +91,7 @@ public class ItemEnchantManager {
         enchantResult = EnchantResult.None;
         mesoCost = 0;
         limitBreakItemUpgrade = null;
+        upgraded = false;
     }
 
     public bool StageItem(EnchantType enchantType, long itemUid) {
@@ -432,6 +433,7 @@ public class ItemEnchantManager {
 
         if (!session.ServerTableMetadata.UnlimitedEnchantOptionTable.Entries.TryGetValue(limitBreakItemUpgrade.Type.Type, out Dictionary<int, UnlimitedEnchantOptionTable.Option>? levelDictionary) ||
             !levelDictionary.TryGetValue(limitBreakItemUpgrade.LimitBreak!.Level + 1, out UnlimitedEnchantOptionTable.Option? optionMetadata)) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_invalid_item));
             return false;
         }
 
