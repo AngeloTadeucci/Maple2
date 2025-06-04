@@ -11,7 +11,7 @@ public interface ITriggerObject : IByteSerializable {
     public bool Visible { get; }
 }
 
-public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
+public abstract class TriggerObject<T> : ITriggerObject where T : Ms2Trigger {
     public readonly T Metadata;
 
     public int Id => Metadata.TriggerId;

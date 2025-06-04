@@ -43,7 +43,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
             var breakableActors = new Dictionary<Guid, BreakableActor>();
             var interacts = new Dictionary<Guid, InteractObject>();
             var triggerModels = new Dictionary<int, TriggerModel>();
-            var triggers = new List<Trigger>();
+            var triggers = new List<Ms2Trigger>();
             var patrols = new List<MS2PatrolData>();
             foreach (MapEntity entity in Context.MapEntity.Where(entity => entity.XBlock == xblock)) {
                 switch (entity.Block) {
@@ -96,7 +96,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                         break;
                     case Ms2TriggerActor or Ms2TriggerAgent or Ms2TriggerBox or Ms2TriggerCamera or Ms2TriggerCube or Ms2TriggerEffect or
                         Ms2TriggerLadder or Ms2TriggerMesh or Ms2TriggerRope or Ms2TriggerSkill or Ms2TriggerSound:
-                        triggers.Add((Trigger) entity.Block);
+                        triggers.Add((Ms2Trigger) entity.Block);
                         break;
                     case Ms2Bounding mapBounding:
                         var box = new BoundingBox(

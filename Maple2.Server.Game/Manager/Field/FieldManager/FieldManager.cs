@@ -50,8 +50,8 @@ public partial class FieldManager : IField {
     public FunctionCubeMetadataStorage FunctionCubeMetadata { get; init; } = null!;
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public RideMetadataStorage RideMetadata { get; init; } = null!;
-    public TriggerScriptMetadata TriggerMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
+    public TriggerCache TriggerCache { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
     public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All

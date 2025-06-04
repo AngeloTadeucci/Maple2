@@ -6,7 +6,7 @@ using Maple2.Model.Metadata;
 namespace Maple2.Database.Storage;
 
 internal class TriggerStorage : ITriggerStorage {
-    private readonly ImmutableDictionary<int, Trigger> triggers;
+    private readonly ImmutableDictionary<int, Ms2Trigger> triggers;
     public ImmutableArray<Ms2TriggerActor> Actors { get; }
     public ImmutableArray<Ms2TriggerAgent> Agents { get; }
     public ImmutableArray<Ms2TriggerBox> Boxes { get; }
@@ -19,8 +19,8 @@ internal class TriggerStorage : ITriggerStorage {
     public ImmutableArray<Ms2TriggerSkill> Skills { get; }
     public ImmutableArray<Ms2TriggerSound> Sounds { get; }
 
-    public TriggerStorage(List<Trigger> triggers) {
-        var builder = ImmutableDictionary.CreateBuilder<int, Trigger>();
+    public TriggerStorage(List<Ms2Trigger> triggers) {
+        var builder = ImmutableDictionary.CreateBuilder<int, Ms2Trigger>();
         var actorBuilder = ImmutableArray.CreateBuilder<Ms2TriggerActor>();
         var agentBuilder = ImmutableArray.CreateBuilder<Ms2TriggerAgent>();
         var boxBuilder = ImmutableArray.CreateBuilder<Ms2TriggerBox>();
@@ -33,7 +33,7 @@ internal class TriggerStorage : ITriggerStorage {
         var skillBuilder = ImmutableArray.CreateBuilder<Ms2TriggerSkill>();
         var soundBuilder = ImmutableArray.CreateBuilder<Ms2TriggerSound>();
 
-        foreach (Trigger trigger in triggers) {
+        foreach (Ms2Trigger trigger in triggers) {
             switch (trigger) {
                 case Ms2TriggerActor actor:
                     actorBuilder.Add(actor);
@@ -89,21 +89,21 @@ internal class TriggerStorage : ITriggerStorage {
         Sounds = soundBuilder.ToImmutable();
     }
 
-    public bool TryGet<T>(int key, [NotNullWhen(true)] out T? trigger) where T : Trigger {
-        triggers.TryGetValue(key, out Trigger? result);
+    public bool TryGet<T>(int key, [NotNullWhen(true)] out T? trigger) where T : Ms2Trigger {
+        triggers.TryGetValue(key, out Ms2Trigger? result);
         trigger = result as T;
         return trigger != null;
     }
 
     public int Count => triggers.Count;
-    public Trigger this[int key] => triggers[key];
+    public Ms2Trigger this[int key] => triggers[key];
 
     public IEnumerable<int> Keys => triggers.Keys;
-    public IEnumerable<Trigger> Values => triggers.Values;
+    public IEnumerable<Ms2Trigger> Values => triggers.Values;
 
     public bool ContainsKey(int key) => triggers.ContainsKey(key);
-    public bool TryGetValue(int key, [NotNullWhen(true)] out Trigger? value) => triggers.TryGetValue(key, out value);
+    public bool TryGetValue(int key, [NotNullWhen(true)] out Ms2Trigger? value) => triggers.TryGetValue(key, out value);
 
-    public IEnumerator<KeyValuePair<int, Trigger>> GetEnumerator() => triggers.GetEnumerator();
+    public IEnumerator<KeyValuePair<int, Ms2Trigger>> GetEnumerator() => triggers.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => triggers.GetEnumerator();
 }

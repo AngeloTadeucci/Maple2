@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 
 namespace Maple2.Server.Game.Trigger.Helpers;
 
@@ -246,7 +247,7 @@ public interface ITriggerContext {
     public bool ScoreBoardScore(int score, OperatorType operatorType);
     public bool ShadowExpeditionPoints(int score);
     public bool TimeExpired(string timerId);
-    public bool UserDetected(int[] boxIds, int jobCode, bool negate);
+    public bool UserDetected(int[] boxIds, JobCode jobCode, bool negate);
     public bool UserValue(string key, int value, bool negate);
     public bool WaitAndResetTick(int waitTick);
     public bool WaitSecondsUserValue(string key, string desc);
