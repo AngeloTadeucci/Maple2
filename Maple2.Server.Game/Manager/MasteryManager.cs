@@ -40,6 +40,7 @@ public class MasteryManager {
         };
         set {
             short startLevel = GetLevel(type);
+            int startValue = this[type];
             switch (type) {
                 case MasteryType.Fishing:
                     Mastery.Fishing = Math.Clamp(value, Mastery.Fishing, Constant.FishingMasteryMax);
@@ -79,14 +80,18 @@ public class MasteryManager {
             }
 
             session.Send(MasteryPacket.UpdateMastery(type, session.Mastery[type]));
-            if (startLevel < GetLevel(type)) {
+            int currentLevel = GetLevel(type);
+            if (startLevel < currentLevel || startValue == 0) {
                 session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
+            }
+            if (startLevel > currentLevel) {
                 session.ConditionUpdate(ConditionType.set_mastery_grade, codeLong: (int) type);
                 if (type == MasteryType.Music) {
                     session.ConditionUpdate(ConditionType.music_play_grade);
                 }
             }
         }
+
     }
 
     public short GetLevel(MasteryType type) {

@@ -10,5 +10,4 @@ public class FieldInstrument(FieldManager field, int objectId, InstrumentMetadat
     public long StartTick { get; set; }
     public bool Ensemble { get; set; }
     public Item? Score { get; set; }
-
 }

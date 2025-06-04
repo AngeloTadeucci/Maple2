@@ -234,6 +234,7 @@ public partial class TriggerContext {
         DebugLog("[QuestUserDetected] boxIds:{BoxIds}, questIds:{QuestIds}, questStates:{QuestStates}, jobCode:{JobCode}",
             string.Join(", ", boxIds), string.Join(", ", questIds), string.Join(", ", questStates), (JobCode) jobCode);
 
+
         foreach (FieldPlayer player in PlayersInBox(boxIds)) {
             foreach (int questId in questIds) {
                 if (!player.Session.Quest.TryGetQuest(questId, out Quest? quest)) {
@@ -263,18 +264,21 @@ public partial class TriggerContext {
         return negate;
     }
 
-    public bool UserDetected(int[] boxIds, int jobCode) {
+    public bool UserDetected(int[] boxIds, int jobCode, bool negate) {
         DebugLog("[UserDetected] boxIds:{BoxIds}, jobCode:{JobCode}", string.Join(", ", boxIds), (JobCode) jobCode);
         IEnumerable<TriggerBox> boxes = boxIds
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
             .Where(box => box != null)!;
 
+        bool result;
         if (jobCode != 0) {
-            return Field.Players.Values
+            result = Field.Players.Values
                 .Any(player => player.Value.Character.Job.Code() == (JobCode) jobCode && boxes.Any(box => box.Contains(player.Position)));
+        } else {
+            result = Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
         }
 
-        return Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
+        return negate ? !result : result;
     }
 
     public bool WaitSecondsUserValue(string key, string desc) {

@@ -45,8 +45,11 @@ public class Stats {
     /// Clears and sets static stats.
     /// </summary>
     public void SetStaticStats(IReadOnlyDictionary<BasicAttribute, long> statsDictionary) {
-        basicValues.Clear();
-        specialValues.Clear();
+        foreach (Stat stat in basicValues.Values) {
+            stat.AddBase(-stat.Base);
+            stat.AddTotal(-stat.Total);
+        }
+        ClearStats();
         foreach (BasicAttribute attribute in statsDictionary.Keys) {
             this[attribute].AddBase(statsDictionary[attribute]);
         }
@@ -54,8 +57,7 @@ public class Stats {
     }
 
     public void Reset(IReadOnlyDictionary<BasicAttribute, long> metadata, JobCode jobCode) {
-        basicValues.Clear();
-        specialValues.Clear();
+        ClearStats();
 
         foreach (BasicAttribute attribute in metadata.Keys) {
             if (attribute is BasicAttribute.PhysicalAtk or BasicAttribute.MagicalAtk) {
@@ -73,7 +75,7 @@ public class Stats {
 
     [Obsolete("Use Reset(UserStatMetadata, JobCode) instead.")]
     public void Reset(JobCode jobCode, short level) {
-        basicValues.Clear();
+        ClearStats();
 
         this[BasicAttribute.Strength].AddBase(BaseStat.Strength(jobCode, level));
         this[BasicAttribute.Dexterity].AddBase(BaseStat.Dexterity(jobCode, level));
@@ -148,6 +150,22 @@ public class Stats {
             return specialValues[attribute];
         }
         set => specialValues[attribute] = value;
+    }
+
+    /// <summary>
+    /// Safely clear stats.
+    /// </summary>
+    private void ClearStats() {
+        foreach (Stat stat in basicValues.Values) {
+            stat.AddBase(-stat.Base);
+            stat.AddTotal(-stat.Total);
+            stat.AddRate(-stat.Rate);
+        }
+        foreach (Stat stat in specialValues.Values) {
+            stat.AddBase(-stat.Base);
+            stat.AddTotal(-stat.Total);
+            stat.AddRate(-stat.Rate);
+        }
     }
 }
 

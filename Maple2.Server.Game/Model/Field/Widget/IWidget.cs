@@ -14,4 +14,5 @@ public interface IWidget {
     /// <param name="numericArg">A numeric argument for the action.</param>
     /// <param name="stringArg">A string argument for the action.</param>
     void Action(string function, int numericArg, string stringArg);
+    bool Check(string name, string arg);
 }

@@ -17,6 +17,10 @@ public class OxQuizWidget : Widget {
         questions = new ConcurrentDictionary<int, OxQuizTable.Entry>();
     }
 
+    public override bool Check(string name, string arg) {
+        return Conditions.GetValueOrDefault(name) == 1;
+    }
+
     public override void Action(string function, int numericArg, string stringArg) {
         MethodInfo? method = GetType().GetMethod(function, BindingFlags.NonPublic | BindingFlags.Instance);
         if (method != null) {

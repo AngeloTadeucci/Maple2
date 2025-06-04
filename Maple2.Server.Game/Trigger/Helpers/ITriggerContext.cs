@@ -246,7 +246,7 @@ public interface ITriggerContext {
     public bool ScoreBoardScore(int score, OperatorType operatorType);
     public bool ShadowExpeditionPoints(int score);
     public bool TimeExpired(string timerId);
-    public bool UserDetected(int[] boxIds, int jobCode);
+    public bool UserDetected(int[] boxIds, int jobCode, bool negate);
     public bool UserValue(string key, int value, bool negate);
     public bool WaitAndResetTick(int waitTick);
     public bool WaitSecondsUserValue(string key, string desc);
@@ -254,5 +254,5 @@ public interface ITriggerContext {
     public bool WeddingEntryInField(string entryType, bool isInField);
     public bool WeddingHallState(string state, bool success);
     public bool WeddingMutualAgreeResult(string agreeType);
-    public bool WidgetValue(string type, string widgetName, int condition, bool negate, string desc);
+    public bool WidgetValue(string type, string widgetName, string widgeArg, bool negate, string desc);
 }

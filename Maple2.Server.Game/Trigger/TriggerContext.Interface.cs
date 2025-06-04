@@ -194,14 +194,13 @@ public partial class TriggerContext {
     }
 
     #region Conditions
-    public bool WidgetValue(string type, string widgetName, int condition, bool negate, string desc = "") {
+    public bool WidgetValue(string type, string widgetName, string widgetArg, bool negate, string desc = "") {
         DebugLog("[WidgetValue] type:{Type}, widgetName:{Name}, desc:{Desc}", type, widgetName, desc);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
             return negate;
         }
 
-
-        bool result = widget.Conditions.GetValueOrDefault(widgetName) == condition;
+        bool result = widget.Check(widgetName, widgetArg);
         if (negate) {
             return !result;
         }

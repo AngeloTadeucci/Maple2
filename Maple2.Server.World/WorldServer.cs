@@ -2,12 +2,10 @@
 using Grpc.Core;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
-using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
-using Maple2.Server.Core.Sync;
 using Maple2.Server.World.Containers;
 using Maple2.Tools.Scheduler;
 using Serilog;
@@ -187,18 +185,17 @@ public class WorldServer {
                 if (startTime > eventData.EndTime) {
                     continue;
                 }
-                scheduler.Schedule(() => GlobalPortal(eventData), (int) (startTime - DateTime.Now).TotalMilliseconds);
+                scheduler.Schedule(() => GlobalPortal(eventData, startTime), (int) (startTime - DateTime.Now).TotalMilliseconds);
             }
         }
     }
 
-    private void GlobalPortal(GlobalPortalMetadata data) {
-        DateTime now = DateTime.Now;
-
+    private void GlobalPortal(GlobalPortalMetadata data, DateTime startTime) {
         // check probability
         bool run = !(data.Probability < 100 && Random.Shared.Next(100) > data.Probability);
 
         if (run) {
+            DateTime now = DateTime.Now;
             globalPortalLookup.Create(data, (long) (now.ToEpochSeconds() + data.LifeTime.TotalMilliseconds), out int eventId);
             if (!globalPortalLookup.TryGet(out GlobalPortalManager? manager)) {
                 logger.Error("Failed to create global portal");
@@ -215,7 +212,7 @@ public class WorldServer {
             });
         }
 
-        DateTime nextRunTime = now + data.CycleTime;
+        DateTime nextRunTime = startTime + data.CycleTime;
         if (data.RandomTime > TimeSpan.Zero) {
             nextRunTime += TimeSpan.FromMilliseconds(Random.Shared.Next((int) data.RandomTime.TotalMilliseconds));
         }
@@ -224,7 +221,7 @@ public class WorldServer {
             return;
         }
 
-        scheduler.Schedule(() => GlobalPortal(data), (int) (nextRunTime - DateTime.Now).TotalMilliseconds);
+        scheduler.Schedule(() => GlobalPortal(data, nextRunTime), (int) (nextRunTime - DateTime.Now).TotalMilliseconds);
     }
 
     private void ScheduleGameEvents() {

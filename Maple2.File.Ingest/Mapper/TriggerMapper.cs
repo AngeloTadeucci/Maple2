@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Xml;
+using M2dXmlGenerator;
 using Maple2.File.Ingest.Utils;
 using Maple2.File.IO;
 using Maple2.File.IO.Crypto.Common;
@@ -60,6 +61,37 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
     };
 
     public static string NormalizeTriggerXmlNames(XmlDocument xml) {
+        // check for state nodes with feature attributes and remove disabled ones
+        List<XmlNode> nodesToRemove = new List<XmlNode>();
+        foreach (XmlNode node in xml.SelectNodes("//state")!) {
+            XmlAttribute? featureAttr = node.Attributes?["feature"];
+            if (featureAttr != null && !FeatureLocaleFilter.FeatureEnabled(featureAttr.Value)) {
+                nodesToRemove.Add(node);
+            }
+        }
+
+        // Check for action nodes with feature attributes and remove disabled ones
+        foreach (XmlNode node in xml.SelectNodes("//action")!) {
+            XmlAttribute? featureAttr = node.Attributes?["feature"];
+            if (featureAttr != null && !FeatureLocaleFilter.FeatureEnabled(featureAttr.Value)) {
+                nodesToRemove.Add(node);
+            }
+        }
+
+        // Check for condition nodes with feature attributes and remove disabled ones
+        foreach (XmlNode node in xml.SelectNodes("//condition")!) {
+            XmlAttribute? featureAttr = node.Attributes?["feature"];
+            if (featureAttr != null && !FeatureLocaleFilter.FeatureEnabled(featureAttr.Value)) {
+                nodesToRemove.Add(node);
+            }
+        }
+
+        // Remove disabled feature nodes
+        foreach (XmlNode node in nodesToRemove) {
+            node.ParentNode?.RemoveChild(node);
+        }
+
+        // Continue with the existing normalization logic
         foreach (XmlNode node in xml.SelectNodes("//state")!) {
             XmlAttribute? attr = node.Attributes?["name"];
             Debug.Assert(attr?.Value != null, "Unable to find name param");

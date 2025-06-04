@@ -45,7 +45,8 @@ public record Ms2TriggerLadder(
 public record Ms2TriggerMesh(
     float Scale,
     int TriggerId,
-    bool Visible)
+    bool Visible,
+    bool MinimapInvisible)
 : Trigger(TriggerId, Visible);
 
 public record Ms2TriggerPortal(
