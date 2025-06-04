@@ -65,6 +65,10 @@ public class ItemEnchantManager {
     private int useCharges;
     private EnchantResult enchantResult;
 
+    // Limit break values only
+    private long mesoCost;
+    private Item? limitBreakItemUpgrade;
+    private bool upgraded;
 
     public ItemEnchantManager(GameSession session) {
         this.session = session;
@@ -85,6 +89,9 @@ public class ItemEnchantManager {
         fodderWeight = 0;
         useCharges = 0;
         enchantResult = EnchantResult.None;
+        mesoCost = 0;
+        limitBreakItemUpgrade = null;
+        upgraded = false;
     }
 
     public bool StageItem(EnchantType enchantType, long itemUid) {
@@ -392,4 +399,128 @@ public class ItemEnchantManager {
             Reset();
         }
     }
+
+    #region Limit Break
+    public bool StageLimitBreakItem(long itemUid) {
+        // Must happen due to this function triggering automatically upon upgrading. Without it, the animation does not play.
+        if (upgraded) {
+            upgraded = false;
+            return false;
+        }
+        Item? item = session.Item.GetGear(itemUid);
+        if (item == null || item.Metadata.Property.LimitBreakMaxLevel == 0 ||
+            (item.LimitBreak?.Level == 0 && item.Enchant?.Enchants < 15)) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_invalid_item));
+            return false;
+        }
+
+        item.LimitBreak ??= new ItemLimitBreak();
+        if (item.LimitBreak.Level >= item.Metadata.Property.LimitBreakMaxLevel) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_max_unlimited_grade));
+            return false;
+        }
+
+        Reset();
+        upgradeItem = item;
+
+        foreach (IngredientInfo ingredient in Core.Formulas.LimitBreak.GetCatalysts(item.LimitBreak.Level)) {
+            catalysts.Add(ingredient);
+        }
+
+        mesoCost = Core.Formulas.LimitBreak.MesoCost(item.LimitBreak.Level);
+
+        limitBreakItemUpgrade = item.Clone();
+
+        if (!session.ServerTableMetadata.UnlimitedEnchantOptionTable.Entries.TryGetValue(limitBreakItemUpgrade.Type.Type, out Dictionary<int, UnlimitedEnchantOptionTable.Option>? levelDictionary) ||
+            !levelDictionary.TryGetValue(limitBreakItemUpgrade.LimitBreak!.Level + 1, out UnlimitedEnchantOptionTable.Option? optionMetadata)) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_invalid_item));
+            return false;
+        }
+
+        foreach ((BasicAttribute attribute, int value) in optionMetadata.Values) {
+            if (limitBreakItemUpgrade.LimitBreak.BasicOptions.TryGetValue(attribute, out BasicOption existing)) {
+                limitBreakItemUpgrade.LimitBreak.BasicOptions[attribute] = existing + new BasicOption(value);
+            } else {
+                limitBreakItemUpgrade.LimitBreak.BasicOptions[attribute] = new BasicOption(value);
+            }
+        }
+        foreach ((BasicAttribute attribute, float rate) in optionMetadata.Rates) {
+            if (limitBreakItemUpgrade.LimitBreak.BasicOptions.TryGetValue(attribute, out BasicOption existing)) {
+                limitBreakItemUpgrade.LimitBreak.BasicOptions[attribute] = existing + new BasicOption(rate);
+            } else {
+                limitBreakItemUpgrade.LimitBreak.BasicOptions[attribute] = new BasicOption(rate);
+            }
+        }
+        foreach ((SpecialAttribute attribute, int value) in optionMetadata.SpecialValues) {
+            if (limitBreakItemUpgrade.LimitBreak.SpecialOptions.TryGetValue(attribute, out SpecialOption existing)) {
+                limitBreakItemUpgrade.LimitBreak.SpecialOptions[attribute] = existing + new SpecialOption(value);
+            } else {
+                limitBreakItemUpgrade.LimitBreak.SpecialOptions[attribute] = new SpecialOption(value);
+            }
+        }
+        foreach ((SpecialAttribute attribute, float rate) in optionMetadata.SpecialRates) {
+            if (limitBreakItemUpgrade.LimitBreak.SpecialOptions.TryGetValue(attribute, out SpecialOption existing)) {
+                limitBreakItemUpgrade.LimitBreak.SpecialOptions[attribute] = existing + new SpecialOption(rate);
+            } else {
+                limitBreakItemUpgrade.LimitBreak.SpecialOptions[attribute] = new SpecialOption(rate);
+            }
+        }
+
+        limitBreakItemUpgrade.LimitBreak.Level++;
+        limitBreakItemUpgrade.Enchant!.Enchants = 0;
+        session.Send(LimitBreakPacket.StageItem(item, limitBreakItemUpgrade, mesoCost, catalysts));
+
+        return true;
+    }
+
+    public bool LimitBreakEnchant(long itemUid) {
+        Item? item = session.Item.GetGear(itemUid);
+        if (item == null || upgradeItem == null || limitBreakItemUpgrade?.LimitBreak == null || upgradeItem.Uid != item.Uid ||
+            item.Metadata.Property.LimitBreakMaxLevel == 0 ||
+            (item.LimitBreak?.Level == 0 && item.Enchant?.Enchants < 15)) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_invalid_item));
+            return false;
+        }
+
+        item.LimitBreak ??= new ItemLimitBreak();
+        if (item.LimitBreak.Level >= item.Metadata.Property.LimitBreakMaxLevel) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_max_unlimited_grade));
+            return false;
+        }
+
+        if (!ConsumeLimitBreakMaterial()) {
+            return false;
+        }
+
+        upgradeItem.LimitBreak = limitBreakItemUpgrade.LimitBreak.Clone();
+        upgradeItem.Enchant!.Enchants = 0;
+        session.Send(LimitBreakPacket.LimitBreak(upgradeItem));
+        if (upgradeItem.LimitBreak.Level == upgradeItem.Metadata.Property.LimitBreakMaxLevel) {
+            session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_max_unlimited_grade));
+        }
+        session.ConditionUpdate(ConditionType.unlimited_enchant);
+        upgraded = true;
+        return true;
+    }
+
+    private bool ConsumeLimitBreakMaterial() {
+        if (upgradeItem?.LimitBreak == null) {
+            return false;
+        }
+
+        lock (session.Item) {
+            if (!session.Item.Inventory.Consume(catalysts)) {
+                session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_lack_ingredient));
+                return false;
+            }
+
+            if (session.Currency.CanAddMeso(-mesoCost) != -mesoCost) {
+                session.Send(LimitBreakPacket.Error(LimitBreakError.s_unlimited_enchant_err_lack_meso));
+                return false;
+            }
+            session.Currency.Meso -= mesoCost;
+            return true;
+        }
+    }
+    #endregion
 }

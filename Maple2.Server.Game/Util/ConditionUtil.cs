@@ -171,6 +171,7 @@ public static class ConditionUtil {
             case ConditionType.chat:
             case ConditionType.send_mail:
             case ConditionType.change_ugc_equip:
+            case ConditionType.unlimited_enchant:
                 return true;
         }
         return false;
@@ -312,6 +313,7 @@ public static class ConditionUtil {
             case ConditionType.taxifee:
             case ConditionType.send_mail:
             case ConditionType.change_ugc_equip:
+            case ConditionType.unlimited_enchant:
                 return true;
         }
         return false;
