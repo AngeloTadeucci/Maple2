@@ -47,4 +47,5 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(FishTable), typeDiscriminator: "fish")]
 [JsonDerivedType(typeof(CombineSpawnTable), typeDiscriminator: "combineSpawn")]
 [JsonDerivedType(typeof(EnchantOptionTable), typeDiscriminator: "enchantOption")]
+[JsonDerivedType(typeof(UnlimitedEnchantOptionTable), typeDiscriminator: "unlimitedEnchantOption")]
 public abstract record ServerTable;

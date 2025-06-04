@@ -124,6 +124,10 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             Name = ServerTableNames.ENCHANT_OPTION,
             Table = ParseEnchantOption()
         };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.UNLIMITED_ENCHANT_OPTION,
+            Table = ParseUnlimitedEnchantOption()
+        };
 
     }
 
@@ -2028,5 +2032,59 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             );
         }
         return new ScriptEventConditionTable(results);
+    }
+
+    private UnlimitedEnchantOptionTable ParseUnlimitedEnchantOption() {
+        var results = new Dictionary<int, Dictionary<int, UnlimitedEnchantOptionTable.Option>>();
+        foreach ((int slot, IDictionary<int[], UnlimitedEnchantOption> enchantOptions) in parser.ParseUnlimitedEnchantOption()) {
+            var levelDictionary = new Dictionary<int, UnlimitedEnchantOptionTable.Option>();
+            foreach ((int[] optionLevel, UnlimitedEnchantOption enchantOption) in enchantOptions) {
+                int minLevel = optionLevel[0];
+                int maxLevel = optionLevel.Length > 1 ? optionLevel[1] : minLevel;
+
+                for (int level = minLevel; level <= maxLevel; level++) {
+                    Dictionary<BasicAttribute, int> values = [];
+                    Dictionary<BasicAttribute, float> rates = [];
+                    Dictionary<SpecialAttribute, int> specialValues = [];
+                    Dictionary<SpecialAttribute, float> specialRates = [];
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option1, enchantOption.value1, enchantOption.rate1);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option2, enchantOption.value2, enchantOption.rate2);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option3, enchantOption.value3, enchantOption.rate3);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option4, enchantOption.value4, enchantOption.rate4);
+                    AddSpecial(specialValues, specialRates, (SpecialAttribute) enchantOption.sa_option1, enchantOption.sa_value1, enchantOption.sa_rate1);
+                    AddSpecial(specialValues, specialRates, (SpecialAttribute) enchantOption.sa_option2, enchantOption.sa_value2, enchantOption.sa_rate2);
+
+                    levelDictionary[level] = new UnlimitedEnchantOptionTable.Option(
+                        Values: values,
+                        Rates: rates,
+                        SpecialValues: specialValues,
+                        SpecialRates: specialRates);
+
+                }
+            }
+            results[slot] = levelDictionary;
+        }
+        return new UnlimitedEnchantOptionTable(results);
+
+        void AddBasic(Dictionary<BasicAttribute, int> values, Dictionary<BasicAttribute, float> rates, BasicAttribute attribute, int value, float rate) {
+            if (value != 0) {
+                values.Add(attribute, value);
+            }
+            if (rate != 0) {
+                rates.Add(attribute, rate);
+            }
+        }
+
+        void AddSpecial(Dictionary<SpecialAttribute, int> values, Dictionary<SpecialAttribute, float> rates, SpecialAttribute attribute, int value, float rate) {
+            if (attribute == SpecialAttribute.None) {
+                return;
+            }
+            if (value != 0) {
+                values.Add(attribute, value);
+            }
+            if (rate != 0) {
+                rates.Add(attribute, rate);
+            }
+        }
     }
 }

@@ -50,7 +50,8 @@ public record ItemMetadataProperty(
     int[] SetOptionIds,
     long[] SellPrices,
     long[] CustomSellPrices,
-    int ShopId);
+    int ShopId,
+    int LimitBreakMaxLevel);
 
 public record ItemMetadataCustomize(
     int ColorPalette,

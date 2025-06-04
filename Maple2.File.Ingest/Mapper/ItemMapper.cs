@@ -192,7 +192,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? Array.Empty<int>(),
                     SellPrices: data.property.sell.price,
                     CustomSellPrices: data.property.sell.priceCustom,
-                    ShopId: data.Shop?.systemShopID ?? 0
+                    ShopId: data.Shop?.systemShopID ?? 0,
+                    LimitBreakMaxLevel: data.property.unlimitedEnchantMaxGrade
                 ),
                 Customize: new ItemMetadataCustomize(
                     ColorPalette: data.customize.colorPalette,
