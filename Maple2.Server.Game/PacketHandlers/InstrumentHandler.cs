@@ -153,11 +153,12 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             return;
         }
 
+        int masteryValue = session.Instrument.Score?.Metadata.Music?.MasteryValue ?? 1;
+        int masteryValueMax = session.Instrument.Score?.Metadata.Music?.MasteryValueMax ?? 1;
+
         // TODO: Prestige exp
         long totalTickTime = Environment.TickCount64 - session.Instrument.StartTick;
-        if (session.ItemMetadata.TryGet(session.Instrument.Value.EquipId, out ItemMetadata? metadata) && metadata.Music != null) {
-            session.Mastery[MasteryType.Music] += (int) Math.Min(totalTickTime * metadata.Music.MasteryValue / 1000, metadata.Music.MasteryValueMax);
-        }
+        session.Mastery[MasteryType.Music] += (int) Math.Min(totalTickTime * masteryValue / 1000, masteryValueMax);
 
         short masteryLevel = session.Mastery.GetLevel(MasteryType.Music);
         ExpType expType = masteryLevel switch {

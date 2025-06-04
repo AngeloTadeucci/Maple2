@@ -29,10 +29,16 @@ public abstract class TriggerObject<T> : ITriggerObject where T : Trigger {
 
 public class TriggerObjectSound(Ms2TriggerSound metadata) : TriggerObject<Ms2TriggerSound>(metadata);
 
-public class TriggerObjectMesh(Ms2TriggerMesh metadata) : TriggerObject<Ms2TriggerMesh>(metadata) {
+public class TriggerObjectMesh : TriggerObject<Ms2TriggerMesh> {
     public bool MinimapVisible { get; init; }
     public int Fade { get; set; }
-    public float Scale { get; set; } = 1f;
+    public float Scale { get; set; }
+
+    public TriggerObjectMesh(Ms2TriggerMesh metadata) : base(metadata) {
+        MinimapVisible = metadata.MinimapInvisible;
+        this.Scale = metadata.Scale;
+        this.Visible = metadata.Visible;
+    }
 
     public override void WriteTo(IByteWriter writer) {
         base.WriteTo(writer);

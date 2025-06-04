@@ -272,7 +272,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 };
             case IMS2TriggerMesh mesh:
                 return new MapEntity(xblock, new Guid(trigger.EntityId), trigger.EntityName) {
-                    Block = new Ms2TriggerMesh(mesh.Scale, mesh.TriggerObjectID, mesh.IsVisible),
+                    Block = new Ms2TriggerMesh(mesh.Scale, mesh.TriggerObjectID, mesh.IsVisible, mesh.MinimapInVisible),
                 };
             case IMS2TriggerPortal _:
                 throw new InvalidOperationException("IMS2TriggerPortal should be parsed as IPortal.");

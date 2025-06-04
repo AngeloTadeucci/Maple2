@@ -3,6 +3,7 @@ using System.Reflection;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
+using Serilog;
 
 namespace Maple2.Server.Game.Model.Widget;
 
@@ -17,10 +18,36 @@ public class OxQuizWidget : Widget {
         questions = new ConcurrentDictionary<int, OxQuizTable.Entry>();
     }
 
+    public override bool Check(string name, string arg) {
+        return Conditions.GetValueOrDefault(name) == 1;
+    }
+
     public override void Action(string function, int numericArg, string stringArg) {
-        MethodInfo? method = GetType().GetMethod(function, BindingFlags.NonPublic | BindingFlags.Instance);
-        if (method != null) {
-            method.Invoke(this, [stringArg, numericArg]);
+        switch (function) {
+            case "DevMode":
+                DevMode(stringArg, numericArg);
+                break;
+            case "PickQuiz":
+                PickQuiz(stringArg, numericArg);
+                break;
+            case "ShowQuiz":
+                ShowQuiz(stringArg, numericArg);
+                break;
+            case "ShowAnswer":
+                ShowAnswer(stringArg, numericArg);
+                break;
+            case "PreJudge":
+                PreJudge(stringArg, numericArg);
+                break;
+            case "Judge":
+                Judge(stringArg, numericArg);
+                break;
+            case "Winner":
+                Winner(stringArg, numericArg);
+                break;
+            default:
+                Log.Logger.Warning("Unknown function called on OxQuizWidget: {Function}", function);
+                break;
         }
     }
 

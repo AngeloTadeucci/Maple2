@@ -254,7 +254,7 @@ public static class TriggerFunctionMapping {
         { "score_board_score", (ctx, attrs) => ctx.ScoreBoardScore(ParseInt(attrs?["score"]?.Value), ParseOperatorType(attrs?["compare_op"]?.Value)) },
         { "shadow_expedition_points", (ctx, attrs) => ctx.ShadowExpeditionPoints(ParseInt(attrs?["score"]?.Value)) },
         { "time_expired", (ctx, attrs) => ctx.TimeExpired(attrs?["timer_id"]?.Value ?? string.Empty) },
-        { "user_detected", (ctx, attrs) => ctx.UserDetected(ParseIntArray(attrs?["box_ids"]?.Value), ParseInt(attrs?["job_code"]?.Value)) },
+        { "user_detected", (ctx, attrs) => ctx.UserDetected(ParseIntArray(attrs?["box_ids"]?.Value), ParseInt(attrs?["job_code"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "user_value", (ctx, attrs) => ctx.UserValue(attrs?["key"]?.Value ?? string.Empty, ParseInt(attrs?["value"]?.Value), ParseBool(attrs?["negate"]?.Value)) },
         { "wait_and_reset_tick", (ctx, attrs) => ctx.WaitAndResetTick(ParseInt(attrs?["wait_tick"]?.Value)) },
         { "wait_seconds_user_value", (ctx, attrs) => ctx.WaitSecondsUserValue(attrs?["key"]?.Value ?? string.Empty, attrs?["desc"]?.Value ?? string.Empty) },
@@ -262,17 +262,27 @@ public static class TriggerFunctionMapping {
         { "wedding_entry_in_field", (ctx, attrs) => ctx.WeddingEntryInField(attrs?["entry_type"]?.Value ?? string.Empty, ParseBool(attrs?["is_in_field"]?.Value)) },
         { "wedding_hall_state", (ctx, attrs) => ctx.WeddingHallState(attrs?["hallState"]?.Value ?? string.Empty, ParseBool(attrs?["success"]?.Value)) },
         { "wedding_mutual_agree_result", (ctx, attrs) => ctx.WeddingMutualAgreeResult(attrs?["agree_type"]?.Value ?? string.Empty) },
-        { "widget_value", (ctx, attrs) => ctx.WidgetValue(attrs?["type"]?.Value ?? string.Empty, attrs?["widget_name"]?.Value ?? string.Empty, ParseInt(attrs?["condition"]?.Value), ParseBool(attrs?["negate"]?.Value), attrs?["desc"]?.Value ?? string.Empty) },
+        { "widget_value", (ctx, attrs) => ctx.WidgetValue(attrs?["type"]?.Value ?? string.Empty, attrs?["widget_name"]?.Value ?? string.Empty, attrs?["condition"]?.Value, ParseBool(attrs?["negate"]?.Value), attrs?["desc"]?.Value ?? string.Empty) },
     };
 
     private static Weather ParseWeather(string? value) {
         if (string.IsNullOrEmpty(value)) return Weather.Clear;
-        return (Weather) Enum.Parse(typeof(Weather), value, true);
+        return Enum.TryParse(value, true, out Weather weather) ? weather : Weather.Clear;
     }
 
     private static BannerType ParseBannerType(string? value) {
-        if (string.IsNullOrEmpty(value)) return BannerType.Lose;
-        return (BannerType) Enum.Parse(typeof(BannerType), value, true);
+        if (string.IsNullOrEmpty(value)) return BannerType.Text;
+        return value switch {
+            // "0"
+            "1" => BannerType.Text,
+            // "2"
+            "3" => BannerType.Winner,
+            "4" => BannerType.Lose,
+            "5" => BannerType.GameOver,
+            "6" => BannerType.Bonus,
+            "7" => BannerType.Success,
+            _ => BannerType.Text,
+        };
     }
 
     private static Locale ParseLocale(string? value) {
