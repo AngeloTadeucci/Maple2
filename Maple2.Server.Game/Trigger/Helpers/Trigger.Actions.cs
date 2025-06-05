@@ -3,7 +3,7 @@
 namespace Maple2.Server.Game.Trigger.Helpers;
 
 public partial class Trigger {
-    public class AddBallonTalk(int spawnId, string msg, int duration, int delayTick, int npcId) : IAction {
+    public class AddBalloonTalk(int spawnId, string msg, int duration, int delayTick, int npcId) : IAction {
         public void Execute(TriggerContext context) => context.AddBalloonTalk(spawnId, msg, duration, delayTick, npcId);
     }
 
@@ -768,7 +768,7 @@ public partial class Trigger {
     }
 
     public class SetWeather(Weather weatherType) : IAction {
-        public void Execute(TriggerContext context) => context.Weather(weatherType);
+        public void Execute(TriggerContext context) => context.SetWeather(weatherType);
     }
 
     public class WeddingBroken : IAction {

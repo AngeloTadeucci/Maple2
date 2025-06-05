@@ -6,7 +6,7 @@ namespace Maple2.Server.Game.Trigger.Helpers;
 
 public static class TriggerFunctionMapping {
     public static readonly Dictionary<string, Func<XmlAttributeCollection?, IAction>> ActionMap = new Dictionary<string, Func<XmlAttributeCollection?, IAction>> {
-        { "add_balloon_talk", attrs => new Trigger.AddBallonTalk(ParseInt(attrs?["spawn_id"]?.Value), attrs?["msg"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), ParseInt(attrs?["delay_tick"]?.Value), ParseInt(attrs?["npc_id"]?.Value)) },
+        { "add_balloon_talk", attrs => new Trigger.AddBalloonTalk(ParseInt(attrs?["spawn_id"]?.Value), attrs?["msg"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), ParseInt(attrs?["delay_tick"]?.Value), ParseInt(attrs?["npc_id"]?.Value)) },
         { "add_buff", attrs => new Trigger.AddBuff(ParseIntArray(attrs?["box_ids"]?.Value), ParseInt(attrs?["skill_id"]?.Value), ParseInt(attrs?["level"]?.Value), ParseBool(attrs?["ignore_player"]?.Value), ParseBool(attrs?["is_skill_set"]?.Value), attrs?["feature"]?.Value ?? string.Empty) },
         { "add_cinematic_talk", attrs => new Trigger.AddCinematicTalk(ParseInt(attrs?["npc_id"]?.Value), attrs?["illust_id"]?.Value ?? string.Empty, attrs?["msg"]?.Value ?? string.Empty, ParseInt(attrs?["duration"]?.Value), ParseAlign(attrs?["align"]?.Value), ParseInt(attrs?["delay_tick"]?.Value)) },
         { "add_effect_nif", attrs => new Trigger.AddEffectNif(ParseInt(attrs?["spawn_id"]?.Value), attrs?["nif_path"]?.Value ?? string.Empty, ParseBool(attrs?["is_outline"]?.Value), ParseFloat(attrs?["scale"]?.Value), ParseInt(attrs?["rotate_z"]?.Value)) },
@@ -272,8 +272,8 @@ public static class TriggerFunctionMapping {
 
     private static JobCode ParseJobCode(string? value) {
         if (string.IsNullOrEmpty(value)) return JobCode.None;
-        return Enum.TryParse<JobCode>(value, true, out var jobCode) 
-            ? jobCode 
+        return Enum.TryParse<JobCode>(value, true, out var jobCode)
+            ? jobCode
             : JobCode.None;
     }
 

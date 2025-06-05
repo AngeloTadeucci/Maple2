@@ -75,8 +75,8 @@ public partial class TriggerContext {
         }
     }
 
-    public void Weather(Weather weather) {
-        DebugLog("[Weather] weatherType:{Type}", weather);
+    public void SetWeather(Weather weather) {
+        DebugLog("[SetWeather] weatherType:{Type}", weather);
         Field.AddFieldProperty(new FieldPropertyWeather { WeatherType = (WeatherType) weather });
     }
 

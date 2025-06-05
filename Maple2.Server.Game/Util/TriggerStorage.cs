@@ -73,21 +73,7 @@ public class TriggerCache : LRUCache<(string, string), Trigger.Helpers.Trigger> 
             State.OnEnter? onEnter = null;
             XmlNode? onEnterNode = stateElement.SelectSingleNode("onEnter");
             if (onEnterNode != null) {
-                LinkedList<IAction> onEnterActions = [];
-                foreach (XmlNode actionNode in onEnterNode.SelectNodes("action")!) {
-                    string? actionName = actionNode.Attributes?["name"]?.Value;
-                    if (actionName is null) {
-                        Log.Error("Action in trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock} must have a 'name' attribute.", stateName, triggerName, xBlock);
-                        continue;
-                    }
-                    TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Func<XmlAttributeCollection?, IAction>? actionMap);
-                    if (actionMap == null) {
-                        Log.Error("Unknown action type '{ActionType}' in trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock}", actionName, stateName, triggerName, xBlock);
-                        continue;
-                    }
-                    IAction actionClass = actionMap(actionNode.Attributes);
-                    onEnterActions.AddLast(actionClass);
-                }
+                LinkedList<IAction> onEnterActions = ParseActions(onEnterNode, stateName, triggerName, xBlock, "onEnter");
 
                 XmlNode? transitionNode = onEnterNode.SelectSingleNode("transition");
 
@@ -134,21 +120,7 @@ public class TriggerCache : LRUCache<(string, string), Trigger.Helpers.Trigger> 
                         }
                     }
 
-                    LinkedList<IAction> actions = [];
-                    foreach (XmlNode actionNode in conditionNode.SelectNodes("action")!) {
-                        string? actionName = actionNode.Attributes?["name"]?.Value;
-                        if (actionName is null) {
-                            Log.Warning("Action in condition of trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock} must have a 'name' attribute.", stateName, triggerName, xBlock);
-                            continue;
-                        }
-                        TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Func<XmlAttributeCollection?, IAction>? actionMap);
-                        if (actionMap == null) {
-                            Log.Warning("Unknown action type '{ActionType}' in trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock}", actionName, stateName, triggerName, xBlock);
-                            continue;
-                        }
-                        IAction actionClass = actionMap(actionNode.Attributes);
-                        actions.AddLast(actionClass);
-                    }
+                    LinkedList<IAction> actions = ParseActions(conditionNode, stateName, triggerName, xBlock, "condition");
                     condition.Actions = actions;
                     conditions.AddLast(condition);
                 }
@@ -157,21 +129,7 @@ public class TriggerCache : LRUCache<(string, string), Trigger.Helpers.Trigger> 
             State.OnExit? onExit = null;
             XmlNode? onExitNode = stateElement.SelectSingleNode("onExit");
             if (onExitNode != null) {
-                LinkedList<IAction> onExitActions = [];
-                foreach (XmlNode actionNode in onExitNode.SelectNodes("action")!) {
-                    string? actionName = actionNode.Attributes?["name"]?.Value;
-                    if (actionName is null) {
-                        Log.Error("Action in trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock} must have a 'name' attribute.", stateName, triggerName, xBlock);
-                        continue;
-                    }
-                    TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Func<XmlAttributeCollection?, IAction>? actionMap);
-                    if (actionMap == null) {
-                        Log.Error("Unknown action type '{ActionType}' in trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock}", actionName, stateName, triggerName, xBlock);
-                        continue;
-                    }
-                    IAction actionClass = actionMap(actionNode.Attributes);
-                    onExitActions.AddLast(actionClass);
-                }
+                LinkedList<IAction> onExitActions = ParseActions(onExitNode, stateName, triggerName, xBlock, "onExit");
 
                 onExit = new State.OnExit(onExitActions);
             }
@@ -180,5 +138,24 @@ public class TriggerCache : LRUCache<(string, string), Trigger.Helpers.Trigger> 
         }
 
         return new Trigger.Helpers.Trigger(states);
+    }
+
+    private LinkedList<IAction> ParseActions(XmlNode parentNode, string stateName, string triggerName, string xBlock, string context) {
+        LinkedList<IAction> actions = [];
+        foreach (XmlNode actionNode in parentNode.SelectNodes("action")!) {
+            string? actionName = actionNode.Attributes?["name"]?.Value;
+            if (actionName is null) {
+                Log.Error("Action in {Context} of trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock} must have a 'name' attribute.", context, stateName, triggerName, xBlock);
+                continue;
+            }
+            TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Func<XmlAttributeCollection?, IAction>? actionMap);
+            if (actionMap == null) {
+                Log.Error("Unknown action type '{ActionType}' in {Context} of trigger state '{StateName}' for trigger '{TriggerName}' in {MapXBlock}", actionName, context, stateName, triggerName, xBlock);
+                continue;
+            }
+            IAction actionClass = actionMap(actionNode.Attributes);
+            actions.AddLast(actionClass);
+        }
+        return actions;
     }
 }

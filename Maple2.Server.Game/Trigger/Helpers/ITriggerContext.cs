@@ -196,7 +196,7 @@ public interface ITriggerContext {
     public void UserTagSymbol(string symbol1, string symbol2);
     public void UserValueToNumberMesh(string key, int startMeshId, int digitCount);
     public void VisibleMyPc(bool isVisible);
-    public void Weather(Weather weatherType);
+    public void SetWeather(Weather weatherType);
     public void WeddingBroken();
     public void WeddingMoveUser(string entryType, int mapId, int[] portalIds, int boxId);
     public void WeddingMutualAgree(string agreeType);
