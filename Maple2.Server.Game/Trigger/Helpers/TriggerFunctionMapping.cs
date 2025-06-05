@@ -272,7 +272,9 @@ public static class TriggerFunctionMapping {
 
     private static JobCode ParseJobCode(string? value) {
         if (string.IsNullOrEmpty(value)) return JobCode.None;
-        return (JobCode) Enum.Parse(typeof(JobCode), value, true);
+        return Enum.TryParse<JobCode>(value, true, out var jobCode) 
+            ? jobCode 
+            : JobCode.None;
     }
 
     private static Weather ParseWeather(string? value) {
