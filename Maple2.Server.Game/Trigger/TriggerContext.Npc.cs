@@ -22,7 +22,7 @@ public partial class TriggerContext {
     public void SpawnMonster(int[] spawnIds, bool spawnAnimation, int arg3) {
         WarnLog("[CreateMonster] spawnIds:{SpawnIds}, spawnAnimation:{SpawnAnimation}, arg3:{Arg3}", string.Join(", ", spawnIds), spawnAnimation, arg3);
         foreach (int spawnId in spawnIds) {
-            SpawnNpc(spawnId);
+            SpawnNpc(spawnId, spawnAnimation);
         }
     }
 
@@ -277,7 +277,7 @@ public partial class TriggerContext {
         return Field.EnumerateNpcs().Where(mob => boxes.Any(box => box.Contains(mob.Position)));
     }
 
-    private void SpawnNpc(int spawnId) {
+    private void SpawnNpc(int spawnId, bool useSpawnAnimation = false) {
         if (!Field.Entities.EventNpcSpawns.TryGetValue(spawnId, out EventSpawnPointNPC? spawn)) {
             logger.Error("[SpawnNpc] Invalid spawnId:{SpawnId}", spawnId);
             return;
@@ -290,7 +290,11 @@ public partial class TriggerContext {
             }
 
             for (int i = 0; i < entry.Count; i++) {
-                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation, spawnAnimation: spawn.SpawnAnimation);
+                string spawnAnimationString = string.Empty;
+                if (!string.IsNullOrEmpty(spawn.SpawnAnimation) && useSpawnAnimation) {
+                    spawnAnimationString = spawn.SpawnAnimation;
+                }
+                FieldNpc? fieldNpc = Field.SpawnNpc(npc, spawn.Position, spawn.Rotation, spawnAnimation: spawnAnimationString);
                 if (fieldNpc == null) {
                     logger.Error("[SpawnNpc] Failed to spawn npcId:{NpcId}", entry.NpcId);
                     continue;
