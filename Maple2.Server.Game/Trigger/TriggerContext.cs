@@ -12,11 +12,11 @@ using Serilog.Core;
 namespace Maple2.Server.Game.Trigger;
 
 public partial class TriggerContext : ITriggerContext {
-    public readonly FieldTrigger Owner;
+    private readonly FieldTrigger owner;
     private readonly ILogger logger = Log.Logger.ForContext<TriggerContext>();
 
-    private FieldManager Field => Owner.Field;
-    private TriggerCollection Objects => Owner.Field.TriggerObjects;
+    private FieldManager Field => owner.Field;
+    private TriggerCollection Objects => owner.Field.TriggerObjects;
 
     private float currentRandom = float.MaxValue;
 
@@ -26,7 +26,7 @@ public partial class TriggerContext : ITriggerContext {
     public long StartTick;
 
     public TriggerContext(FieldTrigger owner) {
-        this.Owner = owner;
+        this.owner = owner;
 
         Events = new EventQueue();
         Events.Start();
@@ -71,7 +71,7 @@ public partial class TriggerContext : ITriggerContext {
             return;
         }
 
-        logAction($"{Owner.Value.Name} {messageTemplate}", args);
+        logAction($"{owner.Value.Name} {messageTemplate}", args);
         lastDebugKey = key;
     }
 
