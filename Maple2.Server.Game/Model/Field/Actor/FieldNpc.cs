@@ -76,7 +76,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly AnimationSequenceMetadata? JumpSequence;
     public readonly AnimationSequenceMetadata? WalkSequence;
     public readonly AnimationSequenceMetadata? FlySequence;
-    public readonly AnimationSequenceMetadata? SpawnSequence;
+    public readonly string? SpawnAnimation;
     private readonly WeightedSet<string> defaultRoutines;
     public readonly AiState AiState;
     public readonly MovementState MovementState;
@@ -100,7 +100,7 @@ public class FieldNpc : Actor<Npc> {
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         FlySequence = npc.Animations.GetValueOrDefault("Fly_A");
-        SpawnSequence = npc.Animations.GetValueOrDefault(spawnAnimation);
+        SpawnAnimation = spawnAnimation;
         defaultRoutines = new WeightedSet<string>();
         foreach (NpcAction action in Value.Metadata.Action.Actions) {
             defaultRoutines.Add(action.Name, action.Probability);
@@ -250,7 +250,7 @@ public class FieldNpc : Actor<Npc> {
                 if (!Value.Animations.TryGetValue(routineName, out AnimationSequenceMetadata? animationSequence)) {
                     break;
                 }
-                return MovementState.TryEmote(animationSequence.Name, SpawnSequence is not null);
+                return MovementState.TryEmote(animationSequence.Name, SpawnAnimation is not null);
         }
 
         Logger.Warning("Unhandled routine: {Routine} for npc {NpcId}", routineName, Value.Metadata.Id);
@@ -337,7 +337,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     public void Talk() {
-        if (SpawnSequence is not null) {
+        if (SpawnAnimation is not null) {
             return;
         }
         idleTask = MovementState.TryTalk();
