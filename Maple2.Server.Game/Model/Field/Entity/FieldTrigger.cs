@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Xml;
+﻿using System.Xml;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
@@ -12,7 +11,7 @@ namespace Maple2.Server.Game.Model;
 
 public class FieldTrigger : FieldEntity<TriggerModel> {
     public readonly TriggerContext Context;
-    private readonly XmlDocument triggerDocument;
+    private readonly Trigger.Helpers.Trigger trigger;
 
     private long nextTick;
     private TriggerState? state;
@@ -20,36 +19,14 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
 
     public FieldTrigger(FieldManager field, int objectId, TriggerModel value) : base(field, objectId, value) {
         Context = new TriggerContext(this);
-        var document = new XmlDocument();
-        string xml;
-        if (!Constant.DebugTriggers) {
-            field.TriggerMetadata.TryGet(Field.Metadata.XBlock, Value.Name.ToLower(), out TriggerMetadata? metadata);
-            if (metadata == null) {
-                throw new ArgumentException($"Trigger {Value.Name} not found in {Field.Metadata.XBlock}");
-            }
-            xml = metadata.Xml;
+        if (field.TriggerCache.TryGet(field.Metadata.XBlock, Value.Name.ToLower(), out Trigger.Helpers.Trigger? cachedTrigger)) {
+            trigger = cachedTrigger;
         } else {
-            string triggerFilePath = Path.Combine(Paths.DEBUG_TRIGGERS_DIR, Field.Metadata.XBlock, Value.Name.ToLower() + ".xml");
-            if (!File.Exists(triggerFilePath)) {
-                throw new ArgumentException($"You are running DebugTriggers, but the trigger file does not exist: {triggerFilePath}");
-            }
-            xml = File.ReadAllText(triggerFilePath);
+            Log.Error("Trigger {TriggerName} not found in {MapXBlock}.", Value.Name, field.Metadata.XBlock);
+            throw new ArgumentException($"Trigger {Value.Name} not found in {field.Metadata.XBlock}.");
         }
 
-        document.LoadXml(xml);
-        triggerDocument = document;
-
-        XmlElement? root = document.DocumentElement;
-        if (root is not { Name: "ms2" }) {
-            throw new ArgumentException($"Trigger {Value.Name} has no <ms2> root element in {Field.Metadata.XBlock}");
-        }
-
-        XmlNode? initialState = root.SelectSingleNode("state");
-        if (initialState is not { Name: "state" }) {
-            throw new ArgumentException($"Trigger {Value.Name} has no <state> element in {Field.Metadata.XBlock}");
-        }
-
-        nextState = new TriggerState(initialState, Context);
+        nextState = new TriggerState(trigger, Context);
         nextTick = field.FieldTick;
     }
 
@@ -59,38 +36,22 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         }
 
         List<TriggerState> states = [];
-        foreach (XmlNode stateNode in triggerDocument.SelectNodes("//state")!) {
-            if (stateNode is not XmlElement stateElement || !names.Contains(stateElement.GetAttribute("name"))) {
+        foreach (Trigger.Helpers.Trigger.State triggerState in trigger.States) {
+            if (!names.Contains(triggerState.Name)) {
                 continue;
             }
-            states.Add(new TriggerState(stateNode, Context));
+            states.Add(new TriggerState(trigger, triggerState, Context));
         }
 
         return states;
     }
 
     public TriggerState? GetState(string name) {
-        XmlNode? stateNode = triggerDocument.SelectSingleNode($"//state[@name='{name}']");
-        if (stateNode == null) {
-            return null;
-        }
-
-        return new TriggerState(stateNode, Context);
+        Trigger.Helpers.Trigger.State? triggerState = trigger.States.FirstOrDefault(x => x.Name == name);
+        return triggerState == null ? null : new TriggerState(trigger, triggerState, Context);
     }
 
-    public XmlNode? GetStateNode(string name) {
-        return triggerDocument.SelectSingleNode($"//state[@name='{name}']");
-    }
-
-    public List<string> GetStateNames() {
-        List<string> stateNames = [];
-        foreach (XmlNode stateNode in triggerDocument.SelectNodes("//state")!) {
-            if (stateNode is XmlElement stateElement) {
-                stateNames.Add(stateElement.GetAttribute("name"));
-            }
-        }
-        return stateNames;
-    }
+    public List<string> GetStateNames() => trigger.States.Select(x => x.Name).ToList();
 
     public bool Skip() {
         if (Context.TryGetSkip(out TriggerState? skip)) {

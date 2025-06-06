@@ -6,139 +6,90 @@ using Serilog;
 namespace Maple2.Server.Game.Trigger.Helpers;
 
 public class TriggerState {
-    private readonly XmlNode stateNode;
+    private readonly Trigger trigger;
+    private readonly Trigger.State triggerState;
     private readonly TriggerContext triggerContext;
 
     public readonly string Name;
 
-    public TriggerState(XmlNode state, TriggerContext context) {
-        stateNode = state;
+    public TriggerState(Trigger trigger, TriggerContext context) {
+        this.trigger = trigger;
+        triggerState = trigger.States.First();
         triggerContext = context;
-        Name = stateNode.Attributes?["name"]?.Value ?? throw new ArgumentException("State node must have a 'name' attribute");
+        Name = triggerState.Name;
+    }
+
+    public TriggerState(Trigger trigger, Trigger.State nextState, TriggerContext context) {
+        this.trigger = trigger;
+        triggerState = nextState;
+        triggerContext = context;
+        Name = triggerState.Name;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TriggerState? OnEnter() {
-        XmlNode? section = stateNode.SelectSingleNode("onEnter");
-        if (section == null) return null;
+        Trigger.State.OnEnter? onEnter = triggerState.Enter;
+        if (onEnter == null) return null;
 
-        foreach (XmlNode actionNode in section.SelectNodes("action")!) {
-            CallAction(actionNode);
+        foreach (IAction actionNode in onEnter.Actions) {
+            ExecuteAction(actionNode);
         }
 
-        if (!GetNextState(section, out XmlNode? nextState)) return null;
+        if (onEnter.NextState is not null && GetNextState(onEnter.NextState, out Trigger.State? nextState)) {
+            return new TriggerState(trigger, nextState, triggerContext);
+        }
 
-        return new TriggerState(nextState, triggerContext);
+        return null;
     }
 
+
     public TriggerState? OnTick() {
-        XmlNodeList? section = stateNode.SelectNodes("condition");
-        if (section == null) return null;
+        LinkedList<ICondition> conditions = triggerState.Conditions;
+        if (conditions.Count == 0) return null;
 
-        foreach (XmlNode conditionNode in section) {
-            if (!CallCondition(conditionNode)) continue;
+        foreach (ICondition condition in conditions) {
+            if (!CallCondition(condition)) continue;
 
-            foreach (XmlNode actionNode in conditionNode.SelectNodes("action")!) {
-                CallAction(actionNode);
+            foreach (IAction actionNode in condition.Actions) {
+                ExecuteAction(actionNode);
             }
 
-            if (!GetNextState(conditionNode, out XmlNode? nextState)) continue;
+            if (condition.NextState is not null && GetNextState(condition.NextState, out Trigger.State? nextState)) {
+                return new TriggerState(trigger, nextState, triggerContext);
+            }
 
-            return new TriggerState(nextState, triggerContext);
+            return null;
         }
         return null;
     }
 
     public void OnExit() {
-        XmlNode? section = stateNode.SelectSingleNode("onExit");
-        if (section == null) return;
-        foreach (XmlNode actionNode in section.SelectNodes("action")!) {
-            CallAction(actionNode);
+        Trigger.State.OnExit? onExit = triggerState.Exit;
+        if (onExit == null) return;
+        foreach (IAction actionNode in onExit.Actions) {
+            ExecuteAction(actionNode);
         }
     }
 
-    private bool GetNextState(XmlNode condition, [NotNullWhen(true)] out XmlNode? xmlNode) {
-        XmlNode? nextStateNode = condition.SelectSingleNode("transition");
-        if (nextStateNode == null) {
-            xmlNode = null;
-            return false;
-        }
-
-        string nextStateName = nextStateNode.Attributes?["state"]?.Value ?? "";
-        if (string.IsNullOrEmpty(nextStateName)) {
-            xmlNode = null;
-            return false;
-        }
-
-        XmlNode? nextNode = triggerContext.Owner.GetStateNode(nextStateName);
-        if (nextNode == null) {
-            xmlNode = null;
-            return false;
-        }
-        xmlNode = nextNode;
-        return true;
+    private bool GetNextState(string nextStateName, [NotNullWhen(true)] out Trigger.State? nextState) {
+        nextState = trigger.States.FirstOrDefault(x => x.Name == nextStateName);
+        return nextState != null;
     }
 
-    private void CallAction(XmlNode actionNode) {
-        string actionName = actionNode.Attributes?["name"]?.Value ?? "";
-        TriggerFunctionMapping.ActionMap.TryGetValue(actionName, out Action<ITriggerContext, XmlAttributeCollection?>? actionFunc);
-        if (actionFunc is not null) {
-            try {
-                actionFunc(triggerContext, actionNode.Attributes);
-            } catch (Exception e) {
-                Log.Logger.Error(e, "CallAction: error executing action '{ActionName}', Node: {Node}", actionName, actionNode.OuterXml);
-            }
-            return;
+    private void ExecuteAction(IAction action) {
+        try {
+            action.Execute(triggerContext);
+        } catch (Exception e) {
+            Log.Logger.Error(e, "Error executing action '{ActionName}'", nameof(action));
         }
-        Log.Logger.Error("CallAction: action function not found for action '{ActionName}'", actionName);
     }
 
-    private bool CallCondition(XmlNode conditionNode) {
-        string conditionName = conditionNode.Attributes?["name"]?.Value ?? "";
-
-        // Handle group conditions
-        if (conditionName is "any_one" or "all_of" or "true") {
-            XmlNode? groupNode = conditionNode.SelectSingleNode("group");
-            if (groupNode == null) {
-                Log.Logger.Error("CallCondition: group node not found for grouped condition '{ActionName}'", conditionName);
-                return false;
-            }
-            XmlNodeList? childConditions = groupNode.SelectNodes("condition");
-            if (childConditions == null || childConditions.Count == 0) {
-                Log.Logger.Error("CallCondition: no child conditions in group for '{ActionName}'", conditionName);
-                return false;
-            }
-
-            switch (conditionName) {
-                case "any_one":
-                    foreach (XmlNode child in childConditions) {
-                        if (CallCondition(child)) return true;
-                    }
-                    return false;
-                case "all_of":
-                    foreach (XmlNode child in childConditions) {
-                        if (!CallCondition(child)) return false;
-                    }
-                    return true;
-                case "true":
-                    return true;
-            }
-        } else if (conditionName is "always") {
-            return true;
+    private bool CallCondition(ICondition condition) {
+        try {
+            return condition.Evaluate(triggerContext);
+        } catch (Exception e) {
+            Log.Logger.Error(e, "Error evaluating condition '{ConditionName}'", nameof(condition));
+            return false;
         }
-
-        TriggerFunctionMapping.ConditionMap.TryGetValue(conditionName, out Func<ITriggerContext, XmlAttributeCollection?, bool>? conditionFunc);
-        if (conditionFunc is not null) {
-            try {
-                bool result = conditionFunc(triggerContext, conditionNode.Attributes);
-                return result;
-            } catch (Exception e) {
-                Log.Logger.Error(e, "CallCondition: error executing condition '{ConditionName}', Node: {Node}", conditionName, conditionNode.OuterXml);
-                return false;
-            }
-        }
-
-        Log.Logger.Error("CallCondition: condition function not found for action '{ConditionName}'", conditionName);
-        return false;
     }
 }

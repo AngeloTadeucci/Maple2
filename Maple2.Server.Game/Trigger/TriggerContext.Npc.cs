@@ -218,7 +218,7 @@ public partial class TriggerContext {
     }
 
     public bool MonsterInCombat(int[] spawnIds, bool negate) {
-        WarnLog("[MonsterInCombat] spawnIds:{SpawnIds}", string.Join(", ", spawnIds));
+        DebugLog("[MonsterInCombat] spawnIds:{SpawnIds}", string.Join(", ", spawnIds));
         foreach (FieldNpc mob in Field.Mobs.Values) {
             if (mob.SpawnPointId > 0 || !spawnIds.Contains(mob.SpawnPointId)) {
                 continue;

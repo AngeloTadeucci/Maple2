@@ -210,7 +210,7 @@ public partial class TriggerContext {
             Random.Shared.Shuffle(states);
         }
 
-        Field.States[triggerId] = Owner.GetStates(states);
+        Field.States[triggerId] = owner.GetStates(states);
     }
 
     #region Conditions
@@ -264,7 +264,7 @@ public partial class TriggerContext {
         return negate;
     }
 
-    public bool UserDetected(int[] boxIds, int jobCode, bool negate) {
+    public bool UserDetected(int[] boxIds, JobCode jobCode, bool negate) {
         DebugLog("[UserDetected] boxIds:{BoxIds}, jobCode:{JobCode}", string.Join(", ", boxIds), (JobCode) jobCode);
         IEnumerable<TriggerBox> boxes = boxIds
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
@@ -273,7 +273,7 @@ public partial class TriggerContext {
         bool result;
         if (jobCode != 0) {
             result = Field.Players.Values
-                .Any(player => player.Value.Character.Job.Code() == (JobCode) jobCode && boxes.Any(box => box.Contains(player.Position)));
+                .Any(player => player.Value.Character.Job.Code() == jobCode && boxes.Any(box => box.Contains(player.Position)));
         } else {
             result = Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
         }
