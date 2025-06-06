@@ -213,14 +213,8 @@ public partial class GameStorage {
                 return null;
             }
 
-            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
-                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
-
-                ugcMap.ExpiryTime = Home.HomeExpiryTime;
-                Context.UgcMap.Update(ugcMap);
-                if (!Context.TrySaveChanges()) {
-                    return null;
-                }
+            if (!ValidateAndFixHomeExpiryTime(ugcMap)) {
+                return null;
             }
 
             var plot = new Plot(group) {
@@ -259,14 +253,8 @@ public partial class GameStorage {
                 return null;
             }
 
-            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
-                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
-
-                ugcMap.ExpiryTime = Home.HomeExpiryTime;
-                Context.UgcMap.Update(ugcMap);
-                if (!Context.TrySaveChanges()) {
-                    return null;
-                }
+            if (!ValidateAndFixHomeExpiryTime(ugcMap)) {
+                return null;
             }
 
             return new PlotInfo(group) {
@@ -333,6 +321,17 @@ public partial class GameStorage {
                 Interact = ToInteractCube(model.Interact),
                 Type = PlotCube.CubeType.Construction,
             };
+        }
+
+        private bool ValidateAndFixHomeExpiryTime(UgcMap ugcMap) {
+            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
+                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
+
+                ugcMap.ExpiryTime = Home.HomeExpiryTime;
+                Context.UgcMap.Update(ugcMap);
+                return Context.TrySaveChanges();
+            }
+            return true;
         }
     }
 }
