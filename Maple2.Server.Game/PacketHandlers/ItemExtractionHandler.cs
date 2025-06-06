@@ -4,13 +4,13 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemExtractionHandler : PacketHandler<GameSession> {
+public class ItemExtractionHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.ItemExtractionScroll;
 
     #region Autofac Autowired

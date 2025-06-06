@@ -3,14 +3,14 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class SetCraftModeHandler : PacketHandler<GameSession> {
+public class SetCraftModeHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestSetCraftMode;
 
     private enum Command : byte {

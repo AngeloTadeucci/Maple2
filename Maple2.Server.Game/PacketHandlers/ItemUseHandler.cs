@@ -6,7 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -16,7 +16,7 @@ using static Maple2.Model.Error.CharacterCreateError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemUseHandler : PacketHandler<GameSession> {
+public class ItemUseHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestItemUse;
 
     #region Autofac Autowired

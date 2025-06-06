@@ -9,7 +9,7 @@ using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -17,7 +17,7 @@ using Maple2.Tools.Collision;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class InstrumentHandler : PacketHandler<GameSession> {
+public class InstrumentHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.PlayInstrument;
 
     private enum Command : byte {

@@ -8,7 +8,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
@@ -19,7 +19,7 @@ using Serilog;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class RequestCubeHandler : PacketHandler<GameSession> {
+public class RequestCubeHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestCube;
 
     private enum Command : byte {

@@ -1,12 +1,12 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class NewsNotificationHandler : PacketHandler<GameSession> {
+public class NewsNotificationHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.NewsNotification;
 
     private enum Command : byte {
