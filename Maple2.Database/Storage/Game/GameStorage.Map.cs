@@ -5,6 +5,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Z.EntityFramework.Plus;
 using Home = Maple2.Model.Game.Home;
 using InteractCube = Maple2.Model.Game.InteractCube;
@@ -212,6 +213,16 @@ public partial class GameStorage {
                 return null;
             }
 
+            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
+                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
+
+                ugcMap.ExpiryTime = Home.HomeExpiryTime;
+                Context.UgcMap.Update(ugcMap);
+                if (!Context.TrySaveChanges()) {
+                    return null;
+                }
+            }
+
             var plot = new Plot(group) {
                 Id = ugcMap.Id,
                 OwnerId = ugcMap.OwnerId,
@@ -246,6 +257,16 @@ public partial class GameStorage {
 
             if (!metadata.Plots.TryGetValue(ugcMap.Number, out UgcMapGroup? group)) {
                 return null;
+            }
+
+            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
+                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
+
+                ugcMap.ExpiryTime = Home.HomeExpiryTime;
+                Context.UgcMap.Update(ugcMap);
+                if (!Context.TrySaveChanges()) {
+                    return null;
+                }
             }
 
             return new PlotInfo(group) {
