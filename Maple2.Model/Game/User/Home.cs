@@ -59,6 +59,8 @@ public class Home : IByteSerializable {
 
     public bool IsHomeSetup => !string.IsNullOrEmpty(Name);
 
+    public static DateTimeOffset HomeExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero);
+
     public Home() {
         message = string.Empty;
         Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
@@ -69,7 +71,7 @@ public class Home : IByteSerializable {
 
     public void NewHomeDefaults(string characterName) {
         Indoor.Name = characterName;
-        Indoor.ExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+        Indoor.ExpiryTime = HomeExpiryTime.ToUnixTimeSeconds();
         Message = "Thanks for visiting. Come back soon!";
         DecorationLevel = 1;
         Passcode = string.Empty;
