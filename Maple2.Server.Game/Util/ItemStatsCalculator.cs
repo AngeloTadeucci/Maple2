@@ -536,7 +536,7 @@ public sealed class ItemStatsCalculator {
         }
 
         while (statResult.Count + specialResult.Count < total && availableEntries.Count > 0) {
-            ItemOption.Entry entry = option.Entries.Random();
+            ItemOption.Entry entry = availableEntries.Random();
             if (statsType == ItemStats.Type.Random &&
                 !IsValidStat(itemType, total, statResult, specialResult, entry)) {
                 availableEntries.Remove(entry);
