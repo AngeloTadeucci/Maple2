@@ -113,7 +113,7 @@ public sealed class ItemStatsCalculator {
 
 
         if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
-            ItemStats.Option option = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random);
+            ItemStats.Option option = GetRandomOption(item.Id, itemOption, item.Type, ItemStats.Type.Random);
             RandomizeValues(item, itemOption, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
@@ -158,7 +158,7 @@ public sealed class ItemStatsCalculator {
         if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             return false;
         }
-        ItemStats.Option randomOption = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random, option.Count, presets);
+        ItemStats.Option randomOption = GetRandomOption(item.Id, itemOption, item.Type, ItemStats.Type.Random, option.Count, presets);
 
         if (!RandomizeValues(item, itemOption, ref randomOption)) {
             return false;
@@ -392,7 +392,7 @@ public sealed class ItemStatsCalculator {
 
         if (TableMetadata.ItemOptionStaticTable.Options.TryGetValue(item.Metadata.Option.StaticId, item.Rarity, out ItemOption? itemOption)) {
             // We're using RandomItemOption here considering the logic is the same.
-            option = RandomItemOption(itemOption, item.Type, statsType);
+            option = RandomItemOption(item.Id, itemOption, item.Type, statsType);
         }
 
         if (item.Metadata.Option.StaticType == ItemOptionMakeType.Lua && pick != null) {
@@ -413,8 +413,8 @@ public sealed class ItemStatsCalculator {
     }
 
     // Used to calculate the default random attributes for a given item.
-    private ItemStats.Option GetRandomOption(ItemOption itemOption, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
-        return RandomItemOption(itemOption, itemType, statsType, count, presets);
+    private ItemStats.Option GetRandomOption(int itemId, ItemOption itemOption, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
+        return RandomItemOption(itemId, itemOption, itemType, statsType, count, presets);
     }
 
     private ItemEquipVariationTable? GetVariationTable(in ItemType type) {
@@ -506,7 +506,7 @@ public sealed class ItemStatsCalculator {
         return new ItemStats.Option(statResult, specialResult);
     }
 
-    private static ItemStats.Option RandomItemOption(ItemOption option, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
+    private static ItemStats.Option RandomItemOption(int itemId, ItemOption option, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
         var statResult = new Dictionary<BasicAttribute, BasicOption>();
         var specialResult = new Dictionary<SpecialAttribute, SpecialOption>();
 
@@ -548,8 +548,8 @@ public sealed class ItemStatsCalculator {
             availableEntries.Remove(entry);
         }
 
-        if (availableEntries.Count == 0) {
-            Log.Logger.Error("Failed to select random item option, no more entries available. ItemType: {ItemType}, StatsType: {StatsType}, Total: {Total}", itemType, statsType, total);
+        if (availableEntries.Count == 0 && statResult.Count + specialResult.Count < total) {
+            Log.Logger.Error("Failed to select random item option, no more entries available. ItemId: {Item}", itemId);
         }
 
         return new ItemStats.Option(statResult, specialResult, multiplyFactor: option.MultiplyFactor);
