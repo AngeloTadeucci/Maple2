@@ -589,10 +589,12 @@ public sealed class QuestManager {
 
     private void SummonPortal(Quest quest) {
         if (quest.Metadata.SummonPortal == null) {
+            logger.Warning("Cannot summon quest portal for quest {QuestId}: No summon portal metadata", quest.Id);
             return;
         }
 
         if (session.NpcScript?.Npc == null) {
+            logger.Warning("Cannot summon quest portal for quest {QuestId}: No NPC script context", quest.Id);
             return;
         }
 

@@ -26,10 +26,10 @@ public class SmartPushHandler : PacketHandler<GameSession> {
                 break;
             case SmartPushType.additionalEffect:
                 HandleAdditionalEffect(session, packet, metadata);
-                return;
+                break;
             default:
                 Logger.Error("Unhandled smart push type: {SmartPushType}", metadata.Type);
-                return;
+                break;
         }
 
     }
@@ -105,8 +105,15 @@ public class SmartPushHandler : PacketHandler<GameSession> {
             return false;
         }
 
+        SmartPushCurrencyType currencyType;
+        if (packageMetadata.MeretCost > 0) {
+            currencyType = SmartPushCurrencyType.Meret;
+        } else if (packageMetadata.MesoCost > 0) {
+            currencyType = SmartPushCurrencyType.Meso;
+        } else {
+            currencyType = SmartPushCurrencyType.None;
+        }
 
-        SmartPushCurrencyType currencyType = packageMetadata.MeretCost > 0 ? SmartPushCurrencyType.Meret : packageMetadata.MesoCost > 0 ? SmartPushCurrencyType.Meso : SmartPushCurrencyType.None;
         // Check if player has enough currency
         switch (currencyType) {
             case SmartPushCurrencyType.Meret:

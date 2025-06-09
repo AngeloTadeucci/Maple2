@@ -10,11 +10,10 @@ public static class ChannelPacket {
         Update = 1,
     }
 
-    public static ByteWriter Load(ICollection<int> channels) {
-        short count = (short) channels.Count;
-
+    public static ByteWriter Load(ICollection<int> _) {
         var pWriter = Packet.Of(SendOp.DynamicChannel);
         pWriter.Write<Command>(Command.Load);
+        // Unsure as to why these values seem to work properly for Update packet to update.
         pWriter.WriteShort(10);
         pWriter.WriteShort(100);
         pWriter.WriteShort(100);
@@ -31,8 +30,8 @@ public static class ChannelPacket {
         var pWriter = Packet.Of(SendOp.DynamicChannel);
         pWriter.Write<Command>(Command.Update);
         pWriter.WriteShort((short) channels.Count);
-        foreach (int channel in channels) {
-            pWriter.WriteShort((short) channel);
+        foreach (short channel in channels) {
+            pWriter.WriteShort(channel);
         }
 
         return pWriter;
