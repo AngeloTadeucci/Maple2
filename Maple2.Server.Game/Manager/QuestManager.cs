@@ -588,17 +588,12 @@ public sealed class QuestManager {
     }
 
     private void SummonPortal(Quest quest) {
-        if (quest.Metadata.SummonPortal == null) {
-            logger.Warning("Cannot summon quest portal for quest {QuestId}: No summon portal metadata", quest.Id);
-            return;
-        }
-
         if (session.NpcScript?.Npc == null) {
             logger.Warning("Cannot summon quest portal for quest {QuestId}: No NPC script context", quest.Id);
             return;
         }
 
-        FieldPortal portal = session.Field.SpawnPortal(quest.Metadata.SummonPortal, session.NpcScript.Npc, session.Player);
+        FieldPortal portal = session.Field.SpawnPortal(quest.Metadata.SummonPortal!, session.NpcScript.Npc, session.Player);
         session.Send(PortalPacket.Add(portal));
         session.Send(QuestPacket.SummonPortal(session.NpcScript.Npc.ObjectId, portal.Value.Id, portal.StartTick));
     }

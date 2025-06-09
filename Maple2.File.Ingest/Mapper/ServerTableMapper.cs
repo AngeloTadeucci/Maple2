@@ -848,9 +848,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             // Only add events that are not expired
             if (endTime < DateTime.UtcNow) {
-                if (eventType != GameEventType.SaleAutoFishing && eventType != GameEventType.SaleAutoPlayInstrument) {
-                    continue;
-                }
+                continue;
             }
 
             (TimeSpan partTimeStart, TimeSpan partTimeEnd) = ParsePartTime(data.partTime);
