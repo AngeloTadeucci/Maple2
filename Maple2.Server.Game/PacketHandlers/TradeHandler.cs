@@ -1,6 +1,6 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -9,7 +9,7 @@ using static Maple2.Model.Error.TradeError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class TradeHandler : PacketHandler<GameSession> {
+public class TradeHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Trade;
 
     private enum Command : byte {

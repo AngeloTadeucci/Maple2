@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -20,6 +20,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -68,6 +69,7 @@ public partial class FieldManager : IField {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
+    private readonly List<(FieldPacketHandler handler, GameSession session, ByteReader reader)> queuedPackets;
     private bool initialized;
     public bool Disposed { get; private set; }
 
@@ -95,6 +97,7 @@ public partial class FieldManager : IField {
         FieldActor = new FieldActor(this, NextLocalId(), metadata, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
+        queuedPackets = new();
         Ai = new AiManager(this);
         RoomId = NextGlobalId();
 
@@ -254,6 +257,29 @@ public partial class FieldManager : IField {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
+    public void QueuePacket(FieldPacketHandler handler, GameSession session, ByteReader reader) {
+        lock (queuedPackets) {
+            queuedPackets.Add((handler, session, reader));
+        }
+    }
+
+    private void ProcessPackets() {
+        lock (queuedPackets) {
+            foreach ((FieldPacketHandler handler, GameSession session, ByteReader reader) packet in queuedPackets) {
+                try {
+                    if (packet.session.State is SessionState.Disconnected) {
+                        continue;
+                    }
+                    packet.handler.Handle(packet.session, packet.reader);
+                } finally {
+                    ArrayPool<byte>.Shared.Return(packet.reader.Buffer);
+                }
+            }
+
+            queuedPackets.Clear();
+        }
+    }
+
     private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
             if (!(DebugRenderer?.IsActive ?? false)) {
@@ -266,6 +292,8 @@ public partial class FieldManager : IField {
     }
 
     public void Update() {
+        ProcessPackets();
+
         if (Players.IsEmpty) {
             return;
         }
@@ -488,17 +516,15 @@ public partial class FieldManager : IField {
                     case CubePortalDestination.SelectedMap:
                         session.MigrateOutOfInstance(srcPortal.TargetMapId);
                         return true;
-                    case CubePortalDestination.FriendHome: {
-                            using GameStorage.Request db = session.GameStorage.Context();
-                            Home? home = db.GetHome(fieldPortal.HomeId);
-                            if (home is null) {
-                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
-                                return false;
-                            }
-
-                            session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
-                            return true;
+                    case CubePortalDestination.FriendHome:
+                        Home? home = GetHome(session, fieldPortal);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
                         }
+
+                        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
+                        return true;
                 }
                 return false;
             case PortalType.LeaveDungeon:
@@ -607,6 +633,12 @@ public partial class FieldManager : IField {
             }
             Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
+    }
+
+    private static Home? GetHome(GameSession session, FieldPortal fieldPortal) {
+        using GameStorage.Request db = session.GameStorage.Context();
+        Home? home = db.GetHome(fieldPortal.HomeId);
+        return home;
     }
 
     #region DebugUtils

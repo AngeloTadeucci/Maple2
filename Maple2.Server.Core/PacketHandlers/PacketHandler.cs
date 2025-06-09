@@ -14,6 +14,10 @@ public abstract class PacketHandler<T> where T : Session {
 
     protected PacketHandler() { }
 
+    public virtual bool TryHandleDeferred(T session, IByteReader reader) {
+        return false;
+    }
+
     public abstract void Handle(T session, IByteReader packet);
 
     public override string ToString() => $"[0x{(ushort) OpCode:X4}] {GetType().Name}";

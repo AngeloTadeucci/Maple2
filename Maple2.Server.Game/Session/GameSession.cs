@@ -558,6 +558,7 @@ public sealed partial class GameSession : Core.Network.Session {
         long exp = 0;
         if (baseMetadata.ExpTableId > 0) {
             if (baseMetadata.ExpTableId > 100000 && TableMetadata.RewardContentTable.ExpStaticEntries.TryGetValue(baseMetadata.ExpTableId, out exp)) {
+                // Static exp entry found
             } else if (TableMetadata.ExpTable.ExpBase.TryGetValue(baseMetadata.ExpTableId, out IReadOnlyDictionary<int, long>? expTable)) {
                 exp = expTable[Player.Value.Character.Level];
             }
@@ -699,6 +700,7 @@ public sealed partial class GameSession : Core.Network.Session {
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
+            Player.Value.Character.MapId = mapId;
             Player.Value.Character.ReturnChannel = 0;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
@@ -708,6 +710,7 @@ public sealed partial class GameSession : Core.Network.Session {
             Disconnect();
         }
     }
+
 
     #region Dispose
     ~GameSession() => Dispose(false);
@@ -763,6 +766,8 @@ public sealed partial class GameSession : Core.Network.Session {
                 Achievement.Save(db);
                 Quest.Save(db);
                 Dungeon.Save(db);
+                db.Commit();
+                db.SaveChanges();
             }
 
             base.Dispose(disposing);
