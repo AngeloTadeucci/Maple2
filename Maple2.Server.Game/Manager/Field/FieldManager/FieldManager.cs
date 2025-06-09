@@ -516,6 +516,9 @@ public partial class FieldManager : IField {
                     ? FieldEnterPacket.Request(session.Player)
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
                 return true;
+            case PortalType.Quest:
+                session.Field.RemovePortal(fieldPortal.ObjectId);
+                break;
 
         }
 

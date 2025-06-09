@@ -8,6 +8,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -167,6 +168,9 @@ public sealed class QuestManager {
 
         session.ConditionUpdate(ConditionType.quest_accept, codeLong: quest.Id);
         session.Send(QuestPacket.Start(quest));
+        if (quest.Metadata.SummonPortal != null) {
+            SummonPortal(quest);
+        }
         return QuestError.none;
     }
 
@@ -583,6 +587,20 @@ public sealed class QuestManager {
         Load();
     }
 
+    private void SummonPortal(Quest quest) {
+        if (quest.Metadata.SummonPortal == null) {
+            return;
+        }
+
+        if (session.NpcScript?.Npc == null) {
+            return;
+        }
+
+        FieldPortal portal = session.Field.SpawnPortal(quest.Metadata.SummonPortal, session.NpcScript.Npc, session.Player);
+        session.Send(PortalPacket.Add(portal));
+        session.Send(QuestPacket.SummonPortal(session.NpcScript.Npc.ObjectId, portal.Value.Id, portal.StartTick));
+    }
+
     /// <summary>
     /// Only used for debugging purposes. Completes all quests in the chapter silently.
     /// </summary>
@@ -628,6 +646,7 @@ public sealed class QuestManager {
 
         Load();
     }
+
     public void Save(GameStorage.Request db) {
         db.SaveQuests(session.AccountId, accountValues.Values);
         db.SaveQuests(session.CharacterId, characterValues.Values);

@@ -46,7 +46,7 @@ public class ChannelHandler : PacketHandler<GameSession> {
 
             // Update the client with the latest channel list.
             ChannelsResponse response = World.Channels(new ChannelsRequest());
-            session.Send(ChannelPacket.Dynamic(response.Channels));
+            session.Send(ChannelPacket.Load(response.Channels));
         }
     }
 }

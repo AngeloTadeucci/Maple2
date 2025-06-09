@@ -12,3 +12,9 @@ public enum CurrencyType : byte {
     StarPoint = 12,
     MesoToken = 13,
 }
+
+public enum SmartPushCurrencyType {
+    None = 0,
+    Meso = 1,
+    Meret = 2,
+}

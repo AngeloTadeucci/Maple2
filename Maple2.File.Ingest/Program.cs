@@ -17,6 +17,7 @@ using Maple2.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 const string locale = "NA";
+string language = "en";
 const string env = "Live";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -36,9 +37,15 @@ foreach (string? arg in args) {
 }
 
 // Force Globalization to en-US because we use periods instead of commas for decimals
-CultureInfo.CurrentCulture = new("en-US");
+CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
 DotEnv.Load();
+
+string? languageEnv = Environment.GetEnvironmentVariable("LANGUAGE");
+if (languageEnv == null) {
+    throw new ArgumentException("LANGUAGE environment variable was not set");
+}
+language = languageEnv.ToLower();
 
 string? ms2Root = Environment.GetEnvironmentVariable("MS2_DATA_FOLDER");
 if (ms2Root == null) {
@@ -193,17 +200,17 @@ UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
-UpdateDatabase(metadataContext, new ItemMapper(xmlReader));
-UpdateDatabase(metadataContext, new NpcMapper(xmlReader));
+UpdateDatabase(metadataContext, new ItemMapper(xmlReader, language, false));
+UpdateDatabase(metadataContext, new NpcMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new PetMapper(xmlReader));
-UpdateDatabase(metadataContext, new MapMapper(xmlReader));
+UpdateDatabase(metadataContext, new MapMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new UgcMapMapper(xmlReader));
 UpdateDatabase(metadataContext, new ExportedUgcMapMapper(xmlReader));
-UpdateDatabase(metadataContext, new QuestMapper(xmlReader));
+UpdateDatabase(metadataContext, new QuestMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new RideMapper(xmlReader));
-UpdateDatabase(metadataContext, new ScriptMapper(xmlReader));
-UpdateDatabase(metadataContext, new SkillMapper(xmlReader));
-UpdateDatabase(metadataContext, new TableMapper(xmlReader));
+UpdateDatabase(metadataContext, new ScriptMapper(xmlReader, language));
+UpdateDatabase(metadataContext, new SkillMapper(xmlReader, language));
+UpdateDatabase(metadataContext, new TableMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 UpdateDatabase(metadataContext, new FunctionCubeMapper(xmlReader));
 

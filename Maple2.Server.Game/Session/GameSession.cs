@@ -283,7 +283,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             ChannelsResponse response = World.Channels(new ChannelsRequest());
-            Send(ChannelPacket.Dynamic(response.Channels));
+            Send(ChannelPacket.Load(response.Channels));
         } catch (RpcException ex) {
             Logger.Warning(ex, "Failed to populate channels");
         }
@@ -479,7 +479,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         // Update the client with the latest channel list.
         ChannelsResponse response = World.Channels(new ChannelsRequest());
-        Send(ChannelPacket.Dynamic(response.Channels));
+        Send(ChannelPacket.Load(response.Channels));
         Send(ServerListPacket.Load(Target.SERVER_NAME, [new IPEndPoint(Target.LoginIp, Target.LoginPort)], response.Channels));
         return true;
     }

@@ -8,6 +8,7 @@ public class FieldPortal : FieldEntity<Portal> {
     public bool Enabled;
     public bool MinimapVisible;
     public int EndTick;
+    public int StartTick;
     public string Model = "";
     public long HomeId;
     public string OwnerName = "";

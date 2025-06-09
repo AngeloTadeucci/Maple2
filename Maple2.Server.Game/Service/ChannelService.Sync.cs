@@ -2,6 +2,7 @@
 using Maple2.Model.Game;
 using Maple2.Server.Channel.Service;
 using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Service;
@@ -22,6 +23,12 @@ public partial class ChannelService {
     public override Task<PlayerUpdateResponse> UpdatePlayer(PlayerUpdateRequest request, ServerCallContext context) {
         playerInfos.ReceiveUpdate(request);
         return Task.FromResult(new PlayerUpdateResponse());
+    }
+
+    public override Task<ChannelsUpdateResponse> UpdateChannels(ChannelsUpdateRequest request, ServerCallContext context) {
+        List<short> channels = request.Channels.Select(channel => (short) channel).ToList();
+        server.Broadcast(ChannelPacket.Update(channels));
+        return Task.FromResult(new ChannelsUpdateResponse());
     }
 
     public override Task<DisconnectResponse> Disconnect(DisconnectRequest request, ServerCallContext context) {

@@ -5,6 +5,7 @@ public enum PortalType : byte {
     DungeonReturnToLobby = 1,
     Event = 3, // Pocket Realms & Player Hosted Mini games
     FieldToHome = 5,
+    Quest = 6,
     Boss = 8,
     DungeonEnter = 9,
     InHome = 11,

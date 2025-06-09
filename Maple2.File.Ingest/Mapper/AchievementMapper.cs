@@ -26,7 +26,7 @@ public class AchievementMapper : TypeMapper<AchievementMetadata> {
                         Value: grade.condition.value == 0 ? 1 : grade.condition.value,
                         Codes: grade.condition.code.ConvertCodes(),
                         Target: grade.condition.target.ConvertCodes()),
-                    Reward: grade.reward.type == AchieveRewardType.unknown ? null : new AchievementMetadataReward(
+                    Reward: grade.reward is null || grade.reward.type == AchieveRewardType.unknown ? null : new AchievementMetadataReward(
                         Type: (AchievementRewardType) grade.reward.type,
                         Code: grade.reward.code,
                         Value: grade.reward.value,

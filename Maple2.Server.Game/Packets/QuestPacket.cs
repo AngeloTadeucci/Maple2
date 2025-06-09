@@ -21,7 +21,7 @@ public static class QuestPacket {
         Abandon = 6,
         Expired = 7,
         SetTracking = 9,
-        Unknown18 = 18,
+        SummonPortal = 18,
         ExplorationProgress = 21,
         LoadQuestStates = 22,
         LoadQuests = 23,
@@ -128,12 +128,12 @@ public static class QuestPacket {
         return pWriter;
     }
 
-    public static ByteWriter Unknown18() {
+    public static ByteWriter SummonPortal(int npcObjectId, int portalId, int startTick) {
         var pWriter = Packet.Of(SendOp.Quest);
-        pWriter.Write<Command>(Command.Unknown18);
-        pWriter.WriteInt();
-        pWriter.WriteInt();
-        pWriter.WriteInt();
+        pWriter.Write<Command>(Command.SummonPortal);
+        pWriter.WriteInt(npcObjectId);
+        pWriter.WriteInt(portalId);
+        pWriter.WriteInt(startTick);
 
         return pWriter;
     }

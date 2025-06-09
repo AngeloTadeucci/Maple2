@@ -8,13 +8,13 @@ namespace Maple2.Server.Game.Packets;
 
 public static class SkillMacroPacket {
     private enum Command : byte {
-        Load = 0,
-        Update = 2,
+        Update = 0,
+        Load = 2,
     }
 
-    public static ByteWriter Load(ICollection<SkillMacro> skillMacros) {
+    public static ByteWriter Update(ICollection<SkillMacro> skillMacros) {
         var pWriter = Packet.Of(SendOp.SkillMacro);
-        pWriter.Write<Command>(Command.Load);
+        pWriter.Write<Command>(Command.Update);
         pWriter.WriteInt(skillMacros.Count);
         foreach (SkillMacro macro in skillMacros) {
             pWriter.WriteClass<SkillMacro>(macro);
@@ -23,9 +23,9 @@ public static class SkillMacroPacket {
         return pWriter;
     }
 
-    public static ByteWriter Update(ICollection<SkillMacro> skillMacros) {
+    public static ByteWriter Load(ICollection<SkillMacro> skillMacros) {
         var pWriter = Packet.Of(SendOp.SkillMacro);
-        pWriter.Write<Command>(Command.Update);
+        pWriter.Write<Command>(Command.Load);
         pWriter.WriteInt(skillMacros.Count);
         foreach (SkillMacro macro in skillMacros) {
             pWriter.WriteClass<SkillMacro>(macro);

@@ -848,7 +848,9 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             // Only add events that are not expired
             if (endTime < DateTime.UtcNow) {
-                continue;
+                if (eventType != GameEventType.SaleAutoFishing && eventType != GameEventType.SaleAutoPlayInstrument) {
+                    continue;
+                }
             }
 
             (TimeSpan partTimeStart, TimeSpan partTimeEnd) = ParsePartTime(data.partTime);
@@ -1384,6 +1386,20 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 return new MapleSurvivalOpenPeriod();
             case GameEventType.ShutdownMapleSurvival:
                 return new ShutdownMapleSurvival();
+            case GameEventType.SaleAutoPlayInstrument:
+                if (!int.TryParse(value1, out int performanceDiscount) && string.IsNullOrEmpty(value2)) {
+                    return null;
+                }
+                return new SaleAutoPlayInstrument(
+                    Discount: performanceDiscount,
+                    ContentType: value2);
+            case GameEventType.SaleAutoFishing:
+                if (!int.TryParse(value1, out int fishingDiscount) && string.IsNullOrEmpty(value2)) {
+                    return null;
+                }
+                return new SaleAutoFishing(
+                    Discount: fishingDiscount,
+                    ContentType: value2);
             default:
                 return null;
         }

@@ -12,8 +12,8 @@ namespace Maple2.File.Ingest.Mapper;
 public class SkillMapper : TypeMapper<StoredSkillMetadata> {
     private readonly SkillParser parser;
 
-    public SkillMapper(M2dReader xmlReader) {
-        parser = new SkillParser(xmlReader);
+    public SkillMapper(M2dReader xmlReader, string language) {
+        parser = new SkillParser(xmlReader, language);
     }
 
     protected override IEnumerable<StoredSkillMetadata> Map() {

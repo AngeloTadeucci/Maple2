@@ -417,9 +417,9 @@ public class InventoryManager {
         lock (session.Item) {
 
             // Check for components
-            Dictionary<int, List<Item>> materialsById = components.ToDictionary(
+            Dictionary<int, IList<Item>> materialsById = components.ToDictionary(
                 ingredient => ingredient.ItemId,
-                ingredient => session.Item.Inventory.Find(ingredient.ItemId, ingredient.Rarity).ToList()
+                ingredient => Filter(item => !item.IsExpired() && item.Id == ingredient.ItemId && item.Rarity == ingredient.Rarity)
             );
             var materialsByTag = new Dictionary<ItemTag, IList<Item>>();
             foreach (ItemComponent ingredient in components) {
