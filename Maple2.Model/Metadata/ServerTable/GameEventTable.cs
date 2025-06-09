@@ -255,6 +255,14 @@ public record DailyLoginReward(
     int MailId,
     RewardItem Item) : GameEventData;
 
+public record SaleAutoPlayInstrument(
+    int Discount,
+    string ContentType) : GameEventData;
+
+public record SaleAutoFishing(
+    int Discount,
+    string ContentType) : GameEventData;
+
 public record LoginNotice : GameEventData;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "!")]
@@ -288,4 +296,6 @@ public record LoginNotice : GameEventData;
 [JsonDerivedType(typeof(ShutdownMapleSurvival), "ShutdownMapleSurvival")]
 [JsonDerivedType(typeof(Ontime), "Ontime")]
 [JsonDerivedType(typeof(DailyLoginReward), "DailyLoginReward")]
+[JsonDerivedType(typeof(SaleAutoPlayInstrument), "SaleAutoPlayInstrument")]
+[JsonDerivedType(typeof(SaleAutoFishing), "SaleAutoFishing")]
 public abstract record GameEventData;

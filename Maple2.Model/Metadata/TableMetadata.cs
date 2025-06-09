@@ -83,4 +83,6 @@ public class TableMetadata {
 [JsonDerivedType(typeof(DungeonMissionTable), typeDiscriminator: "dungeonmission")]
 [JsonDerivedType(typeof(RewardContentTable), typeDiscriminator: "rewardcontent")]
 [JsonDerivedType(typeof(SeasonDataTable), typeDiscriminator: "seasondata")]
+[JsonDerivedType(typeof(SmartPushTable), typeDiscriminator: "smartpush")]
+[JsonDerivedType(typeof(AutoActionTable), typeDiscriminator: "autoaction")]
 public abstract record Table;

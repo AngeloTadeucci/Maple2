@@ -222,7 +222,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             Element: (Element) dotDamage.element,
             UseGrade: dotDamage.useGrade,
             Rate: dotDamage.rate,
-            HpValue: dotDamage.value,
+            HpValue: (int) dotDamage.value,
             SpValue: dotDamage.spValue,
             EpValue: dotDamage.epValue,
             DamageByTargetMaxHp: dotDamage.damageByTargetMaxHP,

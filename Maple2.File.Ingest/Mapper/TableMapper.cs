@@ -38,9 +38,10 @@ namespace Maple2.File.Ingest.Mapper;
 public class TableMapper : TypeMapper<TableMetadata> {
     private readonly TableParser parser;
     private readonly ItemOptionParser optionParser;
+    private readonly string language;
 
-    public TableMapper(M2dReader xmlReader) {
-        parser = new TableParser(xmlReader);
+    public TableMapper(M2dReader xmlReader, string language) {
+        parser = new TableParser(xmlReader, language);
         optionParser = new ItemOptionParser(xmlReader);
     }
 
@@ -82,6 +83,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = TableNames.UGC_HOUSING_POINT_REWARD, Table = ParseUgcHousingPointRewardTable() };
         yield return new TableMetadata { Name = TableNames.REWARD_CONTENT, Table = ParseRewardContentTable() };
         yield return new TableMetadata { Name = TableNames.SEASON_DATA, Table = ParseSeasonDataTable() };
+        yield return new TableMetadata { Name = TableNames.SMART_PUSH, Table = ParseSmartPushTable() };
+        yield return new TableMetadata { Name = TableNames.AUTO_ACTION, Table = ParseAutoActionTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = TableNames.WEDDING, Table = ParseWeddingTable() };
@@ -1771,8 +1774,53 @@ public class TableMapper : TypeMapper<TableMetadata> {
                         seasonData.grade7,
                     ]));
             }
-
             return results;
         }
+    }
+
+    private SmartPushTable ParseSmartPushTable() {
+        var results = new Dictionary<int, SmartPushMetadata>();
+        foreach ((int id, SmartPush smartPush) in parser.ParseSmartPush()) {
+            var requiredItem = new IngredientInfo(ItemTag.None, 0);
+            var requiredItemTag = ItemTag.None;
+            if (smartPush.requireItem.Length != 0) {
+                string[] requiredItemArray = smartPush.requireItem[0].Split(":");
+                if (requiredItemArray.Length == 2) {
+                    requiredItemTag = Enum.TryParse(requiredItemArray[1], out ItemTag tag) ? tag : ItemTag.None;
+                }
+                requiredItem = new IngredientInfo(
+                    tag: requiredItemTag,
+                    amount: int.Parse(smartPush.requireItem[2]));
+            }
+
+            results.Add(id, new SmartPushMetadata(
+                Id: id,
+                Content: smartPush.content,
+                Type: Enum.TryParse(smartPush.actionType, out SmartPushType type) ? type : SmartPushType.none,
+                Value: smartPush.actionValue,
+                MeretCost: smartPush.requireMerat,
+                RequiredItem: requiredItem));
+        }
+        return new SmartPushTable(results);
+    }
+
+    private AutoActionTable ParseAutoActionTable() {
+        var results = new Dictionary<string, IReadOnlyDictionary<int, AutoActionMetaData>>();
+        IEnumerable<IGrouping<string, AutoActionPricePackage>> groups = parser.ParseAutoActionPricePackage()
+            .Select(entry => entry.Data)
+            .GroupBy(entry => entry.content);
+        foreach (IGrouping<string, AutoActionPricePackage> group in groups) {
+            var packages = new Dictionary<int, AutoActionMetaData>();
+            foreach (AutoActionPricePackage package in group) {
+                packages.Add(package.id, new AutoActionMetaData(
+                    Content: package.content,
+                    Id: package.id,
+                    Duration: package.duration,
+                    MeretCost: package.merat,
+                    MesoCost: package.meso));
+            }
+            results.Add(group.Key, packages);
+        }
+        return new AutoActionTable(results);
     }
 }

@@ -234,7 +234,16 @@ public class GameEvent : IByteSerializable {
                     writer.WriteInt(steps);
                     writer.Write<RewardItem>(rewardItem);
                 }
-
+                break;
+            case SaleAutoFishing fishing:
+                writer.WriteInt(Id);
+                writer.WriteInt(fishing.Discount);
+                writer.WriteUnicodeString(fishing.ContentType);
+                break;
+            case SaleAutoPlayInstrument instrument:
+                writer.WriteInt(Id);
+                writer.WriteInt();
+                writer.WriteUnicodeString(instrument.ContentType);
                 break;
         }
     }

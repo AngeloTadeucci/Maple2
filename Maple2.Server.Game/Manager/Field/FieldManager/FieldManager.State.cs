@@ -170,6 +170,22 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
+    public FieldPortal SpawnPortal(QuestSummonPortal metadata, FieldNpc npc, FieldPlayer owner) {
+        var portal = new Portal(NextLocalId(), metadata.MapId, metadata.PortalId, PortalType.Quest, PortalActionType.Interact, npc.Position.Offset(Constant.QuestPortalDistanceFromNpc, npc.Rotation), npc.Rotation,
+            new Vector3(Constant.QuestPortalDistanceFromNpc, Constant.QuestPortalDimensionY, Constant.QuestPortalDimensionZ), Constant.QuestPortalDistanceFromNpc,
+            0, true, false, true);
+        var fieldPortal = new FieldQuestPortal(owner, this, NextLocalId(), portal) {
+            Position = portal.Position,
+            Rotation = portal.Rotation,
+            EndTick = (int) (FieldTick + TimeSpan.FromSeconds(Constant.QuestPortalKeepTime).TotalMilliseconds),
+            StartTick = (int) FieldTick,
+            Model = Constant.QuestPortalKeepNif,
+        };
+        fieldPortals[fieldPortal.ObjectId] = fieldPortal;
+
+        return fieldPortal;
+    }
+
     public FieldPortal? SpawnCubePortal(PlotCube plotCube) {
         int targetMapId = MapId;
         long targetHomeAccountId = 0;
@@ -669,6 +685,7 @@ public partial class FieldManager {
             CommitPlot(fieldPlayer.Session);
             Broadcast(FieldPacket.RemovePlayer(objectId));
             Broadcast(ProxyObjectPacket.RemovePlayer(objectId));
+
             return true;
         }
 
@@ -765,7 +782,11 @@ public partial class FieldManager {
             return false;
         }
 
-        Broadcast(PortalPacket.Remove(portal.Value.Id));
+        if (portal is FieldQuestPortal questPortal) {
+            questPortal.Owner.Session.Send(PortalPacket.Remove(questPortal.Value.Id));
+        } else {
+            Broadcast(PortalPacket.Remove(portal.Value.Id));
+        }
         return true;
     }
 
@@ -839,7 +860,16 @@ public partial class FieldManager {
             added.Session.Send(FieldPacket.AddPet(fieldPet));
         }
         foreach (FieldPortal fieldPortal in fieldPortals.Values) {
-            added.Session.Send(PortalPacket.Add(fieldPortal));
+            switch (fieldPortal) {
+                case FieldQuestPortal questPortal:
+                    if (questPortal.Owner.ObjectId == added.ObjectId) {
+                        added.Session.Send(PortalPacket.Add(questPortal));
+                    }
+                    continue;
+                default:
+                    added.Session.Send(PortalPacket.Add(fieldPortal));
+                    continue;
+            }
         }
         // ProxyGameObj
         foreach (FieldPlayer fieldPlayer in Players.Values) {

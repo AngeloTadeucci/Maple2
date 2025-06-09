@@ -36,7 +36,7 @@ public static class PortalPacket {
         pWriter.Write<PortalType>(portal.Type);
         pWriter.WriteInt(fieldPortal.EndTick);
         pWriter.WriteShort();
-        pWriter.WriteInt(); // unknown
+        pWriter.WriteInt(fieldPortal.StartTick);
         pWriter.WriteBool(!string.IsNullOrEmpty(fieldPortal.Password));
         pWriter.WriteUnicodeString(fieldPortal.OwnerName);
         pWriter.WriteUnicodeString();

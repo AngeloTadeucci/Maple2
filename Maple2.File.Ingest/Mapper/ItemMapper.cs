@@ -13,10 +13,12 @@ namespace Maple2.File.Ingest.Mapper;
 public class ItemMapper : TypeMapper<ItemMetadata> {
     private readonly ItemParser parser;
     private readonly TableParser tableParser;
+    private readonly bool newXml;
 
-    public ItemMapper(M2dReader xmlReader) {
-        parser = new ItemParser(xmlReader);
-        tableParser = new TableParser(xmlReader);
+    public ItemMapper(M2dReader xmlReader, string language, bool newXml) {
+        parser = new ItemParser(xmlReader, language);
+        tableParser = new TableParser(xmlReader, language);
+        this.newXml = newXml;
     }
 
     protected override IEnumerable<ItemMetadata> Map() {
@@ -31,7 +33,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
         }
 
-        foreach ((int id, string name, ItemData data) in parser.Parse<ItemDataRoot>()) {
+        foreach ((int id, string name, ItemData data) in parser.Parse()) {
             int transferType = data.limit.transferType;
             int tradableCount = data.property.tradableCount;
             int tradableCountDeduction = data.property.tradableCountDeduction;

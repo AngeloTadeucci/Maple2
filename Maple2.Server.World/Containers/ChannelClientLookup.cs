@@ -184,24 +184,13 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                     case HealthCheckResponse.Types.ServingStatus.Serving:
                         if (channel.Status is ChannelStatus.Inactive) {
                             logger.Information("Channel {Channel} has become active", channel.Id);
-                            channel.Status = ChannelStatus.Active;
-
-                            // Load custom string boards
-                            foreach ((int id, string message) in worldServer.GetCustomStringBoards()) {
-                                channel.Client.Admin(new AdminRequest {
-                                    AddStringBoard = new AdminRequest.Types.AddStringBoard {
-                                        Id = id,
-                                        Message = message,
-                                    },
-                                });
-                            }
+                            Active(channel);
                         }
                         break;
                     default:
                         if (channel.Status is ChannelStatus.Active) {
-                            channel.Status = ChannelStatus.Inactive;
+                            Inactive(channel);
                             logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
-                            UpdateAllPlayersToOffline(channel.Id);
 #if !DEBUG
                             await cancellationTokenSource.CancelAsync();
 #endif
@@ -214,7 +203,8 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 }
                 if (channel.Status is ChannelStatus.Active) {
                     logger.Information("Channel {Channel} has become inactive", channel.Id);
-                    UpdateAllPlayersToOffline(channel.Id);
+                    Inactive(channel);
+
 #if !DEBUG
                     await cancellationTokenSource.CancelAsync();
 #endif
@@ -243,6 +233,26 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         return GetEnumerator();
     }
 
+    private void Inactive(Channel channel) {
+        channel.Status = ChannelStatus.Inactive;
+        UpdateAllPlayersToOffline(channel.Id);
+        UpdateChannels(channel.Id);
+    }
+
+    private void Active(Channel channel) {
+        channel.Status = ChannelStatus.Active;
+        UpdateChannels(channel.Id);
+        // Load custom string boards
+        foreach ((int id, string message) in worldServer.GetCustomStringBoards()) {
+            channel.Client.Admin(new AdminRequest {
+                AddStringBoard = new AdminRequest.Types.AddStringBoard {
+                    Id = id,
+                    Message = message,
+                },
+            });
+        }
+    }
+
     private void UpdateAllPlayersToOffline(int channelId) {
         foreach (PlayerInfo playerInfo in playerInfoLookup.GetPlayersOnChannel(channelId)) {
             playerInfo.Channel = -1;
@@ -258,6 +268,19 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                     Async = true,
                 });
             }
+        }
+    }
+
+    private void UpdateChannels(int exclueChannelBroadcast = -1) {
+        foreach ((int id, ChannelClient channelClient) in this) {
+            if (id == exclueChannelBroadcast) {
+                continue;
+            }
+
+            List<int> channelList = channels.Values.Where(ch => ch.Status is ChannelStatus.Active && !ch.InstancedContent).Select(ch => ch.Id).ToList();
+            channelClient.UpdateChannels(new Maple2.Server.Channel.Service.ChannelsUpdateRequest {
+                Channels = { channelList },
+            });
         }
     }
 }

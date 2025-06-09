@@ -137,6 +137,10 @@ public class PlayerConfigLookUp {
         }
 
         death.MsRemaining -= (int) msSurpassed;
+        if (death.MsRemaining <= 0) {
+            deaths.Remove(characterId, out _);
+            return new DeathInfo();
+        }
 
         return death;
     }

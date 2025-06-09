@@ -12,8 +12,8 @@ namespace Maple2.File.Ingest.Mapper;
 public class NpcMapper : TypeMapper<NpcMetadata> {
     private readonly NpcParser parser;
 
-    public NpcMapper(M2dReader xmlReader) {
-        parser = new NpcParser(xmlReader);
+    public NpcMapper(M2dReader xmlReader, string language) {
+        parser = new NpcParser(xmlReader, language);
     }
 
     protected override IEnumerable<NpcMetadata> Map() {
