@@ -47,6 +47,5 @@ public class SkillMacroHandler : FieldPacketHandler {
         }
 
         session.Config.UpdateMacros(macros);
-        session.Send(SkillMacroPacket.Update(macros));
     }
 }

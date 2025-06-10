@@ -447,7 +447,7 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(pWriter);
 
         Send(EmotePacket.Load(Player.Value.Unlock.Emotes.Select(id => new Emote(id)).ToList()));
-        Config.LoadMacros();
+        Config.InitMacros();
         Config.LoadSkillCooldowns();
         Dungeon.LoadField();
         Marriage.Load();
