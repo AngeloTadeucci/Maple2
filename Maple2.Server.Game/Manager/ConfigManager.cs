@@ -151,6 +151,10 @@ public class ConfigManager {
         session.Send(KeyTablePacket.LoadHotBar(activeHotBar, hotBars));
     }
 
+    public void InitMacros() {
+        session.Send(SkillMacroPacket.Init(skillMacros));
+    }
+
     public void LoadMacros() {
         session.Send(SkillMacroPacket.Load(skillMacros));
     }
