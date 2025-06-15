@@ -337,6 +337,10 @@ public class FishingManager {
         }
         session.ConditionUpdate(ConditionType.fish, codeLong: selectedFish.Id, targetLong: session.Field.MapId);
 
+        if (masteryExp == 0) {
+            return;
+        }
+
         session.Mastery[MasteryType.Fishing] += masteryExp;
         short masteryLevel = session.Mastery.GetLevel(MasteryType.Fishing);
         session.Send(FishingPacket.IncreaseMastery(selectedFish.Id, masteryLevel, masteryExp, caughtFishType));
