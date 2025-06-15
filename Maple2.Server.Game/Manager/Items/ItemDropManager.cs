@@ -100,7 +100,7 @@ public class ItemDropManager {
             return new List<Item>();
         }
 
-        if (index > 0 && dropGroupId > 0) {
+        if (index >= 0 && dropGroupId > 0) {
             if (entryDict.TryGetValue(dropGroupId, out IndividualDropItemTable.Entry? entry)) {
                 return GetAllGroups(session, level, [entry], index).ToList();
             }
@@ -158,7 +158,7 @@ public class ItemDropManager {
                 continue;
             }
 
-            if (index > 0) {
+            if (index >= 0) {
                 items = items.Concat(GetSelectedIndividualDropBoxItem(session, itemEntries, index)).ToList();
                 continue;
             }
@@ -210,7 +210,6 @@ public class ItemDropManager {
 
     private IEnumerable<Item> CreateIndividualDropBoxItems(IndividualDropItemTable.Item selectedItem, Character? character = null, int rarity = -1) {
         int itemAmount = Random.Shared.Next(selectedItem.DropCount.Min, selectedItem.DropCount.Max + 1);
-
 
         if (rarity <= 0) {
             var raritySet = new WeightedSet<IndividualDropItemTable.Item.Rarity>();

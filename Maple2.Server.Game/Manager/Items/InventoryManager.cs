@@ -328,7 +328,7 @@ public class InventoryManager {
         lock (session.Item) {
             // Group items by inventory type
             Dictionary<InventoryType, List<Item>> itemsByType = items.GroupBy(item => item.Inventory)
-                                  .ToDictionary(g => g.Key, g => g.ToList());
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach ((InventoryType inventoryType, List<Item> typeItems) in itemsByType) {
                 if (!tabs.TryGetValue(inventoryType, out ItemCollection? collection)) {
@@ -419,7 +419,7 @@ public class InventoryManager {
             // Check for components
             Dictionary<int, IList<Item>> materialsById = components.ToDictionary(
                 ingredient => ingredient.ItemId,
-                ingredient => Filter(item => !item.IsExpired() && item.Id == ingredient.ItemId && item.Rarity == ingredient.Rarity)
+                ingredient => Filter(item => !item.IsExpired() && item.Id == ingredient.ItemId && (ingredient.Rarity < 0 || item.Rarity == ingredient.Rarity))
             );
             var materialsByTag = new Dictionary<ItemTag, IList<Item>>();
             foreach (ItemComponent ingredient in components) {
