@@ -69,7 +69,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     _ => 0
                 };
             } else if (data.life.usePeriod > 0) {
-                expirationDuration = data.life.usePeriod;
+                expirationDuration = (long) TimeSpan.FromMinutes(data.life.usePeriod).TotalSeconds;
             }
 
             var hairList = new List<DefaultHairMetadata>();
