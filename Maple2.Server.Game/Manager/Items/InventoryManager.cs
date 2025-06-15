@@ -419,7 +419,7 @@ public class InventoryManager {
             // Check for components
             Dictionary<int, IList<Item>> materialsById = components.ToDictionary(
                 ingredient => ingredient.ItemId,
-                ingredient => Filter(item => !item.IsExpired() && item.Id == ingredient.ItemId && (ingredient.Rarity == -1 || item.Rarity == ingredient.Rarity))
+                ingredient => Filter(item => !item.IsExpired() && item.Id == ingredient.ItemId && (ingredient.Rarity < 0 || item.Rarity == ingredient.Rarity))
             );
             var materialsByTag = new Dictionary<ItemTag, IList<Item>>();
             foreach (ItemComponent ingredient in components) {
