@@ -26,7 +26,7 @@ public class ItemBoxManager {
         BoxCount = 0;
     }
 
-    public ItemBoxError Open(Item item, int count = 1, int index = 0) {
+    public ItemBoxError Open(Item item, int count = 1, int index = -1) {
         if (item.Type.IsTranscendenceCrystal) {
             Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
             if (parameters.Count < 4) {
@@ -42,7 +42,7 @@ public class ItemBoxManager {
             }
             return OpenItemBox(item, globalDropBoxId, 0, 0, individualDropBoxId, 1, count);
         }
-        int[] itemBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? Array.Empty<int>();
+        int[] itemBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
         return item.Metadata.Function?.Type switch {
             ItemFunction.SelectItemBox => SelectItemBox(item, itemBoxParams[0], itemBoxParams[1], index, count),
             ItemFunction.OpenItemBox => OpenItemBox(item, itemBoxParams[0], itemBoxParams[1], itemBoxParams[2], itemBoxParams[3], itemBoxParams.Length == 5 ? itemBoxParams[4] : 1, count),
@@ -69,12 +69,12 @@ public class ItemBoxManager {
         var keyIngredient = new IngredientInfo(Enum.Parse<ItemTag>(parameters["keyItemTag"]), 1);
         var totalItems = new List<Item>();
         for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.Consume(new[] { keyIngredient })) {
+            if (!session.Item.Inventory.Consume([keyIngredient])) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
             }
 
             if (autoPay) {
-                if (!session.Item.Inventory.Consume(new[] { boxIngredient })) {
+                if (!session.Item.Inventory.Consume([boxIngredient])) {
                     int.TryParse(parameters["boxPrice"], out int mesoCost);
                     mesoCost = Math.Max(mesoCost, 0);
                     if (session.Currency.CanAddMeso(-mesoCost) != -mesoCost) {
@@ -83,7 +83,7 @@ public class ItemBoxManager {
                     session.Currency.Meso -= mesoCost;
                 }
             } else {
-                if (!session.Item.Inventory.Consume(new[] { boxIngredient })) {
+                if (!session.Item.Inventory.Consume([boxIngredient])) {
                     return ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
                 }
             }
@@ -129,7 +129,7 @@ public class ItemBoxManager {
         var keyItemTag = new IngredientInfo(Enum.Parse<ItemTag>(parameters["keyItemTag"]), 1);
         var totalItems = new List<Item>();
         for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.Consume(new[] { keyItemTag })) {
+            if (!session.Item.Inventory.Consume([keyItemTag])) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory;
             }
 
@@ -168,9 +168,9 @@ public class ItemBoxManager {
         }
 
         var error = ItemBoxError.ok;
-        ItemComponent ingredient = new(item.Id, -1, 1, ItemTag.None);
+        var ingredient = new ItemComponent(item.Id, -1, 1, ItemTag.None);
         for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+            if (!session.Item.Inventory.ConsumeItemComponents([ingredient])) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
             }
 
@@ -215,9 +215,9 @@ public class ItemBoxManager {
         }
 
         var error = ItemBoxError.ok;
-        ItemComponent ingredient = new(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
+        var ingredient = new ItemComponent(item.Id, item.Rarity, itemRequiredAmount, ItemTag.None);
         for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+            if (!session.Item.Inventory.ConsumeItemComponents([ingredient])) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
             }
 
@@ -270,8 +270,8 @@ public class ItemBoxManager {
 
         IEnumerable<Item> items = session.Field.ItemDrop.GetIndividualDropItems(session, session.Player.Value.Character.Level, boxId);
         var ingredients = new List<ItemComponent> {
-            new(item.Id, -item.Rarity, 1, ItemTag.None),
-            new(keyItemId, -1, keyAmountRequired, ItemTag.None),
+            new ItemComponent(item.Id, -item.Rarity, 1, ItemTag.None),
+            new ItemComponent(keyItemId, -1, keyAmountRequired, ItemTag.None),
         };
         for (int startCount = 0; startCount < count; startCount++) {
             if (!session.Item.Inventory.ConsumeItemComponents(ingredients)) {
@@ -313,9 +313,9 @@ public class ItemBoxManager {
         }
 
         var totalItems = new List<Item>();
-        ItemComponent ingredient = new(item.Id, item.Rarity, 1, ItemTag.None);
+        var ingredient = new ItemComponent(item.Id, item.Rarity, 1, ItemTag.None);
         for (int startCount = 0; startCount < count; startCount++) {
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { ingredient })) {
+            if (!session.Item.Inventory.ConsumeItemComponents([ingredient])) {
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
             }
 
