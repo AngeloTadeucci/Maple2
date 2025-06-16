@@ -6,7 +6,7 @@ namespace Maple2.Tools;
 
 public class LimitedStack<T> {
     private readonly int limit;
-    public readonly Queue<T> queue;
+    private readonly Queue<T> queue;
 
     public LimitedStack(int limit) {
         this.limit = limit;
