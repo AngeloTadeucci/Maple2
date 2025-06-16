@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -95,7 +96,7 @@ public partial class FieldManager {
 
         if (FieldInstance.Type == InstanceType.none || FieldInstance.SaveField) {
             if (Metadata.Property.EnterReturnId != 0) {
-                player.Character.ReturnMapId = Metadata.Property.EnterReturnId;
+                player.Character.ReturnMaps.Push(Metadata.Property.EnterReturnId);
             }
         }
 

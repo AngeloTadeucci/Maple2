@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
+using Maple2.Tools;
 
 namespace Maple2.Model.Game;
 
@@ -37,7 +38,7 @@ public class Character {
     public long StorageCooldown;
     public long DoctorCooldown;
 
-    public int ReturnMapId;
+    public LimitedStack<int> ReturnMaps = new LimitedStack<int>(3);
     public Vector3 ReturnPosition;
     public string Picture = string.Empty;
     public string Motto = string.Empty;

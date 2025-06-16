@@ -1,8 +1,10 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Model.Skill;
@@ -105,6 +107,9 @@ public class FieldPlayer : Actor<Player> {
         StateSyncTrackingTick = Environment.TickCount64;
 
         scheduler = new EventQueue();
+        scheduler.ScheduleRepeated(() => {
+            session.ConditionUpdate(ConditionType.stay_map, codeLong: session.Field.MapId);
+        }, 60000, skipFirst: true); // 60 seconds
         scheduler.Start();
     }
 
@@ -142,6 +147,7 @@ public class FieldPlayer : Actor<Player> {
     public override void Update(long tickCount) {
         base.Update(tickCount);
         Session.GameEvent.Update(tickCount);
+        scheduler.InvokeAll();
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
@@ -293,6 +299,10 @@ public class FieldPlayer : Actor<Player> {
             case ActorState.Walk:
                 if (UpdateStateSyncTracking(ActorState.Walk)) {
                     Session.ConditionUpdate(ConditionType.run, codeLong: Value.Character.MapId);
+
+                    Session.Field.AccelerationStructure?.FindFirstClosestCubeAttribute(Position, 2f, attr => {
+                        Session.ConditionUpdate(ConditionType.stay_cube, codeLong: Session.Field.MapId, targetString: attr.ToString());
+                    });
                 }
                 break;
             case ActorState.Crawl:
@@ -339,7 +349,7 @@ public class FieldPlayer : Actor<Player> {
                     Session.ConditionUpdate(ConditionType.emotiontime, codeString: emote.Property.Emotion);
                 }
                 break;
-                // TODO: Any more condition states?
+            // TODO: Any more condition states?
         }
 
         Field?.EnsurePlayerPosition(this);
