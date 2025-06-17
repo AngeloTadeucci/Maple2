@@ -185,11 +185,12 @@ public sealed class QuestManager {
     /// <param name="codeLong">condition code parameter in long.</param>
     public void Update(ConditionType type, long counter = 1, string targetString = "", long targetLong = 0, string codeString = "", long codeLong = 0) {
         IEnumerable<Quest> quests = characterValues.Values.Where(quest => quest.State != QuestState.Completed)
-            .Concat(accountValues.Values.Where(quest => quest.State != QuestState.Completed));
+            .Concat(accountValues.Values.Where(quest => quest.State != QuestState.Completed))
+            .Where(x => x.Conditions.Values.Any(quest => quest.Metadata.Type == type));
         foreach (Quest quest in quests) {
             // TODO: Not sure if ProgressMap really means that only progress counts in this map. It doesn't make sense for some quests.
             // Testing only on FieldMission for now.
-            if (quest.Metadata.Basic is { Type: QuestType.FieldMission, ProgressMaps: not null }) {
+            if (quest.Metadata.Basic is { Type: QuestType.FieldMission, ProgressMaps: not null } && session.Field is not null) {
                 switch (session.Field.Metadata.Property.ExploreType) {
                     case 1 when !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId):
                     case 2 when !quest.Metadata.Basic.ProgressMaps.Any(x => session.Player.Value.Character.ReturnMaps.Contains(x)):
