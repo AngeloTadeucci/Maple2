@@ -221,23 +221,12 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         });
     }
 
-    public void FindFirstClosestCubeAttribute(Vector3 center, float radius, Action<MapAttribute> callback) {
-        bool found = false;
-        // Query mesh colliders with glass attribute
-        CellsInSphere(center, radius, entity => {
-            if (found) return;
-            if (entity is not FieldMeshColliderEntity { MapAttribute: MapAttribute.glass } meshCollider) return;
-            found = true;
-            callback(meshCollider.MapAttribute);
-        });
-        if (found) return;
-        // Query box colliders with snow or grass attribute
-        QueryBoxCollider(center, radius, boxCollider => {
-            if (found) return;
-            if (boxCollider.MapAttribute is not (MapAttribute.snow or MapAttribute.grass)) return;
-            found = true;
-            callback(boxCollider.MapAttribute);
-        });
+    public void FindBlockUnderPlayer(Vector3 position, Action<FieldEntity> callback) {
+        position = position with {
+            Z = position.Z - BLOCK_SIZE,
+        };
+        position = position.Align();
+        QueryCells(position, position, callback);
     }
 
     public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max) {

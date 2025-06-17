@@ -2,59 +2,75 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Numerics;
-using DotRecast.Core.Numerics;
-using Maple2.Database.Storage;
 using Maple2.Model.Enum;
+using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools.DotRecast;
 
 namespace Maple2.Server.Game.Commands;
 
 public class CoordCommand : GameCommand {
     private const string NAME = "coord";
-    private const string DESCRIPTION = "Move to specified coordinates. If no coordinates are provided, the current position is displayed.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
+    private const string DESCRIPTION = "Move to specified coordinates. You can use ~2, ~-2, or ~+2 to move relative to the current position.";
+    private const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
     private readonly GameSession session;
-    private readonly MapMetadataStorage mapStorage;
 
-    public CoordCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public CoordCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
-        this.mapStorage = mapStorage;
 
-        var xPosition = new Argument<int?>("x", () => null, "X Coordinate.");
-        var yPosition = new Argument<int?>("y", () => null, "Y Coordinate.");
-        var zPosition = new Argument<int?>("z", () => null, "Z Coordinate.");
+        var xPosition = new Argument<string?>("x", () => null, "X Coordinate (use ~ for relative).");
+        var yPosition = new Argument<string?>("y", () => null, "Y Coordinate (use ~ for relative).");
+        var zPosition = new Argument<string?>("z", () => null, "Z Coordinate (use ~ for relative).");
 
         var force = new Option<bool>(["--force", "-f"], "Skip validation and move to the specified position.");
+        var blocks = new Option<bool>(["--block", "-b"], () => false, "Interpret relative coordinates as block offsets (multiplied by block size).");
 
         AddArgument(xPosition);
         AddArgument(yPosition);
         AddArgument(zPosition);
         AddOption(force);
-        this.SetHandler<InvocationContext, int?, int?, int?, bool>(Handle, xPosition, yPosition, zPosition, force);
+        AddOption(blocks);
+
+        this.SetHandler<InvocationContext, string?, string?, string?, bool, bool>(Handle, xPosition, yPosition, zPosition, force, blocks);
     }
 
-    private void Handle(InvocationContext ctx, int? x, int? y, int? z, bool force) {
-        if (x is null || y is null || z is null) {
-            ctx.Console.Out.WriteLine("Current position: " + session.Player.Position);
+    private void Handle(InvocationContext ctx, string? x, string? y, string? z, bool force, bool blocks) {
+        Vector3 pos = session.Player.Position;
+        if (x == null && y == null && z == null) {
+            ctx.Console.Out.WriteLine("Current position: " + pos);
             return;
         }
-        Vector3 position = new((int) x, (int) y, (int) z);
 
-        if (!session.Field.ValidPosition(position) && !force) {
+        float newX = ParseCoord(x, pos.X, blocks);
+        float newY = ParseCoord(y, pos.Y, blocks);
+        float newZ = ParseCoord(z, pos.Z, blocks);
+        var newPos = new Vector3(newX, newY, newZ);
+
+        if (!session.Field.ValidPosition(newPos) && !force) {
             ctx.Console.Out.WriteLine("Position is invalid.");
             return;
         }
 
-        try {
-            ctx.Console.Out.WriteLine($"Moving to '{position}'");
-            session.Send(PortalPacket.MoveByPortal(session.Player, position, session.Player.Rotation));
-            ctx.ExitCode = 0;
-        } catch (SystemException ex) {
-            ctx.Console.Error.WriteLine(ex.Message);
-            ctx.ExitCode = 1;
+        ctx.Console.Out.WriteLine($"Moving to '{newPos}'");
+        session.Send(PortalPacket.MoveByPortal(session.Player, newPos, session.Player.Rotation));
+        ctx.ExitCode = 0;
+        return;
+
+        float ParseCoord(string? input, float current, bool asBlock) {
+            if (string.IsNullOrEmpty(input)) return current;
+            input = input.Trim();
+            if (input.StartsWith('~')) {
+                if (input.Length == 1) return current;
+                if (float.TryParse(input[1..], out float rel)) {
+                    return current + (asBlock ? rel * Constant.BlockSize : rel);
+                }
+                ctx.Console.Error.WriteLine($"Invalid relative coordinate: {input}. Use ~[value] or ~+[value] or ~-[value].");
+                return current;
+            }
+            if (float.TryParse(input, out float abs)) return abs;
+            ctx.Console.Error.WriteLine($"Invalid coordinate: {input}. Use a number or ~[value] for relative coordinates.");
+            return current;
         }
     }
 }
