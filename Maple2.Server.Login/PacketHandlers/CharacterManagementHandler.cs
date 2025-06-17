@@ -15,6 +15,7 @@ using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Login.Session;
 using Maple2.Server.World.Service;
+using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using static Maple2.Model.Enum.EquipSlot;
 using static Maple2.Model.Error.CharacterCreateError;
@@ -173,7 +174,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
             Name = name,
             SkinColor = skinColor,
             MapId = entry.Tutorial.StartField,
-            ReturnMapId = entry.Tutorial.StartField,
+            ReturnMaps = new LimitedStack<int>(3, entry.Tutorial.StartField),
             Mastery = new Mastery(),
         };
 

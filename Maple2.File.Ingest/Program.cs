@@ -181,16 +181,16 @@ Filter.Load(xmlReader, locale, env);
 // new TriggerGenerator(xmlReader).Generate();
 
 var modelReaders = new List<PrefixedM2dReader> {
-    new("/library/", Path.Combine(ms2Root, "Resource/Library.m2d")),
-    new("/model/map/", Path.Combine(ms2Root, "Resource/Model/Map.m2d")),
-    new("/model/effect/", Path.Combine(ms2Root, "Resource/Model/Effect.m2d")),
-    new("/model/camera/", Path.Combine(ms2Root, "Resource/Model/Camera.m2d")),
-    new("/model/tool/", Path.Combine(ms2Root, "Resource/Model/Tool.m2d")),
-    new("/model/item/", Path.Combine(ms2Root, "Resource/Model/Item.m2d")),
-    new("/model/npc/", Path.Combine(ms2Root, "Resource/Model/Npc.m2d")),
-    new("/model/path/", Path.Combine(ms2Root, "Resource/Model/Path.m2d")),
-    new("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
-    new("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
+    new PrefixedM2dReader("/library/", Path.Combine(ms2Root, "Resource/Library.m2d")),
+    new PrefixedM2dReader("/model/map/", Path.Combine(ms2Root, "Resource/Model/Map.m2d")),
+    new PrefixedM2dReader("/model/effect/", Path.Combine(ms2Root, "Resource/Model/Effect.m2d")),
+    new PrefixedM2dReader("/model/camera/", Path.Combine(ms2Root, "Resource/Model/Camera.m2d")),
+    new PrefixedM2dReader("/model/tool/", Path.Combine(ms2Root, "Resource/Model/Tool.m2d")),
+    new PrefixedM2dReader("/model/item/", Path.Combine(ms2Root, "Resource/Model/Item.m2d")),
+    new PrefixedM2dReader("/model/npc/", Path.Combine(ms2Root, "Resource/Model/Npc.m2d")),
+    new PrefixedM2dReader("/model/path/", Path.Combine(ms2Root, "Resource/Model/Path.m2d")),
+    new PrefixedM2dReader("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
+    new PrefixedM2dReader("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
 };
 
 UpdateDatabase(metadataContext, new TriggerMapper(xmlReader));

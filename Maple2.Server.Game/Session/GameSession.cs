@@ -401,6 +401,7 @@ public sealed partial class GameSession : Core.Network.Session {
         LeaveField();
 
         Field = newField;
+        Player.Dispose();
         Player = Field.SpawnPlayer(this, Player, portalId, position, rotation);
         Config.Skill.UpdatePassiveBuffs();
         Player.Buffs.LoadFieldBuffs();
@@ -454,7 +455,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));
-        Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+        Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMaps.Peek()));
 
         Config.LoadLapenshard();
         Config.LoadRevival();
@@ -492,7 +493,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         Character character = player.Character;
-        int mapId = character.ReturnMapId;
+        int mapId = character.ReturnMaps.Peek();
         Vector3 position = character.ReturnPosition;
 
         if (!MapMetadata.TryGet(mapId, out _)) {
@@ -500,7 +501,6 @@ public sealed partial class GameSession : Core.Network.Session {
             position = default;
         }
 
-        character.ReturnMapId = 0;
         character.ReturnPosition = default;
 
         if (character.MapId is Constant.DefaultHomeMapId) {
@@ -734,6 +734,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             Scheduler.Stop();
+            OnLoop -= Scheduler.InvokeAll;
             server.OnDisconnected(this);
             LeaveField();
             Player.Value.Character.Channel = -1;
@@ -769,7 +770,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 db.Commit();
                 db.SaveChanges();
             }
-
+            Player.Dispose();
             base.Dispose(disposing);
         }
         return;

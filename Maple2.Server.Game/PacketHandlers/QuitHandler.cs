@@ -25,8 +25,8 @@ public class QuitHandler : PacketHandler<GameSession> {
         bool quitGame = packet.ReadBool();
 
         // Reset map to return map
-        if (session.Player.Value.Character.ReturnMapId is not 0) {
-            session.Player.Value.Character.MapId = session.Player.Value.Character.ReturnMapId;
+        if (session.Player.Value.Character.ReturnMaps.Peek() is not 0) {
+            session.Player.Value.Character.MapId = session.Player.Value.Character.ReturnMaps.Peek();
         }
 
         // Fully close client

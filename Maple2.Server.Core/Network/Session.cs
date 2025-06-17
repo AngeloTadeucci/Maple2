@@ -273,6 +273,7 @@ public abstract class Session : IDisposable {
             case SendOp.ProxyGameObj:
             case SendOp.ResponseTimeSync:
             case SendOp.Stat:
+            case SendOp.RequestHeartbeat:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
@@ -287,6 +288,8 @@ public abstract class Session : IDisposable {
             case RecvOp.UserSync:
             case RecvOp.RequestTimeSync:
             case RecvOp.GuideObjectSync:
+            case RecvOp.RideSync:
+            case RecvOp.ResponseHeartbeat:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "RECV".ColorGreen(), opcode, $"0x{op:X4}", packet.ToHexString(packet.Length, ' '));

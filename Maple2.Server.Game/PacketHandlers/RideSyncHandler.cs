@@ -29,6 +29,9 @@ public class RideSyncHandler : FieldPacketHandler {
         var stateSyncs = new StateSync[segments];
         for (int i = 0; i < segments; i++) {
             stateSyncs[i] = packet.ReadClass<StateSync>();
+            if (stateSyncs[i].State is ActorState.Walk) {
+                stateSyncs[i].State = ActorState.Ride;
+            }
             packet.ReadInt(); // ClientTicks
             packet.ReadInt(); // ServerTicks
         }

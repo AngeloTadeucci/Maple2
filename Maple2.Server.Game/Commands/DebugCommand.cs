@@ -11,6 +11,7 @@ using Maple2.Model.Common;
 using System;
 using Maple2.Model.Enum;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Packets;
 
 namespace Maple2.Server.Game.Commands;
 
@@ -80,7 +81,6 @@ public class DebugCommand : GameCommand {
             ctx.Console.Out.WriteLine($"{message} AI debug info printing");
         }
     }
-
 
     private class DebugAnimationCommand : Command {
         private readonly GameSession session;
@@ -187,6 +187,7 @@ public class DebugCommand : GameCommand {
             AddCommand(new DebugQueryFluidCommand(session, mapDataStorage));
             AddCommand(new DebugQueryVibrateCommand(session, mapDataStorage));
             AddCommand(new DebugQuerySellableTileCommand(session, mapDataStorage));
+            AddCommand(new DebugQueryBlockUnderPlayerCommand(session));
         }
 
         private class DebugQuerySpawnCommand : Command {
@@ -357,6 +358,28 @@ public class DebugCommand : GameCommand {
 
                     ctx.Console.Out.WriteLine($"SellableGroupId {sellableTile.SellableGroup} found at {position.X} {position.Y} {position.Z} in cell {toCell.X} {toCell.Y} {toCell.Z}");
                 });
+            }
+        }
+
+        private class DebugQueryBlockUnderPlayerCommand : Command {
+            private readonly GameSession session;
+
+            public DebugQueryBlockUnderPlayerCommand(GameSession session) : base("block", "Searches for the block under the player.") {
+                this.session = session;
+
+                this.SetHandler<InvocationContext>(Handle);
+            }
+
+            private void Handle(InvocationContext ctx) {
+                bool found = false;
+                session.Field.AccelerationStructure?.FindBlockUnderPlayer(session.Player.Position, entity => {
+                    found = true;
+                    ctx.Console.Out.WriteLine($"Block under player: {entity}");
+                });
+
+                if (!found) {
+                    ctx.Console.Out.WriteLine("No block found under player.");
+                }
             }
         }
     }
