@@ -29,8 +29,15 @@ public partial class GameStorage {
                 .ToList();
         }
 
-        public ICollection<MesoListing> GetMyMesoListings(long accountId) {
+        public ICollection<MesoListing> GetMyMesoListingsByAccountId(long accountId) {
             return Context.MesoMarket.Where(listing => listing.AccountId == accountId)
+                .AsEnumerable()
+                .Select<Model.MesoListing, MesoListing>(listing => listing)
+                .ToList();
+        }
+
+        public ICollection<MesoListing> GetMyMesoListingsByCharacterId(long characterId) {
+            return Context.MesoMarket.Where(listing => listing.CharacterId == characterId)
                 .AsEnumerable()
                 .Select<Model.MesoListing, MesoListing>(listing => listing)
                 .ToList();

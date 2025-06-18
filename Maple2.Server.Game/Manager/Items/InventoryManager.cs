@@ -721,6 +721,9 @@ public class InventoryManager {
         } else {
             delete.Add(item);
         }
+        lock (session.Item) {
+            session.ConditionUpdate(ConditionType.item_destroy, codeLong: item.Id);
+        }
     }
 
     public void Save(GameStorage.Request db) {
