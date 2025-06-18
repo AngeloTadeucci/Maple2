@@ -722,7 +722,9 @@ public class InventoryManager {
             delete.Add(item);
         }
         lock (session.Item) {
-            session.ConditionUpdate(ConditionType.item_destroy, codeLong: item.Id);
+            if (item.Type is { IsSkin: false, IsHair: false, IsDecal: false, IsEar: false, IsFace: false }) {
+                session.ConditionUpdate(ConditionType.item_destroy, codeLong: item.Id);
+            }
         }
     }
 
