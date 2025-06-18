@@ -186,7 +186,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
 
         using GameStorage.Request db = GameStorage.Context();
         Character? character = db.GetCharacter(characterId, session.AccountId);
-        if (character == null || !ValidateDeleteRequest(session, characterId, character)) {
+        if (character == null || !ValidateDeleteRequest(session, characterId, db, character)) {
             return;
         }
 
@@ -218,7 +218,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
 
         using GameStorage.Request db = GameStorage.Context();
         Character? character = db.GetCharacter(characterId, session.AccountId);
-        if (character == null || !ValidateDeleteRequest(session, characterId, character)) {
+        if (character == null || !ValidateDeleteRequest(session, characterId, db, character)) {
             return;
         }
 
@@ -245,10 +245,45 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         return false;
     }
 
-    private static bool ValidateDeleteRequest(LoginSession session, long characterId, Character? character) {
+    private static bool ValidateDeleteRequest(LoginSession session, long characterId, GameStorage.Request db, Character? character) {
         // This character does not exist or is not owned by session's account.
         if (character == null) {
             session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_already_destroy));
+            return false;
+        }
+
+        if (db.GetBlackMarketListings(characterId).Any()) {
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_black_market_count));
+            return false;
+        }
+
+        if (db.GetMyMesoListingsByCharacterId(characterId).Any()) {
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_meso_market_count));
+            return false;
+        }
+
+        if (db.GetAllMail(characterId).Any(mail => mail.ReadTime == 0)) {
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_unread_mail));
+            return false;
+        }
+
+        if (character.GuildId != 0) {
+            if (db.GetGuild(character.GuildId)?.LeaderCharacterId == characterId) {
+                session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_guild_master));
+                return false;
+            }
+
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_guild));
+            return false;
+        }
+
+        if (db.GetUgcListingsByCharacterId(characterId).Any()) {
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_ugc_market));
+            return false;
+        }
+
+        if (character.MarriageInfo.Status != MaritalStatus.Single) {
+            session.Send(CharacterListPacket.DeleteEntry(characterId, s_char_err_wedding));
             return false;
         }
 

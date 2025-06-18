@@ -51,7 +51,7 @@ public class MesoMarketHandler : FieldPacketHandler {
         session.Send(MesoMarketPacket.Quota(session.Player.Value.Account.MesoMarketListed, session.Player.Value.Account.MesoMarketPurchased));
 
         using GameStorage.Request db = session.GameStorage.Context();
-        ICollection<MesoListing> myListings = db.GetMyMesoListings(session.AccountId);
+        ICollection<MesoListing> myListings = db.GetMyMesoListingsByAccountId(session.AccountId);
         session.Send(MesoMarketPacket.MyListings(myListings));
     }
 

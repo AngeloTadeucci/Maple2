@@ -62,6 +62,7 @@ public static class ConditionUtil {
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.item_add:
+            case ConditionType.item_destroy:
             case ConditionType.beauty_add:
             case ConditionType.beauty_change_color:
             case ConditionType.beauty_random:
@@ -270,6 +271,7 @@ public static class ConditionUtil {
             case ConditionType.music_play_ensemble:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
+            case ConditionType.item_destroy:
             case ConditionType.beauty_add:
             case ConditionType.beauty_change_color:
             case ConditionType.beauty_random:

@@ -16,6 +16,7 @@ public class StorageInventoryHandler : FieldPacketHandler {
         Mesos = 3,
         Expand = 6,
         Sort = 8,
+        Delete = 10,
         Load = 12,
         Close = 15,
     }
@@ -40,6 +41,9 @@ public class StorageInventoryHandler : FieldPacketHandler {
                 return;
             case Command.Sort:
                 HandleSort(session, packet);
+                return;
+            case Command.Delete:
+                HandleDelete(session, packet);
                 return;
             case Command.Load:
                 HandleLoad(session);
@@ -98,6 +102,12 @@ public class StorageInventoryHandler : FieldPacketHandler {
         packet.ReadLong(); // 0
 
         session.Storage?.Sort();
+    }
+
+    private static void HandleDelete(GameSession session, IByteReader packet) {
+        long uid = packet.ReadLong();
+
+        session.Storage?.Delete(uid);
     }
 
     private static void HandleLoad(GameSession session) {
