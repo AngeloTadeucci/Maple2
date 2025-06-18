@@ -43,33 +43,57 @@ public class ItemCommand : GameCommand {
     private void Handle(InvocationContext ctx, int itemId, int amount, int rarity, bool drop, bool rollMax) {
         try {
             rarity = Math.Clamp(rarity, 1, MAX_RARITY);
-            Item? item = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
-            if (item == null) {
+
+            Item? firstItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+            if (firstItem == null) {
                 ctx.Console.Error.WriteLine($"Invalid Item: {itemId}");
                 return;
             }
 
-            if (!item.IsCurrency()) {
-                if (item.Metadata.Property.SlotMax == 0) {
-                    ctx.Console.Error.WriteLine($"{itemId} has SlotMax of 0, ignoring...");
-                    amount = Math.Clamp(amount, 1, int.MaxValue);
-                }
-            }
-            item.Amount = amount;
-
-            if (drop && session.Field != null) {
-                FieldItem fieldItem = session.Field.SpawnItem(session.Player, item);
-                session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
-            } else if (!session.Item.Inventory.Add(item, true)) {
-                session.Item.Inventory.Discard(item);
-                ctx.Console.Error.WriteLine($"Failed to add item:{item.Id} to inventory");
-                ctx.ExitCode = 1;
+            if (firstItem.IsCurrency()) {
+                firstItem.Amount = amount;
+                ProcessSingleItem(ctx, firstItem, drop);
                 return;
+            }
+
+            bool isNonStackable = firstItem.Metadata.Property.SlotMax == 0;
+            if (isNonStackable) {
+                ctx.Console.Error.WriteLine($"{itemId} has SlotMax of 0, ignoring...");
+                amount = Math.Clamp(amount, 1, int.MaxValue);
+            }
+
+            // For non-stackable items or when rollMax is enabled, create individual items  
+            if (isNonStackable || (rollMax && amount > 1)) {
+                ProcessSingleItem(ctx, firstItem, drop);
+
+                for (int i = 1; i < amount; i++) {
+                    Item? additionalItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+                    if (additionalItem == null) {
+                        ctx.Console.Error.WriteLine($"Failed to create additional item {i + 1}/{amount}");
+                        continue;
+                    }
+
+                    ProcessSingleItem(ctx, additionalItem, drop);
+                }
+            } else {
+                firstItem.Amount = amount;
+                ProcessSingleItem(ctx, firstItem, drop);
             }
 
             ctx.ExitCode = 0;
         } catch (SystemException ex) {
             ctx.Console.Error.WriteLine(ex.Message);
+            ctx.ExitCode = 1;
+        }
+    }
+
+    private void ProcessSingleItem(InvocationContext ctx, Item item, bool drop) {
+        if (drop && session.Field != null) {
+            FieldItem fieldItem = session.Field.SpawnItem(session.Player, item);
+            session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+        } else if (!session.Item.Inventory.Add(item, true)) {
+            session.Item.Inventory.Discard(item);
+            ctx.Console.Error.WriteLine($"Failed to add item:{item.Id} to inventory");
             ctx.ExitCode = 1;
         }
     }
