@@ -43,14 +43,16 @@ public sealed class StorageManager : IDisposable {
     }
 
     public void Delete(long uid) {
-        Item? item = items.Get(uid);
-        if (item == null) {
-            return;
-        }
+        lock (session.Item) {
+            Item? item = items.Get(uid);
+            if (item == null) {
+                return;
+            }
 
-        if (items.Remove(uid, out item)) {
-            session.Item.Inventory.Discard(item);
-            session.Send(StorageInventoryPacket.Remove(uid));
+            if (items.Remove(uid, out item)) {
+                session.Item.Inventory.Discard(item);
+                session.Send(StorageInventoryPacket.Remove(uid));
+            }
         }
     }
 

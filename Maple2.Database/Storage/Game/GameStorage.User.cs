@@ -81,6 +81,7 @@ public partial class GameStorage {
                 Character? characterFind = Context.Character.Find(characterId);
                 if (characterFind != null) {
                     characterFind.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                    characterFind.MarriageInfo = GetMarriageInfo(characterId);
                 }
                 return characterFind;
             }
@@ -90,6 +91,7 @@ public partial class GameStorage {
                 character.Id == characterId && character.AccountId == accountId);
             if (character != null) {
                 character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                character.MarriageInfo = GetMarriageInfo(characterId);
                 Account? accountFind = Context.Account.Find(accountId);
                 character.PremiumTime = accountFind?.PremiumTime ?? 0;
             }
