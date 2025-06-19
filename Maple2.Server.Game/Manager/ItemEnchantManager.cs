@@ -14,13 +14,11 @@ public class ItemEnchantManager {
     private const int MAX_EXP = 10000;
     private const int CHARGE_RATE = 1;
 
-    // ReSharper disable RedundantExplicitArraySize
-    private static readonly int[] RequireFodder = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4 };
-    private static readonly int[] GainExp = new int[15] { 10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250 };
-    private static readonly int[] SuccessRate = new int[15] { 100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5 };
-    private static readonly int[] FodderRate = new int[15] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2 };
-    private static readonly int[] FailCharge = new int[15] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5 };
-    // ReSharper restore RedundantExplicitArraySize
+    private static readonly int[] RequireFodder = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4];
+    private static readonly int[] GainExp = [10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250];
+    private static readonly int[] SuccessRate = [100, 100, 100, 95, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10, 5];
+    private static readonly int[] FodderRate = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5, 4, 2];
+    private static readonly int[] FailCharge = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5];
 
     private static readonly IngredientInfo[][] PeachyCost = new IngredientInfo[15][];
 
@@ -73,7 +71,7 @@ public class ItemEnchantManager {
     public ItemEnchantManager(GameSession session) {
         this.session = session;
 
-        catalysts = new List<IngredientInfo>();
+        catalysts = [];
         fodders = new Dictionary<long, Item>();
         attributeDeltas = new Dictionary<BasicAttribute, BasicOption>();
         rates = new EnchantRates();
@@ -147,7 +145,8 @@ public class ItemEnchantManager {
 
         if (add) {
             // Prevent adding more fodder if it won't help.
-            if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE) {
+            // Can't go over 30% rate with fodders
+            if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE || rates.Success + rates.Fodder >= 30) {
                 NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.max_fodder);
                 return false;
             }

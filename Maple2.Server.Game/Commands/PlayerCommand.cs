@@ -357,6 +357,7 @@ public class PlayerCommand : GameCommand {
             AddCommand(new ClearInventoryCommand(session));
             AddCommand(new SlotsInventoryCommand(session));
             AddCommand(new ExpandInventoryCommand(this.session));
+            AddCommand(new PrintInventoryCommand(session));
         }
 
         private class ClearInventoryCommand : Command {
@@ -450,6 +451,35 @@ public class PlayerCommand : GameCommand {
 
                     session.Item.Inventory.Expand(inventoryType);
                     ctx.Console.Out.WriteLine($"Expanded {inventoryType} inventory");
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+        }
+
+        private class PrintInventoryCommand : Command {
+            private readonly GameSession session;
+
+            public PrintInventoryCommand(GameSession session) : base("print", "Print player inventory items.") {
+                this.session = session;
+
+                var tab = new Argument<string>("tab", $"Inventory tab to print. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+                AddArgument(tab);
+                this.SetHandler<InvocationContext, string>(Handle, tab);
+            }
+
+            private void Handle(InvocationContext ctx, string tab) {
+                try {
+                    if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                        ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                        ctx.ExitCode = 1;
+                        return;
+                    }
+
+                    ctx.Console.Out.WriteLine(session.Item.Inventory.Print(inventoryType));
                     ctx.ExitCode = 0;
                 } catch (SystemException ex) {
                     ctx.Console.Error.WriteLine(ex.Message);
