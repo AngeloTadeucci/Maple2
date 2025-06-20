@@ -38,7 +38,7 @@ public class InventoryManager {
             if (!tabs.TryGetValue(type, out ItemCollection? items)) continue;
             foreach (Item item in load) {
                 if (items.Add(item).Count != 0) continue;
-                Discard(item);
+                db.SaveItems(0, item);
                 Log.Warning("Deleted item {ItemUid} from inventory {InventoryType} due to overflow", item.Uid, type);
             }
         }
