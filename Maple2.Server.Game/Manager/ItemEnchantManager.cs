@@ -10,9 +10,10 @@ using Serilog;
 namespace Maple2.Server.Game.Manager;
 
 public class ItemEnchantManager {
-    private const int MAX_RATE = 100;
-    private const int MAX_EXP = 10000;
-    private const int CHARGE_RATE = 1;
+    private const int MaxRate = 100;
+    private const int MaxFodderRate = 30;
+    private const int MaxExp = 10000;
+    private const int ChargeRate = 1;
 
     private static readonly int[] RequireFodder = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4];
     private static readonly int[] GainExp = [10000, 10000, 10000, 5000, 5000, 5000, 2500, 2500, 2500, 2000, 3334, 2000, 2000, 1250, 1250];
@@ -125,7 +126,7 @@ public class ItemEnchantManager {
                 rates.Success = SuccessRate[enchants];
                 break;
             case EnchantType.Peachy:
-                rates.Success = MAX_RATE;
+                rates.Success = MaxRate;
                 break;
         }
         NpcTalkEvent(ScriptEventType.EnchantSelect);
@@ -145,11 +146,17 @@ public class ItemEnchantManager {
 
         if (add) {
             // Prevent adding more fodder if it won't help.
-            // Can't go over 30% rate with fodders
-            if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE || rates.Fodder + FodderRate[enchants] > 30) {
+            if (Type is EnchantType.Ophelia && rates.Total >= MaxRate) {
                 NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.max_fodder);
                 return false;
             }
+
+            // Can't go over 30% rate with fodders
+            if (Type is EnchantType.Ophelia && fodders.Count >= RequireFodder[enchants] && rates.Success + rates.Fodder >= 30) {
+                NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.max_fodder);
+                return false;
+            }
+
             // Cannot add the same fodder twice.
             if (fodders.ContainsKey(itemUid)) {
                 return false;
@@ -179,7 +186,8 @@ public class ItemEnchantManager {
         switch (Type) {
             case EnchantType.Ophelia:
                 int extra = fodderWeight - RequireFodder[enchants];
-                rates.Fodder = Math.Clamp(extra * FodderRate[enchants], 0, MAX_RATE);
+                int maxFodder = Math.Max(0, MaxFodderRate - rates.Success);
+                rates.Fodder = Math.Clamp(extra * FodderRate[enchants], 0, maxFodder);
 
                 // Recompute charges in case we are over max.
                 SetCharges(useCharges);
@@ -222,7 +230,7 @@ public class ItemEnchantManager {
 
         switch (Type) {
             case EnchantType.Ophelia:
-                float roll = Random.Shared.NextSingle() * MAX_RATE;
+                float roll = Random.Shared.NextSingle() * MaxRate;
                 int totalRate = rates.Total;
                 enchantResult = roll < totalRate ? EnchantResult.Success : EnchantResult.Fail;
                 logger.Debug("Enchant result: {Roll} / {Total} = {Result}", roll, totalRate, enchantResult.ToString());
@@ -251,7 +259,7 @@ public class ItemEnchantManager {
                 return true;
             case EnchantType.Peachy:
                 upgradeItem.Enchant.EnchantExp += GainExp[enchants];
-                if (upgradeItem.Enchant.EnchantExp >= MAX_EXP) {
+                if (upgradeItem.Enchant.EnchantExp >= MaxExp) {
                     upgradeItem.Enchant.EnchantExp = 0;
                     // GetBasicOptions() again to ensure rates match those in table.
                     // This *MUST* be called before incrementing Enchants.
@@ -361,10 +369,10 @@ public class ItemEnchantManager {
             return;
         }
 
-        int rateWithoutCharges = Math.Clamp(rates.Total - rates.Charge, 0, MAX_RATE);
-        int maxCharges = (int) Math.Ceiling((MAX_RATE - rateWithoutCharges) / (float) CHARGE_RATE);
+        int rateWithoutCharges = Math.Clamp(rates.Total - rates.Charge, 0, MaxRate);
+        int maxCharges = (int) Math.Ceiling((MaxRate - rateWithoutCharges) / (float) ChargeRate);
         useCharges = Math.Clamp(count, 0, maxCharges);
-        rates.Charge = Math.Clamp(useCharges * CHARGE_RATE, 0, MAX_RATE);
+        rates.Charge = Math.Clamp(useCharges * ChargeRate, 0, MaxRate);
     }
 
     private static int GetFodderWeight(Item item, Item fodder) {
