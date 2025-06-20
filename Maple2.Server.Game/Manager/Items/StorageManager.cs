@@ -21,10 +21,12 @@ public sealed class StorageManager : IDisposable {
 
     public StorageManager(GameSession session) {
         this.session = session;
-        items = new ItemCollection(Constant.BaseStorageCount);
 
         using GameStorage.Request db = session.GameStorage.Context();
         (mesos, expand) = db.GetStorageInfo(session.AccountId);
+
+        items = new ItemCollection((short) (Constant.BaseStorageCount + expand));
+
         foreach (Item item in db.GetStorage(session.AccountId)) {
             if (items.Add(item).Count == 0) {
                 Log.Error("Failed to add storage item:{Uid}", item.Uid);

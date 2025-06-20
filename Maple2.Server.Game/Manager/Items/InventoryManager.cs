@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
@@ -34,13 +35,11 @@ public class InventoryManager {
 
         delete = [];
         foreach ((InventoryType type, List<Item> load) in db.GetInventory(session.CharacterId)) {
-            if (tabs.TryGetValue(type, out ItemCollection? items)) {
-                foreach (Item item in load) {
-                    if (items.Add(item).Count == 0) {
-                        Log.Error("Failed to add item:{Uid} to ItemCollection (Size:{Size}, OpenSlots:{OpenSlots}, Count:{Count})",
-                            item.Uid, items.Size, items.OpenSlots, items.Count);
-                    }
-                }
+            if (!tabs.TryGetValue(type, out ItemCollection? items)) continue;
+            foreach (Item item in load) {
+                if (items.Add(item).Count != 0) continue;
+                Discard(item);
+                Log.Warning("Deleted item {ItemUid} from inventory {InventoryType} due to overflow", item.Uid, type);
             }
         }
     }
@@ -734,6 +733,22 @@ public class InventoryManager {
             foreach (ItemCollection tab in tabs.Values) {
                 db.SaveItems(session.CharacterId, tab.ToArray());
             }
+        }
+    }
+
+    public string Print(InventoryType type) {
+        lock (session.Item) {
+            if (!tabs.TryGetValue(type, out ItemCollection? items)) {
+                return $"Inventory {type} not found.";
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Inventory {type}:");
+            foreach (Item item in items) {
+                sb.AppendLine($"- {item.Id} [{item.Metadata.Name}] (Amount: {item.Amount}, Slot: {item.Slot}, Expiry: {item.ExpiryTime}, Rarity: {item.Rarity}, Tag: {item.Metadata.Property.Tag})");
+            }
+            sb.AppendLine($"Total Items: {items.Count}, Open Slots: {items.OpenSlots}, Size: {items.Size}");
+            return sb.ToString();
         }
     }
 }
