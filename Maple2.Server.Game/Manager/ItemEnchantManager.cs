@@ -146,7 +146,7 @@ public class ItemEnchantManager {
         if (add) {
             // Prevent adding more fodder if it won't help.
             // Can't go over 30% rate with fodders
-            if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE || rates.Success + rates.Fodder >= 30) {
+            if (Type is EnchantType.Ophelia && rates.Total >= MAX_RATE || rates.Fodder + FodderRate[enchants] > 30) {
                 NpcTalkEvent(ScriptEventType.EnchantFail, ItemEnchantError.max_fodder);
                 return false;
             }
