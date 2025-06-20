@@ -33,6 +33,7 @@ public class DebugCommand : GameCommand {
         AddCommand(new DebugQueryCommand(session, mapDataStorage));
         AddCommand(new LogoutCommand(session));
         AddCommand(new ReloadCommandsCommand(session));
+        AddCommand(new PrintInventoryCommand(session));
     }
 
     private class ReloadCommandsCommand : Command {
@@ -396,6 +397,35 @@ public class DebugCommand : GameCommand {
         private void Handle(InvocationContext ctx) {
             ctx.Console.Out.WriteLine("Logging out...");
             session.Disconnect();
+        }
+    }
+
+    private class PrintInventoryCommand : Command {
+        private readonly GameSession session;
+
+        public PrintInventoryCommand(GameSession session) : base("print-inventory", "Print player inventory items.") {
+            this.session = session;
+
+            var tab = new Argument<string>("tab", $"Inventory tab to print. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+            AddArgument(tab);
+            this.SetHandler<InvocationContext, string>(Handle, tab);
+        }
+
+        private void Handle(InvocationContext ctx, string tab) {
+            try {
+                if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                    ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                ctx.Console.Out.WriteLine(session.Item.Inventory.Print(inventoryType));
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
         }
     }
 }
