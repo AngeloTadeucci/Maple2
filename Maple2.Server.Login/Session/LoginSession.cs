@@ -55,7 +55,7 @@ public class LoginSession : Core.Network.Session {
 
     public void AcquireLock(long accountId, int maxRetries = 3) {
         int retryCount = 0;
-        const int backoffMs = 1000;
+        const int backoffMs = 500;
 
         while (retryCount < maxRetries) {
             LockResponse? response = World.AcquireLock(new LockRequest {
