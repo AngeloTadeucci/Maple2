@@ -386,7 +386,7 @@ public sealed partial class GameSession : Core.Network.Session {
             } else if (mapId == dungeonField.Lobby.MapId) {
                 newField = dungeonField.Lobby;
             } else {
-                MigrateOutOfInstance(mapId);
+                Migrate(mapId);
                 newField = null;
                 return false;
             }
@@ -504,7 +504,7 @@ public sealed partial class GameSession : Core.Network.Session {
         character.ReturnPosition = default;
 
         if (character.MapId is Constant.DefaultHomeMapId) {
-            MigrateOutOfInstance(mapId);
+            Migrate(mapId);
             return;
         }
 
@@ -515,7 +515,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 houseRank.TryGetValue(Guild.Guild.HouseTheme, out GuildTable.House? house);
 
                 if (house?.MapId == character.MapId) {
-                    MigrateOutOfInstance(mapId);
+                    Migrate(mapId);
                     return;
                 }
             }
@@ -659,8 +659,8 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public void MigrateToInstance(int mapId, long ownerId) {
-        bool instancedContent = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
+    public void Migrate(int mapId, long ownerId = 0) {
+        bool isInstanced = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
 
         try {
             var request = new MigrateOutRequest {
@@ -670,38 +670,20 @@ public sealed partial class GameSession : Core.Network.Session {
                 Server = Server.World.Service.Server.Game,
                 MapId = mapId,
                 OwnerId = ownerId,
-                InstancedContent = instancedContent,
+                InstancedContent = isInstanced,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
-            Player.Value.Character.ReturnChannel = Player.Value.Character.Channel;
-            State = SessionState.ChangeMap;
-        } catch (RpcException ex) {
-            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
-            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
-        } finally {
-            Disconnect();
-        }
-    }
 
-    public void MigrateOutOfInstance(int mapId) {
-        try {
-            var request = new MigrateOutRequest {
-                AccountId = AccountId,
-                CharacterId = CharacterId,
-                MachineId = MachineId.ToString(),
-                Server = Server.World.Service.Server.Game,
-                Channel = Player.Value.Character.ReturnChannel,
-                MapId = mapId,
-            };
+            if (isInstanced) {
+                Player.Value.Character.ReturnChannel = Player.Value.Character.Channel;
+            } else {
+                Player.Value.Character.MapId = mapId;
+                Player.Value.Character.ReturnChannel = 0;
+            }
 
-            MigrateOutResponse response = World.MigrateOut(request);
-            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
-            Player.Value.Character.MapId = mapId;
-            Player.Value.Character.ReturnChannel = 0;
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));

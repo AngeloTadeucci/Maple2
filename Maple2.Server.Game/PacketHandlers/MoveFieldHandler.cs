@@ -101,7 +101,7 @@ public class MoveFieldHandler : PacketHandler<GameSession> {
             }
         }
 
-        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
+        session.Migrate(home.Indoor.MapId, home.Indoor.OwnerId);
     }
 
     private void HandleReturn(GameSession session) {

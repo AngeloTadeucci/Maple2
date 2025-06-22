@@ -203,7 +203,7 @@ public class QuestHandler : FieldPacketHandler {
         }
 
         if (metadata.GoToMapId is Constant.DefaultHomeMapId) {
-            session.MigrateToInstance(Constant.DefaultHomeMapId, session.AccountId);
+            session.Migrate(Constant.DefaultHomeMapId, session.AccountId);
             return;
         }
 

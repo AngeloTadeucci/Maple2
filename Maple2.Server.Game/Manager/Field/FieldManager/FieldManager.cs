@@ -514,7 +514,7 @@ public partial class FieldManager : IField {
                         session.Send(PortalPacket.MoveByPortal(session.Player, destinationCube.Position, default));
                         return true;
                     case CubePortalDestination.SelectedMap:
-                        session.MigrateOutOfInstance(srcPortal.TargetMapId);
+                        session.Migrate(srcPortal.TargetMapId);
                         return true;
                     case CubePortalDestination.FriendHome:
                         Home? home = GetHome(session, fieldPortal);
@@ -523,7 +523,7 @@ public partial class FieldManager : IField {
                             return false;
                         }
 
-                        session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
+                        session.Migrate(home.Indoor.MapId, home.Indoor.OwnerId);
                         return true;
                 }
                 return false;
