@@ -59,6 +59,9 @@ service World {
   rpc PlayerConfig(PlayerConfigRequest) returns (PlayerConfigResponse);
   // Disconnect
   rpc Disconnect(maple2.DisconnectRequest) returns (maple2.DisconnectResponse);
+  // Acquire and release locks for database operations.
+  rpc AcquireLock (LockRequest) returns (LockResponse);
+  rpc ReleaseLock (LockRequest) returns (LockResponse);
 }
 
 enum Server {
@@ -571,4 +574,13 @@ message DeathInfo {
   int32 count = 1;
   int32 ms_remaining = 2;
   int64 stop_time = 3;
+}
+
+message LockRequest {
+  int64 accountId = 1;
+}
+
+message LockResponse {
+  bool success = 1;
+  string error = 2;
 }
