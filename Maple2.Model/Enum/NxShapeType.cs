@@ -10,5 +10,5 @@ public enum NxShapeType : uint {
     Mesh,
     HeightField,
     RawMesh,
-    Compound
+    Compound,
 }

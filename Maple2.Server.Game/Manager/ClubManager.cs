@@ -60,7 +60,7 @@ public class ClubManager : IDisposable {
             AccountId = session.AccountId,
             CharacterId = session.CharacterId,
             Async = true,
-            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubUpdate { Id = id }) }
+            Clubs = { session.Player.Value.Character.ClubIds.Select(id => new ClubUpdate { Id = id }) },
         });
         session.Send(ClubPacket.Update(Club));
     }

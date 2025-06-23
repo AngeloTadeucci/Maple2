@@ -29,7 +29,7 @@ public class AiState {
     private enum DecisionTreeType {
         None,
         Battle,
-        BattleEnd
+        BattleEnd,
     }
 
     public AiState(FieldNpc actor, string aiPath) {
@@ -167,7 +167,7 @@ public class AiState {
             aiStack[last] = new StackEntry() {
                 Node = entry.Node,
                 Index = nextIndex,
-                LockIndex = entry.LockIndex
+                LockIndex = entry.LockIndex,
             };
 
             Process(entry.Node.Entries[index]);
@@ -191,7 +191,7 @@ public class AiState {
 
     private void Push(Node node) {
         aiStack.Add(new StackEntry() {
-            Node = node
+            Node = node,
         });
     }
 
@@ -451,7 +451,7 @@ public class AiState {
         aiStack[aiStack.Count - 1] = new StackEntry {
             Node = node,
             Index = selected.index,
-            LockIndex = true
+            LockIndex = true,
         };
 
         Push(selected.entry);
@@ -694,7 +694,7 @@ public class AiState {
         return node.TargetState switch {
             AiConditionTargetState.GrabTarget => state == ActorState.GrabTarget,
             AiConditionTargetState.HoldMe => state == ActorState.Hold,
-            _ => false
+            _ => false,
         };
     }
 

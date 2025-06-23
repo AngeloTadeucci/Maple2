@@ -38,95 +38,95 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     protected override IEnumerable<ServerTableMetadata> Map() {
         yield return new ServerTableMetadata {
             Name = ServerTableNames.INSTANCE_FIELD,
-            Table = ParseInstanceField()
+            Table = ParseInstanceField(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_CONDITION,
-            Table = ParseScriptCondition()
+            Table = ParseScriptCondition(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_FUNCTION,
-            Table = ParseScriptFunction()
+            Table = ParseScriptFunction(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_EVENT,
-            Table = ParseScriptEventConditionTable()
+            Table = ParseScriptEventConditionTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.JOB_CONDITION,
-            Table = ParseJobCondition()
+            Table = ParseJobCondition(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.BONUS_GAME,
-            Table = ParseBonusGameTable()
+            Table = ParseBonusGameTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX,
-            Table = ParseGlobalItemDropTable()
+            Table = ParseGlobalItemDropTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.USER_STAT,
-            Table = ParseUserStat()
+            Table = ParseUserStat(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.INDIVIDUAL_DROP_ITEM,
-            Table = ParseIndividualItemDropTable()
+            Table = ParseIndividualItemDropTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.PRESTIGE_EXP,
-            Table = ParsePrestigeExpTable()
+            Table = ParsePrestigeExpTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.PRESTIGE_ID_EXP,
-            Table = ParsePrestigeIdExpTable()
+            Table = ParsePrestigeIdExpTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.TIME_EVENT,
-            Table = ParseTimeEventTable()
+            Table = ParseTimeEventTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.GAME_EVENT,
-            Table = ParseGameEventTable()
+            Table = ParseGameEventTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.OX_QUIZ,
-            Table = ParseOxQuizTable()
+            Table = ParseOxQuizTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.ITEM_MERGE,
-            Table = ParseItemMergeOptionTable()
+            Table = ParseItemMergeOptionTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SHOP,
-            Table = ParseShop()
+            Table = ParseShop(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SHOP_ITEM,
-            Table = ParseShopItems()
+            Table = ParseShopItems(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.BEAUTY_SHOP,
-            Table = ParseBeautyShops()
+            Table = ParseBeautyShops(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.MERET_MARKET,
-            Table = ParseMeretCustomShop()
+            Table = ParseMeretCustomShop(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.FISH,
-            Table = ParseFish()
+            Table = ParseFish(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.COMBINE_SPAWN,
-            Table = ParseCombineSpawn()
+            Table = ParseCombineSpawn(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.ENCHANT_OPTION,
-            Table = ParseEnchantOption()
+            Table = ParseEnchantOption(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.UNLIMITED_ENCHANT_OPTION,
-            Table = ParseUnlimitedEnchantOption()
+            Table = ParseUnlimitedEnchantOption(),
         };
 
     }
@@ -531,7 +531,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             if (!dropGroups.TryGetValue(id, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? groupDict)) {
                 groupDict = new Dictionary<int, IList<GlobalDropItemBoxTable.Group>> {
-                    { id, groups }
+                    { id, groups },
                 };
                 dropGroups.Add(id, groupDict);
             } else {
@@ -597,7 +597,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 { BasicAttribute.Damage, (long) userStat.dmg },
                 { BasicAttribute.Piercing, (long) userStat.pen },
                 { BasicAttribute.BonusAtk, (long) userStat.base_atk },
-                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value }
+                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value },
             };
 
             return stats;
@@ -616,7 +616,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 { JobCode.Assassin, parser.ParseUserStat80().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.RuneBlader, parser.ParseUserStat90().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.Striker, parser.ParseUserStat100().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
-                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) }
+                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
             }
         );
     }
@@ -1642,7 +1642,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         Days = item.dayOfWeek.Length == 0 ? [] : Array.ConvertAll(item.dayOfWeek, day => (ShopBuyDay) day),
                         TimeRanges = buyTimeOfDays,
                         StartTime = string.IsNullOrEmpty(item.startDate) ? 0 : DateTime.ParseExact(item.startDate, "yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture).ToEpochSeconds(),
-                        EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds()
+                        EndTime = string.IsNullOrEmpty(item.endDate) ? 0 : DateTime.ParseExact(item.endDate, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture).ToEpochSeconds(),
                     };
                 }
 
@@ -1655,7 +1655,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         Amount = (int) item.price,
                         ItemId = item.paymentItemID,
                         SaleAmount = 0, // ?
-                        Type = (ShopCurrencyType) item.paymentType
+                        Type = (ShopCurrencyType) item.paymentType,
                     },
                     SellCount: item.sellCount,
                     Category: item.category,

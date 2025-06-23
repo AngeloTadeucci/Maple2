@@ -49,9 +49,9 @@ public partial class WorldService {
         return new BlackMarketResponse {
             Search = new BlackMarketResponse.Types.Search {
                 ListingIds = {
-                    listingIds
+                    listingIds,
                 },
-            }
+            },
         };
     }
 

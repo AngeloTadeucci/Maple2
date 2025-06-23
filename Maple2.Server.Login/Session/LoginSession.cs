@@ -152,7 +152,7 @@ public class LoginSession : Core.Network.Session {
         Send(CharacterListPacket.SetMax(account.MaxCharacters, Constant.ServerMaxCharacters));
         Send(CharacterListPacket.AppendEntry(account, character,
             new Dictionary<ItemGroup, List<Item>> {
-                { ItemGroup.Outfit, outfits }
+                { ItemGroup.Outfit, outfits },
             }));
     }
 

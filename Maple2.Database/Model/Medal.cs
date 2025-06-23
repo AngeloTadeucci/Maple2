@@ -17,7 +17,7 @@ internal class Medal {
         return other == null ? null : new Medal {
             Id = other.Id,
             Slot = other.Slot,
-            ExpiryTime = other.ExpiryTime.FromEpochSeconds()
+            ExpiryTime = other.ExpiryTime.FromEpochSeconds(),
         };
     }
 

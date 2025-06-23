@@ -30,7 +30,7 @@ public class PartyHandler : FieldPacketHandler {
         CancelPartySearch = 34,
         VoteKick = 45,
         ReadyCheck = 46,
-        VoteReply = 48
+        VoteReply = 48,
     }
 
     #region Autofac Autowired

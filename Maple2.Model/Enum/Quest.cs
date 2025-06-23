@@ -40,5 +40,5 @@ public enum QuestEventMissionType {
     gallery,
     levelup_package,
     stamp,
-    timerun
+    timerun,
 }

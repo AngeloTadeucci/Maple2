@@ -152,7 +152,7 @@ public class NavMeshMapper {
 
             Transform transform = new() {
                 Position = placeable.Position,
-                RotationAnglesDegrees = placeable.Rotation
+                RotationAnglesDegrees = placeable.Rotation,
             };
 
             transform.Transformation *= DotRecastHelper.MapRotation;

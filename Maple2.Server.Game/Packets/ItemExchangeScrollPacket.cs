@@ -8,7 +8,7 @@ namespace Maple2.Server.Game.Packets;
 public static class ItemExchangeScrollPacket {
     private enum Command : byte {
         Unknown0 = 0,
-        Error = 2
+        Error = 2,
     }
 
     public static ByteWriter Unknown0() {

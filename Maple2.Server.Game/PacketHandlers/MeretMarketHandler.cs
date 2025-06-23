@@ -499,7 +499,7 @@ public class MeretMarketHandler : FieldPacketHandler {
             }
             // get any sub tabs
             tabIds = new[] {
-                meretMarketSearch.TabId
+                meretMarketSearch.TabId,
             }.Concat(tab.SubTabIds).ToArray();
             sortGender = tab.SortGender;
             sortJob = tab.SortJob;

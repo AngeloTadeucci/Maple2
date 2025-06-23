@@ -3,5 +3,5 @@
 public enum AnimationType {
     Misc,
     Move,
-    Skill
+    Skill,
 }

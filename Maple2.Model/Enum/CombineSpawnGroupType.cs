@@ -3,5 +3,5 @@
 public enum CombineSpawnGroupType {
     none,
     npc,
-    interactObject
+    interactObject,
 }

@@ -142,55 +142,55 @@ public class VertexShader : Shader {
             SemanticName = Marshal("POSITION"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = 0,
-            InputSlot = 0
+            InputSlot = 0,
         };
         vertexAttributes[1] = new InputElementDesc {
             SemanticName = Marshal("NORMAL"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = 0,
-            InputSlot = 1
+            InputSlot = 1,
         };
         vertexAttributes[2] = new InputElementDesc {
             SemanticName = Marshal("COLOR"),
             Format = Format.FormatR32Uint,
             AlignedByteOffset = (uint) sizeof(Vector3),
-            InputSlot = 1
+            InputSlot = 1,
         };
         vertexAttributes[3] = new InputElementDesc {
             SemanticName = Marshal("TEXCOORD"),
             Format = Format.FormatR32G32Float,
             AlignedByteOffset = (uint) (sizeof(Vector3) + sizeof(uint)),
-            InputSlot = 1
+            InputSlot = 1,
         };
         vertexAttributes[4] = new InputElementDesc {
             SemanticName = Marshal("TANGENT"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = 0,
-            InputSlot = 2
+            InputSlot = 2,
         };
         vertexAttributes[5] = new InputElementDesc {
             SemanticName = Marshal("BINORMAL"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = (uint) sizeof(Vector3),
-            InputSlot = 2
+            InputSlot = 2,
         };
         vertexAttributes[6] = new InputElementDesc {
             SemanticName = Marshal("MORPH_POSITION"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = 0,
-            InputSlot = 3
+            InputSlot = 3,
         };
         vertexAttributes[7] = new InputElementDesc {
             SemanticName = Marshal("BLENDWEIGHT"),
             Format = Format.FormatR32G32B32Float,
             AlignedByteOffset = 0,
-            InputSlot = 4
+            InputSlot = 4,
         };
         vertexAttributes[8] = new InputElementDesc {
             SemanticName = Marshal("BLENDINDICES"),
             Format = Format.FormatR32Uint,
             AlignedByteOffset = (uint) sizeof(Vector3),
-            InputSlot = 4
+            InputSlot = 4,
         };
 
         for (int i = 0; i < vertexAttributes.Length; i++) {

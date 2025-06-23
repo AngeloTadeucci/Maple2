@@ -12,7 +12,7 @@ namespace Maple2.Server.DebugGame.Graphics;
 public enum ImGuiWindowType {
     NoToolbar,
     Main,
-    Field
+    Field,
 }
 
 public class ImGuiController {
@@ -70,7 +70,7 @@ public class ImGuiController {
                 ImGuiWindowType.NoToolbar => false,
                 ImGuiWindowType.Main => window.AllowMainWindow,
                 ImGuiWindowType.Field => window.AllowFieldWindow,
-                _ => false
+                _ => false,
             };
 
             if (!windowIsAllowed) {

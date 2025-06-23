@@ -274,7 +274,7 @@ public class FishingManager {
             >= 0.025 and < 0.03 => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
             >= 0.03 and < 0.15 => Random.Shared.Next(selectedFish.SmallSize.Max, selectedFish.BigSize.Min),
             >= 0.15 => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
-            _ => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max)
+            _ => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
         };
 
         bool hasAutoFish = session.Player.Buffs.HasBuff(BuffEventType.AutoFish);

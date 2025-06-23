@@ -12,5 +12,5 @@ public enum NpcTaskPriority {
     Stun,
     Interrupt, // push, pull, stagger
 
-    Count
+    Count,
 }

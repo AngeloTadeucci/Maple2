@@ -62,7 +62,7 @@ public sealed class Navigation : IDisposable {
             maxSpeed = agentMaxSpeed,
             updateFlags = crowdAgentConfig.GetUpdateFlags(),
             obstacleAvoidanceType = crowdAgentConfig.obstacleAvoidanceType,
-            separationWeight = crowdAgentConfig.separationWeight
+            separationWeight = crowdAgentConfig.separationWeight,
         };
         ap.collisionQueryRange = ap.radius * 12.0f;
         ap.pathOptimizationRange = ap.radius * 30.0f;

@@ -108,25 +108,25 @@ public partial class GameStorage {
                           join indoor in Context.UgcMap on
                               new {
                                   OwnerId = character.AccountId,
-                                  Indoor = true
+                                  Indoor = true,
                               } equals new {
                                   indoor.OwnerId,
-                                  indoor.Indoor
+                                  indoor.Indoor,
                               }
                           join outdoor in Context.UgcMap on
                               new {
                                   OwnerId = character.AccountId,
-                                  Indoor = false
+                                  Indoor = false,
                               } equals new {
                                   outdoor.OwnerId,
-                                  outdoor.Indoor
+                                  outdoor.Indoor,
                               } into plot
                           from outdoor in plot.DefaultIfEmpty()
                           select new {
                               character,
                               indoor,
                               outdoor,
-                              account.PremiumTime
+                              account.PremiumTime,
                           })
                 .FirstOrDefault();
             if (result == null) {
@@ -435,7 +435,7 @@ public partial class GameStorage {
             Context.SaveChanges(); // Exception if failed.
 
             Context.Home.Add(new Home {
-                AccountId = model.Id
+                AccountId = model.Id,
             });
             Context.UgcMap.Add(new UgcMap {
                 OwnerId = model.Id,
@@ -454,7 +454,7 @@ public partial class GameStorage {
             model.Channel = -1;
 #if DEBUG
             model.Currency = new CharacterCurrency {
-                Meso = 999999999
+                Meso = 999999999,
             };
 #endif
             Context.Character.Add(model);
@@ -467,7 +467,7 @@ public partial class GameStorage {
             Context.CharacterUnlock.Add(model);
 
             SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") {
-                Id = characterId
+                Id = characterId,
             });
             if (defaultTab == null) {
                 return false;

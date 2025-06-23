@@ -224,7 +224,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                     SwapEffect = SwapEffect.FlipDiscard, // don't keep old output from previous frames
                     SampleDesc = new SampleDesc(
                         count: 1, // 1 buffer sample per pixel (AA needs more)
-                        quality: 0) // no antialiasing
+                        quality: 0), // no antialiasing
                 };
 
                 // Factory1 adds DXGI 1.1 support & Factory2 adds DXGI 1.2 support

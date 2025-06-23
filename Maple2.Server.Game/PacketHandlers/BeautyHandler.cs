@@ -351,13 +351,13 @@ public class BeautyHandler : FieldPacketHandler {
             1 => Constant.BeautyHairShopGotoFieldID,
             3 => Constant.BeautyFaceShopGotoFieldID,
             5 => Constant.BeautyColorShopGotoFieldID,
-            _ => 0
+            _ => 0,
         };
         int portalId = type switch {
             1 => Constant.BeautyHairShopGotoPortalID,
             3 => Constant.BeautyFaceShopGotoPortalID,
             5 => Constant.BeautyColorShopGotoPortalID,
-            _ => 0
+            _ => 0,
         };
 
         session.Send(session.PrepareField(mapId, portalId: portalId)

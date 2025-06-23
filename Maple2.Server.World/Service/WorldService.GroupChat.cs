@@ -16,7 +16,7 @@ public partial class WorldService {
 
         return Task.FromResult(new GroupChatInfoResponse {
             Infos = {
-                groupChats
+                groupChats,
             },
         });
     }
@@ -78,7 +78,7 @@ public partial class WorldService {
 
         GroupChatError error = manager.Invite(requestorId, info);
         return new GroupChatResponse {
-            Error = (int) error
+            Error = (int) error,
         };
     }
 

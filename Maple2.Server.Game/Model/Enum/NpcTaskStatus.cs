@@ -4,5 +4,5 @@ public enum NpcTaskStatus {
     Pending,
     Running,
     Cancelled,
-    Complete
+    Complete,
 }

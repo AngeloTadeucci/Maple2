@@ -87,7 +87,7 @@ public class CurrencyManager {
             CurrencyType.MenteeToken => Currency.MenteeToken,
             CurrencyType.StarPoint => Currency.StarPoint,
             CurrencyType.MesoToken => Currency.MesoToken,
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Invalid currency type.")
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Invalid currency type."),
         };
         set {
             if (value < 0) {

@@ -16,7 +16,7 @@ public class PremiumMarketItem : MarketItem {
         PromoData = new PremiumMarketPromoData {
             Name = Metadata.PromoName,
             StartTime = Metadata.PromoStartTime,
-            EndTime = Metadata.PromoEndTime
+            EndTime = Metadata.PromoEndTime,
         };
         TabId = Metadata.TabId;
         Price = Metadata.Price;

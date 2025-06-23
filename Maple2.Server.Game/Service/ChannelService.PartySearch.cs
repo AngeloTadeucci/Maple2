@@ -54,13 +54,13 @@ public partial class ChannelService {
         foreach (long receiverId in receiverIds) {
             if (!server.GetSession(receiverId, out GameSession? session)) {
                 return new PartySearchResponse {
-                    Error = (int) PartySearchError.s_partysearch_err_server_db
+                    Error = (int) PartySearchError.s_partysearch_err_server_db,
                 };
             }
 
             if (partyId != session.Party.Party?.Id) {
                 return new PartySearchResponse {
-                    Error = (int) PartySearchError.s_partysearch_err_server_db
+                    Error = (int) PartySearchError.s_partysearch_err_server_db,
                 };
             }
 

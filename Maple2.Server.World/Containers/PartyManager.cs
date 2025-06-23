@@ -114,7 +114,7 @@ public class PartyManager : IDisposable {
             var request = new PartyRequest {
                 PartyId = Party.Id,
                 ReceiverIds = {
-                    player.CharacterId
+                    player.CharacterId,
                 },
                 Invite = new PartyRequest.Types.Invite {
                     SenderId = requestor.CharacterId,

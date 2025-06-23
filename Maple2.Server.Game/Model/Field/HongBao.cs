@@ -51,7 +51,7 @@ public class HongBao : IUpdatable {
         );
 
         return new[] {
-            amount
+            amount,
         }.Concat(remaining).ToArray();
     }
 

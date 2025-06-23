@@ -260,7 +260,7 @@ public class ItemCollectionTest {
         CollectionAssert.AreEqual(new[] {
             item1,
             item2,
-            item3
+            item3,
         }, collection.ToList());
     }
 
@@ -362,7 +362,7 @@ public class ItemCollectionTest {
         var fakeLife = new ItemMetadataLife(0, 0);
         var fakeMetadata = new ItemMetadata(id, $"{id}", [], "", [], fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, [], null, null, null, null);
         return new Model.Game.Item(fakeMetadata, rarity, amount) {
-            Uid = Rng.NextInt64()
+            Uid = Rng.NextInt64(),
         };
     }
 }

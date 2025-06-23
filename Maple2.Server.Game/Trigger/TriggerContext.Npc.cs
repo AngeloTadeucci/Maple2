@@ -169,7 +169,7 @@ public partial class TriggerContext {
         foreach (FieldNpc npc in Field.EnumerateNpcs()) {
             if (npc.SpawnPointId == spawnId) {
                 npc.Rotation = npc.Rotation with {
-                    Z = rotation
+                    Z = rotation,
                 };
             }
         }
