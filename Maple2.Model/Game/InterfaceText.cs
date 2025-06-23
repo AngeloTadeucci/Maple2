@@ -26,7 +26,7 @@ public class InterfaceText : IByteSerializable {
 
         this.code = code;
         this.args = args;
-        this.message = string.Empty;
+        message = string.Empty;
     }
 
     public static implicit operator InterfaceText(StringCode code) => new InterfaceText(code);

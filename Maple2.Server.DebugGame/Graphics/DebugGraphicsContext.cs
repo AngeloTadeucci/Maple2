@@ -254,7 +254,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             VertexShader.Load("screenVertex.hlsl", "vs_main");
             PixelShader.Load("screenPixel.hlsl", "ps_main");
 
-            this.CoreModels = new CoreModels(this);
+            CoreModels = new CoreModels(this);
 
             Logger.Information("Graphics context initialized");
 

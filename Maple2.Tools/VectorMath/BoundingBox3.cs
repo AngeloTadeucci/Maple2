@@ -35,7 +35,7 @@ public struct BoundingBox3 {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BoundingBox3 Expand(BoundingBox3 box) {
-        return this.Expand(box.Min).Expand(box.Max);
+        return Expand(box.Min).Expand(box.Max);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

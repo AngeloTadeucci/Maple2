@@ -31,7 +31,7 @@ public class Texture {
         Texture2DDesc textureDesc = new Texture2DDesc {
             Width = (uint) image.Width,
             Height = (uint) image.Height,
-            Format = Silk.NET.DXGI.Format.FormatB8G8R8A8Unorm,
+            Format = Format.FormatB8G8R8A8Unorm,
             MipLevels = 1,
             BindFlags = (uint) BindFlag.ShaderResource,
             Usage = Usage.Default,

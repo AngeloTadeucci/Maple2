@@ -96,7 +96,7 @@ public class TaskState {
         public virtual bool CancelOnInterrupt { get; }
 
         protected NpcTask(TaskState queue, NpcTaskPriority priority) {
-            this.Queue = queue;
+            Queue = queue;
             Priority = priority;
 
             Status = queue.QueueTask(this);

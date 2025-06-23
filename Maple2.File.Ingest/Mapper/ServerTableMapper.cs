@@ -164,7 +164,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new ScriptConditionTable(results);
     }
 
-    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser) {
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, NpcScriptCondition> ScriptConditions)> parser) {
         foreach ((int npcId, IDictionary<int, NpcScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
             foreach ((int scriptId, NpcScriptCondition scriptCondition) in scripts) {
@@ -227,7 +227,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> ScriptConditions)> parser) {
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, QuestScriptCondition> ScriptConditions)> parser) {
         foreach ((int questId, IDictionary<int, QuestScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
             foreach ((int scriptId, QuestScriptCondition scriptCondition) in scripts) {
@@ -320,7 +320,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new ScriptFunctionTable(results);
     }
 
-    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, NpcScriptFunction> ScriptFunctions)> parser) {
         foreach ((int npcId, IDictionary<int, NpcScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, NpcScriptFunction scriptFunction) in scripts) {
@@ -377,7 +377,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, QuestScriptFunction> ScriptFunctions)> parser) {
         foreach ((int questId, IDictionary<int, QuestScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, QuestScriptFunction scriptFunction) in scripts) {

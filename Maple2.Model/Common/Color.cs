@@ -36,20 +36,20 @@ public readonly struct EquipColor {
     public int PaletteId { get; }
 
     public EquipColor(Color color) {
-        this.Primary = color;
-        this.Secondary = color;
-        this.Tertiary = color;
-        this.Index = -1;
-        this.PaletteId = 0;
+        Primary = color;
+        Secondary = color;
+        Tertiary = color;
+        Index = -1;
+        PaletteId = 0;
     }
 
     [JsonConstructor]
     public EquipColor(Color primary, Color secondary, Color tertiary, int paletteId, int index = -1) {
-        this.Primary = primary;
-        this.Secondary = secondary;
-        this.Tertiary = tertiary;
-        this.PaletteId = paletteId;
-        this.Index = index;
+        Primary = primary;
+        Secondary = secondary;
+        Tertiary = tertiary;
+        PaletteId = paletteId;
+        Index = index;
     }
 
     public override string ToString() =>

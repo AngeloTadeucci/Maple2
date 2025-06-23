@@ -58,7 +58,7 @@ public partial class GameStorage {
             }
 
             if (sold) {
-                Model.SoldMesoListing soldListing = listing;
+                SoldMesoListing soldListing = listing;
                 Context.MesoMarket.Remove(listing);
                 Context.MesoMarketSold.Add(soldListing);
                 return Context.TrySaveChanges();

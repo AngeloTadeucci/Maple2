@@ -10,7 +10,7 @@ public record BonusGameTable(
     public record Game(
         int Id,
         ItemComponent ConsumeItem,
-        BonusGameTable.Game.Slot[] Slots) {
+        Game.Slot[] Slots) {
 
         public record Slot(
             int MinProp,

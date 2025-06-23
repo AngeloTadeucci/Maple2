@@ -21,5 +21,5 @@ public record PremiumClubTable(
         long EndDate,
         long Period,
         long Price,
-        IList<PremiumClubTable.Item> BonusItems);
+        IList<Item> BonusItems);
 }

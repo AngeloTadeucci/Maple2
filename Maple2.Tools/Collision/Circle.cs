@@ -8,8 +8,8 @@ public class Circle : IPolygon {
     public readonly float Radius;
 
     public Circle(in Vector2 origin, float radius) {
-        this.Origin = origin;
-        this.Radius = radius;
+        Origin = origin;
+        Radius = radius;
     }
 
     public virtual bool Contains(in Vector2 point) {

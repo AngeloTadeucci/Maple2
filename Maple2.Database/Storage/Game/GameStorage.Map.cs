@@ -289,7 +289,7 @@ public partial class GameStorage {
             return game.functionCubeMetadata.TryGet(model.ObjectCode, out FunctionCubeMetadata? metadata) ? model.Convert(metadata, model.NoticeSettings, model.PortalSettings) : null;
         }
 
-        private PlotCube? ToPlotCube(Model.HomeLayoutCube? model) {
+        private PlotCube? ToPlotCube(HomeLayoutCube? model) {
             if (model == null) {
                 return null;
             }

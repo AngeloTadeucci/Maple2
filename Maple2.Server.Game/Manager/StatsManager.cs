@@ -17,7 +17,7 @@ public class StatsManager {
     public Stats Values { get; init; }
 
     public StatsManager(IActor actor, UserStatTable userStatsMetadata) {
-        this.Actor = actor;
+        Actor = actor;
         levelStats = new Dictionary<short, IReadOnlyDictionary<BasicAttribute, long>>();
 
         if (actor is not FieldPlayer player) {
@@ -40,7 +40,7 @@ public class StatsManager {
     }
 
     public StatsManager(IActor actor) {
-        this.Actor = actor;
+        Actor = actor;
         levelStats = new Dictionary<short, IReadOnlyDictionary<BasicAttribute, long>>();
 
         if (actor is FieldNpc npc) {
