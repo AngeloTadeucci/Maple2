@@ -11,11 +11,7 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class TriggerCommand : GameCommand {
-    private const string NAME = "trigger";
-    private const string DESCRIPTION = "Manage triggers for current map.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
-    public TriggerCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public TriggerCommand(GameSession session) : base(AdminPermissions.Debug, "trigger", "Manage triggers for current map.") {
         AddCommand(new ListCommand(session));
         AddCommand(new ResetCommand(session));
         AddCommand(new RunCommand(session));

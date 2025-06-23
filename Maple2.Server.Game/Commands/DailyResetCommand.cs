@@ -7,11 +7,8 @@ namespace Maple2.Server.Game.Commands;
 
 public class DailyResetCommand : GameCommand {
     private readonly GameSession session;
-    private const string NAME = "daily-reset";
-    private const string DESCRIPTION = "Force daily reset for this player.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.EventManagement;
 
-    public DailyResetCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public DailyResetCommand(GameSession session) : base(AdminPermissions.EventManagement, "daily-reset", "Force daily reset for this player.") {
         this.session = session;
         this.SetHandler<InvocationContext>(Handle);
     }

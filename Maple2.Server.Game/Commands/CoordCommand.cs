@@ -10,13 +10,9 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class CoordCommand : GameCommand {
-    private const string NAME = "coord";
-    private const string DESCRIPTION = "Move to specified coordinates. You can use ~2, ~-2, or ~+2 to move relative to the current position.";
-    private const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly GameSession session;
 
-    public CoordCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public CoordCommand(GameSession session) : base(AdminPermissions.Debug, "coord", "Move to specified coordinates. You can use ~2, ~-2, or ~+2 to move relative to the current position.") {
         this.session = session;
 
         var xPosition = new Argument<string?>("x", () => null, "X Coordinate (use ~ for relative).");
