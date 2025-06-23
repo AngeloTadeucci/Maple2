@@ -8,7 +8,7 @@ namespace Maple2.Server.World.Migrations {
     public partial class InteractCubeFix : Migration {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder) {
-            var dbName = Environment.GetEnvironmentVariable("GaME_DB_NAME");
+            var dbName = Environment.GetEnvironmentVariable("GAME_DB_NAME");
             migrationBuilder.Sql($"DELETE FROM `{dbName}`.`ugcmap-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
             migrationBuilder.Sql($"DELETE FROM `{dbName}`.`home-layout-cube` WHERE `Interact` IS NOT NULL AND `Interact` <> '';");
         }
