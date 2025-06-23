@@ -25,7 +25,7 @@ Console.OutputEncoding = System.Text.Encoding.UTF8;
 bool runNavmesh = false;
 bool dropData = false;
 
-foreach (string? arg in args) {
+foreach (string arg in args) {
     switch (arg) {
         case "--run-navmesh":
             runNavmesh = true;

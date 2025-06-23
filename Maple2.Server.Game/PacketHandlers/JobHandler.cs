@@ -56,7 +56,7 @@ public class JobHandler : FieldPacketHandler {
             return;
         }
 
-        if (session.NpcScript?.Npc.Value.Id != npc.Value.Id ||
+        if (session.NpcScript?.Npc?.Value.Id != npc.Value.Id ||
             session.NpcScript.JobCondition == null) {
             return;
         }
@@ -94,7 +94,7 @@ public class JobHandler : FieldPacketHandler {
         session.Player.Buffs.Initialize();
         session.Player.Buffs.LoadFieldBuffs();
         session.Stats.Refresh();
-        session.Field?.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
+        session.Field.Broadcast(JobPacket.Advance(session.Player, session.Config.Skill.SkillInfo));
         session.ConditionUpdate(ConditionType.job, codeLong: (int) session.NpcScript.JobCondition.ChangeToJobCode);
         session.Player.Flag |= PlayerObjectFlag.Job;
     }

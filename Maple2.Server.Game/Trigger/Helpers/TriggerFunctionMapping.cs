@@ -263,7 +263,7 @@ public static class TriggerFunctionMapping {
         { "wedding_entry_in_field", attrs => new Trigger.WeddingEntryInField(attrs?["entry_type"]?.Value ?? string.Empty, ParseBool(attrs?["is_in_field"]?.Value)) },
         { "wedding_hall_state", attrs => new Trigger.WeddingHallState(attrs?["hallState"]?.Value ?? string.Empty, ParseBool(attrs?["success"]?.Value)) },
         { "wedding_mutual_agree_result", attrs => new Trigger.WeddingMutualAgreeResult(attrs?["agree_type"]?.Value ?? string.Empty) },
-        { "widget_value", attrs => new Trigger.WidgetValue(attrs?["type"]?.Value ?? string.Empty, attrs?["widget_name"]?.Value ?? string.Empty, attrs?["condition"]?.Value, ParseBool(attrs?["negate"]?.Value), attrs?["desc"]?.Value ?? string.Empty) },
+        { "widget_value", attrs => new Trigger.WidgetValue(attrs?["type"]?.Value ?? string.Empty, attrs?["widget_name"]?.Value ?? string.Empty, attrs?["condition"]?.Value ?? string.Empty, ParseBool(attrs?["negate"]?.Value), attrs?["desc"]?.Value ?? string.Empty) },
         { "any_one", _ => new Trigger.GroupAnyOne() },
         { "all_of", _ => new Trigger.GroupAllOf() },
         { "true", _ => new Trigger.GroupTrue() },

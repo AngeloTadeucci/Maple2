@@ -90,7 +90,7 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
             owner.Buffs.AddBuff(caster, owner, effect.Skills[index].Id, effect.Skills[index].Level, startTick, stacks: effect.Condition.OverlapCount, notifyField: notifyField, type: type);
         } else {
             foreach (SkillEffectMetadata.Skill skill in effect.Skills) {
-                owner.Buffs.AddBuff(caster, owner, skill.Id, skill.Level, startTick, stacks: effect.Condition.OverlapCount, notifyField: notifyField, type: type);
+                owner.Buffs.AddBuff(caster, owner, skill.Id, skill.Level, startTick, stacks: effect.Condition!.OverlapCount, notifyField: notifyField, type: type);
             }
         }
     }

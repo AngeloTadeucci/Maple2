@@ -39,6 +39,7 @@ public partial class GameStorage {
                 return true;
             }
 #endif
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
         }
 

@@ -187,7 +187,7 @@ public class RequestCubeHandler : FieldPacketHandler {
         }
 
         session.HeldCube = cubeItem;
-        session.Field?.Broadcast(CubePacket.HoldCube(session.Player.ObjectId, session.HeldCube));
+        session.Field.Broadcast(CubePacket.HoldCube(session.Player.ObjectId, session.HeldCube));
     }
 
     private void HandleBuyPlot(GameSession session, IByteReader packet) {
@@ -214,10 +214,6 @@ public class RequestCubeHandler : FieldPacketHandler {
         var position = packet.Read<Vector3B>();
         var cubeItem = packet.ReadClass<HeldCube>();
         float rotation = packet.ReadFloat();
-
-        if (session.Field == null) {
-            return;
-        }
 
         session.Field.PlaceCube(session, cubeItem, position, rotation);
     }
@@ -262,7 +258,7 @@ public class RequestCubeHandler : FieldPacketHandler {
             cube.Rotation = (cube.Rotation + 90f) % 360f; // Rotate counter-clockwise
         }
 
-        session.Field?.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
+        session.Field.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
         if (plot.IsPlanner) {
             return;
         }
@@ -284,7 +280,7 @@ public class RequestCubeHandler : FieldPacketHandler {
             return;
         }
         if (session.Housing.TryPlaceCube(cubeItem, plot, metdata, position, rotation, out PlotCube? placedCube, isReplace: true)) {
-            session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
+            session.Field.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
         }
     }
 
@@ -345,7 +341,7 @@ public class RequestCubeHandler : FieldPacketHandler {
 
         foreach (PlotCube cube in plot.Cubes.Values) {
             if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
-                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+                session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
 
@@ -379,14 +375,14 @@ public class RequestCubeHandler : FieldPacketHandler {
         if (session.Player.Value.Home.IsPlanner) {
             int decorArea = session.Player.Value.Home.PlannerArea + 1;
             if (session.Player.Value.Home.SetPlannerArea(decorArea)) {
-                session.Field?.Broadcast(CubePacket.IncreaseArea((byte) decorArea));
+                session.Field.Broadcast(CubePacket.IncreaseArea((byte) decorArea));
             }
             return;
         }
 
         int area = session.Player.Value.Home.Area + 1;
         if (session.Player.Value.Home.SetArea(area) && session.Housing.SaveHome()) {
-            session.Field?.Broadcast(CubePacket.IncreaseArea((byte) area));
+            session.Field.Broadcast(CubePacket.IncreaseArea((byte) area));
         }
     }
 
@@ -395,12 +391,12 @@ public class RequestCubeHandler : FieldPacketHandler {
         if (session.Player.Value.Home.IsPlanner) {
             newArea = session.Player.Value.Home.PlannerArea - 1;
             if (session.Player.Value.Home.SetPlannerArea(newArea)) {
-                session.Field?.Broadcast(CubePacket.DecreaseArea((byte) newArea));
+                session.Field.Broadcast(CubePacket.DecreaseArea((byte) newArea));
             }
         } else {
             newArea = session.Player.Value.Home.Area - 1;
             if (session.Player.Value.Home.SetArea(newArea) && session.Housing.SaveHome()) {
-                session.Field?.Broadcast(CubePacket.DecreaseArea((byte) newArea));
+                session.Field.Broadcast(CubePacket.DecreaseArea((byte) newArea));
             }
         }
 
@@ -413,7 +409,7 @@ public class RequestCubeHandler : FieldPacketHandler {
         List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => session.Housing.IsCoordOutsideArea(cube.Position)).ToList();
         foreach (PlotCube cube in cubesToRemove) {
             if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
-                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+                session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
 
@@ -428,14 +424,14 @@ public class RequestCubeHandler : FieldPacketHandler {
         if (session.Player.Value.Home.IsPlanner) {
             int decorHeight = session.Player.Value.Home.PlannerHeight + 1;
             if (session.Player.Value.Home.SetPlannerHeight(decorHeight)) {
-                session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) decorHeight));
+                session.Field.Broadcast(CubePacket.IncreaseHeight((byte) decorHeight));
             }
             return;
         }
 
         int height = session.Player.Value.Home.Height + 1;
         if (session.Player.Value.Home.SetHeight(height) && session.Housing.SaveHome()) {
-            session.Field?.Broadcast(CubePacket.IncreaseHeight((byte) height));
+            session.Field.Broadcast(CubePacket.IncreaseHeight((byte) height));
         }
     }
 
@@ -444,12 +440,12 @@ public class RequestCubeHandler : FieldPacketHandler {
         if (session.Player.Value.Home.IsPlanner) {
             newHeight = session.Player.Value.Home.PlannerHeight - 1;
             if (session.Player.Value.Home.SetPlannerHeight(newHeight)) {
-                session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
+                session.Field.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
             }
         } else {
             newHeight = session.Player.Value.Home.Height - 1;
             if (session.Player.Value.Home.SetHeight(newHeight) && session.Housing.SaveHome()) {
-                session.Field?.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
+                session.Field.Broadcast(CubePacket.DecreaseHeight((byte) newHeight));
             }
         }
 
@@ -462,7 +458,7 @@ public class RequestCubeHandler : FieldPacketHandler {
         List<PlotCube> cubesToRemove = plot.Cubes.Values.Where(cube => cube.Position.Z > newHeight).ToList();
         foreach (PlotCube cube in cubesToRemove) {
             if (session.Housing.TryRemoveCube(plot, cube.Position, out _)) {
-                session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
+                session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, cube.Position));
             }
         }
 
@@ -501,7 +497,7 @@ public class RequestCubeHandler : FieldPacketHandler {
             session.Player.Value.Home.Permissions.Remove(permission);
         }
 
-        session.Field?.Broadcast(CubePacket.EnablePermission(permission, enabled));
+        session.Field.Broadcast(CubePacket.EnablePermission(permission, enabled));
     }
 
     private void HandleSetPermission(GameSession session, IByteReader packet) {
@@ -514,7 +510,7 @@ public class RequestCubeHandler : FieldPacketHandler {
             setting = HomePermissionSetting.None;
         }
 
-        session.Field?.Broadcast(CubePacket.SetPermission(permission, setting));
+        session.Field.Broadcast(CubePacket.SetPermission(permission, setting));
     }
 
     private void HandleSaveLayout(GameSession session, IByteReader packet) {
@@ -602,21 +598,21 @@ public class RequestCubeHandler : FieldPacketHandler {
     private void HandleSetBackground(GameSession session, IByteReader packet) {
         var background = packet.Read<HomeBackground>();
         if (session.Player.Value.Home.SetBackground(background)) {
-            session.Field?.Broadcast(CubePacket.SetBackground(background));
+            session.Field.Broadcast(CubePacket.SetBackground(background));
         }
     }
 
     private void HandleSetLighting(GameSession session, IByteReader packet) {
         var lighting = packet.Read<HomeLighting>();
         if (session.Player.Value.Home.SetLighting(lighting)) {
-            session.Field?.Broadcast(CubePacket.SetLighting(lighting));
+            session.Field.Broadcast(CubePacket.SetLighting(lighting));
         }
     }
 
     private void HandleSetCamera(GameSession session, IByteReader packet) {
         var camera = packet.Read<HomeCamera>();
         if (session.Player.Value.Home.SetCamera(camera)) {
-            session.Field?.Broadcast(CubePacket.SetCamera(camera));
+            session.Field.Broadcast(CubePacket.SetCamera(camera));
         }
     }
 

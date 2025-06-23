@@ -10,7 +10,11 @@ public class StringTable {
         Table = new Dictionary<string, string>();
 
         XmlDocument doc = xmlReader.GetXmlDocument(xmlReader.GetEntry("en/stringcommon.xml"));
-        foreach (XmlNode node in doc.SelectNodes("ms2/key")) {
+        XmlNodeList? nodes = doc.SelectNodes("ms2/key");
+        if (nodes == null) {
+            throw new InvalidOperationException("No nodes found in stringcommon.xml");
+        }
+        foreach (XmlNode node in nodes) {
             string? id = node.Attributes?["id"]?.Value;
             string value = node.Attributes?["value"]?.Value ?? "";
             if (id == null) {
