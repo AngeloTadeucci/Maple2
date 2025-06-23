@@ -13,7 +13,7 @@ public class QuestCommand : GameCommand {
     private readonly GameSession session;
     private readonly QuestMetadataStorage questStorage;
 
-    public QuestCommand(GameSession session, QuestMetadataStorage questStorage) : base(AdminPermissions.Quest, "quest", "Field information.") {
+    public QuestCommand(GameSession session, QuestMetadataStorage questStorage) : base(AdminPermissions.Quest, "quest", "Modify a quest's state.") {
         this.session = session;
         this.questStorage = questStorage;
 
