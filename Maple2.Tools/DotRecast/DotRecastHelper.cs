@@ -3,7 +3,6 @@ using System.Numerics;
 using DotRecast.Core.Numerics;
 using DotRecast.Recast;
 using DotRecast.Recast.Toolset;
-using Maple2.Tools.Extensions;
 
 namespace Maple2.Tools.DotRecast;
 public static class DotRecastHelper {

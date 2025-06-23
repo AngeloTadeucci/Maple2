@@ -3,7 +3,6 @@ using Maple2.File.IO.Nif;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Tools.VectorMath;
-using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 

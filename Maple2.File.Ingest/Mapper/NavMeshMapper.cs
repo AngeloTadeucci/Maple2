@@ -21,8 +21,6 @@ using Maple2.File.IO;
 using Maple2.File.IO.Nif;
 using Maple2.File.Parser.Flat;
 using Maple2.File.Parser.MapXBlock;
-using Maple2.Model.Game.Field;
-using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Tools;
 using Maple2.Tools.DotRecast;
 using Maple2.Tools.VectorMath;

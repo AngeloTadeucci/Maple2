@@ -6,7 +6,6 @@ using DotRecast.Recast.Toolset;
 using DotRecast.Recast.Toolset.Builder;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
-using Maple2.Tools;
 using Maple2.Tools.DotRecast;
 using Serilog;
 

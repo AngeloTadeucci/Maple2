@@ -1,8 +1,4 @@
-﻿using System.Numerics;
-using Maple2.Model.Enum;
-using Maple2.Model.Game;
-
-namespace Maple2.Server.Game.Trigger.Helpers;
+﻿namespace Maple2.Server.Game.Trigger.Helpers;
 
 public partial class Trigger {
     public List<State> States { get; }

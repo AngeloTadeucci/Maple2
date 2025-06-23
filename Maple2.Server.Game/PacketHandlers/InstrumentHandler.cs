@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using Maple2.Database.Storage;
 using Maple2.Model;
@@ -13,7 +12,6 @@ using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools.Collision;
 
 namespace Maple2.Server.Game.PacketHandlers;
 

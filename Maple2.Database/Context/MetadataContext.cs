@@ -1,6 +1,5 @@
 ﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
-using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

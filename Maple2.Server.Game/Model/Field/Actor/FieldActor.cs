@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Maple2.Model.Enum;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;

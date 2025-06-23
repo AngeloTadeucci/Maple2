@@ -10,7 +10,6 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Maple2.Server.DebugGame.Graphics.Assets;
-using ImGuiNET;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.DebugGame.Graphics {

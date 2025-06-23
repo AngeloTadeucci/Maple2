@@ -1,16 +1,10 @@
-﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.Assets;
-using Maple2.Server.DebugGame.Graphics.Resources;
-using Maple2.Server.Game.Model;
-using Serilog;
+﻿using Serilog;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
-using System.Drawing;
-using static Maple2.Server.Game.Manager.Field.FieldManager;
 
 namespace Maple2.Server.DebugGame.Graphics;
 

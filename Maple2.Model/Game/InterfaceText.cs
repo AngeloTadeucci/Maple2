@@ -1,5 +1,4 @@
-﻿using System;
-using System.Web;
+﻿using System.Web;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;

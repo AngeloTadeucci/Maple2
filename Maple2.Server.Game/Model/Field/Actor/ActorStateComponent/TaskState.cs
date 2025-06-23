@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Maple2.Server.Game.Model.Enum;
+﻿using Maple2.Server.Game.Model.Enum;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 

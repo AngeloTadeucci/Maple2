@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Storage;
-using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;

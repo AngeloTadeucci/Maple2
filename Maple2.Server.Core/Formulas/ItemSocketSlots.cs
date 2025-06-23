@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Server.Core.Formulas;
+﻿namespace Maple2.Server.Core.Formulas;
 
 public static class ItemSocketSlots {
     // This is entirely just a guess. 5% success rate per socket.

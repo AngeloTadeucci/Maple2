@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -11,7 +10,6 @@ using Account = Maple2.Model.Game.Account;
 using Character = Maple2.Model.Game.Character;
 using SkillMacro = Maple2.Model.Game.SkillMacro;
 using SkillBook = Maple2.Model.Game.SkillBook;
-using SkillCooldown = Maple2.Model.Game.SkillCooldown;
 using SkillTab = Maple2.Model.Game.SkillTab;
 using SkillPoint = Maple2.Model.Game.SkillPoint;
 using Wardrobe = Maple2.Model.Game.Wardrobe;

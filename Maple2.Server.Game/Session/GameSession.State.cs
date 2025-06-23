@@ -2,10 +2,8 @@
 using Maple2.Model.Game.Dungeon;
 using Maple2.Model.Game.Shop;
 using Maple2.Server.Game.Manager;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Model.Skill;
 
 namespace Maple2.Server.Game.Session;
 

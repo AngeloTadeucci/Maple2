@@ -1,5 +1,4 @@
-﻿using System;
-using Maple2.Model.Common;
+﻿using Maple2.Model.Common;
 
 namespace Maple2.Server.Tests.Vector;
 

@@ -2,7 +2,6 @@
 using Maple2.File.Flat;
 using Maple2.File.Flat.maplestory2library;
 using Maple2.File.Flat.standardmodellibrary;
-using Maple2.File.IO;
 using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;

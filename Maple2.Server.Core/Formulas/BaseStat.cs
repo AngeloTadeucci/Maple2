@@ -1,5 +1,4 @@
-﻿using System;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 
 namespace Maple2.Server.Core.Formulas;
 

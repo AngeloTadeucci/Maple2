@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Database.Extensions;
 using Maple2.Model;
 using Maple2.Model.Common;

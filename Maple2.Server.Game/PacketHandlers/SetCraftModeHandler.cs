@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using Maple2.Model.Game;
-using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;

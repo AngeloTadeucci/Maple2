@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Maple2.Tools;
 
 namespace Maple2.Server.Tests.Tools;

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record GachaInfoTable(IReadOnlyDictionary<int, GachaInfoTable.Entry> Entries) : Table {
     public record Entry(

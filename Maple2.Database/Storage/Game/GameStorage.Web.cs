@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Model.Ranking;
-using Maple2.Model;
 using Maple2.Model.Game;
 using Character = Maple2.Database.Model.Character;
 

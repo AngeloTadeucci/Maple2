@@ -1,8 +1,5 @@
 ﻿using System.Buffers;
 using Maple2.PacketLib.Tools;
-using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.Network;
-using Serilog;
 using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Session;
 

@@ -6,7 +6,6 @@ using Maple2.Server.Core.Formulas;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Session;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;

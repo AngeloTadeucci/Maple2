@@ -4,7 +4,7 @@ using Maple2.Model.Game.Ugc;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Tools.Extensions;
-using Microsoft.EntityFrameworkCore.Query;
+
 // ReSharper disable RedundantTypeArgumentsOfMethod
 
 namespace Maple2.Server.Core.Packets;

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record AnimationMetadata(string Model, IReadOnlyDictionary<string, AnimationSequenceMetadata> Sequences);
 

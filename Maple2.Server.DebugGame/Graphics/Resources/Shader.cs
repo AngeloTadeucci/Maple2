@@ -3,8 +3,6 @@ using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using System.Numerics;
 using Silk.NET.DXGI;
-using Silk.NET.Direct3D.Compilers;
-using Silk.NET.OpenAL;
 using System.Runtime.CompilerServices;
 
 namespace Maple2.Server.DebugGame.Graphics.Resources;
