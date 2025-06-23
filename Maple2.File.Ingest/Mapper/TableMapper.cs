@@ -1103,7 +1103,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private ColorPaletteTable ParseColorPaletteTable() {
         var results = new Dictionary<int, IReadOnlyDictionary<int, ColorPaletteTable.Entry>>();
         foreach ((int id, ColorPalette palette) in parser.ParseColorPalette()) {
-            foreach (ColorPalette.Color? color in palette.color) {
+            foreach (ColorPalette.Color color in palette.color) {
                 var entry = new ColorPaletteTable.Entry(
                     Primary: ParseColor(color.ch0),
                     Secondary: ParseColor(color.ch1),
@@ -1188,7 +1188,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private FurnishingShopTable ParseFurnishingShopTable() {
         var results = new Dictionary<int, FurnishingShopTable.Entry>();
-        foreach ((int id, ShopFurnishing? shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
+        foreach ((int id, ShopFurnishing shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
             results.Add(id, new FurnishingShopTable.Entry(
                 ItemId: shop!.id,
                 Buyable: shop.ugcHousingBuy,
@@ -1497,7 +1497,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private UgcHousingPointRewardTable ParseUgcHousingPointRewardTable() {
         var results = new Dictionary<int, UgcHousingPointRewardTable.Entry>();
-        foreach ((int id, UgcHousingPointReward? ugcHousing) in parser.ParseUgcHousingPointReward()) {
+        foreach ((int id, UgcHousingPointReward ugcHousing) in parser.ParseUgcHousingPointReward()) {
             results.Add(id, new UgcHousingPointRewardTable.Entry(
                 DecorationScore: ugcHousing.housingPoint,
                 IndividualDropBoxId: ugcHousing.individualDropBoxId));
@@ -1507,7 +1507,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private WeddingTable ParseWeddingTable() {
         var rewardsResults = new Dictionary<MarriageExpType, WeddingReward>();
-        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward? reward) in parser.ParseWeddingReward()) {
+        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward reward) in parser.ParseWeddingReward()) {
             rewardsResults.Add((MarriageExpType) type, new WeddingReward(
                 Type: (MarriageExpType) type,
                 Amount: reward.rewardExp,

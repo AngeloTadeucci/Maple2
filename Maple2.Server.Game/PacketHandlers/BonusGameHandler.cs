@@ -51,7 +51,7 @@ public class BonusGameHandler : FieldPacketHandler {
     }
 
     private void HandleSpin(GameSession session) {
-        if (session.NpcScript?.State == null) {
+        if (session.NpcScript?.State is null || session.NpcScript.Npc is null) {
             session.BonusGameId = 0;
             return;
         }

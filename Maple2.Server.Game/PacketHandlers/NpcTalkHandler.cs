@@ -67,7 +67,7 @@ public class NpcTalkHandler : FieldPacketHandler {
     }
 
     private void HandleClose(GameSession session) {
-        session.NpcScript?.Npc.StopTalk();
+        session.NpcScript?.Npc?.StopTalk();
         session.NpcScript = null;
         session.Shop.ClearActiveShop();
     }
@@ -127,10 +127,8 @@ public class NpcTalkHandler : FieldPacketHandler {
         }
 
         // Determine which script to use.
-        ScriptState? selectedState = null;
-        if (npc.Value.Metadata.Basic.Kind is >= 100 and <= 108) {
-            selectedState = selectState;
-        } else if (talkType.HasFlag(NpcTalkType.Select)) {
+        ScriptState? selectedState;
+        if (npc.Value.Metadata.Basic.Kind is >= 100 and <= 108 || talkType.HasFlag(NpcTalkType.Select)) {
             selectedState = selectState;
         } else if (talkType.HasFlag(NpcTalkType.Quest)) {
             if (questState == null) {
@@ -186,7 +184,11 @@ public class NpcTalkHandler : FieldPacketHandler {
                 addedOptions += session.NpcScript.Quests.Count;
                 // Picked quest
                 if (pick < addedOptions) {
-                    FieldNpc npc = session.NpcScript.Npc;
+                    FieldNpc? npc = session.NpcScript.Npc;
+                    if (npc == null) {
+                        session.Send(NpcTalkPacket.Close());
+                        return;
+                    }
                     if (!session.ScriptMetadata.TryGet(session.NpcScript.Quests.ElementAt(pick).Value.Id, out ScriptMetadata? metadata)) {
                         session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
                         session.NpcScript = null;
@@ -259,6 +261,10 @@ public class NpcTalkHandler : FieldPacketHandler {
         packet.ReadShort(); // 2 or 0. 2 = Start quest, 0 = Complete quest.
 
         FieldNpc? npc = session.NpcScript.Npc;
+        if (npc == null) {
+            session.Send(NpcTalkPacket.Close());
+            return;
+        }
         if (!session.ScriptMetadata.TryGet(questId, out ScriptMetadata? metadata)) {
             session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
             session.NpcScript = null;

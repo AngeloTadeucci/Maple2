@@ -96,7 +96,7 @@ public class FieldNpc : Actor<Npc> {
     public readonly Dictionary<string, int> AiExtraData = new();
 
     public FieldNpc(FieldManager field, int objectId, DtCrowdAgent? agent, Npc npc, string aiPath, string spawnAnimation = "", string? patrolDataUUID = null) : base(field, objectId, npc, field.NpcMetadata) {
-        IdleSequenceMetadata = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequenceMetadata(string.Empty, -1, 1f, null);
+        IdleSequenceMetadata = npc.Animations.GetValueOrDefault("Idle_A") ?? new AnimationSequenceMetadata(string.Empty, -1, 1f, []);
         JumpSequence = npc.Animations.GetValueOrDefault("Jump_A") ?? npc.Animations.GetValueOrDefault("Jump_B");
         WalkSequence = npc.Animations.GetValueOrDefault("Walk_A");
         FlySequence = npc.Animations.GetValueOrDefault("Fly_A");
@@ -238,15 +238,14 @@ public class FieldNpc : Actor<Npc> {
         }
 
         switch (routineName) {
-            case { } when routineName.Contains("Idle_"):
+            case not null when routineName.Contains("Idle_"):
                 return MovementState.TryStandby(null, true, sequence.Name);
-            case { } when routineName.Contains("Bore_"):
+            case not null when routineName.Contains("Bore_"):
                 return MovementState.TryEmote(sequence.Name, true);
-            case { } when routineName.StartsWith("Walk_"):
+            case not null when routineName.StartsWith("Walk_"):
+            case not null when routineName.StartsWith("Run_"):
                 return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
-            case { } when routineName.StartsWith("Run_"):
-                return MovementState.TryMoveTo(Navigation?.GetRandomPatrolPoint() ?? Position, false, sequence.Name);
-            case { }:
+            case not null:
                 if (!Value.Animations.TryGetValue(routineName, out AnimationSequenceMetadata? animationSequence)) {
                     break;
                 }
@@ -277,9 +276,9 @@ public class FieldNpc : Actor<Npc> {
 
         if (currentWaypoint.AirWayPoint) {
             if (Value.Animations.TryGetValue(currentWaypoint.ApproachAnimation, out AnimationSequenceMetadata? patrolSequence)) {
-                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: patrolSequence.Name, speed: Patrol.PatrolSpeed / 2, lookAt: true);
+                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: patrolSequence.Name, speed: (float) Patrol.PatrolSpeed / 2, lookAt: true);
             } else if (FlySequence is not null) {
-                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: FlySequence.Name, speed: Patrol.PatrolSpeed / 2, lookAt: true);
+                approachTask = MovementState.TryFlyTo(currentWaypoint.Position, false, sequence: FlySequence.Name, speed: (float) Patrol.PatrolSpeed / 2, lookAt: true);
             } else {
                 Logger.Warning("No walk sequence found for npc {NpcId} in patrol {PatrolId}", Value.Metadata.Id, Patrol.Uuid);
             }

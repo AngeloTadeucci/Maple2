@@ -1780,10 +1780,10 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new MeretMarketTable(results);
 
         MeretMarketItemMetadata ParseMarketItemMetadata(ShopMeretCustom item, ShopMeretCustom? parent = null) {
-            string? saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
-            string? saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
-            string? promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
-            string? promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
+            string saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
+            string saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
+            string promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
+            string promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
             int[] jobRequirement = parent?.jobRequire ?? item.jobRequire;
             return new MeretMarketItemMetadata(
                 Id: item.id,

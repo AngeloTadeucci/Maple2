@@ -227,7 +227,7 @@ public class UgcHandler : FieldPacketHandler {
         foreach (BannerSlot slot in slots) {
             slot.Template = ugc;
 
-            BannerSlot? oldSlot = banner.Slots.First(x => x.Id == slot.Id);
+            BannerSlot oldSlot = banner.Slots.First(x => x.Id == slot.Id);
             banner.Slots.Remove(oldSlot);
             banner.Slots.Add(slot);
         }

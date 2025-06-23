@@ -379,7 +379,7 @@ public class NavMeshMapper {
         option.ch = cellHeight;
         option.buildBvTree = true;
 
-        List<RcOffMeshConnection>? offMeshConnections = geom.GetOffMeshConnections();
+        List<RcOffMeshConnection> offMeshConnections = geom.GetOffMeshConnections();
         option.offMeshConCount = offMeshConnections.Count;
         option.offMeshConVerts = new float[option.offMeshConCount * 6];
         option.offMeshConRad = new float[option.offMeshConCount];

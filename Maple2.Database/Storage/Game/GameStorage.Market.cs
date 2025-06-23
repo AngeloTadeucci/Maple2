@@ -75,7 +75,8 @@ public partial class GameStorage {
             return Context.UgcMarketItem.Where(listing => listing.AccountId == accountId)
                 .AsEnumerable()
                 .Select(ToMarketEntry)
-                .ToDictionary(entry => entry.Id, entry => entry);
+                .Where(x => x is not null)
+                .ToDictionary(entry => entry!.Id, entry => entry!);
         }
 
         /// <summary>
@@ -296,7 +297,7 @@ public partial class GameStorage {
         }
 
         public bool SaveBlackMarketListing(BlackMarketListing listing) {
-            Model.BlackMarketListing? model = listing;
+            Model.BlackMarketListing model = listing;
 
             Context.BlackMarketListing.Update(model);
             return Context.TrySaveChanges();

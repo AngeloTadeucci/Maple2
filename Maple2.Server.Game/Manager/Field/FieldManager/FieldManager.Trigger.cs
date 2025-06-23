@@ -27,8 +27,7 @@ public partial class FieldManager {
 
             return fieldTrigger;
         } catch (ArgumentException ex) {
-            logger.Warning("Invalid Trigger: {Exception}", ex.Message);
-            logger.Warning(ex.StackTrace);
+            logger.Warning(ex, "Invalid Trigger: {Exception}", ex.Message);
             return null;
         }
     }
