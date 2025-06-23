@@ -27,8 +27,12 @@ public class ItemBoxManager {
     }
 
     public ItemBoxError Open(Item item, int count = 1, int index = -1) {
+        if (string.IsNullOrEmpty(item.Metadata.Function?.Parameters)) {
+            logger.Error("Item {ItemId} has no parameters for item box function", item.Id);
+            return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+        }
         if (item.Type.IsTranscendenceCrystal) {
-            Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
+            Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function.Parameters);
             if (parameters.Count < 4) {
                 logger.Error("Invalid parameters for item box: {ItemId}", item.Id);
                 return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
@@ -42,7 +46,7 @@ public class ItemBoxManager {
             }
             return OpenItemBox(item, globalDropBoxId, 0, 0, individualDropBoxId, 1, count);
         }
-        int[] itemBoxParams = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
+        int[] itemBoxParams = item.Metadata.Function.Parameters.Split(',').Select(int.Parse).ToArray();
         return item.Metadata.Function?.Type switch {
             ItemFunction.SelectItemBox => SelectItemBox(item, itemBoxParams[0], itemBoxParams[1], index, count),
             ItemFunction.OpenItemBox => OpenItemBox(item, itemBoxParams[0], itemBoxParams[1], itemBoxParams[2], itemBoxParams[3], itemBoxParams.Length == 5 ? itemBoxParams[4] : 1, count),
