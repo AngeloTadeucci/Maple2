@@ -8,13 +8,9 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class FreeCamCommand : GameCommand {
-    private const string NAME = "freecam";
-    private const string DESCRIPTION = "Enables a free cam user interface.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly GameSession session;
 
-    public FreeCamCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public FreeCamCommand(GameSession session) : base(AdminPermissions.Debug, "freecam", "Enables a free cam user interface.") {
         this.session = session;
         var toggle = new Option<string>(["toggle"], () => "on", "Enable free cam. \"on\" or \"off\"");
 

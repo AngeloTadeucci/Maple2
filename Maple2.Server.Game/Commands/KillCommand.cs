@@ -13,11 +13,7 @@ using Maple2.Tools.Collision;
 namespace Maple2.Server.Game.Commands;
 
 public class KillCommand : GameCommand {
-    private const string NAME = "kill";
-    private const string DESCRIPTION = "Kill NPCs/Mobs/Players";
-    public const AdminPermissions RequiredPermission = AdminPermissions.GameMaster;
-
-    public KillCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public KillCommand(GameSession session) : base(AdminPermissions.GameMaster, "kill", "Kill NPCs/Mobs/Players") {
         AddCommand(new KillAllNpcCommand(session));
         AddCommand(new KillNearNpcCommand(session));
         AddCommand(new KillPlayerCommand(session));

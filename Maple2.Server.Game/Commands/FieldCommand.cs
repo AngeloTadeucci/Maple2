@@ -10,15 +10,11 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class FieldCommand : GameCommand {
-    private const string NAME = "field";
-    private const string DESCRIPTION = "Field information.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
     private readonly MapEntityStorage mapEntities;
 
-    public FieldCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public FieldCommand(GameSession session, MapMetadataStorage mapStorage, MapEntityStorage mapEntities) : base(AdminPermissions.Debug, "field", "Field information.") {
         this.session = session;
         this.mapStorage = mapStorage;
         this.mapEntities = mapEntities;

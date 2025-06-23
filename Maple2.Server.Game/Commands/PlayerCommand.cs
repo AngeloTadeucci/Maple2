@@ -12,11 +12,7 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class PlayerCommand : GameCommand {
-    private const string NAME = "player";
-    private const string DESCRIPTION = "Player management.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.PlayerCommands;
-
-    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public PlayerCommand(GameSession session, AchievementMetadataStorage achievementMetadataStorage) : base(AdminPermissions.PlayerCommands, "player", "Player management.") {
         AddCommand(new LevelCommand(session));
         AddCommand(new PrestigeCommand(session));
         AddCommand(new ExpCommand(session));

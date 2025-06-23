@@ -12,17 +12,13 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class ItemCommand : GameCommand {
-    private const string NAME = "item";
-    private const string DESCRIPTION = "Item spawning.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.SpawnItem;
-
     private const int MAX_RARITY = 6;
     private const int MAX_SOCKET = 5;
 
     private readonly GameSession session;
     private readonly ItemMetadataStorage itemStorage;
 
-    public ItemCommand(GameSession session, ItemMetadataStorage itemStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public ItemCommand(GameSession session, ItemMetadataStorage itemStorage) : base(AdminPermissions.SpawnItem, "item", "Item spawning.") {
         this.session = session;
         this.itemStorage = itemStorage;
 
@@ -62,7 +58,7 @@ public class ItemCommand : GameCommand {
                 amount = Math.Clamp(amount, 1, int.MaxValue);
             }
 
-            // For non-stackable items or when rollMax is enabled, create individual items  
+            // For non-stackable items or when rollMax is enabled, create individual items
             if (isNonStackable || (rollMax && amount > 1)) {
                 ProcessSingleItem(ctx, firstItem, drop);
 

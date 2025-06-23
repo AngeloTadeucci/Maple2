@@ -13,13 +13,9 @@ using Maple2.Model.Enum;
 namespace Maple2.Server.Game.Commands;
 
 public class DebugCommand : GameCommand {
-    private const string NAME = "debug";
-    private const string DESCRIPTION = "Debug information management.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly NpcMetadataStorage npcStorage;
 
-    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(AdminPermissions.Debug, "debug", "Debug information management.") {
         this.npcStorage = npcStorage;
 
         AddCommand(new DebugNpcAiCommand(session, npcStorage));

@@ -11,17 +11,13 @@ using Maple2.Server.Game.Util;
 namespace Maple2.Server.Game.Commands;
 
 public class TutorialCommand : GameCommand {
-    private const string NAME = "tutorial";
-    private const string DESCRIPTION = "Tutorial management.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     // ReSharper restore All
     #endregion
 
-    public TutorialCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public TutorialCommand(GameSession session) : base(AdminPermissions.Debug, "tutorial", "Tutorial management.") {
         Add(new RewardCommand(session, this));
     }
 

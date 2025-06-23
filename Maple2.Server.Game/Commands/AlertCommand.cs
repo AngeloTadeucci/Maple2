@@ -6,13 +6,9 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class AlertCommand : GameCommand {
-    private const string NAME = "alert";
-    private const string DESCRIPTION = "Send alert to the entire server.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Alert;
-
     private readonly GameSession session;
 
-    public AlertCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public AlertCommand(GameSession session) : base(AdminPermissions.Alert, "alert", "Send alert to the entire server.") {
         this.session = session;
 
         var message = new Argument<string[]>("message", () => [], "Message to display");
