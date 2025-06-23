@@ -72,7 +72,7 @@ public class HongBao : IUpdatable {
         if (distributionIndex < 0 || distributionIndex >= Distributions.Length) {
             return null;
         }
-        return player.Session.Field.ItemDrop.CreateItem(ItemId, amount: Distributions[distributionIndex]);
+        return player.Session.Field?.ItemDrop.CreateItem(ItemId, amount: Distributions[distributionIndex]);
     }
 
     public void Update(long tickCount) {

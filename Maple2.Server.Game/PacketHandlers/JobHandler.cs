@@ -50,6 +50,7 @@ public class JobHandler : FieldPacketHandler {
     }
 
     private void HandleAdvance(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int npcId = packet.ReadInt();
 
         if (!session.Field.Npcs.TryGetValue(npcId, out FieldNpc? npc)) {

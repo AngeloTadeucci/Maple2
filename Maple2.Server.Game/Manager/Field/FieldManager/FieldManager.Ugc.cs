@@ -98,7 +98,9 @@ public partial class FieldManager {
     }
 
     public void PlaceCube(GameSession session, HeldCube cubeItem, in Vector3B position, float rotation) {
+        if (session.Field is null) return;
         if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? itemMetadata)) {
+            // ReSharper disable once InconsistentlySynchronizedField
             logger.Error("Failed to get item metadata for cube {cubeId}.", cubeItem.ItemId);
             return;
         }
@@ -106,7 +108,8 @@ public partial class FieldManager {
         switch (session.HeldCube) {
             case PlotCube _:
                 if (itemMetadata.Install is null || itemMetadata.Housing is null) {
-                    logger.Error($"Item {cubeItem.ItemId} is not a housing item.");
+                    // ReSharper disable once InconsistentlySynchronizedField
+                    logger.Error("Item {CubeItemItemId} is not a housing item.", cubeItem.ItemId);
                     return;
                 }
                 plot = session.Housing.GetFieldPlot();
@@ -127,9 +130,8 @@ public partial class FieldManager {
                         if (nurturing is null) {
                             nurturing = db.CreateNurturing(session.AccountId, plotCube.Interact.Metadata.Nurturing, plotCube.Interact.Metadata.Id);
                             if (nurturing is null) {
-                                lock (Plots) {
-                                    logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
-                                }
+                                // ReSharper disable once InconsistentlySynchronizedField
+                                logger.Error("Failed to create Nurturing for {AccountId}, ItemId {ItemId}", session.AccountId, plotCube.ItemId);
                                 return;
                             }
                         }

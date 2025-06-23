@@ -109,15 +109,16 @@ public class HomeActionHandler : FieldPacketHandler {
             case BallUpdateCommand.Move:
                 Vector3 velocity2 = packet.Read<Vector3>();
 
-                session.Field.Broadcast(HomeActionPacket.UpdateBall(guideObject, velocity, velocity2), session);
+                session.Field?.Broadcast(HomeActionPacket.UpdateBall(guideObject, velocity, velocity2), session);
                 break;
             case BallUpdateCommand.Hit:
-                session.Field.Broadcast(HomeActionPacket.HitBall(guideObject, velocity));
+                session.Field?.Broadcast(HomeActionPacket.HitBall(guideObject, velocity));
                 break;
         }
     }
 
     private void HandleChangePortalSettings(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         packet.ReadByte();
         Vector3B coord = packet.Read<Vector3B>();
 
@@ -182,7 +183,7 @@ public class HomeActionHandler : FieldPacketHandler {
         cube.Interact.NoticeSettings.Notice = packet.ReadUnicodeString();
         cube.Interact.NoticeSettings.Distance = packet.ReadByte();
 
-        session.Field.Broadcast(HomeActionPacket.SendCubeNoticeSettings(cube, editing: false));
+        session.Field?.Broadcast(HomeActionPacket.SendCubeNoticeSettings(cube, editing: false));
         session.Housing.SaveHome();
     }
 

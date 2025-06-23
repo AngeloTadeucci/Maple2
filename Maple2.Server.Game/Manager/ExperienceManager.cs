@@ -108,6 +108,7 @@ public sealed class ExperienceManager {
     }
 
     public long AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
+        if (session.Field is null) return 0;
         if (!session.TableMetadata.CommonExpTable.Entries.TryGetValue(expType, out CommonExpTable.Entry? entry)
             || !session.TableMetadata.ExpTable.ExpBase.TryGetValue(entry.ExpTableId, out IReadOnlyDictionary<int, long>? expBase)) {
             return 0;
@@ -241,7 +242,7 @@ public sealed class ExperienceManager {
         }
 
         for (int i = 0; i < amount; i++) {
-            Item? item = session.Field.ItemDrop.CreateItem(Constant.AdventureLevelLvUpRewardItem);
+            Item? item = session.Field?.ItemDrop.CreateItem(Constant.AdventureLevelLvUpRewardItem);
             if (item == null) {
                 break;
             }

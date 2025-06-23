@@ -35,7 +35,7 @@ public class ItemExtractionHandler : FieldPacketHandler {
                 return;
             }
 
-            Item? resultItem = session.Field.ItemDrop.CreateItem(entry.ResultItemId);
+            Item? resultItem = session.Field?.ItemDrop.CreateItem(entry.ResultItemId);
             if (resultItem == null) {
                 return;
             }

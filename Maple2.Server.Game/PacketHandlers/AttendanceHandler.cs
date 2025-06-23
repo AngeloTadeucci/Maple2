@@ -98,7 +98,7 @@ public class AttendanceHandler : FieldPacketHandler {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(reward.ItemId, reward.Rarity, reward.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(reward.ItemId, reward.Rarity, reward.Amount);
         if (item == null) {
             return;
         }

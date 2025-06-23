@@ -37,10 +37,11 @@ public class ItemCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, int itemId, int amount, int rarity, bool drop, bool rollMax) {
+        if (session.Field is null) return;
         try {
             rarity = Math.Clamp(rarity, 1, MAX_RARITY);
 
-            Item? firstItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+            Item? firstItem = session.Field?.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
             if (firstItem == null) {
                 ctx.Console.Error.WriteLine($"Invalid Item: {itemId}");
                 return;
@@ -63,7 +64,7 @@ public class ItemCommand : GameCommand {
                 ProcessSingleItem(ctx, firstItem, drop);
 
                 for (int i = 1; i < amount; i++) {
-                    Item? additionalItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+                    Item? additionalItem = session.Field?.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
                     if (additionalItem == null) {
                         ctx.Console.Error.WriteLine($"Failed to create additional item {i + 1}/{amount}");
                         continue;

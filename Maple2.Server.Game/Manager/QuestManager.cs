@@ -155,7 +155,7 @@ public sealed class QuestManager {
 
         // TODO: Confirm inventory can hold all the items.
         foreach (QuestMetadataReward.Item acceptReward in metadata.AcceptReward.EssentialItem) {
-            Item? reward = session.Field.ItemDrop.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
+            Item? reward = session.Field?.ItemDrop.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
             if (reward == null) {
                 logger.Error("Failed to create quest reward {RewardId}", acceptReward.Id);
                 continue;
@@ -311,7 +311,7 @@ public sealed class QuestManager {
 
         List<Item> rewards = [];
         foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item is null) {
                 continue;
             }
@@ -328,7 +328,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item is null) {
                 continue;
             }
@@ -477,7 +477,7 @@ public sealed class QuestManager {
 
             if (!ignoreItemRewards) {
                 foreach (ItemComponent itemComponent in entry.Items) {
-                    Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
+                    Item? item = session.Field?.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
                     if (item == null) {
                         continue;
                     }
@@ -514,7 +514,7 @@ public sealed class QuestManager {
         session.Send(QuestPacket.UpdateExploration(session.Config.ExplorationProgress));
 
         if (metadata.Item != null) {
-            Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
+            Item? item = session.Field?.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
             if (item != null) {
                 if (!session.Item.Inventory.Add(item, true)) {
                     session.Item.MailItem(item);
@@ -594,6 +594,7 @@ public sealed class QuestManager {
     }
 
     private void SummonPortal(Quest quest) {
+        if (session.Field is null) return;
         if (session.NpcScript?.Npc == null) {
             logger.Warning("Cannot summon quest portal for quest {QuestId}: No NPC script context", quest.Id);
             return;

@@ -71,6 +71,7 @@ public class SkillHandler : FieldPacketHandler {
     }
 
     private void HandleUse(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long skillUid = packet.ReadLong();
         int serverTick = packet.ReadInt();
         int skillId = packet.ReadInt();
@@ -370,7 +371,7 @@ public class SkillHandler : FieldPacketHandler {
         }
 
         session.Player.InBattle = true;
-        session.Field.Broadcast(SkillPacket.Cancel(record));
+        session.Field?.Broadcast(SkillPacket.Cancel(record));
 
         if (session.Player.DebugSkills) {
             session.Send(NoticePacket.Message($"Skill.Cancel: {skillUid}"));

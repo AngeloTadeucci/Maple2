@@ -73,6 +73,7 @@ public class NpcTalkHandler : FieldPacketHandler {
     }
 
     private void HandleTalk(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int objectId = packet.ReadInt();
         if (!session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
             return; // Invalid Npc

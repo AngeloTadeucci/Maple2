@@ -14,11 +14,17 @@ public partial class ChannelService {
     }
 
     private PlayerWarpResponse GoToPlayer(PlayerWarpRequest.Types.GoToPlayer gotoPlayer) {
+
         if (!server.GetSession(gotoPlayer.CharacterId, out GameSession? session)) {
             return new PlayerWarpResponse {
                 Error = -1,
             };
         }
+
+        if (session.Field is null)
+            return new PlayerWarpResponse() {
+                Error = -1,
+            };
 
         return new PlayerWarpResponse {
             RoomId = session.Field.RoomId,

@@ -241,7 +241,7 @@ public class ConfigManager {
     }
 
     public void RefreshPremiumClubBuffs() {
-        if (session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds()) {
+        if (session.Player.Value.Account.PremiumTime > DateTime.Now.ToEpochSeconds() && session.Field is not null) {
             foreach ((int buffId, PremiumClubTable.Buff buff) in session.TableMetadata.PremiumClubTable.Buffs) {
                 session.Player.Buffs.AddBuff(session.Player, session.Player, buff.Id, buff.Level, session.Field.FieldTick);
             }
@@ -337,7 +337,7 @@ public class ConfigManager {
         // Otherwise update penalty
         else {
             // Reset count if previous penalty expired
-            if (session.Field.FieldTick > DeathPenaltyEndTick) {
+            if (session.Field?.FieldTick > DeathPenaltyEndTick) {
                 DeathCount = 0;
             }
             DeathCount++;
@@ -548,7 +548,7 @@ public class ConfigManager {
             return true; // Nothing to unequip
         }
 
-        Item? lapenshard = session.Field.ItemDrop.CreateItem(lapenshardId, Constant.LapenshardGrade);
+        Item? lapenshard = session.Field?.ItemDrop.CreateItem(lapenshardId, Constant.LapenshardGrade);
         if (lapenshard == null) {
             return false;
         }

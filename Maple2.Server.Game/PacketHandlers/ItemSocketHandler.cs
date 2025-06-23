@@ -304,7 +304,7 @@ public class ItemSocketHandler : FieldPacketHandler {
                 return;
             }
 
-            Item? gem = session.Field.ItemDrop.CreateItem(itemGemstone.ItemId, rarity: Constant.GemstoneGrade);
+            Item? gem = session.Field?.ItemDrop.CreateItem(itemGemstone.ItemId, rarity: Constant.GemstoneGrade);
             if (gem == null) {
                 session.Send(ItemSocketPacket.Error(11, error: s_itemsocketsystem_error_server_default));
                 return;

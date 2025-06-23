@@ -36,6 +36,7 @@ public class BuffCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, int buffId, int level, int stack, int duration, bool all, string target, bool remove) {
+        if (session.Field is null) return;
         try {
             if (!skillStorage.TryGetEffect(buffId, (short) level, out AdditionalEffectMetadata? _)) {
                 ctx.Console.Error.WriteLine($"Invalid buff: {buffId}, level: {level}");

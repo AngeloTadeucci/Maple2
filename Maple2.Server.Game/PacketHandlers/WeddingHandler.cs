@@ -78,6 +78,7 @@ public class WeddingHandler : FieldPacketHandler {
     }
 
     private static void HandlePropose(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         string otherPlayerName = packet.ReadUnicodeString();
 
         if (!session.Field.TryGetPlayer(otherPlayerName, out FieldPlayer? otherPlayer)) {
@@ -95,6 +96,7 @@ public class WeddingHandler : FieldPacketHandler {
     }
 
     private static void HandleProposalReply(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         var response = packet.Read<WeddingError>();
         long playerId = packet.ReadLong();
 

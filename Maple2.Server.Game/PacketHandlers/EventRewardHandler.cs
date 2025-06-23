@@ -64,7 +64,7 @@ public class EventRewardHandler : FieldPacketHandler {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
         if (item == null) {
             return;
         }
@@ -84,7 +84,7 @@ public class EventRewardHandler : FieldPacketHandler {
 
         RewardItem rewardItem = timeRunEvent.FinalReward;
 
-        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
         if (item == null) {
             return;
         }
@@ -157,7 +157,7 @@ public class EventRewardHandler : FieldPacketHandler {
         session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.GalleryClaimReward, value + 1);
 
         foreach (RewardItem rewardItem in gallery.RewardItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }
@@ -260,7 +260,7 @@ public class EventRewardHandler : FieldPacketHandler {
         GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
 
         foreach (RewardItem rewardItem in bingoEvent.Rewards[index].Items) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }

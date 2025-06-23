@@ -32,6 +32,8 @@ public class CoordCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, string? x, string? y, string? z, bool force, bool blocks) {
+        if (session.Field is null) return;
+
         Vector3 pos = session.Player.Position;
         if (x == null && y == null && z == null) {
             ctx.Console.Out.WriteLine("Current position: " + pos);

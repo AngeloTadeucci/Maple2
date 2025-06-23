@@ -142,7 +142,7 @@ public class ItemDismantleHandler : FieldPacketHandler {
                 result[id] = total;
                 while (total > 0) {
 
-                    Item? item = session.Field.ItemDrop.CreateItem(id, amount: total);
+                    Item? item = session.Field?.ItemDrop.CreateItem(id, amount: total);
                     if (item == null) {
                         continue;
                     }

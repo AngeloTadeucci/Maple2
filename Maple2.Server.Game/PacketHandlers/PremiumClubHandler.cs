@@ -61,7 +61,7 @@ public class PremiumClubHandler : FieldPacketHandler {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(premiumMetadata.Id, premiumMetadata.Rarity, premiumMetadata.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(premiumMetadata.Id, premiumMetadata.Rarity, premiumMetadata.Amount);
         if (item == null || !session.Item.Inventory.CanAdd(item)) {
             return;
         }
@@ -103,7 +103,7 @@ public class PremiumClubHandler : FieldPacketHandler {
         session.Currency.Meret -= premiumMetadata.Price;
 
         foreach (PremiumClubTable.Item item in premiumMetadata.BonusItems) {
-            Item? bonusItem = session.Field.ItemDrop.CreateItem(item.Id, item.Rarity, item.Amount);
+            Item? bonusItem = session.Field?.ItemDrop.CreateItem(item.Id, item.Rarity, item.Amount);
             if (bonusItem == null) {
                 continue;
             }

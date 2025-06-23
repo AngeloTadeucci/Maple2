@@ -135,6 +135,7 @@ public class GotoCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string playerName) {
+            if (session.Field is null) return;
             using GameStorage.Request db = session.GameStorage.Context();
             long characterId = db.GetCharacterId(playerName);
             if (characterId == 0) {

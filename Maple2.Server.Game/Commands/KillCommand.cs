@@ -34,6 +34,7 @@ public class KillCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, bool npcOnly, bool mobOnly) {
+            if (session.Field is null) return;
             if (!session.SkillMetadata.TryGet(10000001, 1, out SkillMetadata? skill)) {
                 ctx.Console.Out.WriteLine("Skill not found.");
                 return;
@@ -80,6 +81,7 @@ public class KillCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, int distance) {
+            if (session.Field is null) return;
             var rec = new Rectangle(new Vector2(session.Player.Position.X, session.Player.Position.Y), distance, distance, 0);
             var prism = new Prism(rec, session.Player.Position.Z, distance * 2);
             if (!session.SkillMetadata.TryGet(10000001, 1, out SkillMetadata? skill)) {
@@ -116,6 +118,7 @@ public class KillCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string name) {
+            if (session.Field is null) return;
             if (string.IsNullOrEmpty(name)) {
                 ctx.Console.Out.WriteLine("Name cannot be empty.");
                 return;
@@ -138,6 +141,7 @@ public class KillCommand : GameCommand {
     }
 
     private static void Kill(GameSession session, FieldNpc npc, SkillMetadata skill) {
+        if (session.Field is null) return;
         var damageRecord = new DamageRecord(skill, skill.Data.Motions[0].Attacks[0]) {
             CasterId = session.Player.ObjectId,
             TargetUid = ((long) Random.Shared.Next(int.MinValue, int.MaxValue) << 32) | (uint) Random.Shared.Next(int.MinValue, int.MaxValue),

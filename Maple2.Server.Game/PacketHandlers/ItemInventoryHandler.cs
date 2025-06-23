@@ -89,6 +89,7 @@ public class ItemInventoryHandler : FieldPacketHandler {
     /// <param name="uid">Uid of the item to drop</param>
     /// <param name="amount">The amount to drop. -1 drops the entire stack.</param>
     private void DropItem(GameSession session, long uid, int amount = -1) {
+        if (session.Field is null) return;
         Item? drop = session.Item.Inventory.Get(uid);
         if (drop == null) {
             return;
@@ -113,7 +114,7 @@ public class ItemInventoryHandler : FieldPacketHandler {
             return;
         }
 
-        FieldItem fieldItem = session.Field!.SpawnItem(session.Player, drop);
+        FieldItem fieldItem = session.Field.SpawnItem(session.Player, drop);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
     }
 }

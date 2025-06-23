@@ -321,7 +321,7 @@ public class BeautyHandler : FieldPacketHandler {
             (float) backLength, defaultHairMetadata.BackPosition, defaultHairMetadata.BackRotation, (float) frontLength, defaultHairMetadata.FrontPosition,
             defaultHairMetadata.FrontRotation);
 
-        Item? newHair = session.Field.ItemDrop.CreateItem(entry.Id);
+        Item? newHair = session.Field?.ItemDrop.CreateItem(entry.Id);
         if (newHair == null) {
             return;
         }
@@ -373,7 +373,7 @@ public class BeautyHandler : FieldPacketHandler {
         }
         if (!newHairSelected) {
             session.Beauty.SelectPreviousHair();
-            Item? voucher = session.Field.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
+            Item? voucher = session.Field?.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
             if (voucher != null && !session.Item.Inventory.Add(voucher, true)) {
                 session.Item.MailItem(voucher);
                 voucherItemId = voucher.Id;
@@ -563,7 +563,7 @@ public class BeautyHandler : FieldPacketHandler {
     }
 
     private static bool ModifyBeauty(GameSession session, IByteReader packet, int itemId) {
-        Item? newCosmetic = session.Field.ItemDrop.CreateItem(itemId, 1, 1);
+        Item? newCosmetic = session.Field?.ItemDrop.CreateItem(itemId, 1, 1);
         if (newCosmetic == null) {
             return false;
         }

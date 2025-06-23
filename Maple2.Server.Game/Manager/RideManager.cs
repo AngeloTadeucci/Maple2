@@ -38,11 +38,12 @@ public sealed class RideManager {
         int objectId = FieldManager.NextGlobalId();
         var action = new RideOnActionDefault(item.Metadata.Property.Ride, objectId, item);
         Ride = new Ride(session.Player.ObjectId, metadata, action);
-        session.Field.Broadcast(RidePacket.Start(Ride));
+        session.Field?.Broadcast(RidePacket.Start(Ride));
         return true;
     }
 
     public bool Mount(AdditionalEffectMetadata additionalEffectMetadata) {
+        if (session.Field is null) return false;
         if (Ride != null) {
             return false;
         }
@@ -69,7 +70,7 @@ public sealed class RideManager {
         }
 
         RideOffAction rideOffAction = GetRideOffAction(type, forced);
-        session.Field.Broadcast(RidePacket.Stop(Ride.OwnerId, rideOffAction));
+        session.Field?.Broadcast(RidePacket.Stop(Ride.OwnerId, rideOffAction));
 
         Ride ride = Ride;
         Ride = null;

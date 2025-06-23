@@ -487,7 +487,7 @@ public class GuildHandler : FieldPacketHandler {
 
             session.Send(GuildPacket.CheckedIn());
             session.Exp.AddExp(ExpType.guildUserExp, session.Guild.Properties.CheckInPlayerExpRate);
-            Item? guildCoin = session.Field.ItemDrop.CreateItem(Constant.GuildCoinId, Constant.GuildCoinRarity, session.Guild.Properties.CheckInCoin);
+            Item? guildCoin = session.Field?.ItemDrop.CreateItem(Constant.GuildCoinId, Constant.GuildCoinRarity, session.Guild.Properties.CheckInCoin);
             if (guildCoin != null) {
                 session.Item.Inventory.Add(guildCoin, true);
             }

@@ -29,6 +29,8 @@ public class PetCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, int petId) {
+        if (session.Field is null) return;
+
         try {
             if (!itemStorage.TryGetPet(petId, out ItemMetadata? itemMetadata)) {
                 ctx.Console.Error.WriteLine($"Invalid Pet: {petId}");

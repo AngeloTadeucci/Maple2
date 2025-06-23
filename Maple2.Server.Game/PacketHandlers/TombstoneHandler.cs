@@ -11,6 +11,7 @@ public class TombstoneHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Tombstone;
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int objectId = packet.ReadInt();
         int hits = packet.ReadInt();
 

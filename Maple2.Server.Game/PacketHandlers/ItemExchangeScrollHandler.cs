@@ -79,7 +79,7 @@ public class ItemExchangeScroll : FieldPacketHandler {
                 }
             }
         }
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(scrollMetadata.RewardItem.ItemId, scrollMetadata.RewardItem.Rarity, scrollMetadata.RewardItem.Amount * quantity);
+        Item? rewardItem = session.Field?.ItemDrop.CreateItem(scrollMetadata.RewardItem.ItemId, scrollMetadata.RewardItem.Rarity, scrollMetadata.RewardItem.Amount * quantity);
         if (rewardItem == null) {
             return;
         }

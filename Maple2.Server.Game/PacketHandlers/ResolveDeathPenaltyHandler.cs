@@ -12,6 +12,7 @@ public class ResolveDeathPenaltyHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.ResolvePenalty;
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int npcObjectId = packet.ReadInt();
         if (!session.Field.Npcs.TryGetValue(npcObjectId, out FieldNpc? npc) || npc.Value.Metadata.Basic.Kind != 81) { // 81 = Doctor
             return;

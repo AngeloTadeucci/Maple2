@@ -200,6 +200,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float radius) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -242,6 +244,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -285,6 +289,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -332,6 +338,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -365,6 +373,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx) {
+                if (session.Field is null) return;
+
                 bool found = false;
                 session.Field.AccelerationStructure?.FindBlockUnderPlayer(session.Player.Position, entity => {
                     found = true;

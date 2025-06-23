@@ -8,6 +8,7 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
+#pragma warning disable CS0108, CS0114
 
 namespace Maple2.Server.Game.Model;
 
