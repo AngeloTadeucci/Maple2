@@ -647,7 +647,7 @@ public class GuildHandler : FieldPacketHandler {
             return;
         }
 
-        session.MigrateToInstance(house.MapId, session.Guild.Id);
+        session.Migrate(house.MapId, session.Guild.Id);
     }
 
     private void HandleSendGift(GameSession session, IByteReader packet) {
