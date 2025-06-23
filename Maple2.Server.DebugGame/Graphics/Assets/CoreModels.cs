@@ -21,9 +21,9 @@ public class CoreModels {
     }
 
     private Mesh CreateQuad() {
-        Ms2MeshData meshData = new Ms2MeshData();
-
-        meshData.PrimitiveCount = 2;
+        Ms2MeshData meshData = new Ms2MeshData {
+            PrimitiveCount = 2,
+        };
 
         meshData.SetPositionBinding([
             new PositionBinding(new Vector3(-1,  1, 0)),
@@ -52,9 +52,9 @@ public class CoreModels {
     }
 
     private (Mesh solid, Mesh wire) CreateCubes() {
-        Ms2MeshData meshData = new Ms2MeshData();
-
-        meshData.PrimitiveCount = 2;
+        Ms2MeshData meshData = new Ms2MeshData {
+            PrimitiveCount = 2,
+        };
 
         PositionBinding[] cubeVertices = [
             new PositionBinding(new Vector3(-0.5f,  0.5f, 0)),

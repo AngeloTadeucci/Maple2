@@ -304,10 +304,11 @@ public class ItemCollectionTest {
         var item3 = CreateItem(1000, rarity: 2, amount: 5);
 
         // Create collection with gaps
-        var collection = new ItemCollection(10);
-        collection[2] = item1; // Insert at specific slots to create gaps
-        collection[5] = item2;
-        collection[8] = item3;
+        var collection = new ItemCollection(10) {
+            [2] = item1, // Insert at specific slots to create gaps
+            [5] = item2,
+            [8] = item3,
+        };
 
         // Sort the inventory with gaps
         collection.Sort();

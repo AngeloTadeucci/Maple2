@@ -254,16 +254,15 @@ public partial class GameStorage {
                 },
                 Unlock = Context.CharacterUnlock.Find(characterId),
                 Home = home,
+                Character = {
+                    GuildId = guild.Item1,
+                    GuildName = guild.Item2,
+                    ClubIds = clubs.Select(club => club.Item1).ToList(),
+                    AchievementInfo = GetAchievementInfo(accountId, characterId),
+                    MarriageInfo = GetMarriageInfo(characterId),
+                    PremiumTime = account.PremiumTime,
+                },
             };
-
-            player.Character.GuildId = guild.Item1;
-            player.Character.GuildName = guild.Item2;
-
-            player.Character.ClubIds = clubs.Select(club => club.Item1).ToList();
-
-            player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
-            player.Character.MarriageInfo = GetMarriageInfo(characterId);
-            player.Character.PremiumTime = account.PremiumTime;
 
             return player;
         }

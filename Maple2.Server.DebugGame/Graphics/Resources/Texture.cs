@@ -23,8 +23,11 @@ public class Texture {
 
         path = Path.GetFullPath(Path.Combine(TextureRootPath, path));
 
-        DecoderOptions decoderOptions = new DecoderOptions();
-        decoderOptions.Configuration.PreferContiguousImageBuffers = true;
+        DecoderOptions decoderOptions = new DecoderOptions {
+            Configuration = {
+                PreferContiguousImageBuffers = true,
+            },
+        };
 
         Image<Bgra32> image = Image.Load<Bgra32>(decoderOptions, path);
 
