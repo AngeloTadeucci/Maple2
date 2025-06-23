@@ -581,6 +581,5 @@ message LockRequest {
 }
 
 message LockResponse {
-  bool success = 1;
-  string error = 2;
+  string error = 1;
 }

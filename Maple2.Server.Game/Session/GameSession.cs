@@ -702,7 +702,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public void AcquireLock(long accountId, int maxRetries = 3) {
+    private void AcquireLock(long accountId, int maxRetries = 3) {
         int retryCount = 0;
         const int backoffMs = 500;
 
@@ -711,11 +711,9 @@ public sealed partial class GameSession : Core.Network.Session {
                 AccountId = accountId,
             });
 
-            if (response.Success) {
-                Logger.Information("Acquired lock for account {AccountId}", accountId);
+            if (string.IsNullOrEmpty(response.Error)) {
                 return;
             }
-            Logger.Information("Failed to acquire lock for account {AccountId}, retrying... (Attempt {RetryCount}/{MaxRetries})", accountId, retryCount + 1, maxRetries);
 
             retryCount++;
             Thread.Sleep(backoffMs);
@@ -729,9 +727,7 @@ public sealed partial class GameSession : Core.Network.Session {
             LockResponse response = World.ReleaseLock(new LockRequest {
                 AccountId = accountId,
             });
-            if (response.Success) {
-                Logger.Information("Released lock for account {AccountId}", accountId);
-            } else {
+            if (!string.IsNullOrEmpty(response.Error)) {
                 Logger.Warning("Failed to release lock for account {AccountId}: {ErrorMessage}", accountId, response.Error);
             }
         } catch (RpcException ex) {

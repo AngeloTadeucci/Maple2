@@ -20,12 +20,9 @@ public partial class WorldService {
         // Try to acquire lock
         bool acquired = Locks.TryAdd(request.AccountId, now);
         if (acquired) {
-            return Task.FromResult(new LockResponse {
-                Success = true,
-            });
+            return Task.FromResult(new LockResponse());
         }
         return Task.FromResult(new LockResponse {
-            Success = false,
             Error = "Lock already held.",
         });
     }
@@ -33,12 +30,9 @@ public partial class WorldService {
     public override Task<LockResponse> ReleaseLock(LockRequest request, ServerCallContext context) {
         bool removed = Locks.TryRemove(request.AccountId, out _);
         if (removed) {
-            return Task.FromResult(new LockResponse {
-                Success = true,
-            });
+            return Task.FromResult(new LockResponse());
         }
         return Task.FromResult(new LockResponse {
-            Success = false,
             Error = "Lock not held.",
         });
     }
