@@ -221,7 +221,7 @@ public class UgcHandler : FieldPacketHandler {
             Author = session.PlayerName,
             CharacterId = session.CharacterId,
             CreationTime = DateTime.Now.ToEpochSeconds(),
-            Name = $"AD Banner {bannerId}"
+            Name = $"AD Banner {bannerId}",
         };
 
         foreach (BannerSlot slot in slots) {

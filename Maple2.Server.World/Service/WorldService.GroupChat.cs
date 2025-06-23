@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.GroupChat;
@@ -19,7 +16,7 @@ public partial class WorldService {
 
         return Task.FromResult(new GroupChatInfoResponse {
             Infos = {
-                groupChats
+                groupChats,
             },
         });
     }
@@ -81,7 +78,7 @@ public partial class WorldService {
 
         GroupChatError error = manager.Invite(requestorId, info);
         return new GroupChatResponse {
-            Error = (int) error
+            Error = (int) error,
         };
     }
 

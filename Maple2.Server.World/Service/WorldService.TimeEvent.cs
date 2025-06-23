@@ -35,7 +35,7 @@ public partial class WorldService {
                 RoomId = roomId,
                 MapId = fieldMetadata.MapId,
                 PortalId = fieldMetadata.PortalId,
-            }
+            },
         };
     }
 
@@ -48,7 +48,7 @@ public partial class WorldService {
             GlobalPortalInfo = new GlobalPortalInfo {
                 MetadataId = manager.Portal.MetadataId,
                 EventId = manager.Portal.Id,
-            }
+            },
         };
     }
 }

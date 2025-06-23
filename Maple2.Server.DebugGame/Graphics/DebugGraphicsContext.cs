@@ -10,14 +10,13 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Maple2.Server.DebugGame.Graphics.Assets;
-using ImGuiNET;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.DebugGame.Graphics {
     public class DebugGraphicsContext : IGraphicsContext {
         public static readonly bool ForceDXVK = false;
         public static readonly Vector2D<int> DefaultWindowSize = new Vector2D<int>(800, 600);
-        public static readonly float[] WindowClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+        public static readonly float[] WindowClearColor = [0.0f, 0.0f, 0.0f, 1.0f];
         public static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
 
         public readonly Dictionary<FieldManager, DebugFieldRenderer> Fields;
@@ -42,7 +41,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
         private string resourceRootPath = "";
 
-        private List<DebugFieldRenderer> fieldRenderers = new();
+        private List<DebugFieldRenderer> fieldRenderers = [];
         private Mutex fieldRendererMutex = new();
         public DebugFieldRenderer[] FieldRenderers {
             get {
@@ -54,10 +53,10 @@ namespace Maple2.Server.DebugGame.Graphics {
             }
         }
         public IReadOnlyList<DebugFieldWindow> FieldWindows { get => fieldWindows; }
-        private List<DebugFieldWindow> fieldWindows = new();
-        private HashSet<FieldManager> updatedFields = new();
+        private List<DebugFieldWindow> fieldWindows = [];
+        private HashSet<FieldManager> updatedFields = [];
         private int deltaIndex = 0;
-        private List<int> deltaTimes = new();
+        private List<int> deltaTimes = [];
         public int DeltaAverage { get; private set; }
         public int DeltaMin { get; private set; }
         public int DeltaMax { get; private set; }
@@ -225,7 +224,7 @@ namespace Maple2.Server.DebugGame.Graphics {
                     SwapEffect = SwapEffect.FlipDiscard, // don't keep old output from previous frames
                     SampleDesc = new SampleDesc(
                         count: 1, // 1 buffer sample per pixel (AA needs more)
-                        quality: 0) // no antialiasing
+                        quality: 0), // no antialiasing
                 };
 
                 // Factory1 adds DXGI 1.1 support & Factory2 adds DXGI 1.2 support
@@ -255,7 +254,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             VertexShader.Load("screenVertex.hlsl", "vs_main");
             PixelShader.Load("screenPixel.hlsl", "ps_main");
 
-            this.CoreModels = new CoreModels(this);
+            CoreModels = new CoreModels(this);
 
             Logger.Information("Graphics context initialized");
 

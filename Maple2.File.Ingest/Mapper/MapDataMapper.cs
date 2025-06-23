@@ -4,7 +4,6 @@ using Maple2.File.Flat.maplestory2library;
 using Maple2.File.Flat.physxmodellibrary;
 using Maple2.File.Flat.standardmodellibrary;
 using Maple2.File.Ingest.Helpers;
-using Maple2.File.IO;
 using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Common;
 using Maple2.Model.Game.Field;

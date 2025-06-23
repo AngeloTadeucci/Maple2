@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Model.Game;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
 

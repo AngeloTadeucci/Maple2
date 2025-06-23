@@ -11,7 +11,6 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
-using Maple2.Server.Global.Service;
 using Maple2.Server.World.Service;
 using static Maple2.Model.Error.CharacterCreateError;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
@@ -153,7 +152,7 @@ public class LoginSession : Core.Network.Session {
         Send(CharacterListPacket.SetMax(account.MaxCharacters, Constant.ServerMaxCharacters));
         Send(CharacterListPacket.AppendEntry(account, character,
             new Dictionary<ItemGroup, List<Item>> {
-                { ItemGroup.Outfit, outfits }
+                { ItemGroup.Outfit, outfits },
             }));
     }
 

@@ -298,7 +298,7 @@ public static class MapperExtensions {
             Effects: change.changeSkillCheckEffectID
                 .Zip(change.changeSkillCheckEffectLevel, (effectId, effectLevel) => new {
                     effectId,
-                    effectLevel
+                    effectLevel,
                 })
                 .Zip(change.changeSkillCheckEffectOverlapCount, (effect, overlapCount) => new SkillMetadataChange.Effect(effect.effectId, effect.effectLevel, overlapCount))
                 .ToArray(),

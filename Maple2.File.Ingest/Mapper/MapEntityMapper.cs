@@ -2,7 +2,6 @@
 using Maple2.File.Flat;
 using Maple2.File.Flat.maplestory2library;
 using Maple2.File.Flat.standardmodellibrary;
-using Maple2.File.IO;
 using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -68,14 +67,14 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                 case IPortal portal:
                     if (!FeatureEnabled(portal.feature) || !HasLocale(portal.locale)) continue;
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.RandomDestRadius, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable)
+                        Block = new Portal(portal.PortalID, portal.TargetFieldSN, portal.TargetPortalID, (PortalType) portal.PortalType, (PortalActionType) portal.ActionType, portal.Position, portal.Rotation, portal.PortalDimension, portal.frontOffset, portal.RandomDestRadius, portal.IsVisible, portal.MinimapIconVisible, portal.PortalEnable),
                     };
                     continue;
                 case ISpawnPoint spawn:
                     switch (spawn) {
                         case ISpawnPointPC pcSpawn:
                             yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                Block = new SpawnPointPC(pcSpawn.SpawnPointID, pcSpawn.Position, pcSpawn.Rotation, pcSpawn.IsVisible, pcSpawn.Enable)
+                                Block = new SpawnPointPC(pcSpawn.SpawnPointID, pcSpawn.Position, pcSpawn.Rotation, pcSpawn.IsVisible, pcSpawn.Enable),
                             };
                             continue;
                         case ISpawnPointNPC npcSpawn:
@@ -102,26 +101,26 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             switch (npcSpawn) {
                                 case IEventSpawnPointNPC eventNpcSpawn:
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new EventSpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation)
+                                        Block = new EventSpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation),
                                     };
                                     continue;
                                 default:
                                     string? patrolData = npcSpawn.PatrolData != "00000000-0000-0000-0000-000000000000" ? npcSpawn.PatrolData.Replace("-", string.Empty) : null;
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new SpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, patrolData)
+                                        Block = new SpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, patrolData),
                                     };
                                     continue;
                             }
                         case IEventSpawnPointItem itemSpawn:
                             yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                Block = new EventSpawnPointItem(itemSpawn.SpawnPointID, itemSpawn.Position, itemSpawn.Rotation, itemSpawn.LifeTime, int.TryParse(itemSpawn.individualDropBoxId, out int individualDropBoxId) ? individualDropBoxId : 0, int.TryParse(itemSpawn.globalDropBoxId, out int globalDropBoxId) ? globalDropBoxId : 0, (int) itemSpawn.globalDropLevel, itemSpawn.IsVisible)
+                                Block = new EventSpawnPointItem(itemSpawn.SpawnPointID, itemSpawn.Position, itemSpawn.Rotation, itemSpawn.LifeTime, int.TryParse(itemSpawn.individualDropBoxId, out int individualDropBoxId) ? individualDropBoxId : 0, int.TryParse(itemSpawn.globalDropBoxId, out int globalDropBoxId) ? globalDropBoxId : 0, (int) itemSpawn.globalDropLevel, itemSpawn.IsVisible),
                             };
                             continue;
                     }
                     continue;
                 case IMS2RegionSpawnBase spawn:
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new Ms2RegionSpawn(spawn.SpawnPointID, spawn.UseRotAsSpawnDir, spawn.Position, spawn.Rotation)
+                        Block = new Ms2RegionSpawn(spawn.SpawnPointID, spawn.UseRotAsSpawnDir, spawn.Position, spawn.Rotation),
                     };
                     continue;
                 case IMS2TriggerObject triggerObject:
@@ -132,7 +131,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     continue;
                 case IMS2RegionSkill skill:
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new Ms2RegionSkill(skill.skillID, (short) skill.skillLevel, skill.Interval, skill.Position, skill.Rotation)
+                        Block = new Ms2RegionSkill(skill.skillID, (short) skill.skillLevel, skill.Interval, skill.Position, skill.Rotation),
                     };
                     continue;
                 // case IMS2Breakable breakable: {
@@ -166,7 +165,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     continue;
                 case IMS2LiftableTargetBox liftableTargetBox:
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new LiftableTargetBox(liftableTargetBox.Position, liftableTargetBox.Rotation, liftableTargetBox.isForceFinish, liftableTargetBox.liftableTarget)
+                        Block = new LiftableTargetBox(liftableTargetBox.Position, liftableTargetBox.Rotation, liftableTargetBox.isForceFinish, liftableTargetBox.liftableTarget),
                     };
                     continue;
                 case IMS2MapProperties mapProperties:
@@ -176,11 +175,11 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                 int[] itemIds = physXProp.ObjectWeaponItemCode.Split(',').Select(int.Parse).ToArray();
                                 if (physXProp.ObjectWeaponSpawnNpcCode == 0) {
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new ObjectWeapon(itemIds, (int) physXProp.ObjectWeaponRespawnTick, physXProp.ObjectWeaponActiveDistance, physXProp.Position, physXProp.Rotation)
+                                        Block = new ObjectWeapon(itemIds, (int) physXProp.ObjectWeaponRespawnTick, physXProp.ObjectWeaponActiveDistance, physXProp.Position, physXProp.Rotation),
                                     };
                                 } else {
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new ObjectWeapon(itemIds, (int) physXProp.ObjectWeaponRespawnTick, physXProp.ObjectWeaponActiveDistance, physXProp.Position, physXProp.Rotation, (int) physXProp.ObjectWeaponSpawnNpcCode, (int) physXProp.ObjectWeaponSpawnNpcCount, physXProp.ObjectWeaponSpawnNpcRate, (int) physXProp.ObjectWeaponSpawnNpcLifeTick)
+                                        Block = new ObjectWeapon(itemIds, (int) physXProp.ObjectWeaponRespawnTick, physXProp.ObjectWeaponActiveDistance, physXProp.Position, physXProp.Rotation, (int) physXProp.ObjectWeaponSpawnNpcCode, (int) physXProp.ObjectWeaponSpawnNpcCount, physXProp.ObjectWeaponSpawnNpcRate, (int) physXProp.ObjectWeaponSpawnNpcLifeTick),
                                     };
                                 }
                                 continue;
@@ -189,12 +188,12 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             switch (physXProp) {
                                 case IMS2Liftable liftable:
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new Liftable((int) liftable.ItemID, liftable.ItemStackCount, liftable.ItemLifeTime, liftable.LiftableRegenCheckTime, liftable.LiftableFinishTime, liftable.MaskQuestID, liftable.MaskQuestState, liftable.EffectQuestID, liftable.EffectQuestState, liftable.IsReactEffect, liftable.Position, liftable.Rotation)
+                                        Block = new Liftable((int) liftable.ItemID, liftable.ItemStackCount, liftable.ItemLifeTime, liftable.LiftableRegenCheckTime, liftable.LiftableFinishTime, liftable.MaskQuestID, liftable.MaskQuestState, liftable.EffectQuestID, liftable.EffectQuestState, liftable.IsReactEffect, liftable.Position, liftable.Rotation),
                                     };
                                     continue;
                                 case IMS2TaxiStation taxiStation:
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new TaxiStation(taxiStation.Position, taxiStation.Rotation)
+                                        Block = new TaxiStation(taxiStation.Position, taxiStation.Rotation),
                                     };
                                     continue;
                                     // Intentionally do not parse IMS2Vibrate, there are 4M entries.
@@ -208,14 +207,14 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             case IMS2BreakableActor breakable:
                                 int.TryParse(breakable.additionGlobalDropBoxId, out int globalDropBoxId);
                                 yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, globalDropBoxId, breakable.Position, breakable.Rotation)
+                                    Block = new BreakableActor(actor.IsVisible, (int) breakable.TriggerBreakableID, breakable.hideTimer, breakable.resetTimer, globalDropBoxId, breakable.Position, breakable.Rotation),
                                 };
                                 continue;
                         }
                         continue;
                     }
                 case IMS2PatrolData patrolData:
-                    List<MS2WayPoint> wayPoints = new();
+                    List<MS2WayPoint> wayPoints = [];
                     foreach (KeyValuePair<string, string> wayPointDict in patrolData.WayPoints) {
                         IMS2WayPoint? wayPoint = ms2WayPoints.GetValueOrDefault(wayPointDict.Value.Replace("-", string.Empty));
                         if (wayPoint is null) {
@@ -230,7 +229,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
 
 
                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                        Block = new MS2PatrolData(patrolData.EntityId, patrolData.EntityName, patrolData.IsAirWayPoint, (int) patrolData.PatrolSpeed, patrolData.IsLoop, wayPoints)
+                        Block = new MS2PatrolData(patrolData.EntityId, patrolData.EntityName, patrolData.IsAirWayPoint, (int) patrolData.PatrolSpeed, patrolData.IsLoop, wayPoints),
                     };
                     continue;
             }
@@ -301,7 +300,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
         return parser.Parallel().SelectMany(map => {
             string xblock = map.xblock.ToLower();
             if (!xBlocks.Contains(xblock)) {
-                return Enumerable.Empty<MapEntity>();
+                return [];
             }
 
             return ParseMap(xblock, map.entities);

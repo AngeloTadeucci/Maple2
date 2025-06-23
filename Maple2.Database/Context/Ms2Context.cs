@@ -74,9 +74,9 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<Achievement>(Maple2.Database.Model.Achievement.Configure);
         modelBuilder.Entity<Quest>(Maple2.Database.Model.Quest.Configure);
         modelBuilder.Entity<Medal>(Maple2.Database.Model.Medal.Configure);
-        modelBuilder.Entity<BannerSlot>(Maple2.Database.Model.BannerSlot.Configure);
+        modelBuilder.Entity<BannerSlot>(BannerSlot.Configure);
         modelBuilder.Entity<HomeLayout>(Maple2.Database.Model.HomeLayout.Configure);
-        modelBuilder.Entity<HomeLayoutCube>(Maple2.Database.Model.HomeLayoutCube.Configure);
+        modelBuilder.Entity<HomeLayoutCube>(HomeLayoutCube.Configure);
         modelBuilder.Entity<Marriage>(Maple2.Database.Model.Marriage.Configure);
         modelBuilder.Entity<WeddingHall>(Maple2.Database.Model.WeddingHall.Configure);
         modelBuilder.Entity<Nurturing>(Maple2.Database.Model.Nurturing.Configure);
@@ -91,7 +91,7 @@ public sealed class Ms2Context(DbContextOptions options) : DbContext(options) {
         modelBuilder.Entity<GameEventUserValue>(Maple2.Database.Model.GameEventUserValue.Configure);
 
         modelBuilder.Entity<ServerInfo>(Maple2.Database.Model.ServerInfo.Configure);
-        modelBuilder.Entity<PlayerReport>(Maple2.Database.Model.PlayerReport.Configure);
+        modelBuilder.Entity<PlayerReport>(PlayerReport.Configure);
 
         modelBuilder.Entity<DungeonRecord>(Maple2.Database.Model.DungeonRecord.Configure);
     }

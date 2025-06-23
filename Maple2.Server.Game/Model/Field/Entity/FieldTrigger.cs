@@ -1,10 +1,8 @@
-﻿using System.Xml;
-using Maple2.Model.Metadata;
+﻿using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Trigger;
 using Maple2.Server.Game.Trigger.Helpers;
-using Maple2.Tools;
 using Serilog;
 
 namespace Maple2.Server.Game.Model;

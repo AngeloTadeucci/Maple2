@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using Maple2.Database.Model.Ranking;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
@@ -16,9 +13,7 @@ using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Serilog;
-using Serilog.Core;
 using Enum = System.Enum;
 
 namespace Maple2.Server.Web.Controllers;

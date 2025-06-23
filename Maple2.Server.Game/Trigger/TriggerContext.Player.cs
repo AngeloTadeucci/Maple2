@@ -3,7 +3,6 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 
@@ -300,7 +299,7 @@ public partial class TriggerContext {
 
     private IEnumerable<FieldPlayer> PlayersNotInBox(int boxId) {
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
-            return Array.Empty<FieldPlayer>();
+            return [];
         }
 
         return Field.Players.Values.Where(player => !box.Contains(player.Position));

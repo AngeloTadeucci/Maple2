@@ -28,8 +28,8 @@ public class GameConsole : IConsole {
 
         public GameOutputStreamWriter(GameSession session) {
             this.session = session;
-            this.pending = new StringBuilder();
-            this.joinNewline = false;
+            pending = new StringBuilder();
+            joinNewline = false;
         }
 
         public void Write(string? value) {

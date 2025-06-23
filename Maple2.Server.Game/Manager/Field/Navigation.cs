@@ -6,7 +6,6 @@ using DotRecast.Recast.Toolset;
 using DotRecast.Recast.Toolset.Builder;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
-using Maple2.Tools;
 using Maple2.Tools.DotRecast;
 using Serilog;
 
@@ -63,7 +62,7 @@ public sealed class Navigation : IDisposable {
             maxSpeed = agentMaxSpeed,
             updateFlags = crowdAgentConfig.GetUpdateFlags(),
             obstacleAvoidanceType = crowdAgentConfig.obstacleAvoidanceType,
-            separationWeight = crowdAgentConfig.separationWeight
+            separationWeight = crowdAgentConfig.separationWeight,
         };
         ap.collisionQueryRange = ap.radius * 12.0f;
         ap.pathOptimizationRange = ap.radius * 30.0f;

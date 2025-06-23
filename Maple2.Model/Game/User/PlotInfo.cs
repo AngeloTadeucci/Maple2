@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Maple2.Model.Common;
+﻿using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 

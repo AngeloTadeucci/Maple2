@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record PremiumClubTable(
     IReadOnlyDictionary<int, PremiumClubTable.Buff> Buffs,
@@ -23,5 +21,5 @@ public record PremiumClubTable(
         long EndDate,
         long Period,
         long Price,
-        IList<PremiumClubTable.Item> BonusItems);
+        IList<Item> BonusItems);
 }

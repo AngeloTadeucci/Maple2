@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Database.Extensions;
+﻿namespace Maple2.Database.Extensions;
 
 public static class DateTimeExtensions {
     public static long ToEpochSeconds(this DateTime dateTime) {

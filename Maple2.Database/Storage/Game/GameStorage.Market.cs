@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -61,7 +58,7 @@ public partial class GameStorage {
             }
 
             if (sold) {
-                Model.SoldMesoListing soldListing = listing;
+                SoldMesoListing soldListing = listing;
                 Context.MesoMarket.Remove(listing);
                 Context.MesoMarketSold.Add(soldListing);
                 return Context.TrySaveChanges();

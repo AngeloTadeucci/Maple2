@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Game;
+﻿namespace Maple2.Model.Game;
 
 public class SkillBook {
     public int MaxSkillTabs;

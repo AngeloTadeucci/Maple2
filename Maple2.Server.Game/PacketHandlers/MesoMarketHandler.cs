@@ -192,10 +192,10 @@ public class MesoMarketHandler : FieldPacketHandler {
         var buyerMail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
-            },
+            ],
             Meso = listing.Amount,
         };
         buyerMail.SetSenderName(StringCode.s_mesoMarket_mail_to_sender);
@@ -206,13 +206,13 @@ public class MesoMarketHandler : FieldPacketHandler {
         var sellerMail = new Mail {
             ReceiverId = listing.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
                 ("money", $"{meretFee}"),
                 ("money", $"{(int) (Constant.MesoMarketTaxRate * 100)}"),
                 ("money", $"{listing.Price - meretFee}"),
-            },
+            ],
             Meret = listing.Price - meretFee,
         };
         sellerMail.SetSenderName(StringCode.s_mesoMarket_mail_to_sender);

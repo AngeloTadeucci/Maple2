@@ -6,7 +6,6 @@ using Grpc.Core;
 using Grpc.Health.V1;
 using Grpc.Net.Client;
 using Maple2.Database.Extensions;
-using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Server.Core.Constants;
 using Serilog;

@@ -39,7 +39,7 @@ public enum SockHint {
     Decodef,
     Decode8,
     DecodeStr,
-    DecodeStrA
+    DecodeStrA,
 }
 public readonly struct SockHintInfo {
     private readonly SockHint hint;
@@ -99,7 +99,7 @@ public static class SockHintExtensions {
             SockHint.Decode8 => "pWriter.WriteLong();",
             SockHint.DecodeStr => "pWriter.WriteUnicodeString(\"\");",
             SockHint.DecodeStrA => "pWriter.WriteString(\"\");",
-            _ => throw new ArgumentException($"Unexpected hint: {hint}")
+            _ => throw new ArgumentException($"Unexpected hint: {hint}"),
         };
     }
 
@@ -112,7 +112,7 @@ public static class SockHintExtensions {
             "8" => SockHint.Decode8.ToString(),
             "s" => SockHint.DecodeStr.ToString(),
             "sa" => SockHint.DecodeStrA.ToString(),
-            _ => sockHint
+            _ => sockHint,
         };
         bool result = Enum.TryParse(sockHint, out SockHint hint);
         Debug.Assert(result, $"Failed to parse SockHint:{sockHint}");

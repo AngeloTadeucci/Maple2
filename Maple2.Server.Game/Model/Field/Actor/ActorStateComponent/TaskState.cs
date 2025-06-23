@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Maple2.Server.Game.Model.Enum;
+﻿using Maple2.Server.Game.Model.Enum;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 
@@ -97,7 +96,7 @@ public class TaskState {
         public virtual bool CancelOnInterrupt { get; }
 
         protected NpcTask(TaskState queue, NpcTaskPriority priority) {
-            this.Queue = queue;
+            Queue = queue;
             Priority = priority;
 
             Status = queue.QueueTask(this);

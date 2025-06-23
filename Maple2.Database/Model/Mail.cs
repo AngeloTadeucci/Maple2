@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Enum;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +18,8 @@ internal class Mail {
     public string WeddingInvite { get; set; } = string.Empty;
 
     // List is used here to preserve order
-    public IList<string> TitleArgs { get; set; } = Array.Empty<string>();
-    public IList<string> ContentArgs { get; set; } = Array.Empty<string>();
+    public IList<string> TitleArgs { get; set; } = [];
+    public IList<string> ContentArgs { get; set; } = [];
 
     public required MailCurrency Currency { get; set; }
 

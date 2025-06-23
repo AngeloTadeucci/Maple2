@@ -21,28 +21,28 @@ public class CoreModels {
     }
 
     private Mesh CreateQuad() {
-        Ms2MeshData meshData = new Ms2MeshData();
+        Ms2MeshData meshData = new Ms2MeshData {
+            PrimitiveCount = 2,
+        };
 
-        meshData.PrimitiveCount = 2;
-
-        meshData.SetPositionBinding(new Data.VertexBuffer.PositionBinding[] {
+        meshData.SetPositionBinding([
             new PositionBinding(new Vector3(-1,  1, 0)),
             new PositionBinding(new Vector3( 1,  1, 0)),
             new PositionBinding(new Vector3(-1, -1, 0)),
-            new PositionBinding(new Vector3( 1, -1, 0))
-        });
+            new PositionBinding(new Vector3( 1, -1, 0)),
+        ]);
 
-        meshData.SetAttributeBinding(new Data.VertexBuffer.AttributeBinding[] {
+        meshData.SetAttributeBinding([
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(1, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 1)),
-            new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(1, 1))
-        });
+            new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(1, 1)),
+        ]);
 
-        meshData.SetIndexBuffer(new uint[] {
+        meshData.SetIndexBuffer([
             0, 1, 3,
-            0, 3, 2
-        });
+            0, 3, 2,
+        ]);
 
         Mesh mesh = new Mesh(Context);
 
@@ -52,11 +52,11 @@ public class CoreModels {
     }
 
     private (Mesh solid, Mesh wire) CreateCubes() {
-        Ms2MeshData meshData = new Ms2MeshData();
+        Ms2MeshData meshData = new Ms2MeshData {
+            PrimitiveCount = 2,
+        };
 
-        meshData.PrimitiveCount = 2;
-
-        PositionBinding[] cubeVertices = {
+        PositionBinding[] cubeVertices = [
             new PositionBinding(new Vector3(-0.5f,  0.5f, 0)),
             new PositionBinding(new Vector3( 0.5f,  0.5f, 0)),
             new PositionBinding(new Vector3(-0.5f, -0.5f, 0)),
@@ -64,10 +64,10 @@ public class CoreModels {
             new PositionBinding(new Vector3(-0.5f,  0.5f, 1)),
             new PositionBinding(new Vector3( 0.5f,  0.5f, 1)),
             new PositionBinding(new Vector3(-0.5f, -0.5f, 1)),
-            new PositionBinding(new Vector3( 0.5f, -0.5f, 1))
-        };
+            new PositionBinding(new Vector3( 0.5f, -0.5f, 1)),
+        ];
 
-        uint[] cubeSolidIndices = {
+        uint[] cubeSolidIndices = [
             0, 1, 3,
             0, 3, 2,
             4, 7, 5,
@@ -79,12 +79,12 @@ public class CoreModels {
             3, 7, 6,
             3, 6, 2,
             0, 2, 6,
-            0, 6, 4
-        };
+            0, 6, 4,
+        ];
 
         meshData.SetPositionBinding(cubeVertices);
 
-        meshData.SetAttributeBinding(new Data.VertexBuffer.AttributeBinding[] {
+        meshData.SetAttributeBinding([
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
@@ -92,12 +92,12 @@ public class CoreModels {
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
             new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
-            new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0))
-        });
+            new AttributeBinding(new Vector3(0, 0, -1), 0xFFFFFFFF, new Vector2(0, 0)),
+        ]);
 
         meshData.IsTriangleMesh = false;
 
-        meshData.SetIndexBuffer(new uint[] {
+        meshData.SetIndexBuffer([
             0, 1,
             1, 3,
             3, 2,
@@ -109,15 +109,15 @@ public class CoreModels {
             4, 5,
             5, 7,
             7, 6,
-            6, 4
-        });
+            6, 4,
+        ]);
 
         Mesh cubeWireMesh = new Mesh(Context);
 
         cubeWireMesh.UploadData(meshData);
 
-        List<PositionBinding> positionBinding = new List<PositionBinding>();
-        List<AttributeBinding> attributeBinding = new List<AttributeBinding>();
+        List<PositionBinding> positionBinding = [];
+        List<AttributeBinding> attributeBinding = [];
 
         for (int i = 0; i < cubeSolidIndices.Length; i += 3) {
             PositionBinding vertA = cubeVertices[i + 0];

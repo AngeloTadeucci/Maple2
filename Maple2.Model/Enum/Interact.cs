@@ -69,5 +69,5 @@ public enum InteractCubeControlType {
     InstallNPC,
     Portal,
     SpawnPoint,
-    PVP
+    PVP,
 }

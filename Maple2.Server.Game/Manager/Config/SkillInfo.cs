@@ -232,7 +232,7 @@ public class SkillInfo : IByteSerializable {
             Level = baseLevel;
         }
 
-        public Skill(int id, short baseLevel, short maxLevel) : this(id, Array.Empty<Skill>(), baseLevel, maxLevel) { }
+        public Skill(int id, short baseLevel, short maxLevel) : this(id, [], baseLevel, maxLevel) { }
 
         public void Reset() {
             Level = BaseLevel;

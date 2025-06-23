@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Model.Enum;
+﻿namespace Maple2.Model.Enum;
 
 public enum MeretMarketSection {
     All = 0,

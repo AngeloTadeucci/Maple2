@@ -1,8 +1,6 @@
 ﻿using Maple2.File.IO.Nif;
 using Maple2.File.Parser;
-using Maple2.Model.Common;
 using Maple2.Model.Metadata;
-using Maple2.Tools.Extensions;
 using Maple2.Tools.VectorMath;
 using System.Numerics;
 

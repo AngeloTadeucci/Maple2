@@ -49,7 +49,7 @@ public class AnimationRecord {
         // mobs
         public TickPair(long server) {
             this.server = server;
-            this.client = server;
+            client = server;
         }
 
         // players

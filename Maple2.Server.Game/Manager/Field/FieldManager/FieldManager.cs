@@ -90,7 +90,7 @@ public partial class FieldManager : IField {
         Metadata = metadata;
         MapId = metadata.Id;
         this.ugcMetadata = ugcMetadata;
-        this.Entities = entities;
+        Entities = entities;
         TriggerObjects = new TriggerCollection(entities);
 
         Scheduler = new EventQueue();

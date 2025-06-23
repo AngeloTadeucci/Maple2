@@ -131,7 +131,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                 Interacts = interacts,
                 TriggerModels = triggerModels,
                 Trigger = new TriggerStorage(triggers),
-                Patrols = patrols
+                Patrols = patrols,
             };
             Cache.AddReplace(xblock, mapEntity);
         }

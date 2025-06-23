@@ -12,7 +12,7 @@ public partial class MovementState {
         Direction,
         MoveTo,
         ToTarget,
-        FromTarget
+        FromTarget,
     }
 
     private Vector3 walkDirection;
@@ -64,7 +64,7 @@ public partial class MovementState {
             WalkType.MoveTo => true,
             WalkType.FromTarget => true,
             WalkType.ToTarget => true,
-            _ => false
+            _ => false,
         };
     }
 

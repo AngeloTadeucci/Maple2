@@ -137,7 +137,7 @@ public class ItemCollection : IEnumerable<Item> {
     /// <returns>A list of items which were stacked on and their added amounts.</returns>
     public IList<(Item, int Added)> Add(Item add, bool stack = false) {
         if (OpenSlots <= 0 && (!stack || GetStackResult(add) > 0)) {
-            return Array.Empty<(Item, int)>();
+            return [];
         }
 
         // Prefer item slot if specified
@@ -160,7 +160,7 @@ public class ItemCollection : IEnumerable<Item> {
             return result;
         }
 
-        return Array.Empty<(Item, int)>();
+        return [];
     }
 
     public Item? Get(long uid) {

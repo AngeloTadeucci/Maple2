@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record TimeEventTable(IReadOnlyDictionary<int, GlobalPortalMetadata> GlobalPortal) : ServerTable;
 

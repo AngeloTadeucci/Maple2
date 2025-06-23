@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System;
 using System.Globalization;
 using Maple2.Server.Game.Trigger.Helpers;
 

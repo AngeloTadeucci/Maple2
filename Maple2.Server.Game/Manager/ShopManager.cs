@@ -572,9 +572,9 @@ public sealed class ShopManager {
                 break;
             case ShopCurrencyType.Item:
                 var ingredient = new ItemComponent(cost.ItemId, -1, price, ItemTag.None);
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] {
-                        ingredient
-                    })) {
+                if (!session.Item.Inventory.ConsumeItemComponents([
+                        ingredient,
+                    ])) {
                     session.Send(ShopPacket.Error(ShopError.s_err_lack_payment_item, 0, cost.ItemId));
                     return false;
                 }

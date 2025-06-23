@@ -18,7 +18,7 @@ public class PremiumClubHandler : FieldPacketHandler {
         LoadClaimedItems = 1,
         ClaimItem = 2,
         LoadPackages = 3,
-        PurchasePackage = 4
+        PurchasePackage = 4,
     }
 
     #region Autofac Autowired

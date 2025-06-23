@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Xml;
 using Serilog;
 
 namespace Maple2.Server.Game.Trigger.Helpers;

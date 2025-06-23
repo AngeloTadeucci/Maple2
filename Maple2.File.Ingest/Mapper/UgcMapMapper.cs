@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Maple2.File.IO;
+﻿using Maple2.File.IO;
 using Maple2.File.Parser;
 using Maple2.File.Parser.Xml;
 using Maple2.Model.Common;

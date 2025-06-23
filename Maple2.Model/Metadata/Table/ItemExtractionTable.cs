@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record ItemExtractionTable(IReadOnlyDictionary<int, ItemExtractionTable.Entry> Entries) : Table {
     public record Entry(

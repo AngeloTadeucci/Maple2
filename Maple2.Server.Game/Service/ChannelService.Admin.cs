@@ -52,7 +52,7 @@ public partial class ChannelService {
             StartPartTime: TimeSpan.Zero,
             EndPartTime: TimeSpan.Zero,
             ActiveDays: [],
-            Data: new Maple2.Model.Metadata.StringBoard(addStringBoard.Message, 0),
+            Data: new StringBoard(addStringBoard.Message, 0),
             Value1: string.Empty,
             Value2: string.Empty,
             Value3: string.Empty,

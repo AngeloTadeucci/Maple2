@@ -12,7 +12,7 @@ internal class ScheduledEvent {
 
     public ScheduledEvent(Action task, long executionTime = 0, int interval = -1, bool strict = false) {
         this.task = task;
-        this.ExecutionTime = executionTime;
+        ExecutionTime = executionTime;
         this.interval = interval;
         this.strict = strict;
     }

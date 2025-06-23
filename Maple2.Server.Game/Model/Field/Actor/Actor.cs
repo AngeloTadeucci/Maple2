@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Tools.VectorMath;
@@ -11,7 +10,6 @@ using Maple2.Server.Game.Packets;
 using Maple2.Tools.Collision;
 using Serilog;
 using Maple2.Database.Storage;
-using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Util;
@@ -140,17 +138,17 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
                 case DamageType.Critical:
                     caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, skillId: damage.SkillId);
                     caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackCrit, skillId: damage.SkillId);
-                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnAttacked, skillId: damage.SkillId);
+                    Buffs.TriggerEvent(this, this, this, EventConditionType.OnAttacked, skillId: damage.SkillId);
                     break;
                 case DamageType.Normal:
                     caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnOwnerAttackHit, skillId: damage.SkillId);
                     break;
                 case DamageType.Block:
-                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnBlock, skillId: damage.SkillId);
+                    Buffs.TriggerEvent(this, this, this, EventConditionType.OnBlock, skillId: damage.SkillId);
                     break;
                 case DamageType.Miss:
                     caster.Buffs.TriggerEvent(caster, caster, this, EventConditionType.OnAttackMiss, skillId: damage.SkillId);
-                    this.Buffs.TriggerEvent(this, this, this, EventConditionType.OnEvade, skillId: damage.SkillId);
+                    Buffs.TriggerEvent(this, this, this, EventConditionType.OnEvade, skillId: damage.SkillId);
                     break;
             }
         }

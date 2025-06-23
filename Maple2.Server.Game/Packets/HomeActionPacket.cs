@@ -34,7 +34,7 @@ public static class HomeActionPacket {
         Add = 0,
         Remove = 1,
         Update = 2,
-        Hit = 3
+        Hit = 3,
     }
 
     public static ByteWriter SendCubePortalSettings(PlotCube cube, List<string> otherPortalsNames) {

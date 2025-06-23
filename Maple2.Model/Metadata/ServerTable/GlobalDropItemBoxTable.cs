@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;

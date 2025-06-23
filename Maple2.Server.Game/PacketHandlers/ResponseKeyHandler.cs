@@ -6,8 +6,9 @@ using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
-using static Maple2.Model.Error.MigrationError;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
+// ReSharper disable once RedundantUsingDirective
+using static Maple2.Model.Error.MigrationError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 

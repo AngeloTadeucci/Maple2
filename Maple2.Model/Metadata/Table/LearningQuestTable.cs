@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record LearningQuestTable(IReadOnlyDictionary<int, LearningQuestTable.Entry> Entries) : Table {
     public record Entry(

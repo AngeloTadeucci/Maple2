@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maple2.Model.Enum;
+﻿namespace Maple2.Model.Enum;
 
 [Flags]
 public enum NpcTalkType : byte {

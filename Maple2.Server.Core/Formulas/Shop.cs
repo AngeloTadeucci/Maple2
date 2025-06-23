@@ -1,9 +1,6 @@
-﻿using System;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
-using ShopRestockData = Maple2.Model.Metadata.ShopRestockData;
 
 namespace Maple2.Server.Core.Formulas;
 

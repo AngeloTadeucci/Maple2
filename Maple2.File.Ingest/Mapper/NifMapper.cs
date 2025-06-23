@@ -3,7 +3,6 @@ using Maple2.File.IO.Nif;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Tools.VectorMath;
-using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 
@@ -41,7 +40,7 @@ public class NifMapper : TypeMapper<NifMetadata> {
                 NiPhysXProp prop => new NifMetadata.NiPhysXPropMetadata(item.BlockIndex, prop.Name, PhysXToWorldScale: prop.PhysXToWorldScale, Snapshot: prop.Snapshot?.BlockIndex ?? -1),
                 NiPhysXPropDesc propDesc => new NifMetadata.NiPhysXPropDescMetadata(item.BlockIndex, propDesc.Name, Actors: propDesc.Actors.Select(actor => actor.BlockIndex).ToList()),
                 NiPhysXShapeDesc shapeDesc => new NifMetadata.NiPhysXShapeDescMetadata(item.BlockIndex, shapeDesc.Name, LocalPose: shapeDesc.LocalPose, ShapeType: (NxShapeType) shapeDesc.ShapeType, BoxHalfExtents: shapeDesc.BoxHalfExtents, Mesh: shapeDesc.Mesh?.BlockIndex ?? -1),
-                _ => new NifMetadata.NifBlockMetadata(item.BlockIndex, item.Name)
+                _ => new NifMetadata.NifBlockMetadata(item.BlockIndex, item.Name),
             };
             yield return nifBlockMetadata;
         }

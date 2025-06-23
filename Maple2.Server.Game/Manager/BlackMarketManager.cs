@@ -119,10 +119,10 @@ public sealed class BlackMarketManager {
         var mail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.BlackMarketListingCancel,
-            TitleArgs = new[] {
+            TitleArgs = [
                 ("item", $"{listing.Item.Id}"),
-            },
-            ContentArgs = new[] {
+            ],
+            ContentArgs = [
                 ("key", listing.ExpiryTime < DateTime.Now.ToEpochSeconds() ?
                     $"{StringCode.s_blackmarket_mail_to_cancel_expired}" :
                     $"{StringCode.s_blackmarket_mail_to_cancel_direct}"),
@@ -131,7 +131,7 @@ public sealed class BlackMarketManager {
                 ("money", $"{listing.Price * listing.Quantity}"),
                 ("money", $"{listing.Price}"),
                 ("money", $"{deposit}"),
-            },
+            ],
             Meso = deposit,
         };
 
@@ -246,15 +246,15 @@ public sealed class BlackMarketManager {
         var receivingMail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.BlackMarketSale,
-            TitleArgs = new[] {
+            TitleArgs = [
                 ("item", $"{listing.Item.Id}"),
-            },
-            ContentArgs = new[] {
+            ],
+            ContentArgs = [
                 ("item", $"{listing.Item.Id}"),
                 ("str", $"{quantity}"),
                 ("money", $"{listing.Price * quantity}"),
                 ("money", $"{listing.Price}"),
-            },
+            ],
         };
 
         receivingMail.SetTitle(StringCode.s_blackmarket_mail_to_buyer_title);
@@ -301,9 +301,9 @@ public sealed class BlackMarketManager {
         var mail = new Mail {
             ReceiverId = listing.CharacterId,
             Type = MailType.BlackMarketSale,
-            TitleArgs = new[] {
+            TitleArgs = [
                 ("item", $"{listing.Item.Id}"),
-            },
+            ],
             ContentArgs = contentArgs,
             Meso = revenue,
         };
@@ -328,9 +328,9 @@ public sealed class BlackMarketManager {
         var mail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.BlackMarketFail,
-            TitleArgs = new[] {
+            TitleArgs = [
                 ("item", $"{item.Id}"),
-            },
+            ],
             Meso = refund,
         };
 

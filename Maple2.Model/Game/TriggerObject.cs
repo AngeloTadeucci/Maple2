@@ -36,8 +36,8 @@ public class TriggerObjectMesh : TriggerObject<Ms2TriggerMesh> {
 
     public TriggerObjectMesh(Ms2TriggerMesh metadata) : base(metadata) {
         MinimapVisible = metadata.MinimapInvisible;
-        this.Scale = metadata.Scale;
-        this.Visible = metadata.Visible;
+        Scale = metadata.Scale;
+        Visible = metadata.Visible;
     }
 
     public override void WriteTo(IByteWriter writer) {

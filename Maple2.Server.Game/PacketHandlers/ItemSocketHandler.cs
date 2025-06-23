@@ -117,7 +117,7 @@ public class ItemSocketHandler : FieldPacketHandler {
                 Lua.CalcItemSocketUnlockIngredient(0, equip.Rarity, (ushort) equip.Metadata.Limit.Level, 0, equip.Metadata.Property.SkinType);
 
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
+            if (!session.Item.Inventory.Consume([ingredient])) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }
@@ -328,7 +328,7 @@ public class ItemSocketHandler : FieldPacketHandler {
 
             (string tag, int amount) = Lua.CalcGetGemStonePutOffPrice(Constant.GemstoneGrade, (ushort) entry.Level, 0);
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
+            if (!session.Item.Inventory.Consume([ingredient])) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }

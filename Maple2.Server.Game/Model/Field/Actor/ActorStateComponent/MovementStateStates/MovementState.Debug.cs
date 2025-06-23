@@ -37,7 +37,7 @@ public partial class MovementState {
         FieldItem fieldItem = new FieldItem(actor.Field, 0, item) {
             FixedPosition = true,
             ReceiverId = -1,
-            Type = DropType.Player
+            Type = DropType.Player,
         };
 
         return new DebugMarker(fieldItem, item);

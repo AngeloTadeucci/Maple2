@@ -66,7 +66,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                         DateTime.UnixEpoch.AddDays(7 * data.life.numberOfWeeksMonths).ToEpochSeconds(),
                     2 => // Month
                         DateTime.UnixEpoch.AddMonths(1 * data.life.numberOfWeeksMonths).ToEpochSeconds(),
-                    _ => 0
+                    _ => 0,
                 };
             } else if (data.life.usePeriod > 0) {
                 expirationDuration = (long) TimeSpan.FromMinutes(data.life.usePeriod).TotalSeconds;
@@ -191,7 +191,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     DisableDrop: data.property.disableDrop,
                     SocketId: data.property.socketDataId,
                     IsFragment: data.property.functionTags == "piece",
-                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? Array.Empty<int>(),
+                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? [],
                     SellPrices: data.property.sell.price,
                     CustomSellPrices: data.property.sell.priceCustom,
                     ShopId: data.Shop?.systemShopID ?? 0,

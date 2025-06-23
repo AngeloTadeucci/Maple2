@@ -65,7 +65,7 @@ internal class SkillMacro {
     public static implicit operator SkillMacro(Maple2.Model.Game.SkillMacro? other) {
         return other == null ? new SkillMacro {
             Name = string.Empty,
-            Skills = Array.Empty<int>(),
+            Skills = [],
         } : new SkillMacro {
             Name = other.Name,
             KeyId = other.KeyId,

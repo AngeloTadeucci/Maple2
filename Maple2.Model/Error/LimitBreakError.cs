@@ -1,7 +1,5 @@
 ﻿// ReSharper disable InconsistentNaming, IdentifierTypo
 
-using System.ComponentModel;
-
 namespace Maple2.Model.Error;
 
 public enum LimitBreakError : short {

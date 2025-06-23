@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-using Maple2.Model.Enum;
-using Maple2.Model.Game;
+﻿using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
 

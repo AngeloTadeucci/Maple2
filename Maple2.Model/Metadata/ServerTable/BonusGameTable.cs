@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Game;
+﻿using Maple2.Model.Game;
 
 namespace Maple2.Model.Metadata;
 
@@ -11,7 +10,7 @@ public record BonusGameTable(
     public record Game(
         int Id,
         ItemComponent ConsumeItem,
-        BonusGameTable.Game.Slot[] Slots) {
+        Game.Slot[] Slots) {
 
         public record Slot(
             int MinProp,

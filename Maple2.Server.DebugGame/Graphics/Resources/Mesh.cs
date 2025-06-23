@@ -65,12 +65,12 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
             var bufferDescription = new BufferDesc {
                 ByteWidth = (uint) (data.Length * sizeof(BufferType)),
                 Usage = Usage.Default,
-                BindFlags = (uint) flags
+                BindFlags = (uint) flags,
             };
 
             fixed (BufferType* bindingData = data) {
                 var subresourceData = new SubresourceData {
-                    PSysMem = bindingData
+                    PSysMem = bindingData,
                 };
 
                 ID3D11Buffer* bufferHandle = default;

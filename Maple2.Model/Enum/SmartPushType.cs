@@ -3,5 +3,5 @@
 public enum SmartPushType {
     none,
     additionalEffect,
-    autoInteraction
+    autoInteraction,
 }

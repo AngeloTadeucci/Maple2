@@ -1,5 +1,4 @@
-﻿using System;
-using Maple2.Database.Context;
+﻿using Maple2.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 

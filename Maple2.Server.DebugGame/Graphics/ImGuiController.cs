@@ -12,7 +12,7 @@ namespace Maple2.Server.DebugGame.Graphics;
 public enum ImGuiWindowType {
     NoToolbar,
     Main,
-    Field
+    Field,
 }
 
 public class ImGuiController {
@@ -25,15 +25,15 @@ public class ImGuiController {
     public ImGuiWindowType WindowType { get; init; }
     private List<char> pressedCharacters;
 
-    private List<IUiWindow> uiWindows = new();
+    private List<IUiWindow> uiWindows = [];
     private Dictionary<Type, IUiWindow> uiWindowMap = new();
     private static bool _initializedReflectedTypes = false;
-    private static IEnumerable<Type> _uiWindowTypes = Array.Empty<Type>();
+    private static IEnumerable<Type> _uiWindowTypes = [];
 
     public ImGuiController(DebugGraphicsContext context, IInputContext input, ImGuiWindowType windowType = ImGuiWindowType.NoToolbar) {
         Context = context;
         Input = input;
-        pressedCharacters = new List<char>();
+        pressedCharacters = [];
         WindowType = windowType;
 
         InitializeWindows(null);
@@ -42,7 +42,7 @@ public class ImGuiController {
     public ImGuiController(DebugGraphicsContext context, IInputContext input, DebugFieldWindow fieldWindow) {
         Context = context;
         Input = input;
-        pressedCharacters = new List<char>();
+        pressedCharacters = [];
         WindowType = ImGuiWindowType.Field;
 
         InitializeWindows(fieldWindow);
@@ -70,7 +70,7 @@ public class ImGuiController {
                 ImGuiWindowType.NoToolbar => false,
                 ImGuiWindowType.Main => window.AllowMainWindow,
                 ImGuiWindowType.Field => window.AllowFieldWindow,
-                _ => false
+                _ => false,
             };
 
             if (!windowIsAllowed) {
