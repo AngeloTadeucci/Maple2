@@ -339,7 +339,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 WeaponItemId: info.weapon.weaponItemId,
                 Item: new InteractObjectMetadataItem(info.item.code, info.item.consume, info.item.rank, info.item.checkCount, info.gathering.receipeID),
                 Time: new InteractObjectMetadataTime(info.time.resetTime, info.time.reactTime, info.time.hideTime),
-                Drop: new InteractObjectMetadataDrop(info.drop.objectDropRank, info.drop.globalDropBoxId ?? Array.Empty<int>(), info.drop.individualDropBoxId ?? Array.Empty<int>(), info.drop.dropHeight, info.drop.dropDistance),
+                Drop: new InteractObjectMetadataDrop(info.drop.objectDropRank, info.drop.globalDropBoxId ?? [], info.drop.individualDropBoxId ?? [], info.drop.dropHeight, info.drop.dropDistance),
                 AdditionalEffect: new InteractObjectMetadataEffect(
                     Condition: ParseConditional(info.conditionAdditionalEffect),
                     Invoke: ParseInvoke(info.additionalEffect),
@@ -1136,7 +1136,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                         Categories: subTab.category,
                         SortGender: subTab.sortGender,
                         SortJob: subTab.sortJob,
-                        SubTabIds: Array.Empty<int>());
+                        SubTabIds: []);
                     subTabIds.Add(subTab.id);
                     if (!results.ContainsKey(id)) {
                         results.Add(id, new Dictionary<int, MeretMarketCategoryTable.Tab> {

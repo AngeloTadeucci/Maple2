@@ -309,9 +309,9 @@ public class ItemUseHandler : FieldPacketHandler {
         var receiverMail = new Mail() {
             ReceiverId = receiverInfo.CharacterId,
             Type = MailType.System,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("str", $"{session.PlayerName}"),
-            },
+            ],
         };
 
         receiverMail.SetTitle(StringCode.s_couple_effect_mail_title_receiver);

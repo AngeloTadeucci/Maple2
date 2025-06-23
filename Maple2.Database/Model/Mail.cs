@@ -18,8 +18,8 @@ internal class Mail {
     public string WeddingInvite { get; set; } = string.Empty;
 
     // List is used here to preserve order
-    public IList<string> TitleArgs { get; set; } = Array.Empty<string>();
-    public IList<string> ContentArgs { get; set; } = Array.Empty<string>();
+    public IList<string> TitleArgs { get; set; } = [];
+    public IList<string> ContentArgs { get; set; } = [];
 
     public required MailCurrency Currency { get; set; }
 

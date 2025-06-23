@@ -17,7 +17,7 @@ public interface IPolygon {
     public bool Intersects(IPolygon other);
 
     private class NullPolygon : Polygon {
-        public override Vector2[] Points => Array.Empty<Vector2>();
+        public override Vector2[] Points => [];
         public override bool Contains(in Vector2 point) => false;
     }
 }

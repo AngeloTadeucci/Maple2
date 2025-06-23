@@ -16,7 +16,7 @@ namespace Maple2.Server.DebugGame.Graphics {
     public class DebugGraphicsContext : IGraphicsContext {
         public static readonly bool ForceDXVK = false;
         public static readonly Vector2D<int> DefaultWindowSize = new Vector2D<int>(800, 600);
-        public static readonly float[] WindowClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+        public static readonly float[] WindowClearColor = [0.0f, 0.0f, 0.0f, 1.0f];
         public static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
 
         public readonly Dictionary<FieldManager, DebugFieldRenderer> Fields;
@@ -41,7 +41,7 @@ namespace Maple2.Server.DebugGame.Graphics {
 
         private string resourceRootPath = "";
 
-        private List<DebugFieldRenderer> fieldRenderers = new();
+        private List<DebugFieldRenderer> fieldRenderers = [];
         private Mutex fieldRendererMutex = new();
         public DebugFieldRenderer[] FieldRenderers {
             get {
@@ -53,10 +53,10 @@ namespace Maple2.Server.DebugGame.Graphics {
             }
         }
         public IReadOnlyList<DebugFieldWindow> FieldWindows { get => fieldWindows; }
-        private List<DebugFieldWindow> fieldWindows = new();
-        private HashSet<FieldManager> updatedFields = new();
+        private List<DebugFieldWindow> fieldWindows = [];
+        private HashSet<FieldManager> updatedFields = [];
         private int deltaIndex = 0;
-        private List<int> deltaTimes = new();
+        private List<int> deltaTimes = [];
         public int DeltaAverage { get; private set; }
         public int DeltaMin { get; private set; }
         public int DeltaMax { get; private set; }

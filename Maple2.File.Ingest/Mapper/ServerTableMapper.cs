@@ -1595,7 +1595,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         foreach ((int shopId, ShopGame data) in parser.ParseShopGame()) {
             var shopResults = new Dictionary<int, ShopItemMetadata>();
             foreach (ShopGame.Item item in data.item) {
-                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? Array.Empty<string>() : item.requireAchieve.Split(",");
+                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? [] : item.requireAchieve.Split(",");
                 int achievementId = 0;
                 int achievementRank = 0;
                 if (achievementArray.Length == 2) {

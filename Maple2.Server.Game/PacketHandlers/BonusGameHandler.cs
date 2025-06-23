@@ -88,7 +88,7 @@ public class BonusGameHandler : FieldPacketHandler {
                 break;
             }
 
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { game.ConsumeItem })) {
+            if (!session.Item.Inventory.ConsumeItemComponents([game.ConsumeItem])) {
                 // TODO: Close the bonus game if items count is 0
                 break;
             }

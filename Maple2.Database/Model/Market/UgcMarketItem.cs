@@ -21,7 +21,7 @@ internal class UgcMarketItem {
     public long CharacterId { get; set; }
     public string CharacterName { get; set; }
     public string Description { get; set; }
-    public string[] Tags { get; set; } = Array.Empty<string>();
+    public string[] Tags { get; set; } = [];
     public UgcItemLook Look { get; set; }
     public ItemBlueprint Blueprint { get; set; }
     public DateTime CreationTime { get; set; }

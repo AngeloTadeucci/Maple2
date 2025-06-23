@@ -16,7 +16,7 @@ public class InterfaceText : IByteSerializable {
         isLocalized = false;
         unknown = message.StartsWith("s_") ? 5 : 0;
 
-        this.args = Array.Empty<string>();
+        args = [];
         this.message = htmlEncoded ? message : HttpUtility.HtmlEncode(message);
     }
 

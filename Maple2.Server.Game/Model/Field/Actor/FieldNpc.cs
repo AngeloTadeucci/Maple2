@@ -133,7 +133,7 @@ public class FieldNpc : Actor<Npc> {
 
     protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
 
-    private List<string> debugMessages = new List<string>();
+    private List<string> debugMessages = [];
     private bool playersListeningToDebug = false; // controls whether messages should log
     private long nextDebugPacket = 0;
 

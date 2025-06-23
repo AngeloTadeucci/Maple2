@@ -88,7 +88,7 @@ public struct BoundingBox3 {
         }
 
         Vector3 size = box.Max - box.Min;
-        List<Vector3> vertices = new List<Vector3>() {
+        List<Vector3> vertices = [
             box.Min,
             box.Max,
             box.Min + new Vector3(size.X, 0, 0),
@@ -96,8 +96,8 @@ public struct BoundingBox3 {
             box.Min + new Vector3(size.X, 0, size.Z),
             box.Min + new Vector3(0, size.Y, 0),
             box.Min + new Vector3(0, size.Y, size.Z),
-            box.Min + new Vector3(0, 0, size.Z)
-        };
+            box.Min + new Vector3(0, 0, size.Z),
+        ];
 
         for (int i = 0; i < 8; ++i) {
             vertices[i] = Vector3.Transform(vertices[i], matrix);

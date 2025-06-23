@@ -832,16 +832,16 @@ public static class Lua {
             if (dailyCount == 1) {
                 return 10000;
             } else {
-                int[] local1 = {
+                int[] local1 = [
                     11000,
                     22000,
                     33000,
-                };
-                int[] local2 = {
+                ];
+                int[] local2 = [
                     55000,
                     70000,
                     100000,
-                };
+                ];
 
                 int local3 = Math.Min(GetMesoRevivalDailyMaxCount() - dailyRemain + 1, local1.Length);
 

@@ -356,11 +356,11 @@ public class ItemCollectionTest {
     }
 
     private static Model.Game.Item CreateItem(int id, int rarity = 1, int amount = 1) {
-        var fakeProperty = new ItemMetadataProperty(false, 0, 100, 18, 0, string.Empty, string.Empty, ItemTag.None, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array.Empty<int>(), false, 0, false, Array.Empty<int>(), Array.Empty<long>(), Array.Empty<long>(), 0, 0);
+        var fakeProperty = new ItemMetadataProperty(false, 0, 100, 18, 0, string.Empty, string.Empty, ItemTag.None, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], false, 0, false, [], [], [], 0, 0);
         var fakeCustomize = new ItemMetadataCustomize(0, 0);
-        var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, Array.Empty<JobCode>(), Array.Empty<JobCode>());
+        var fakeLimit = new ItemMetadataLimit(Gender.All, 0, 0, 4, true, true, true, true, true, false, false, 0, [], []);
         var fakeLife = new ItemMetadataLife(0, 0);
-        var fakeMetadata = new ItemMetadata(id, $"{id}", Array.Empty<EquipSlot>(), "", Array.Empty<DefaultHairMetadata>(), fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, Array.Empty<ItemMetadataAdditionalEffect>(), null, null, null, null);
+        var fakeMetadata = new ItemMetadata(id, $"{id}", [], "", [], fakeLife, fakeProperty, fakeCustomize, fakeLimit, null, null, [], null, null, null, null);
         return new Model.Game.Item(fakeMetadata, rarity, amount) {
             Uid = Rng.NextInt64()
         };

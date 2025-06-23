@@ -191,7 +191,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     DisableDrop: data.property.disableDrop,
                     SocketId: data.property.socketDataId,
                     IsFragment: data.property.functionTags == "piece",
-                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? Array.Empty<int>(),
+                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? [],
                     SellPrices: data.property.sell.price,
                     CustomSellPrices: data.property.sell.priceCustom,
                     ShopId: data.Shop?.systemShopID ?? 0,

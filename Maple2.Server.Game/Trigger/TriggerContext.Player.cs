@@ -299,7 +299,7 @@ public partial class TriggerContext {
 
     private IEnumerable<FieldPlayer> PlayersNotInBox(int boxId) {
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
-            return Array.Empty<FieldPlayer>();
+            return [];
         }
 
         return Field.Players.Values.Where(player => !box.Contains(player.Position));

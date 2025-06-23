@@ -214,7 +214,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                         continue;
                     }
                 case IMS2PatrolData patrolData:
-                    List<MS2WayPoint> wayPoints = new();
+                    List<MS2WayPoint> wayPoints = [];
                     foreach (KeyValuePair<string, string> wayPointDict in patrolData.WayPoints) {
                         IMS2WayPoint? wayPoint = ms2WayPoints.GetValueOrDefault(wayPointDict.Value.Replace("-", string.Empty));
                         if (wayPoint is null) {
@@ -300,7 +300,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
         return parser.Parallel().SelectMany(map => {
             string xblock = map.xblock.ToLower();
             if (!xBlocks.Contains(xblock)) {
-                return Enumerable.Empty<MapEntity>();
+                return [];
             }
 
             return ParseMap(xblock, map.entities);

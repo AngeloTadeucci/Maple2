@@ -46,7 +46,7 @@ public class ItemExtractionHandler : FieldPacketHandler {
             }
 
             var anvils = new IngredientInfo(ItemTag.ItemExtraction, entry.ScrollCount);
-            if (!session.Item.Inventory.Consume(new[] { anvils })) {
+            if (!session.Item.Inventory.Consume([anvils])) {
                 session.Send(ItemExtractionPacket.InsufficientAnvils());
                 return;
             }

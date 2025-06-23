@@ -16,7 +16,7 @@ public class FreeCamCommand : GameCommand {
 
     public FreeCamCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
         this.session = session;
-        var toggle = new Option<string>(new[] { "toggle" }, () => "on", "Enable free cam. \"on\" or \"off\"");
+        var toggle = new Option<string>(["toggle"], () => "on", "Enable free cam. \"on\" or \"off\"");
 
         AddOption(toggle);
         this.SetHandler<InvocationContext, string>(Handle, toggle);
