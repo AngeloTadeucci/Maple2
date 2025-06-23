@@ -98,7 +98,7 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
         Animation = Session.Animation;
 

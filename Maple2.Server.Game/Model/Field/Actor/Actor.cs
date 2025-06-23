@@ -59,8 +59,8 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     /// </summary>
     public (Vector3 Position, long LastTick, long Duration) PositionTick { get; set; }
 
-    protected Actor(FieldManager? field, int objectId, T value, NpcMetadataStorage npcMetadata) {
-        Field = field ?? throw new ArgumentNullException(nameof(field), "Field cannot be null");
+    protected Actor(FieldManager field, int objectId, T value, NpcMetadataStorage npcMetadata) {
+        Field = field;
         ObjectId = objectId;
         Value = value;
         Buffs = new BuffManager(this);
