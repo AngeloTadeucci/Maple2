@@ -23,6 +23,7 @@ public class BoundingBox : Polygon {
     }
 
     public override bool Contains(in Vector2 point) {
+        // Truncate to integer coordinates for pixel-perfect collision detection
         int pointX = (int) point.X;
         int pointY = (int) point.Y;
         return min.X <= pointX && pointX <= max.X && min.Y <= pointY && pointY <= max.Y;
