@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.Numerics;
+using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
@@ -36,7 +37,7 @@ public class CoordCommand : GameCommand {
 
         Vector3 pos = session.Player.Position;
         if (x == null && y == null && z == null) {
-            ctx.Console.Out.WriteLine("Current position: " + pos);
+            ctx.Console.Out.WriteLine("Current position: " + pos + ", Vector3B: " + (Vector3B) pos);
             return;
         }
 

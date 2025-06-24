@@ -32,7 +32,7 @@ public class InteractCube : IByteSerializable {
         if (metadata.ConfigurableCubeType is ConfigurableCubeType.UGCPortal) {
             PortalSettings = new CubePortalSettings(position);
         } else if (metadata.ConfigurableCubeType is ConfigurableCubeType.UGCNotice) {
-            NoticeSettings = new CubeNoticeSettings(position);
+            NoticeSettings = new CubeNoticeSettings();
         }
     }
 
