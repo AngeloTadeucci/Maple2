@@ -19,7 +19,7 @@ public abstract class Polygon : IPolygon {
 
         for (int i = 0; i < Points.Length; i++) {
             // If point is in the polygon
-            if (Points[i] == point) {
+            if (Vector2.DistanceSquared(Points[i], point) <= epsilon * epsilon) {
                 return true;
             }
 

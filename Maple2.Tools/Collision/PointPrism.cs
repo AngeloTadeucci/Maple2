@@ -26,10 +26,7 @@ public readonly struct PointPrism : IPrism {
     }
 
     private readonly struct Point(float x, float y) : IPolygon {
-        public bool Contains(in Vector2 point, float epsilon = 1e-5f) {
-            const float tolerance = 0.0000001f;
-            return Math.Abs(x - point.X) < tolerance && Math.Abs(y - point.Y) < tolerance;
-        }
+        public bool Contains(in Vector2 point, float epsilon = 1e-5f) => Math.Abs(x - point.X) < epsilon && Math.Abs(y - point.Y) < epsilon;
 
         public bool Intersects(IPolygon polygon) {
             return polygon.Contains(x, y);

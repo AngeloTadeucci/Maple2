@@ -11,7 +11,7 @@ public sealed class HoleCircle : Circle {
     }
 
     public override bool Contains(in Vector2 point, float epsilon = 1e-5f) {
-        return base.Contains(point, epsilon) && !hole.Contains(point);
+        return base.Contains(point, epsilon) && !hole.Contains(point, epsilon);
     }
 
     // Inherited GetAxes() and AxisProjection() includes hole, but is unused.
