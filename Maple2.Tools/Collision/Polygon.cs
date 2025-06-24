@@ -18,16 +18,11 @@ public abstract class Polygon : IPolygon {
         int neg = 0;
 
         for (int i = 0; i < Points.Length; i++) {
-            // If point is in the polygon
-            if (Vector2.DistanceSquared(Points[i], point) <= epsilon * epsilon) {
-                return true;
-            }
-
             // Form a segment between the i'th point
             float x1 = Points[i].X;
             float y1 = Points[i].Y;
 
-            // And the i+1'th, or if i is the last, with the first point
+            // And the i+1'th, or if it is the last, with the first point
             int i2 = (i + 1) % Points.Length;
 
             float x = point.X;
@@ -38,13 +33,11 @@ public abstract class Polygon : IPolygon {
 
             // Compute the cross product
             float d = (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1);
-            switch (d) {
-                case > 0:
-                    pos++;
-                    break;
-                case < 0:
-                    neg++;
-                    break;
+
+            if (d > epsilon) {
+                pos++;
+            } else if (d < -epsilon) {
+                neg++;
             }
 
             // If the sign changes, then point is outside
