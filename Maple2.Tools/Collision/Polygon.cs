@@ -9,7 +9,7 @@ namespace Maple2.Tools.Collision;
 public abstract class Polygon : IPolygon {
     public abstract Vector2[] Points { get; }
 
-    public virtual bool Contains(in Vector2 point) {
+    public virtual bool Contains(in Vector2 point, float epsilon = 1e-5f) {
         // Check if a triangle or higher n-gon
         Debug.Assert(Points.Length >= 3);
 
