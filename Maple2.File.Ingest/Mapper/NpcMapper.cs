@@ -12,6 +12,8 @@ namespace Maple2.File.Ingest.Mapper;
 public class NpcMapper : TypeMapper<NpcMetadata> {
     private readonly NpcParser parser;
 
+    public static Dictionary<int, NpcMetadata> NpcMetadataById { get; } = new();
+
     public NpcMapper(M2dReader xmlReader, string language) {
         parser = new NpcParser(xmlReader, language);
     }
@@ -20,7 +22,7 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
         foreach ((int id, string name, NpcData data, List<EffectDummy> _) in parser.Parse()) {
             Debug.Assert(data.collision.shape == "box" || string.IsNullOrWhiteSpace(data.collision.shape));
 
-            yield return new NpcMetadata(Id: id,
+            var metadata = new NpcMetadata(Id: id,
                 Name: name,
                 AiPath: data.aiInfo.path,
                 Model: new NpcMetadataModel(
@@ -117,6 +119,10 @@ public class NpcMapper : TypeMapper<NpcMetadata> {
                     data.lookattarget.lookAtMyPCWhenTalking == 1,
                     data.lookattarget.useTalkMotion == 1)
             );
+
+            NpcMetadataById[id] = metadata;
+
+            yield return metadata;
         }
     }
 

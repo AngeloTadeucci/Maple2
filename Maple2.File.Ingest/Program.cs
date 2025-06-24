@@ -195,13 +195,14 @@ var modelReaders = new List<PrefixedM2dReader> {
 
 UpdateDatabase(metadataContext, new TriggerMapper(xmlReader));
 
+UpdateDatabase(metadataContext, new ItemMapper(xmlReader, language, false));
+UpdateDatabase(metadataContext, new NpcMapper(xmlReader, language));
+
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
 UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
-UpdateDatabase(metadataContext, new ItemMapper(xmlReader, language, false));
-UpdateDatabase(metadataContext, new NpcMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new PetMapper(xmlReader));
 UpdateDatabase(metadataContext, new MapMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new UgcMapMapper(xmlReader));

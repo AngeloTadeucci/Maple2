@@ -15,6 +15,8 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
     private readonly TableParser tableParser;
     private readonly bool newXml;
 
+    public static Dictionary<int, ItemMetadata> ItemMetadataById { get; } = new();
+
     public ItemMapper(M2dReader xmlReader, string language, bool newXml) {
         parser = new ItemParser(xmlReader, language);
         tableParser = new TableParser(xmlReader, language);
@@ -156,7 +158,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 ObjectCubeId: data.install.objCode,
                 MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
-            yield return new ItemMetadata(
+            var itemMetadata = new ItemMetadata(
                 Id: id,
                 Name: name,
                 SlotNames: data.slots.slot
@@ -227,6 +229,10 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 Housing: housing,
                 Install: install
             );
+
+            ItemMetadataById[id] = itemMetadata;
+
+            yield return itemMetadata;
         }
     }
 }

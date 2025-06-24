@@ -203,13 +203,16 @@ public sealed class ShopManager {
             return new SortedDictionary<int, ShopItem>();
         }
 
-
         if (metadata.EnableReset) {
             int minItemCount = metadata.RestockData.MinItemCount;
             if (shopItemMetadatas.Count < metadata.RestockData.MinItemCount) {
                 minItemCount = shopItemMetadatas.Count;
             }
-            while (items.Count < minItemCount) {
+
+            int failSafe = 0;
+            const int maxIterations = 10;
+
+            while (items.Count < minItemCount && failSafe < maxIterations) {
                 foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
                     if (items.Count >= metadata.RestockData.MaxItemCount) {
                         break;
@@ -233,6 +236,10 @@ public sealed class ShopManager {
                     };
                     items.Add(shopItemMetadata.Id, shopItem);
                 }
+                failSafe++;
+            }
+            if (failSafe >= maxIterations) {
+                logger.Warning("GetShopItems: Fail safe triggered after {MaxIterations} iterations for shop {ShopId}", maxIterations, metadata.Id);
             }
         } else {
             foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {

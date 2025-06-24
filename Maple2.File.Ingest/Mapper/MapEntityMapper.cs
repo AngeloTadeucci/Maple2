@@ -86,6 +86,11 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                     npcCount = 1;
                                 }
 
+                                NpcMapper.NpcMetadataById.TryGetValue(npcId, out NpcMetadata? npcMetadata);
+                                if (npcMetadata == null) {
+                                    return null;
+                                }
+
                                 // Some NPC spawns have these be equal, so default to 1
                                 if (npcId == npcCount) {
                                     npcCount = 1;
