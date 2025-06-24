@@ -17,8 +17,10 @@ public readonly struct PointPrism : IPrism {
         Height = new Range(origin.Z, origin.Z);
     }
 
-    public bool Contains(in Vector3 other) {
-        return origin == other;
+    public bool Contains(in Vector3 other, float epsilon = 1e-5f) {
+        return Math.Abs(origin.X - other.X) < epsilon &&
+               Math.Abs(origin.Y - other.Y) < epsilon &&
+               Math.Abs(origin.Z - other.Z) < epsilon;
     }
 
     public bool Intersects(IPrism prism) {
