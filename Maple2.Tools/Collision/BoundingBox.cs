@@ -23,7 +23,9 @@ public class BoundingBox : Polygon {
     }
 
     public override bool Contains(in Vector2 point) {
-        return min.X <= point.X && point.X <= max.X && min.Y <= point.Y && point.Y <= max.Y;
+        int pointX = (int) point.X;
+        int pointY = (int) point.Y;
+        return min.X <= pointX && pointX <= max.X && min.Y <= pointY && pointY <= max.Y;
     }
 
     public override string ToString() {
