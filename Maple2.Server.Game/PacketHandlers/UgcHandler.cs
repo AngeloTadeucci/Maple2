@@ -145,7 +145,7 @@ public class UgcHandler : FieldPacketHandler {
             }
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(itemId, ugcMetadata.ItemRarity);
+        Item? item = session.Field?.ItemDrop.CreateItem(itemId, ugcMetadata.ItemRarity);
         if (item == null) {
             Logger.Fatal("Failed to create UGC item {ItemId}", itemId);
             throw new InvalidOperationException($"Fatal: Creating UGC item: {itemId}");
@@ -172,6 +172,7 @@ public class UgcHandler : FieldPacketHandler {
     }
 
     private void UploadBanner(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long bannerId = packet.ReadLong();
 
         session.Field.Banners.TryGetValue(bannerId, out FieldUgcBanner? banner);
@@ -425,7 +426,7 @@ public class UgcHandler : FieldPacketHandler {
         }
 
         void ConfirmBanner() {
-            UgcBanner? banner = session.Field.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
+            UgcBanner? banner = session.Field?.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
             if (banner is null) {
                 Logger.Warning("Failed to find banner for UGC {UgcUid}", ugcUid);
                 return;
@@ -497,10 +498,12 @@ public class UgcHandler : FieldPacketHandler {
     }
 
     private static void HandleLoadBanners(GameSession session) {
+        if (session.Field is null) return;
         session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.Select(fieldUgcBanner => (UgcBanner) fieldUgcBanner).ToList()));
     }
 
     private void HandleReserveBanner(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long bannerId = packet.ReadLong();
         int hours = packet.ReadInt();
 

@@ -161,6 +161,7 @@ public class TaxiHandler : FieldPacketHandler {
     }
 
     public static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
+        if (session.Field is null) return false;
         MapMetadataCashCall currentCashCall = session.Field.Metadata.CashCall;
         if (!currentCashCall.TaxiDeparture) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_departure));

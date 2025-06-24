@@ -27,7 +27,7 @@ public partial class ChannelService {
             return new TimeEventResponse();
         }
         foreach (GameSession session in server.GetSessions()) {
-            if (session.Field.Metadata.Property.Type is >= MapType.None and <= MapType.Telescope or >= MapType.Alikar and <= MapType.Shelter) {
+            if (session.Field?.Metadata.Property.Type is >= MapType.None and <= MapType.Telescope or >= MapType.Alikar and <= MapType.Shelter) {
                 session.Send(GlobalPortalPacket.Announce(metadata, portal.EventId));
             }
         }

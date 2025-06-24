@@ -56,6 +56,8 @@ public class ItemBoxManager {
     }
 
     public ItemBoxError OpenLulluBox(Item item, int count = 1, bool autoPay = false) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
+
         Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
 
         // Get common dropbox
@@ -115,6 +117,7 @@ public class ItemBoxManager {
     }
 
     public ItemBoxError OpenLulluBoxSimple(Item item, int count = 1) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         Dictionary<string, string> parameters = XmlParseUtil.GetParameters(item.Metadata.Function?.Parameters);
 
         if (!int.TryParse(parameters["commonBoxId"], out int commonBoxId)) {
@@ -157,6 +160,7 @@ public class ItemBoxManager {
     }
 
     private ItemBoxError SelectItemBox(Item item, int groupId, int boxId, int index, int count = 1) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         // check if box count is enough to open
         if (session.Item.Inventory.Find(item.Id).Sum(box => box.Amount) < 1) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
@@ -196,6 +200,7 @@ public class ItemBoxManager {
     }
 
     private ItemBoxError OpenItemBox(Item item, int globalDropBoxId, int unknownId, int itemId, int individualDropBoxId, int itemRequiredAmount, int count = 1) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         // unknownId is treated as a bool. if 1 = receive one item from each drop group, if 0 = receive all items from one drop group.
         // There are occasions where this number is higher than 1. No idea what it is as it's not a globaldropBoxId
 
@@ -253,6 +258,7 @@ public class ItemBoxManager {
     }
 
     private ItemBoxError OpenItemBoxWithKey(Item item, int keyItemId, int keyAmountRequired, int itemId, int boxId, int count = 1) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         if (keyItemId == 0) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         }
@@ -282,7 +288,7 @@ public class ItemBoxManager {
             }
 
             if (itemId > 0) {
-                Item? newItem = session.Field.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
+                Item? newItem = session.Field?.ItemDrop.CreateItem(itemId, item.Metadata.Option?.ConstantId ?? 1);
                 if (newItem == null) {
                     continue;
                 }
@@ -302,6 +308,7 @@ public class ItemBoxManager {
     }
 
     private ItemBoxError OpenGachaBox(Item item, int gachaInfoId, int count) {
+        if (session.Field is null) return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;
         // Check if the gachaInfoId is in the drop table
         if (!session.TableMetadata.GachaInfoTable.Entries.TryGetValue(gachaInfoId, out GachaInfoTable.Entry? gachaEntry)) {
             return ItemBoxError.s_err_cannot_open_multi_itembox_inventory_fail;

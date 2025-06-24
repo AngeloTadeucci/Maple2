@@ -26,6 +26,7 @@ public class UserChatHandler : FieldPacketHandler {
     #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         var type = packet.Read<ChatType>();
         string message = packet.ReadUnicodeString();
         string recipient = packet.ReadUnicodeString();

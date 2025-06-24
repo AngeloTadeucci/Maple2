@@ -76,6 +76,7 @@ public class LoadUgcMapHandler : FieldPacketHandler {
     }
 
     private static void LoadPlots(GameSession session, List<PlotCube> plotCubes) {
+        if (session.Field is null) return;
         lock (session.Field.Plots) {
             List<Plot> allPlots = session.Field.Plots.Values.ToList();
             List<Plot> ownedPlots = allPlots.Where(x => x.State is not PlotState.Open).ToList();

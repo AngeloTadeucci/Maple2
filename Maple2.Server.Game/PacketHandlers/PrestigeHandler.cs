@@ -51,7 +51,7 @@ public class PrestigeHandler : FieldPacketHandler {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(metadata.Id, metadata.Rarity, metadata.Value);
+        Item? item = session.Field?.ItemDrop.CreateItem(metadata.Id, metadata.Rarity, metadata.Value);
         if (item == null) {
             return;
         }
@@ -77,7 +77,7 @@ public class PrestigeHandler : FieldPacketHandler {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Amount);
         if (item == null) {
             return;
         }

@@ -34,6 +34,7 @@ public class FieldPlayer : Actor<Player> {
     public override bool IsDead {
         get => isDead;
         protected set {
+            if (Session.Field is null) return;
             if (value == isDead) return;
             isDead = value;
             Flag |= PlayerObjectFlag.Dead;
@@ -97,7 +98,7 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
         Animation = Session.Animation;
 
@@ -110,7 +111,7 @@ public class FieldPlayer : Actor<Player> {
 
         scheduler = new EventQueue();
         scheduler.ScheduleRepeated(() => {
-            session.ConditionUpdate(ConditionType.stay_map, codeLong: session.Field.MapId);
+            session.ConditionUpdate(ConditionType.stay_map, codeLong: session.Field!.MapId);
         }, 60000, skipFirst: true); // 60 seconds
         scheduler.Start();
     }
@@ -259,7 +260,7 @@ public class FieldPlayer : Actor<Player> {
         LastCurrentBlockUpdateTick += syncTick;
         if (LastCurrentBlockUpdateTick >= 1000) { // 1 second
             LastCurrentBlockUpdateTick = 0;
-            Session.Field.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
+            Session.Field?.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
                 StandingOnBlock = entity;
             });
         }
@@ -285,7 +286,7 @@ public class FieldPlayer : Actor<Player> {
             case ActorState.Walk:
                 if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.run, codeLong: Value.Character.MapId);
-                    Session.Field.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
+                    Session.Field?.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
                         switch (entity) {
                             case FieldMeshColliderEntity { MapAttribute: MapAttribute.glass } meshCollider:
                                 Session.ConditionUpdate(ConditionType.stay_cube, codeLong: Session.Field.MapId, targetString: meshCollider.MapAttribute.ToString());
@@ -373,6 +374,7 @@ public class FieldPlayer : Actor<Player> {
     }
 
     protected override void OnDeath() {
+        if (Session.Field is null) return;
         Field.Broadcast(SetCraftModePacket.Stop(ObjectId));
 
         Session.HeldCube = null;

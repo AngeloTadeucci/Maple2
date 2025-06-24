@@ -185,7 +185,7 @@ public class InventoryManager {
 
                 // Create and add individual copies for remaining items
                 for (int i = 1; i < totalAmount; i++) {
-                    Item? copy = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity);
+                    Item? copy = session.Field?.ItemDrop.CreateItem(add.Id, add.Rarity);
                     if (copy is null) {
                         return false;
                     }

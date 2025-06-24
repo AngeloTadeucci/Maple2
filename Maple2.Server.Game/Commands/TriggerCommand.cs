@@ -27,7 +27,8 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx) {
-            List<FieldTrigger> fieldTriggers = session.Field!.EnumerateTrigger().ToList();
+            if (session.Field is null) return;
+            List<FieldTrigger> fieldTriggers = session.Field.EnumerateTrigger().ToList();
             ctx.Console.Out.WriteLine($"Triggers: {fieldTriggers.Count}");
             foreach (FieldTrigger trigger in fieldTriggers) {
                 string triggerName = trigger.Value.Name;
@@ -58,7 +59,8 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string triggerName, int stateIndex) {
-            if (!session.Field!.TryGetTrigger(triggerName, out FieldTrigger? currentFieldTrigger)) {
+            if (session.Field is null) return;
+            if (!session.Field.TryGetTrigger(triggerName, out FieldTrigger? currentFieldTrigger)) {
                 ctx.Console.Error.WriteLine($"Trigger {triggerName} not found.");
                 return;
             }
@@ -103,6 +105,7 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string functionName, string[] parameters) {
+            if (session.Field is null) return;
             functionName = functionName.ToLower();
             List<string> functionNames = ["set_skill", "spawn_monster", "move_npc", "set_npc_emotion_sequence", "destroy_monster"];
 

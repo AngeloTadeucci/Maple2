@@ -33,6 +33,7 @@ public class RevivalHandler : FieldPacketHandler {
     /// Handles normal revival (from tombstone hits or manual revival)
     /// </summary>
     private void HandleSafeRevive(GameSession session) {
+        if (session.Field is null) return;
         if (session.Field.Metadata.Property.NoRevivalHere || session.Field.Metadata.Property.RevivalReturnId == 0) {
             return;
         }
@@ -46,6 +47,7 @@ public class RevivalHandler : FieldPacketHandler {
     /// Handles instant revival (using mesos or voucher)
     /// </summary>
     private void HandleInstantRevive(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         if (session.Field.Metadata.Property.NoRevivalHere) {
             return;
         }

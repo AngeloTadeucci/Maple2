@@ -26,6 +26,7 @@ public class PlayerHostHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClaimHongBao(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int hongBaoId = packet.ReadInt();
         if (!session.Field.TryGetHongBao(hongBaoId, out HongBao? hongBao)) {
             session.Send(PlayerHostPacket.InactiveHongBao());

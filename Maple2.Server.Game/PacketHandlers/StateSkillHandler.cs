@@ -13,6 +13,7 @@ public class StateSkillHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.StateSkill;
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         byte function = packet.ReadByte();
         if (function != 0) {
             Logger.Warning("Unhandled StateSkill function: {Function}", function);

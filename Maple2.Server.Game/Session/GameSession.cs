@@ -97,7 +97,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ShopManager Shop { get; set; } = null!;
     public UgcMarketManager UgcMarket { get; set; } = null!;
     public BlackMarketManager BlackMarket { get; set; } = null!;
-    public FieldManager Field { get; set; } = null!;
+    public FieldManager? Field { get; set; }
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
@@ -603,7 +603,7 @@ public sealed partial class GameSession : Core.Network.Session {
                     continue;
                 }
                 foreach (RewardItem rewardItem in data.RewardItems) {
-                    Item? item = Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+                    Item? item = Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
                     if (item != null) {
                         items.Add(item);
                     }
@@ -738,6 +738,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     protected override void Dispose(bool disposing) {
         if (disposed) return;
+        if (Field is null) return;
         disposed = true;
 
         if (State == SessionState.Connected) {

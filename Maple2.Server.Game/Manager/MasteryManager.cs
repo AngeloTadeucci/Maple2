@@ -143,8 +143,8 @@ public class MasteryManager {
 
     public void Gather(MasteryRecipeTable.Entry recipeMetadata, Vector3 position, Vector3 rotation) {
         foreach (ItemComponent itemReward in recipeMetadata.RewardItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
-            if (item == null) {
+            Item? item = session.Field?.ItemDrop.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
+            if (item == null || session.Field is null) {
                 continue;
             }
             FieldItem fieldItem = session.Field.SpawnItem(position, rotation, item, session.CharacterId);

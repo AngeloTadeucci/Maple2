@@ -223,7 +223,7 @@ public sealed class ShopManager {
                         continue;
                     }
 
-                    Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                    Item? item = session.Field?.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
                     if (item == null) {
                         continue;
                     }
@@ -236,7 +236,7 @@ public sealed class ShopManager {
             }
         } else {
             foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
-                Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                Item? item = session.Field?.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
                 if (item == null) {
                     continue;
                 }

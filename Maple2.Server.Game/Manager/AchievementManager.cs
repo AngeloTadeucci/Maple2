@@ -151,6 +151,7 @@ public sealed class AchievementManager {
     /// <param name="manualClaim">If true, assumes player requested the reward. it will give the player rewards for items, titles, skill points, and attribute points.
     /// These are never given automatically upon newly awarded trophy grade.</param>
     private void GiveReward(Achievement achievement, bool manualClaim = false) {
+        if (session.Field is null) return;
         if (achievement.CurrentGrade < achievement.RewardGrade) {
             return;
         }
@@ -169,7 +170,7 @@ public sealed class AchievementManager {
                 if (!manualClaim) {
                     return;
                 }
-                Item? item = session.Field.ItemDrop.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
+                Item? item = session.Field?.ItemDrop.CreateItem(grade.Reward.Code, grade.Reward.Rank, grade.Reward.Value);
                 if (item == null) {
                     return;
                 }

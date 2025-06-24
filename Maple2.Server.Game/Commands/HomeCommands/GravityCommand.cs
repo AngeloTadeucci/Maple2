@@ -27,6 +27,7 @@ public class GravityCommand : Command {
     }
 
     private void Handle(InvocationContext context, float gravity) {
+        if (session.Field is null) return;
         Character character = session.Player.Value.Character;
         if (character.MapId is not Constant.DefaultHomeMapId) {
             return;

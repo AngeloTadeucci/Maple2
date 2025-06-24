@@ -13,6 +13,7 @@ public class HomeDoctorHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestHomeDoctor;
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (session.Player.Value.Character.DoctorCooldown + Constant.HomeDoctorCallCooldown > time) {
             return;

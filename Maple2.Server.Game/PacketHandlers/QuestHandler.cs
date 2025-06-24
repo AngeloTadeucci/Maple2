@@ -82,6 +82,8 @@ public class QuestHandler : FieldPacketHandler {
     }
 
     private static void HandleAccept(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
+
         int questId = packet.ReadInt();
         int npcObjectId = packet.ReadInt();
 

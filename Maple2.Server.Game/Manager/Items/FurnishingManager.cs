@@ -221,7 +221,7 @@ public class FurnishingManager {
     }
 
     private long AddStorage(HeldCube cube) {
-        Item? item = session.Field.ItemDrop.CreateItem(cube.ItemId);
+        Item? item = session.Field?.ItemDrop.CreateItem(cube.ItemId);
         if (item == null) {
             return 0;
         }
@@ -230,7 +230,7 @@ public class FurnishingManager {
     }
 
     private long AddStorage(int itemId) {
-        Item? item = session.Field.ItemDrop.CreateItem(itemId);
+        Item? item = session.Field?.ItemDrop.CreateItem(itemId);
         if (item == null) {
             return 0;
         }

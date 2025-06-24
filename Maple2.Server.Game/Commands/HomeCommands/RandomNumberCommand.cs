@@ -20,6 +20,7 @@ public class RandomNumberCommand : Command {
     }
 
     private void Handle(InvocationContext context) {
+        if (session.Field is null) return;
         Character character = session.Player.Value.Character;
         bool isHome = character.MapId is Constant.DefaultHomeMapId;
         int rng = Random.Shared.Next(1, 101);

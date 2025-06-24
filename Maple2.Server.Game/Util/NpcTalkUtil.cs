@@ -87,6 +87,7 @@ public static class NpcTalkUtil {
     }
 
     private static bool MeetsJobCondition(GameSession session, JobConditionMetadata jobCondition) {
+        if (session.Field is null) return false;
         if (jobCondition.StartedQuestId > 0 &&
             (!session.Quest.TryGetQuest(jobCondition.StartedQuestId, out Quest? startedQuest) || startedQuest.State != QuestState.Started)) {
             return false;
@@ -139,28 +140,29 @@ public static class NpcTalkUtil {
     }
 
     public static bool ConditionCheck(this ScriptConditionMetadata scriptCondition, GameSession session) {
+        if (session.Field is null) return false;
         if (scriptCondition.JobCode.Count > 0 && !scriptCondition.JobCode.Contains(session.Player.Value.Character.Job.Code())) {
             return false;
         }
 
         foreach ((int questId, bool started) in scriptCondition.QuestStarted) {
             session.Quest.TryGetQuest(questId, out Quest? quest);
-            if (started && (quest == null || quest.State != QuestState.Started)) {
+            if (started && quest is not { State: QuestState.Started }) {
                 return false;
             }
 
-            if (!started && quest != null && quest.State == QuestState.Started) {
+            if (!started && quest is { State: QuestState.Started }) {
                 return false;
             }
         }
 
         foreach ((int questId, bool completed) in scriptCondition.QuestCompleted) {
             session.Quest.TryGetQuest(questId, out Quest? quest);
-            if (completed && (quest == null || quest.State != QuestState.Completed)) {
+            if (completed && quest is not { State: QuestState.Completed }) {
                 return false;
             }
 
-            if (!completed && quest != null && quest.State == QuestState.Completed) {
+            if (!completed && quest is { State: QuestState.Completed }) {
                 return false;
             }
         }

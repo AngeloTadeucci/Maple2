@@ -44,6 +44,7 @@ public class TutorialCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, Type type) {
+            if (session.Field is null) return;
             try {
                 Player player = session.Player;
                 JobTable jobTable = session.TableMetadata.JobTable;
@@ -52,7 +53,7 @@ public class TutorialCommand : GameCommand {
                 switch (type) {
                     case Type.Item: {
                             foreach (JobTable.Item rewardItem in tutorial.StartItem.Concat(tutorial.Reward)) {
-                                Item? item = session.Field.ItemDrop.CreateItem(rewardItem.Id, rewardItem.Rarity, rewardItem.Count);
+                                Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.Id, rewardItem.Rarity, rewardItem.Count);
                                 if (item == null) {
                                     ctx.Console.Error.WriteLine($"Failed to create item: {rewardItem.Id}");
                                     ctx.ExitCode = 1;

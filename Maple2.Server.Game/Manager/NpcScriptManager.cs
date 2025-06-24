@@ -350,7 +350,7 @@ public sealed class NpcScriptManager {
     }
 
     public void ProcessScriptFunction(bool enter = true) {
-        if (State == null) {
+        if (State == null || session.Field is null) {
             return;
         }
 
@@ -400,7 +400,7 @@ public sealed class NpcScriptManager {
 
         IList<Item> items = new List<Item>();
         foreach (ItemComponent item in scriptFunction.PresentItems) {
-            Item? newItem = session.Field.ItemDrop.CreateItem(item.ItemId, item.Rarity, item.Amount);
+            Item? newItem = session.Field?.ItemDrop.CreateItem(item.ItemId, item.Rarity, item.Amount);
             if (newItem == null) {
                 continue;
             }

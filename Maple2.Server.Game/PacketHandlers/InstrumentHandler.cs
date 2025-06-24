@@ -169,7 +169,7 @@ public class InstrumentHandler : FieldPacketHandler {
 
         // Subtracting 500ms to account for the delay between the client and server and exp abuse.
         // Modifier is the number of 500ms ticks that have passed.
-        session.Exp.AddExp(expType, (totalTickTime - 500) / 500);
+        session.Exp.AddExp(expType, (float) (totalTickTime - 500) / 500);
 
         session.ConditionUpdate(ConditionType.music_play_instrument_time, counter: totalTickTime / 1000, targetLong: session.Field.MapId, codeLong: session.Instrument.Value.Id);
         if (session.Instrument.Ensemble) {
@@ -272,21 +272,21 @@ public class InstrumentHandler : FieldPacketHandler {
     }
 
     private void HandleStartPerform(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
     }
 
     private void HandleEndPerform(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
     }
 
-    private void HandleEnterExitStage(GameSession session) => session.Field.PerformanceStage?.EnterExitStage(session);
+    private void HandleEnterExitStage(GameSession session) => session.Field?.PerformanceStage?.EnterExitStage(session);
 
     private void HandleFireworks(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
 
@@ -309,7 +309,7 @@ public class InstrumentHandler : FieldPacketHandler {
 
     private bool TryUseInstrument(GameSession session, long itemUid, long startTick, bool ensemble, [NotNullWhen(true)] out FieldInstrument? fieldInstrument) {
         Item? instrument = session.Item.Inventory.Get(itemUid, InventoryType.FishingMusic);
-        if (instrument == null || instrument.Metadata.Function?.Type != ItemFunction.OpenInstrument) {
+        if (instrument == null || instrument.Metadata.Function?.Type != ItemFunction.OpenInstrument || session.Field is null) {
             fieldInstrument = null;
             return false;
         }

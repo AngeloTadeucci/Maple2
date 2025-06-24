@@ -27,6 +27,7 @@ public class ItemUseHandler : FieldPacketHandler {
     #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long itemUid = packet.ReadLong();
 
         Item? item = session.Item.Inventory.Get(itemUid);
@@ -288,7 +289,7 @@ public class ItemUseHandler : FieldPacketHandler {
             return;
         }
 
-        Item? selfBadge = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? selfBadge = session.Field?.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (selfBadge == null) {
             session.Send(NoticePacket.MessageBox(StringCode.s_couple_effect_error_openbox_unknown));
             Logger.Error("Failed to create buddy badge box item: {Parameters}", buddyBadgeBoxParams[0]);
@@ -324,7 +325,7 @@ public class ItemUseHandler : FieldPacketHandler {
             throw new InvalidOperationException($"Failed to create buddy badge mail for receiver character id: {receiverInfo.CharacterId}");
         }
 
-        Item? receiverItem = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? receiverItem = session.Field?.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (receiverItem == null) {
             throw new InvalidOperationException($"Failed to create buddy badge item: {buddyBadgeBoxParams[0]}");
         }
@@ -525,8 +526,8 @@ public class ItemUseHandler : FieldPacketHandler {
 
         Vector3 position = session.Player.Transform.Position + session.Player.Transform.FrontAxis * distance;
         // TODO: Do we check Z?
-        FieldNpc? fieldNpc = session.Field.SpawnNpc(npcMetadata, position, session.Player.Rotation);
-        if (fieldNpc == null) {
+        FieldNpc? fieldNpc = session.Field?.SpawnNpc(npcMetadata, position, session.Player.Rotation);
+        if (fieldNpc == null || session.Field is null) {
             return;
         }
         session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
@@ -576,10 +577,11 @@ public class ItemUseHandler : FieldPacketHandler {
             return;
         }
         session.Item.Inventory.Consume(item.Uid, 1);
-        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
+        session.Field?.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
     }
 
     private void HandleAddAdditionalEffect(GameSession session, Item item) {
+        if (session.Field is null) return;
         int[] parameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
         if (parameters.Length < 2) {
             return;
@@ -653,6 +655,7 @@ public class ItemUseHandler : FieldPacketHandler {
     }
 
     private void HandleCallAirTaxi(GameSession session, IByteReader packet, Item item) {
+        if (session.Field is null) return;
         string mapIdString = packet.ReadUnicodeString();
 
         if (!int.TryParse(mapIdString, out int mapId)) {

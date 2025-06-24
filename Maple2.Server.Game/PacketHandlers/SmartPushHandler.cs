@@ -59,6 +59,7 @@ public class SmartPushHandler : PacketHandler<GameSession> {
     }
 
     private void HandleAdditionalEffect(GameSession session, IByteReader packet, SmartPushMetadata metadata) {
+        if (session.Field is null) return;
         int packageId = packet.ReadInt();
         if (metadata.RequiredItem.Tag != ItemTag.None && !session.Item.Inventory.Consume([metadata.RequiredItem])) {
             return;
