@@ -50,10 +50,14 @@ public partial class GameStorage {
                 Context.Mail.Remove(mail);
             }
 
+            Context.SaveChanges();
+
             foreach (Model.Mail mail in mails) {
                 mail.ReceiverId = characterId;
                 Context.Mail.Add(mail);
             }
+
+            Context.SaveChanges();
 
             if (!Commit()) {
                 throw new Exception("Failed to bind account mails to character");

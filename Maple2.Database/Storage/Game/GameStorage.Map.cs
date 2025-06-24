@@ -234,8 +234,8 @@ public partial class GameStorage {
                     continue;
                 }
 
-                if (plotCube.Interact != null && plotCube.Interact?.Metadata.Nurturing is not null) {
-                    plotCube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId, plotCube.Interact.Metadata.Nurturing);
+                if (plotCube.Interact?.Metadata.Nurturing is not null) {
+                    plotCube.Interact.Nurturing = GetNurturing(ugcMap.OwnerId, cube.Interact!.ObjectCode, plotCube.Interact.Metadata.Nurturing);
                 }
 
                 plot.Cubes.Add(plotCube.Position, plotCube);
