@@ -20,6 +20,9 @@ public class FieldFunctionInteract : FieldEntity<FunctionCubeMetadata> {
 
     public override void Update(long tickCount) {
         lock (InteractCube) {
+            if (InteractCube.Metadata.ControlType is InteractCubeControlType.Notice) {
+                return;
+            }
             if (InteractCube.State is InteractCubeState.Available or InteractCubeState.None) {
                 return;
             }

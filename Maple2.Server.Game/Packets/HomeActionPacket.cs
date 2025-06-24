@@ -59,6 +59,7 @@ public static class HomeActionPacket {
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.NoticeCube);
         pWriter.WriteBool(editing);
+        pWriter.Write<Vector3B>(cube.Position);
         pWriter.WriteClass<CubeNoticeSettings>(cube.Interact.NoticeSettings);
 
         return pWriter;
