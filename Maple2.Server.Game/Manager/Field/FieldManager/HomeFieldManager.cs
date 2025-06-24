@@ -28,6 +28,12 @@ public class HomeFieldManager : FieldManager {
             .Where(p => p.Interact?.PortalSettings is not null)
             .ToList()
             .ForEach(cubePortal => SpawnCubePortal(cubePortal));
+
+        Plots.Values
+            .SelectMany(plot => plot.Cubes.Values)
+            .Where(plotCube => plotCube.Interact != null)
+            .ToList()
+            .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
     }
 
     public void SetHomeSurvey(HomeSurvey survey) {

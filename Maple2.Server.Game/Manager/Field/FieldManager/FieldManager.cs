@@ -138,6 +138,12 @@ public partial class FieldManager : IField {
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
             }
+
+            Plots.Values
+                .SelectMany(plot => plot.Cubes.Values)
+                .Where(plotCube => plotCube.Interact != null)
+                .ToList()
+                .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
         }
 
         // Create default to place liftable cubes
@@ -156,12 +162,6 @@ public partial class FieldManager : IField {
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
         }
-
-        Plots.Values
-            .SelectMany(plot => plot.Cubes.Values)
-            .Where(plotCube => plotCube.Interact != null)
-            .ToList()
-            .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);
