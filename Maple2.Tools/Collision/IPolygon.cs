@@ -6,7 +6,7 @@ namespace Maple2.Tools.Collision;
 public interface IPolygon {
     public static readonly IPolygon Null = new NullPolygon();
 
-    public bool Contains(float x, float y) => Contains(new Vector2(x, y), 0.001f);
+    public bool Contains(float x, float y, float epsilon = 0.001f) => Contains(new Vector2(x, y), epsilon);
 
     public bool Contains(in Vector2 point, float epsilon = 1e-5f);
 
