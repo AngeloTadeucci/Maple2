@@ -12,8 +12,9 @@ public class Circle : IPolygon {
         Radius = radius;
     }
 
-    public virtual bool Contains(in Vector2 point) {
-        return Vector2.DistanceSquared(Origin, point) <= Radius * Radius;
+    public virtual bool Contains(in Vector2 point, float epsilon = 1e-5f) {
+        float expandedRadius = Radius + epsilon;
+        return Vector2.DistanceSquared(Origin, point) <= expandedRadius * expandedRadius;
     }
 
     public Vector2[] GetAxes(Polygon? other) {

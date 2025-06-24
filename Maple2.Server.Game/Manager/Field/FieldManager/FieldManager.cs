@@ -323,7 +323,7 @@ public partial class FieldManager : IField {
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {
-        if (Entities.BoundingBox.Contains(player.Position)) {
+        if (Entities.BoundingBox.Contains(player.Position, 0.001f)) {
             return;
         }
 

@@ -17,8 +17,10 @@ public readonly struct PointPrism : IPrism {
         Height = new Range(origin.Z, origin.Z);
     }
 
-    public bool Contains(in Vector3 other) {
-        return origin == other;
+    public bool Contains(in Vector3 other, float epsilon = 1e-5f) {
+        return Math.Abs(origin.X - other.X) < epsilon &&
+               Math.Abs(origin.Y - other.Y) < epsilon &&
+               Math.Abs(origin.Z - other.Z) < epsilon;
     }
 
     public bool Intersects(IPrism prism) {
@@ -26,10 +28,7 @@ public readonly struct PointPrism : IPrism {
     }
 
     private readonly struct Point(float x, float y) : IPolygon {
-        public bool Contains(in Vector2 point) {
-            const float tolerance = 0.0000001f;
-            return Math.Abs(x - point.X) < tolerance && Math.Abs(y - point.Y) < tolerance;
-        }
+        public bool Contains(in Vector2 point, float epsilon = 1e-5f) => Math.Abs(x - point.X) < epsilon && Math.Abs(y - point.Y) < epsilon;
 
         public bool Intersects(IPolygon polygon) {
             return polygon.Contains(x, y);

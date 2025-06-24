@@ -6,9 +6,9 @@ namespace Maple2.Tools.Collision;
 public interface IPolygon {
     public static readonly IPolygon Null = new NullPolygon();
 
-    public bool Contains(float x, float y) => Contains(new Vector2(x, y));
+    public bool Contains(float x, float y, float epsilon = 0.001f) => Contains(new Vector2(x, y), epsilon);
 
-    public bool Contains(in Vector2 point);
+    public bool Contains(in Vector2 point, float epsilon = 1e-5f);
 
     public Vector2[] GetAxes(Polygon? other);
 
@@ -18,6 +18,6 @@ public interface IPolygon {
 
     private class NullPolygon : Polygon {
         public override Vector2[] Points => [];
-        public override bool Contains(in Vector2 point) => false;
+        public override bool Contains(in Vector2 point, float epsilon = 1e-5f) => false;
     }
 }
