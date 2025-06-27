@@ -54,10 +54,10 @@ const int maxRetries = 3;
 const int delayMs = 5000;
 int attempt = 0;
 
+GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
+var worldClient = new WorldClient(channel);
 while (attempt < maxRetries) {
     try {
-        GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
-        var worldClient = new WorldClient(channel);
         response = worldClient.AddChannel(new AddChannelRequest {
             GameIp = Target.GameIp.ToString(),
             GrpcGameIp = Target.GrpcGameIp,
