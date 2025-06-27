@@ -74,7 +74,7 @@ while (attempt < maxRetries) {
 }
 
 if (response == null || response.GamePort == 0) {
-    Log.Error("Failed to add channel to World Server after {MaxRetries} attempts.", maxRetries);
+    Log.Error("Failed to add channel to World Server. Is the World Server running?");
     return;
 }
 
