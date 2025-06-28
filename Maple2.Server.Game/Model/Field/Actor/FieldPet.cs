@@ -86,7 +86,7 @@ public sealed class FieldPet : FieldNpc {
         damage.Targets.TryAdd(ObjectId, targetRecord);
     }
 
-    protected override void Remove(int delay) => Field.RemovePet(ObjectId, delay);
+    protected override void Remove(TimeSpan delay) => Field.RemovePet(ObjectId, delay);
 
     public void UpdateSkin(int skinId) {
         SkinId = skinId > 0 ? skinId : Value.Id;

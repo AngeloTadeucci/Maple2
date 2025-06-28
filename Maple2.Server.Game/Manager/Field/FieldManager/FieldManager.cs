@@ -203,7 +203,7 @@ public partial class FieldManager : IField {
 
             if (spawn.Tags.Contains("보너스맵")) { // Bonus Map
                 // Spawn a hat within a random range of 5 min to 8 hours
-                int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
+                TimeSpan delay = Random.Shared.Next(1, 97) * TimeSpan.FromMinutes(5);
                 Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, regionSpawn), delay);
             }
         }

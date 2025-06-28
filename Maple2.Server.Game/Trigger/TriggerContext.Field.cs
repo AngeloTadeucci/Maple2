@@ -293,7 +293,7 @@ public partial class TriggerContext {
 
             if (interval > 0) {
                 intervalTotal += interval;
-                Events.Schedule(() => UpdateSetMesh(mesh), intervalTotal + delay);
+                Events.Schedule(() => UpdateSetMesh(mesh), TimeSpan.FromMilliseconds(intervalTotal + delay));
             } else {
                 UpdateSetMesh(mesh);
             }

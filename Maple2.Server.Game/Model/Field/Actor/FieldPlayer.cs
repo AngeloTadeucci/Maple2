@@ -112,7 +112,7 @@ public class FieldPlayer : Actor<Player> {
         scheduler = new EventQueue();
         scheduler.ScheduleRepeated(() => {
             session.ConditionUpdate(ConditionType.stay_map, codeLong: session.Field!.MapId);
-        }, 60000, skipFirst: true); // 60 seconds
+        }, TimeSpan.FromSeconds(60), skipFirst: true);
         scheduler.Start();
     }
 

@@ -131,7 +131,7 @@ public class FieldNpc : Actor<Npc> {
 
     protected override void Dispose(bool disposing) { }
 
-    protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
+    protected virtual void Remove(TimeSpan delay) => Field.RemoveNpc(ObjectId, delay);
 
     private List<string> debugMessages = [];
     private bool playersListeningToDebug = false; // controls whether messages should log
@@ -321,7 +321,7 @@ public class FieldNpc : Actor<Npc> {
 
         HandleDamageDealers();
 
-        Remove(delay: (int) (Value.Metadata.Dead.Time * 1000));
+        Remove(delay: TimeSpan.FromSeconds(Value.Metadata.Dead.Time));
     }
 
     public virtual void Animate(string sequenceName, float duration = -1f) {
