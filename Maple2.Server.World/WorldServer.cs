@@ -144,13 +144,13 @@ public class WorldServer {
 
         DateTime nextMidnight = lastMidnight.AddDays(1);
         TimeSpan timeUntilMidnight = nextMidnight - now;
-        scheduler.Schedule(ScheduleDailyReset, (int) timeUntilMidnight.TotalMilliseconds);
+        scheduler.Schedule(ScheduleDailyReset, timeUntilMidnight);
     }
 
     private void ScheduleDailyReset() {
         DailyReset();
         // Schedule it to repeat every once a day.
-        scheduler.ScheduleRepeated(DailyReset, (int) TimeSpan.FromDays(1).TotalMilliseconds, true);
+        scheduler.ScheduleRepeated(DailyReset, TimeSpan.FromDays(1), strict: true);
     }
 
     private void DailyReset() {
@@ -185,7 +185,7 @@ public class WorldServer {
                 if (startTime > eventData.EndTime) {
                     continue;
                 }
-                scheduler.Schedule(() => GlobalPortal(eventData, startTime), (int) (startTime - DateTime.Now).TotalMilliseconds);
+                scheduler.Schedule(() => GlobalPortal(eventData, startTime), startTime - DateTime.Now);
             }
         }
     }
@@ -221,7 +221,7 @@ public class WorldServer {
             return;
         }
 
-        scheduler.Schedule(() => GlobalPortal(data, nextRunTime), (int) (nextRunTime - DateTime.Now).TotalMilliseconds);
+        scheduler.Schedule(() => GlobalPortal(data, nextRunTime), nextRunTime - DateTime.Now);
     }
 
     private void ScheduleGameEvents() {
@@ -229,12 +229,12 @@ public class WorldServer {
         // Add Events
         // Get only events that havent been started. Started events already get loaded on game/login servers on start up
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.StartTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            scheduler.Schedule(() => AddGameEvent(data.Id), (int) (data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+            scheduler.Schedule(() => AddGameEvent(data.Id), TimeSpan.FromSeconds(data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
         }
 
         // Remove Events
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.EndTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            scheduler.Schedule(() => RemoveGameEvent(data.Id), (int) (data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+            scheduler.Schedule(() => RemoveGameEvent(data.Id), TimeSpan.FromSeconds(data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
         }
     }
 

@@ -564,7 +564,7 @@ public partial class FieldManager {
 
     private void SetBonusMapPortal(IList<MapMetadata> bonusMaps, Ms2RegionSpawn spawn) {
         // Spawn a hat within a random range of 5 min to 8 hours
-        int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
+        var delay = Random.Shared.Next(1, 97) * TimeSpan.FromMinutes(5);
         MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
         IField? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
         bonusMap?.Init();
@@ -726,7 +726,7 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveInteract(IInteractObject interactObject, int removeDelay = 0) {
+    public bool RemoveInteract(IInteractObject interactObject, TimeSpan removeDelay = default) {
         if (!fieldAdBalloons.ContainsKey(interactObject.EntityId) && !fieldInteracts.ContainsKey(interactObject.EntityId)) {
             return false;
         }
@@ -747,7 +747,7 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveNpc(int objectId, int removeDelay = 0) {
+    public bool RemoveNpc(int objectId, TimeSpan removeDelay = default) {
         if (!Mobs.TryGetValue(objectId, out FieldNpc? npc) && !Npcs.TryGetValue(objectId, out npc)) {
             return false;
         }
@@ -764,7 +764,7 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemovePet(int objectId, int removeDelay = 0) {
+    public bool RemovePet(int objectId, TimeSpan removeDelay = default) {
         if (!Pets.TryRemove(objectId, out FieldPet? pet)) {
             return false;
         }
