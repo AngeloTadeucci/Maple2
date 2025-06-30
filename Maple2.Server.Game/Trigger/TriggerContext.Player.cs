@@ -5,7 +5,6 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -204,35 +203,36 @@ public partial class TriggerContext {
         }
     }
 
-    public void SetState(int triggerId, object[] states, bool randomize) {
+    public void SetState(int triggerId, string[] states, bool randomize) {
         ErrorLog("[SetState] triggerId:{TriggerId}, states:{States}, randomize:{Randomize}", triggerId, string.Join(", ", states), randomize);
         if (randomize) {
             Random.Shared.Shuffle(states);
         }
 
-        Field.States[triggerId] = new List<object>(states);
+        Field.States[triggerId] = owner.GetStates(states);
     }
 
     #region Conditions
-    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level) {
+    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level, bool negate) {
         DebugLog("[CheckAnyUserAdditionalEffect] boxId:{BoxId}, additionalEffectId:{EffectId}, level:{Level}", boxId, additionalEffectId, level);
         foreach (FieldPlayer player in PlayersInBox(boxId)) {
             if (player.Buffs.HasBuff(additionalEffectId, (short) level)) {
-                return true;
+                return !negate;
             }
         }
 
-        return false;
+        return negate;
     }
 
-    public bool CheckSameUserTag(int boxId) {
+    public bool CheckSameUserTag(int boxId, bool negate) {
         ErrorLog("[CheckSameUserTag] boxId:{BoxId}", boxId);
         return false;
     }
 
-    public bool QuestUserDetected(int[] boxIds, int[] questIds, int[] questStates, int jobCode) {
+    public bool QuestUserDetected(int[] boxIds, int[] questIds, int[] questStates, int jobCode, bool negate) {
         DebugLog("[QuestUserDetected] boxIds:{BoxIds}, questIds:{QuestIds}, questStates:{QuestStates}, jobCode:{JobCode}",
             string.Join(", ", boxIds), string.Join(", ", questIds), string.Join(", ", questStates), (JobCode) jobCode);
+
 
         foreach (FieldPlayer player in PlayersInBox(boxIds)) {
             foreach (int questId in questIds) {
@@ -243,38 +243,41 @@ public partial class TriggerContext {
                 switch (questStates[0]) {
                     case 1: // Started
                         if (quest.State == QuestState.Started) {
-                            return true;
+                            return !negate;
                         }
                         break;
                     case 2: // Started and Can Complete
                         if (quest.State == QuestState.Started && player.Session.Quest.CanComplete(quest)) {
-                            return true;
+                            return !negate;
                         }
                         break;
                     case 3: // Completed
                         if (quest.State == QuestState.Completed) {
-                            return true;
+                            return !negate;
                         }
                         break;
                 }
             }
         }
 
-        return false;
+        return negate;
     }
 
-    public bool UserDetected(int[] boxIds, int jobCode) {
+    public bool UserDetected(int[] boxIds, JobCode jobCode, bool negate) {
         DebugLog("[UserDetected] boxIds:{BoxIds}, jobCode:{JobCode}", string.Join(", ", boxIds), (JobCode) jobCode);
         IEnumerable<TriggerBox> boxes = boxIds
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
             .Where(box => box != null)!;
 
+        bool result;
         if (jobCode != 0) {
-            return Field.Players.Values
-                .Any(player => player.Value.Character.Job.Code() == (JobCode) jobCode && boxes.Any(box => box.Contains(player.Position)));
+            result = Field.Players.Values
+                .Any(player => player.Value.Character.Job.Code() == jobCode && boxes.Any(box => box.Contains(player.Position)));
+        } else {
+            result = Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
         }
 
-        return Field.Players.Values.Any(player => boxes.Any(box => box.Contains(player.Position)));
+        return negate ? !result : result;
     }
 
     public bool WaitSecondsUserValue(string key, string desc) {
@@ -296,7 +299,7 @@ public partial class TriggerContext {
 
     private IEnumerable<FieldPlayer> PlayersNotInBox(int boxId) {
         if (!Objects.Boxes.TryGetValue(boxId, out TriggerBox? box)) {
-            return Array.Empty<FieldPlayer>();
+            return [];
         }
 
         return Field.Players.Values.Where(player => !box.Contains(player.Position));

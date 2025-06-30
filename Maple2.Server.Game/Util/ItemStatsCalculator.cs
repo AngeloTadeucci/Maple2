@@ -113,7 +113,7 @@ public sealed class ItemStatsCalculator {
 
 
         if (TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
-            ItemStats.Option option = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random);
+            ItemStats.Option option = GetRandomOption(item.Id, itemOption, item.Type, ItemStats.Type.Random);
             RandomizeValues(item, itemOption, ref option, rollMax);
             stats[ItemStats.Type.Random] = option;
         }
@@ -158,7 +158,7 @@ public sealed class ItemStatsCalculator {
         if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             return false;
         }
-        ItemStats.Option randomOption = GetRandomOption(itemOption, item.Type, ItemStats.Type.Random, option.Count, presets);
+        ItemStats.Option randomOption = GetRandomOption(item.Id, itemOption, item.Type, ItemStats.Type.Random, option.Count, presets);
 
         if (!RandomizeValues(item, itemOption, ref randomOption)) {
             return false;
@@ -392,7 +392,7 @@ public sealed class ItemStatsCalculator {
 
         if (TableMetadata.ItemOptionStaticTable.Options.TryGetValue(item.Metadata.Option.StaticId, item.Rarity, out ItemOption? itemOption)) {
             // We're using RandomItemOption here considering the logic is the same.
-            option = RandomItemOption(itemOption, item.Type, statsType);
+            option = RandomItemOption(item.Id, itemOption, item.Type, statsType);
         }
 
         if (item.Metadata.Option.StaticType == ItemOptionMakeType.Lua && pick != null) {
@@ -413,8 +413,8 @@ public sealed class ItemStatsCalculator {
     }
 
     // Used to calculate the default random attributes for a given item.
-    private ItemStats.Option GetRandomOption(ItemOption itemOption, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
-        return RandomItemOption(itemOption, itemType, statsType, count, presets);
+    private ItemStats.Option GetRandomOption(int itemId, ItemOption itemOption, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
+        return RandomItemOption(itemId, itemOption, itemType, statsType, count, presets);
     }
 
     private ItemEquipVariationTable? GetVariationTable(in ItemType type) {
@@ -506,7 +506,7 @@ public sealed class ItemStatsCalculator {
         return new ItemStats.Option(statResult, specialResult);
     }
 
-    private static ItemStats.Option RandomItemOption(ItemOption option, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
+    private static ItemStats.Option RandomItemOption(int itemId, ItemOption option, in ItemType itemType, ItemStats.Type statsType, int count = -1, params LockOption[] presets) {
         var statResult = new Dictionary<BasicAttribute, BasicOption>();
         var specialResult = new Dictionary<SpecialAttribute, SpecialOption>();
 
@@ -517,28 +517,39 @@ public sealed class ItemStatsCalculator {
         // Ensures that there are enough options to choose.
         total = Math.Min(total, option.Entries.Length);
 
+        // Create a mutable list of entries
+        List<ItemOption.Entry> availableEntries = option.Entries.ToList();
+
         // Compute locked options first.
         foreach (LockOption preset in presets) {
             if (preset.TryGet(out BasicAttribute basic, out bool _)) {
                 ItemOption.Entry entry = option.Entries.FirstOrDefault(e => e.BasicAttribute == basic);
                 // Ignore any invalid presets, they will get populated with valid data below.
                 AddResult(entry, statResult, specialResult);
+                availableEntries.Remove(entry);
             } else if (preset.TryGet(out SpecialAttribute special, out bool _)) {
                 ItemOption.Entry entry = option.Entries.FirstOrDefault(e => e.SpecialAttribute == special);
                 // Ignore any invalid presets, they will get populated with valid data below.
                 AddResult(entry, statResult, specialResult);
+                availableEntries.Remove(entry);
             }
         }
 
-        while (statResult.Count + specialResult.Count < total) {
-            ItemOption.Entry entry = option.Entries.Random();
+        while (statResult.Count + specialResult.Count < total && availableEntries.Count > 0) {
+            ItemOption.Entry entry = availableEntries.Random();
             if (statsType == ItemStats.Type.Random &&
                 !IsValidStat(itemType, total, statResult, specialResult, entry)) {
+                availableEntries.Remove(entry);
                 continue;
             }
             if (!AddResult(entry, statResult, specialResult)) {
-                Log.Error("Failed to select random item option: {Entry}", entry); // Invalid entry
+                Log.Logger.Error("Failed to select random item option: {Entry}", entry); // Invalid entry
             }
+            availableEntries.Remove(entry);
+        }
+
+        if (availableEntries.Count == 0 && statResult.Count + specialResult.Count < total) {
+            Log.Logger.Error("Failed to select random item option, no more entries available. ItemId: {Item}", itemId);
         }
 
         return new ItemStats.Option(statResult, specialResult, multiplyFactor: option.MultiplyFactor);
@@ -588,15 +599,14 @@ public sealed class ItemStatsCalculator {
             return damageTypeStatCount < 1;
         }
 
-        if (itemType is { IsCombatPet: false, IsWeapon: false, IsAccessory: false }) {
+        bool isBaseOffense = entry.BasicAttribute != null && offenseBasicAttributes.Contains((BasicAttribute) entry.BasicAttribute);
+        bool isSpecialOffense = entry.SpecialAttribute != null && offenseSpecialAttributes.Contains((SpecialAttribute) entry.SpecialAttribute);
+        if (itemType is { IsCombatPet: false, IsWeapon: false, IsAccessory: false } && (isBaseOffense || isSpecialOffense)) {
             int offenseStatCount = statDict.Keys.Count(stat => offenseBasicAttributes.Contains(stat));
             offenseStatCount += specialDict.Keys.Count(stat => offenseSpecialAttributes.Contains(stat));
 
-            if (entry.BasicAttribute != null && offenseBasicAttributes.Contains((BasicAttribute) entry.BasicAttribute)) {
-                offenseStatCount++;
-            } else if (entry.SpecialAttribute != null && offenseSpecialAttributes.Contains((SpecialAttribute) entry.SpecialAttribute)) {
-                offenseStatCount++;
-            }
+            // Simulate the addition of the new stat
+            offenseStatCount++;
 
             return (float) offenseStatCount / statLineCount <= OFFENSE_LINE_MAX_THRESHOLD;
         }

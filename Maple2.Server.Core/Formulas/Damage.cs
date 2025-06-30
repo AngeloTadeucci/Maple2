@@ -1,6 +1,4 @@
-﻿using Maple2.Model.Enum;
-
-namespace Maple2.Server.Core.Formulas;
+﻿namespace Maple2.Server.Core.Formulas;
 
 public static class Damage {
     public static double CalculateResistance(double targetPiercingResistance, double casterPiercingMultiplier) {

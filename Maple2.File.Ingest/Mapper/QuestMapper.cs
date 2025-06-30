@@ -14,8 +14,8 @@ namespace Maple2.File.Ingest.Mapper;
 public class QuestMapper : TypeMapper<QuestMetadata> {
     private readonly QuestParser parser;
 
-    public QuestMapper(M2dReader xmlReader) {
-        parser = new QuestParser(xmlReader);
+    public QuestMapper(M2dReader xmlReader, string language) {
+        parser = new QuestParser(xmlReader, language);
     }
 
     protected override IEnumerable<QuestMetadata> Map() {
@@ -80,9 +80,13 @@ public class QuestMapper : TypeMapper<QuestMetadata> {
                     PortalId: data.dispatch.portal,
                     Script: data.dispatch.script
                 ),
-                Mentoring: data.mentoringMission == null ? null : new QuestMentoringMission(
+                Mentoring: data.mentoringMission == null || string.IsNullOrEmpty(data.mentoringMission.mentoringIcon) ? null : new QuestMentoringMission(
                     OpeningDay: data.mentoringMission.openingDay,
                     Season: data.mentoringMission.mentoringSeason
+                ),
+                SummonPortal: data.summonPortal is { fieldID: 0, portalID: 0 } ? null : new QuestSummonPortal(
+                    MapId: data.summonPortal.fieldID,
+                    PortalId: data.summonPortal.portalID
                 ),
                 EventMissionType: Enum.TryParse(data.eventMission.@event, true, out QuestEventMissionType eventMissionType) ? eventMissionType : QuestEventMissionType.none,
                 Conditions: data.condition.Select(condition => new ConditionMetadata(

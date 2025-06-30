@@ -1,5 +1,4 @@
-﻿using System.CommandLine;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using System.Reflection;
 using Autofac;
@@ -35,6 +34,7 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 // Force Globalization to en-US because we use periods instead of commas for decimals
 CultureInfo.CurrentCulture = new("en-US");
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 DotEnv.Load();
 
@@ -50,21 +50,31 @@ Log.Logger = new LoggerConfiguration()
 bool overrideInstanced = args.Contains("--instanced");
 
 AddChannelResponse? response = null;
-try {
-    GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
-    var worldClient = new WorldClient(channel);
-    response = worldClient.AddChannel(new AddChannelRequest {
-        GameIp = Target.GameIp.ToString(),
-        GrpcGameIp = Target.GrpcGameIp,
-        InstancedContent = overrideInstanced || Target.InstancedContent,
-    });
-} catch (RpcException e) {
-    Log.Error(e, "Failed to get port information from World Server. Is World Server running?");
-    return;
+const int maxRetries = 3;
+const int delayMs = 5000;
+int attempt = 0;
+
+GrpcChannel channel = GrpcChannel.ForAddress(Target.GrpcWorldUri);
+var worldClient = new WorldClient(channel);
+while (attempt < maxRetries) {
+    try {
+        response = worldClient.AddChannel(new AddChannelRequest {
+            GameIp = Target.GameIp.ToString(),
+            GrpcGameIp = Target.GrpcGameIp,
+            InstancedContent = overrideInstanced || Target.InstancedContent,
+        });
+        break; // Success
+    } catch (RpcException e) {
+        attempt++;
+        Log.Warning("Failed to get port information from World Server. Attempt {Attempt} of {MaxRetries}.", attempt, maxRetries);
+        if (attempt < maxRetries) {
+            await Task.Delay(delayMs);
+        }
+    }
 }
 
-if (response.GamePort == 0) {
-    Log.Error("Failed to add channel to World Server.");
+if (response == null || response.GamePort == 0) {
+    Log.Error("Failed to add channel to World Server. Is the World Server running?");
     return;
 }
 
@@ -113,6 +123,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .PropertiesAutowired()
         .AsSelf();
     autofac.RegisterType<ItemStatsCalculator>()
+        .PropertiesAutowired()
+        .SingleInstance();
+    autofac.RegisterType<TriggerCache>()
         .PropertiesAutowired()
         .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()

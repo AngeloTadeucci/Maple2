@@ -4,13 +4,13 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class PrestigeHandler : PacketHandler<GameSession> {
+public class PrestigeHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Prestige;
 
     private enum Command : byte {
@@ -51,7 +51,7 @@ public class PrestigeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(metadata.Id, metadata.Rarity, metadata.Value);
+        Item? item = session.Field?.ItemDrop.CreateItem(metadata.Id, metadata.Rarity, metadata.Value);
         if (item == null) {
             return;
         }
@@ -77,7 +77,7 @@ public class PrestigeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Amount);
         if (item == null) {
             return;
         }

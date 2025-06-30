@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 
 namespace Maple2.Model.Metadata;
 
@@ -16,6 +15,7 @@ public record QuestMetadata(
     QuestMetadataGoToDungeon GoToDungeon,
     QuestDispatch? Dispatch,
     QuestMentoringMission? Mentoring,
+    QuestSummonPortal? SummonPortal,
     QuestEventMissionType EventMissionType,
     ConditionMetadata[] Conditions) : ISearchResult;
 
@@ -89,4 +89,8 @@ public record QuestDispatch(
 public record QuestMentoringMission(
     int OpeningDay,
     int Season);
+
+public record QuestSummonPortal(
+    int MapId,
+    int PortalId);
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -20,6 +20,7 @@ using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Model.Skill;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -51,6 +52,7 @@ public partial class FieldManager : IField {
     public ServerTableMetadataStorage ServerTableMetadata { get; init; } = null!;
     public RideMetadataStorage RideMetadata { get; init; } = null!;
     public ItemStatsCalculator ItemStatsCalc { get; init; } = null!;
+    public TriggerCache TriggerCache { get; init; } = null!;
     public Factory FieldFactory { get; init; } = null!;
     public IGraphicsContext DebugGraphicsContext { get; init; } = null!;
     // ReSharper restore All
@@ -67,6 +69,7 @@ public partial class FieldManager : IField {
     internal readonly FieldActor FieldActor;
     private readonly CancellationTokenSource cancel;
     private readonly Thread thread;
+    private readonly List<(FieldPacketHandler handler, GameSession session, ByteReader reader)> queuedPackets;
     private bool initialized;
     public bool Disposed { get; private set; }
 
@@ -87,13 +90,14 @@ public partial class FieldManager : IField {
         Metadata = metadata;
         MapId = metadata.Id;
         this.ugcMetadata = ugcMetadata;
-        this.Entities = entities;
+        Entities = entities;
         TriggerObjects = new TriggerCollection(entities);
 
         Scheduler = new EventQueue();
         FieldActor = new FieldActor(this, NextLocalId(), metadata, npcMetadata); // pulls from argument because member NpcMetadata is null here
         cancel = new CancellationTokenSource();
         thread = new Thread(UpdateLoop);
+        queuedPackets = new();
         Ai = new AiManager(this);
         RoomId = NextGlobalId();
 
@@ -134,6 +138,12 @@ public partial class FieldManager : IField {
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
             }
+
+            Plots.Values
+                .SelectMany(plot => plot.Cubes.Values)
+                .Where(plotCube => plotCube.Interact != null)
+                .ToList()
+                .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
         }
 
         // Create default to place liftable cubes
@@ -152,12 +162,6 @@ public partial class FieldManager : IField {
         foreach (Portal portal in Entities.Portals.Values) {
             SpawnPortal(portal);
         }
-
-        Plots.Values
-            .SelectMany(plot => plot.Cubes.Values)
-            .Where(plotCube => plotCube.Interact != null)
-            .ToList()
-            .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
 
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);
@@ -253,6 +257,29 @@ public partial class FieldManager : IField {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
+    public void QueuePacket(FieldPacketHandler handler, GameSession session, ByteReader reader) {
+        lock (queuedPackets) {
+            queuedPackets.Add((handler, session, reader));
+        }
+    }
+
+    private void ProcessPackets() {
+        lock (queuedPackets) {
+            foreach ((FieldPacketHandler handler, GameSession session, ByteReader reader) packet in queuedPackets) {
+                try {
+                    if (packet.session.State is SessionState.Disconnected) {
+                        continue;
+                    }
+                    packet.handler.Handle(packet.session, packet.reader);
+                } finally {
+                    ArrayPool<byte>.Shared.Return(packet.reader.Buffer);
+                }
+            }
+
+            queuedPackets.Clear();
+        }
+    }
+
     private void UpdateLoop() {
         while (!cancel.IsCancellationRequested) {
             if (!(DebugRenderer?.IsActive ?? false)) {
@@ -265,6 +292,8 @@ public partial class FieldManager : IField {
     }
 
     public void Update() {
+        ProcessPackets();
+
         if (Players.IsEmpty) {
             return;
         }
@@ -294,7 +323,7 @@ public partial class FieldManager : IField {
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {
-        if (Entities.BoundingBox.Contains(player.Position)) {
+        if (Entities.BoundingBox.Contains(player.Position, 0.001f)) {
             return;
         }
 
@@ -307,6 +336,12 @@ public partial class FieldManager : IField {
     }
 
     public bool FindNearestPoly(Vector3 point, out long nearestRef, out RcVec3f position) {
+        if (point.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || point.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
+            nearestRef = 0;
+            position = default;
+            logger.Error("Invalid point {Point} in field {MapId}", point, MapId);
+            return false;
+        }
         RcVec3f pointToNavMesh = DotRecastHelper.ToNavMeshSpace(point);
         return FindNearestPoly(pointToNavMesh, out nearestRef, out position);
     }
@@ -463,14 +498,15 @@ public partial class FieldManager : IField {
         Portal srcPortal = fieldPortal;
         switch (srcPortal.Type) {
             case PortalType.InHome:
-                PlotCube? cubePortal = session.Housing.GetFieldPlot()?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
+                Plot? fieldPlot = session.Housing.GetFieldPlot();
+                PlotCube? cubePortal = fieldPlot?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalObjectId == fieldPortal.ObjectId);
                 if (cubePortal is null) {
                     return false;
                 }
 
                 switch (cubePortal.Interact!.PortalSettings!.Destination) {
                     case CubePortalDestination.PortalInHome:
-                        PlotCube? destinationCube = session.Housing.GetFieldPlot()?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
+                        PlotCube? destinationCube = fieldPlot?.Cubes.Values.FirstOrDefault(x => x.Interact?.PortalSettings is not null && x.Interact.PortalSettings.PortalName == cubePortal.Interact.PortalSettings.DestinationTarget);
                         if (destinationCube is null) {
                             return false;
                         }
@@ -478,24 +514,22 @@ public partial class FieldManager : IField {
                         session.Send(PortalPacket.MoveByPortal(session.Player, destinationCube.Position, default));
                         return true;
                     case CubePortalDestination.SelectedMap:
-                        session.MigrateOutOfInstance(srcPortal.TargetMapId);
+                        session.Migrate(srcPortal.TargetMapId);
                         return true;
-                    case CubePortalDestination.FriendHome: {
-                            using GameStorage.Request db = session.GameStorage.Context();
-                            Home? home = db.GetHome(fieldPortal.HomeId);
-                            if (home is null) {
-                                session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
-                                return false;
-                            }
-
-                            session.MigrateToInstance(home.Indoor.MapId, home.Indoor.OwnerId);
-                            return true;
+                    case CubePortalDestination.FriendHome:
+                        Home? home = GetHome(session, fieldPortal);
+                        if (home is null) {
+                            session.Send(FieldEnterPacket.Error(MigrationError.s_move_err_no_server));
+                            return false;
                         }
+
+                        session.Migrate(home.Indoor.MapId, home.Indoor.OwnerId);
+                        return true;
                 }
                 return false;
             case PortalType.LeaveDungeon:
                 //TODO: Migrate back to original channel
-                session.Send(session.PrepareField(session.Player.Value.Character.ReturnMapId)
+                session.Send(session.PrepareField(session.Player.Value.Character.ReturnMaps.Peek())
                     ? FieldEnterPacket.Request(session.Player)
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
                 return true;
@@ -508,6 +542,9 @@ public partial class FieldManager : IField {
                     ? FieldEnterPacket.Request(session.Player)
                     : FieldEnterPacket.Error(MigrationError.s_move_err_default));
                 return true;
+            case PortalType.Quest:
+                session.Field?.RemovePortal(fieldPortal.ObjectId);
+                break;
 
         }
 
@@ -523,6 +560,8 @@ public partial class FieldManager : IField {
             session.ReturnField();
             return true;
         }
+
+        session.ConditionUpdate(ConditionType.map, codeLong: srcPortal.TargetMapId);
 
         session.Send(session.PrepareField(srcPortal.TargetMapId, portalId: srcPortal.TargetPortalId)
             ? FieldEnterPacket.Request(session.Player)
@@ -599,6 +638,12 @@ public partial class FieldManager : IField {
             }
             Broadcast(VibratePacket.Attack(vibrate.Id.Id, record));
         }
+    }
+
+    private static Home? GetHome(GameSession session, FieldPortal fieldPortal) {
+        using GameStorage.Request db = session.GameStorage.Context();
+        Home? home = db.GetHome(fieldPortal.HomeId);
+        return home;
     }
 
     #region DebugUtils

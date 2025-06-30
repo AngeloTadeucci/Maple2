@@ -4,14 +4,14 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using static Maple2.Model.Error.MesoMarketError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class MesoMarketHandler : PacketHandler<GameSession> {
+public class MesoMarketHandler : FieldPacketHandler {
     // TODO: Periodically update this by querying `meso-market-sold` table
     private const int AVERAGE_PRICE = 200;
 
@@ -51,7 +51,7 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
         session.Send(MesoMarketPacket.Quota(session.Player.Value.Account.MesoMarketListed, session.Player.Value.Account.MesoMarketPurchased));
 
         using GameStorage.Request db = session.GameStorage.Context();
-        ICollection<MesoListing> myListings = db.GetMyMesoListings(session.AccountId);
+        ICollection<MesoListing> myListings = db.GetMyMesoListingsByAccountId(session.AccountId);
         session.Send(MesoMarketPacket.MyListings(myListings));
     }
 
@@ -192,10 +192,10 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
         var buyerMail = new Mail {
             ReceiverId = session.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
-            },
+            ],
             Meso = listing.Amount,
         };
         buyerMail.SetSenderName(StringCode.s_mesoMarket_mail_to_sender);
@@ -206,13 +206,13 @@ public class MesoMarketHandler : PacketHandler<GameSession> {
         var sellerMail = new Mail {
             ReceiverId = listing.CharacterId,
             Type = MailType.MesoMarket,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("money", $"{listing.Amount}"),
                 ("money", $"{listing.Price}"),
                 ("money", $"{meretFee}"),
                 ("money", $"{(int) (Constant.MesoMarketTaxRate * 100)}"),
                 ("money", $"{listing.Price - meretFee}"),
-            },
+            ],
             Meret = listing.Price - meretFee,
         };
         sellerMail.SetSenderName(StringCode.s_mesoMarket_mail_to_sender);

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 using DotRecast.Core;
 using DotRecast.Core.Numerics;
 using DotRecast.Detour;
@@ -72,7 +71,7 @@ public sealed class AgentNavigation {
         while (pathIterPolysCount > 0 && smoothPath.Count < MAX_SMOOTH) {
             // Find location to steer towards.
             if (!DtPathUtils.GetSteerTarget(navMeshQuery, iterPos, endPos, DotRecastHelper.MIN_TARGET_DIST,
-                    pathIterPolys, pathIterPolysCount, out var steerPos, out int steerPosFlag, out long steerPosRef)) {
+                pathIterPolys, pathIterPolysCount, out var steerPos, out int steerPosFlag, out long steerPosRef)) {
                 break;
             }
 
@@ -219,6 +218,27 @@ public sealed class AgentNavigation {
         RcVec3f end = RcVec3f.Lerp(currentPath[currentPathIndex], currentPath[currentPathIndex + 1], currentPathProgress);
 
         return (start, DotRecastHelper.FromNavMeshSpace(end));
+    }
+
+    /// <summary>
+    /// Advances the actor in a straight line towards the target position, ignoring navmesh.
+    /// </summary>
+    /// <param name="start">Current position</param>
+    /// <param name="target">Target position</param>
+    /// <param name="speed">Movement speed</param>
+    /// <param name="deltaTime">Time in seconds</param>
+    /// <returns>Tuple of (new position, reachedTarget)</returns>
+    public (Vector3 newPosition, bool reachedTarget) FlyAdvance(Vector3 start, Vector3 target, float speed, float deltaTime) {
+        Vector3 direction = target - start;
+        float distance = direction.Length();
+        if (distance == 0) return (target, true);
+
+        float moveDist = speed * deltaTime;
+        if (moveDist >= distance) {
+            return (target, true);
+        }
+        Vector3 step = direction / distance * moveDist;
+        return (start + step, false);
     }
 
     public Vector3 GetRandomPatrolPoint() {

@@ -172,7 +172,7 @@ public class BattleState {
                     canMatch = friendlyType switch {
                         0 => target is FieldPlayer,
                         1 => target is FieldNpc,
-                        _ => false
+                        _ => false,
                     };
                 }
                 canMatch |= target.Buffs.HasBuff(TargetNode.AdditionalId, TargetNode.AdditionalLevel, 0);
@@ -219,7 +219,7 @@ public class BattleState {
             friendlyType = TargetNode.Target switch {
                 NodeAiTarget.Hostile => friendlyType == 0 ? 0 : 1, // enemies target players (0), friendlies target enemies (1)
                 NodeAiTarget.Friendly => friendlyType == 1 ? 0 : 1, // enemies target enemies (1), friendlies target players (0)
-                _ => friendlyType
+                _ => friendlyType,
             };
         }
 

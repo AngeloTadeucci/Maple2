@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Maple2.Model.Enum;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
@@ -9,6 +8,7 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model.ActorStateComponent;
 using Maple2.Server.Game.Model.Skill;
+#pragma warning disable CS0108, CS0114
 
 namespace Maple2.Server.Game.Model;
 

@@ -38,91 +38,95 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
     protected override IEnumerable<ServerTableMetadata> Map() {
         yield return new ServerTableMetadata {
             Name = ServerTableNames.INSTANCE_FIELD,
-            Table = ParseInstanceField()
+            Table = ParseInstanceField(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_CONDITION,
-            Table = ParseScriptCondition()
+            Table = ParseScriptCondition(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_FUNCTION,
-            Table = ParseScriptFunction()
+            Table = ParseScriptFunction(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SCRIPT_EVENT,
-            Table = ParseScriptEventConditionTable()
+            Table = ParseScriptEventConditionTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.JOB_CONDITION,
-            Table = ParseJobCondition()
+            Table = ParseJobCondition(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.BONUS_GAME,
-            Table = ParseBonusGameTable()
+            Table = ParseBonusGameTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.GLOBAL_DROP_ITEM_BOX,
-            Table = ParseGlobalItemDropTable()
+            Table = ParseGlobalItemDropTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.USER_STAT,
-            Table = ParseUserStat()
+            Table = ParseUserStat(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.INDIVIDUAL_DROP_ITEM,
-            Table = ParseIndividualItemDropTable()
+            Table = ParseIndividualItemDropTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.PRESTIGE_EXP,
-            Table = ParsePrestigeExpTable()
+            Table = ParsePrestigeExpTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.PRESTIGE_ID_EXP,
-            Table = ParsePrestigeIdExpTable()
+            Table = ParsePrestigeIdExpTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.TIME_EVENT,
-            Table = ParseTimeEventTable()
+            Table = ParseTimeEventTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.GAME_EVENT,
-            Table = ParseGameEventTable()
+            Table = ParseGameEventTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.OX_QUIZ,
-            Table = ParseOxQuizTable()
+            Table = ParseOxQuizTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.ITEM_MERGE,
-            Table = ParseItemMergeOptionTable()
+            Table = ParseItemMergeOptionTable(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SHOP,
-            Table = ParseShop()
+            Table = ParseShop(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.SHOP_ITEM,
-            Table = ParseShopItems()
+            Table = ParseShopItems(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.BEAUTY_SHOP,
-            Table = ParseBeautyShops()
+            Table = ParseBeautyShops(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.MERET_MARKET,
-            Table = ParseMeretCustomShop()
+            Table = ParseMeretCustomShop(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.FISH,
-            Table = ParseFish()
+            Table = ParseFish(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.COMBINE_SPAWN,
-            Table = ParseCombineSpawn()
+            Table = ParseCombineSpawn(),
         };
         yield return new ServerTableMetadata {
             Name = ServerTableNames.ENCHANT_OPTION,
-            Table = ParseEnchantOption()
+            Table = ParseEnchantOption(),
+        };
+        yield return new ServerTableMetadata {
+            Name = ServerTableNames.UNLIMITED_ENCHANT_OPTION,
+            Table = ParseUnlimitedEnchantOption(),
         };
 
     }
@@ -160,7 +164,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new ScriptConditionTable(results);
     }
 
-    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptCondition> ScriptConditions)> parser) {
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeNpcScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, NpcScriptCondition> ScriptConditions)> parser) {
         foreach ((int npcId, IDictionary<int, NpcScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
             foreach ((int scriptId, NpcScriptCondition scriptCondition) in scripts) {
@@ -223,7 +227,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptCondition> ScriptConditions)> parser) {
+    private Dictionary<int, Dictionary<int, ScriptConditionMetadata>> MergeQuestScriptConditions(Dictionary<int, Dictionary<int, ScriptConditionMetadata>> results, IEnumerable<(int NpcId, IDictionary<int, QuestScriptCondition> ScriptConditions)> parser) {
         foreach ((int questId, IDictionary<int, QuestScriptCondition> scripts) in parser) {
             var scriptConditions = new Dictionary<int, ScriptConditionMetadata>();
             foreach ((int scriptId, QuestScriptCondition scriptCondition) in scripts) {
@@ -316,7 +320,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new ScriptFunctionTable(results);
     }
 
-    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.NpcScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeNpcScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, NpcScriptFunction> ScriptFunctions)> parser) {
         foreach ((int npcId, IDictionary<int, NpcScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, NpcScriptFunction scriptFunction) in scripts) {
@@ -373,7 +377,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return results;
     }
 
-    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, Parser.Xml.Table.Server.QuestScriptFunction> ScriptFunctions)> parser) {
+    private static Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> MergeQuestScriptFunctions(Dictionary<int, Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>> results, IEnumerable<(int NpcId, IDictionary<int, QuestScriptFunction> ScriptFunctions)> parser) {
         foreach ((int questId, IDictionary<int, QuestScriptFunction> scripts) in parser) {
             var scriptDict = new Dictionary<int, Dictionary<int, ScriptFunctionMetadata>>(); // scriptIds, functionDict
             foreach ((int scriptId, QuestScriptFunction scriptFunction) in scripts) {
@@ -527,7 +531,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
 
             if (!dropGroups.TryGetValue(id, out Dictionary<int, IList<GlobalDropItemBoxTable.Group>>? groupDict)) {
                 groupDict = new Dictionary<int, IList<GlobalDropItemBoxTable.Group>> {
-                    { id, groups }
+                    { id, groups },
                 };
                 dropGroups.Add(id, groupDict);
             } else {
@@ -593,7 +597,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 { BasicAttribute.Damage, (long) userStat.dmg },
                 { BasicAttribute.Piercing, (long) userStat.pen },
                 { BasicAttribute.BonusAtk, (long) userStat.base_atk },
-                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value }
+                { BasicAttribute.PetBonusAtk, (long) userStat.sp_value },
             };
 
             return stats;
@@ -612,7 +616,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 { JobCode.Assassin, parser.ParseUserStat80().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.RuneBlader, parser.ParseUserStat90().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.Striker, parser.ParseUserStat100().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
-                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) }
+                { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
             }
         );
     }
@@ -1380,6 +1384,20 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 return new MapleSurvivalOpenPeriod();
             case GameEventType.ShutdownMapleSurvival:
                 return new ShutdownMapleSurvival();
+            case GameEventType.SaleAutoPlayInstrument:
+                if (!int.TryParse(value1, out int performanceDiscount) && string.IsNullOrEmpty(value2)) {
+                    return null;
+                }
+                return new SaleAutoPlayInstrument(
+                    Discount: performanceDiscount,
+                    ContentType: value2);
+            case GameEventType.SaleAutoFishing:
+                if (!int.TryParse(value1, out int fishingDiscount) && string.IsNullOrEmpty(value2)) {
+                    return null;
+                }
+                return new SaleAutoFishing(
+                    Discount: fishingDiscount,
+                    ContentType: value2);
             default:
                 return null;
         }
@@ -1577,7 +1595,12 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         foreach ((int shopId, ShopGame data) in parser.ParseShopGame()) {
             var shopResults = new Dictionary<int, ShopItemMetadata>();
             foreach (ShopGame.Item item in data.item) {
-                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? Array.Empty<string>() : item.requireAchieve.Split(",");
+                // Check if item exists in ItemMetadataById
+                if (!ItemMapper.ItemMetadataById.TryGetValue(item.id, out ItemMetadata? itemMeta)) {
+                    continue;
+                }
+
+                string[] achievementArray = string.IsNullOrEmpty(item.requireAchieve) ? [] : item.requireAchieve.Split(",");
                 int achievementId = 0;
                 int achievementRank = 0;
                 if (achievementArray.Length == 2) {
@@ -1637,7 +1660,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                         Amount = (int) item.price,
                         ItemId = item.paymentItemID,
                         SaleAmount = 0, // ?
-                        Type = (ShopCurrencyType) item.paymentType
+                        Type = (ShopCurrencyType) item.paymentType,
                     },
                     SellCount: item.sellCount,
                     Category: item.category,
@@ -1762,10 +1785,10 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
         return new MeretMarketTable(results);
 
         MeretMarketItemMetadata ParseMarketItemMetadata(ShopMeretCustom item, ShopMeretCustom? parent = null) {
-            string? saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
-            string? saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
-            string? promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
-            string? promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
+            string saleStartTime = string.IsNullOrEmpty(parent?.saleStartTime) ? item.saleStartTime : parent.saleStartTime;
+            string saleEndTime = string.IsNullOrEmpty(parent?.saleEndTime) ? item.saleEndTime : parent.saleEndTime;
+            string promoStartTime = string.IsNullOrEmpty(parent?.promoSaleStartTime) ? item.promoSaleStartTime : parent.promoSaleStartTime;
+            string promoEndTime = string.IsNullOrEmpty(parent?.promoSaleEndTime) ? item.promoSaleEndTime : parent.promoSaleEndTime;
             int[] jobRequirement = parent?.jobRequire ?? item.jobRequire;
             return new MeretMarketItemMetadata(
                 Id: item.id,
@@ -2028,5 +2051,59 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
             );
         }
         return new ScriptEventConditionTable(results);
+    }
+
+    private UnlimitedEnchantOptionTable ParseUnlimitedEnchantOption() {
+        var results = new Dictionary<int, Dictionary<int, UnlimitedEnchantOptionTable.Option>>();
+        foreach ((int slot, IDictionary<int[], UnlimitedEnchantOption> enchantOptions) in parser.ParseUnlimitedEnchantOption()) {
+            var levelDictionary = new Dictionary<int, UnlimitedEnchantOptionTable.Option>();
+            foreach ((int[] optionLevel, UnlimitedEnchantOption enchantOption) in enchantOptions) {
+                int minLevel = optionLevel[0];
+                int maxLevel = optionLevel.Length > 1 ? optionLevel[1] : minLevel;
+
+                for (int level = minLevel; level <= maxLevel; level++) {
+                    Dictionary<BasicAttribute, int> values = [];
+                    Dictionary<BasicAttribute, float> rates = [];
+                    Dictionary<SpecialAttribute, int> specialValues = [];
+                    Dictionary<SpecialAttribute, float> specialRates = [];
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option1, enchantOption.value1, enchantOption.rate1);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option2, enchantOption.value2, enchantOption.rate2);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option3, enchantOption.value3, enchantOption.rate3);
+                    AddBasic(values, rates, (BasicAttribute) enchantOption.option4, enchantOption.value4, enchantOption.rate4);
+                    AddSpecial(specialValues, specialRates, (SpecialAttribute) enchantOption.sa_option1, enchantOption.sa_value1, enchantOption.sa_rate1);
+                    AddSpecial(specialValues, specialRates, (SpecialAttribute) enchantOption.sa_option2, enchantOption.sa_value2, enchantOption.sa_rate2);
+
+                    levelDictionary[level] = new UnlimitedEnchantOptionTable.Option(
+                        Values: values,
+                        Rates: rates,
+                        SpecialValues: specialValues,
+                        SpecialRates: specialRates);
+
+                }
+            }
+            results[slot] = levelDictionary;
+        }
+        return new UnlimitedEnchantOptionTable(results);
+
+        void AddBasic(Dictionary<BasicAttribute, int> values, Dictionary<BasicAttribute, float> rates, BasicAttribute attribute, int value, float rate) {
+            if (value != 0) {
+                values.Add(attribute, value);
+            }
+            if (rate != 0) {
+                rates.Add(attribute, rate);
+            }
+        }
+
+        void AddSpecial(Dictionary<SpecialAttribute, int> values, Dictionary<SpecialAttribute, float> rates, SpecialAttribute attribute, int value, float rate) {
+            if (attribute == SpecialAttribute.None) {
+                return;
+            }
+            if (value != 0) {
+                values.Add(attribute, value);
+            }
+            if (rate != 0) {
+                rates.Add(attribute, rate);
+            }
+        }
     }
 }

@@ -4,7 +4,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
@@ -15,7 +15,7 @@ using static Maple2.Model.Error.MigrationError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class TaxiHandler : PacketHandler<GameSession> {
+public class TaxiHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestTaxi;
 
     private enum Command : byte {
@@ -161,6 +161,7 @@ public class TaxiHandler : PacketHandler<GameSession> {
     }
 
     public static bool CheckMapCashCall(GameSession session, int mapId, MapMetadataStorage mapMetadataStorage) {
+        if (session.Field is null) return false;
         MapMetadataCashCall currentCashCall = session.Field.Metadata.CashCall;
         if (!currentCashCall.TaxiDeparture) {
             session.Send(NoticePacket.MessageBox(StringCode.s_err_cash_taxi_cannot_departure));

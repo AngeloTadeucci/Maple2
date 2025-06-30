@@ -106,7 +106,7 @@ public class ClubManager : IDisposable {
             var request = new ClubRequest {
                 ClubId = Club.Id,
                 ReceiverIds = {
-                    info.CharacterId
+                    info.CharacterId,
                 },
                 Invite = new ClubRequest.Types.Invite {
                     ClubName = Club.Name,

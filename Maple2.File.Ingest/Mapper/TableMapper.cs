@@ -38,9 +38,10 @@ namespace Maple2.File.Ingest.Mapper;
 public class TableMapper : TypeMapper<TableMetadata> {
     private readonly TableParser parser;
     private readonly ItemOptionParser optionParser;
+    private readonly string language;
 
-    public TableMapper(M2dReader xmlReader) {
-        parser = new TableParser(xmlReader);
+    public TableMapper(M2dReader xmlReader, string language) {
+        parser = new TableParser(xmlReader, language);
         optionParser = new ItemOptionParser(xmlReader);
     }
 
@@ -82,6 +83,8 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = TableNames.UGC_HOUSING_POINT_REWARD, Table = ParseUgcHousingPointRewardTable() };
         yield return new TableMetadata { Name = TableNames.REWARD_CONTENT, Table = ParseRewardContentTable() };
         yield return new TableMetadata { Name = TableNames.SEASON_DATA, Table = ParseSeasonDataTable() };
+        yield return new TableMetadata { Name = TableNames.SMART_PUSH, Table = ParseSmartPushTable() };
+        yield return new TableMetadata { Name = TableNames.AUTO_ACTION, Table = ParseAutoActionTable() };
 
         // Marriage/Wedding
         yield return new TableMetadata { Name = TableNames.WEDDING, Table = ParseWeddingTable() };
@@ -336,7 +339,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                 WeaponItemId: info.weapon.weaponItemId,
                 Item: new InteractObjectMetadataItem(info.item.code, info.item.consume, info.item.rank, info.item.checkCount, info.gathering.receipeID),
                 Time: new InteractObjectMetadataTime(info.time.resetTime, info.time.reactTime, info.time.hideTime),
-                Drop: new InteractObjectMetadataDrop(info.drop.objectDropRank, info.drop.globalDropBoxId ?? Array.Empty<int>(), info.drop.individualDropBoxId ?? Array.Empty<int>(), info.drop.dropHeight, info.drop.dropDistance),
+                Drop: new InteractObjectMetadataDrop(info.drop.objectDropRank, info.drop.globalDropBoxId ?? [], info.drop.individualDropBoxId ?? [], info.drop.dropHeight, info.drop.dropDistance),
                 AdditionalEffect: new InteractObjectMetadataEffect(
                     Condition: ParseConditional(info.conditionAdditionalEffect),
                     Invoke: ParseInvoke(info.additionalEffect),
@@ -1100,7 +1103,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
     private ColorPaletteTable ParseColorPaletteTable() {
         var results = new Dictionary<int, IReadOnlyDictionary<int, ColorPaletteTable.Entry>>();
         foreach ((int id, ColorPalette palette) in parser.ParseColorPalette()) {
-            foreach (ColorPalette.Color? color in palette.color) {
+            foreach (ColorPalette.Color color in palette.color) {
                 var entry = new ColorPaletteTable.Entry(
                     Primary: ParseColor(color.ch0),
                     Secondary: ParseColor(color.ch1),
@@ -1133,7 +1136,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
                         Categories: subTab.category,
                         SortGender: subTab.sortGender,
                         SortJob: subTab.sortJob,
-                        SubTabIds: Array.Empty<int>());
+                        SubTabIds: []);
                     subTabIds.Add(subTab.id);
                     if (!results.ContainsKey(id)) {
                         results.Add(id, new Dictionary<int, MeretMarketCategoryTable.Tab> {
@@ -1185,7 +1188,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private FurnishingShopTable ParseFurnishingShopTable() {
         var results = new Dictionary<int, FurnishingShopTable.Entry>();
-        foreach ((int id, ShopFurnishing? shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
+        foreach ((int id, ShopFurnishing shop) in parser.ParseFurnishingShopUgcAll().Concat(parser.ParseFurnishingShopMaid())) {
             results.Add(id, new FurnishingShopTable.Entry(
                 ItemId: shop!.id,
                 Buyable: shop.ugcHousingBuy,
@@ -1494,7 +1497,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private UgcHousingPointRewardTable ParseUgcHousingPointRewardTable() {
         var results = new Dictionary<int, UgcHousingPointRewardTable.Entry>();
-        foreach ((int id, UgcHousingPointReward? ugcHousing) in parser.ParseUgcHousingPointReward()) {
+        foreach ((int id, UgcHousingPointReward ugcHousing) in parser.ParseUgcHousingPointReward()) {
             results.Add(id, new UgcHousingPointRewardTable.Entry(
                 DecorationScore: ugcHousing.housingPoint,
                 IndividualDropBoxId: ugcHousing.individualDropBoxId));
@@ -1504,7 +1507,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
 
     private WeddingTable ParseWeddingTable() {
         var rewardsResults = new Dictionary<MarriageExpType, WeddingReward>();
-        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward? reward) in parser.ParseWeddingReward()) {
+        foreach ((WeddingRewardType type, Parser.Xml.Table.WeddingReward reward) in parser.ParseWeddingReward()) {
             rewardsResults.Add((MarriageExpType) type, new WeddingReward(
                 Type: (MarriageExpType) type,
                 Amount: reward.rewardExp,
@@ -1771,8 +1774,53 @@ public class TableMapper : TypeMapper<TableMetadata> {
                         seasonData.grade7,
                     ]));
             }
-
             return results;
         }
+    }
+
+    private SmartPushTable ParseSmartPushTable() {
+        var results = new Dictionary<int, SmartPushMetadata>();
+        foreach ((int id, SmartPush smartPush) in parser.ParseSmartPush()) {
+            var requiredItem = new IngredientInfo(ItemTag.None, 0);
+            var requiredItemTag = ItemTag.None;
+            if (smartPush.requireItem.Length != 0) {
+                string[] requiredItemArray = smartPush.requireItem[0].Split(":");
+                if (requiredItemArray.Length == 2) {
+                    requiredItemTag = Enum.TryParse(requiredItemArray[1], out ItemTag tag) ? tag : ItemTag.None;
+                }
+                requiredItem = new IngredientInfo(
+                    tag: requiredItemTag,
+                    amount: int.Parse(smartPush.requireItem[2]));
+            }
+
+            results.Add(id, new SmartPushMetadata(
+                Id: id,
+                Content: smartPush.content,
+                Type: Enum.TryParse(smartPush.actionType, out SmartPushType type) ? type : SmartPushType.none,
+                Value: smartPush.actionValue,
+                MeretCost: smartPush.requireMerat,
+                RequiredItem: requiredItem));
+        }
+        return new SmartPushTable(results);
+    }
+
+    private AutoActionTable ParseAutoActionTable() {
+        var results = new Dictionary<string, IReadOnlyDictionary<int, AutoActionMetaData>>();
+        IEnumerable<IGrouping<string, AutoActionPricePackage>> groups = parser.ParseAutoActionPricePackage()
+            .Select(entry => entry.Data)
+            .GroupBy(entry => entry.content);
+        foreach (IGrouping<string, AutoActionPricePackage> group in groups) {
+            var packages = new Dictionary<int, AutoActionMetaData>();
+            foreach (AutoActionPricePackage package in group) {
+                packages.Add(package.id, new AutoActionMetaData(
+                    Content: package.content,
+                    Id: package.id,
+                    Duration: package.duration,
+                    MeretCost: package.merat,
+                    MesoCost: package.meso));
+            }
+            results.Add(group.Key, packages);
+        }
+        return new AutoActionTable(results);
     }
 }

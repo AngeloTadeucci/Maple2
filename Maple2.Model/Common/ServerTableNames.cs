@@ -23,4 +23,5 @@ public static class ServerTableNames {
     public const string FISH = "fish*.xml";
     public const string COMBINE_SPAWN = "combineSpawn*.xml";
     public const string ENCHANT_OPTION = "enchantOption.xml";
+    public const string UNLIMITED_ENCHANT_OPTION = "unlimitedEnchantOption.xml";
 }

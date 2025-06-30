@@ -11,8 +11,8 @@ public readonly struct Prism : IPrism {
         Height = new Range(baseHeight, baseHeight + height);
     }
 
-    public bool Contains(in Vector3 point) {
-        return Height.Min <= point.Z && point.Z <= Height.Max && Polygon.Contains(point.X, point.Y);
+    public bool Contains(in Vector3 point, float epsilon = 1e-5f) {
+        return Height.Min <= point.Z && point.Z <= Height.Max && Polygon.Contains(point.X, point.Y, epsilon);
     }
 
     public bool Intersects(IPrism prism) {

@@ -97,7 +97,7 @@ public enum ApplyTargetType {
     RegionBuff = 5, // Includes speed pads in Crazy Runners
     RegionBuff2 = 6, // Includes Healing spots
     Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
-    HungryMobs = 8
+    HungryMobs = 8,
 }
 
 public enum SkillTarget {
@@ -198,7 +198,7 @@ public enum TargetType {
     Player3 = 6, // Unknown, Recovery
     Player4 = 7, // Unknown, Debuff (Archeon's ice bombs)
 
-    HungryMobs = 8
+    HungryMobs = 8,
 }
 
 public enum BounceType {

@@ -9,11 +9,8 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class HomeCommand : GameCommand {
-    private const string NAME = "home";
-    private const string DESCRIPTION = "Home commands.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
 
-    public HomeCommand(GameSession session, TableMetadataStorage tableMetadata) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public HomeCommand(GameSession session, TableMetadataStorage tableMetadata) : base(AdminPermissions.Debug, "home", "Home commands.") {
         AddCommand(new ExpCommand(session, tableMetadata));
         AddCommand(new LevelCommand(session));
         AddCommand(new SetExpCommand(session));

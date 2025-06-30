@@ -8,20 +8,14 @@ using Maple2.Model.Metadata;
 using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
-using System;
 using Maple2.Model.Enum;
-using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.Game.Commands;
 
 public class DebugCommand : GameCommand {
-    private const string NAME = "debug";
-    private const string DESCRIPTION = "Debug information management.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly NpcMetadataStorage npcStorage;
 
-    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(AdminPermissions.Debug, "debug", "Debug information management.") {
         this.npcStorage = npcStorage;
 
         AddCommand(new DebugNpcAiCommand(session, npcStorage));
@@ -32,6 +26,7 @@ public class DebugCommand : GameCommand {
         AddCommand(new DebugQueryCommand(session, mapDataStorage));
         AddCommand(new LogoutCommand(session));
         AddCommand(new ReloadCommandsCommand(session));
+        AddCommand(new PrintInventoryCommand(session));
     }
 
     private class ReloadCommandsCommand : Command {
@@ -80,7 +75,6 @@ public class DebugCommand : GameCommand {
             ctx.Console.Out.WriteLine($"{message} AI debug info printing");
         }
     }
-
 
     private class DebugAnimationCommand : Command {
         private readonly GameSession session;
@@ -187,6 +181,7 @@ public class DebugCommand : GameCommand {
             AddCommand(new DebugQueryFluidCommand(session, mapDataStorage));
             AddCommand(new DebugQueryVibrateCommand(session, mapDataStorage));
             AddCommand(new DebugQuerySellableTileCommand(session, mapDataStorage));
+            AddCommand(new DebugQueryBlockUnderPlayerCommand(session));
         }
 
         private class DebugQuerySpawnCommand : Command {
@@ -205,6 +200,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float radius) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -247,6 +244,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -290,6 +289,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -337,6 +338,8 @@ public class DebugCommand : GameCommand {
             }
 
             private void Handle(InvocationContext ctx, float x, float y, float z) {
+                if (session.Field is null) return;
+
                 if (!session.Field.MapMetadata.TryGet(session.Field.MapId, out MapMetadata? map)) {
                     return;
                 }
@@ -359,6 +362,30 @@ public class DebugCommand : GameCommand {
                 });
             }
         }
+
+        private class DebugQueryBlockUnderPlayerCommand : Command {
+            private readonly GameSession session;
+
+            public DebugQueryBlockUnderPlayerCommand(GameSession session) : base("block", "Searches for the block under the player.") {
+                this.session = session;
+
+                this.SetHandler<InvocationContext>(Handle);
+            }
+
+            private void Handle(InvocationContext ctx) {
+                if (session.Field is null) return;
+
+                bool found = false;
+                session.Field.AccelerationStructure?.FindBlockUnderPlayer(session.Player.Position, entity => {
+                    found = true;
+                    ctx.Console.Out.WriteLine($"Block under player: {entity}");
+                });
+
+                if (!found) {
+                    ctx.Console.Out.WriteLine("No block found under player.");
+                }
+            }
+        }
     }
 
     private class LogoutCommand : Command {
@@ -373,6 +400,35 @@ public class DebugCommand : GameCommand {
         private void Handle(InvocationContext ctx) {
             ctx.Console.Out.WriteLine("Logging out...");
             session.Disconnect();
+        }
+    }
+
+    private class PrintInventoryCommand : Command {
+        private readonly GameSession session;
+
+        public PrintInventoryCommand(GameSession session) : base("print-inventory", "Print player inventory items.") {
+            this.session = session;
+
+            var tab = new Argument<string>("tab", $"Inventory tab to print. One of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+
+            AddArgument(tab);
+            this.SetHandler<InvocationContext, string>(Handle, tab);
+        }
+
+        private void Handle(InvocationContext ctx, string tab) {
+            try {
+                if (!Enum.TryParse(tab, true, out InventoryType inventoryType)) {
+                    ctx.Console.Error.WriteLine($"Invalid inventory tab: {tab}. Must be one of: {string.Join(", ", Enum.GetNames(typeof(InventoryType)))}");
+                    ctx.ExitCode = 1;
+                    return;
+                }
+
+                ctx.Console.Out.WriteLine(session.Item.Inventory.Print(inventoryType));
+                ctx.ExitCode = 0;
+            } catch (SystemException ex) {
+                ctx.Console.Error.WriteLine(ex.Message);
+                ctx.ExitCode = 1;
+            }
         }
     }
 }

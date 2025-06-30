@@ -46,6 +46,9 @@ public class TableMetadataStorage {
     private readonly Lazy<BannerTable> bannerTable;
     private readonly Lazy<WeddingTable> weddingTable;
     private readonly Lazy<RewardContentTable> rewardContentTable;
+    private readonly Lazy<SeasonDataTable> seasonDataTable;
+    private readonly Lazy<SmartPushTable> smartPushTable;
+    private readonly Lazy<AutoActionTable> autoActionTable;
 
     private readonly Lazy<EnchantScrollTable> enchantScrollTable;
     private readonly Lazy<ItemRemakeScrollTable> itemRemakeScrollTable;
@@ -109,6 +112,9 @@ public class TableMetadataStorage {
     public BannerTable BannerTable => bannerTable.Value;
     public WeddingTable WeddingTable => weddingTable.Value;
     public RewardContentTable RewardContentTable => rewardContentTable.Value;
+    public SeasonDataTable SeasonDataTable => seasonDataTable.Value;
+    public SmartPushTable SmartPushTable => smartPushTable.Value;
+    public AutoActionTable AutoActionTable => autoActionTable.Value;
 
     public EnchantScrollTable EnchantScrollTable => enchantScrollTable.Value;
     public ItemRemakeScrollTable ItemRemakeScrollTable => itemRemakeScrollTable.Value;
@@ -191,6 +197,10 @@ public class TableMetadataStorage {
         dungeonRankRewardTable = Retrieve<DungeonRankRewardTable>(context, TableNames.DUNGEON_RANK_REWARD);
         dungeonConfigTable = Retrieve<DungeonConfigTable>(context, TableNames.DUNGEON_CONFIG);
         dungeonMissionTable = Retrieve<DungeonMissionTable>(context, TableNames.DUNGEON_MISSION);
+        seasonDataTable = Retrieve<SeasonDataTable>(context, TableNames.SEASON_DATA);
+        smartPushTable = Retrieve<SmartPushTable>(context, TableNames.SMART_PUSH);
+        autoActionTable = Retrieve<AutoActionTable>(context, TableNames.AUTO_ACTION);
+
     }
 
     private static Lazy<T> Retrieve<T>(MetadataContext context, string key) where T : Table {

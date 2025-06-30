@@ -17,6 +17,7 @@ using Maple2.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 const string locale = "NA";
+string language = "en";
 const string env = "Live";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -24,7 +25,7 @@ Console.OutputEncoding = System.Text.Encoding.UTF8;
 bool runNavmesh = false;
 bool dropData = false;
 
-foreach (string? arg in args) {
+foreach (string arg in args) {
     switch (arg) {
         case "--run-navmesh":
             runNavmesh = true;
@@ -36,9 +37,15 @@ foreach (string? arg in args) {
 }
 
 // Force Globalization to en-US because we use periods instead of commas for decimals
-CultureInfo.CurrentCulture = new("en-US");
+CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
 DotEnv.Load();
+
+string? languageEnv = Environment.GetEnvironmentVariable("LANGUAGE");
+if (languageEnv == null) {
+    throw new ArgumentException("LANGUAGE environment variable was not set");
+}
+language = languageEnv.ToLower();
 
 string? ms2Root = Environment.GetEnvironmentVariable("MS2_DATA_FOLDER");
 if (ms2Root == null) {
@@ -174,34 +181,37 @@ Filter.Load(xmlReader, locale, env);
 // new TriggerGenerator(xmlReader).Generate();
 
 var modelReaders = new List<PrefixedM2dReader> {
-    new("/library/", Path.Combine(ms2Root, "Resource/Library.m2d")),
-    new("/model/map/", Path.Combine(ms2Root, "Resource/Model/Map.m2d")),
-    new("/model/effect/", Path.Combine(ms2Root, "Resource/Model/Effect.m2d")),
-    new("/model/camera/", Path.Combine(ms2Root, "Resource/Model/Camera.m2d")),
-    new("/model/tool/", Path.Combine(ms2Root, "Resource/Model/Tool.m2d")),
-    new("/model/item/", Path.Combine(ms2Root, "Resource/Model/Item.m2d")),
-    new("/model/npc/", Path.Combine(ms2Root, "Resource/Model/Npc.m2d")),
-    new("/model/path/", Path.Combine(ms2Root, "Resource/Model/Path.m2d")),
-    new("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
-    new("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
+    new PrefixedM2dReader("/library/", Path.Combine(ms2Root, "Resource/Library.m2d")),
+    new PrefixedM2dReader("/model/map/", Path.Combine(ms2Root, "Resource/Model/Map.m2d")),
+    new PrefixedM2dReader("/model/effect/", Path.Combine(ms2Root, "Resource/Model/Effect.m2d")),
+    new PrefixedM2dReader("/model/camera/", Path.Combine(ms2Root, "Resource/Model/Camera.m2d")),
+    new PrefixedM2dReader("/model/tool/", Path.Combine(ms2Root, "Resource/Model/Tool.m2d")),
+    new PrefixedM2dReader("/model/item/", Path.Combine(ms2Root, "Resource/Model/Item.m2d")),
+    new PrefixedM2dReader("/model/npc/", Path.Combine(ms2Root, "Resource/Model/Npc.m2d")),
+    new PrefixedM2dReader("/model/path/", Path.Combine(ms2Root, "Resource/Model/Path.m2d")),
+    new PrefixedM2dReader("/model/character/", Path.Combine(ms2Root, "Resource/Model/Character.m2d")),
+    new PrefixedM2dReader("/model/textures/", Path.Combine(ms2Root, "Resource/Model/Textures.m2d")),
 };
+
+UpdateDatabase(metadataContext, new TriggerMapper(xmlReader));
+
+UpdateDatabase(metadataContext, new ItemMapper(xmlReader, language, false));
+UpdateDatabase(metadataContext, new NpcMapper(xmlReader, language));
 
 UpdateDatabase(metadataContext, new ServerTableMapper(serverReader));
 UpdateDatabase(metadataContext, new AiMapper(serverReader));
 
 UpdateDatabase(metadataContext, new AdditionalEffectMapper(xmlReader));
 UpdateDatabase(metadataContext, new AnimationMapper(xmlReader));
-UpdateDatabase(metadataContext, new ItemMapper(xmlReader));
-UpdateDatabase(metadataContext, new NpcMapper(xmlReader));
 UpdateDatabase(metadataContext, new PetMapper(xmlReader));
-UpdateDatabase(metadataContext, new MapMapper(xmlReader));
+UpdateDatabase(metadataContext, new MapMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new UgcMapMapper(xmlReader));
 UpdateDatabase(metadataContext, new ExportedUgcMapMapper(xmlReader));
-UpdateDatabase(metadataContext, new QuestMapper(xmlReader));
+UpdateDatabase(metadataContext, new QuestMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new RideMapper(xmlReader));
-UpdateDatabase(metadataContext, new ScriptMapper(xmlReader));
-UpdateDatabase(metadataContext, new SkillMapper(xmlReader));
-UpdateDatabase(metadataContext, new TableMapper(xmlReader));
+UpdateDatabase(metadataContext, new ScriptMapper(xmlReader, language));
+UpdateDatabase(metadataContext, new SkillMapper(xmlReader, language));
+UpdateDatabase(metadataContext, new TableMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 UpdateDatabase(metadataContext, new FunctionCubeMapper(xmlReader));
 

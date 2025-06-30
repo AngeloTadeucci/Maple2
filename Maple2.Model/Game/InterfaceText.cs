@@ -1,5 +1,4 @@
-﻿using System;
-using System.Web;
+﻿using System.Web;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
@@ -17,7 +16,7 @@ public class InterfaceText : IByteSerializable {
         isLocalized = false;
         unknown = message.StartsWith("s_") ? 5 : 0;
 
-        this.args = Array.Empty<string>();
+        args = [];
         this.message = htmlEncoded ? message : HttpUtility.HtmlEncode(message);
     }
 
@@ -27,7 +26,7 @@ public class InterfaceText : IByteSerializable {
 
         this.code = code;
         this.args = args;
-        this.message = string.Empty;
+        message = string.Empty;
     }
 
     public static implicit operator InterfaceText(StringCode code) => new InterfaceText(code);

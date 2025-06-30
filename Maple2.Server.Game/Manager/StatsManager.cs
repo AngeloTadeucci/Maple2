@@ -6,7 +6,6 @@ using Maple2.Server.Core.Formulas;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Session;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;
@@ -18,7 +17,7 @@ public class StatsManager {
     public Stats Values { get; init; }
 
     public StatsManager(IActor actor, UserStatTable userStatsMetadata) {
-        this.Actor = actor;
+        Actor = actor;
         levelStats = new Dictionary<short, IReadOnlyDictionary<BasicAttribute, long>>();
 
         if (actor is not FieldPlayer player) {
@@ -41,7 +40,7 @@ public class StatsManager {
     }
 
     public StatsManager(IActor actor) {
-        this.Actor = actor;
+        Actor = actor;
         levelStats = new Dictionary<short, IReadOnlyDictionary<BasicAttribute, long>>();
 
         if (actor is FieldNpc npc) {
@@ -89,7 +88,7 @@ public class StatsManager {
     public float GetCriticalDamage(float targetCriticalDamageResistance, int mode = 0) {
         float criticalDamage = Actor switch {
             FieldPlayer or FieldNpc => Lua.CalcCritDamage(Values[BasicAttribute.CriticalDamage].Total, mode),
-            _ => 0
+            _ => 0,
         };
         //TODO: Apply target's resistance. Need to figure out formula for this.
         return criticalDamage;
@@ -105,7 +104,7 @@ public class StatsManager {
         float criticalChance = Actor switch {
             FieldPlayer player => Lua.CalcPlayerCritRate((int) player.Value.Character.Job.Code(), player.Stats.Values[BasicAttribute.Luck].Total, player.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion, 0, 0),
             FieldNpc npc => Lua.CalcNpcCritRate(npc.Stats.Values[BasicAttribute.Luck].Total, npc.Stats.Values[BasicAttribute.CriticalRate].Total, targetCriticalEvasion),
-            _ => 0
+            _ => 0,
         };
 
         return Random.Shared.NextDouble() < Math.Max(criticalChance, casterCriticalOverride) ? DamageType.Critical : DamageType.Normal;

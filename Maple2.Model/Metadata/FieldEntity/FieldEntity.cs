@@ -62,7 +62,8 @@ public record FieldBoxColliderEntity(
     BoundingBox3 Bounds,
     Vector3 Size,
     bool IsWhiteBox,
-    bool IsFluid) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
+    bool IsFluid,
+    MapAttribute MapAttribute) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
 public record FieldMeshColliderEntity(
     FieldEntityId Id,
@@ -70,7 +71,8 @@ public record FieldMeshColliderEntity(
     Vector3 Rotation,
     float Scale,
     BoundingBox3 Bounds,
-    uint MeshLlid) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
+    uint MeshLlid,
+    MapAttribute MapAttribute) : FieldEntity(Id, Position, Rotation, Scale, Bounds);
 
 public record FieldFluidEntity(
     FieldEntityId Id,
@@ -81,7 +83,8 @@ public record FieldFluidEntity(
     BoundingBox3 Bounds,
     uint MeshLlid,
     bool IsShallow,
-    bool IsSurface) : FieldMeshColliderEntity(Id, Position, Rotation, Scale, Bounds, MeshLlid);
+    bool IsSurface,
+    MapAttribute MapAttribute) : FieldMeshColliderEntity(Id, Position, Rotation, Scale, Bounds, MeshLlid, MapAttribute);
 
 public record FieldCellEntities(
     FieldEntityId Id,

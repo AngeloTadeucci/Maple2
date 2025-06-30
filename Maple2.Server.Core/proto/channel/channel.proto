@@ -7,6 +7,8 @@ import "sync.proto";
 
 // The channel service definition.
 service Channel {
+  // Retrieve information about channels.
+  rpc UpdateChannels(ChannelsUpdateRequest) returns (ChannelsUpdateResponse);
   // Manage field
   rpc Field(maple2.FieldRequest) returns (maple2.FieldResponse);
   // Send a chat message.
@@ -46,6 +48,14 @@ service Channel {
   rpc Disconnect(maple2.DisconnectRequest) returns (maple2.DisconnectResponse);
   // Heartbeat
   rpc Heartbeat(maple2.HeartbeatRequest) returns (maple2.HeartbeatResponse);
+}
+
+message ChannelsUpdateRequest {
+  repeated int32 channels = 1;
+}
+
+message ChannelsUpdateResponse {
+  int32 error = 1;
 }
 
 message GuildRequest {

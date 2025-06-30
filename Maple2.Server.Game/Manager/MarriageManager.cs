@@ -235,6 +235,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError ReserveHall(WeddingHall hall, bool useCoupon = false) {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (!ValidHallTime(hall.CeremonyTime, out WeddingError error)) {
             return error;
         }
@@ -275,6 +276,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError ConfirmReservation() {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (UnconfirmedReservation == null) {
             return WeddingError.s_wedding_result_err_invalid_wedding_hall;
         }
@@ -350,7 +352,7 @@ public sealed class MarriageManager {
         }
 
         foreach (WeddingPackage.HallData.Item rewardItem in metadata.CompleteItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }
@@ -374,6 +376,7 @@ public sealed class MarriageManager {
     }
 
     public void CancelReservationRequest() {
+        if (session.Field is null) return;
         if (session.CharacterId != WeddingHall.ReserverCharacterId) {
             session.Send(WeddingPacket.Error(WeddingError.s_wedding_result_only_booking_character));
             return;
@@ -395,6 +398,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError CancelReservationReply(WeddingError response) {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (!session.Field.TryGetPlayerById(Partner.CharacterId, out FieldPlayer? fieldPartner)) {
             return WeddingError.s_wedding_result_err_same_field;
         }
@@ -419,7 +423,7 @@ public sealed class MarriageManager {
         }
 
         // TODO: Fix rarity ?
-        Item? coupon = session.Field.ItemDrop.CreateItem(couponItemId, 1, 1);
+        Item? coupon = session.Field?.ItemDrop.CreateItem(couponItemId, 1, 1);
         if (coupon == null) {
             logger.Error("Failed to create wedding coupon for {CharacterId}", session.CharacterId);
             return WeddingError.s_wedding_result_err_system;
@@ -470,6 +474,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError CancelNoRefund() {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (!session.Field.TryGetPlayerById(Partner.CharacterId, out FieldPlayer? fieldPartner)) {
             return WeddingError.s_wedding_result_err_same_field;
         }
@@ -491,6 +496,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError ChangeReservationRequest(WeddingHall hall) {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (WeddingHall.Id == 0) {
             return WeddingError.s_wedding_result_err_invalid_wedding_hall;
         }
@@ -539,6 +545,7 @@ public sealed class MarriageManager {
     }
 
     public WeddingError ChangeReservationReply(WeddingError response) {
+        if (session.Field is null) return WeddingError.s_wedding_result_err_system;
         if (UnconfirmedReservation == null) {
             return WeddingError.s_wedding_result_err_invalid_wedding_hall;
         }

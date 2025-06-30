@@ -13,10 +13,14 @@ namespace Maple2.File.Ingest.Mapper;
 public class ItemMapper : TypeMapper<ItemMetadata> {
     private readonly ItemParser parser;
     private readonly TableParser tableParser;
+    private readonly bool newXml;
 
-    public ItemMapper(M2dReader xmlReader) {
-        parser = new ItemParser(xmlReader);
-        tableParser = new TableParser(xmlReader);
+    public static Dictionary<int, ItemMetadata> ItemMetadataById { get; } = new();
+
+    public ItemMapper(M2dReader xmlReader, string language, bool newXml) {
+        parser = new ItemParser(xmlReader, language);
+        tableParser = new TableParser(xmlReader, language);
+        this.newXml = newXml;
     }
 
     protected override IEnumerable<ItemMetadata> Map() {
@@ -31,7 +35,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
             }
         }
 
-        foreach ((int id, string name, ItemData data) in parser.Parse<ItemDataRoot>()) {
+        foreach ((int id, string name, ItemData data) in parser.Parse()) {
             int transferType = data.limit.transferType;
             int tradableCount = data.property.tradableCount;
             int tradableCountDeduction = data.property.tradableCountDeduction;
@@ -64,10 +68,10 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                         DateTime.UnixEpoch.AddDays(7 * data.life.numberOfWeeksMonths).ToEpochSeconds(),
                     2 => // Month
                         DateTime.UnixEpoch.AddMonths(1 * data.life.numberOfWeeksMonths).ToEpochSeconds(),
-                    _ => 0
+                    _ => 0,
                 };
             } else if (data.life.usePeriod > 0) {
-                expirationDuration = data.life.usePeriod;
+                expirationDuration = (long) TimeSpan.FromMinutes(data.life.usePeriod).TotalSeconds;
             }
 
             var hairList = new List<DefaultHairMetadata>();
@@ -154,7 +158,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 ObjectCubeId: data.install.objCode,
                 MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
-            yield return new ItemMetadata(
+            var itemMetadata = new ItemMetadata(
                 Id: id,
                 Name: name,
                 SlotNames: data.slots.slot
@@ -189,10 +193,11 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                     DisableDrop: data.property.disableDrop,
                     SocketId: data.property.socketDataId,
                     IsFragment: data.property.functionTags == "piece",
-                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? Array.Empty<int>(),
+                    SetOptionIds: itemSetBonuses.GetValueOrDefault(id)?.ToArray() ?? [],
                     SellPrices: data.property.sell.price,
                     CustomSellPrices: data.property.sell.priceCustom,
-                    ShopId: data.Shop?.systemShopID ?? 0
+                    ShopId: data.Shop?.systemShopID ?? 0,
+                    LimitBreakMaxLevel: data.property.unlimitedEnchantMaxGrade
                 ),
                 Customize: new ItemMetadataCustomize(
                     ColorPalette: data.customize.colorPalette,
@@ -224,6 +229,10 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 Housing: housing,
                 Install: install
             );
+
+            ItemMetadataById[id] = itemMetadata;
+
+            yield return itemMetadata;
         }
     }
 }

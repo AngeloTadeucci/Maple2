@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Maple2.Database.Extensions;
 using Maple2.Model;
 using Maple2.Model.Common;
@@ -158,7 +156,7 @@ public static class CharacterListPacket {
         writer.WriteLong();
         writer.WriteLong(character.StorageCooldown);
         writer.WriteLong(character.DoctorCooldown);
-        writer.WriteInt(character.ReturnMapId);
+        writer.WriteInt(character.ReturnMaps.Peek());
         writer.Write<Vector3>(character.ReturnPosition);
         writer.WriteInt(); // GearScore
         writer.Write<SkinColor>(character.SkinColor);

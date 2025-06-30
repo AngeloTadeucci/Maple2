@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Extensions;
-using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -7,13 +6,13 @@ using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class EventRewardHandler : PacketHandler<GameSession> {
+public class EventRewardHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.EventReward;
 
     private enum Command : byte {
@@ -65,7 +64,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
         if (item == null) {
             return;
         }
@@ -85,7 +84,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
 
         RewardItem rewardItem = timeRunEvent.FinalReward;
 
-        Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
         if (item == null) {
             return;
         }
@@ -158,7 +157,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
         session.GameEvent.Set(gameEvent.Id, GameEventUserValueType.GalleryClaimReward, value + 1);
 
         foreach (RewardItem rewardItem in gallery.RewardItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }
@@ -261,7 +260,7 @@ public class EventRewardHandler : PacketHandler<GameSession> {
         GameEventUserValue checkedNumbers = session.GameEvent.Get(GameEventUserValueType.BingoNumbersChecked, gameEvent.Id, gameEvent.EndTime);
 
         foreach (RewardItem rewardItem in bingoEvent.Rewards[index].Items) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }

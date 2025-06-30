@@ -8,12 +8,13 @@ public class Circle : IPolygon {
     public readonly float Radius;
 
     public Circle(in Vector2 origin, float radius) {
-        this.Origin = origin;
-        this.Radius = radius;
+        Origin = origin;
+        Radius = radius;
     }
 
-    public virtual bool Contains(in Vector2 point) {
-        return Vector2.DistanceSquared(Origin, point) <= Radius * Radius;
+    public virtual bool Contains(in Vector2 point, float epsilon = 1e-5f) {
+        float expandedRadius = Radius + epsilon;
+        return Vector2.DistanceSquared(Origin, point) <= expandedRadius * expandedRadius;
     }
 
     public Vector2[] GetAxes(Polygon? other) {

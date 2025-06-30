@@ -12,5 +12,5 @@ public enum MapAttribute {
     sand,
     snow,
     water,
-    wood
+    wood,
 }

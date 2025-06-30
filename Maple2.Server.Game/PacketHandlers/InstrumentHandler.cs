@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using Maple2.Database.Storage;
 using Maple2.Model;
@@ -9,15 +8,14 @@ using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools.Collision;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class InstrumentHandler : PacketHandler<GameSession> {
+public class InstrumentHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.PlayInstrument;
 
     private enum Command : byte {
@@ -153,11 +151,12 @@ public class InstrumentHandler : PacketHandler<GameSession> {
             return;
         }
 
+        int masteryValue = session.Instrument.Score?.Metadata.Music?.MasteryValue ?? 1;
+        int masteryValueMax = session.Instrument.Score?.Metadata.Music?.MasteryValueMax ?? 1;
+
         // TODO: Prestige exp
         long totalTickTime = Environment.TickCount64 - session.Instrument.StartTick;
-        if (session.ItemMetadata.TryGet(session.Instrument.Value.EquipId, out ItemMetadata? metadata) && metadata.Music != null) {
-            session.Mastery[MasteryType.Music] += (int) Math.Min(totalTickTime * metadata.Music.MasteryValue / 1000, metadata.Music.MasteryValueMax);
-        }
+        session.Mastery[MasteryType.Music] += (int) Math.Min(totalTickTime * masteryValue / 1000, masteryValueMax);
 
         short masteryLevel = session.Mastery.GetLevel(MasteryType.Music);
         ExpType expType = masteryLevel switch {
@@ -170,7 +169,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
 
         // Subtracting 500ms to account for the delay between the client and server and exp abuse.
         // Modifier is the number of 500ms ticks that have passed.
-        session.Exp.AddExp(expType, (totalTickTime - 500) / 500);
+        session.Exp.AddExp(expType, (float) (totalTickTime - 500) / 500);
 
         session.ConditionUpdate(ConditionType.music_play_instrument_time, counter: totalTickTime / 1000, targetLong: session.Field.MapId, codeLong: session.Instrument.Value.Id);
         if (session.Instrument.Ensemble) {
@@ -273,21 +272,21 @@ public class InstrumentHandler : PacketHandler<GameSession> {
     }
 
     private void HandleStartPerform(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
     }
 
     private void HandleEndPerform(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
     }
 
-    private void HandleEnterExitStage(GameSession session) => session.Field.PerformanceStage?.EnterExitStage(session);
+    private void HandleEnterExitStage(GameSession session) => session.Field?.PerformanceStage?.EnterExitStage(session);
 
     private void HandleFireworks(GameSession session) {
-        if (session.Field.PerformanceStage is null) {
+        if (session.Field?.PerformanceStage is null) {
             return;
         }
 
@@ -310,7 +309,7 @@ public class InstrumentHandler : PacketHandler<GameSession> {
 
     private bool TryUseInstrument(GameSession session, long itemUid, long startTick, bool ensemble, [NotNullWhen(true)] out FieldInstrument? fieldInstrument) {
         Item? instrument = session.Item.Inventory.Get(itemUid, InventoryType.FishingMusic);
-        if (instrument == null || instrument.Metadata.Function?.Type != ItemFunction.OpenInstrument) {
+        if (instrument == null || instrument.Metadata.Function?.Type != ItemFunction.OpenInstrument || session.Field is null) {
             fieldInstrument = null;
             return false;
         }

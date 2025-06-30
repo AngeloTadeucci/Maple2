@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Game;
+﻿using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Tools.Extensions;

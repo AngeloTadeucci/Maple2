@@ -3,8 +3,8 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.Game.Manager;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -34,6 +34,7 @@ public class FieldPlayer : Actor<Player> {
     public override bool IsDead {
         get => isDead;
         protected set {
+            if (Session.Field is null) return;
             if (value == isDead) return;
             isDead = value;
             Flag |= PlayerObjectFlag.Dead;
@@ -62,6 +63,10 @@ public class FieldPlayer : Actor<Player> {
     private readonly Dictionary<ActorState, float> stateSyncDistanceTracking;
     private long StateSyncTimeTracking { get; set; }
     private long StateSyncTrackingTick { get; set; }
+
+    private long LastCurrentBlockUpdateTick { get; set; }
+
+    public FieldEntity? StandingOnBlock { get; set; }
 
     public Tombstone? Tombstone { get; set; }
 
@@ -93,7 +98,7 @@ public class FieldPlayer : Actor<Player> {
 
     private readonly EventQueue scheduler;
 
-    public FieldPlayer(GameSession session, Player player) : base(session.Field, player.ObjectId, player, session.NpcMetadata) {
+    public FieldPlayer(GameSession session, Player player) : base(session.Field!, player.ObjectId, player, session.NpcMetadata) {
         Session = session;
         Animation = Session.Animation;
 
@@ -105,6 +110,9 @@ public class FieldPlayer : Actor<Player> {
         StateSyncTrackingTick = Environment.TickCount64;
 
         scheduler = new EventQueue();
+        scheduler.ScheduleRepeated(() => {
+            session.ConditionUpdate(ConditionType.stay_map, codeLong: session.Field!.MapId);
+        }, 60000, skipFirst: true); // 60 seconds
         scheduler.Start();
     }
 
@@ -142,6 +150,7 @@ public class FieldPlayer : Actor<Player> {
     public override void Update(long tickCount) {
         base.Update(tickCount);
         Session.GameEvent.Update(tickCount);
+        scheduler.InvokeAll();
 
         if (Flag != PlayerObjectFlag.None && tickCount > flagTick) {
             Field.Broadcast(ProxyObjectPacket.UpdatePlayer(this, Flag));
@@ -248,41 +257,25 @@ public class FieldPlayer : Actor<Player> {
             LastGroundPosition = stateSync.Position;
         }
 
-        bool UpdateStateSyncTracking(ActorState state) {
-            if (stateSyncDistanceTracking.TryGetValue(state, out float totalDistance)) {
-                totalDistance += syncDistance;
-                // 150f = BLOCK_SIZE = 1 meter
-                if (totalDistance >= 150F) {
-                    stateSyncDistanceTracking[state] = 0f;
-                    return true;
-                }
-                stateSyncDistanceTracking[state] = totalDistance;
-                return false;
-            }
-            stateSyncDistanceTracking[state] = syncDistance;
-            return false;
-        }
-
-        bool UpdateStateSyncTimeTracking() {
-            StateSyncTimeTracking += syncTick;
-            if (StateSyncTimeTracking >= 1000) {
-                StateSyncTimeTracking = 0;
-                return true;
-            }
-            return false;
+        LastCurrentBlockUpdateTick += syncTick;
+        if (LastCurrentBlockUpdateTick >= 1000) { // 1 second
+            LastCurrentBlockUpdateTick = 0;
+            Session.Field?.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
+                StandingOnBlock = entity;
+            });
         }
 
         // Condition updates
         // Distance conditions are in increments of 1 meter, while time conditions are 1 second.
         switch (stateSync.State) {
             case ActorState.Fall:
-                if (UpdateStateSyncTracking(ActorState.Fall)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.fall, codeLong: Value.Character.MapId);
                 }
                 break;
             case ActorState.SwimDash:
             case ActorState.Swim:
-                if (UpdateStateSyncTracking(ActorState.Swim)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.swim, codeLong: Value.Character.MapId);
                 }
 
@@ -291,22 +284,32 @@ public class FieldPlayer : Actor<Player> {
                 }
                 break;
             case ActorState.Walk:
-                if (UpdateStateSyncTracking(ActorState.Walk)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.run, codeLong: Value.Character.MapId);
+                    Session.Field?.AccelerationStructure?.FindBlockUnderPlayer(Position, entity => {
+                        switch (entity) {
+                            case FieldMeshColliderEntity { MapAttribute: MapAttribute.glass } meshCollider:
+                                Session.ConditionUpdate(ConditionType.stay_cube, codeLong: Session.Field.MapId, targetString: meshCollider.MapAttribute.ToString());
+                                break;
+                            case FieldBoxColliderEntity { MapAttribute: MapAttribute.snow or MapAttribute.grass } boxCollider:
+                                Session.ConditionUpdate(ConditionType.stay_cube, codeLong: Session.Field.MapId, targetString: boxCollider.MapAttribute.ToString());
+                                break;
+                        }
+                    });
                 }
                 break;
             case ActorState.Crawl:
-                if (UpdateStateSyncTracking(ActorState.Crawl)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.crawl, codeLong: Value.Character.MapId);
                 }
                 break;
             case ActorState.Glide:
-                if (UpdateStateSyncTracking(ActorState.Glide)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.glide, codeLong: Value.Character.MapId);
                 }
                 break;
             case ActorState.Climb:
-                if (UpdateStateSyncTracking(ActorState.Climb)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.climb, codeLong: Value.Character.MapId);
                 }
                 break;
@@ -326,7 +329,7 @@ public class FieldPlayer : Actor<Player> {
                 }
                 break;
             case ActorState.Ride:
-                if (UpdateStateSyncTracking(ActorState.Ride)) {
+                if (UpdateStateSyncTracking()) {
                     Session.ConditionUpdate(ConditionType.riding, codeLong: Value.Character.MapId);
                 }
                 break;
@@ -342,10 +345,36 @@ public class FieldPlayer : Actor<Player> {
                 // TODO: Any more condition states?
         }
 
-        Field?.EnsurePlayerPosition(this);
+        Field.EnsurePlayerPosition(this);
+        return;
+
+        bool UpdateStateSyncTimeTracking() {
+            StateSyncTimeTracking += syncTick;
+            if (StateSyncTimeTracking >= 1000) {
+                StateSyncTimeTracking = 0;
+                return true;
+            }
+            return false;
+        }
+
+        bool UpdateStateSyncTracking() {
+            if (stateSyncDistanceTracking.TryGetValue(state, out float totalDistance)) {
+                totalDistance += syncDistance;
+                // 150f = BLOCK_SIZE = 1 meter
+                if (totalDistance >= 150F) {
+                    stateSyncDistanceTracking[state] = 0f;
+                    return true;
+                }
+                stateSyncDistanceTracking[state] = totalDistance;
+                return false;
+            }
+            stateSyncDistanceTracking[state] = syncDistance;
+            return false;
+        }
     }
 
     protected override void OnDeath() {
+        if (Session.Field is null) return;
         Field.Broadcast(SetCraftModePacket.Stop(ObjectId));
 
         Session.HeldCube = null;
@@ -647,5 +676,13 @@ public class FieldPlayer : Actor<Player> {
         }
 
         return true;
+    }
+
+    public override string ToString() {
+        return $"FieldPlayer: {Value.Character.Name} ({ObjectId}) at {Position} in {Field.Metadata.Name} ({Field.Metadata.Id})" +
+               $"\n  State: {State}, SubState: {SubState}, Flag: {Flag}, IsDead: {IsDead}" +
+               $"\n  Position: {Position}, Rotation: {Rotation}, LastGroundPosition: {LastGroundPosition}" +
+               $"\n  AdminPermissions: {AdminPermissions}, TagId: {TagId}" +
+               $"\n  DebugAi: {DebugAi}, DebugSkills: {DebugSkills}";
     }
 }

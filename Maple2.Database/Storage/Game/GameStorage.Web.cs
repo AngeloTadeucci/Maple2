@@ -1,5 +1,4 @@
 ﻿using Maple2.Database.Model.Ranking;
-using Maple2.Model;
 using Maple2.Model.Game;
 using Character = Maple2.Database.Model.Character;
 
@@ -22,7 +21,7 @@ public partial class GameStorage {
             var allCharacters = Context.Character
                 .Select(c => new {
                     CharacterId = c.Id,
-                    AccountId = c.AccountId
+                    AccountId = c.AccountId,
                 })
                 .ToList();
 

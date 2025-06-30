@@ -211,6 +211,11 @@ public abstract class Session : IDisposable {
                 reader.AdvanceTo(buffer.Start, buffer.End);
             } while (!disposed && !result.IsCompleted);
         } catch (Exception ex) {
+            if (ex is InvalidOperationException invalidOperation && invalidOperation.Message.Contains("reader was completed")) {
+                // Ignore this exception, it happens when the reader is completed, either by the client closing or by the session being disposed.
+                // it's not a real error
+                return;
+            }
             if (!disposed) {
                 Logger.Error(ex, "Exception reading recv packet");
             }
@@ -273,6 +278,7 @@ public abstract class Session : IDisposable {
             case SendOp.ProxyGameObj:
             case SendOp.ResponseTimeSync:
             case SendOp.Stat:
+            case SendOp.RequestHeartbeat:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
@@ -287,6 +293,8 @@ public abstract class Session : IDisposable {
             case RecvOp.UserSync:
             case RecvOp.RequestTimeSync:
             case RecvOp.GuideObjectSync:
+            case RecvOp.RideSync:
+            case RecvOp.ResponseHeartbeat:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "RECV".ColorGreen(), opcode, $"0x{op:X4}", packet.ToHexString(packet.Length, ' '));

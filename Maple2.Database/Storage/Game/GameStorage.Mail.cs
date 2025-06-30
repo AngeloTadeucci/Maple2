@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Mail = Maple2.Model.Game.Mail;
 using Item = Maple2.Model.Game.Item;
 
@@ -53,10 +50,14 @@ public partial class GameStorage {
                 Context.Mail.Remove(mail);
             }
 
+            Context.SaveChanges();
+
             foreach (Model.Mail mail in mails) {
                 mail.ReceiverId = characterId;
                 Context.Mail.Add(mail);
             }
+
+            Context.SaveChanges();
 
             if (!Commit()) {
                 throw new Exception("Failed to bind account mails to character");

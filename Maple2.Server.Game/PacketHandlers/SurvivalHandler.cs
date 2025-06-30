@@ -1,14 +1,12 @@
-﻿using Maple2.Database.Storage;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Session;
-using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class SurvivalHandler : PacketHandler<GameSession> {
+public class SurvivalHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Survival;
 
     private enum Command : byte {

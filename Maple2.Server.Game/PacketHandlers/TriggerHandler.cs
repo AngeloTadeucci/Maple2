@@ -1,6 +1,7 @@
-﻿using Maple2.PacketLib.Tools;
+﻿using Maple2.Model.Enum;
+using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
@@ -8,7 +9,7 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class TriggerHandler : PacketHandler<GameSession> {
+public class TriggerHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Trigger;
 
     private enum Command : byte {
@@ -60,36 +61,36 @@ public class TriggerHandler : PacketHandler<GameSession> {
             return;
         }
 
-        byte mode = packet.ReadByte();
+        var widgetType = packet.Read<WidgetType>();
         int arg = packet.ReadInt();
-        switch (mode) {
-            case 1: {
-                    if (session.Field.Widgets.TryGetValue("Guide", out Widget? widget)) {
-                        widget.Conditions["IsTriggerEvent"] = arg;
-                    }
-                    break;
+        switch (widgetType) {
+            case WidgetType.Guide:
+                if (session.Field.Widgets.TryGetValue(widgetType.ToString(), out Widget? guideWidget)) {
+                    guideWidget.Conditions["IsTriggerEvent"] = arg;
                 }
-            case 5: {
-                    if (session.Field.Widgets.TryGetValue("SceneMovie", out Widget? widget)) {
-                        widget.Conditions["IsStop"] = arg;
-                        session.Send(TriggerPacket.UiSkipMovie(arg));
-                    }
-                    break;
+                break;
+            case WidgetType.SceneMovie:
+                if (session.Field.Widgets.TryGetValue(widgetType.ToString(), out Widget? sceneMovieWidget)) {
+                    sceneMovieWidget.Conditions["IsStop"] = arg;
+                    session.Send(TriggerPacket.UiSkipMovie(arg));
                 }
-            case 12: {
-                    // TODO: This is all a guess
-                    if (session.Field.Widgets.TryGetValue("Round", out Widget? widget)) {
-                        switch (arg) {
-                            case 0: // 0 = FailGameProgress
-                                widget.Conditions["GameFail"] = 0;
-                                break;
-                            case 1: // 1 = SuccessGameProgress
-                                widget.Conditions["GameClear"] = 0;
-                                break;
-                        }
+                break;
+            case WidgetType.Round:
+                // TODO: This is all a guess
+                if (session.Field.Widgets.TryGetValue(widgetType.ToString(), out Widget? roundWidget)) {
+                    switch (arg) {
+                        case 0: // 0 = FailGameProgress
+                            roundWidget.Conditions["GameFail"] = 0;
+                            break;
+                        case 1: // 1 = SuccessGameProgress
+                            roundWidget.Conditions["GameClear"] = 0;
+                            break;
                     }
-                    break;
                 }
+                break;
+            default:
+                Logger.Warning("Unhandled widget type: {WidgetType}", widgetType);
+                break;
         }
     }
 

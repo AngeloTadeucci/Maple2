@@ -6,8 +6,8 @@ using Maple2.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
-using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
+using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
@@ -155,7 +155,7 @@ public sealed class QuestManager {
 
         // TODO: Confirm inventory can hold all the items.
         foreach (QuestMetadataReward.Item acceptReward in metadata.AcceptReward.EssentialItem) {
-            Item? reward = session.Field.ItemDrop.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
+            Item? reward = session.Field?.ItemDrop.CreateItem(acceptReward.Id, acceptReward.Rarity, acceptReward.Amount);
             if (reward == null) {
                 logger.Error("Failed to create quest reward {RewardId}", acceptReward.Id);
                 continue;
@@ -167,6 +167,9 @@ public sealed class QuestManager {
 
         session.ConditionUpdate(ConditionType.quest_accept, codeLong: quest.Id);
         session.Send(QuestPacket.Start(quest));
+        if (quest.Metadata.SummonPortal != null) {
+            SummonPortal(quest);
+        }
         return QuestError.none;
     }
 
@@ -181,12 +184,17 @@ public sealed class QuestManager {
     /// <param name="codeLong">condition code parameter in long.</param>
     public void Update(ConditionType type, long counter = 1, string targetString = "", long targetLong = 0, string codeString = "", long codeLong = 0) {
         IEnumerable<Quest> quests = characterValues.Values.Where(quest => quest.State != QuestState.Completed)
-            .Concat(accountValues.Values.Where(quest => quest.State != QuestState.Completed));
+            .Concat(accountValues.Values.Where(quest => quest.State != QuestState.Completed))
+            .Where(x => x.Conditions.Values.Any(quest => quest.Metadata.Type == type));
         foreach (Quest quest in quests) {
             // TODO: Not sure if ProgressMap really means that only progress counts in this map. It doesn't make sense for some quests.
             // Testing only on FieldMission for now.
-            if (quest.Metadata.Basic.Type == QuestType.FieldMission && quest.Metadata.Basic.ProgressMaps != null && !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId)) {
-                continue;
+            if (quest.Metadata.Basic is { Type: QuestType.FieldMission, ProgressMaps: not null } && session.Field is not null) {
+                switch (session.Field.Metadata.Property.ExploreType) {
+                    case 1 when !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId):
+                    case 2 when !quest.Metadata.Basic.ProgressMaps.Any(x => session.Player.Value.Character.ReturnMaps.Contains(x)):
+                        continue;
+                }
             }
 
             if (quest.Metadata.Basic.Type == QuestType.MentoringMission && quest.Metadata.Mentoring != null) {
@@ -209,8 +217,7 @@ public sealed class QuestManager {
                 condition.Counter = (int) Math.Min(condition.Metadata.Value, condition.Counter + counter);
 
                 session.Send(QuestPacket.Update(quest));
-                if (quest.Metadata.Basic.Type == QuestType.FieldMission &&
-                    CanComplete(quest)) {
+                if (quest.Metadata.Basic.Type == QuestType.FieldMission && CanComplete(quest)) {
                     Complete(quest);
                 }
             }
@@ -304,7 +311,7 @@ public sealed class QuestManager {
 
         List<Item> rewards = [];
         foreach (QuestMetadataReward.Item entry in reward.EssentialItem) {
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item is null) {
                 continue;
             }
@@ -321,7 +328,7 @@ public sealed class QuestManager {
                 continue;
             }
 
-            Item? item = session.Field.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(entry.Id, entry.Rarity, entry.Amount);
             if (item is null) {
                 continue;
             }
@@ -361,6 +368,9 @@ public sealed class QuestManager {
         session.ConditionUpdate(ConditionType.quest_clear_by_chapter, codeLong: quest.Metadata.Basic.ChapterId);
         session.ConditionUpdate(ConditionType.quest, codeLong: quest.Metadata.Id);
         session.ConditionUpdate(ConditionType.quest_clear, codeLong: quest.Metadata.Id);
+        if (quest.Metadata.Basic.Type == QuestType.FieldMission) {
+            session.ConditionUpdate(ConditionType.field_mission);
+        }
 
         quest.EndTime = DateTime.Now.ToEpochSeconds();
         quest.State = QuestState.Completed;
@@ -467,7 +477,7 @@ public sealed class QuestManager {
 
             if (!ignoreItemRewards) {
                 foreach (ItemComponent itemComponent in entry.Items) {
-                    Item? item = session.Field.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
+                    Item? item = session.Field?.ItemDrop.CreateItem(itemComponent.ItemId, itemComponent.Rarity, itemComponent.Amount);
                     if (item == null) {
                         continue;
                     }
@@ -504,7 +514,7 @@ public sealed class QuestManager {
         session.Send(QuestPacket.UpdateExploration(session.Config.ExplorationProgress));
 
         if (metadata.Item != null) {
-            Item? item = session.Field.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
+            Item? item = session.Field?.ItemDrop.CreateItem(metadata.Item.ItemId, metadata.Item.Rarity, metadata.Item.Rarity);
             if (item != null) {
                 if (!session.Item.Inventory.Add(item, true)) {
                     session.Item.MailItem(item);
@@ -583,6 +593,18 @@ public sealed class QuestManager {
         Load();
     }
 
+    private void SummonPortal(Quest quest) {
+        if (session.Field is null) return;
+        if (session.NpcScript?.Npc == null) {
+            logger.Warning("Cannot summon quest portal for quest {QuestId}: No NPC script context", quest.Id);
+            return;
+        }
+
+        FieldPortal portal = session.Field.SpawnPortal(quest.Metadata.SummonPortal!, session.NpcScript.Npc, session.Player);
+        session.Send(PortalPacket.Add(portal));
+        session.Send(QuestPacket.SummonPortal(session.NpcScript.Npc.ObjectId, portal.Value.Id, portal.StartTick));
+    }
+
     /// <summary>
     /// Only used for debugging purposes. Completes all quests in the chapter silently.
     /// </summary>
@@ -628,6 +650,7 @@ public sealed class QuestManager {
 
         Load();
     }
+
     public void Save(GameStorage.Request db) {
         db.SaveQuests(session.AccountId, accountValues.Values);
         db.SaveQuests(session.CharacterId, characterValues.Values);

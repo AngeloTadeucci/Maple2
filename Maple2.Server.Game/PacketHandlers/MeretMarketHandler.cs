@@ -7,16 +7,15 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
-using Maple2.Tools;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class MeretMarketHandler : PacketHandler<GameSession> {
+public class MeretMarketHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.MeretMarket;
 
     #region Autofac Autowired
@@ -348,7 +347,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             return null;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
+        Item? item = session.Field?.ItemDrop.CreateItem(entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
         if (item == null) {
             Logger.Fatal("Failed to create item {ItemId}, {Rarity}, {Quantity}", entry.ItemMetadata.Id, entry.Metadata.Rarity, entry.Metadata.Quantity + entry.Metadata.BonusQuantity);
             throw new InvalidOperationException($"Fatal: Failed to create item {entry.ItemMetadata.Id}, {entry.Metadata.Rarity}, {entry.Metadata.Quantity + entry.Metadata.BonusQuantity}");
@@ -399,7 +398,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             return null;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(ugcItem.ItemMetadata.Id, designMetadata.ItemRarity);
+        Item? item = session.Field?.ItemDrop.CreateItem(ugcItem.ItemMetadata.Id, designMetadata.ItemRarity);
         if (item == null) {
             Logger.Fatal("Unable to create Item for {itemId}", ugcItem.ItemMetadata.Id);
             return null;
@@ -500,7 +499,7 @@ public class MeretMarketHandler : PacketHandler<GameSession> {
             }
             // get any sub tabs
             tabIds = new[] {
-                meretMarketSearch.TabId
+                meretMarketSearch.TabId,
             }.Concat(tab.SubTabIds).ToArray();
             sortGender = tab.SortGender;
             sortJob = tab.SortJob;

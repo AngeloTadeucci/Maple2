@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Maple2.Model.Common;
 using Maple2.Tools.Collision;
@@ -30,7 +28,7 @@ public class MapEntityMetadata {
     public required IReadOnlyList<MS2PatrolData> Patrols { get; init; }
 }
 
-public interface ITriggerStorage : IReadOnlyDictionary<int, Trigger> {
+public interface ITriggerStorage : IReadOnlyDictionary<int, Ms2Trigger> {
     public ImmutableArray<Ms2TriggerActor> Actors { get; }
     public ImmutableArray<Ms2TriggerBox> Boxes { get; }
     public ImmutableArray<Ms2TriggerCamera> Cameras { get; }
@@ -43,5 +41,5 @@ public interface ITriggerStorage : IReadOnlyDictionary<int, Trigger> {
     public ImmutableArray<Ms2TriggerSound> Sounds { get; }
     public ImmutableArray<Ms2TriggerAgent> Agents { get; }
 
-    public bool TryGet<T>(int key, [NotNullWhen(true)] out T? trigger) where T : Trigger;
+    public bool TryGet<T>(int key, [NotNullWhen(true)] out T? trigger) where T : Ms2Trigger;
 }

@@ -3,14 +3,14 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class BonusGameHandler : PacketHandler<GameSession> {
+public class BonusGameHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.BonusGame;
 
     private enum Command : byte {
@@ -51,7 +51,7 @@ public class BonusGameHandler : PacketHandler<GameSession> {
     }
 
     private void HandleSpin(GameSession session) {
-        if (session.NpcScript?.State == null) {
+        if (session.NpcScript?.State is null || session.NpcScript.Npc is null) {
             session.BonusGameId = 0;
             return;
         }
@@ -83,12 +83,12 @@ public class BonusGameHandler : PacketHandler<GameSession> {
         IList<KeyValuePair<Item, int>> rewardedItems = new List<KeyValuePair<Item, int>>(); // Item, Index on wheel
         for (int spin = 0; spin < spins; spin++) {
             (BonusGameTable.Drop.Item DropItem, int Index) result = dropItems.Get();
-            Item? createdItem = session.Field.ItemDrop.CreateItem(result.DropItem.ItemComponent.ItemId, result.DropItem.ItemComponent.Rarity, result.DropItem.ItemComponent.Amount);
+            Item? createdItem = session.Field?.ItemDrop.CreateItem(result.DropItem.ItemComponent.ItemId, result.DropItem.ItemComponent.Rarity, result.DropItem.ItemComponent.Amount);
             if (createdItem == null) {
                 break;
             }
 
-            if (!session.Item.Inventory.ConsumeItemComponents(new[] { game.ConsumeItem })) {
+            if (!session.Item.Inventory.ConsumeItemComponents([game.ConsumeItem])) {
                 // TODO: Close the bonus game if items count is 0
                 break;
             }

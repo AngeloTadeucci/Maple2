@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+﻿using System.Collections.Immutable;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -23,9 +21,14 @@ public class PacketRouter<T> where T : Session {
     public void OnPacket(object? sender, IByteReader reader) {
         var op = reader.Read<RecvOp>();
         PacketHandler<T>? handler = handlers.GetValueOrDefault(op);
-        if (sender is T session) {
-            handler?.Handle(session, reader);
+        if (sender is not T session) return;
+
+        // Let another system schedule when to call Handle
+        if (handler?.TryHandleDeferred(session, reader) ?? false) {
+            return;
         }
+
+        handler?.Handle(session, reader);
     }
 
     private void Register(ImmutableDictionary<RecvOp, PacketHandler<T>>.Builder builder, PacketHandler<T> packetHandler) {

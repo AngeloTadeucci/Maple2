@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text.Json.Serialization;
 using Maple2.Model.Enum;
-using Maple2.Model.Game.Event;
 
 namespace Maple2.Model.Metadata;
 

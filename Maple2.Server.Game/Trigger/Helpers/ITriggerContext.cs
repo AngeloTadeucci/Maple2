@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
+using Maple2.Model.Enum;
 
-namespace Maple2.Server.Game.Scripting.Trigger;
+namespace Maple2.Server.Game.Trigger.Helpers;
 
 public interface ITriggerContext {
     // Actions
@@ -157,11 +158,11 @@ public interface ITriggerContext {
     public void SetQuestComplete(int questId);
     public void SetRandomMesh(int[] triggerIds, bool visible, int startDelay, int interval, int fade);
     public void SetRope(int triggerId, bool visible, bool enable, int fade);
-    public void SetSceneSkip(dynamic state, string action);
+    public void SetSceneSkip(string state, string nextState);
     public void SetSkill(int[] triggerIds, bool enable);
-    public void SetSkip(dynamic state);
+    public void SetSkip(string state);
     public void SetSound(int triggerId, bool enable);
-    public void SetState(int id, dynamic[] states, bool randomize);
+    public void SetState(int id, string[] states, bool randomize);
     public void SetTimeScale(bool enable, float startScale, float endScale, float duration, int interpolator);
     public void SetTimer(string timerId, int seconds, bool autoRemove, bool display, int vOffset, string type, string desc);
     public void SetUserValue(int triggerId, string key, int value);
@@ -195,7 +196,7 @@ public interface ITriggerContext {
     public void UserTagSymbol(string symbol1, string symbol2);
     public void UserValueToNumberMesh(string key, int startMeshId, int digitCount);
     public void VisibleMyPc(bool isVisible);
-    public void Weather(Weather weatherType);
+    public void SetWeather(Weather weatherType);
     public void WeddingBroken();
     public void WeddingMoveUser(string entryType, int mapId, int[] portalIds, int boxId);
     public void WeddingMutualAgree(string agreeType);
@@ -209,51 +210,50 @@ public interface ITriggerContext {
     public void WriteLog(string logName, string @event, int triggerId, string subEvent, int level);
 
     // Conditions
-    public int BonusGameReward(int boxId);
-    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level);
-    public bool CheckDungeonLobbyUserCount();
-    public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, int level);
-    public float NpcDamage(int spawnId);
-    public int NpcExtraData(int spawnPointId, string extraDataKey);
-    public int NpcHp(int spawnId, bool isRelative);
-    public bool CheckSameUserTag(int boxId);
-    public bool CheckUser();
-    public int UserCount();
-    public int CountUsers(int boxId, int userTagId);
-    public int DayOfWeek(string desc);
-    public bool DetectLiftableObject(int[] boxIds, int itemId);
-    public int DungeonPlayTime();
-    public string DungeonState();
-    public int DungeonFirstUserMissionScore();
-    public int DungeonId();
-    public int DungeonLevel();
-    public int DungeonMaxUserCount();
-    public int DungeonRound();
+    public bool BonusGameReward(int boxId, int type);
+    public bool CheckAnyUserAdditionalEffect(int boxId, int additionalEffectId, int level, bool negate);
+    public bool CheckDungeonLobbyUserCount(bool negate);
+    public bool CheckNpcAdditionalEffect(int spawnId, int additionalEffectId, int level, bool negate);
+    public bool NpcDamage(int spawnId, float damageRate, OperatorType operatorType);
+    public bool NpcExtraData(int spawnPointId, string extraDataKey, int extraDataValue, OperatorType operatorType);
+    public bool NpcHp(int spawnId, bool isRelative, int value, CompareType compareType);
+    public bool CheckSameUserTag(int boxId, bool negate);
+    public bool CheckUser(bool negate);
+    public bool UserCount(int count);
+    public bool CountUsers(int boxId, int userTagId, int minUsers, OperatorType operatorType, bool negate);
+    public bool DayOfWeek(int[] dayOfWeeks, string desc, bool negate);
+    public bool DetectLiftableObject(int[] boxIds, int itemId, bool negate);
+    public bool DungeonPlayTime(int playSeconds);
+    public bool DungeonState(string checkState);
+    public bool DungeonFirstUserMissionScore(int score, OperatorType operatorType);
+    public bool DungeonId(int dungeonId);
+    public bool DungeonLevel(int level);
+    public bool DungeonMaxUserCount(int value);
+    public bool DungeonRound(int round);
     public bool DungeonTimeout();
-    public int DungeonVariable(int varId);
+    public bool DungeonVariable(int varId, int value);
     public bool GuildVsGameScoredTeam(int teamId);
     public bool GuildVsGameWinnerTeam(int teamId);
-    public bool IsDungeonRoom();
-    public bool IsPlayingMapleSurvival();
+    public bool IsDungeonRoom(bool negate);
+    public bool IsPlayingMapleSurvival(bool negate);
     public bool MonsterDead(int[] spawnIds, bool autoTarget);
-    public bool MonsterInCombat(int[] spawnIds);
-    public bool NpcDetected(int boxId, int[] spawnIds);
+    public bool MonsterInCombat(int[] spawnIds, bool negate);
+    public bool NpcDetected(int boxId, int[] spawnIds, bool negate);
     public bool NpcIsDeadByStringId(string stringId);
     public bool ObjectInteracted(int[] interactIds, int state);
     public bool PvpZoneEnded(int boxId);
-    public bool QuestUserDetected(int[] boxIds, int[] questIds, int[] questStates, int jobCode);
+    public bool QuestUserDetected(int[] boxIds, int[] questIds, int[] questStates, int jobCode, bool negate);
     public bool RandomCondition(float weight, string desc);
-    public int ScoreBoardScore();
-    public int ShadowExpeditionPoints();
+    public bool ScoreBoardScore(int score, OperatorType operatorType);
+    public bool ShadowExpeditionPoints(int score);
     public bool TimeExpired(string timerId);
-    public bool UserDetected(int[] boxIds, int jobCode);
-    public int UserValue(string key);
+    public bool UserDetected(int[] boxIds, JobCode jobCode, bool negate);
+    public bool UserValue(string key, int value, bool negate);
     public bool WaitAndResetTick(int waitTick);
     public bool WaitSecondsUserValue(string key, string desc);
     public bool WaitTick(int waitTick);
     public bool WeddingEntryInField(string entryType, bool isInField);
-    public string WeddingHallState(bool success);
+    public bool WeddingHallState(string state, bool success);
     public bool WeddingMutualAgreeResult(string agreeType);
-    public int WidgetValue(string type, string name, string desc);
+    public bool WidgetValue(string type, string widgetName, string widgeArg, bool negate, string desc);
 }
-

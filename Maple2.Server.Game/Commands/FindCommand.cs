@@ -11,17 +11,13 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class FindCommand : GameCommand {
-    private const string NAME = "find";
-    private const string DESCRIPTION = "Search database for ids.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Find;
-
     public FindCommand(GameSession session,
                        AchievementMetadataStorage achievementStorage,
                        ItemMetadataStorage itemStorage,
                        MapMetadataStorage mapStorage,
                        NpcMetadataStorage npcStorage,
                        QuestMetadataStorage questStorage,
-                       SkillMetadataStorage skillStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+                       SkillMetadataStorage skillStorage) : base(AdminPermissions.Find, "find", "Search database for ids.") {
         AddCommand(new FindSubCommand<AchievementMetadata>("achievement", session, achievementStorage));
         AddCommand(new FindSubCommand<ItemMetadata>("item", session, itemStorage));
         AddCommand(new FindSubCommand<MapMetadata>("map", session, mapStorage));

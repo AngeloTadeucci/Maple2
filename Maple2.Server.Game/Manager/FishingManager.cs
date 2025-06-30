@@ -41,7 +41,7 @@ public class FishingManager {
             return;
         }
         session.Send(FishingPacket.Stop());
-        session.Field.Broadcast(GuideObjectPacket.Remove(GuideObject));
+        session.Field?.Broadcast(GuideObjectPacket.Remove(GuideObject));
         GuideObject = null;
         rod = null;
         fishFightGame = false;
@@ -52,7 +52,7 @@ public class FishingManager {
     }
 
     public FishingError Prepare(long fishingRodUid) {
-        if (session.GuideObject != null || session.Field.AccelerationStructure == null) {
+        if (session.GuideObject != null || session.Field?.AccelerationStructure == null) {
             return FishingError.s_fishing_error_system_error;
         }
 
@@ -94,7 +94,7 @@ public class FishingManager {
 
     private Dictionary<Vector3, FishingTile> GetFishingBlocks(FishingRodTable.Entry rod) {
         Dictionary<Vector3, FishingTile> tiles = new();
-        if (session.Field.AccelerationStructure == null) {
+        if (session.Field?.AccelerationStructure == null) {
             return tiles;
         }
         Vector3 playerPosition = session.Player.Position;
@@ -206,7 +206,7 @@ public class FishingManager {
     }
 
     public FishingError Start(Vector3 position) {
-        if (session.Field.AccelerationStructure == null) {
+        if (session.Field?.AccelerationStructure == null) {
             return FishingError.s_fishing_error_system_error;
         }
 
@@ -260,7 +260,7 @@ public class FishingManager {
     }
 
     public FishingError Catch(bool success) {
-        if (selectedTile == null || selectedFish == null) {
+        if (selectedTile == null || selectedFish == null || session.Field is null) {
             return FishingError.s_fishing_error_system_error;
         }
 
@@ -274,7 +274,7 @@ public class FishingManager {
             >= 0.025 and < 0.03 => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
             >= 0.03 and < 0.15 => Random.Shared.Next(selectedFish.SmallSize.Max, selectedFish.BigSize.Min),
             >= 0.15 => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
-            _ => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max)
+            _ => Random.Shared.Next(selectedFish.SmallSize.Min, selectedFish.SmallSize.Max),
         };
 
         bool hasAutoFish = session.Player.Buffs.HasBuff(BuffEventType.AutoFish);
@@ -292,7 +292,7 @@ public class FishingManager {
     }
 
     private void AddFish(int fishSize, bool hasAutoFish) {
-        if (selectedFish == null) {
+        if (selectedFish == null || session.Field is null) {
             return;
         }
 
@@ -337,12 +337,17 @@ public class FishingManager {
         }
         session.ConditionUpdate(ConditionType.fish, codeLong: selectedFish.Id, targetLong: session.Field.MapId);
 
+        if (masteryExp == 0) {
+            return;
+        }
+
         session.Mastery[MasteryType.Fishing] += masteryExp;
         short masteryLevel = session.Mastery.GetLevel(MasteryType.Fishing);
         session.Send(FishingPacket.IncreaseMastery(selectedFish.Id, masteryLevel, masteryExp, caughtFishType));
     }
 
     private void CatchItem(FishTable.Spot spot) {
+        if (session.Field is null) return;
         var items = new List<Item>();
         if (spot.GlobalDropBoxId > 0) {
             ICollection<Item> globalDropItems = session.Field.ItemDrop.GetGlobalDropItems(spot.GlobalDropBoxId, spot.SpotLevel);

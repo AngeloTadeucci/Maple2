@@ -2,20 +2,14 @@
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using Maple2.Model.Enum;
-using Maple2.Model.Game;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
 public class StringBoardCommand : GameCommand {
-    private const string NAME = "stringboard";
-    private const string DESCRIPTION = "Manage string board events (scrolling text top left).";
-    public const AdminPermissions RequiredPermission = AdminPermissions.StringBoard;
-
     private readonly GameSession session;
 
-    public StringBoardCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public StringBoardCommand(GameSession session) : base(AdminPermissions.StringBoard, "stringboard", "Manage string board events (scrolling text top left).") {
         this.session = session;
         AddCommand(new AddStringBoardCommand(session));
         AddCommand(new RemoveStringBoardCommand(session));

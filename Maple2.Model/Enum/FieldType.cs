@@ -3,5 +3,5 @@
 public enum FieldType : byte {
     Default = 0,
     Random = 1, // Random Rooms like Pocket Realms
-    Dungeon = 2
+    Dungeon = 2,
 }

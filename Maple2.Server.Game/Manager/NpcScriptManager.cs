@@ -6,7 +6,6 @@ using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;
-using Maple2.Server.World.Service;
 using Maple2.Tools.Extensions;
 using Serilog;
 
@@ -94,7 +93,7 @@ public sealed class NpcScriptManager {
         State = GetQuestScriptState(metadata);
         if (State == null || State.Id == 0) {
             session.Send(NpcTalkPacket.Close());
-            Npc.StopTalk();
+            Npc?.StopTalk();
             return false;
         }
         Button = GetButton();
@@ -277,7 +276,7 @@ public sealed class NpcScriptManager {
             stateId = NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 200, 300);
         }
 
-        if (quest != null && quest.Metadata.Basic.CompleteNpc == Npc.Value.Id) {
+        if (quest != null && quest.Metadata.Basic.CompleteNpc == Npc?.Value.Id) {
             stateId = NpcTalkUtil.GetFirstStateScript(scriptMetadata.States.Keys.ToArray(), 300, 400);
         }
 
@@ -351,7 +350,7 @@ public sealed class NpcScriptManager {
     }
 
     public void ProcessScriptFunction(bool enter = true) {
-        if (State == null) {
+        if (State == null || session.Field is null) {
             return;
         }
 
@@ -385,7 +384,7 @@ public sealed class NpcScriptManager {
 
         if (scriptFunction.CollectItems.Count > 0) {
             if (!session.Item.Inventory.ConsumeItemComponents(scriptFunction.CollectItems.ToList())) {
-                logger.Error("Failed to consume items for script function {FunctionId} on npc {NpcId}", scriptFunction.FunctionId, Npc.Value.Id);
+                logger.Error("Failed to consume items for script function {FunctionId} on npc {NpcId}", scriptFunction.FunctionId, Npc?.Value.Id);
             }
         }
 
@@ -401,7 +400,7 @@ public sealed class NpcScriptManager {
 
         IList<Item> items = new List<Item>();
         foreach (ItemComponent item in scriptFunction.PresentItems) {
-            Item? newItem = session.Field.ItemDrop.CreateItem(item.ItemId, item.Rarity, item.Amount);
+            Item? newItem = session.Field?.ItemDrop.CreateItem(item.ItemId, item.Rarity, item.Amount);
             if (newItem == null) {
                 continue;
             }
@@ -443,25 +442,25 @@ public sealed class NpcScriptManager {
         RunEventScript(eventId);
     }
 
-    private bool EventConditionCheck(ScriptEventConditionMetadata metadata, int enchantLevel, short rarity, int failCount, EnchantResult result, ItemEnchantError error) {
-        if (error != ItemEnchantError.s_itemenchant_unknown_err && metadata.ErrorCode != error) {
+    private bool EventConditionCheck(ScriptEventConditionMetadata scriptMetadata, int enchantLevel, short rarity, int failCount, EnchantResult result, ItemEnchantError error) {
+        if (error != ItemEnchantError.s_itemenchant_unknown_err && scriptMetadata.ErrorCode != error) {
             return false;
         }
 
-        if (metadata.Rarity > 0 && metadata.Rarity != rarity) {
+        if (scriptMetadata.Rarity > 0 && scriptMetadata.Rarity != rarity) {
             return false;
         }
 
-        if (!metadata.EnchantLevel.Contains(enchantLevel)) {
+        if (!scriptMetadata.EnchantLevel.Contains(enchantLevel)) {
             return false;
         }
 
-        if (metadata.FailCount > 0 || metadata.DamageType != EnchantDamageType.None) {
+        if (scriptMetadata.FailCount > 0 || scriptMetadata.DamageType != EnchantDamageType.None) {
             // Returning false here because we don't have the fail count or damage type
             return false;
         }
 
-        if (metadata.ResultType != EnchantResult.None && metadata.ResultType != result) {
+        if (scriptMetadata.ResultType != EnchantResult.None && scriptMetadata.ResultType != result) {
             return false;
         }
 

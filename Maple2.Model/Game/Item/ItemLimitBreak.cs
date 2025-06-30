@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
@@ -8,7 +7,7 @@ namespace Maple2.Model.Game;
 public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
     public static readonly ItemLimitBreak Default = new ItemLimitBreak();
 
-    public int Level { get; private set; }
+    public int Level { get; set; }
     public readonly IDictionary<BasicAttribute, BasicOption> BasicOptions;
     public readonly IDictionary<SpecialAttribute, SpecialOption> SpecialOptions;
 
@@ -18,7 +17,8 @@ public sealed class ItemLimitBreak : IByteSerializable, IByteDeserializable {
     }
 
     public ItemLimitBreak Clone() {
-        return new ItemLimitBreak(Level, BasicOptions, SpecialOptions);
+        return new ItemLimitBreak(Level, new Dictionary<BasicAttribute, BasicOption>(BasicOptions),
+            new Dictionary<SpecialAttribute, SpecialOption>(SpecialOptions));
     }
 
     public ItemLimitBreak(int level, IDictionary<BasicAttribute, BasicOption> basicOptions,

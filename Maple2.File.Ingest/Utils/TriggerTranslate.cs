@@ -4,7 +4,7 @@ using System.Text;
 namespace Maple2.File.Ingest.Utils;
 
 public static class TriggerTranslate {
-    private static readonly Dictionary<string, string> ActionLookup = new() {
+    public static readonly Dictionary<string, string> ActionLookup = new() {
         {"대화를설정한다", "Set Dialogue"},
         {"랜덤메쉬를설정한다", "Set Random Mesh"},
         {"로그를남긴다", "Write Log"},
@@ -48,7 +48,7 @@ public static class TriggerTranslate {
         {"전장점수를준다", "Allocate Battlefield Points"},
     };
 
-    private static readonly Dictionary<string, string> ConditionLookup = new() {
+    public static readonly Dictionary<string, string> ConditionLookup = new() {
         {"랜덤조건", "Random Condition"},
         {"NPC를감지했으면", "NPC Detected"},
         {"몬스터가전투상태면", "Monster In Combat"},

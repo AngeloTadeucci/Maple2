@@ -34,7 +34,7 @@ public static class HomeActionPacket {
         Add = 0,
         Remove = 1,
         Update = 2,
-        Hit = 3
+        Hit = 3,
     }
 
     public static ByteWriter SendCubePortalSettings(PlotCube cube, List<string> otherPortalsNames) {
@@ -59,6 +59,7 @@ public static class HomeActionPacket {
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.NoticeCube);
         pWriter.WriteBool(editing);
+        pWriter.Write<Vector3B>(cube.Position);
         pWriter.WriteClass<CubeNoticeSettings>(cube.Interact.NoticeSettings);
 
         return pWriter;

@@ -2,14 +2,14 @@
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class RevivalHandler : PacketHandler<GameSession> {
+public class RevivalHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Revival;
 
     private enum Command : byte {
@@ -33,6 +33,7 @@ public class RevivalHandler : PacketHandler<GameSession> {
     /// Handles normal revival (from tombstone hits or manual revival)
     /// </summary>
     private void HandleSafeRevive(GameSession session) {
+        if (session.Field is null) return;
         if (session.Field.Metadata.Property.NoRevivalHere || session.Field.Metadata.Property.RevivalReturnId == 0) {
             return;
         }
@@ -46,6 +47,7 @@ public class RevivalHandler : PacketHandler<GameSession> {
     /// Handles instant revival (using mesos or voucher)
     /// </summary>
     private void HandleInstantRevive(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         if (session.Field.Metadata.Property.NoRevivalHere) {
             return;
         }

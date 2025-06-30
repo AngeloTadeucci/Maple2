@@ -1,12 +1,12 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class StorageInventoryHandler : PacketHandler<GameSession> {
+public class StorageInventoryHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestItemStorage;
 
     private enum Command : byte {
@@ -16,6 +16,7 @@ public class StorageInventoryHandler : PacketHandler<GameSession> {
         Mesos = 3,
         Expand = 6,
         Sort = 8,
+        Delete = 10,
         Load = 12,
         Close = 15,
     }
@@ -40,6 +41,9 @@ public class StorageInventoryHandler : PacketHandler<GameSession> {
                 return;
             case Command.Sort:
                 HandleSort(session, packet);
+                return;
+            case Command.Delete:
+                HandleDelete(session, packet);
                 return;
             case Command.Load:
                 HandleLoad(session);
@@ -98,6 +102,12 @@ public class StorageInventoryHandler : PacketHandler<GameSession> {
         packet.ReadLong(); // 0
 
         session.Storage?.Sort();
+    }
+
+    private static void HandleDelete(GameSession session, IByteReader packet) {
+        long uid = packet.ReadLong();
+
+        session.Storage?.Delete(uid);
     }
 
     private static void HandleLoad(GameSession session) {

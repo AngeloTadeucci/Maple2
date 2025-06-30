@@ -1,14 +1,12 @@
 ﻿using Maple2.Model.Enum;
-using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
-using Maple2.Server.Game.Manager;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemEnchantHandler : PacketHandler<GameSession> {
+public class ItemEnchantHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestItemEnchant;
 
     private enum Command : byte {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
@@ -10,7 +11,6 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.Packets;
-using Maple2.Server.Global.Service;
 using Maple2.Server.World.Service;
 using static Maple2.Model.Error.CharacterCreateError;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
@@ -52,6 +52,39 @@ public class LoginSession : Core.Network.Session {
         Server.OnConnected(this);
     }
 
+    private void AcquireLock(long accountId, int maxRetries = 3) {
+        int retryCount = 0;
+        const int backoffMs = 500;
+
+        while (retryCount < maxRetries) {
+            LockResponse? response = World.AcquireLock(new LockRequest {
+                AccountId = accountId,
+            });
+
+            if (string.IsNullOrEmpty(response.Error)) {
+                return;
+            }
+
+            retryCount++;
+            Thread.Sleep(backoffMs);
+        }
+
+        Logger.Error("Failed to acquire lock for account {AccountId} after {MaxRetries} retries", accountId, maxRetries);
+    }
+
+    private void ReleaseLock(long accountId) {
+        try {
+            LockResponse response = World.ReleaseLock(new LockRequest {
+                AccountId = accountId,
+            });
+            if (!string.IsNullOrEmpty(response.Error)) {
+                Logger.Warning("Failed to release lock for account {AccountId}: {ErrorMessage}", accountId, response.Error);
+            }
+        } catch (RpcException ex) {
+            Logger.Error(ex, "Failed to release lock for account {AccountId}", accountId);
+        }
+    }
+
     public void ListServers() {
         ChannelsResponse response = World.Channels(new ChannelsRequest());
         Send(BannerListPacket.Load(Server.GetSystemBanners()));
@@ -60,7 +93,14 @@ public class LoginSession : Core.Network.Session {
 
     public void ListCharacters() {
         using GameStorage.Request db = GameStorage.Context();
-        (Account? readAccount, IList<Character>? characters) = db.ListCharacters(AccountId);
+        AcquireLock(AccountId);
+        Account? readAccount;
+        IList<Character>? characters;
+        try {
+            (readAccount, characters) = db.ListCharacters(AccountId);
+        } finally {
+            ReleaseLock(AccountId);
+        }
         if (readAccount == null || characters == null) {
             throw new InvalidOperationException($"Failed to load characters for account: {AccountId}");
         }
@@ -112,7 +152,7 @@ public class LoginSession : Core.Network.Session {
         Send(CharacterListPacket.SetMax(account.MaxCharacters, Constant.ServerMaxCharacters));
         Send(CharacterListPacket.AppendEntry(account, character,
             new Dictionary<ItemGroup, List<Item>> {
-                { ItemGroup.Outfit, outfits }
+                { ItemGroup.Outfit, outfits },
             }));
     }
 

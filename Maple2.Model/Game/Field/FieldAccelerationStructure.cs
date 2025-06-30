@@ -76,16 +76,15 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     // Then in queries use field.VibrateObjects[vibrateEntity.VibrateIndex] to retrieve the right one
     public ReadOnlySpan<FieldVibrateEntity> VibrateEntities => CollectionsMarshal.AsSpan(vibrateEntities);
 
-    private List<FieldEntity> alignedEntities = new();
-    private List<FieldEntity> alignedTrimmedEntities = new();
-    private List<FieldEntity> unalignedEntities = new(); // TODO: add AABB tree implementation for querying unaligned objects
-    private List<FieldVibrateEntity> vibrateEntities = new();
+    private readonly List<FieldEntity> alignedEntities = [];
+    private readonly List<FieldEntity> alignedTrimmedEntities = [];
+    private List<FieldEntity> unalignedEntities = []; // TODO: add AABB tree implementation for querying unaligned objects
+    private readonly List<FieldVibrateEntity> vibrateEntities = [];
     private int[,,] cellGrid = new int[0, 0, 0];
 
     public ulong GridBytesWritten { get; private set; } = 0;
 
-    public FieldAccelerationStructure() {
-    }
+    public FieldAccelerationStructure() { }
 
     public static Vector3S PointToCell(Vector3 point) {
         point *= (1 / BLOCK_SIZE);
@@ -140,7 +139,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void CellsInSphere(Vector3 center, float radius, Action<FieldEntity> callback) {
-        QueryCells(center - new Vector3(radius, radius, radius), center + new Vector3(radius, radius, radius), (entity) => {
+        QueryCells(center - new Vector3(radius, radius, radius), center + new Vector3(radius, radius, radius), entity => {
             if (entity.Bounds.IntersectsSphere(center, radius)) {
                 callback(entity);
             }
@@ -148,7 +147,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void QuerySpawns(Vector3 center, float radius, Action<FieldSpawnTile> callback) {
-        CellsInSphere(center, radius, (entity) => {
+        CellsInSphere(center, radius, entity => {
             if (entity is FieldSpawnTile spawn) {
                 callback(spawn);
             }
@@ -156,7 +155,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldSpawnTile> QuerySpawnsList(Vector3 center, float radius) {
-        List<FieldSpawnTile> spawns = new();
+        List<FieldSpawnTile> spawns = [];
 
         QuerySpawns(center, radius, spawns.Add);
 
@@ -168,7 +167,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldFluidEntity> QueryFluidsList(BoundingBox3 box) {
-        List<FieldFluidEntity> fluids = new();
+        List<FieldFluidEntity> fluids = [];
 
         QueryFluids(box, fluids.Add);
 
@@ -176,7 +175,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void QueryFluids(Vector3 min, Vector3 max, Action<FieldFluidEntity> callback) {
-        QueryCells(min, max, (entity) => {
+        QueryCells(min, max, entity => {
             if (entity is FieldFluidEntity { IsSurface: true, IsShallow: false } fluid) {
                 callback(fluid);
             }
@@ -184,7 +183,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void QuerySellableTiles(Vector3 min, Vector3 max, Action<FieldSellableTile> callback) {
-        QueryCells(min, max, (entity) => {
+        QueryCells(min, max, entity => {
             if (entity is FieldSellableTile tile) {
                 callback(tile);
             }
@@ -214,8 +213,24 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
         QuerySellableTiles(center - 0.5f * size, center + 0.5f * size, callback);
     }
 
+    public void QueryBoxCollider(Vector3 center, float radius, Action<FieldBoxColliderEntity> callback) {
+        QueryCells(center - new Vector3(radius, radius, radius), center + new Vector3(radius, radius, radius), entity => {
+            if (entity is FieldBoxColliderEntity collider) {
+                callback(collider);
+            }
+        });
+    }
+
+    public void FindBlockUnderPlayer(Vector3 position, Action<FieldEntity> callback) {
+        position = position with {
+            Z = position.Z - BLOCK_SIZE,
+        };
+        position = position.Align();
+        QueryCells(position, position, callback);
+    }
+
     public List<FieldFluidEntity> QueryFluidsList(Vector3 min, Vector3 max) {
-        List<FieldFluidEntity> fluids = new();
+        List<FieldFluidEntity> fluids = [];
 
         QueryFluids(min, max, fluids.Add);
 
@@ -227,7 +242,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldFluidEntity> QueryFluidsCenterList(Vector3 center, Vector3 size) {
-        List<FieldFluidEntity> fluids = new();
+        List<FieldFluidEntity> fluids = [];
 
         QueryFluidsCenter(center, size, fluids.Add);
 
@@ -239,7 +254,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public List<FieldVibrateEntity> QueryVibrateObjectsList(BoundingBox3 box) {
-        List<FieldVibrateEntity> vibrateObjects = new();
+        List<FieldVibrateEntity> vibrateObjects = [];
 
         QueryVibrateObjects(box, vibrateObjects.Add);
 
@@ -247,7 +262,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
     }
 
     public void QueryVibrateObjects(Vector3 min, Vector3 max, Action<FieldVibrateEntity> callback) {
-        QueryBox(min, max, (entity) => {
+        QueryBox(min, max, entity => {
             if (entity is FieldVibrateEntity vibrateObject) {
                 callback(vibrateObject);
             }
@@ -299,7 +314,7 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
 
     private static void GenerateSpawnLocations(Dictionary<Vector3S, List<FieldEntity>> gridAlignedEntities, Vector3S minIndex, Vector3S maxIndex, List<FieldEntity> unalignedEntities) {
         Dictionary<Vector3S, (bool isOccupied, bool isGround)> occupancyMap = new();
-        List<(Vector3S index, FieldSpawnTile tile)> spawnTiles = new();
+        List<(Vector3S index, FieldSpawnTile tile)> spawnTiles = [];
 
         foreach ((Vector3S coord, List<FieldEntity> entityList) in gridAlignedEntities) {
             if (!occupancyMap.TryGetValue(coord, out (bool isOccupied, bool isGround) occupancy)) {
@@ -392,7 +407,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                                     Bounds: fluid.Bounds,
                                     MeshLlid: fluid.MeshLlid,
                                     IsShallow: isShallow,
-                                    IsSurface: isSurface);
+                                    IsSurface: isSurface,
+                                    MapAttribute: fluid.MapAttribute);
                             }
                         }
                     }
@@ -774,11 +790,13 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                 writer.Write(boxCollider.Size);
                 writer.Write(boxCollider.IsWhiteBox);
                 writer.Write(boxCollider.IsFluid);
+                writer.Write(boxCollider.MapAttribute);
                 break;
             case FieldMeshColliderEntity meshCollider:
                 if ((memberFlags & FieldEntityMembers.Llid) != 0) {
                     writer.Write(meshCollider.MeshLlid);
                 }
+                writer.Write(meshCollider.MapAttribute);
                 if (entity is FieldFluidEntity fluid) {
                     writer.Write(fluid.LiquidType);
                     writer.Write(fluid.IsShallow);
@@ -933,7 +951,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Bounds: bounds,
                     Size: reader.Read<Vector3>(),
                     IsWhiteBox: reader.Read<bool>(),
-                    IsFluid: reader.Read<bool>());
+                    IsFluid: reader.Read<bool>(),
+                    MapAttribute: reader.Read<MapAttribute>());
             case FieldEntityType.MeshCollider:
                 if ((memberFlags & FieldEntityMembers.Llid) != 0) {
                     llid = reader.Read<uint>();
@@ -945,12 +964,13 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Rotation: rotation,
                     Scale: scale,
                     Bounds: bounds,
-                    MeshLlid: llid);
+                    MeshLlid: llid,
+                    MapAttribute: reader.Read<MapAttribute>());
             case FieldEntityType.Fluid:
                 if ((memberFlags & FieldEntityMembers.Llid) != 0) {
                     llid = reader.Read<uint>();
                 }
-
+                var mapAttribute = reader.Read<MapAttribute>();
                 return new FieldFluidEntity(
                     Id: id,
                     Position: position,
@@ -960,7 +980,8 @@ public class FieldAccelerationStructure : IByteSerializable, IByteDeserializable
                     Bounds: bounds,
                     MeshLlid: llid,
                     IsShallow: reader.Read<bool>(),
-                    IsSurface: reader.Read<bool>());
+                    IsSurface: reader.Read<bool>(),
+                    MapAttribute: mapAttribute);
             case FieldEntityType.Cell:
                 int childCount = reader.ReadInt();
                 var children = new List<FieldEntity>();

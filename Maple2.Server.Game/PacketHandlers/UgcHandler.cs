@@ -8,7 +8,7 @@ using Maple2.Model.Game.Ugc;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model.Field;
 using Maple2.Server.Game.Packets;
@@ -19,7 +19,7 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class UgcHandler : PacketHandler<GameSession> {
+public class UgcHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Ugc;
 
     #region Autofac Autowired
@@ -145,7 +145,7 @@ public class UgcHandler : PacketHandler<GameSession> {
             }
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(itemId, ugcMetadata.ItemRarity);
+        Item? item = session.Field?.ItemDrop.CreateItem(itemId, ugcMetadata.ItemRarity);
         if (item == null) {
             Logger.Fatal("Failed to create UGC item {ItemId}", itemId);
             throw new InvalidOperationException($"Fatal: Creating UGC item: {itemId}");
@@ -172,6 +172,7 @@ public class UgcHandler : PacketHandler<GameSession> {
     }
 
     private void UploadBanner(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long bannerId = packet.ReadLong();
 
         session.Field.Banners.TryGetValue(bannerId, out FieldUgcBanner? banner);
@@ -221,13 +222,13 @@ public class UgcHandler : PacketHandler<GameSession> {
             Author = session.PlayerName,
             CharacterId = session.CharacterId,
             CreationTime = DateTime.Now.ToEpochSeconds(),
-            Name = $"AD Banner {bannerId}"
+            Name = $"AD Banner {bannerId}",
         };
 
         foreach (BannerSlot slot in slots) {
             slot.Template = ugc;
 
-            BannerSlot? oldSlot = banner.Slots.First(x => x.Id == slot.Id);
+            BannerSlot oldSlot = banner.Slots.First(x => x.Id == slot.Id);
             banner.Slots.Remove(oldSlot);
             banner.Slots.Add(slot);
         }
@@ -425,7 +426,7 @@ public class UgcHandler : PacketHandler<GameSession> {
         }
 
         void ConfirmBanner() {
-            UgcBanner? banner = session.Field.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
+            UgcBanner? banner = session.Field?.Banners.Values.FirstOrDefault(x => x.Slots.Any(slot => slot.Template?.Id == ugcUid));
             if (banner is null) {
                 Logger.Warning("Failed to find banner for UGC {UgcUid}", ugcUid);
                 return;
@@ -497,10 +498,12 @@ public class UgcHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleLoadBanners(GameSession session) {
+        if (session.Field is null) return;
         session.Send(UgcPacket.LoadBanners(session.Field.Banners.Values.Select(fieldUgcBanner => (UgcBanner) fieldUgcBanner).ToList()));
     }
 
     private void HandleReserveBanner(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long bannerId = packet.ReadLong();
         int hours = packet.ReadInt();
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-
-namespace Maple2.Model.Game.GroupChat;
+﻿namespace Maple2.Model.Game.GroupChat;
 
 public class GroupChatMember : IDisposable {
     public required PlayerInfo Info;

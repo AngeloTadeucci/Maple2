@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Maple2.Model.Enum;
 
 namespace Maple2.Model.Game;

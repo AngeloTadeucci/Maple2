@@ -12,14 +12,10 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class NpcCommand : GameCommand {
-    private const string NAME = "npc";
-    private const string DESCRIPTION = "Npc spawning.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.SpawnNpc;
-
     private readonly GameSession session;
     private readonly NpcMetadataStorage npcStorage;
 
-    public NpcCommand(GameSession session, NpcMetadataStorage npcStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public NpcCommand(GameSession session, NpcMetadataStorage npcStorage) : base(AdminPermissions.SpawnNpc, "npc", "Npc spawning.") {
         this.session = session;
         this.npcStorage = npcStorage;
 
@@ -56,14 +52,10 @@ public class NpcCommand : GameCommand {
 }
 
 public class AnimateNpcCommand : GameCommand {
-    private const string NAME = "anim-npc";
-    private const string DESCRIPTION = "Animate npc.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
     private readonly GameSession session;
     private readonly NpcMetadataStorage npcStorage;
 
-    public AnimateNpcCommand(GameSession session, NpcMetadataStorage npcStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public AnimateNpcCommand(GameSession session, NpcMetadataStorage npcStorage) : base(AdminPermissions.Debug, "anim-npc", "Animate npc.") {
         this.session = session;
         this.npcStorage = npcStorage;
 

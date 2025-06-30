@@ -6,13 +6,13 @@ using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class MapleopolyHandler : PacketHandler<GameSession> {
+public class MapleopolyHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Mapleopoly;
 
     #region Autofac Autowired
@@ -105,7 +105,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
         switch (slot.Type) {
             case BlueMarbleSlotType.Item:
             case BlueMarbleSlotType.Paradise:
-                Item? item = session.Field.ItemDrop.CreateItem(slot.Item.ItemId, slot.Item.Rarity, slot.Item.Amount);
+                Item? item = session.Field?.ItemDrop.CreateItem(slot.Item.ItemId, slot.Item.Rarity, slot.Item.Amount);
                 if (item == null) {
                     // TODO: Error packet?
                     break;
@@ -153,7 +153,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
             // Check if there's any item to give for every 1 trip
             BlueMarble.Round? entry1 = blueMarble.Rounds.FirstOrDefault(entry => entry.RoundCount == 0);
             if (entry1 != default) {
-                Item? trip0Item = session.Field.ItemDrop.CreateItem(entry1.Item.ItemId);
+                Item? trip0Item = session.Field?.ItemDrop.CreateItem(entry1.Item.ItemId);
                 if (trip0Item != null && !session.Item.Inventory.Add(trip0Item, true)) {
                     session.Item.MailItem(trip0Item);
                 }
@@ -162,7 +162,7 @@ public class MapleopolyHandler : PacketHandler<GameSession> {
             // Check if there's any other item to give for hitting a specific number of trips
             BlueMarble.Round? entry2 = blueMarble.Rounds.FirstOrDefault(entry => entry.RoundCount == trips);
             if (entry2 != default) {
-                Item? tripItem = session.Field.ItemDrop.CreateItem(entry2.Item.ItemId);
+                Item? tripItem = session.Field?.ItemDrop.CreateItem(entry2.Item.ItemId);
                 if (tripItem != null && !session.Item.Inventory.Add(tripItem, true)) {
                     session.Item.MailItem(tripItem);
                 }

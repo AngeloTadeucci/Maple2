@@ -12,11 +12,7 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class AdminPermissionCommand : GameCommand {
-    private const string NAME = "perm";
-    private const string DESCRIPTION = "Set/Remove admin permissions.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Admin;
-
-    public AdminPermissionCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public AdminPermissionCommand(GameSession session) : base(AdminPermissions.Admin, "perm", "Set/Remove admin permissions.") {
         AddCommand(new SetCommand(session));
         AddCommand(new RemoveCommand(session));
         AddCommand(new ViewCommand(session));
@@ -54,7 +50,7 @@ public class AdminPermissionCommand : GameCommand {
                 return;
             }
 
-            FieldPlayer? player = session.Field.GetPlayers().Values
+            FieldPlayer? player = session.Field?.GetPlayers().Values
                 .FirstOrDefault(player => string.Equals(player.Value.Character.Name, playerName, StringComparison.OrdinalIgnoreCase));
             if (player is null) {
                 ctx.Console.Out.WriteLine($"Player {playerName} not found in field.");
@@ -102,7 +98,7 @@ public class AdminPermissionCommand : GameCommand {
                 return;
             }
 
-            FieldPlayer? player = session.Field.GetPlayers().Values
+            FieldPlayer? player = session.Field?.GetPlayers().Values
                 .FirstOrDefault(player => string.Equals(player.Value.Character.Name, playerName, StringComparison.OrdinalIgnoreCase));
             if (player is null) {
                 ctx.Console.Out.WriteLine($"Player {playerName} not found in field.");

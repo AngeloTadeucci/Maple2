@@ -1,5 +1,4 @@
-﻿using Grpc.Core;
-using Maple2.Server.DebugGame.Graphics.Data.VertexBuffer;
+﻿using Maple2.Server.DebugGame.Graphics.Data.VertexBuffer;
 using System.Numerics;
 using System.Runtime.InteropServices;
 

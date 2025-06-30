@@ -1,14 +1,13 @@
 ﻿using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
-using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class SkillMacroHandler : PacketHandler<GameSession> {
+public class SkillMacroHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.SkillMacro;
 
     private const int TOTAL_SKILL_MACROS = 3;
@@ -47,6 +46,5 @@ public class SkillMacroHandler : PacketHandler<GameSession> {
         }
 
         session.Config.UpdateMacros(macros);
-        session.Send(SkillMacroPacket.Update(macros));
     }
 }

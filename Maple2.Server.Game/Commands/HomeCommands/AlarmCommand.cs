@@ -21,6 +21,8 @@ public class AlarmCommand : Command {
     }
 
     private void Handle(InvocationContext context, string[] message) {
+        if (session.Field is null) return;
+
         Character character = session.Player.Value.Character;
         if (character.MapId is not Constant.DefaultHomeMapId) {
             return;

@@ -1,8 +1,6 @@
 ﻿using Maple2.Database.Storage;
-using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
-using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.Game.Util;

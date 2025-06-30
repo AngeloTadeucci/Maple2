@@ -329,4 +329,8 @@ public class Buff : IUpdatable, IByteSerializable {
     public void WriteShieldHealth(IByteWriter writer) {
         writer.WriteLong(ShieldHealth);
     }
+
+    public override string ToString() {
+        return $"Buff(Id={Id}, Level={Level}, Caster={Caster.ObjectId}, Owner={Owner.ObjectId}, StartTick={StartTick}, EndTick={EndTick}, Stacks={Stacks}, Enabled={Enabled})";
+    }
 }

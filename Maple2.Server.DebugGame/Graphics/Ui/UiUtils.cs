@@ -17,7 +17,7 @@ public static class UiUtils {
             MemberTypes.Field => ((FieldInfo) member).FieldType.Name,
             MemberTypes.Method => GetMethodName((MethodInfo) member),
             MemberTypes.Property => ((PropertyInfo) member).PropertyType.Name,
-            _ => "<unknown>"
+            _ => "<unknown>",
         };
 
         return $"[{member.Module.ScopeName}]: {memberType} {member.DeclaringType?.Name ?? "null"}.{member.Name}";

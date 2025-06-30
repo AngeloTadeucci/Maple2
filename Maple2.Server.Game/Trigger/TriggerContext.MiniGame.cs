@@ -5,8 +5,8 @@ using Maple2.Model.Game.Dungeon;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
-using Locale = Maple2.Server.Game.Scripting.Trigger.Locale;
+using Maple2.Server.Game.Trigger.Helpers;
+using Locale = Maple2.Server.Game.Trigger.Helpers.Locale;
 
 namespace Maple2.Server.Game.Trigger;
 
@@ -144,7 +144,7 @@ public partial class TriggerContext {
     public void UnsetMiniGameAreaForHack() { }
 
     public void UseState(int id, bool randomize) {
-        if (!Field.States.TryGetValue(id, out List<object>? states)) {
+        if (!Field.States.TryGetValue(id, out List<TriggerState>? states)) {
             return;
         }
 
@@ -154,14 +154,12 @@ public partial class TriggerContext {
         }
 
         // get first state and remove from list
-        object state = states.First();
+        TriggerState state = states.First();
         states.RemoveAt(0);
         Field.States[id] = states;
 
-        TriggerState? triggerState = CreateState(state);
-
         // They only have OnEnter() method
-        triggerState?.OnEnter();
+        state?.OnEnter();
     }
 
     #region CathyMart
@@ -179,8 +177,8 @@ public partial class TriggerContext {
     #endregion
 
     #region Conditions
-    public int BonusGameReward(int boxId) {
-        return -1;
+    public bool BonusGameReward(int boxId, int type) {
+        return -1 == type;
     }
     #endregion
 }

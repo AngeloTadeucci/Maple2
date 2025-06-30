@@ -62,7 +62,7 @@ public static class PlayerInfoUpdateExtensions {
             info.PlotExpiryTime = update.Request.Home.ExpiryTime.Seconds;
         }
         if (update.Type.HasFlag(UpdateField.Trophy) && update.Request.Trophy != null) {
-            info.AchievementInfo = new Model.Game.AchievementInfo {
+            info.AchievementInfo = new AchievementInfo {
                 Combat = update.Request.Trophy.Combat,
                 Adventure = update.Request.Trophy.Adventure,
                 Lifestyle = update.Request.Trophy.Lifestyle,

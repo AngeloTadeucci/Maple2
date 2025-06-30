@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Xml;
 using Grpc.Core;
 using Maple2.Database.Storage;
@@ -8,17 +7,15 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
-using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Server.Game.Session;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class UserChatHandler : PacketHandler<GameSession> {
+public class UserChatHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.UserChat;
 
     #region Autofac Autowired
@@ -29,6 +26,7 @@ public class UserChatHandler : PacketHandler<GameSession> {
     #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         var type = packet.Read<ChatType>();
         string message = packet.ReadUnicodeString();
         string recipient = packet.ReadUnicodeString();

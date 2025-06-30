@@ -9,7 +9,7 @@ using Maple2.Model.Game.Shop;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -18,7 +18,7 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class BeautyHandler : PacketHandler<GameSession> {
+public class BeautyHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Beauty;
 
     #region Autofac Autowired
@@ -321,7 +321,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
             (float) backLength, defaultHairMetadata.BackPosition, defaultHairMetadata.BackRotation, (float) frontLength, defaultHairMetadata.FrontPosition,
             defaultHairMetadata.FrontRotation);
 
-        Item? newHair = session.Field.ItemDrop.CreateItem(entry.Id);
+        Item? newHair = session.Field?.ItemDrop.CreateItem(entry.Id);
         if (newHair == null) {
             return;
         }
@@ -351,13 +351,13 @@ public class BeautyHandler : PacketHandler<GameSession> {
             1 => Constant.BeautyHairShopGotoFieldID,
             3 => Constant.BeautyFaceShopGotoFieldID,
             5 => Constant.BeautyColorShopGotoFieldID,
-            _ => 0
+            _ => 0,
         };
         int portalId = type switch {
             1 => Constant.BeautyHairShopGotoPortalID,
             3 => Constant.BeautyFaceShopGotoPortalID,
             5 => Constant.BeautyColorShopGotoPortalID,
-            _ => 0
+            _ => 0,
         };
 
         session.Send(session.PrepareField(mapId, portalId: portalId)
@@ -373,7 +373,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
         }
         if (!newHairSelected) {
             session.Beauty.SelectPreviousHair();
-            Item? voucher = session.Field.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
+            Item? voucher = session.Field?.ItemDrop.CreateItem(session.BeautyShop.Metadata.ReturnCouponId);
             if (voucher != null && !session.Item.Inventory.Add(voucher, true)) {
                 session.Item.MailItem(voucher);
                 voucherItemId = voucher.Id;
@@ -563,7 +563,7 @@ public class BeautyHandler : PacketHandler<GameSession> {
     }
 
     private static bool ModifyBeauty(GameSession session, IByteReader packet, int itemId) {
-        Item? newCosmetic = session.Field.ItemDrop.CreateItem(itemId, 1, 1);
+        Item? newCosmetic = session.Field?.ItemDrop.CreateItem(itemId, 1, 1);
         if (newCosmetic == null) {
             return false;
         }

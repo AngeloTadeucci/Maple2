@@ -3,7 +3,6 @@ using System.Numerics;
 using DotRecast.Core.Numerics;
 using DotRecast.Recast;
 using DotRecast.Recast.Toolset;
-using Maple2.Tools.Extensions;
 
 namespace Maple2.Tools.DotRecast;
 public static class DotRecastHelper {
@@ -40,9 +39,6 @@ public static class DotRecastHelper {
 
     public static RcVec3f ToNavMeshSpace(Vector3 vector) {
         Vector3 transform = Vector3.Transform(vector, MapRotation);
-        if (transform.X is float.NaN or float.PositiveInfinity or float.NegativeInfinity || transform.Y is float.NaN or float.PositiveInfinity or float.NegativeInfinity || transform.Z is float.NaN or float.PositiveInfinity or float.NegativeInfinity) {
-            throw new ArgumentException("Vector contains invalid float values from vector: " + vector);
-        }
         return new RcVec3f(transform.X, transform.Y, transform.Z);
     }
 

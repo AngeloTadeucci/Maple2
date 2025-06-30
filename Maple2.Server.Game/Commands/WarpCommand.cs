@@ -19,14 +19,10 @@ using MigrationType = Maple2.Server.World.Service.MigrationType;
 namespace Maple2.Server.Game.Commands;
 
 public class WarpCommand : GameCommand {
-    private const string NAME = "warp";
-    private const string DESCRIPTION = "Map warping.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Warp;
-
     private readonly GameSession session;
     private readonly MapMetadataStorage mapStorage;
 
-    public WarpCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public WarpCommand(GameSession session, MapMetadataStorage mapStorage) : base(AdminPermissions.Warp, "warp", "Map warping.") {
         this.session = session;
         this.mapStorage = mapStorage;
 
@@ -59,11 +55,7 @@ public class WarpCommand : GameCommand {
 }
 
 public class GotoCommand : GameCommand {
-    private const string NAME = "goto";
-    private const string DESCRIPTION = "Map warping by name or player.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Warp;
-
-    public GotoCommand(GameSession session, MapMetadataStorage mapStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public GotoCommand(GameSession session, MapMetadataStorage mapStorage) : base(AdminPermissions.Warp, "goto", "Map warping by name or player.") {
         AddCommand(new MapCommand(session, mapStorage));
         AddCommand(new PlayerCommand(session));
     }
@@ -143,6 +135,7 @@ public class GotoCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string playerName) {
+            if (session.Field is null) return;
             using GameStorage.Request db = session.GameStorage.Context();
             long characterId = db.GetCharacterId(playerName);
             if (characterId == 0) {

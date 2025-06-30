@@ -1,9 +1,9 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Maple2.Database.Extensions;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
+using Maple2.Tools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -44,7 +44,7 @@ internal class Character {
             Level = other.Level,
             SkinColor = other.SkinColor,
             MapId = other.MapId,
-            ReturnMapId = other.ReturnMapId,
+            ReturnMapId = other.ReturnMaps.Peek(),
             Experience = new Experience {
                 Exp = other.Exp,
                 RestExp = other.RestExp,
@@ -96,7 +96,7 @@ internal class Character {
             Exp = other.Experience.Exp,
             RestExp = other.Experience.RestExp,
             MapId = other.MapId,
-            ReturnMapId = other.ReturnMapId,
+            ReturnMaps = new LimitedStack<int>(3, other.ReturnMapId),
             Mastery = other.Mastery,
             Motto = other.Profile.Motto,
             Picture = other.Profile.Picture,

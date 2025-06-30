@@ -11,11 +11,7 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class TriggerCommand : GameCommand {
-    private const string NAME = "trigger";
-    private const string DESCRIPTION = "Manage triggers for current map.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.Debug;
-
-    public TriggerCommand(GameSession session) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public TriggerCommand(GameSession session) : base(AdminPermissions.Debug, "trigger", "Manage triggers for current map.") {
         AddCommand(new ListCommand(session));
         AddCommand(new ResetCommand(session));
         AddCommand(new RunCommand(session));
@@ -31,14 +27,15 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx) {
-            List<FieldTrigger> fieldTriggers = session.Field!.EnumerateTrigger().ToList();
+            if (session.Field is null) return;
+            List<FieldTrigger> fieldTriggers = session.Field.EnumerateTrigger().ToList();
             ctx.Console.Out.WriteLine($"Triggers: {fieldTriggers.Count}");
             foreach (FieldTrigger trigger in fieldTriggers) {
                 string triggerName = trigger.Value.Name;
-                string[] triggerStates = GetStateNames(trigger);
-                var result = new StringBuilder($"TriggerStates for {triggerName}, count: {triggerStates.Length}\n");
+                List<string> triggerStates = trigger.GetStateNames();
+                var result = new StringBuilder($"TriggerStates for {triggerName}, count: {triggerStates.Count}\n");
 
-                for (int i = 0; i < triggerStates.Length; i++) {
+                for (int i = 0; i < triggerStates.Count; i++) {
                     result.AppendLine($"  -[{i}] {triggerStates[i]}");
                 }
 
@@ -62,7 +59,8 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string triggerName, int stateIndex) {
-            if (!session.Field!.TryGetTrigger(triggerName, out FieldTrigger? currentFieldTrigger)) {
+            if (session.Field is null) return;
+            if (!session.Field.TryGetTrigger(triggerName, out FieldTrigger? currentFieldTrigger)) {
                 ctx.Console.Error.WriteLine($"Trigger {triggerName} not found.");
                 return;
             }
@@ -79,8 +77,8 @@ public class TriggerCommand : GameCommand {
                 ctx.Console.Out.WriteLine($"Trigger {triggerName} reset.");
             } else {
                 // Set trigger to specific state
-                string[] triggerStates = GetStateNames(currentFieldTrigger);
-                if (stateIndex >= triggerStates.Length) {
+                List<string> triggerStates = currentFieldTrigger.GetStateNames();
+                if (stateIndex >= triggerStates.Count) {
                     ctx.Console.Error.WriteLine($"Invalid state index for {triggerName}");
                     return;
                 }
@@ -107,6 +105,7 @@ public class TriggerCommand : GameCommand {
         }
 
         private void Handle(InvocationContext ctx, string functionName, string[] parameters) {
+            if (session.Field is null) return;
             functionName = functionName.ToLower();
             List<string> functionNames = ["set_skill", "spawn_monster", "move_npc", "set_npc_emotion_sequence", "destroy_monster"];
 
@@ -182,11 +181,5 @@ public class TriggerCommand : GameCommand {
 
             ctx.Console.Out.WriteLine($"Function {functionName} executed.");
         }
-    }
-
-    private static string[] GetStateNames(FieldTrigger trigger) {
-        return trigger.Context.Scope.GetVariableNames()
-            .Where(v => !v.StartsWith("__") && v != "trigger_api" && v != "initial_state")
-            .ToArray();
     }
 }

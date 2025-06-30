@@ -1,5 +1,4 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
 using Maple2.Database.Context;
 using Maple2.Database.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -54,5 +53,6 @@ public class DataDbModule : Module {
         builder.RegisterType<ServerTableMetadataStorage>().SingleInstance();
         builder.RegisterType<AiMetadataStorage>().SingleInstance();
         builder.RegisterType<FunctionCubeMetadataStorage>().SingleInstance();
+        builder.RegisterType<TriggerScriptMetadata>().SingleInstance();
     }
 }

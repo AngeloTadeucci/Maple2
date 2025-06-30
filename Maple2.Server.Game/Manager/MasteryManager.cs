@@ -3,8 +3,6 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
-using Maple2.PacketLib.Tools;
-using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
@@ -40,6 +38,7 @@ public class MasteryManager {
         };
         set {
             short startLevel = GetLevel(type);
+            int startValue = this[type];
             switch (type) {
                 case MasteryType.Fishing:
                     Mastery.Fishing = Math.Clamp(value, Mastery.Fishing, Constant.FishingMasteryMax);
@@ -79,14 +78,18 @@ public class MasteryManager {
             }
 
             session.Send(MasteryPacket.UpdateMastery(type, session.Mastery[type]));
-            if (startLevel < GetLevel(type)) {
+            int currentLevel = GetLevel(type);
+            if (startLevel < currentLevel || startValue == 0) {
                 session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
+            }
+            if (startLevel > currentLevel) {
                 session.ConditionUpdate(ConditionType.set_mastery_grade, codeLong: (int) type);
                 if (type == MasteryType.Music) {
                     session.ConditionUpdate(ConditionType.music_play_grade);
                 }
             }
         }
+
     }
 
     public short GetLevel(MasteryType type) {
@@ -98,30 +101,60 @@ public class MasteryManager {
     }
 
     public void Gather(FieldInteract fieldInteract) {
-        ByteWriter successPacket = InteractObjectPacket.Interact(fieldInteract, decreaseAmount: 1);
-        ByteWriter failPacket = InteractObjectPacket.Interact(fieldInteract, GatherResult.Fail, decreaseAmount: 0);
-
-        GatherCommon(fieldInteract.Value.Item.RecipeId, successPacket, failPacket, fieldInteract.Position, fieldInteract.Rotation);
+        if (GatherCommon(fieldInteract.Value.Item.RecipeId, fieldInteract.Position, fieldInteract.Rotation)) {
+            session.Send(InteractObjectPacket.Interact(fieldInteract, decreaseAmount: 1));
+        } else {
+            session.Send(InteractObjectPacket.Interact(fieldInteract, GatherResult.Fail, decreaseAmount: 0));
+        }
     }
 
     public void Gather(FieldFunctionInteract fieldFunctionInteract) {
-        ByteWriter successPacket = FunctionCubePacket.SuccessLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube);
-        ByteWriter failPacket = FunctionCubePacket.FailLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube);
-
-        GatherCommon(fieldFunctionInteract.Value.RecipeId, successPacket, failPacket, fieldFunctionInteract.Position, fieldFunctionInteract.Rotation);
+        if (GatherCommon(fieldFunctionInteract.Value.RecipeId, fieldFunctionInteract.Position, fieldFunctionInteract.Rotation)) {
+            session.Send(FunctionCubePacket.SuccessLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube));
+        } else {
+            session.Send(FunctionCubePacket.FailLifeSkill(session.CharacterId, fieldFunctionInteract.InteractCube));
+        }
     }
 
-    private void GatherCommon(int recipeId, ByteWriter successPacket, ByteWriter failPacket, Vector3 position, Vector3 rotation) {
+    private bool GatherCommon(int recipeId, Vector3 position, Vector3 rotation) {
         if (!session.TableMetadata.MasteryRecipeTable.Entries.TryGetValue(recipeId, out MasteryRecipeTable.Entry? recipeMetadata)) {
             session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_unknown));
-            return;
+            return false;
         }
 
         if (recipeMetadata.RequiredMastery > this[recipeMetadata.Type]) {
             session.Send(MasteryPacket.Error(MasteryError.s_mastery_error_lack_mastery));
-            return;
+            return false;
+        }
+        float successRate = GatherSuccessRate(recipeMetadata);
+
+        BeforeGather(recipeMetadata);
+        if (Random.Shared.NextDouble() > (successRate / 100)) {
+            return false;
         }
 
+        Gather(recipeMetadata, position, rotation);
+        this[recipeMetadata.Type] += recipeMetadata.RewardMastery;
+        if (!recipeMetadata.NoRewardExp) {
+            session.Exp.AddExp(ExpType.gathering);
+        }
+        return true;
+    }
+
+    public void Gather(MasteryRecipeTable.Entry recipeMetadata, Vector3 position, Vector3 rotation) {
+        foreach (ItemComponent itemReward in recipeMetadata.RewardItems) {
+            Item? item = session.Field?.ItemDrop.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
+            if (item == null || session.Field is null) {
+                continue;
+            }
+            FieldItem fieldItem = session.Field.SpawnItem(position, rotation, item, session.CharacterId);
+            session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+        }
+
+        AfterGather(recipeMetadata, 1);
+    }
+
+    public float GatherSuccessRate(MasteryRecipeTable.Entry recipeMetadata) {
         if (!gatheringCounts.TryGetValue(recipeMetadata.Id, out int currentCount)) {
             gatheringCounts[recipeMetadata.Id] = 0;
         }
@@ -130,36 +163,10 @@ public class MasteryManager {
         if (session.Field is HomeFieldManager homeField) {
             myHome = homeField.OwnerId == session.AccountId ? 1 : 0;
         }
-        float successRate = Lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
-
-        int gatheringAmount = 0;
-        BeforeConditionUpdate(recipeMetadata);
-        if (Random.Shared.NextDouble() > (successRate / 100)) {
-            session.Send(failPacket);
-            return;
-        }
-
-        foreach (ItemComponent itemReward in recipeMetadata.RewardItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(itemReward.ItemId, itemReward.Rarity, itemReward.Amount);
-            if (item == null) {
-                continue;
-            }
-            FieldItem fieldItem = session.Field.SpawnItem(position, rotation, item, session.CharacterId);
-            session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
-        }
-
-        gatheringAmount++;
-        AfterConditionUpdate(recipeMetadata, gatheringAmount);
-
-        this[recipeMetadata.Type] += recipeMetadata.RewardMastery;
-        if (!recipeMetadata.NoRewardExp) {
-            session.Exp.AddExp(ExpType.gathering);
-        }
-        gatheringCounts[recipeMetadata.Id] += gatheringAmount;
-        session.Send(successPacket);
+        return Lua.CalcGatheringObjectSuccessRate(currentCount, recipeMetadata.HighRateLimitCount, recipeMetadata.NormalRateLimitCount, myHome);
     }
 
-    private void AfterConditionUpdate(MasteryRecipeTable.Entry recipeMetadata, int gatheringAmount) {
+    private void AfterGather(MasteryRecipeTable.Entry recipeMetadata, int gatheringAmount) {
         switch (recipeMetadata.Type) {
             case MasteryType.Breeding:
             case MasteryType.Farming:
@@ -176,9 +183,11 @@ public class MasteryManager {
                 session.ConditionUpdate(ConditionType.mastery_gathering, counter: gatheringAmount, codeLong: recipeMetadata.Id);
                 break;
         }
+
+        gatheringCounts[recipeMetadata.Id] += 1;
     }
 
-    private void BeforeConditionUpdate(MasteryRecipeTable.Entry recipeMetadata) {
+    public void BeforeGather(MasteryRecipeTable.Entry recipeMetadata) {
         switch (recipeMetadata.Type) {
             case MasteryType.Farming:
             case MasteryType.Breeding:

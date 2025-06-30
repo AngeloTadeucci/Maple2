@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
@@ -7,8 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
-using Maple2.Server.Core.Packets;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -17,7 +15,7 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class GuildHandler : PacketHandler<GameSession> {
+public class GuildHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Guild;
 
     private enum Command : byte {
@@ -491,7 +489,7 @@ public class GuildHandler : PacketHandler<GameSession> {
 
             session.Send(GuildPacket.CheckedIn());
             session.Exp.AddExp(ExpType.guildUserExp, session.Guild.Properties.CheckInPlayerExpRate);
-            Item? guildCoin = session.Field.ItemDrop.CreateItem(Constant.GuildCoinId, Constant.GuildCoinRarity, session.Guild.Properties.CheckInCoin);
+            Item? guildCoin = session.Field?.ItemDrop.CreateItem(Constant.GuildCoinId, Constant.GuildCoinRarity, session.Guild.Properties.CheckInCoin);
             if (guildCoin != null) {
                 session.Item.Inventory.Add(guildCoin, true);
             }
@@ -649,7 +647,7 @@ public class GuildHandler : PacketHandler<GameSession> {
             return;
         }
 
-        session.MigrateToInstance(house.MapId, session.Guild.Id);
+        session.Migrate(house.MapId, session.Guild.Id);
     }
 
     private void HandleSendGift(GameSession session, IByteReader packet) {

@@ -73,9 +73,14 @@ public class EventQueue {
     /// <param name="task">task to be run</param>
     /// <param name="interval">interval for this task to be run at</param>
     /// <param name="strict">if true, any delays will not affect future task scheduling</param>
-    public void ScheduleRepeated(Action task, int interval, bool strict = false) {
+    /// <param name="skipFirst">if true, the first execution will be skipped</param>
+    public void ScheduleRepeated(Action task, int interval, bool strict = false, bool skipFirst = false) {
+        if (interval <= 0) throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be positive");
         lock (mutex) {
             long executionTime = Environment.TickCount64;
+            if (skipFirst) {
+                executionTime += interval;
+            }
             timedEvents.Add(new ScheduledEvent(task, executionTime, interval, strict));
 
             Interlocked.Exchange(ref nextTime, Math.Min(nextTime, executionTime));

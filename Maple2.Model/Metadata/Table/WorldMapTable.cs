@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record WorldMapTable(List<WorldMapTable.Map> Entries) : Table {
     public record Map(

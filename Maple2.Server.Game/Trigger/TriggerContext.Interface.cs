@@ -1,11 +1,10 @@
-﻿using Maple2.Model.Enum;
-using Maple2.Model.Game;
+﻿using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Model.Widget;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Trigger;
@@ -15,6 +14,9 @@ public partial class TriggerContext {
         DebugLog("[CreateWidget] type:{Type}", type);
         var widget = type switch {
             "OxQuiz" => new OxQuizWidget(Field),
+            "SceneMovie" => new SceneMovieWidget(Field),
+            "Guide" => new GuideWidget(Field),
+            "SurvivalContents" => new SurvivalContentsWidget(Field),
             _ => new Widget(Field),
         };
         Field.Widgets[type] = widget;
@@ -194,13 +196,17 @@ public partial class TriggerContext {
     }
 
     #region Conditions
-    public int WidgetValue(string type, string name, string desc) {
-        DebugLog("[WidgetValue] type:{Type}, name:{Name}, desc:{Desc}", type, name, desc);
+    public bool WidgetValue(string type, string widgetName, string widgetArg, bool negate, string desc = "") {
+        DebugLog("[WidgetValue] type:{Type}, widgetName:{Name}, desc:{Desc}", type, widgetName, desc);
         if (!Field.Widgets.TryGetValue(type, out Widget? widget)) {
-            return 0;
+            return negate;
         }
 
-        return widget.Conditions.GetValueOrDefault(name);
+        bool result = widget.Check(widgetName, widgetArg);
+        if (negate) {
+            return !result;
+        }
+        return result;
     }
     #endregion
 }

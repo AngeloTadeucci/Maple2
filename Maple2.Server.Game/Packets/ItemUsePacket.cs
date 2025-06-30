@@ -11,6 +11,7 @@ public static class ItemUsePacket {
         CharacterSlotAdded = 2,
         MaxCharacterSlots = 3,
         QuestScroll = 4,
+        FashionCoupon = 5, // Codi/outfit fashion tab on player
         BeautyCoupon = 6,
     }
 

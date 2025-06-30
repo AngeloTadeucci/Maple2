@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Maple2.Model.Metadata;
 
@@ -14,7 +13,7 @@ public class TableMetadata {
     public override bool Equals(object? obj) {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
+        if (obj.GetType() != GetType()) return false;
 
         return Equals((TableMetadata) obj);
     }
@@ -83,4 +82,6 @@ public class TableMetadata {
 [JsonDerivedType(typeof(DungeonMissionTable), typeDiscriminator: "dungeonmission")]
 [JsonDerivedType(typeof(RewardContentTable), typeDiscriminator: "rewardcontent")]
 [JsonDerivedType(typeof(SeasonDataTable), typeDiscriminator: "seasondata")]
+[JsonDerivedType(typeof(SmartPushTable), typeDiscriminator: "smartpush")]
+[JsonDerivedType(typeof(AutoActionTable), typeDiscriminator: "autoaction")]
 public abstract record Table;

@@ -1,30 +1,55 @@
 ﻿using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Packets;
-using Maple2.Server.Game.Scripting.Trigger;
 using Maple2.Server.Game.Trigger;
+using Maple2.Server.Game.Trigger.Helpers;
+using Serilog;
 
 namespace Maple2.Server.Game.Model;
 
 public class FieldTrigger : FieldEntity<TriggerModel> {
-    private static readonly TriggerScriptLoader TriggerLoader = new();
-
     public readonly TriggerContext Context;
+    private readonly Trigger.Helpers.Trigger trigger;
 
     private long nextTick;
     private TriggerState? state;
     private TriggerState? nextState;
 
     public FieldTrigger(FieldManager field, int objectId, TriggerModel value) : base(field, objectId, value) {
-        Context = TriggerLoader.CreateContext(this);
-
-        // We load the initial_state as nextState so on_enter() will be called.
-        if (!TriggerLoader.TryInitScript(Context, Field.Metadata.XBlock, Value.Name.ToLower(), out nextState)) {
-            throw new ArgumentException($"Invalid trigger for {Field.Metadata.XBlock}, {Value.Name.ToLower()}");
+        Context = new TriggerContext(this);
+        if (field.TriggerCache.TryGet(field.Metadata.XBlock, Value.Name.ToLower(), out Trigger.Helpers.Trigger? cachedTrigger)) {
+            trigger = cachedTrigger;
+        } else {
+            Log.Error("Trigger {TriggerName} not found in {MapXBlock}.", Value.Name, field.Metadata.XBlock);
+            throw new ArgumentException($"Trigger {Value.Name} not found in {field.Metadata.XBlock}.");
         }
 
-        nextTick = Environment.TickCount64;
+        nextState = new TriggerState(trigger, Context);
+        nextTick = field.FieldTick;
     }
+
+    public List<TriggerState> GetStates(string[] names) {
+        if (names.Length == 0) {
+            throw new ArgumentException("At least one state name must be provided.");
+        }
+
+        List<TriggerState> states = [];
+        foreach (Trigger.Helpers.Trigger.State triggerState in trigger.States) {
+            if (!names.Contains(triggerState.Name)) {
+                continue;
+            }
+            states.Add(new TriggerState(trigger, triggerState, Context));
+        }
+
+        return states;
+    }
+
+    public TriggerState? GetState(string name) {
+        Trigger.Helpers.Trigger.State? triggerState = trigger.States.FirstOrDefault(x => x.Name == name);
+        return triggerState == null ? null : new TriggerState(trigger, triggerState, Context);
+    }
+
+    public List<string> GetStateNames() => trigger.States.Select(x => x.Name).ToList();
 
     public bool Skip() {
         if (Context.TryGetSkip(out TriggerState? skip)) {
@@ -46,10 +71,10 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
         nextTick += Constant.NextStateTriggerDefaultTick;
 
         if (nextState != null) {
-            Context.DebugLog("[OnExit] {State}", state?.Name?.Value ?? "null");
+            Context.DebugLog("[OnExit] {State}", state?.Name ?? "null");
             state?.OnExit();
             state = nextState;
-            Context.StartTick = Environment.TickCount64;
+            Context.StartTick = Field.FieldTick;
             Context.DebugLog("[OnEnter] {State}", state.Name);
             nextState = state.OnEnter();
 
@@ -66,12 +91,12 @@ public class FieldTrigger : FieldEntity<TriggerModel> {
     /// Should only be used for debugging
     /// </summary>
     public bool SetNextState(string next) {
-        dynamic? stateClass = Context.Scope.GetVariable(next);
+        TriggerState? stateClass = GetState(next);
         if (stateClass == null) {
             return false;
         }
 
-        nextState = Context.CreateState(stateClass);
+        nextState = stateClass;
         return nextState != null;
     }
 }

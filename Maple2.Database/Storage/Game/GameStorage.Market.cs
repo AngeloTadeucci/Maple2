@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Maple2.Database.Extensions;
+﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
@@ -29,8 +26,15 @@ public partial class GameStorage {
                 .ToList();
         }
 
-        public ICollection<MesoListing> GetMyMesoListings(long accountId) {
+        public ICollection<MesoListing> GetMyMesoListingsByAccountId(long accountId) {
             return Context.MesoMarket.Where(listing => listing.AccountId == accountId)
+                .AsEnumerable()
+                .Select<Model.MesoListing, MesoListing>(listing => listing)
+                .ToList();
+        }
+
+        public ICollection<MesoListing> GetMyMesoListingsByCharacterId(long characterId) {
+            return Context.MesoMarket.Where(listing => listing.CharacterId == characterId)
                 .AsEnumerable()
                 .Select<Model.MesoListing, MesoListing>(listing => listing)
                 .ToList();
@@ -54,7 +58,7 @@ public partial class GameStorage {
             }
 
             if (sold) {
-                Model.SoldMesoListing soldListing = listing;
+                SoldMesoListing soldListing = listing;
                 Context.MesoMarket.Remove(listing);
                 Context.MesoMarketSold.Add(soldListing);
                 return Context.TrySaveChanges();
@@ -68,7 +72,8 @@ public partial class GameStorage {
             return Context.UgcMarketItem.Where(listing => listing.AccountId == accountId)
                 .AsEnumerable()
                 .Select(ToMarketEntry)
-                .ToDictionary(entry => entry.Id, entry => entry);
+                .Where(x => x is not null)
+                .ToDictionary(entry => entry!.Id, entry => entry!);
         }
 
         /// <summary>
@@ -289,7 +294,7 @@ public partial class GameStorage {
         }
 
         public bool SaveBlackMarketListing(BlackMarketListing listing) {
-            Model.BlackMarketListing? model = listing;
+            Model.BlackMarketListing model = listing;
 
             Context.BlackMarketListing.Update(model);
             return Context.TrySaveChanges();

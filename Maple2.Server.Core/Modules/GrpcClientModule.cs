@@ -1,5 +1,4 @@
-﻿using System;
-using Grpc.Net.ClientFactory;
+﻿using Grpc.Net.ClientFactory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Maple2.Server.Core.Modules;

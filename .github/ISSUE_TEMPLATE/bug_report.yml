@@ -11,6 +11,7 @@ body:
         - Windows
         - Linux
         - macOS
+        - N/A
       default: 0
     validations:
       required: true

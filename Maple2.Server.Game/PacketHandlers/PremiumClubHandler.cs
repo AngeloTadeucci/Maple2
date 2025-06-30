@@ -4,21 +4,21 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class PremiumClubHandler : PacketHandler<GameSession> {
+public class PremiumClubHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.PremiumClub;
 
     private enum Command : byte {
         LoadClaimedItems = 1,
         ClaimItem = 2,
         LoadPackages = 3,
-        PurchasePackage = 4
+        PurchasePackage = 4,
     }
 
     #region Autofac Autowired
@@ -61,7 +61,7 @@ public class PremiumClubHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? item = session.Field.ItemDrop.CreateItem(premiumMetadata.Id, premiumMetadata.Rarity, premiumMetadata.Amount);
+        Item? item = session.Field?.ItemDrop.CreateItem(premiumMetadata.Id, premiumMetadata.Rarity, premiumMetadata.Amount);
         if (item == null || !session.Item.Inventory.CanAdd(item)) {
             return;
         }
@@ -103,7 +103,7 @@ public class PremiumClubHandler : PacketHandler<GameSession> {
         session.Currency.Meret -= premiumMetadata.Price;
 
         foreach (PremiumClubTable.Item item in premiumMetadata.BonusItems) {
-            Item? bonusItem = session.Field.ItemDrop.CreateItem(item.Id, item.Rarity, item.Amount);
+            Item? bonusItem = session.Field?.ItemDrop.CreateItem(item.Id, item.Rarity, item.Amount);
             if (bonusItem == null) {
                 continue;
             }

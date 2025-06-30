@@ -1,6 +1,4 @@
 ﻿using Grpc.Core;
-using Maple2.Model.Metadata;
-using Maple2.Server.World.Containers;
 
 namespace Maple2.Server.World.Service;
 

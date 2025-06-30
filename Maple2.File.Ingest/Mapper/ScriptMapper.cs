@@ -13,8 +13,8 @@ namespace Maple2.File.Ingest.Mapper;
 public class ScriptMapper : TypeMapper<ScriptMetadata> {
     private readonly ScriptParser parser;
 
-    public ScriptMapper(M2dReader xmlReader) {
-        parser = new ScriptParser(xmlReader);
+    public ScriptMapper(M2dReader xmlReader, string language) {
+        parser = new ScriptParser(xmlReader, language);
     }
 
     protected override IEnumerable<ScriptMetadata> Map() {

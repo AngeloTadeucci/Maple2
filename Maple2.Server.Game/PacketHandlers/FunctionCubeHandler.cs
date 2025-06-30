@@ -1,12 +1,10 @@
-﻿using System.Numerics;
-using Maple2.Database.Storage;
-using Maple2.Model.Common;
+﻿using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -14,7 +12,7 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class FunctionCubeHandler : PacketHandler<GameSession> {
+public class FunctionCubeHandler : FieldPacketHandler {
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -46,7 +44,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
             return;
         }
 
-        FieldFunctionInteract? fieldInteract = session.Field.TryGetFieldFunctionInteract(interactId);
+        FieldFunctionInteract? fieldInteract = session.Field?.TryGetFieldFunctionInteract(interactId);
         if (fieldInteract is null) {
             Logger.Error("Interact cube not found for interactId {0}", interactId);
             return;
@@ -60,7 +58,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                 break;
             case InteractCubeControlType.Farming:
             case InteractCubeControlType.Breeding:
-                FieldFunctionInteract? fieldFunctionInteract = session.Field.TryGetFieldFunctionInteract(fieldInteract.InteractCube.Id);
+                FieldFunctionInteract? fieldFunctionInteract = session.Field?.TryGetFieldFunctionInteract(fieldInteract.InteractCube.Id);
                 if (fieldFunctionInteract != null && fieldFunctionInteract.Use()) {
                     session.Send(FunctionCubePacket.UpdateFunctionCube(fieldFunctionInteract.InteractCube));
 
@@ -75,13 +73,15 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                 bool isInDefaultState = fieldInteract.InteractCube.State == fieldInteract.InteractCube.Metadata.DefaultState;
                 fieldInteract.InteractCube.State = isInDefaultState ? InteractCubeState.InUse : fieldInteract.InteractCube.Metadata.DefaultState;
                 fieldInteract.InteractCube.InteractingCharacterId = isInDefaultState ? session.CharacterId : 0;
-                session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldInteract.InteractCube));
-                session.Field.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, fieldInteract.InteractCube));
+                session.Field?.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldInteract.InteractCube));
+                session.Field?.Broadcast(FunctionCubePacket.UseFurniture(session.CharacterId, fieldInteract.InteractCube));
                 break;
         }
     }
 
     private void HandleNurturing(GameSession session, FieldFunctionInteract fieldCube) {
+        if (session.Field is null) return;
+
         if (fieldCube.Value.Nurturing is null) {
             return;
         }
@@ -122,7 +122,6 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
                 Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, fieldCube.InteractCube.Metadata.Id);
                 return;
             }
-
             // drop the item
             FieldItem fieldRewardStageItem = session.Field.SpawnItem(session.Player, fieldCube.Position, fieldCube.Rotation, rewardStageItem, session.CharacterId);
             session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
@@ -159,6 +158,8 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
     }
 
     private void HandlePlayNurturing(GameSession session, Plot plot, FieldFunctionInteract cube, Nurturing nurturing, GameStorage.Request db) {
+        if (session.Field is null) return;
+
         if (nurturing.PlayedBy.Contains(session.AccountId)) {
             session.Send(NoticePacket.Message("You already played with this pet today. TODO: Find correct string id")); // TODO: Find correct string id
             return;
@@ -232,7 +233,7 @@ public class FunctionCubeHandler : PacketHandler<GameSession> {
         }
 
         RewardItem rewardPlay = nurturing.RewardFeed;
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
+        Item? rewardItem = session.Field?.ItemDrop.CreateItem(rewardPlay.ItemId, rarity: rewardPlay.Rarity, amount: rewardPlay.Amount);
         if (rewardItem is null) {
             Logger.Error("Failed to create the reward item for account {0} and item {1}", session.AccountId, rewardPlay.ItemId);
             return null;

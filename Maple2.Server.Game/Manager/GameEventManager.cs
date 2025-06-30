@@ -51,7 +51,7 @@ public sealed class GameEventManager {
 
             if (!eventValues.TryGetValue(userValue.EventId, out Dictionary<GameEventUserValueType, GameEventUserValue>? valueDict)) {
                 eventValues.Add(userValue.EventId, new Dictionary<GameEventUserValueType, GameEventUserValue> {
-                    {userValue.Type, userValue},
+                    { userValue.Type, userValue },
                 });
             } else {
                 valueDict.TryAdd(userValue.Type, userValue);
@@ -60,6 +60,8 @@ public sealed class GameEventManager {
     }
 
     private void UpdateDtReward() {
+        if (session.Field is null) return;
+
         IList<GameEvent> events = session.FindEvent(GameEventType.DTReward);
         if (events.Count == 0) {
             return;
@@ -85,7 +87,7 @@ public sealed class GameEventManager {
             // Give reward
             if (userValue.Long() >= dtReward.Entries[rewardIndexValue.Int()].EndDuration) {
                 DTReward.Entry entry = dtReward.Entries[rewardIndexValue.Int()];
-                Item? item = session.Field.ItemDrop.CreateItem(entry.Item.ItemId, entry.Item.Rarity, entry.Item.Amount);
+                Item? item = session.Field?.ItemDrop.CreateItem(entry.Item.ItemId, entry.Item.Rarity, entry.Item.Amount);
                 if (item == null) {
                     continue;
                 }
@@ -144,7 +146,7 @@ public sealed class GameEventManager {
     public GameEventUserValue Get(GameEventUserValueType type, int eventId, long expirationTime) {
         if (!eventValues.TryGetValue(eventId, out Dictionary<GameEventUserValueType, GameEventUserValue>? valueDict)) {
             eventValues.Add(eventId, new Dictionary<GameEventUserValueType, GameEventUserValue> {
-                {type, new GameEventUserValue(type, expirationTime, eventId)},
+                { type, new GameEventUserValue(type, expirationTime, eventId) },
             });
         } else if (!valueDict.ContainsKey(type)) {
             valueDict.Add(type, new GameEventUserValue(type, expirationTime, eventId));

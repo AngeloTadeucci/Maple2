@@ -1,5 +1,4 @@
 ﻿using Maple2.Model.Enum;
-using System.Collections.Generic;
 
 namespace Maple2.Model.Metadata;
 
@@ -79,7 +78,7 @@ public record AdditionalEffectMetadataStatus(
     IReadOnlyDictionary<SpecialAttribute, float> SpecialValues,
     IReadOnlyDictionary<SpecialAttribute, float> SpecialRates,
     IReadOnlyDictionary<BasicAttribute, float> Resistances,
-    long DeathResistanceHp,
+    bool DeathResistanceHp,
     AdditionalEffectMetadataStatus.CompulsionEvent? Compulsion,
     AdditionalEffectMetadataStatus.StatConversion? Conversion,
     int ImmuneBreak,

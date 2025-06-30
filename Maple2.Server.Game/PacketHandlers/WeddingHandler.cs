@@ -5,7 +5,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -13,7 +13,7 @@ using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class WeddingHandler : PacketHandler<GameSession> {
+public class WeddingHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Wedding;
 
     private enum Command : byte {
@@ -78,6 +78,7 @@ public class WeddingHandler : PacketHandler<GameSession> {
     }
 
     private static void HandlePropose(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         string otherPlayerName = packet.ReadUnicodeString();
 
         if (!session.Field.TryGetPlayer(otherPlayerName, out FieldPlayer? otherPlayer)) {
@@ -95,6 +96,7 @@ public class WeddingHandler : PacketHandler<GameSession> {
     }
 
     private static void HandleProposalReply(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         var response = packet.Read<WeddingError>();
         long playerId = packet.ReadLong();
 

@@ -29,9 +29,9 @@ public class CommandRouter {
 
         this.session = session;
         this.context = context;
-        this.commands = listBuilder.ToImmutable();
-        this.aliasLookup = dictionaryBuilder.ToImmutable();
-        this.console = new GameConsole(session);
+        commands = listBuilder.ToImmutable();
+        aliasLookup = dictionaryBuilder.ToImmutable();
+        console = new GameConsole(session);
     }
 
     public void RegisterCommands() {

@@ -294,7 +294,7 @@ public class BuffManager : IUpdatable {
         }
 
         Compulsions.Add(eventType, new ConcurrentDictionary<int, AdditionalEffectMetadataStatus.CompulsionEvent> {
-            [buff.Id] = buff.Metadata.Status.Compulsion
+            [buff.Id] = buff.Metadata.Status.Compulsion,
         });
     }
 

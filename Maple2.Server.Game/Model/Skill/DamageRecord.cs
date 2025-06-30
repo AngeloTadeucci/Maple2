@@ -52,7 +52,7 @@ public class DamageRecordTarget {
 
     public DamageRecordTarget(IActor target) {
         Target = target;
-        damage = new List<(DamageType Type, long Amount)>();
+        damage = [];
     }
 
     public void AddDamage(DamageType type, long amount) {

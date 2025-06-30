@@ -5,6 +5,7 @@ using Maple2.Model.Common;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Z.EntityFramework.Plus;
 using Home = Maple2.Model.Game.Home;
 using InteractCube = Maple2.Model.Game.InteractCube;
@@ -212,6 +213,10 @@ public partial class GameStorage {
                 return null;
             }
 
+            if (!ValidateAndFixHomeExpiryTime(ugcMap)) {
+                return null;
+            }
+
             var plot = new Plot(group) {
                 Id = ugcMap.Id,
                 OwnerId = ugcMap.OwnerId,
@@ -229,8 +234,8 @@ public partial class GameStorage {
                     continue;
                 }
 
-                if (plotCube.Interact != null && plotCube.Interact?.Metadata.Nurturing is not null) {
-                    plotCube.Interact!.Nurturing = GetNurturing(ugcMap.OwnerId, cube.ItemId, plotCube.Interact.Metadata.Nurturing);
+                if (plotCube.Interact?.Metadata.Nurturing is not null) {
+                    plotCube.Interact.Nurturing = GetNurturing(ugcMap.OwnerId, cube.Interact!.ObjectCode, plotCube.Interact.Metadata.Nurturing);
                 }
 
                 plot.Cubes.Add(plotCube.Position, plotCube);
@@ -245,6 +250,10 @@ public partial class GameStorage {
             }
 
             if (!metadata.Plots.TryGetValue(ugcMap.Number, out UgcMapGroup? group)) {
+                return null;
+            }
+
+            if (!ValidateAndFixHomeExpiryTime(ugcMap)) {
                 return null;
             }
 
@@ -280,7 +289,7 @@ public partial class GameStorage {
             return game.functionCubeMetadata.TryGet(model.ObjectCode, out FunctionCubeMetadata? metadata) ? model.Convert(metadata, model.NoticeSettings, model.PortalSettings) : null;
         }
 
-        private PlotCube? ToPlotCube(Model.HomeLayoutCube? model) {
+        private PlotCube? ToPlotCube(HomeLayoutCube? model) {
             if (model == null) {
                 return null;
             }
@@ -312,6 +321,17 @@ public partial class GameStorage {
                 Interact = ToInteractCube(model.Interact),
                 Type = PlotCube.CubeType.Construction,
             };
+        }
+
+        private bool ValidateAndFixHomeExpiryTime(UgcMap ugcMap) {
+            if (!string.IsNullOrEmpty(ugcMap.Name) && ugcMap.MapId is Constant.DefaultHomeMapId && ugcMap.ExpiryTime != Home.HomeExpiryTime) {
+                Logger.LogError("Plot {Id} for {OwnerId} is initialized but it's ExpiryTime is not set to Home.HomeExpiryTime. Why?", ugcMap.Id, ugcMap.OwnerId);
+
+                ugcMap.ExpiryTime = Home.HomeExpiryTime;
+                Context.UgcMap.Update(ugcMap);
+                return Context.TrySaveChanges();
+            }
+            return true;
         }
     }
 }

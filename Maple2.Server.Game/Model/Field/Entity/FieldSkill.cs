@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model.Skill;
@@ -63,6 +62,12 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         }
 
         if (tickCount < NextTick) {
+            return;
+        }
+
+        if (FireCount == 0) {
+            // Finished firing, remove skill
+            Field.RemoveSkill(ObjectId);
             return;
         }
 

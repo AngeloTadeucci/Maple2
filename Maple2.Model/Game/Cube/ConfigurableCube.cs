@@ -1,6 +1,5 @@
 ﻿using Maple2.Model.Common;
 using Maple2.Model.Enum;
-using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools;
 
@@ -32,23 +31,10 @@ public class CubePortalSettings : IByteSerializable {
 }
 
 public class CubeNoticeSettings : IByteSerializable {
-    public string Notice { get; set; }
-    public byte Distance { get; set; }
-
-    public Vector3B Position { get; set; }
-
-    public CubeNoticeSettings() {
-        Notice = string.Empty;
-    }
-
-    public CubeNoticeSettings(Vector3B position) {
-        Notice = string.Empty;
-        Distance = 1;
-        Position = position;
-    }
+    public string Notice { get; set; } = string.Empty;
+    public byte Distance { get; set; } = 1;
 
     public void WriteTo(IByteWriter writer) {
-        writer.Write<Vector3B>(Position);
         writer.WriteUnicodeString(Notice);
         writer.WriteByte(Distance);
     }

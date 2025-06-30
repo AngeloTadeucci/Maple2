@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 

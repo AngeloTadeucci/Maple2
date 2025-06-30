@@ -5,14 +5,14 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class MasteryHandler : PacketHandler<GameSession> {
+public class MasteryHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.Mastery;
 
     private enum Command : byte {
@@ -58,7 +58,7 @@ public class MasteryHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(entry.ItemId, entry.ItemRarity, entry.ItemAmount);
+        Item? rewardItem = session.Field?.ItemDrop.CreateItem(entry.ItemId, entry.ItemRarity, entry.ItemAmount);
         if (rewardItem == null) {
             return;
         }
@@ -109,7 +109,7 @@ public class MasteryHandler : PacketHandler<GameSession> {
         }
 
         foreach (ItemComponent rewardItem in entry.RewardItems) {
-            Item? item = session.Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+            Item? item = session.Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
             if (item == null) {
                 continue;
             }

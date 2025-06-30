@@ -14,7 +14,7 @@ namespace Maple2.Server.DebugGame.Graphics {
             }
         }
 
-        private HashSet<DebugFieldWindow> activeWindows = new HashSet<DebugFieldWindow>();
+        private HashSet<DebugFieldWindow> activeWindows = [];
         private Mutex activeMutex = new();
 
         public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {

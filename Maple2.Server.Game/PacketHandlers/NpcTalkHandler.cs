@@ -4,7 +4,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -13,7 +13,7 @@ using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class NpcTalkHandler : PacketHandler<GameSession> {
+public class NpcTalkHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.NpcTalk;
 
     private enum Command : byte {
@@ -67,12 +67,13 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
     }
 
     private void HandleClose(GameSession session) {
-        session.NpcScript?.Npc.StopTalk();
+        session.NpcScript?.Npc?.StopTalk();
         session.NpcScript = null;
         session.Shop.ClearActiveShop();
     }
 
     private void HandleTalk(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         int objectId = packet.ReadInt();
         if (!session.Field.Npcs.TryGetValue(objectId, out FieldNpc? npc)) {
             return; // Invalid Npc
@@ -127,10 +128,8 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         }
 
         // Determine which script to use.
-        ScriptState? selectedState = null;
-        if (npc.Value.Metadata.Basic.Kind is >= 100 and <= 108) {
-            selectedState = selectState;
-        } else if (talkType.HasFlag(NpcTalkType.Select)) {
+        ScriptState? selectedState;
+        if (npc.Value.Metadata.Basic.Kind is >= 100 and <= 108 || talkType.HasFlag(NpcTalkType.Select)) {
             selectedState = selectState;
         } else if (talkType.HasFlag(NpcTalkType.Quest)) {
             if (questState == null) {
@@ -186,7 +185,11 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
                 addedOptions += session.NpcScript.Quests.Count;
                 // Picked quest
                 if (pick < addedOptions) {
-                    FieldNpc npc = session.NpcScript.Npc;
+                    FieldNpc? npc = session.NpcScript.Npc;
+                    if (npc == null) {
+                        session.Send(NpcTalkPacket.Close());
+                        return;
+                    }
                     if (!session.ScriptMetadata.TryGet(session.NpcScript.Quests.ElementAt(pick).Value.Id, out ScriptMetadata? metadata)) {
                         session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
                         session.NpcScript = null;
@@ -259,6 +262,10 @@ public class NpcTalkHandler : PacketHandler<GameSession> {
         packet.ReadShort(); // 2 or 0. 2 = Start quest, 0 = Complete quest.
 
         FieldNpc? npc = session.NpcScript.Npc;
+        if (npc == null) {
+            session.Send(NpcTalkPacket.Close());
+            return;
+        }
         if (!session.ScriptMetadata.TryGet(questId, out ScriptMetadata? metadata)) {
             session.Send(NpcTalkPacket.Respond(npc, NpcTalkType.None, default));
             session.NpcScript = null;

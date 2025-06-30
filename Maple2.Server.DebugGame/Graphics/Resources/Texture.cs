@@ -23,22 +23,25 @@ public class Texture {
 
         path = Path.GetFullPath(Path.Combine(TextureRootPath, path));
 
-        DecoderOptions decoderOptions = new DecoderOptions();
-        decoderOptions.Configuration.PreferContiguousImageBuffers = true;
+        DecoderOptions decoderOptions = new DecoderOptions {
+            Configuration = {
+                PreferContiguousImageBuffers = true,
+            },
+        };
 
         Image<Bgra32> image = Image.Load<Bgra32>(decoderOptions, path);
 
         Texture2DDesc textureDesc = new Texture2DDesc {
             Width = (uint) image.Width,
             Height = (uint) image.Height,
-            Format = Silk.NET.DXGI.Format.FormatB8G8R8A8Unorm,
+            Format = Format.FormatB8G8R8A8Unorm,
             MipLevels = 1,
             BindFlags = (uint) BindFlag.ShaderResource,
             Usage = Usage.Default,
             CPUAccessFlags = 0,
             MiscFlags = (uint) ResourceMiscFlag.None,
             SampleDesc = new SampleDesc(1, 0),
-            ArraySize = 1
+            ArraySize = 1,
         };
 
         if (image.DangerousTryGetSinglePixelMemory(out var imageData)) {
@@ -46,7 +49,7 @@ public class Texture {
                 SubresourceData subresourceData = new SubresourceData {
                     PSysMem = pixelData.Pointer,
                     SysMemPitch = (uint) image.Width * sizeof(int),
-                    SysMemSlicePitch = (uint) (image.Width * sizeof(int) * image.Height)
+                    SysMemSlicePitch = (uint) (image.Width * sizeof(int) * image.Height),
                 };
 
                 ID3D11Texture2D* texture = default;
@@ -66,9 +69,9 @@ public class Texture {
             Anonymous = new ShaderResourceViewDescUnion {
                 Texture2D = {
                     MostDetailedMip = 0,
-                    MipLevels = 1
-                }
-            }
+                    MipLevels = 1,
+                },
+            },
         };
 
         ID3D11ShaderResourceView* resourceView = default;
@@ -86,7 +89,7 @@ public class Texture {
             MipLODBias = 0,
             MaxAnisotropy = 1,
             MinLOD = float.MinValue,
-            MaxLOD = float.MaxValue
+            MaxLOD = float.MaxValue,
         };
 
         samplerDesc.BorderColor[0] = 0.0f;

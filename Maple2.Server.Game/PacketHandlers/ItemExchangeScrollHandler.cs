@@ -4,13 +4,13 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemExchangeScroll : PacketHandler<GameSession> {
+public class ItemExchangeScroll : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.ItemExchangeScroll;
 
     private enum Command : byte {
@@ -79,7 +79,7 @@ public class ItemExchangeScroll : PacketHandler<GameSession> {
                 }
             }
         }
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(scrollMetadata.RewardItem.ItemId, scrollMetadata.RewardItem.Rarity, scrollMetadata.RewardItem.Amount * quantity);
+        Item? rewardItem = session.Field?.ItemDrop.CreateItem(scrollMetadata.RewardItem.ItemId, scrollMetadata.RewardItem.Rarity, scrollMetadata.RewardItem.Amount * quantity);
         if (rewardItem == null) {
             return;
         }

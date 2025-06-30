@@ -13,15 +13,11 @@ using Maple2.Server.Game.Session;
 namespace Maple2.Server.Game.Commands;
 
 public class PetCommand : GameCommand {
-    private const string NAME = "pet";
-    private const string DESCRIPTION = "Hungry field pet spawning.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.SpawnItem;
-
     private readonly GameSession session;
     private readonly NpcMetadataStorage npcStorage;
     private readonly ItemMetadataStorage itemStorage;
 
-    public PetCommand(GameSession session, NpcMetadataStorage npcStorage, ItemMetadataStorage itemStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public PetCommand(GameSession session, NpcMetadataStorage npcStorage, ItemMetadataStorage itemStorage) : base(AdminPermissions.SpawnItem, "pet", "Hungry field pet spawning.") {
         this.session = session;
         this.npcStorage = npcStorage;
         this.itemStorage = itemStorage;
@@ -33,6 +29,8 @@ public class PetCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, int petId) {
+        if (session.Field is null) return;
+
         try {
             if (!itemStorage.TryGetPet(petId, out ItemMetadata? itemMetadata)) {
                 ctx.Console.Error.WriteLine($"Invalid Pet: {petId}");

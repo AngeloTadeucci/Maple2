@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Maple2.Model.Metadata;
 
@@ -14,7 +13,7 @@ public class ServerTableMetadata {
     public override bool Equals(object? obj) {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
+        if (obj.GetType() != GetType()) return false;
 
         return Equals((ServerTableMetadata) obj);
     }
@@ -47,4 +46,5 @@ public class ServerTableMetadata {
 [JsonDerivedType(typeof(FishTable), typeDiscriminator: "fish")]
 [JsonDerivedType(typeof(CombineSpawnTable), typeDiscriminator: "combineSpawn")]
 [JsonDerivedType(typeof(EnchantOptionTable), typeDiscriminator: "enchantOption")]
+[JsonDerivedType(typeof(UnlimitedEnchantOptionTable), typeDiscriminator: "unlimitedEnchantOption")]
 public abstract record ServerTable;

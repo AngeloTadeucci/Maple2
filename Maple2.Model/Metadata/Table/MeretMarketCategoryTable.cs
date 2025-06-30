@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Maple2.Model.Metadata;
+﻿namespace Maple2.Model.Metadata;
 
 public record MeretMarketCategoryTable(IReadOnlyDictionary<int, IReadOnlyDictionary<int, MeretMarketCategoryTable.Tab>> Entries) : Table {
 

@@ -1,5 +1,4 @@
-﻿using System;
-using Maple2.Model.Enum;
+﻿using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Tools.Extensions;
@@ -15,7 +14,7 @@ public class UgcMarketItem(ItemMetadata metadata) : MarketItem(metadata) {
     public required long SellerCharacterId { get; init; }
     public required string SellerCharacterName { get; init; }
     public required string Description { get; set; }
-    public required string[] Tags { get; set; } = Array.Empty<string>();
+    public required string[] Tags { get; set; } = [];
     public required UgcItemLook Look { get; init; }
     public required ItemBlueprint Blueprint { get; init; }
     public UgcItemMusicScore MusicScore = new(); // TODO: Implement UgcItemMusicScore

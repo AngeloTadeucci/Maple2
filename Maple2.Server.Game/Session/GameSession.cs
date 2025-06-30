@@ -20,7 +20,6 @@ using Maple2.Server.Core.Packets;
 using Maple2.Server.Core.Sync;
 using Maple2.Server.Game.Commands;
 using Maple2.Server.Game.Manager;
-using Maple2.Server.Game.Manager.Config;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Manager.Items;
 using Maple2.Server.Game.Model;
@@ -56,6 +55,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
+    // ReSharper disable UnusedAutoPropertyAccessor.Global
     public required GameStorage GameStorage { get; init; }
     public required WorldClient World { get; init; }
     public required ItemMetadataStorage ItemMetadata { get; init; }
@@ -73,6 +73,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public required ItemStatsCalculator ItemStatsCalc { private get; init; }
     public required PlayerInfoStorage PlayerInfo { get; init; }
     // ReSharper restore All
+    // ReSharper restore UnusedAutoPropertyAccessor.Global
     #endregion
 
     public ConfigManager Config { get; set; } = null!;
@@ -96,7 +97,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public ShopManager Shop { get; set; } = null!;
     public UgcMarketManager UgcMarket { get; set; } = null!;
     public BlackMarketManager BlackMarket { get; set; } = null!;
-    public FieldManager Field { get; set; } = null!;
+    public FieldManager? Field { get; set; }
     public FieldPlayer Player { get; private set; } = null!;
     public PartyManager Party { get; set; } = null!;
     public ConcurrentDictionary<int, GroupChatManager> GroupChats { get; set; }
@@ -146,13 +147,19 @@ public sealed partial class GameSession : Core.Network.Session {
         using GameStorage.Request db = GameStorage.Context();
         db.BeginTransaction();
         int objectId = FieldManager.NextGlobalId();
-        Player? player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
+        Player? player;
+        try {
+            AcquireLock(CharacterId, 5);
+            player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
+            db.Commit();
+        } finally {
+            ReleaseLock(CharacterId);
+        }
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
             Send(MigrationPacket.MoveResult(MigrationError.s_move_err_default));
             return false;
         }
-        db.Commit();
 
         Player = new FieldPlayer(this, player);
         Animation = new AnimationManager(this);
@@ -283,7 +290,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             ChannelsResponse response = World.Channels(new ChannelsRequest());
-            Send(ChannelPacket.Dynamic(response.Channels));
+            Send(ChannelPacket.Load(response.Channels));
         } catch (RpcException ex) {
             Logger.Warning(ex, "Failed to populate channels");
         }
@@ -386,7 +393,7 @@ public sealed partial class GameSession : Core.Network.Session {
             } else if (mapId == dungeonField.Lobby.MapId) {
                 newField = dungeonField.Lobby;
             } else {
-                MigrateOutOfInstance(mapId);
+                Migrate(mapId);
                 newField = null;
                 return false;
             }
@@ -401,6 +408,7 @@ public sealed partial class GameSession : Core.Network.Session {
         LeaveField();
 
         Field = newField;
+        Player.Dispose();
         Player = Field.SpawnPlayer(this, Player, portalId, position, rotation);
         Config.Skill.UpdatePassiveBuffs();
         Player.Buffs.LoadFieldBuffs();
@@ -449,14 +457,14 @@ public sealed partial class GameSession : Core.Network.Session {
         Send(pWriter);
 
         Send(EmotePacket.Load(Player.Value.Unlock.Emotes.Select(id => new Emote(id)).ToList()));
-        Config.LoadMacros();
+        Config.InitMacros();
         Config.LoadSkillCooldowns();
         Dungeon.LoadField();
         Marriage.Load();
 
         Send(CubePacket.DesignRankReward(Player.Value.Home));
         Send(CubePacket.UpdateProfile(Player, true));
-        Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMapId));
+        Send(CubePacket.ReturnMap(Player.Value.Character.ReturnMaps.Peek()));
 
         Config.LoadLapenshard();
         Config.LoadRevival();
@@ -481,7 +489,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
         // Update the client with the latest channel list.
         ChannelsResponse response = World.Channels(new ChannelsRequest());
-        Send(ChannelPacket.Dynamic(response.Channels));
+        Send(ChannelPacket.Load(response.Channels));
         Send(ServerListPacket.Load(Target.SERVER_NAME, [new IPEndPoint(Target.LoginIp, Target.LoginPort)], response.Channels));
         return true;
     }
@@ -494,7 +502,7 @@ public sealed partial class GameSession : Core.Network.Session {
         }
 
         Character character = player.Character;
-        int mapId = character.ReturnMapId;
+        int mapId = character.ReturnMaps.Peek();
         Vector3 position = character.ReturnPosition;
 
         if (!MapMetadata.TryGet(mapId, out _)) {
@@ -502,11 +510,10 @@ public sealed partial class GameSession : Core.Network.Session {
             position = default;
         }
 
-        character.ReturnMapId = 0;
         character.ReturnPosition = default;
 
         if (character.MapId is Constant.DefaultHomeMapId) {
-            MigrateOutOfInstance(mapId);
+            Migrate(mapId);
             return;
         }
 
@@ -517,7 +524,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 houseRank.TryGetValue(Guild.Guild.HouseTheme, out GuildTable.House? house);
 
                 if (house?.MapId == character.MapId) {
-                    MigrateOutOfInstance(mapId);
+                    Migrate(mapId);
                     return;
                 }
             }
@@ -560,6 +567,7 @@ public sealed partial class GameSession : Core.Network.Session {
         long exp = 0;
         if (baseMetadata.ExpTableId > 0) {
             if (baseMetadata.ExpTableId > 100000 && TableMetadata.RewardContentTable.ExpStaticEntries.TryGetValue(baseMetadata.ExpTableId, out exp)) {
+                // Static exp entry found
             } else if (TableMetadata.ExpTable.ExpBase.TryGetValue(baseMetadata.ExpTableId, out IReadOnlyDictionary<int, long>? expTable)) {
                 exp = expTable[Player.Value.Character.Level];
             }
@@ -597,7 +605,7 @@ public sealed partial class GameSession : Core.Network.Session {
                     continue;
                 }
                 foreach (RewardItem rewardItem in data.RewardItems) {
-                    Item? item = Field.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
+                    Item? item = Field?.ItemDrop.CreateItem(rewardItem.ItemId, rewardItem.Rarity, rewardItem.Amount);
                     if (item != null) {
                         items.Add(item);
                     }
@@ -660,8 +668,8 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public void MigrateToInstance(int mapId, long ownerId) {
-        bool instancedContent = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
+    public void Migrate(int mapId, long ownerId = 0) {
+        bool isInstanced = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
 
         try {
             var request = new MigrateOutRequest {
@@ -671,13 +679,20 @@ public sealed partial class GameSession : Core.Network.Session {
                 Server = Server.World.Service.Server.Game,
                 MapId = mapId,
                 OwnerId = ownerId,
-                InstancedContent = instancedContent,
+                InstancedContent = isInstanced,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
             var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
             Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
-            Player.Value.Character.ReturnChannel = Player.Value.Character.Channel;
+
+            if (isInstanced) {
+                Player.Value.Character.ReturnChannel = Player.Value.Character.Channel;
+            } else {
+                Player.Value.Character.MapId = mapId;
+                Player.Value.Character.ReturnChannel = 0;
+            }
+
             State = SessionState.ChangeMap;
         } catch (RpcException ex) {
             Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
@@ -687,27 +702,36 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
 
-    public void MigrateOutOfInstance(int mapId) {
-        try {
-            var request = new MigrateOutRequest {
-                AccountId = AccountId,
-                CharacterId = CharacterId,
-                MachineId = MachineId.ToString(),
-                Server = Server.World.Service.Server.Game,
-                Channel = Player.Value.Character.ReturnChannel,
-                MapId = mapId,
-            };
+    private void AcquireLock(long accountId, int maxRetries = 3) {
+        int retryCount = 0;
+        const int backoffMs = 500;
 
-            MigrateOutResponse response = World.MigrateOut(request);
-            var endpoint = new IPEndPoint(IPAddress.Parse(response.IpAddress), response.Port);
-            Send(MigrationPacket.GameToGame(endpoint, response.Token, mapId));
-            Player.Value.Character.ReturnChannel = 0;
-            State = SessionState.ChangeMap;
+        while (retryCount < maxRetries) {
+            LockResponse? response = World.AcquireLock(new LockRequest {
+                AccountId = accountId,
+            });
+
+            if (string.IsNullOrEmpty(response.Error)) {
+                return;
+            }
+
+            retryCount++;
+            Thread.Sleep(backoffMs);
+        }
+
+        Logger.Error("Failed to acquire lock for account {AccountId} after {MaxRetries} retries", accountId, maxRetries);
+    }
+
+    private void ReleaseLock(long accountId) {
+        try {
+            LockResponse response = World.ReleaseLock(new LockRequest {
+                AccountId = accountId,
+            });
+            if (!string.IsNullOrEmpty(response.Error)) {
+                Logger.Warning("Failed to release lock for account {AccountId}: {ErrorMessage}", accountId, response.Error);
+            }
         } catch (RpcException ex) {
-            Send(MigrationPacket.GameToGameError(MigrationError.s_move_err_default));
-            Send(NoticePacket.Disconnect(new InterfaceText(ex.Message)));
-        } finally {
-            Disconnect();
+            Logger.Error(ex, "Failed to release lock for account {AccountId}", accountId);
         }
     }
 
@@ -716,6 +740,7 @@ public sealed partial class GameSession : Core.Network.Session {
 
     protected override void Dispose(bool disposing) {
         if (disposed) return;
+        if (Field is null) return;
         disposed = true;
 
         if (State == SessionState.Connected) {
@@ -733,13 +758,35 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             Scheduler.Stop();
+            OnLoop -= Scheduler.InvokeAll;
             server.OnDisconnected(this);
             LeaveField();
             Player.Value.Character.Channel = -1;
             Player.Value.Account.Online = false;
             State = SessionState.Disconnected;
             Complete();
+
+            SaveCacheConfig();
+            AcquireLock(CharacterId);
+            using GameStorage.Request db = GameStorage.Context();
+            db.BeginTransaction();
+            db.SavePlayer(Player);
+            UgcMarket.Save(db);
+            Config.Save(db);
+            Shop.Save(db);
+            Item.Save(db);
+            Survival.Save(db);
+            Housing.Save(db);
+            GameEvent.Save(db);
+            Achievement.Save(db);
+            Quest.Save(db);
+            Dungeon.Save(db);
+            db.Commit();
+            db.SaveChanges();
+        } catch (Exception ex) {
+            Logger.Error(ex, "Error during session cleanup for {Player}", PlayerName);
         } finally {
+            ReleaseLock(CharacterId);
             Guild.Dispose();
             Buddy.Dispose();
             Party.Dispose();
@@ -751,22 +798,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 club.Dispose();
             }
 
-            SaveCacheConfig();
-            using (GameStorage.Request db = GameStorage.Context()) {
-                db.BeginTransaction();
-                db.SavePlayer(Player);
-                UgcMarket.Save(db);
-                Config.Save(db);
-                Shop.Save(db);
-                Item.Save(db);
-                Survival.Save(db);
-                Housing.Save(db);
-                GameEvent.Save(db);
-                Achievement.Save(db);
-                Quest.Save(db);
-                Dungeon.Save(db);
-            }
-
+            Player.Dispose();
             base.Dispose(disposing);
         }
         return;

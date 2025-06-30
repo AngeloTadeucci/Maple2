@@ -1,6 +1,5 @@
 ﻿using Maple2.Database.Extensions;
 using Maple2.Database.Model.Metadata;
-using Maple2.Model.Game.Field;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -31,6 +30,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<NxsMeshMetadata> NXSMeshMetadata { get; set; } = null!;
     public DbSet<FunctionCubeMetadata> FunctionCubeMetadata { get; set; } = null!;
     public DbSet<MapDataMetadata> MapDataMetadata { get; set; } = null!;
+    public DbSet<TriggerMetadata> TriggerMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -57,6 +57,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NifMetadata>(ConfigureNifMetadata);
         modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
         modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
+        modelBuilder.Entity<TriggerMetadata>(ConfigureTriggerMetadata);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -172,6 +173,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.Property(quest => quest.GoToDungeon).HasJsonConversion();
         builder.Property(quest => quest.Dispatch).HasJsonConversion();
         builder.Property(quest => quest.Mentoring).HasJsonConversion();
+        builder.Property(quest => quest.SummonPortal).HasJsonConversion();
     }
 
     private static void ConfigureRideMetadata(EntityTypeBuilder<RideMetadata> builder) {
@@ -249,5 +251,13 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         builder.HasKey(cube => cube.Id);
         builder.Property(cube => cube.AutoStateChange).HasJsonConversion();
         builder.Property(cube => cube.Nurturing).HasJsonConversion();
+    }
+
+    private static void ConfigureTriggerMetadata(EntityTypeBuilder<TriggerMetadata> builder) {
+        builder.ToTable("trigger");
+        builder.HasKey(trigger => new {
+            trigger.MapXBlock,
+            trigger.Name,
+        });
     }
 }

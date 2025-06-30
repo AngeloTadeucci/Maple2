@@ -3,7 +3,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -11,7 +11,7 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemInventoryHandler : PacketHandler<GameSession> {
+public class ItemInventoryHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestItemInventory;
 
     private enum Command : byte {
@@ -89,6 +89,7 @@ public class ItemInventoryHandler : PacketHandler<GameSession> {
     /// <param name="uid">Uid of the item to drop</param>
     /// <param name="amount">The amount to drop. -1 drops the entire stack.</param>
     private void DropItem(GameSession session, long uid, int amount = -1) {
+        if (session.Field is null) return;
         Item? drop = session.Item.Inventory.Get(uid);
         if (drop == null) {
             return;
@@ -113,7 +114,7 @@ public class ItemInventoryHandler : PacketHandler<GameSession> {
             return;
         }
 
-        FieldItem fieldItem = session.Field!.SpawnItem(session.Player, drop);
+        FieldItem fieldItem = session.Field.SpawnItem(session.Player, drop);
         session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
     }
 }

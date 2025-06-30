@@ -5,7 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -13,7 +13,7 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class HomeActionHandler : PacketHandler<GameSession> {
+public class HomeActionHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.HomeAction;
 
     private enum Command : byte {
@@ -109,15 +109,16 @@ public class HomeActionHandler : PacketHandler<GameSession> {
             case BallUpdateCommand.Move:
                 Vector3 velocity2 = packet.Read<Vector3>();
 
-                session.Field.Broadcast(HomeActionPacket.UpdateBall(guideObject, velocity, velocity2), session);
+                session.Field?.Broadcast(HomeActionPacket.UpdateBall(guideObject, velocity, velocity2), session);
                 break;
             case BallUpdateCommand.Hit:
-                session.Field.Broadcast(HomeActionPacket.HitBall(guideObject, velocity));
+                session.Field?.Broadcast(HomeActionPacket.HitBall(guideObject, velocity));
                 break;
         }
     }
 
     private void HandleChangePortalSettings(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         packet.ReadByte();
         Vector3B coord = packet.Read<Vector3B>();
 
@@ -182,7 +183,7 @@ public class HomeActionHandler : PacketHandler<GameSession> {
         cube.Interact.NoticeSettings.Notice = packet.ReadUnicodeString();
         cube.Interact.NoticeSettings.Distance = packet.ReadByte();
 
-        session.Field.Broadcast(HomeActionPacket.SendCubeNoticeSettings(cube, editing: false));
+        session.Field?.Broadcast(HomeActionPacket.SendCubeNoticeSettings(cube, editing: false));
         session.Housing.SaveHome();
     }
 

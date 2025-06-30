@@ -5,20 +5,15 @@ using Maple2.Database.Storage;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
-using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands;
 
 public class BuffCommand : GameCommand {
-    private const string NAME = "buff";
-    private const string DESCRIPTION = "Add buff to player.";
-    public const AdminPermissions RequiredPermission = AdminPermissions.GameMaster;
-
     private readonly GameSession session;
     private readonly SkillMetadataStorage skillStorage;
 
-    public BuffCommand(GameSession session, SkillMetadataStorage skillStorage) : base(RequiredPermission, NAME, DESCRIPTION) {
+    public BuffCommand(GameSession session, SkillMetadataStorage skillStorage) : base(AdminPermissions.GameMaster, "buff", "Add buff to player.") {
         this.session = session;
         this.skillStorage = skillStorage;
 
@@ -41,6 +36,7 @@ public class BuffCommand : GameCommand {
     }
 
     private void Handle(InvocationContext ctx, int buffId, int level, int stack, int duration, bool all, string target, bool remove) {
+        if (session.Field is null) return;
         try {
             if (!skillStorage.TryGetEffect(buffId, (short) level, out AdditionalEffectMetadata? _)) {
                 ctx.Console.Error.WriteLine($"Invalid buff: {buffId}, level: {level}");

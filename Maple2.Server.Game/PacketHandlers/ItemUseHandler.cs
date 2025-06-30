@@ -6,7 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -16,7 +16,7 @@ using static Maple2.Model.Error.CharacterCreateError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemUseHandler : PacketHandler<GameSession> {
+public class ItemUseHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.RequestItemUse;
 
     #region Autofac Autowired
@@ -27,6 +27,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
     #endregion
 
     public override void Handle(GameSession session, IByteReader packet) {
+        if (session.Field is null) return;
         long itemUid = packet.ReadLong();
 
         Item? item = session.Item.Inventory.Get(itemUid);
@@ -288,7 +289,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
 
-        Item? selfBadge = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? selfBadge = session.Field?.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (selfBadge == null) {
             session.Send(NoticePacket.MessageBox(StringCode.s_couple_effect_error_openbox_unknown));
             Logger.Error("Failed to create buddy badge box item: {Parameters}", buddyBadgeBoxParams[0]);
@@ -309,9 +310,9 @@ public class ItemUseHandler : PacketHandler<GameSession> {
         var receiverMail = new Mail() {
             ReceiverId = receiverInfo.CharacterId,
             Type = MailType.System,
-            ContentArgs = new[] {
+            ContentArgs = [
                 ("str", $"{session.PlayerName}"),
-            },
+            ],
         };
 
         receiverMail.SetTitle(StringCode.s_couple_effect_mail_title_receiver);
@@ -324,7 +325,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             throw new InvalidOperationException($"Failed to create buddy badge mail for receiver character id: {receiverInfo.CharacterId}");
         }
 
-        Item? receiverItem = session.Field.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
+        Item? receiverItem = session.Field?.ItemDrop.CreateItem(buddyBadgeBoxParams[0], buddyBadgeBoxParams[1]);
         if (receiverItem == null) {
             throw new InvalidOperationException($"Failed to create buddy badge item: {buddyBadgeBoxParams[0]}");
         }
@@ -525,8 +526,8 @@ public class ItemUseHandler : PacketHandler<GameSession> {
 
         Vector3 position = session.Player.Transform.Position + session.Player.Transform.FrontAxis * distance;
         // TODO: Do we check Z?
-        FieldNpc? fieldNpc = session.Field.SpawnNpc(npcMetadata, position, session.Player.Rotation);
-        if (fieldNpc == null) {
+        FieldNpc? fieldNpc = session.Field?.SpawnNpc(npcMetadata, position, session.Player.Rotation);
+        if (fieldNpc == null || session.Field is null) {
             return;
         }
         session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
@@ -576,10 +577,11 @@ public class ItemUseHandler : PacketHandler<GameSession> {
             return;
         }
         session.Item.Inventory.Consume(item.Uid, 1);
-        session.Field.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
+        session.Field?.AddHongBao(session.Player, item.Id, itemId, totalUser, durationSec, totalCount);
     }
 
     private void HandleAddAdditionalEffect(GameSession session, Item item) {
+        if (session.Field is null) return;
         int[] parameters = item.Metadata.Function?.Parameters.Split(',').Select(int.Parse).ToArray() ?? [];
         if (parameters.Length < 2) {
             return;
@@ -653,6 +655,7 @@ public class ItemUseHandler : PacketHandler<GameSession> {
     }
 
     private void HandleCallAirTaxi(GameSession session, IByteReader packet, Item item) {
+        if (session.Field is null) return;
         string mapIdString = packet.ReadUnicodeString();
 
         if (!int.TryParse(mapIdString, out int mapId)) {

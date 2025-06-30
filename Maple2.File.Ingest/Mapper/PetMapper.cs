@@ -56,7 +56,7 @@ public class PetMapper : TypeMapper<PetMetadata> {
                 OptionLevel: property.optionLevel,
                 OptionFactor: property.constantOptionFactor,
                 Skill: data.skill.id == 0 ? null : new PetMetadataSkill(data.skill.id, data.skill.level),
-                Effect: property.additionalEffectID == null ? Array.Empty<PetMetadataEffect>()
+                Effect: property.additionalEffectID == null ? []
                     : property.additionalEffectID.Zip(property.additionalEffectLevel,
                         (effectId, level) => new PetMetadataEffect(effectId, level)).ToArray(),
                 Distance: new PetMetadataDistance(

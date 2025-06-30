@@ -5,7 +5,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Game.PacketHandlers.Field;
 using Maple2.Server.Game.LuaFunctions;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
@@ -13,7 +13,7 @@ using static Maple2.Model.Error.ItemSocketError;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class ItemSocketHandler : PacketHandler<GameSession> {
+public class ItemSocketHandler : FieldPacketHandler {
     public override RecvOp OpCode => RecvOp.ItemSocketSystem;
 
     private enum Command : byte {
@@ -117,7 +117,7 @@ public class ItemSocketHandler : PacketHandler<GameSession> {
                 Lua.CalcItemSocketUnlockIngredient(0, equip.Rarity, (ushort) equip.Metadata.Limit.Level, 0, equip.Metadata.Property.SkinType);
 
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
+            if (!session.Item.Inventory.Consume([ingredient])) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }
@@ -304,7 +304,7 @@ public class ItemSocketHandler : PacketHandler<GameSession> {
                 return;
             }
 
-            Item? gem = session.Field.ItemDrop.CreateItem(itemGemstone.ItemId, rarity: Constant.GemstoneGrade);
+            Item? gem = session.Field?.ItemDrop.CreateItem(itemGemstone.ItemId, rarity: Constant.GemstoneGrade);
             if (gem == null) {
                 session.Send(ItemSocketPacket.Error(11, error: s_itemsocketsystem_error_server_default));
                 return;
@@ -328,7 +328,7 @@ public class ItemSocketHandler : PacketHandler<GameSession> {
 
             (string tag, int amount) = Lua.CalcGetGemStonePutOffPrice(Constant.GemstoneGrade, (ushort) entry.Level, 0);
             var ingredient = new IngredientInfo(Enum.Parse<ItemTag>(tag), amount);
-            if (!session.Item.Inventory.Consume(new[] { ingredient })) {
+            if (!session.Item.Inventory.Consume([ingredient])) {
                 session.Send(ItemSocketPacket.Error(error: s_itemsocketsystem_error_lack_price));
                 return false;
             }

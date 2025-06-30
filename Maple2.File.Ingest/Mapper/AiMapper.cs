@@ -4,7 +4,6 @@ using Maple2.File.Parser;
 using Maple2.File.Parser.Xml.AI;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
-using System.Numerics;
 
 namespace Maple2.File.Ingest.Mapper;
 

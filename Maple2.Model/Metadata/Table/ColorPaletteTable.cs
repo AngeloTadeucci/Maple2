@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Maple2.Model.Common;
+﻿using Maple2.Model.Common;
 
 namespace Maple2.Model.Metadata;
 

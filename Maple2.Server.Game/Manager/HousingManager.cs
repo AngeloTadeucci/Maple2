@@ -379,6 +379,8 @@ public class HousingManager {
     };
 
     public void InteriorCheckIn(Plot plot) {
+        if (session.Field is null) return;
+
         Dictionary<HousingCategory, int> decorationCurrent = plot.Cubes.Values
             .Where(plotCube => plotCube.Metadata.Housing != null)
             .GroupBy(plotCube => plotCube.Metadata.Housing!.HousingCategory)
@@ -453,7 +455,7 @@ public class HousingManager {
             return;
         }
 
-        Item? rewardItem = session.Field.ItemDrop.CreateItem(reward.RewardJobItemId);
+        Item? rewardItem = session.Field?.ItemDrop.CreateItem(reward.RewardJobItemId);
         if (rewardItem == null) {
             return;
         }
@@ -483,7 +485,7 @@ public class HousingManager {
 
         float groundHeight = 0;
         if (plot.MapId is not Constant.DefaultHomeMapId) {
-            FieldSellableTile? groundTile = session.Field.AccelerationStructure?.FirstSellableTile(position, (x) => x.SellableGroup == plot.Number);
+            FieldSellableTile? groundTile = session.Field?.AccelerationStructure?.FirstSellableTile(position, (x) => x.SellableGroup == plot.Number);
             if (groundTile is null) {
                 session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
                 return false;
@@ -569,7 +571,7 @@ public class HousingManager {
         result.Rotation = rotation;
         if (functionCubeMetadata is not null) {
             result.Interact = new InteractCube(position, functionCubeMetadata);
-            session.Field.AddFieldFunctionInteract(result);
+            session.Field?.AddFieldFunctionInteract(result);
         }
         plot.Cubes.Add(position, result);
         return true;
@@ -582,11 +584,11 @@ public class HousingManager {
         }
 
         if (cube.Interact?.PortalSettings is not null) {
-            session.Field.RemovePortal(cube.Interact.PortalSettings.PortalObjectId);
+            session.Field?.RemovePortal(cube.Interact.PortalSettings.PortalObjectId);
         }
 
         if (cube.Interact is not null) {
-            session.Field.RemoveFieldFunctionInteract(cube.Interact.Id);
+            session.Field?.RemoveFieldFunctionInteract(cube.Interact.Id);
         }
 
         if (plot.IsPlanner) {
@@ -661,6 +663,7 @@ public class HousingManager {
     }
 
     public void ApplyLayout(Plot plot, HomeLayout layout, bool isBlueprint = false) {
+        if (session.Field is null) return;
         if (plot.IsPlanner) {
             Home.SetPlannerArea(layout.Area);
             Home.SetPlannerHeight(layout.Height);

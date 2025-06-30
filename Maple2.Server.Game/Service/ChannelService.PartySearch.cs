@@ -1,8 +1,6 @@
 ﻿using Grpc.Core;
 using Maple2.Model.Error;
-using Maple2.Model.Game;
 using Maple2.Model.Game.Party;
-using Maple2.Server.Channel.Service;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 
@@ -56,13 +54,13 @@ public partial class ChannelService {
         foreach (long receiverId in receiverIds) {
             if (!server.GetSession(receiverId, out GameSession? session)) {
                 return new PartySearchResponse {
-                    Error = (int) PartySearchError.s_partysearch_err_server_db
+                    Error = (int) PartySearchError.s_partysearch_err_server_db,
                 };
             }
 
             if (partyId != session.Party.Party?.Id) {
                 return new PartySearchResponse {
-                    Error = (int) PartySearchError.s_partysearch_err_server_db
+                    Error = (int) PartySearchError.s_partysearch_err_server_db,
                 };
             }
 

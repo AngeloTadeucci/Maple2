@@ -29,7 +29,7 @@ public class AiState {
     private enum DecisionTreeType {
         None,
         Battle,
-        BattleEnd
+        BattleEnd,
     }
 
     public AiState(FieldNpc actor, string aiPath) {
@@ -164,7 +164,11 @@ public class AiState {
 
             int nextIndex = entry.LockIndex ? entry.Node.Entries.Length : index + 1;
 
-            aiStack[last] = new StackEntry() { Node = entry.Node, Index = nextIndex, LockIndex = entry.LockIndex };
+            aiStack[last] = new StackEntry() {
+                Node = entry.Node,
+                Index = nextIndex,
+                LockIndex = entry.LockIndex,
+            };
 
             Process(entry.Node.Entries[index]);
 
@@ -186,7 +190,9 @@ public class AiState {
     }
 
     private void Push(Node node) {
-        aiStack.Add(new StackEntry() { Node = node });
+        aiStack.Add(new StackEntry() {
+            Node = node,
+        });
     }
 
     private void Push(AiPreset aiPreset) {
@@ -352,13 +358,18 @@ public class AiState {
     private void ProcessNode(TeleportNode node) {
         actor.Position = node.Pos;
 
-        Vector3 facePos = actor.BattleState.Target?.Position ?? new Vector3(0, 0, 0);
-
-        if (node.Pos != new Vector3(0, 0, 0)) {
-            facePos = node.Pos;
+        if (node.FacePos == new Vector3(0, 0, 0)) {
+            return;
         }
 
-        actor.Transform.LookTo(Vector3.Normalize(facePos - actor.Position));
+        Vector3 offset = node.FacePos - actor.Position;
+        float squareDistance = offset.LengthSquared();
+
+        if (MathF.Abs(squareDistance) < 1e-5f) {
+            return;
+        }
+
+        actor.Transform.LookTo((1 / MathF.Sqrt(squareDistance)) * offset);
     }
 
     private void ProcessNode(StandbyNode node) {
@@ -418,9 +429,7 @@ public class AiState {
         Push(passed);
     }
 
-    private void ProcessNode(JumpNode node) {
-
-    }
+    private void ProcessNode(JumpNode node) { }
 
     private void ProcessNode(SelectNode node) {
         var weightedEntries = new WeightedSet<(Entry, int)>();
@@ -439,7 +448,11 @@ public class AiState {
 
         (Entry entry, int index) selected = weightedEntries.Get();
 
-        aiStack[aiStack.Count - 1] = new StackEntry { Node = node, Index = selected.index, LockIndex = true };
+        aiStack[aiStack.Count - 1] = new StackEntry {
+            Node = node,
+            Index = selected.index,
+            LockIndex = true,
+        };
 
         Push(selected.entry);
         Process(selected.entry);
@@ -451,25 +464,17 @@ public class AiState {
         SetNodeTask(task, node.Limit);
     }
 
-    private void ProcessNode(SummonNode node) {
-
-    }
+    private void ProcessNode(SummonNode node) { }
 
     private void ProcessNode(TriggerSetUserValueNode node) {
         actor.Field.UserValues[node.Key] = node.Value;
     }
 
-    private void ProcessNode(RideNode node) {
+    private void ProcessNode(RideNode node) { }
 
-    }
+    private void ProcessNode(SetSlaveValueNode node) { }
 
-    private void ProcessNode(SetSlaveValueNode node) {
-
-    }
-
-    private void ProcessNode(SetMasterValueNode node) {
-
-    }
+    private void ProcessNode(SetMasterValueNode node) { }
 
     private void ProcessNode(RunawayNode node) {
         if (!actor.Field.TryGetActor(actor.BattleState.TargetId, out IActor? target)) {
@@ -532,9 +537,7 @@ public class AiState {
         actor.Field.Broadcast(NpcNoticePacket.TargetEffect(actor.BattleState.TargetId, node.EffectName));
     }
 
-    private void ProcessNode(ShowVibrateNode node) {
-
-    }
+    private void ProcessNode(ShowVibrateNode node) { }
 
     private void ProcessNode(SidePopupNode node) {
         actor.Field.Broadcast(NpcNoticePacket.SidePopup(node.Type, node.Duration, node.Illust, node.Voice, node.Script, node.Sound));
@@ -579,28 +582,19 @@ public class AiState {
         actor.Field.Broadcast(NpcNoticePacket.Announce(node.Message, node.DurationTick));
     }
 
-    private void ProcessNode(ModifyRoomTimeNode node) {
-    }
+    private void ProcessNode(ModifyRoomTimeNode node) { }
 
-    private void ProcessNode(HideVibrateAllNode node) {
-
-    }
+    private void ProcessNode(HideVibrateAllNode node) { }
 
     private void ProcessNode(TriggerModifyUserValueNode node) {
         actor.Field.UserValues[node.Key] = node.Value;
     }
 
-    private void ProcessNode(RemoveSlavesNode node) {
+    private void ProcessNode(RemoveSlavesNode node) { }
 
-    }
+    private void ProcessNode(CreateRandomRoomNode node) { }
 
-    private void ProcessNode(CreateRandomRoomNode node) {
-
-    }
-
-    private void ProcessNode(CreateInteractObjectNode node) {
-
-    }
+    private void ProcessNode(CreateInteractObjectNode node) { }
 
     private void ProcessNode(RemoveMeNode node) {
         actor.Field.RemoveNpc(actor.ObjectId);
@@ -700,7 +694,7 @@ public class AiState {
         return node.TargetState switch {
             AiConditionTargetState.GrabTarget => state == ActorState.GrabTarget,
             AiConditionTargetState.HoldMe => state == ActorState.Hold,
-            _ => false
+            _ => false,
         };
     }
 

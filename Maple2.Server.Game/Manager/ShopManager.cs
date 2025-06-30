@@ -9,7 +9,6 @@ using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
-using Microsoft.Scripting.Utils;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager;
@@ -204,13 +203,16 @@ public sealed class ShopManager {
             return new SortedDictionary<int, ShopItem>();
         }
 
-
         if (metadata.EnableReset) {
             int minItemCount = metadata.RestockData.MinItemCount;
             if (shopItemMetadatas.Count < metadata.RestockData.MinItemCount) {
                 minItemCount = shopItemMetadatas.Count;
             }
-            while (items.Count < minItemCount) {
+
+            int failSafe = 0;
+            const int maxIterations = 10;
+
+            while (items.Count < minItemCount && failSafe < maxIterations) {
                 foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
                     if (items.Count >= metadata.RestockData.MaxItemCount) {
                         break;
@@ -224,7 +226,7 @@ public sealed class ShopManager {
                         continue;
                     }
 
-                    Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                    Item? item = session.Field?.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
                     if (item == null) {
                         continue;
                     }
@@ -234,10 +236,14 @@ public sealed class ShopManager {
                     };
                     items.Add(shopItemMetadata.Id, shopItem);
                 }
+                failSafe++;
+            }
+            if (failSafe >= maxIterations) {
+                logger.Warning("GetShopItems: Fail safe triggered after {MaxIterations} iterations for shop {ShopId}", maxIterations, metadata.Id);
             }
         } else {
             foreach (ShopItemMetadata shopItemMetadata in shopItemMetadatas.Values) {
-                Item? item = session.Field.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
+                Item? item = session.Field?.ItemDrop.CreateItem(shopItemMetadata.ItemId, shopItemMetadata.Rarity, shopItemMetadata.SellUnit);
                 if (item == null) {
                     continue;
                 }
@@ -573,9 +579,9 @@ public sealed class ShopManager {
                 break;
             case ShopCurrencyType.Item:
                 var ingredient = new ItemComponent(cost.ItemId, -1, price, ItemTag.None);
-                if (!session.Item.Inventory.ConsumeItemComponents(new[] {
-                        ingredient
-                    })) {
+                if (!session.Item.Inventory.ConsumeItemComponents([
+                        ingredient,
+                    ])) {
                     session.Send(ShopPacket.Error(ShopError.s_err_lack_payment_item, 0, cost.ItemId));
                     return false;
                 }

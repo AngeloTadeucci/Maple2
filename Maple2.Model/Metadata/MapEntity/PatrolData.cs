@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace Maple2.Model.Metadata;
 
@@ -19,5 +18,6 @@ public record MS2WayPoint(
     Vector3 Rotation,
     string ApproachAnimation,
     string ArriveAnimation,
-    int ArriveAnimationTime
+    int ArriveAnimationTime,
+    bool AirWayPoint
 );

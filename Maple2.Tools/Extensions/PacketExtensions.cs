@@ -109,7 +109,7 @@ public static class PacketExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ICollection<T> ReadCollection<T>(this IByteReader packet) where T : struct {
         if (packet.Available < INT_SIZE) {
-            return Array.Empty<T>();
+            return [];
         }
 
         int count = packet.ReadInt();

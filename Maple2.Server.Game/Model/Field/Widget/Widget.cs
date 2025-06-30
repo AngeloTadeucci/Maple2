@@ -8,6 +8,9 @@ public class Widget : IWidget {
     public ConcurrentDictionary<string, int> Conditions { get; set; }
     public virtual void Action(string function, int numericArg, string stringArg) {
     }
+    public virtual bool Check(string name, string arg) {
+        return false;
+    }
 
     public Widget(FieldManager field) {
         Field = field;

@@ -10,7 +10,6 @@ using Account = Maple2.Model.Game.Account;
 using Character = Maple2.Model.Game.Character;
 using SkillMacro = Maple2.Model.Game.SkillMacro;
 using SkillBook = Maple2.Model.Game.SkillBook;
-using SkillCooldown = Maple2.Model.Game.SkillCooldown;
 using SkillTab = Maple2.Model.Game.SkillTab;
 using SkillPoint = Maple2.Model.Game.SkillPoint;
 using Wardrobe = Maple2.Model.Game.Wardrobe;
@@ -38,6 +37,7 @@ public partial class GameStorage {
                 return true;
             }
 #endif
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             return account != null && BCrypt.Net.BCrypt.Verify(password, account.Password);
         }
 
@@ -80,6 +80,7 @@ public partial class GameStorage {
                 Character? characterFind = Context.Character.Find(characterId);
                 if (characterFind != null) {
                     characterFind.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                    characterFind.MarriageInfo = GetMarriageInfo(characterId);
                 }
                 return characterFind;
             }
@@ -89,6 +90,7 @@ public partial class GameStorage {
                 character.Id == characterId && character.AccountId == accountId);
             if (character != null) {
                 character.AchievementInfo = GetAchievementInfo(accountId, characterId);
+                character.MarriageInfo = GetMarriageInfo(characterId);
                 Account? accountFind = Context.Account.Find(accountId);
                 character.PremiumTime = accountFind?.PremiumTime ?? 0;
             }
@@ -107,25 +109,25 @@ public partial class GameStorage {
                           join indoor in Context.UgcMap on
                               new {
                                   OwnerId = character.AccountId,
-                                  Indoor = true
+                                  Indoor = true,
                               } equals new {
                                   indoor.OwnerId,
-                                  indoor.Indoor
+                                  indoor.Indoor,
                               }
                           join outdoor in Context.UgcMap on
                               new {
                                   OwnerId = character.AccountId,
-                                  Indoor = false
+                                  Indoor = false,
                               } equals new {
                                   outdoor.OwnerId,
-                                  outdoor.Indoor
+                                  outdoor.Indoor,
                               } into plot
                           from outdoor in plot.DefaultIfEmpty()
                           select new {
                               character,
                               indoor,
                               outdoor,
-                              account.PremiumTime
+                              account.PremiumTime,
                           })
                 .FirstOrDefault();
             if (result == null) {
@@ -253,16 +255,15 @@ public partial class GameStorage {
                 },
                 Unlock = Context.CharacterUnlock.Find(characterId),
                 Home = home,
+                Character = {
+                    GuildId = guild.Item1,
+                    GuildName = guild.Item2,
+                    ClubIds = clubs.Select(club => club.Item1).ToList(),
+                    AchievementInfo = GetAchievementInfo(accountId, characterId),
+                    MarriageInfo = GetMarriageInfo(characterId),
+                    PremiumTime = account.PremiumTime,
+                },
             };
-
-            player.Character.GuildId = guild.Item1;
-            player.Character.GuildName = guild.Item2;
-
-            player.Character.ClubIds = clubs.Select(club => club.Item1).ToList();
-
-            player.Character.AchievementInfo = GetAchievementInfo(accountId, characterId);
-            player.Character.MarriageInfo = GetMarriageInfo(characterId);
-            player.Character.PremiumTime = account.PremiumTime;
 
             return player;
         }
@@ -396,13 +397,11 @@ public partial class GameStorage {
                 attribute => attribute,
                 attribute => allocation[attribute]);
             config.StatPoints = statSources.Points;
-            config.SkillPoint = skillPoint.Points.SelectMany(
-                    point => point.Value.Ranks.Select(
-                        rankPoint => new Model.SkillPoint {
-                            Source = point.Key,
-                            Rank = rankPoint.Key,
-                            Points = rankPoint.Value,
-                        }))
+            config.SkillPoint = skillPoint.Points.SelectMany(point => point.Value.Ranks.Select(rankPoint => new Model.SkillPoint {
+                Source = point.Key,
+                Rank = rankPoint.Key,
+                Points = rankPoint.Value,
+            }))
                 .ToList();
             config.GatheringCounts = gatheringCounts;
             config.GuideRecords = guideRecords;
@@ -436,7 +435,7 @@ public partial class GameStorage {
             Context.SaveChanges(); // Exception if failed.
 
             Context.Home.Add(new Home {
-                AccountId = model.Id
+                AccountId = model.Id,
             });
             Context.UgcMap.Add(new UgcMap {
                 OwnerId = model.Id,
@@ -455,7 +454,7 @@ public partial class GameStorage {
             model.Channel = -1;
 #if DEBUG
             model.Currency = new CharacterCurrency {
-                Meso = 999999999
+                Meso = 999999999,
             };
 #endif
             Context.Character.Add(model);
@@ -468,7 +467,7 @@ public partial class GameStorage {
             Context.CharacterUnlock.Add(model);
 
             SkillTab? defaultTab = CreateSkillTab(characterId, new SkillTab("Build 1") {
-                Id = characterId
+                Id = characterId,
             });
             if (defaultTab == null) {
                 return false;

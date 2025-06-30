@@ -285,6 +285,7 @@ public static class FieldPacket {
     private static void WriteCharacter(this IByteWriter writer, GameSession session) {
         Account account = session.Player.Value.Account;
         Character character = session.Player.Value.Character;
+        int returnMapId = character.ReturnMaps.Peek();
         writer.WriteLong(account.Id);
         writer.WriteLong(character.Id);
         writer.WriteUnicodeString(character.Name);
@@ -292,7 +293,7 @@ public static class FieldPacket {
         writer.WriteByte(1);
         writer.WriteLong(character.AccountId);
         writer.WriteInt();
-        writer.WriteInt(character.ReturnMapId);
+        writer.WriteInt(returnMapId);
         writer.WriteInt(character.MapId);
         writer.WriteInt(character.RoomId);
         writer.WriteShort(character.Level);
@@ -305,7 +306,7 @@ public static class FieldPacket {
         writer.WriteLong();
         writer.WriteLong(character.StorageCooldown);
         writer.WriteLong(character.DoctorCooldown);
-        writer.WriteInt(character.ReturnMapId);
+        writer.WriteInt(returnMapId);
         writer.Write<Vector3>(character.ReturnPosition);
         writer.WriteInt(session.Stats.Values.GearScore);
         writer.Write<SkinColor>(character.SkinColor);

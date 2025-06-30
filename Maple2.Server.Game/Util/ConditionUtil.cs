@@ -62,6 +62,7 @@ public static class ConditionUtil {
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.item_add:
+            case ConditionType.item_destroy:
             case ConditionType.beauty_add:
             case ConditionType.beauty_change_color:
             case ConditionType.beauty_random:
@@ -117,6 +118,8 @@ public static class ConditionUtil {
             case ConditionType.revise_achieve_multi_grade:
             case ConditionType.revise_achieve_single_grade:
             case ConditionType.hero_achieve_grade:
+            case ConditionType.stay_map:
+            case ConditionType.stay_cube:
                 if (code.Range != null && InRange((ConditionMetadata.Range<int>) code.Range, (int) longValue)) {
                     return true;
                 }
@@ -171,6 +174,7 @@ public static class ConditionUtil {
             case ConditionType.chat:
             case ConditionType.send_mail:
             case ConditionType.change_ugc_equip:
+            case ConditionType.unlimited_enchant:
                 return true;
         }
         return false;
@@ -178,6 +182,11 @@ public static class ConditionUtil {
 
     private static bool CheckTarget(this ConditionMetadata.Parameters target, GameSession session, ConditionType conditionType, string stringValue = "", long longValue = 0) {
         switch (conditionType) {
+            case ConditionType.stay_cube:
+                if (target.Strings != null && target.Strings.Contains(stringValue)) {
+                    return true;
+                }
+                break;
             case ConditionType.emotiontime:
             case ConditionType.emotion:
                 if (target.Range != null && target.Range.Value.Min >= session.Player.Value.Character.MapId &&
@@ -262,6 +271,7 @@ public static class ConditionUtil {
             case ConditionType.music_play_ensemble:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
+            case ConditionType.item_destroy:
             case ConditionType.beauty_add:
             case ConditionType.beauty_change_color:
             case ConditionType.beauty_random:
@@ -312,6 +322,7 @@ public static class ConditionUtil {
             case ConditionType.taxifee:
             case ConditionType.send_mail:
             case ConditionType.change_ugc_equip:
+            case ConditionType.unlimited_enchant:
                 return true;
         }
         return false;

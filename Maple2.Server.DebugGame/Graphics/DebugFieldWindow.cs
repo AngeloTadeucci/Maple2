@@ -1,17 +1,10 @@
-﻿using ImGuiNET;
-using Maple2.Server.DebugGame.Graphics.Assets;
-using Maple2.Server.DebugGame.Graphics.Resources;
-using Maple2.Server.Game.Model;
-using Serilog;
+﻿using Serilog;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
-using System.Drawing;
-using static Community.CsharpSqlite.Sqlite3;
-using static Maple2.Server.Game.Manager.Field.FieldManager;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -120,7 +113,7 @@ public class DebugFieldWindow {
             SwapEffect = SwapEffect.FlipDiscard, // don't keep old output from previous frames
             SampleDesc = new SampleDesc(
                 count: 1, // 1 buffer sample per pixel (AA needs more)
-                quality: 0) // no antialiasing
+                quality: 0), // no antialiasing
         };
 
         unsafe {

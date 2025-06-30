@@ -4,7 +4,6 @@ using Maple2.File.Flat.maplestory2library;
 using Maple2.File.Flat.physxmodellibrary;
 using Maple2.File.Flat.standardmodellibrary;
 using Maple2.File.Ingest.Helpers;
-using Maple2.File.IO;
 using Maple2.File.Parser.MapXBlock;
 using Maple2.Model.Common;
 using Maple2.Model.Game.Field;
@@ -26,15 +25,15 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     private readonly HashSet<string> xBlocks;
     private readonly XBlockParser parser;
 
-    private readonly StatsTracker mapByteStats = new();
-    private readonly StatsTracker mapGridByteStats = new();
-    private readonly StatsTracker mapGridBytePercentStats = new();
-    private readonly StatsTracker mapXStats = new();
-    private readonly StatsTracker mapYStats = new();
-    private readonly StatsTracker mapZStats = new();
-    private readonly StatsTracker alignedStats = new();
-    private readonly StatsTracker alignedTrimmedStats = new();
-    private readonly StatsTracker unalignedStats = new();
+    private readonly StatsTracker mapByteStats = new StatsTracker();
+    private readonly StatsTracker mapGridByteStats = new StatsTracker();
+    private readonly StatsTracker mapGridBytePercentStats = new StatsTracker();
+    private readonly StatsTracker mapXStats = new StatsTracker();
+    private readonly StatsTracker mapYStats = new StatsTracker();
+    private readonly StatsTracker mapZStats = new StatsTracker();
+    private readonly StatsTracker alignedStats = new StatsTracker();
+    private readonly StatsTracker alignedTrimmedStats = new StatsTracker();
+    private readonly StatsTracker unalignedStats = new StatsTracker();
     private readonly HashSet<string> invalidLlids = [];
     private readonly HashSet<uint> missingLlids = [];
 
@@ -125,13 +124,14 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         Position: placeable.Position - new Vector3(0, 0, 0.5f * whitebox.ShapeDimensions.Z),
                         Rotation: placeable.Rotation,
                         Scale: placeable.Scale,
-                        Bounds: entityBounds,
+                        Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                         Size: whitebox.ShapeDimensions,
                         IsWhiteBox: true,
-                        IsFluid: false);
+                        IsFluid: false,
+                        MapAttribute: MapAttribute.none);
                     break;
                 case IMesh mesh:
-                    if (entity is IMS2Vibrate vibrate && vibrate.Enabled) {
+                    if (entity is IMS2Vibrate { Enabled: true } vibrate) {
                         entityBounds.Min = -new Vector3(HALF_BLOCK, HALF_BLOCK, 0);
                         entityBounds.Max = new Vector3(HALF_BLOCK, HALF_BLOCK, BLOCK_SIZE);
 
@@ -140,7 +140,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Position: placeable.Position,
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
-                            Bounds: entityBounds,
+                            Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                             BreakDefense: vibrate.brokenDefence,
                             BreakTick: vibrate.brokenTick,
                             VibrateIndex: vibrateObjectId++);
@@ -156,7 +156,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Position: placeable.Position,
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
-                            Bounds: entityBounds,
+                            Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                             SellableGroup: cube.CubeSalableGroup
                         );
 
@@ -164,12 +164,14 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                     }
 
                     bool isFluid = false;
-
+                    var attribute = MapAttribute.none;
                     if (entity is IMS2MapProperties meshMapProperties) {
                         if (meshMapProperties.DisableCollision) {
                             continue;
                         }
 
+                        isFluid = meshMapProperties.CubeType == "Fluid";
+                        attribute = Enum.TryParse(meshMapProperties.MapAttribute, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none;
                         if (meshMapProperties.GeneratePhysX) {
                             var meshPhysXDimension = new Vector3(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
@@ -185,20 +187,18 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                                 Position: placeable.Position,
                                 Rotation: placeable.Rotation,
                                 Scale: placeable.Scale,
-                                Bounds: entityBounds,
+                                Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                                 Size: meshPhysXDimension,
                                 IsWhiteBox: false,
-                                IsFluid: meshMapProperties.CubeType == "Fluid");
+                                IsFluid: isFluid,
+                                MapAttribute: attribute);
 
                             break;
                         }
-
-                        isFluid = meshMapProperties.CubeType == "Fluid";
                     }
 
-                    if (mesh.NifAsset.Length < 9 || mesh.NifAsset.Substring(0, 9).ToLower() != "urn:llid:") {
-                        if (!invalidLlids.Contains(mesh.NifAsset)) {
-                            invalidLlids.Add(mesh.NifAsset);
+                    if (mesh.NifAsset.Length < 9 || !mesh.NifAsset[..9].Equals("urn:llid:", StringComparison.CurrentCultureIgnoreCase)) {
+                        if (invalidLlids.Add(mesh.NifAsset)) {
                             Console.WriteLine($"Non llid NifAsset: '{mesh.NifAsset}'");
                         }
 
@@ -213,8 +213,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                     uint llid = Convert.ToUInt32(mesh.NifAsset.Substring(mesh.NifAsset.LastIndexOf(':') + 1, 8), 16);
 
                     if (!NifParserHelper.nifBounds.TryGetValue(llid, out entityBounds)) {
-                        if (!missingLlids.Contains(llid)) {
-                            missingLlids.Add(llid);
+                        if (missingLlids.Add(llid)) {
                             Console.WriteLine($"NIF with LLID {llid:X} not found");
                         }
 
@@ -228,10 +227,11 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                             Rotation: placeable.Rotation,
                             Scale: placeable.Scale,
                             LiquidType: Enum.TryParse(fluidMapProperties.MapAttribute, out LiquidType liquidType) ? liquidType : LiquidType.none,
-                            Bounds: entityBounds,
+                            Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                             MeshLlid: llid,
                             IsShallow: false,
-                            IsSurface: true);
+                            IsSurface: true,
+                            MapAttribute: attribute);
                         break;
                     }
 
@@ -240,9 +240,9 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         Position: placeable.Position,
                         Rotation: placeable.Rotation,
                         Scale: placeable.Scale,
-                        Bounds: entityBounds,
-                        MeshLlid: llid);
-
+                        Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
+                        MeshLlid: llid,
+                        MapAttribute: attribute);
                     break;
                 case IMS2MapProperties mapProperties: // GeneratePhysX
                     if (mapProperties.DisableCollision) {
@@ -267,11 +267,11 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
                         Position: placeable.Position,
                         Rotation: placeable.Rotation,
                         Scale: placeable.Scale,
-                        Bounds: entityBounds,
+                        Bounds: BoundingBox3.Transform(entityBounds, transform.Transformation),
                         Size: physXDimension,
                         IsWhiteBox: false,
-                        IsFluid: false);
-
+                        IsFluid: false,
+                        MapAttribute: MapAttribute.none);
                     break;
                 default:
                     continue;
@@ -312,7 +312,7 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     }
 
     private static byte[] GetEmptyMap() {
-        FieldAccelerationStructure mapData = new();
+        var mapData = new FieldAccelerationStructure();
 
         var writer = new ByteWriter();
 

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Maple2.Model.Error;
+﻿using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Game.GroupChat;
 using Serilog;

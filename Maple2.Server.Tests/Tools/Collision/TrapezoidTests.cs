@@ -45,9 +45,11 @@ public class TrapezoidTests {
 
         var insidePoint = new Vector2(1.5f, 1.5f);
         Assert.That(trapezoid.Contains(insidePoint), Is.True);
-        var edgePoint = new Vector2(2, 2);
-        Assert.That(trapezoid.Contains(edgePoint), Is.False);
-        var outsidePoint = new Vector2(2, 2);
-        Assert.That(trapezoid.Contains(outsidePoint), Is.False);
+
+        var onEdgePoint = new Vector2(2, 2);
+        Assert.That(trapezoid.Contains(onEdgePoint), Is.False, "Point on edge should be considered outside");
+
+        var outsidePoint = new Vector2(5, 5);
+        Assert.That(trapezoid.Contains(outsidePoint), Is.False, "Point clearly outside should be considered outside");
     }
 }

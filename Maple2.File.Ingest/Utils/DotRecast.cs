@@ -99,7 +99,7 @@ internal class InputGeomProvider : IInputGeomProvider {
             verts = verts,
             hmin = minh,
             hmax = maxh,
-            areaMod = areaMod
+            areaMod = areaMod,
         });
     }
 
