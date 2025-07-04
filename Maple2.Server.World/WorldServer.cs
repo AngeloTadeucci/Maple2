@@ -2,11 +2,13 @@
 using Grpc.Core;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
 using Maple2.Server.World.Containers;
+using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
@@ -19,6 +21,7 @@ public class WorldServer {
     private readonly GameStorage gameStorage;
     private readonly ChannelClientLookup channelClients;
     private readonly ServerTableMetadataStorage serverTableMetadata;
+    private readonly ItemMetadataStorage itemMetadata;
     private readonly GlobalPortalLookup globalPortalLookup;
     private readonly PlayerInfoLookup playerInfoLookup;
     private readonly Thread thread;
@@ -32,13 +35,14 @@ public class WorldServer {
 
     private readonly LoginClient login;
 
-    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup, PlayerInfoLookup playerInfoLookup, LoginClient login) {
+    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup, PlayerInfoLookup playerInfoLookup, LoginClient login, ItemMetadataStorage itemMetadata) {
         this.gameStorage = gameStorage;
         this.channelClients = channelClients;
         this.serverTableMetadata = serverTableMetadata;
         this.globalPortalLookup = globalPortalLookup;
         this.playerInfoLookup = playerInfoLookup;
         this.login = login;
+        this.itemMetadata = itemMetadata;
         scheduler = new EventQueue();
         scheduler.Start();
         memoryStringBoards = [];
@@ -48,6 +52,7 @@ public class WorldServer {
         StartDailyReset();
         StartWorldEvents();
         ScheduleGameEvents();
+        FieldPlotExpiryCheck();
         thread = new Thread(Loop);
         thread.Start();
 
@@ -235,6 +240,118 @@ public class WorldServer {
         // Remove Events
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.EndTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
             scheduler.Schedule(() => RemoveGameEvent(data.Id), TimeSpan.FromSeconds(data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+        }
+    }
+
+    public void FieldPlotExpiryCheck() {
+        using GameStorage.Request db = gameStorage.Context();
+        // Get all plots that have expired but are not yet pending
+        List<PlotInfo> expiredPlots = db.GetPlotsToExpire();
+        if (expiredPlots.Count > 0) {
+            foreach (PlotInfo plot in expiredPlots) {
+                bool forfeit = false;
+                if (plot.OwnerId > 0 && plot.ExpiryTime < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                    SetPlotAsPending(db, plot);
+                    forfeit = true;
+                    // mark as open when 3 days has passed since the expiry time
+                } else if (plot.OwnerId == 0 && plot.ExpiryTime + Constant.UgcHomeSaleWaitingTime.TotalSeconds < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                    logger.Information("Marking plot {PlotId} as open (no owner)", plot.Id);
+                    db.SetPlotOpen(plot.Id); // Mark as open
+                } else {
+                    continue; // Still valid, skip
+                }
+
+                // Notify channels about the expired plots
+                foreach ((int _, ChannelClient channelClient) in channelClients) {
+                    logger.Information("Notifying channel about expired plot {PlotId}", plot.Id);
+                    channelClient.UpdateFieldPlot(new FieldPlotRequest {
+                        MapId = plot.MapId,
+                        PlotNumber = plot.Number,
+                        UpdatePlot = new FieldPlotRequest.Types.UpdatePlot() {
+                            AccountId = plot.OwnerId,
+                            Forfeit = forfeit,
+                        },
+                    });
+                }
+            }
+        }
+
+        // Schedule next check for the next soonest expiry
+        PlotInfo? nextPlot = db.GetSoonestPlotFromExpire();
+        TimeSpan delay;
+        if (nextPlot is not null) {
+            DateTimeOffset nextExpiry = DateTimeOffset.FromUnixTimeSeconds(nextPlot.ExpiryTime);
+            delay = nextExpiry - DateTimeOffset.UtcNow;
+            if (delay < TimeSpan.Zero) {
+                delay = TimeSpan.Zero;
+            }
+        } else {
+            delay = TimeSpan.FromDays(1); // Default to 1 day if no plots are found
+        }
+        scheduler.Schedule(FieldPlotExpiryCheck, delay);
+    }
+
+    // Marks a plot as pending, removes its cubes, and adds them to the owner's inventory.
+    private void SetPlotAsPending(GameStorage.Request db, PlotInfo plot) {
+        logger.Information("Marking plot {PlotId} as pending (owner: {OwnerId})", plot.Id, plot.OwnerId);
+
+        db.SetPlotPending(plot.Id);
+
+        Plot? outdoorPlot = db.GetOutdoorPlotInfo(plot.Number, plot.MapId);
+        if (outdoorPlot == null) {
+            logger.Warning("Outdoor plot not found for plot id {PlotId}", plot.Id);
+            return;
+        }
+
+        List<Item>? items = db.GetItemGroups(plot.OwnerId, ItemGroup.Furnishing).GetValueOrDefault(ItemGroup.Furnishing);
+        if (items == null) {
+            logger.Warning("No furnishing items found for owner id {OwnerId}", outdoorPlot.OwnerId);
+            return;
+        }
+
+        var changedItems = new List<Item>();
+
+        foreach (PlotCube cube in outdoorPlot.Cubes.Values.ToList()) {
+            // remove cube from plot
+            db.DeleteCube(cube);
+
+            // add item to account inventory
+            Item? stored = items.FirstOrDefault(existing => existing.Id == cube.ItemId && existing.Template?.Url == cube.Template?.Url);
+            if (stored == null) {
+                Item? item = CreateItem(cube.ItemId);
+                if (item == null) {
+                    continue;
+                }
+                item.Group = ItemGroup.Furnishing;
+                db.CreateItem(outdoorPlot.OwnerId, item);
+                continue;
+            }
+
+            stored.Amount += 1;
+            if (!changedItems.Contains(stored)) {
+                changedItems.Add(stored);
+            }
+        }
+
+        if (changedItems.Count > 0) {
+            db.SaveItems(plot.OwnerId, changedItems.ToArray());
+        }
+        return;
+
+        Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
+            if (!itemMetadata.TryGet(itemId, out ItemMetadata? metadata)) {
+                return null;
+            }
+
+            if (rarity <= 0) {
+                if (metadata.Option != null && metadata.Option.ConstantId is < 6 and > 0) {
+                    rarity = metadata.Option.ConstantId;
+                } else {
+                    rarity = 1;
+                }
+            }
+
+            return new Item(metadata, rarity, amount);
         }
     }
 

@@ -53,6 +53,8 @@ public sealed partial class GameSession : Core.Network.Session {
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
 
+    public int Channel { get; private set; }
+
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     // ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -140,6 +142,7 @@ public sealed partial class GameSession : Core.Network.Session {
         AccountId = accountId;
         CharacterId = characterId;
         MachineId = machineId;
+        Channel = channel;
 
         State = SessionState.ChangeMap;
         server.OnConnected(this);
@@ -651,7 +654,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 OwnerId = AccountId,
                 InstancedContent = true,
                 Type = (World.Service.MigrationType) plotMode,
-                RoomId = -1,
+                RoomId = plotMode is not PlotMode.Normal ? -1 : 0,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);

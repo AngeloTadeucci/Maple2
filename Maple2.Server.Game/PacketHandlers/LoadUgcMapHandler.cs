@@ -44,6 +44,7 @@ public class LoadUgcMapHandler : FieldPacketHandler {
         }
 
         using GameStorage.Request db = GameStorage.Context();
+        // get home from db because session.Player.Value will not always be the owner of the home
         Home? home = db.GetHome(homeFieldManager.OwnerId);
         if (home == null) {
             return;
@@ -79,11 +80,10 @@ public class LoadUgcMapHandler : FieldPacketHandler {
         if (session.Field is null) return;
         lock (session.Field.Plots) {
             List<Plot> allPlots = session.Field.Plots.Values.ToList();
-            List<Plot> ownedPlots = allPlots.Where(x => x.State is not PlotState.Open).ToList();
-            session.Send(LoadCubesPacket.PlotOwners(ownedPlots));
+            session.Send(LoadCubesPacket.PlotOwners(allPlots.Where(x => x.State is PlotState.Taken).ToList()));
             session.Send(LoadCubesPacket.Load(plotCubes));
             session.Send(LoadCubesPacket.PlotState(allPlots));
-            session.Send(LoadCubesPacket.PlotExpiry(ownedPlots));
+            session.Send(LoadCubesPacket.PlotExpiry(allPlots.Where(x => x.State is not PlotState.Open).ToList()));
         }
     }
 }

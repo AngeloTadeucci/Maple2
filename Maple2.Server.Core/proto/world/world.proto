@@ -62,6 +62,8 @@ service World {
   // Acquire and release locks for database operations.
   rpc AcquireLock (LockRequest) returns (LockResponse);
   rpc ReleaseLock (LockRequest) returns (LockResponse);
+  // Field plot
+  rpc UpdateFieldPlot(maple2.FieldPlotRequest) returns (maple2.FieldPlotResponse);
 }
 
 enum Server {

@@ -275,7 +275,7 @@ public static class Constant {
     public const int UgcBoundaryStartDistance = 1;
     public const int UgcBoundaryEndDistance = 7;
     public const int DurationForBoundaryDisplay = 3000;
-    public const int UgcHomeSaleWaitingTime = 259200;
+    public static TimeSpan UgcHomeSaleWaitingTime = TimeSpan.FromSeconds(259200);
     public const int UgcContainerExpireDurationNormal = 90;
     public const int UgcContainerExpireDurationCash = 365;
     public const int UgcContainerExpireDurationMeret = 365;

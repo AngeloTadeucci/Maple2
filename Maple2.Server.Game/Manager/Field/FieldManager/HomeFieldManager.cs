@@ -10,8 +10,11 @@ public class HomeFieldManager : FieldManager {
 
     public HomeSurvey? HomeSurvey { get; private set; }
 
-    public HomeFieldManager(Home home, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata)
+    private readonly int roomId;
+
+    public HomeFieldManager(Home home, MapMetadata mapMetadata, UgcMapMetadata ugcMetadata, MapEntityMetadata entities, NpcMetadataStorage npcMetadata, int roomId)
         : base(mapMetadata, ugcMetadata, entities, npcMetadata) {
+        this.roomId = roomId;
         Home = home;
     }
 
@@ -20,6 +23,10 @@ public class HomeFieldManager : FieldManager {
 
         using GameStorage.Request db = GameStorage.Context();
         foreach (Plot plot in db.LoadPlotsForMap(MapId, OwnerId)) {
+            // If roomId is -1, it's a planner plot and should start empty.
+            if (roomId == -1) {
+                plot.Cubes.Clear();
+            }
             Plots[plot.Number] = plot;
         }
 
