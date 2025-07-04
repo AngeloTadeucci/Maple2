@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Maple2.Model.Error;
 using Maple2.Model.Metadata;
 

@@ -581,7 +581,7 @@ public sealed class ShopManager {
                 var ingredient = new ItemComponent(cost.ItemId, -1, price, ItemTag.None);
                 if (!session.Item.Inventory.ConsumeItemComponents([
                         ingredient,
-                ])) {
+                    ])) {
                     session.Send(ShopPacket.Error(ShopError.s_err_lack_payment_item, 0, cost.ItemId));
                     return false;
                 }

@@ -26,10 +26,10 @@ public class CoreModels {
         };
 
         meshData.SetPositionBinding([
-            new PositionBinding(new Vector3(-1, 1, 0)),
-            new PositionBinding(new Vector3(1, 1, 0)),
+            new PositionBinding(new Vector3(-1,  1, 0)),
+            new PositionBinding(new Vector3( 1,  1, 0)),
             new PositionBinding(new Vector3(-1, -1, 0)),
-            new PositionBinding(new Vector3(1, -1, 0)),
+            new PositionBinding(new Vector3( 1, -1, 0)),
         ]);
 
         meshData.SetAttributeBinding([
@@ -40,12 +40,8 @@ public class CoreModels {
         ]);
 
         meshData.SetIndexBuffer([
-            0,
-            1,
-            3,
-            0,
-            3,
-            2,
+            0, 1, 3,
+            0, 3, 2,
         ]);
 
         Mesh mesh = new Mesh(Context);
@@ -61,53 +57,29 @@ public class CoreModels {
         };
 
         PositionBinding[] cubeVertices = [
-            new PositionBinding(new Vector3(-0.5f, 0.5f, 0)),
-            new PositionBinding(new Vector3(0.5f, 0.5f, 0)),
+            new PositionBinding(new Vector3(-0.5f,  0.5f, 0)),
+            new PositionBinding(new Vector3( 0.5f,  0.5f, 0)),
             new PositionBinding(new Vector3(-0.5f, -0.5f, 0)),
-            new PositionBinding(new Vector3(0.5f, -0.5f, 0)),
-            new PositionBinding(new Vector3(-0.5f, 0.5f, 1)),
-            new PositionBinding(new Vector3(0.5f, 0.5f, 1)),
+            new PositionBinding(new Vector3( 0.5f, -0.5f, 0)),
+            new PositionBinding(new Vector3(-0.5f,  0.5f, 1)),
+            new PositionBinding(new Vector3( 0.5f,  0.5f, 1)),
             new PositionBinding(new Vector3(-0.5f, -0.5f, 1)),
-            new PositionBinding(new Vector3(0.5f, -0.5f, 1)),
+            new PositionBinding(new Vector3( 0.5f, -0.5f, 1)),
         ];
 
         uint[] cubeSolidIndices = [
-            0,
-            1,
-            3,
-            0,
-            3,
-            2,
-            4,
-            7,
-            5,
-            4,
-            6,
-            7,
-            0,
-            4,
-            5,
-            0,
-            5,
-            1,
-            1,
-            5,
-            7,
-            1,
-            7,
-            3,
-            3,
-            7,
-            6,
-            3,
-            6,
-            2,
-            0,
-            2,
-            6,
-            0,
-            6,
-            4,
+            0, 1, 3,
+            0, 3, 2,
+            4, 7, 5,
+            4, 6, 7,
+            0, 4, 5,
+            0, 5, 1,
+            1, 5, 7,
+            1, 7, 3,
+            3, 7, 6,
+            3, 6, 2,
+            0, 2, 6,
+            0, 6, 4,
         ];
 
         meshData.SetPositionBinding(cubeVertices);
@@ -126,30 +98,18 @@ public class CoreModels {
         meshData.IsTriangleMesh = false;
 
         meshData.SetIndexBuffer([
-            0,
-            1,
-            1,
-            3,
-            3,
-            2,
-            2,
-            0,
-            0,
-            4,
-            1,
-            5,
-            3,
-            7,
-            2,
-            6,
-            4,
-            5,
-            5,
-            7,
-            7,
-            6,
-            6,
-            4,
+            0, 1,
+            1, 3,
+            3, 2,
+            2, 0,
+            0, 4,
+            1, 5,
+            3, 7,
+            2, 6,
+            4, 5,
+            5, 7,
+            7, 6,
+            6, 4,
         ]);
 
         Mesh cubeWireMesh = new Mesh(Context);

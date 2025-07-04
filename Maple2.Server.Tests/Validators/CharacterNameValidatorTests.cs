@@ -1,4 +1,4 @@
-﻿using Maple2.Model.Error;
+using Maple2.Model.Error;
 using Maple2.Model.Validators;
 
 namespace Maple2.Server.Tests.Validators;
@@ -94,7 +94,7 @@ public class CharacterNameValidatorTests {
         Assert.That(CharacterNameValidator.ValidateName("ADMIN"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
         Assert.That(CharacterNameValidator.ValidateName("Admin"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
         Assert.That(CharacterNameValidator.ValidateName("aDmIn"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-
+        
         Assert.That(CharacterNameValidator.ValidateName("TESTADMIN"), Is.EqualTo(CharacterCreateError.s_char_err_ban_any));
         Assert.That(CharacterNameValidator.ValidateName("TestAdmin"), Is.EqualTo(CharacterCreateError.s_char_err_ban_any));
         Assert.That(CharacterNameValidator.ValidateName("testADMIN"), Is.EqualTo(CharacterCreateError.s_char_err_ban_any));
