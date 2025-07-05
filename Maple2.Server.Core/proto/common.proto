@@ -380,7 +380,7 @@ message FieldPlotRequest {
     message Add {}
     message Remove {}
     message Rotate {
-      bool clockwise = 4;
+      bool clockwise = 1;
     }
     message Replace {}
 
