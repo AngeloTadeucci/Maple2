@@ -59,7 +59,7 @@ public class HousingManager {
             session.World.UpdateFieldPlot(new FieldPlotRequest {
                 MapId = session.Field.MapId,
                 PlotNumber = plot.Number,
-                IgnoreChannel = session.Channel,
+                IgnoreChannel = GameServer.GetChannel(),
                 UpdatePlot = new FieldPlotRequest.Types.UpdatePlot(),
             });
         } else {
@@ -204,7 +204,7 @@ public class HousingManager {
         session.Field.Broadcast(CubePacket.BuyPlot(plotInfo));
         SetPlot(plotInfo);
         session.World.UpdateFieldPlot(new FieldPlotRequest {
-            IgnoreChannel = session.Channel,
+            IgnoreChannel = GameServer.GetChannel(),
             MapId = session.Field.MapId,
             PlotNumber = plotInfo.Number,
             UpdatePlot = new FieldPlotRequest.Types.UpdatePlot(),
@@ -246,7 +246,7 @@ public class HousingManager {
         session.Field.Broadcast(CubePacket.ForfeitPlot(plotInfo));
         SetPlot(null);
         session.World.UpdateFieldPlot(new FieldPlotRequest {
-            IgnoreChannel = session.Channel,
+            IgnoreChannel = GameServer.GetChannel(),
             MapId = session.Field.MapId,
             PlotNumber = plotInfo.Number,
             UpdatePlot = new FieldPlotRequest.Types.UpdatePlot {
@@ -307,7 +307,7 @@ public class HousingManager {
         session.World.UpdateFieldPlot(new FieldPlotRequest {
             MapId = session.Field.MapId,
             PlotNumber = plotInfo.Number,
-            IgnoreChannel = session.Channel,
+            IgnoreChannel = GameServer.GetChannel(),
             UpdatePlot = new FieldPlotRequest.Types.UpdatePlot(),
         });
     }

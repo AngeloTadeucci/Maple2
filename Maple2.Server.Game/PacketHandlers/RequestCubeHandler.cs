@@ -231,7 +231,7 @@ public class RequestCubeHandler : FieldPacketHandler {
         session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
         if (plot.MapId is not Constant.DefaultHomeMapId) {
             session.World.UpdateFieldPlot(new FieldPlotRequest {
-                IgnoreChannel = session.Channel,
+                IgnoreChannel = GameServer.GetChannel(),
                 MapId = session.Field.MapId,
                 PlotNumber = plot.Number,
                 UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
@@ -268,7 +268,7 @@ public class RequestCubeHandler : FieldPacketHandler {
         session.Field.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
         if (plot.MapId is not Constant.DefaultHomeMapId) {
             session.World.UpdateFieldPlot(new FieldPlotRequest {
-                IgnoreChannel = session.Channel,
+                IgnoreChannel = GameServer.GetChannel(),
                 MapId = session.Field.MapId,
                 PlotNumber = plot.Number,
                 UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
@@ -313,7 +313,7 @@ public class RequestCubeHandler : FieldPacketHandler {
 
         if (plot.MapId is not Constant.DefaultHomeMapId) {
             session.World.UpdateFieldPlot(new FieldPlotRequest {
-                IgnoreChannel = session.Channel,
+                IgnoreChannel = GameServer.GetChannel(),
                 MapId = session.Field.MapId,
                 PlotNumber = plot.Number,
                 UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {

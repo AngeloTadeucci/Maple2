@@ -122,7 +122,7 @@ public partial class FieldManager {
 
                 if (plot.MapId is not Constant.DefaultHomeMapId) {
                     session.World.UpdateFieldPlot(new FieldPlotRequest {
-                        IgnoreChannel = session.Channel,
+                        IgnoreChannel = GameServer.GetChannel(),
                         MapId = session.Field.MapId,
                         PlotNumber = plot.Number,
                         UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
