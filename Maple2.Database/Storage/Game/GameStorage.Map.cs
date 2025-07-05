@@ -278,8 +278,7 @@ public partial class GameStorage {
             }
 
             Context.UgcMapCube.Remove(model);
-            Context.TrySaveChanges();
-            return true;
+            return Context.TrySaveChanges();
         }
 
         public PlotCube? GetCube(long cubeId) {

@@ -250,15 +250,20 @@ public class WorldServer {
         if (expiredPlots.Count > 0) {
             foreach (PlotInfo plot in expiredPlots) {
                 bool forfeit = false;
-                if (plot.OwnerId > 0 && plot.ExpiryTime < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
-                    SetPlotAsPending(db, plot);
-                    forfeit = true;
-                    // mark as open when 3 days has passed since the expiry time
-                } else if (plot.OwnerId == 0 && plot.ExpiryTime + Constant.UgcHomeSaleWaitingTime.TotalSeconds < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
-                    logger.Information("Marking plot {PlotId} as open (no owner)", plot.Id);
-                    db.SetPlotOpen(plot.Id); // Mark as open
-                } else {
-                    continue; // Still valid, skip
+                try {
+                    if (plot.OwnerId > 0 && plot.ExpiryTime < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                        SetPlotAsPending(db, plot);
+                        forfeit = true;
+                        // mark as open when 3 days has passed since the expiry time
+                    } else if (plot.OwnerId == 0 && plot.ExpiryTime + Constant.UgcHomeSaleWaitingTime.TotalSeconds < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                        logger.Information("Marking plot {PlotId} as open (no owner)", plot.Id);
+                        db.SetPlotOpen(plot.Id); // Mark as open
+                    } else {
+                        continue; // Still valid, skip
+                    }
+                } catch (Exception e) {
+                    logger.Error(e, "Error processing plot {PlotId} for expiry check", plot.Id);
+                    continue; // Skip this plot if there's an error
                 }
 
                 // Notify channels about the expired plots
