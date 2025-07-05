@@ -135,7 +135,7 @@ public partial class FieldManager {
                 home = new Home();
             }
 
-            var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata);
+            var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata, roomId);
             context.InjectProperties(field);
             field.Init();
 

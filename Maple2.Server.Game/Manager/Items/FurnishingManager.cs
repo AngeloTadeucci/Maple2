@@ -28,8 +28,7 @@ public class FurnishingManager {
         storage = new ItemCollection(Constant.FurnishingStorageMaxSlot);
         inventory = new ConcurrentDictionary<long, PlotCube>();
 
-        List<Item>? items = db.GetItemGroups(session.AccountId, ItemGroup.Furnishing)
-            .GetValueOrDefault(ItemGroup.Furnishing);
+        List<Item>? items = db.GetItemGroups(session.AccountId, ItemGroup.Furnishing).GetValueOrDefault(ItemGroup.Furnishing);
         if (items == null) {
             return;
         }
@@ -83,17 +82,15 @@ public class FurnishingManager {
     /// <param name="uid">Uid of the item to withdraw from</param>
     /// <param name="cube">The cube to be placed</param>
     /// <returns>Information about the withdrawn cube</returns>
-    public bool TryPlaceCube(long uid, [NotNullWhen(true)] out PlotCube? cube) {
+    public bool TryAddCube(long uid, PlotCube cube) {
         const int amount = 1;
         lock (session.Item) {
             if (session.Field == null) {
-                cube = null;
                 return false;
             }
 
             Item? item = storage.Get(uid);
             if (item == null || item.Amount < amount) {
-                cube = null;
                 return false;
             }
 
@@ -104,9 +101,6 @@ public class FurnishingManager {
                 ? FurnishingStoragePacket.Update(item.Uid, item.Amount)
                 : FurnishingStoragePacket.Remove(item.Uid));
 
-            cube = new PlotCube(item.Metadata, NextCubeId(), item.Template) {
-                Type = PlotCube.CubeType.Construction,
-            };
             if (!AddInventory(cube)) {
                 logger.Fatal("Failed to add cube: {CubeId} to inventory", cube.Id);
                 throw new InvalidOperationException($"Failed to add cube: {cube.Id} to inventory");

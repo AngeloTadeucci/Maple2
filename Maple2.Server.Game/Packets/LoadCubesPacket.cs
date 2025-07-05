@@ -42,7 +42,7 @@ public static class LoadCubesPacket {
         pWriter.WriteInt(plots.Count);
         foreach (Plot plot in plots) {
             pWriter.WriteInt(plot.Number);
-            pWriter.Write<PlotState>(plot.State);
+            pWriter.WriteBool(plot.State is Maple2.Model.Enum.PlotState.Taken);
         }
 
         return pWriter;
@@ -54,8 +54,8 @@ public static class LoadCubesPacket {
         pWriter.WriteInt(plots.Count);
         foreach (Plot plot in plots) {
             pWriter.WriteInt(plot.Number);
-            pWriter.WriteInt(plot.ApartmentNumber); // unsure
-            pWriter.WriteUnicodeString(); // plot Name
+            pWriter.WriteInt(plot.ApartmentNumber);
+            pWriter.WriteUnicodeString(plot.Name);
             pWriter.WriteLong(plot.OwnerId);
         }
 
@@ -69,7 +69,7 @@ public static class LoadCubesPacket {
         pWriter.WriteInt(plots.Count);
         foreach (Plot plot in plots) {
             pWriter.WriteInt(plot.Number);
-            pWriter.WriteInt(plot.ApartmentNumber); // unsure
+            pWriter.WriteInt(plot.ApartmentNumber);
             pWriter.Write<PlotState>(plot.State);
             pWriter.WriteLong(plot.ExpiryTime);
         }

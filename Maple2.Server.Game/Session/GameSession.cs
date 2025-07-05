@@ -651,7 +651,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 OwnerId = AccountId,
                 InstancedContent = true,
                 Type = (World.Service.MigrationType) plotMode,
-                RoomId = -1,
+                RoomId = plotMode is not PlotMode.Normal ? -1 : 0,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);

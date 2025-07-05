@@ -667,6 +667,8 @@ public partial class FieldManager {
 
         fieldFunctionInteracts[cube.Interact.Id] = fieldInteract;
 
+        Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+
         return fieldInteract;
     }
 
