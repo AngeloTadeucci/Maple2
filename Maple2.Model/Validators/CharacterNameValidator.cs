@@ -31,35 +31,45 @@ public static class CharacterNameValidator {
             return CharacterCreateError.s_char_err_name;
         }
 
-        // Trim whitespace for validation
-        string trimmedName = name.Trim();
-
-        // Check length constraints
-        if (trimmedName.Length < Constant.CharacterNameLengthMin) {
+        // Check for leading or trailing spaces
+        if (name != name.Trim()) {
             return CharacterCreateError.s_char_err_name;
         }
 
-        if (trimmedName.Length > Constant.CharacterNameLengthMax) {
+        // Check for multiple consecutive spaces
+        if (name.Contains("  ")) {
+            return CharacterCreateError.s_char_err_name;
+        }
+
+        // Use the original name (no trimming needed since we validated no leading/trailing spaces)
+        string validatedName = name;
+
+        // Check length constraints
+        if (validatedName.Length < Constant.CharacterNameLengthMin) {
+            return CharacterCreateError.s_char_err_name;
+        }
+
+        if (validatedName.Length > Constant.CharacterNameLengthMax) {
             return CharacterCreateError.s_char_err_system;
         }
 
         // Check if the name is completely banned
-        if (BannedNames.Contains(trimmedName)) {
+        if (BannedNames.Contains(validatedName)) {
             return CharacterCreateError.s_char_err_ban_all;
         }
 
         // Check for forbidden words
-        if (ContainsForbiddenWord(trimmedName)) {
+        if (ContainsForbiddenWord(validatedName)) {
             return CharacterCreateError.s_char_err_ban_any;
         }
 
         // Check character pattern (letters, numbers, spaces, hyphens, underscores only)
-        if (!ValidNamePattern.IsMatch(trimmedName)) {
+        if (!ValidNamePattern.IsMatch(validatedName)) {
             return CharacterCreateError.s_char_err_name;
         }
 
         // Check for names that are only whitespace/special characters
-        if (trimmedName.All(c => !char.IsLetterOrDigit(c))) {
+        if (validatedName.All(c => !char.IsLetterOrDigit(c))) {
             return CharacterCreateError.s_char_err_name;
         }
 
