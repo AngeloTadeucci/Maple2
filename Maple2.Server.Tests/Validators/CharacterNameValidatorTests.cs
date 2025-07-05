@@ -102,10 +102,10 @@ public class CharacterNameValidatorTests {
 
     [Test]
     public void SpaceValidation_ShouldWork() {
-        // Names with spaces should be valid
-        Assert.That(CharacterNameValidator.ValidateName("Test Name"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Cool Player"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("a b"), Is.Null); // minimum length with space
+        // Names with spaces should be invalid
+        Assert.That(CharacterNameValidator.ValidateName("Test Name"), Is.EqualTo(CharacterCreateError.s_char_err_name));
+        Assert.That(CharacterNameValidator.ValidateName("Cool Player"), Is.EqualTo(CharacterCreateError.s_char_err_name));
+        Assert.That(CharacterNameValidator.ValidateName("a b"), Is.EqualTo(CharacterCreateError.s_char_err_name));
 
         // Names with leading or trailing spaces should be invalid
         Assert.That(CharacterNameValidator.ValidateName(" ValidName"), Is.EqualTo(CharacterCreateError.s_char_err_name));

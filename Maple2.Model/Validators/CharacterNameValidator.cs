@@ -18,8 +18,8 @@ public static class CharacterNameValidator {
         "maple", "nexon", "maplestory", "maple2", "support", "helper", "bot", "null", "undefined"
     };
 
-    // Regex pattern for valid character names (letters, numbers, spaces, and some special characters)
-    private static readonly Regex ValidNamePattern = new(@"^[a-zA-Z0-9\s\-_]+$", RegexOptions.Compiled);
+    // Regex pattern for valid character names (letters, numbers, and some special characters, no spaces)
+    private static readonly Regex ValidNamePattern = new(@"^[a-zA-Z0-9\-_]+$", RegexOptions.Compiled);
 
     /// <summary>
     /// Validates a character name according to all rules.
@@ -31,17 +31,7 @@ public static class CharacterNameValidator {
             return CharacterCreateError.s_char_err_name;
         }
 
-        // Check for leading or trailing spaces
-        if (name != name.Trim()) {
-            return CharacterCreateError.s_char_err_name;
-        }
-
-        // Check for multiple consecutive spaces
-        if (name.Contains("  ")) {
-            return CharacterCreateError.s_char_err_name;
-        }
-
-        // Use the original name (no trimming needed since we validated no leading/trailing spaces)
+        // Use the original name for validation
         string validatedName = name;
 
         // Check length constraints
@@ -63,7 +53,7 @@ public static class CharacterNameValidator {
             return CharacterCreateError.s_char_err_ban_any;
         }
 
-        // Check character pattern (letters, numbers, spaces, hyphens, underscores only)
+        // Check character pattern (letters, numbers, hyphens, underscores only, no spaces)
         if (!ValidNamePattern.IsMatch(validatedName)) {
             return CharacterCreateError.s_char_err_name;
         }
