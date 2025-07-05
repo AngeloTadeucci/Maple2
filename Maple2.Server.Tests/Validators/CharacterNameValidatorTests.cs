@@ -117,4 +117,68 @@ public class CharacterNameValidatorTests {
         Assert.That(CharacterNameValidator.ValidateName("Test   Name"), Is.EqualTo(CharacterCreateError.s_char_err_name));
         Assert.That(CharacterNameValidator.ValidateName("A  B"), Is.EqualTo(CharacterCreateError.s_char_err_name));
     }
+
+    [Test]
+    public void JapaneseCharacterNames_ShouldBeValid() {
+        // Japanese Hiragana characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("さくら"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("ひろし"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("あいうえお"), Is.Null);
+
+        // Japanese Katakana characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("サクラ"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("ヒロシ"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("アイウエオ"), Is.Null);
+
+        // Japanese Kanji characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("田中"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("山田"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("佐藤"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("鈴木"), Is.Null);
+
+        // Mixed Japanese characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("さくら123"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("田中ひろし"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("サクラ_田中"), Is.Null);
+    }
+
+    [Test]
+    public void KoreanCharacterNames_ShouldBeValid() {
+        // Korean Hangul characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("김철수"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("이영희"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("박민수"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("정수진"), Is.Null);
+
+        // Korean with numbers should be valid
+        Assert.That(CharacterNameValidator.ValidateName("김철수123"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("이영희_456"), Is.Null);
+
+        // Korean with allowed special characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("박민수-정"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("정수진_김"), Is.Null);
+    }
+
+    [Test]
+    public void ChineseCharacterNames_ShouldBeValid() {
+        // Simplified Chinese characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("王小明"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("李小红"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("张三"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("刘德华"), Is.Null);
+
+        // Traditional Chinese characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("王小明"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("陳大文"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("黃志強"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("林美玲"), Is.Null);
+
+        // Chinese with numbers should be valid
+        Assert.That(CharacterNameValidator.ValidateName("王小明123"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("李小红_456"), Is.Null);
+
+        // Chinese with allowed special characters should be valid
+        Assert.That(CharacterNameValidator.ValidateName("张三-李四"), Is.Null);
+        Assert.That(CharacterNameValidator.ValidateName("刘德华_陈"), Is.Null);
+    }
 }

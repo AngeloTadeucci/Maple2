@@ -18,8 +18,8 @@ public static class CharacterNameValidator {
         "maple", "nexon", "maplestory", "maple2", "support", "helper", "bot", "null", "undefined"
     };
 
-    // Regex pattern for valid character names (letters, numbers, and some special characters, no spaces)
-    private static readonly Regex ValidNamePattern = new(@"^[a-zA-Z0-9\-_]+$", RegexOptions.Compiled);
+    // Regex pattern for valid character names (Unicode letters, numbers, and some special characters, no spaces)
+    private static readonly Regex ValidNamePattern = new(@"^[\p{L}0-9\-_]+$", RegexOptions.Compiled);
 
     /// <summary>
     /// Validates a character name according to all rules.
@@ -53,7 +53,7 @@ public static class CharacterNameValidator {
             return CharacterCreateError.s_char_err_ban_any;
         }
 
-        // Check character pattern (letters, numbers, hyphens, underscores only, no spaces)
+        // Check character pattern (Unicode letters, numbers, hyphens, underscores only, no spaces)
         if (!ValidNamePattern.IsMatch(validatedName)) {
             return CharacterCreateError.s_char_err_name;
         }
