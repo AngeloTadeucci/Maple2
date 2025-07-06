@@ -2,6 +2,7 @@
 using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
+using Microsoft.EntityFrameworkCore;
 using Item = Maple2.Model.Game.Item;
 using PetConfig = Maple2.Model.Game.PetConfig;
 using UgcItemLook = Maple2.Model.Game.UgcItemLook;
@@ -65,8 +66,20 @@ public partial class GameStorage {
 
             return ugcModel.Template;
         }
+
         public IDictionary<ItemGroup, List<Item>> GetItemGroups(long ownerId, params ItemGroup[] groups) {
             return Context.Item.Where(item => item.OwnerId == ownerId && groups.Contains(item.Group))
+                .AsEnumerable()
+                .GroupBy(item => item.Group)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(ToItem).Where(item => item != null).ToList()
+                )!;
+        }
+
+        public IDictionary<ItemGroup, List<Item>> GetItemGroupsNoTracking(long ownerId, params ItemGroup[] groups) {
+            return Context.Item.Where(item => item.OwnerId == ownerId && groups.Contains(item.Group))
+                .AsNoTracking()
                 .AsEnumerable()
                 .GroupBy(item => item.Group)
                 .ToDictionary(

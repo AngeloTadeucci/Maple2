@@ -308,7 +308,7 @@ public class WorldServer {
             return;
         }
 
-        List<Item>? items = db.GetItemGroups(plot.OwnerId, ItemGroup.Furnishing).GetValueOrDefault(ItemGroup.Furnishing);
+        List<Item>? items = db.GetItemGroupsNoTracking(plot.OwnerId, ItemGroup.Furnishing).GetValueOrDefault(ItemGroup.Furnishing);
         if (items == null) {
             logger.Warning("No furnishing items found for owner id {OwnerId}", outdoorPlot.OwnerId);
             return;
