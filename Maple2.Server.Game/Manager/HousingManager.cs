@@ -368,7 +368,7 @@ public class HousingManager {
             }
 
             session.FunctionCubeMetadata.TryGet(itemMetadata.Install.ObjectCubeId, out FunctionCubeMetadata? functionCubeMetadata);
-            PlotCube? plotCube = CreateCube((Plot) Home.Indoor, itemMetadata, functionCubeMetadata, null, template.BaseCubePosition + cube.OffsetPosition, cube.Rotation);
+            PlotCube? plotCube = CreateCube(Home.Indoor, itemMetadata, functionCubeMetadata, null, template.BaseCubePosition + cube.OffsetPosition, cube.Rotation);
             if (plotCube is null) {
                 logger.Error("Failed to create cube {cubeId} at position {position}.", cube.ItemId, template.BaseCubePosition + cube.OffsetPosition);
                 continue;
@@ -488,7 +488,7 @@ public class HousingManager {
         session.Send(CubePacket.DesignRankReward(Home));
     }
 
-    private PlotCube? CreateCube(Plot plot, ItemMetadata itemMetadata, FunctionCubeMetadata? functionCubeMetadata, UgcItemLook? template, Vector3 position, float rotation) {
+    private PlotCube? CreateCube(PlotInfo plot, ItemMetadata itemMetadata, FunctionCubeMetadata? functionCubeMetadata, UgcItemLook? template, Vector3 position, float rotation) {
         var result = new PlotCube(itemMetadata, 0, template) {
             Type = PlotCube.CubeType.Construction,
             Position = position,
