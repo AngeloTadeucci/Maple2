@@ -30,7 +30,7 @@ public static class Constant {
     public const byte MaxHomeArea = 25;
     public const byte MinHomeHeight = 3;
     public const byte MaxHomeHeight = 15;
-    public const short FurnishingStorageMaxSlot = 512;
+    public const short FurnishingStorageMaxSlot = 1024;
     public const int ConstructionCubeItemId = 50200183;
     public const int HomeNameMaxLength = 16;
     public const int HomeMessageMaxLength = 100;

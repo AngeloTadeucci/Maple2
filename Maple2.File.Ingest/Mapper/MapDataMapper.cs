@@ -322,41 +322,43 @@ public class MapDataMapper : TypeMapper<MapDataMetadata> {
     }
 
     protected override IEnumerable<MapDataMetadata> Map() {
-        return parser.Parallel().Select(map => {
-            string xblock = map.xblock.ToLower();
-            if (!xBlocks.Contains(xblock)) {
-                return new MapDataMetadata(xblock, GetEmptyMap());
-            }
+        return parser.Parallel().Select(ParseMap).OrderBy(x => x.XBlock).ThenBy(x => x.Data.Length);
+    }
 
-            FieldAccelerationStructure mapData = ParseMapEntities(map.entities);
+    private MapDataMetadata ParseMap((string xblock, IEnumerable<IMapEntity> entities) map) {
+        string xblock = map.xblock.ToLower();
+        if (!xBlocks.Contains(xblock)) {
+            return new MapDataMetadata(xblock, GetEmptyMap());
+        }
 
-            var writer = new ByteWriter();
+        FieldAccelerationStructure mapData = ParseMapEntities(map.entities);
 
-            writer.WriteClass(mapData);
+        var writer = new ByteWriter();
 
-            byte[] data = writer.ToArray();
-            var dataStream = new MemoryStream();
+        writer.WriteClass(mapData);
 
-            using (var dstream = new DeflateStream(dataStream, CompressionLevel.SmallestSize)) {
-                dstream.Write(data, 0, data.Length);
-            }
+        byte[] data = writer.ToArray();
+        var dataStream = new MemoryStream();
 
-            data = dataStream.ToArray();
+        using (var dstream = new DeflateStream(dataStream, CompressionLevel.SmallestSize)) {
+            dstream.Write(data, 0, data.Length);
+        }
 
-            lock (this) {
-                mapByteStats.AddValue((ulong) data.LongLength);
-                mapGridByteStats.AddValue(mapData.GridBytesWritten);
-                mapGridBytePercentStats.AddValue((ulong) (10000 * (float) mapData.GridBytesWritten / data.LongLength));
-                mapXStats.AddValue((ulong) mapData.GridSize.X);
-                mapYStats.AddValue((ulong) mapData.GridSize.Y);
-                mapZStats.AddValue((ulong) mapData.GridSize.Z);
-                alignedStats.AddValue((ulong) mapData.AlignedEntities.Length);
-                alignedTrimmedStats.AddValue((ulong) mapData.AlignedTrimmedEntities.Length);
-                unalignedStats.AddValue((ulong) mapData.UnalignedEntities.Length);
-            }
+        data = dataStream.ToArray();
 
-            return new MapDataMetadata(xblock, data);
-        });
+        lock (this) {
+            mapByteStats.AddValue((ulong) data.LongLength);
+            mapGridByteStats.AddValue(mapData.GridBytesWritten);
+            mapGridBytePercentStats.AddValue((ulong) (10000 * (float) mapData.GridBytesWritten / data.LongLength));
+            mapXStats.AddValue((ulong) mapData.GridSize.X);
+            mapYStats.AddValue((ulong) mapData.GridSize.Y);
+            mapZStats.AddValue((ulong) mapData.GridSize.Z);
+            alignedStats.AddValue((ulong) mapData.AlignedEntities.Length);
+            alignedTrimmedStats.AddValue((ulong) mapData.AlignedTrimmedEntities.Length);
+            unalignedStats.AddValue((ulong) mapData.UnalignedEntities.Length);
+        }
+
+        return new MapDataMetadata(xblock, data);
     }
 
     public void ReportStats() {

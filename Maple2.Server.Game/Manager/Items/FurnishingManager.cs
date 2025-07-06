@@ -238,6 +238,10 @@ public class FurnishingManager {
         lock (session.Item) {
             Item? stored = storage.FirstOrDefault(existing => existing.Id == item.Id && existing.Template?.Url == template?.Url);
             if (stored == null) {
+                if (storage.OpenSlots <= 0) {
+                    logger.Error("Furnishing storage is full, cannot add item: {ItemId}", item.Id);
+                    return 0;
+                }
                 item.Group = ItemGroup.Furnishing;
                 using GameStorage.Request db = session.GameStorage.Context();
                 Item? newItem = db.CreateItem(session.AccountId, item);
