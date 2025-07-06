@@ -720,7 +720,6 @@ public class HousingManager {
             Item? item = session.Item.Furnishing.GetItem(id);
             if (item is null) {
                 if (shopEntry is null) {
-                    Log.Logger.Warning("Failed to get shop entry for cube {cubeId} when applying layout {LayoutId}.", id, layout.Id);
                     continue;
                 }
                 cubeCosts[shopEntry.FurnishingTokenType] += shopEntry.Price * amount;
@@ -733,7 +732,6 @@ public class HousingManager {
             }
 
             if (shopEntry is null) {
-                Log.Logger.Warning("Failed to get shop entry for cube {cubeId} when applying layout {LayoutId}.", id, layout.Id);
                 continue;
             }
 
@@ -779,12 +777,20 @@ public class HousingManager {
         foreach (PlotCube cube in layout.Cubes) {
             Item? item = session.Item.Furnishing.GetItem(cube.ItemId);
             cube.Id = item?.Uid ?? 0;
-            if (item?.Metadata is null) {
-                logger.Warning("Failed to get item metadata for cube {CubeId} when applying layout {LayoutId}.", cube.ItemId, layout.Id);
+            ItemMetadata? metadata = null;
+            if (item is null) {
+                if (session.ItemMetadata.TryGet(cube.ItemId, out ItemMetadata? newMetadata)) {
+                    metadata = newMetadata;
+                }
+            } else {
+                metadata = item.Metadata;
+            }
+            if (metadata is null) {
+                logger.Error("Failed to get item metadata for cube {CubeId} when applying layout {LayoutId}.", cube.ItemId, layout.Id);
                 continue;
             }
-            if (!TryPlaceCube(cube, plot, item.Metadata, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
-                return;
+            if (!TryPlaceCube(cube, plot, metadata, cube.Position, cube.Rotation, out PlotCube? plotCube)) {
+                continue;
             }
 
             ByteWriter sendPacket;
@@ -817,7 +823,7 @@ public class HousingManager {
 
         Vector3 position = Home.CalculateSafePosition(plot.Cubes.Values.ToList());
         foreach (FieldPlayer fieldPlayer in session.Field.Players.Values) {
-            fieldPlayer.MoveToPosition(position, default);
+            fieldPlayer.Session.Send(PortalPacket.MoveByPortal(fieldPlayer, position, default));
         }
 
         session.Item.Furnishing.SendStorageCount();
