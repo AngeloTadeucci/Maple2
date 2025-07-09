@@ -216,6 +216,27 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
+    public FieldPortal? SpawnFieldToHomePortal(PlotCube plotCube, long targetHomeAccountId) {
+        if (plotCube.Metadata.Install is { IndoorPortal: false }) {
+            return null;
+        }
+
+        var transform = new Transform {
+            Position = plotCube.Position,
+            RotationAnglesDegrees = new Vector3(0, 0, plotCube.Rotation),
+        };
+
+        Vector3 newPosition = plotCube.Position;
+        newPosition -= transform.FrontAxis * 75;
+        newPosition.Z -= 75;
+
+        var portal = new Portal(NextLocalId(), Constant.DefaultHomeMapId, -1, PortalType.FieldToHome, PortalActionType.Interact, newPosition, new Vector3(0, 0, plotCube.Rotation), new Vector3(75, 75, 75), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        FieldPortal fieldPortal = SpawnPortal(portal);
+        fieldPortal.HomeId = targetHomeAccountId;
+
+        return fieldPortal;
+    }
+
     public FieldItem SpawnItem(IActor owner, Item item) {
         lock (item) {
             using GameStorage.Request db = GameStorage.Context();
