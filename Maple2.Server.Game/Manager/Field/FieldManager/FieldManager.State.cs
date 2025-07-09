@@ -771,7 +771,7 @@ public partial class FieldManager {
     }
 
     public bool RemoveNpc(int objectId, TimeSpan removeDelay = default) {
-        if (!Mobs.TryGetValue(objectId, out FieldNpc? npc) && !Npcs.TryGetValue(objectId, out npc)) {
+        if (!Mobs.TryGetValue(objectId, out _) && !Npcs.TryGetValue(objectId, out _)) {
             return false;
         }
 
