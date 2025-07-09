@@ -219,12 +219,18 @@ public class HousingManager {
             return null;
         }
 
+        if (!session.FindField(plotInfo.MapId, out FieldManager? fieldManager)) {
+            // Should we instantiate a field manager instead of giving an error?
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
+            return null;
+        }
+
         if (DateTime.UtcNow - plotInfo.ExpiryTime.FromEpochSeconds() > TimeSpan.FromDays(3)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_extension_date));
             return null;
         }
 
-        if (session.Field == null || !session.Field.Plots.TryGetValue(plotInfo.Number, out Plot? plot)) {
+        if ( !fieldManager.Plots.TryGetValue(plotInfo.Number, out Plot? plot)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
             return null;
         }
@@ -237,17 +243,17 @@ public class HousingManager {
             return null;
         }
 
-        if (session.Field.UpdatePlotInfo(plotInfo) != true) {
+        if (fieldManager.UpdatePlotInfo(plotInfo) != true) {
             logger.Warning("Failed to update map plot in field: {PlotId}", plotInfo.Id);
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
             return null;
         }
 
-        session.Field.Broadcast(CubePacket.ForfeitPlot(plotInfo));
+        fieldManager.Broadcast(CubePacket.ForfeitPlot(plotInfo));
         SetPlot(null);
         session.World.UpdateFieldPlot(new FieldPlotRequest {
             IgnoreChannel = GameServer.GetChannel(),
-            MapId = session.Field.MapId,
+            MapId = fieldManager.MapId,
             PlotNumber = plotInfo.Number,
             UpdatePlot = new FieldPlotRequest.Types.UpdatePlot {
                 AccountId = session.AccountId,
