@@ -27,6 +27,7 @@ using Maple2.Server.Game.Util;
 using Maple2.Tools.DotRecast;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
+using Maple2.Tools.VectorMath;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;
@@ -550,7 +551,21 @@ public partial class FieldManager : IField {
 
         if (srcPortal.TargetMapId == MapId) {
             if (TryGetPortal(srcPortal.TargetPortalId, out FieldPortal? dstPortal)) {
-                session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
+                Vector3 position = dstPortal.Position;
+                Vector3 rotation = dstPortal.Rotation;
+
+                if (dstPortal.Value.ActionType is PortalActionType.Touch) {
+                    // add one blocks or use offset in the direction of front axis
+                    float offset = Constant.BlockSize;
+                    if (dstPortal.Value.FrontOffset != 0) {
+                        offset = dstPortal.Value.FrontOffset;
+                    }
+
+                    Vector3 forward = dstPortal.Transform.FrontAxis;
+
+                    position += forward * offset;
+                }
+                session.Send(PortalPacket.MoveByPortal(session.Player, position, rotation));
             }
 
             return true;
