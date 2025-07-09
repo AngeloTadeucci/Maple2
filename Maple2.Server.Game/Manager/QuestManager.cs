@@ -25,10 +25,10 @@ public sealed class QuestManager {
 
     private ChangeJobMetadata? changeJobMetadata;
 
-    private readonly ConditionType[] throttleStates = [
+    private readonly HashSet<ConditionType> throttleStates = [
         ConditionType.fall, ConditionType.swim, ConditionType.swimtime, ConditionType.run, ConditionType.stay_cube,
-        ConditionType.stay_cube, ConditionType.crawl, ConditionType.glide, ConditionType.climb, ConditionType.ropetime,
-        ConditionType.laddertime, ConditionType.holdtime, ConditionType.riding, ConditionType.emotiontime,
+        ConditionType.crawl, ConditionType.glide, ConditionType.climb, ConditionType.ropetime, ConditionType.laddertime,
+        ConditionType.holdtime, ConditionType.riding, ConditionType.emotiontime,
     ];
 
     private readonly ILogger logger = Log.Logger.ForContext<QuestManager>();
