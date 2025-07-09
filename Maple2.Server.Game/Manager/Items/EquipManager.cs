@@ -29,16 +29,20 @@ public class EquipManager {
         foreach ((ItemGroup tab, List<Item> items) in db.GetItemGroups(session.CharacterId, ItemGroup.Gear, ItemGroup.Outfit, ItemGroup.Badge)) {
             foreach (Item item in items) {
                 EquipSlot equipSlot = item.EquipSlot();
-                if (equipSlot is EquipSlot.Unknown) {
-                    delete.Add(item);
-                    continue;
-                }
 
                 switch (tab) {
                     case ItemGroup.Gear:
+                        if (equipSlot is EquipSlot.Unknown) {
+                            delete.Add(item);
+                            continue;
+                        }
                         Gear[equipSlot] = item;
                         break;
                     case ItemGroup.Outfit:
+                        if (equipSlot is EquipSlot.Unknown) {
+                            delete.Add(item);
+                            continue;
+                        }
                         Outfit[equipSlot] = item;
                         break;
                     case ItemGroup.Badge:
