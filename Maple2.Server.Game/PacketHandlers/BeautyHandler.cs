@@ -337,11 +337,14 @@ public class BeautyHandler : FieldPacketHandler {
         // Save old hair
         Item? prevHair = session.Item.Equips.Get(EquipSlot.HR);
         if (prevHair == null) {
+            Logger.Error("Player {PlayerId} has no previous hair to save for random hair", session.Player.Value.Character.Id);
             return;
         }
         session.Beauty.SavePreviousHair(prevHair);
 
-        session.Item.Equips.EquipCosmetic(newHair, EquipSlot.HR);
+        if (!session.Item.Equips.EquipCosmetic(newHair, EquipSlot.HR)) {
+            Logger.Error("Player {PlayerId} failed to equip random hair {HairId}", session.Player.Value.Character.Id, newHair.Id);
+        }
         session.Send(BeautyPacket.RandomHair(prevHair.Id, newHair.Id));
         session.ConditionUpdate(ConditionType.beauty_random, codeLong: newHair.Id);
     }
