@@ -67,7 +67,12 @@ public class CoordCommand : GameCommand {
                 ctx.Console.Error.WriteLine($"Invalid relative coordinate: {input}. Use ~[value] or ~+[value] or ~-[value].");
                 return current;
             }
-            if (float.TryParse(input, out float abs)) return abs;
+            if (float.TryParse(input, out float abs)) {
+                if (asBlock) {
+                    abs *= Constant.BlockSize;
+                }
+                return abs;
+            }
             ctx.Console.Error.WriteLine($"Invalid coordinate: {input}. Use a number or ~[value] for relative coordinates.");
             return current;
         }

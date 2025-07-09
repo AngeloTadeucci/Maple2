@@ -28,19 +28,17 @@ public class HomeFieldManager : FieldManager {
                 plot.Cubes.Clear();
             }
             Plots[plot.Number] = plot;
+
+            plot.Cubes.Values
+                .Where(p => p.Interact?.PortalSettings is not null)
+                .ToList()
+                .ForEach(cubePortal => SpawnCubePortal(cubePortal));
+
+            plot.Cubes.Values
+                .Where(plotCube => plotCube.Interact != null)
+                .ToList()
+                .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
         }
-
-        Plots.Values
-            .SelectMany(c => c.Cubes.Values)
-            .Where(p => p.Interact?.PortalSettings is not null)
-            .ToList()
-            .ForEach(cubePortal => SpawnCubePortal(cubePortal));
-
-        Plots.Values
-            .SelectMany(plot => plot.Cubes.Values)
-            .Where(plotCube => plotCube.Interact != null)
-            .ToList()
-            .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
     }
 
     public void SetHomeSurvey(HomeSurvey survey) {

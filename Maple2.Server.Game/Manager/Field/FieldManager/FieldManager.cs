@@ -138,13 +138,17 @@ public partial class FieldManager : IField {
             using GameStorage.Request db = GameStorage.Context();
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
-            }
 
-            Plots.Values
-                .SelectMany(plot => plot.Cubes.Values)
-                .Where(plotCube => plotCube.Interact != null)
-                .ToList()
-                .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
+                plot.Cubes.Values
+                    .Where(plotCube => plotCube.Interact != null)
+                    .ToList()
+                    .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
+
+                plot.Cubes.Values
+                    .Where(plotCube => plotCube.Metadata.Install is { IndoorPortal: true })
+                    .ToList()
+                    .ForEach(plotCube => SpawnFieldToHomePortal(plotCube, plot.OwnerId));
+            }
         }
 
         // Create default to place liftable cubes

@@ -529,7 +529,7 @@ public class HousingManager {
     public bool TryPlaceCube(HeldCube cube, Plot plot, ItemMetadata itemMetadata, in Vector3B position, float rotation,
                              [NotNullWhen(true)] out PlotCube? result, bool isReplace = false) {
         result = null;
-        if (session.Field is null) return false;
+        if (session.Field is null || itemMetadata.Install is null) return false;
 
         tableMetadata.FurnishingShopTable.Entries.TryGetValue(cube.ItemId, out FurnishingShopTable.Entry? shopEntry);
 
@@ -549,7 +549,8 @@ public class HousingManager {
         }
 
         float groundHeight = 0;
-        if (plot.MapId is not Constant.DefaultHomeMapId) {
+        bool outdoor = plot.MapId is not Constant.DefaultHomeMapId;
+        if (outdoor) {
             FieldSellableTile? groundTile = session.Field.AccelerationStructure?.FirstSellableTile(position, (x) => x.SellableGroup == plot.Number);
             if (groundTile is null) {
                 session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
@@ -557,6 +558,17 @@ public class HousingManager {
             }
 
             groundHeight = groundTile.Position.Z / Constant.BlockSize;
+        }
+
+        if (!outdoor && itemMetadata.Install.IndoorPortal) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_be_created));
+            return false;
+        }
+
+        // can only place one indoor portal per plot
+        if (outdoor && plot.Cubes.Any(x => x.Value.Metadata.Install is { IndoorPortal: true })) {
+            session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
+            return false;
         }
 
         bool isSolidCube = itemMetadata.Install!.IsSolidCube;
@@ -585,7 +597,7 @@ public class HousingManager {
         }
 
         // Only check height on outside plots since we already check if it's inside the area when getting the ground height
-        if (plot.MapId is not Constant.DefaultHomeMapId && position.Z - groundHeight > plot.Metadata.Limit.Height) {
+        if (outdoor && position.Z - groundHeight > plot.Metadata.Limit.Height) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_area_limit));
             return false;
         }
@@ -656,6 +668,16 @@ public class HousingManager {
             session.Field.AddFieldFunctionInteract(result);
         }
 
+        if (outdoor && itemMetadata.Install.IndoorPortal) {
+            FieldPortal? fieldPortal = session.Field.SpawnFieldToHomePortal(result, plot.OwnerId);
+            if (fieldPortal is null) {
+                DeleteCube(result);
+                session.Send(CubePacket.Error(UgcMapError.s_ugcmap_not_owned_item));
+                return false;
+            }
+            session.Field.Broadcast(PortalPacket.Add(fieldPortal));
+        }
+
         plot.Cubes.Add(position, result);
         return true;
     }
@@ -672,6 +694,13 @@ public class HousingManager {
 
         if (cube.Interact is not null) {
             session.Field?.RemoveFieldFunctionInteract(cube.Interact.Id);
+        }
+
+        if (plot.MapId is not Constant.DefaultHomeMapId && cube.Metadata.Install is { IndoorPortal: true }) {
+            FieldPortal? portal = session.Field?.GetPortals().FirstOrDefault(x => x.HomeId == plot.OwnerId);
+            if (portal is not null) {
+                session.Field?.RemovePortal(portal.ObjectId);
+            }
         }
 
         if (plot.IsPlanner) {
