@@ -36,8 +36,10 @@ public class CoordCommand : GameCommand {
         if (session.Field is null) return;
 
         Vector3 pos = session.Player.Position;
+        Vector3B vector3B = pos;
+        Vector3 center = vector3B * Constant.BlockSize;
         if (x == null && y == null && z == null) {
-            ctx.Console.Out.WriteLine("Current position: " + pos + ", Vector3B: " + (Vector3B) pos);
+            ctx.Console.Out.WriteLine("Current position: " + pos + "\nVector3B: " + vector3B + "\nBlock center: " + center);
             return;
         }
 

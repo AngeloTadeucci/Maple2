@@ -222,11 +222,11 @@ UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 var index = new FlatTypeIndex(exportedReader);
 
-XBlockParser parser = new XBlockParser(exportedReader, index);
+var xBlockParser = new XBlockParser(exportedReader, index);
 
-UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, parser));
+UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, xBlockParser));
 
-MapDataMapper mapDataMapper = new MapDataMapper(metadataContext, parser);
+var mapDataMapper = new MapDataMapper(metadataContext, xBlockParser);
 
 UpdateDatabase(metadataContext, mapDataMapper);
 
