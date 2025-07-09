@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
@@ -8,10 +9,10 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands.HomeCommands;
 
-public class SurveyCommand : Command {
+public class SurveyCommand : GameCommand {
     private readonly GameSession session;
 
-    public SurveyCommand(GameSession session) : base("survey", "Creates a survey") {
+    public SurveyCommand(GameSession session) : base(AdminPermissions.None, "survey", "Creates a survey") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
 
@@ -67,6 +68,11 @@ public class SurveyCommand : Command {
                         return;
                     }
 
+                    if (survey.Options.Count >= Constant.HomePollMaxCount) {
+                        session.Send(HomeActionPacket.SurveyMessage());
+                        return;
+                    }
+
                     string[] option = options.Skip(1).ToArray();
                     if (option.Length == 0) {
                         return;
@@ -98,6 +104,11 @@ public class SurveyCommand : Command {
                     HomeSurvey? survey = field.HomeSurvey;
                     if (survey is null || survey.Ended) {
                         session.Send(HomeActionPacket.SurveyMessage());
+                        return;
+                    }
+
+                    if (!survey.Started) {
+                        session.Send(HomeActionPacket.SurveyProgress(survey));
                         return;
                     }
 
