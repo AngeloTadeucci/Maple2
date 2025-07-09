@@ -128,8 +128,8 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public bool FindField(int mapId, [NotNullWhen(true)] out FieldManager? field) {
-         field = server.GetField(mapId);
-         return field is not null;
+        field = server.GetField(mapId);
+        return field is not null;
     }
 
     public bool EnterServer(long accountId, Guid machineId, MigrateInResponse migrateResponse) {

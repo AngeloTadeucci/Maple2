@@ -230,7 +230,7 @@ public class HousingManager {
             return null;
         }
 
-        if ( !fieldManager.Plots.TryGetValue(plotInfo.Number, out Plot? plot)) {
+        if (!fieldManager.Plots.TryGetValue(plotInfo.Number, out Plot? plot)) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_system_error));
             return null;
         }
