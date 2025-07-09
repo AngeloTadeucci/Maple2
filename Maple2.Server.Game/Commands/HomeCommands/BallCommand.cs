@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Numerics;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model;
@@ -9,10 +10,10 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands.HomeCommands;
 
-public class BallCommand : Command {
+public class BallCommand : GameCommand {
     private readonly GameSession session;
 
-    public BallCommand(GameSession session) : base("hostball", "Spawn a ball in the map") {
+    public BallCommand(GameSession session) : base(AdminPermissions.None, "hostball", "Spawn a ball in the map") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
 
