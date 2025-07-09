@@ -336,7 +336,7 @@ public class FieldNpc : Actor<Npc> {
     }
 
     public void Talk() {
-        if (SpawnAnimation is not null) {
+        if (!string.IsNullOrEmpty(SpawnAnimation)) {
             return;
         }
         idleTask = MovementState.TryTalk();
