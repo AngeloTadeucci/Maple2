@@ -31,10 +31,11 @@ public partial class ChannelService {
 
     public override Task<DisconnectResponse> Disconnect(DisconnectRequest request, ServerCallContext context) {
         if (request is { CharacterId: <= 0 }) {
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"CharacterId not specified"));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "CharacterId not specified"));
         }
 
         if (!server.GetSession(request.CharacterId, out GameSession? session)) {
+            logger.Error("Unable to find session for character: {CharacterId}", request.CharacterId);
             return Task.FromResult(new DisconnectResponse {
                 Success = false,
             });

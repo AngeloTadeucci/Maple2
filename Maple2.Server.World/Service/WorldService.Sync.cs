@@ -76,10 +76,12 @@ public partial class WorldService {
 
     public override Task<DisconnectResponse> Disconnect(DisconnectRequest request, ServerCallContext context) {
         if (request is { CharacterId: <= 0 }) {
+            logger.Information("Disconnect request with no character id.");
             throw new RpcException(new Status(StatusCode.InvalidArgument, $"CharacterId not specified"));
         }
 
         if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info) || info is { Online: false }) {
+            logger.Error("Unable to find player info for character: {CharacterId}", request.CharacterId);
             throw new RpcException(new Status(StatusCode.NotFound, $"Unable to find: {request.CharacterId}"));
         }
 
@@ -88,9 +90,20 @@ public partial class WorldService {
             return Task.FromResult(new DisconnectResponse());
         }
 
-        return Task.FromResult(channelClient.Disconnect(new DisconnectRequest {
+        DisconnectResponse disconnectResponse = channelClient.Disconnect(new DisconnectRequest {
             CharacterId = info.CharacterId,
-        }));
+        });
+
+        if (!disconnectResponse.Success) {
+            logger.Information("Disconnect failed for character: {CharacterId}", info.CharacterId);
+            worldServer.SetOffline(info);
+            return Task.FromResult(new DisconnectResponse {
+                Success = true,
+            });
+        }
+
+        logger.Information("Disconnect successful for character: {CharacterId}", info.CharacterId);
+        return Task.FromResult(disconnectResponse);
     }
 
     private static PlayerInfoResponse PlayerInfoResponse(PlayerInfo info) {
