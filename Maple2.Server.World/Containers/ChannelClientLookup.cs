@@ -133,8 +133,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     private (ushort gamePort, int grpcPort, int channel) AddChannel(string gameIp, string grpcGameIp, bool instancedContent) {
-        int channelId = channels.Count(kvp => !kvp.Value.InstancedContent) + 1;
-        if (instancedContent) {
+        int channelId = 1;
+        if (!instancedContent) {
+            // Find the smallest positive integer not used as a channel ID (excluding 0)
+            var usedIds = channels.Keys.Where(id => id > 0).ToHashSet();
+            while (usedIds.Contains(channelId)) {
+                channelId++;
+            }
+        } else {
             channelId = 0;
         }
 

@@ -58,7 +58,7 @@ public class LoginHandler : PacketHandler<LoginSession> {
             AccountId = response.AccountId,
         });
 
-        if (playerInfo is not null && playerInfo.Channel != -1) {
+        if (playerInfo is not null && playerInfo.Channel != -1 && playerInfo.CharacterId > 0) {
             DisconnectResponse? disconnectResponse = World.Disconnect(new DisconnectRequest {
                 CharacterId = playerInfo.CharacterId,
             });
