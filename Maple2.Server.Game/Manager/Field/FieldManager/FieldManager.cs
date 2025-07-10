@@ -550,7 +550,9 @@ public partial class FieldManager : IField {
             case PortalType.Quest:
                 session.Field?.RemovePortal(fieldPortal.ObjectId);
                 break;
-
+            case PortalType.FieldToHome:
+                session.Migrate(Constant.DefaultHomeMapId, fieldPortal.HomeId);
+                break;
         }
 
         if (srcPortal.TargetMapId == MapId) {
