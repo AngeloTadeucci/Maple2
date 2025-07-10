@@ -73,21 +73,24 @@ public class WorldServer {
                 login.Heartbeat(new HeartbeatRequest(), cancellationToken: tokenSource.Token);
 
                 foreach (PlayerInfo playerInfo in playerInfoLookup.GetOnlinePlayerInfos()) {
-                    if (playerInfo.CharacterId == 0) continue;
-                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) continue;
+                    if (playerInfo.CharacterId == 0) {
+                        logger.Information("Player {CharacterId} is online without a character id, setting to offline", playerInfo.CharacterId);
+                        playerInfo.Channel = -1;
+                        continue;
+                    }
+                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) {
+                        // Player is online and without a channel, set them to offline.
+                        logger.Information("Player {CharacterId} is online without a channel, setting to offline", playerInfo.CharacterId);
+                        SetOffline(playerInfo);
+                        continue;
+                    }
 
                     try {
                         HeartbeatResponse? response = channel.Heartbeat(new HeartbeatRequest {
                             CharacterId = playerInfo.CharacterId,
                         }, cancellationToken: tokenSource.Token);
                         if (response is { Success: false }) {
-                            playerInfoLookup.Update(new PlayerUpdateRequest {
-                                AccountId = playerInfo.AccountId,
-                                CharacterId = playerInfo.CharacterId,
-                                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                                Channel = -1,
-                                Async = true,
-                            });
+                            SetOffline(playerInfo);
                             continue;
                         }
                         playerInfo.RetryHeartbeat = 3;
@@ -96,13 +99,7 @@ public class WorldServer {
                             playerInfo.RetryHeartbeat--;
                             continue;
                         }
-                        playerInfoLookup.Update(new PlayerUpdateRequest {
-                            AccountId = playerInfo.AccountId,
-                            CharacterId = playerInfo.CharacterId,
-                            LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                            Channel = -1,
-                            Async = true,
-                        });
+                        SetOffline(playerInfo);
                     }
 
                 }
@@ -112,6 +109,16 @@ public class WorldServer {
                 logger.Warning(ex, "Heartbeat loop error");
             }
         }
+    }
+
+    public void SetOffline(PlayerInfo playerInfo) {
+        playerInfoLookup.Update(new PlayerUpdateRequest {
+            AccountId = playerInfo.AccountId,
+            CharacterId = playerInfo.CharacterId,
+            LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+            Channel = -1,
+            Async = true,
+        });
     }
 
     private void Loop() {
