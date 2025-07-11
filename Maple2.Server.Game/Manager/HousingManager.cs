@@ -572,7 +572,7 @@ public class HousingManager {
         }
 
         // can only place one indoor portal per plot
-        if (outdoor && plot.Cubes.Any(x => x.Value.Metadata.Install is { IndoorPortal: true })) {
+        if (outdoor && plot.Cubes.Any(x => x.Value.Metadata.Install is { IndoorPortal: true }) && itemMetadata.Install.IndoorPortal) {
             session.Send(CubePacket.Error(UgcMapError.s_ugcmap_cant_create_on_place));
             return false;
         }
