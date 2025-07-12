@@ -279,6 +279,8 @@ public abstract class Session : IDisposable {
             case SendOp.ResponseTimeSync:
             case SendOp.Stat:
             case SendOp.RequestHeartbeat:
+            case SendOp.FurnishingInventory:
+            case SendOp.FurnishingStorage:
                 break;
             default:
                 Logger.Verbose("{Mode} ({Name} - {OpCode}): {Packet}", "SEND".ColorRed(), opcode, $"0x{op:X4}", packet.ToHexString(length, ' '));
