@@ -19,7 +19,7 @@ public partial class GameStorage {
                 Exp = 0,
                 ClaimedGiftForStage = 1,
                 CreationTime = DateTime.Now,
-                LastFeedTime = DateTime.MinValue,
+                LastFeedTime = DateTime.Now,
                 PlayedBy = [],
             };
             Context.Nurturing.Add(nurturing);

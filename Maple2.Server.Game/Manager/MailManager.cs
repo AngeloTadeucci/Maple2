@@ -6,6 +6,7 @@ using Maple2.Model.Game;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Tools.Extensions;
+using Serilog;
 
 namespace Maple2.Server.Game.Manager;
 
@@ -19,6 +20,8 @@ public sealed class MailManager {
     private int unreadMail;
 
     private readonly SortedList<long, Mail> inbox;
+
+    private readonly ILogger logger = Log.ForContext<MailManager>();
 
     public MailManager(GameSession session) {
         this.session = session;
@@ -205,7 +208,8 @@ public sealed class MailManager {
             }
 
             if (!session.Item.Inventory.Add(item, notifyNew: true, commit: true)) {
-                throw new InvalidOperationException($"Mail {mail.Id} was collected but items could not be added to inventory.");
+                logger.Error("Mail {MailId} was collected but items could not be added to inventory. Item: {Item}", mail.Id, item);
+                return MailError.s_mail_error_receiveitem_to_inven;
             }
 
             mail.Items.RemoveAt(i);
