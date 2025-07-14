@@ -714,7 +714,8 @@ public class HousingManager {
         }
 
         if (!session.Item.Furnishing.RetrieveCube(cube.Id)) {
-            throw new InvalidOperationException($"Failed to deposit cube {cube.Id} back into storage.");
+            logger.Error("Failed to deposit cube {CubeId} back into storage.", cube.Id);
+            return false;
         }
 
         DeleteCube(cube);

@@ -276,6 +276,12 @@ public partial class FieldManager : IField {
                         continue;
                     }
                     packet.handler.Handle(packet.session, packet.reader);
+                } catch (Exception ex) {
+                    if (ex is IndexOutOfRangeException) {
+                        logger.Error("Error processing packet {OpCode} for account ID {AccountId}. Packet: {Packet}", packet.handler.OpCode, packet.session.AccountId, packet.ToString());
+                    } else {
+                        logger.Error(ex, "Error processing handler {Handler} for account ID {AccountId}. Packet: {Packet}", packet.handler.OpCode, packet.session.AccountId, packet.ToString());
+                    }
                 } finally {
                     ArrayPool<byte>.Shared.Return(packet.reader.Buffer);
                 }
