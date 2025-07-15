@@ -1,7 +1,6 @@
 ﻿using Grpc.Core;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Session;
-using Serilog;
 
 namespace Maple2.Server.Game.Service;
 

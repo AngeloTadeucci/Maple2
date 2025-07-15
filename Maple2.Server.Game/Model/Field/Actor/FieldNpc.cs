@@ -199,7 +199,7 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        if (hasBeenBattling && idleTask is null) {
+        if (hasBeenBattling && idleTask is null && MovementState.CastTask is null) {
             Vector3 spawnPoint = Navigation?.GetRandomPatrolPoint() ?? Origin;
 
             idleTask = MovementState.TryMoveTo(spawnPoint, false);
@@ -330,7 +330,7 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase);
+        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase) || sequenceName.Contains("sit", StringComparison.OrdinalIgnoreCase);
 
         idleTask = MovementState.TryEmote(sequence.Name, isIdle, duration);
     }

@@ -13,7 +13,7 @@ public class TaskState {
     public TaskState(FieldNpc actor) {
         Actor = actor;
 
-        var comparer = Comparer<NpcTaskPriority>.Create((NpcTaskPriority item1, NpcTaskPriority item2) => item2.CompareTo(item1));
+        var comparer = Comparer<NpcTaskPriority>.Create((item1, item2) => item2.CompareTo(item1));
 
         taskQueue = new PriorityQueue<NpcTask, NpcTaskPriority>(comparer);
         runningTasks = new NpcTask?[(int) NpcTaskPriority.Count];
@@ -28,7 +28,7 @@ public class TaskState {
 
         queued?.Cancel();
 
-        if (taskQueue.TryPeek(out NpcTask? currentTask, out NpcTaskPriority priority) && currentTask.PriorityValue < task.PriorityValue) {
+        if (taskQueue.TryPeek(out NpcTask? currentTask, out _) && currentTask.PriorityValue < task.PriorityValue) {
             if (currentTask.CancelOnInterrupt) {
                 currentTask.Cancel();
             } else {

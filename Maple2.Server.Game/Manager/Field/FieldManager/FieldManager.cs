@@ -27,7 +27,6 @@ using Maple2.Server.Game.Util;
 using Maple2.Tools.DotRecast;
 using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
-using Maple2.Tools.VectorMath;
 using Serilog;
 
 namespace Maple2.Server.Game.Manager.Field;

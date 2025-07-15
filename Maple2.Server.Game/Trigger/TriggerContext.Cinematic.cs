@@ -38,7 +38,7 @@ public partial class TriggerContext {
     }
 
     public void SetCinematicUi(int type, string script, bool arg3) {
-        WarnLog("[SetCinematicUI] type:{Type}, script:{Script}, arg3:{Arg3}", type, script, arg3);
+        DebugLog("[SetCinematicUI] type:{Type}, script:{Script}, arg3:{Arg3}", type, script, arg3);
         switch (type) {
             case 0:
                 Broadcast(CinematicPacket.ToggleUi(false));
