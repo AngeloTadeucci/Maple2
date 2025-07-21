@@ -47,7 +47,10 @@ public class WorldServer {
         scheduler.Start();
         memoryStringBoards = [];
 
-        SetAllCharacterToOffline();
+        // World initialization: set all characters offline and cleanup unowned items
+        using GameStorage.Request db = gameStorage.Context();
+        db.SetAllCharacterToOffline();
+        db.DeleteUnownedItems();
 
         StartDailyReset();
         StartWorldEvents();
@@ -58,11 +61,6 @@ public class WorldServer {
 
         heartbeatThread = new Thread(Heartbeat);
         heartbeatThread.Start();
-    }
-
-    private void SetAllCharacterToOffline() {
-        using GameStorage.Request db = gameStorage.Context();
-        db.SetAllCharacterToOffline();
     }
 
     private void Heartbeat() {
@@ -138,6 +136,7 @@ public class WorldServer {
     public void Stop() {
         tokenSource.Cancel();
         thread.Join();
+        heartbeatThread.Join();
         scheduler.Stop();
     }
 
