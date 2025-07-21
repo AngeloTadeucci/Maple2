@@ -309,7 +309,7 @@ public class InventoryManager {
             case 90000025: // StarPoint
                 session.Currency[CurrencyType.StarPoint] += add.Amount;
                 break;
-            // case 90000026: // Unknown (Blank)
+                // case 90000026: // Unknown (Blank)
         }
     }
 
@@ -496,8 +496,7 @@ public class InventoryManager {
             }
 
             if (removeExpired) {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                IList<Item> toRemove = items.Where(item => item.ExpiryTime > 0 && item.ExpiryTime <= now).ToList();
+                IEnumerable<Item> toRemove = items.Where(item => item.IsExpired());
                 foreach (Item item in toRemove) {
                     if (items.Remove(item.Uid, out Item? removed)) {
                         Discard(removed);
