@@ -60,10 +60,9 @@ public partial class GameStorage {
 
         public UgcItemLook? GetTemplate(long itemUid) {
             ItemSubType? model = Context.Item.Select(item => new {
-                    item.Id,
-                    item.SubType
-                })
-                .FirstOrDefault(result => result.Id == itemUid)?.SubType;
+                item.Id,
+                item.SubType,
+            }).FirstOrDefault(result => result.Id == itemUid)?.SubType;
             if (model is not ItemUgc ugcModel) {
                 return null;
             }
