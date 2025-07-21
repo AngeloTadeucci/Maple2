@@ -3,6 +3,7 @@ using Maple2.Database.Model;
 using Maple2.Model.Enum;
 using Maple2.Model.Metadata;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Item = Maple2.Model.Game.Item;
 using PetConfig = Maple2.Model.Game.PetConfig;
 using UgcItemLook = Maple2.Model.Game.UgcItemLook;
@@ -58,7 +59,10 @@ public partial class GameStorage {
         }
 
         public UgcItemLook? GetTemplate(long itemUid) {
-            ItemSubType? model = Context.Item.Select(item => new { item.Id, item.SubType })
+            ItemSubType? model = Context.Item.Select(item => new {
+                    item.Id,
+                    item.SubType
+                })
                 .FirstOrDefault(result => result.Id == itemUid)?.SubType;
             if (model is not ItemUgc ugcModel) {
                 return null;
@@ -157,6 +161,16 @@ public partial class GameStorage {
             Context.Item.Update(model);
 
             return Context.TrySaveChanges();
+        }
+
+        // Delete all items that are unowned. (Character, account, etc.)
+        public void DeleteUnownedItems() {
+            int deletedCount = Context.Database.ExecuteSqlRaw("DELETE FROM `item` WHERE OwnerId = 0");
+            if (deletedCount == 0) {
+                return;
+            }
+
+            Logger.LogInformation("Deleted {Count} unowned items.", deletedCount);
         }
 
         public bool SaveStorageInfo(long accountId, long mesos, short expand) {
