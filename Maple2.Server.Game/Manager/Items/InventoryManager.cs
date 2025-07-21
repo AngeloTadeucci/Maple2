@@ -496,8 +496,7 @@ public class InventoryManager {
             }
 
             if (removeExpired) {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                IList<Item> toRemove = items.Where(item => item.ExpiryTime <= now).ToList();
+                IEnumerable<Item> toRemove = items.Where(item => item.IsExpired());
                 foreach (Item item in toRemove) {
                     if (items.Remove(item.Uid, out Item? removed)) {
                         Discard(removed);
