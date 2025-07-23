@@ -10,38 +10,62 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Maple2.Server.DebugGame.Graphics.Assets;
-using Maple2.Server.Game.Model;
 using Maple2.Tools.Extensions;
+using System.Numerics;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
 public class DebugGraphicsContext : IGraphicsContext {
     private const bool ForceDxvk = false;
     public static readonly Vector2D<int> DefaultWindowSize = new Vector2D<int>(800, 600);
+    public static readonly Vector2D<int> DefaultFieldWindowSize = new Vector2D<int>(1920, 1080);
     public static readonly float[] WindowClearColor = [0.0f, 0.0f, 0.0f, 1.0f];
     private static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
 
     private readonly Dictionary<FieldManager, DebugFieldRenderer> fields = [];
 
-    private IWindow? DebuggerWindow { get; set; }
+    public IWindow? DebuggerWindow { get; set; }
     private IInputContext? Input { get; set; }
 
-    public D3D11? D3d11 { get; private set; }
-    public DXGI? Dxgi { get; private set; }
+    private D3D11? D3d11 { get; set; }
+    private DXGI? Dxgi { get; set; }
     public D3DCompiler? Compiler { get; private set; }
 
     public ComPtr<ID3D11Device> DxDevice { get; private set; }
     public ComPtr<ID3D11DeviceContext> DxDeviceContext { get; private set; }
     public ComPtr<IDXGIFactory2> DxFactory { get; private set; }
-    public ComPtr<IDXGISwapChain1> DxSwapChain { get; private set; }
-    public VertexShader? VertexShader { get; private set; }
-    public PixelShader? PixelShader { get; private set; }
+    private ComPtr<IDXGISwapChain1> DxSwapChain { get; set; }
+
+    // Enhanced shader support
+    private VertexShader? VertexShader { get; set; }
+    private PixelShader? PixelShader { get; set; }
+    public VertexShader? WireframeVertexShader { get; private set; }
+    public PixelShader? WireframePixelShader { get; private set; }
+
+    // 3D rendering resources
+    private ComPtr<ID3D11Texture2D> DepthStencilBuffer { get; set; }
+    private ComPtr<ID3D11DepthStencilView> DepthStencilView { get; set; }
+    private ComPtr<ID3D11DepthStencilState> DepthStencilState { get; set; }
+    private ComPtr<ID3D11RasterizerState> SolidRasterizerState { get; set; }
+    private ComPtr<ID3D11RasterizerState> WireframeRasterizerState { get; set; }
+    private ComPtr<ID3D11Buffer> ConstantBuffer { get; set; }
 
     public CoreModels? CoreModels { get; private set; }
-    public Texture? SampleTexture;
-    public ImGuiController? ImGuiController { get; private set; }
+    private Texture? sampleTexture;
+    private ImGuiController? ImGuiController { get; set; }
 
     private string resourceRootPath = "";
+
+    // 3D rendering state
+    public Matrix4x4 ViewMatrix { get; set; } = Matrix4x4.Identity;
+    public Matrix4x4 ProjectionMatrix { get; set; } = Matrix4x4.Identity;
+    public Vector3 CameraPosition { get; set; } = new Vector3(0, -1000, 1000); // Default overview position
+    public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
+    private Vector3 CameraUp { get; set; } = Vector3.UnitY;
+
+    // Quaternion-based camera rotation (eliminates gimbal lock)
+    public Quaternion CameraRotation { get; set; } = new Quaternion(-0.140f, 0.332f, 0.364f, 0.859f); // Back to standard Y up
+    public bool WireframeMode { get; set; } = true; // Start in wireframe mode
 
     private readonly List<DebugFieldRenderer> fieldRenderers = [];
     private readonly Mutex fieldRendererMutex = new();
@@ -58,13 +82,21 @@ public class DebugGraphicsContext : IGraphicsContext {
     private readonly List<DebugFieldWindow> fieldWindows = [];
     private readonly HashSet<FieldManager> updatedFields = [];
     private readonly object updatedFieldsLock = new();
-    private int deltaIndex = 0;
+    private int deltaIndex;
     private readonly List<int> deltaTimes = [];
     public int DeltaAverage { get; private set; }
+
+    // Cleanup tracking
+    private bool isCleanedUp;
+
+    // Camera follow system
+    public bool IsFollowingPlayer { get; private set; }
+    public long? FollowedPlayerId { get; private set; }
+    public bool HasManuallyStopped { get; private set; }
     public int DeltaMin { get; private set; }
     public int DeltaMax { get; private set; }
     private DateTime lastTime = DateTime.Now;
-    public bool IsClosing { get; private set; }
+    private bool IsClosing { get; set; }
 
     public void RunDebugger() {
         DebuggerWindow!.Initialize();
@@ -73,10 +105,16 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         while (!(DebuggerWindow?.IsClosing ?? true) || subWindowsUpdating) {
             if (DebuggerWindow is not null && !DebuggerWindow.IsClosing) {
-                UpdateWindow(DebuggerWindow, IsClosing);
+                try {
+                    UpdateWindow(DebuggerWindow, IsClosing);
 
-                if (DebuggerWindow.IsClosing) {
+                    if (DebuggerWindow is not null && DebuggerWindow.IsClosing) {
+                        CleanUp();
+                    }
+                } catch (Exception ex) {
+                    Logger.Warning(ex, "Exception during window update");
                     CleanUp();
+                    break;
                 }
             }
 
@@ -100,7 +138,6 @@ public class DebugGraphicsContext : IGraphicsContext {
                 }
             }
         }
-
     }
 
     public bool UpdateWindow(IView window, bool shouldClose) {
@@ -240,23 +277,33 @@ public class DebugGraphicsContext : IGraphicsContext {
             DxSwapChain = swapChain;
         }
 
-        if (VertexShader is null) {
-            VertexShader = new VertexShader(this);
-        }
+        // Create shaders
+        VertexShader ??= new VertexShader(this);
 
-        if (PixelShader is null) {
-            PixelShader = new PixelShader(this);
-        }
+        PixelShader ??= new PixelShader(this);
+
+        WireframeVertexShader ??= new VertexShader(this);
+
+        WireframePixelShader ??= new PixelShader(this);
 
         VertexShader.Load("screenVertex.hlsl", "vs_main");
         PixelShader.Load("screenPixel.hlsl", "ps_main");
+        WireframeVertexShader.Load("wireframeVertex.hlsl", "vs_main");
+        WireframePixelShader.Load("wireframePixel.hlsl", "ps_main");
+
+        // Create 3D rendering resources
+        Create3DRenderingResources();
 
         CoreModels = new CoreModels(this);
 
         Logger.Information("Graphics context initialized");
 
-        SampleTexture = new Texture(this);
-        SampleTexture.Load("sample_derp_wave.png");
+        sampleTexture = new Texture(this);
+        sampleTexture.Load("sample_derp_wave.png");
+
+        // Initialize 3D matrices
+        UpdateProjectionMatrix();
+        UpdateViewMatrix();
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
@@ -273,11 +320,192 @@ public class DebugGraphicsContext : IGraphicsContext {
         return Path.GetFullPath(Path.Combine(resourceRootPath, rootPath));
     }
 
+    private unsafe void Create3DRenderingResources() {
+        Vector2D<int> windowSize = DebuggerWindow!.FramebufferSize;
+
+        // Create depth stencil buffer
+        var depthBufferDesc = new Texture2DDesc {
+            Width = (uint)windowSize.X,
+            Height = (uint)windowSize.Y,
+            MipLevels = 1,
+            ArraySize = 1,
+            Format = Format.FormatD24UnormS8Uint,
+            SampleDesc = new SampleDesc(1, 0),
+            Usage = Usage.Default,
+            BindFlags = (uint)BindFlag.DepthStencil,
+            CPUAccessFlags = 0,
+            MiscFlags = 0,
+        };
+
+        ID3D11Texture2D* depthStencilBuffer = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*)null, &depthStencilBuffer));
+        DepthStencilBuffer = depthStencilBuffer;
+
+        // Create depth stencil view
+        var depthStencilViewDesc = new DepthStencilViewDesc {
+            Format = Format.FormatD24UnormS8Uint,
+            ViewDimension = DsvDimension.Texture2D,
+            Flags = 0,
+        };
+        depthStencilViewDesc.Anonymous.Texture2D.MipSlice = 0;
+
+        ID3D11DepthStencilView* depthStencilView = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*)DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
+        DepthStencilView = depthStencilView;
+
+        // Create depth stencil state
+        var depthStencilDesc = new DepthStencilDesc {
+            DepthEnable = true,
+            DepthWriteMask = DepthWriteMask.All,
+            DepthFunc = ComparisonFunc.Less,
+            StencilEnable = false,
+        };
+
+        ID3D11DepthStencilState* depthStencilState = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilState(&depthStencilDesc, &depthStencilState));
+        DepthStencilState = depthStencilState;
+
+        // Create rasterizer states
+        var solidRasterizerDesc = new RasterizerDesc {
+            FillMode = FillMode.Solid,
+            CullMode = CullMode.Back,
+            FrontCounterClockwise = false,
+            DepthBias = 0,
+            DepthBiasClamp = 0.0f,
+            SlopeScaledDepthBias = 0.0f,
+            DepthClipEnable = true,
+            ScissorEnable = false,
+            MultisampleEnable = false,
+            AntialiasedLineEnable = false,
+        };
+
+        ID3D11RasterizerState* solidRasterizerState = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateRasterizerState(&solidRasterizerDesc, &solidRasterizerState));
+        SolidRasterizerState = solidRasterizerState;
+
+        RasterizerDesc wireframeRasterizerDesc = solidRasterizerDesc;
+        wireframeRasterizerDesc.FillMode = FillMode.Wireframe;
+        wireframeRasterizerDesc.CullMode = CullMode.None;
+
+        ID3D11RasterizerState* wireframeRasterizerState = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateRasterizerState(&wireframeRasterizerDesc, &wireframeRasterizerState));
+        WireframeRasterizerState = wireframeRasterizerState;
+
+        // Create constant buffer for matrices and color
+        var constantBufferDesc = new BufferDesc {
+            ByteWidth = 256, // 3 * 64 bytes for matrices + 16 bytes for color (rounded up to 256 for alignment)
+            Usage = Usage.Dynamic,
+            BindFlags = (uint)BindFlag.ConstantBuffer,
+            CPUAccessFlags = (uint)CpuAccessFlag.Write,
+            MiscFlags = 0,
+        };
+
+        ID3D11Buffer* constantBuffer = null;
+        SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*)null, &constantBuffer));
+        ConstantBuffer = constantBuffer;
+    }
+
+    public void UpdateProjectionMatrix() {
+        Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
+        float aspectRatio = (float)windowSize.X / windowSize.Y;
+        ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
+            MathF.PI / 4.0f, // 45 degree field of view
+            aspectRatio,
+            1.0f,    // near plane
+            50000.0f // far plane - much larger for big fields
+        );
+    }
+
+    public void UpdateViewMatrix() {
+        // Calculate forward direction from quaternion rotation
+        Vector3 forward = Vector3.Transform(Vector3.UnitX, CameraRotation); // X is forward in our coordinate system
+
+        // Calculate target as position + forward direction
+        CameraTarget = CameraPosition + forward;
+
+        // Calculate up vector from quaternion rotation
+        Vector3 up = Vector3.Transform(Vector3.UnitZ, CameraRotation); // Z is up in our coordinate system
+
+        ViewMatrix = Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, up);
+    }
+
+    public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {
+        UpdateConstantBuffer(worldMatrix, new Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // Default white color
+    }
+
+    // Current color for rendering
+    private Vector4 currentColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f); // Default white
+
+    public void SetColor(float r, float g, float b, float a) {
+        currentColor = new Vector4(r, g, b, a);
+    }
+
+    public void UpdateConstantBuffer(Matrix4x4 worldMatrix, bool useCurrentColor) {
+        UpdateConstantBuffer(worldMatrix, useCurrentColor ? currentColor : new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
+    public unsafe void UpdateConstantBuffer(Matrix4x4 worldMatrix, Vector4 color) {
+        if (ConstantBuffer.Handle == null) return;
+
+        MappedSubresource mappedResource;
+        SilkMarshal.ThrowHResult(DxDeviceContext.Map(ConstantBuffer, 0, Map.WriteDiscard, 0, &mappedResource));
+
+        // Write matrices and color to constant buffer (world, view, projection, color)
+        float* data = (float*)mappedResource.PData;
+
+        // Copy world matrix (transposed)
+        Matrix4x4 worldTransposed = Matrix4x4.Transpose(worldMatrix);
+        data[0] = worldTransposed.M11; data[1] = worldTransposed.M12; data[2] = worldTransposed.M13; data[3] = worldTransposed.M14;
+        data[4] = worldTransposed.M21; data[5] = worldTransposed.M22; data[6] = worldTransposed.M23; data[7] = worldTransposed.M24;
+        data[8] = worldTransposed.M31; data[9] = worldTransposed.M32; data[10] = worldTransposed.M33; data[11] = worldTransposed.M34;
+        data[12] = worldTransposed.M41; data[13] = worldTransposed.M42; data[14] = worldTransposed.M43; data[15] = worldTransposed.M44;
+
+        // Copy view matrix (transposed)
+        Matrix4x4 viewTransposed = Matrix4x4.Transpose(ViewMatrix);
+        data[16] = viewTransposed.M11; data[17] = viewTransposed.M12; data[18] = viewTransposed.M13; data[19] = viewTransposed.M14;
+        data[20] = viewTransposed.M21; data[21] = viewTransposed.M22; data[22] = viewTransposed.M23; data[23] = viewTransposed.M24;
+        data[24] = viewTransposed.M31; data[25] = viewTransposed.M32; data[26] = viewTransposed.M33; data[27] = viewTransposed.M34;
+        data[28] = viewTransposed.M41; data[29] = viewTransposed.M42; data[30] = viewTransposed.M43; data[31] = viewTransposed.M44;
+
+        // Copy projection matrix (transposed)
+        Matrix4x4 projTransposed = Matrix4x4.Transpose(ProjectionMatrix);
+        data[32] = projTransposed.M11; data[33] = projTransposed.M12; data[34] = projTransposed.M13; data[35] = projTransposed.M14;
+        data[36] = projTransposed.M21; data[37] = projTransposed.M22; data[38] = projTransposed.M23; data[39] = projTransposed.M24;
+        data[40] = projTransposed.M31; data[41] = projTransposed.M32; data[42] = projTransposed.M33; data[43] = projTransposed.M34;
+        data[44] = projTransposed.M41; data[45] = projTransposed.M42; data[46] = projTransposed.M43; data[47] = projTransposed.M44;
+
+        // Copy color
+        data[48] = color.X;
+        data[49] = color.Y;
+        data[50] = color.Z;
+        data[51] = color.W;
+
+        DxDeviceContext.Unmap(ConstantBuffer, 0);
+
+        // Bind constant buffer to vertex shader
+        ID3D11Buffer* constantBuffers = ConstantBuffer;
+        DxDeviceContext.VSSetConstantBuffers(0, 1, &constantBuffers);
+    }
+
     public void CleanUp() {
+        if (isCleanedUp) return; // Prevent multiple cleanup calls
+        isCleanedUp = true;
+
         unsafe {
             if (DxDevice.Handle is not null) {
                 VertexShader?.CleanUp();
                 PixelShader?.CleanUp();
+                WireframeVertexShader?.CleanUp();
+                WireframePixelShader?.CleanUp();
+
+                // Clean up 3D resources
+                DepthStencilBuffer.Dispose();
+                DepthStencilView.Dispose();
+                DepthStencilState.Dispose();
+                SolidRasterizerState.Dispose();
+                WireframeRasterizerState.Dispose();
+                ConstantBuffer.Dispose();
+
                 DxDevice.Dispose();
                 DxDeviceContext.Dispose();
                 DxSwapChain.Dispose();
@@ -285,21 +513,31 @@ public class DebugGraphicsContext : IGraphicsContext {
 
                 VertexShader = null;
                 PixelShader = null;
+                WireframeVertexShader = null;
+                WireframePixelShader = null;
                 DxDevice = default;
                 DxDeviceContext = default;
                 DxSwapChain = default;
+                DepthStencilBuffer = default;
+                DepthStencilView = default;
+                DepthStencilState = default;
+                SolidRasterizerState = default;
+                WireframeRasterizerState = default;
+                ConstantBuffer = default;
                 Input = null;
 
                 Logger.Information("Graphics context cleaning up");
             }
         }
 
-        if (DebuggerWindow is not null) {
-            DebuggerWindow.Dispose();
-
-            DebuggerWindow = null;
-
-            Logger.Information("Window cleaning up");
+        try {
+            if (DebuggerWindow is not null) {
+                DebuggerWindow.Dispose();
+                DebuggerWindow = null;
+                Logger.Information("Window cleaning up");
+            }
+        } catch (Exception ex) {
+            Logger.Warning(ex, "Exception during window cleanup");
         }
     }
 
@@ -329,7 +567,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         DebugFieldRenderer renderer = new DebugFieldRenderer(this, field);
 
         fieldRendererMutex.WaitOne();
-        int index = fieldRenderers.AddSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
+        fieldRenderers.AddSorted(renderer, Comparer<DebugFieldRenderer>.Create(CompareRenderers));
         fieldRendererMutex.ReleaseMutex();
 
         fields[field] = renderer;
@@ -368,8 +606,51 @@ public class DebugGraphicsContext : IGraphicsContext {
     }
 
     private unsafe void OnFramebufferResize(Vector2D<int> newSize) {
+        // Validate size to prevent errors with invalid dimensions
+        if (newSize.X <= 0 || newSize.Y <= 0) {
+            return; // Skip resize if dimensions are invalid
+        }
+
         // there is currently a bug with resizing where the framebuffer positioning doesn't take into account title bar size
         SilkMarshal.ThrowHResult(DxSwapChain.ResizeBuffers(0, (uint) newSize.X, (uint) newSize.Y, Format.FormatB8G8R8A8Unorm, 0));
+
+        // Recreate depth buffer for new size
+        if (DepthStencilBuffer.Handle != null) {
+            DepthStencilBuffer.Dispose();
+            DepthStencilView.Dispose();
+
+            // Recreate depth buffer with new size
+            var depthBufferDesc = new Texture2DDesc {
+                Width = (uint)newSize.X,
+                Height = (uint)newSize.Y,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = Format.FormatD24UnormS8Uint,
+                SampleDesc = new SampleDesc(1, 0),
+                Usage = Usage.Default,
+                BindFlags = (uint)BindFlag.DepthStencil,
+                CPUAccessFlags = 0,
+                MiscFlags = 0,
+            };
+
+            ID3D11Texture2D* depthStencilBuffer = null;
+            SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*)null, &depthStencilBuffer));
+            DepthStencilBuffer = depthStencilBuffer;
+
+            var depthStencilViewDesc = new DepthStencilViewDesc {
+                Format = Format.FormatD24UnormS8Uint,
+                ViewDimension = DsvDimension.Texture2D,
+                Flags = 0,
+            };
+            depthStencilViewDesc.Anonymous.Texture2D.MipSlice = 0;
+
+            ID3D11DepthStencilView* depthStencilView = null;
+            SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*)DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
+            DepthStencilView = depthStencilView;
+        }
+
+        // Update projection matrix for new aspect ratio
+        UpdateProjectionMatrix();
     }
 
     public bool HasFieldUpdated(FieldManager field) {
@@ -440,36 +721,122 @@ public class DebugGraphicsContext : IGraphicsContext {
         ComPtr<ID3D11RenderTargetView> renderTargetView = default;
         SilkMarshal.ThrowHResult(DxDevice.CreateRenderTargetView(framebuffer, null, ref renderTargetView));
 
+        // Clear both color and depth buffers
         DxDeviceContext.ClearRenderTargetView(renderTargetView, WindowClearColor);
+        DxDeviceContext.ClearDepthStencilView(DepthStencilView, (uint) (ClearFlag.Depth | ClearFlag.Stencil), 1.0f, 0);
 
         Viewport viewport = new Viewport(0, 0, DebuggerWindow!.FramebufferSize.X, DebuggerWindow!.FramebufferSize.Y, 0, 1);
         DxDeviceContext.RSSetViewports(1, in viewport);
 
-        DxDeviceContext.OMSetRenderTargets(1, in renderTargetView.Handle, (ID3D11DepthStencilView*) null);
+        // Set render targets with depth buffer
+        DxDeviceContext.OMSetRenderTargets(1, in renderTargetView.Handle, DepthStencilView);
+
+        // Set depth stencil state
+        DxDeviceContext.OMSetDepthStencilState(DepthStencilState, 1);
+
+        // Set rasterizer state based on wireframe mode
+        DxDeviceContext.RSSetState(WireframeMode ? WireframeRasterizerState : SolidRasterizerState);
 
         ImGuiController!.BeginFrame((float) delta);
-
-        #region Render code
-        // Begin region for render code
-
-        // A vertex + pixel shader required to draw meshes
-        VertexShader!.Bind();
-        PixelShader!.Bind();
-        SampleTexture!.Bind(); // bind textures to active GPU texture samplers for access in shaders
-        CoreModels!.Quad.Draw(); // draw a full screen quad/rectangle
-
-        // logic
-        //FieldListWindow();
-        //RendererListWindow();
-
-        // End region for render code
-        #endregion
-
         ImGuiController!.EndFrame();
 
         DxSwapChain.Present(1, 0);
 
         renderTargetView.Dispose();
         framebuffer.Dispose();
+    }
+
+    // Camera control methods
+    public void SetCameraPosition(Vector3 position) {
+        CameraPosition = position;
+        UpdateViewMatrix();
+    }
+
+    public void SetCameraTarget(Vector3 target) {
+        CameraTarget = target;
+        UpdateViewMatrix();
+    }
+
+    public void RotateCamera(float yawDelta, float pitchDelta) {
+        // Rotate camera around target
+        Vector3 direction = CameraPosition - CameraTarget;
+        float distance = direction.Length();
+
+        if (distance < 0.01f) return; // Avoid division by zero
+
+        // Convert to spherical coordinates
+        float currentYaw = MathF.Atan2(direction.Z, direction.X);
+        float currentPitch = MathF.Asin(Math.Clamp(direction.Y / distance, -1.0f, 1.0f));
+
+        // Apply rotation
+        currentYaw += yawDelta;
+        currentPitch = Math.Clamp(currentPitch + pitchDelta, -MathF.PI * 0.4f, MathF.PI * 0.4f);
+
+        // Convert back to cartesian
+        float x = distance * MathF.Cos(currentPitch) * MathF.Cos(currentYaw);
+        float y = distance * MathF.Sin(currentPitch);
+        float z = distance * MathF.Cos(currentPitch) * MathF.Sin(currentYaw);
+
+        SetCameraPosition(CameraTarget + new Vector3(x, y, z));
+    }
+
+    public void SetCameraOrientationForMapData() {
+        // Set camera orientation that works well with the transformed map coordinate system
+        // Based on the working camera position you provided, set up a similar view
+        Vector3 offset = new Vector3(0, -5, 5); // Look up from below and in front (inverted from typical)
+        SetCameraPosition(CameraTarget + offset);
+    }
+
+    public void FlipCameraUpVector() {
+        // Flip the camera's up vector to fix upside-down view
+        CameraUp = -CameraUp;
+        UpdateViewMatrix();
+    }
+
+    public void MoveCameraRelative(Vector3 offset) {
+        CameraPosition += offset;
+        CameraTarget += offset;
+        UpdateViewMatrix();
+
+        // Unlock camera follow when manually moving
+        if (IsFollowingPlayer && offset.LengthSquared() > 0.01f) {
+            UnlockCameraFollow();
+        }
+    }
+
+    public void StartFollowingPlayer(long playerId) {
+        IsFollowingPlayer = true;
+        FollowedPlayerId = playerId;
+        HasManuallyStopped = false; // Reset manual stop flag when starting to follow
+    }
+
+    public void StopFollowingPlayer() {
+        IsFollowingPlayer = false;
+        FollowedPlayerId = null;
+        HasManuallyStopped = true; // Remember that user manually stopped
+    }
+
+    private void UnlockCameraFollow() {
+        if (IsFollowingPlayer) {
+            IsFollowingPlayer = false;
+            Logger.Information("Camera follow unlocked - manual movement detected");
+        }
+    }
+
+    public void ToggleWireframeMode() {
+        WireframeMode = !WireframeMode;
+        Logger.Information("Wireframe mode: {Mode}", WireframeMode ? "ON" : "OFF");
+    }
+
+    public void SetWireframeRasterizer() {
+        // Set wireframe rasterizer state
+        // This would typically involve setting D3D11 rasterizer state
+        // For now, we'll rely on the WireframeMode flag
+    }
+
+    public void SetSolidRasterizer() {
+        // Set solid rasterizer state
+        // This would typically involve setting D3D11 rasterizer state
+        // For now, we'll rely on the WireframeMode flag
     }
 }

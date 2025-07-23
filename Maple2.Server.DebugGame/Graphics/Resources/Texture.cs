@@ -1,4 +1,5 @@
-﻿using Silk.NET.Core.Native;
+﻿using System.Buffers;
+using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 using SixLabors.ImageSharp;
@@ -44,8 +45,8 @@ public class Texture {
             ArraySize = 1,
         };
 
-        if (image.DangerousTryGetSinglePixelMemory(out var imageData)) {
-            using (var pixelData = imageData.Pin()) {
+        if (image.DangerousTryGetSinglePixelMemory(out Memory<Bgra32> imageData)) {
+            using (MemoryHandle pixelData = imageData.Pin()) {
                 SubresourceData subresourceData = new SubresourceData {
                     PSysMem = pixelData.Pointer,
                     SysMemPitch = (uint) image.Width * sizeof(int),
