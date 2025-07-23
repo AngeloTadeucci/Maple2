@@ -4,6 +4,7 @@ namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     private long emoteLimitTick;
+    private bool dontIdleOnStateEnd;
 
     private void EmoteStateUpdate(long tickCount, long tickDelta) {
         if (tickCount >= emoteLimitTick && emoteLimitTick != 0) {
@@ -22,6 +23,10 @@ public partial class MovementState {
                 }
 
                 emoteActionTask?.Completed();
+
+                if (dontIdleOnStateEnd) {
+                    return;
+                }
 
                 Idle();
 
