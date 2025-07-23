@@ -25,6 +25,7 @@ public partial class MovementState {
 
     private void Standby(NpcTask task, IActor? target, bool isIdle, string sequence) {
         Idle(sequence);
+        dontIdleOnStateEnd = isIdle;
 
         if (target is null) {
             return;

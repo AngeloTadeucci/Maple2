@@ -181,7 +181,7 @@ public class FieldNpc : Actor<Npc> {
 
         playersListeningToDebug = playersListeningToDebugNow;
 
-        if (SendControl) {
+        if (SendControl && !IsDead) {
             SequenceCounter++;
             Field.BroadcastNpcControl(this);
             SendControl = false;
