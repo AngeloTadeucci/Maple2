@@ -45,7 +45,7 @@ try {
     var worldClient = new WorldClient(channel);
     response = worldClient.AddChannel(new AddChannelRequest {
         GameIp = Target.GameIp.ToString(),
-        GrpcGameIp = Target.GrpcGameIp.ToString(),
+        GrpcGameIp = Target.GrpcGameIp,
     });
 
 } catch (RpcException e) {
@@ -106,6 +106,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
         .PropertiesAutowired()
         .AsSelf();
     autofac.RegisterType<ItemStatsCalculator>()
+        .PropertiesAutowired()
+        .SingleInstance();
+    autofac.RegisterType<TriggerCache>()
         .PropertiesAutowired()
         .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()
