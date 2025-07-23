@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using System.Numerics;
+using Serilog;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
@@ -9,18 +10,21 @@ using Silk.NET.Windowing;
 namespace Maple2.Server.DebugGame.Graphics;
 
 public class DebugFieldWindow {
-    public DebugGraphicsContext Context { get; init; }
+    private DebugGraphicsContext Context { get; }
     public DebugFieldRenderer? ActiveRenderer { get; private set; }
     public IWindow? DebuggerWindow { get; private set; }
-    public IInputContext? Input { get; private set; }
-    public ComPtr<IDXGISwapChain1> DxSwapChain { get; private set; }
-    public ImGuiController? ImGuiController { get; private set; }
-    public int WindowId { get; init; }
-    public string WindowName { get; init; }
+    private IInputContext? Input { get; set; }
+    private ComPtr<IDXGISwapChain1> DxSwapChain { get; set; }
+    private ImGuiController? ImGuiController { get; set; }
+    private int WindowId { get; }
+    public string WindowName { get; }
     public bool IsInitialized { get; private set; }
     public bool IsClosing { get; private set; }
 
-    private static int _windowIdCounter = 0;
+    private static int _windowIdCounter;
+
+    // Camera input tracking
+    private Vector2 lastMousePosition;
 
     public DebugFieldWindow(DebugGraphicsContext context) {
         Context = context;
@@ -50,7 +54,7 @@ public class DebugFieldWindow {
         IsInitialized = true;
 
         var windowOptions = WindowOptions.Default;
-        windowOptions.Size = DebugGraphicsContext.DefaultWindowSize;
+        windowOptions.Size = DebugGraphicsContext.DefaultFieldWindowSize;
         windowOptions.Title = $"Maple2 - {WindowName}";
         windowOptions.API = GraphicsAPI.None;
         windowOptions.FramesPerSecond = 60;
@@ -135,7 +139,7 @@ public class DebugFieldWindow {
         ImGuiController.Initialize(DebuggerWindow);
     }
 
-    public unsafe void OnUpdate(double delta) {
+    public void OnUpdate(double delta) {
         if (IsClosing) {
             return;
         }
@@ -144,6 +148,9 @@ public class DebugFieldWindow {
             ActiveRenderer.Update();
             DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.RoomId})";
         }
+
+        // Handle camera input for this field window
+        HandleCameraInput((float)delta);
     }
 
     public unsafe void OnRender(double delta) {
@@ -170,11 +177,12 @@ public class DebugFieldWindow {
         #region Render code
         // Begin region for render code
 
-        Context.VertexShader!.Bind();
-        Context.PixelShader!.Bind();
-        Context.SampleTexture!.Bind();
-        Context.CoreModels!.Quad.Draw();
+        // Render 3D field content first (before ImGui)
+        if (ActiveRenderer is not null) {
+            ActiveRenderer.RenderFieldWindow3D(delta);
+        }
 
+        // Then render ImGui content
         if (ActiveRenderer is not null) {
             ActiveRenderer.Render(delta);
         }
@@ -191,7 +199,7 @@ public class DebugFieldWindow {
 
     }
 
-    private unsafe void OnFramebufferResize(Vector2D<int> newSize) {
+    private void OnFramebufferResize(Vector2D<int> newSize) {
         // there is currently a bug with resizing where the framebuffer positioning doesn't take into account title bar size
         SilkMarshal.ThrowHResult(DxSwapChain.ResizeBuffers(0, (uint) newSize.X, (uint) newSize.Y, Format.FormatB8G8R8A8Unorm, 0));
     }
@@ -206,5 +214,117 @@ public class DebugFieldWindow {
 
     private void LoadField(DebugFieldRenderer renderer) {
 
+    }
+
+    private void HandleCameraInput(float deltaTime) {
+        if (Input == null) return;
+
+        IKeyboard keyboard = Input.Keyboards[0];
+        IMouse mouse = Input.Mice[0];
+
+        float moveSpeed = 500.0f * deltaTime; // Units per second
+        float rotateSpeed = 2.0f * deltaTime; // Radians per second
+
+        // Faster movement when holding Shift
+        if (keyboard.IsKeyPressed(Key.ShiftLeft) || keyboard.IsKeyPressed(Key.ShiftRight)) {
+            moveSpeed *= 5.0f; // 5x faster with Shift
+        }
+
+        // Calculate camera directions from quaternion rotation
+        Vector3 forward = Vector3.Transform(Vector3.UnitX, Context.CameraRotation); // X is forward in our coordinate system
+        Vector3 right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitZ)); // Use Z as world up for transformed coords
+        Vector3 up = Vector3.UnitZ; // Use Z as up direction for Q/E movement
+
+        // WASD movement
+        Vector3 movement = Vector3.Zero;
+        if (keyboard.IsKeyPressed(Key.W)) movement += forward;
+        if (keyboard.IsKeyPressed(Key.S)) movement -= forward;
+        if (keyboard.IsKeyPressed(Key.A)) movement -= right;
+        if (keyboard.IsKeyPressed(Key.D)) movement += right;
+        if (keyboard.IsKeyPressed(Key.Q)) movement += up;
+        if (keyboard.IsKeyPressed(Key.E)) movement -= up;
+
+        // Arrow keys for camera rotation (quaternion-based)
+        bool rotated = false;
+        Quaternion rotationDelta = Quaternion.Identity;
+
+        if (keyboard.IsKeyPressed(Key.Left)) {
+            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, rotateSpeed); // Yaw left
+            rotated = true;
+        }
+        if (keyboard.IsKeyPressed(Key.Right)) {
+            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, -rotateSpeed); // Yaw right
+            rotated = true;
+        }
+        if (keyboard.IsKeyPressed(Key.Up)) {
+            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, -rotateSpeed); // Pitch up (inverted)
+            rotated = true;
+        }
+        if (keyboard.IsKeyPressed(Key.Down)) {
+            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, rotateSpeed); // Pitch down (inverted)
+            rotated = true;
+        }
+
+        if (rotated) {
+            // Apply rotation delta to camera
+            Context.CameraRotation = rotationDelta * Context.CameraRotation;
+            Context.CameraRotation = Quaternion.Normalize(Context.CameraRotation);
+            Context.UpdateViewMatrix();
+        }
+
+        if (movement != Vector3.Zero) {
+            movement = Vector3.Normalize(movement) * moveSpeed;
+            // Move camera position directly (free camera style)
+            Context.CameraPosition += movement;
+            Context.UpdateViewMatrix();
+
+            // Unlock camera follow when manually moving
+            if (Context.IsFollowingPlayer && movement.LengthSquared() > 0.01f) {
+                Context.StopFollowingPlayer();
+            }
+        }
+
+        // Mouse look (only when right mouse button is held)
+        if (mouse.IsButtonPressed(MouseButton.Right)) {
+            Vector2 mouseDelta = mouse.Position - lastMousePosition;
+
+            if (mouseDelta.X != 0 || mouseDelta.Y != 0) {
+                float sensitivity = 0.002f; // Mouse sensitivity
+
+                // Create rotation quaternions for yaw and pitch
+                Quaternion yawRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, -mouseDelta.X * sensitivity); // Yaw around Z-axis
+                Quaternion pitchRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, mouseDelta.Y * sensitivity); // Pitch around Y-axis (inverted)
+
+                // Apply rotations: first yaw (world space), then pitch (local space)
+                Context.CameraRotation = yawRotation * Context.CameraRotation * pitchRotation;
+
+                // Normalize to prevent drift
+                Context.CameraRotation = Quaternion.Normalize(Context.CameraRotation);
+
+                Context.UpdateViewMatrix();
+            }
+        }
+
+        // Mouse wheel movement (with same modifiers as WASD)
+        if (mouse is { ScrollWheels.Count: > 0 }) {
+            float scroll = mouse.ScrollWheels[0].Y;
+            if (scroll != 0) {
+                // Use same speed modifiers as WASD movement
+                float wheelMoveSpeed = moveSpeed * scroll;
+
+                // Move forward/backward along camera's forward direction (like W/S)
+                Vector3 wheelMovement = forward * wheelMoveSpeed;
+
+                Context.CameraPosition += wheelMovement;
+                Context.UpdateViewMatrix();
+
+                // Unlock camera follow when manually moving
+                if (Context.IsFollowingPlayer && wheelMovement.LengthSquared() > 0.01f) {
+                    Context.StopFollowingPlayer();
+                }
+            }
+
+            lastMousePosition = mouse.Position;
+        }
     }
 }

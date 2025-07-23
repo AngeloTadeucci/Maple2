@@ -18,12 +18,12 @@ public enum ImGuiWindowType {
 public class ImGuiController {
     public static readonly ILogger Logger = Log.Logger.ForContext<ImGuiController>();
 
-    public DebugGraphicsContext Context { get; init; }
-    public IWindow? ParentWindow { get; private set; }
-    public IInputContext Input { get; init; }
-    public IntPtr ImGuiContext { get; private set; }
-    public ImGuiWindowType WindowType { get; init; }
-    private List<char> pressedCharacters;
+    private DebugGraphicsContext Context { get; init; }
+    private IWindow? ParentWindow { get; set; }
+    private IInputContext Input { get; init; }
+    private IntPtr ImGuiContext { get; set; }
+    private ImGuiWindowType WindowType { get; init; }
+    private readonly List<char> pressedCharacters;
 
     private List<IUiWindow> uiWindows = [];
     private Dictionary<Type, IUiWindow> uiWindowMap = new();
@@ -60,7 +60,7 @@ public class ImGuiController {
         }
 
         foreach (Type type in _uiWindowTypes) {
-            var windowObject = Activator.CreateInstance(type);
+            object? windowObject = Activator.CreateInstance(type);
 
             if (windowObject is not IUiWindow window) {
                 throw new InvalidCastException($"Type {type.Name} doesn't implement IUiWindow");

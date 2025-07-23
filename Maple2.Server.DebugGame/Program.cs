@@ -1,5 +1,4 @@
-﻿using System.CommandLine;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using System.Reflection;
 using Autofac;
@@ -132,11 +131,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     // ChatCommand Handlers
     autofac.RegisterType<CommandRouter>();
 
-    autofac.RegisterAssemblyTypes(typeof(CommandRouter).Assembly)
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom("Maple2.Server.Game.dll"))
         .PublicOnly()
         .WithAttributeFiltering()
-        .Where(type => typeof(Command).IsAssignableFrom(type))
-        .As<Command>()
+        .Where(type => typeof(GameCommand).IsAssignableFrom(type))
+        .As<GameCommand>()
         .PropertiesAutowired();
 
     // Managers
