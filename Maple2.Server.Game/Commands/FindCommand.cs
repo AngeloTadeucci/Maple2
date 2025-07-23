@@ -21,7 +21,7 @@ public class FindCommand : GameCommand {
         AddCommand(new FindSubCommand<AchievementMetadata>(["achievement"], session, achievementStorage));
         AddCommand(new FindSubCommand<ItemMetadata>(["item"], session, itemStorage));
         AddCommand(new FindSubCommand<MapMetadata>(["map"], session, mapStorage));
-        AddCommand(new FindSubCommand<NpcMetadata>(["npc","mob"], session, npcStorage));
+        AddCommand(new FindSubCommand<NpcMetadata>(["npc", "mob"], session, npcStorage));
         AddCommand(new FindSubCommand<QuestMetadata>(["quest"], session, questStorage));
         AddCommand(new FindSubCommand<StoredSkillMetadata>(["skill"], session, skillStorage));
     }
