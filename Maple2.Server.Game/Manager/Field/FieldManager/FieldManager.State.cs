@@ -448,6 +448,22 @@ public partial class FieldManager {
         Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
     }
 
+    public void AddSkill(Ms2TriggerSkill triggerSkill, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
+        if (!SkillMetadata.TryGet(triggerSkill.SkillId, triggerSkill.Level, out SkillMetadata? skillMetadata)) {
+            logger.Warning("Invalid skill: {Id}", triggerSkill.SkillId);
+            return;
+        }
+
+        var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, skillMetadata, interval, triggerSkill.Count, position) {
+            Position = position,
+            Rotation = rotation,
+            TriggerId = triggerId,
+        };
+
+        fieldSkills[fieldSkill.ObjectId] = fieldSkill;
+        Broadcast(RegionSkillPacket.Add(fieldSkill));
+    }
+
     public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
         var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, metadata, interval, position) {
             Position = position,

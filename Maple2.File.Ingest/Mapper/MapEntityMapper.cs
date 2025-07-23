@@ -293,7 +293,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     return null;
                 }
                 return new MapEntity(xblock, new Guid(trigger.EntityId), trigger.EntityName) {
-                    Block = new Ms2TriggerSkill(skill.skillID, (short) skill.skillLevel, skill.Position, skill.Rotation, skill.TriggerObjectID, skill.IsVisible),
+                    Block = new Ms2TriggerSkill(skill.skillID, (short) skill.skillLevel, skill.Position, skill.Rotation, skill.TriggerObjectID, skill.IsVisible, skill.count),
                 };
             case IMS2TriggerSound sound:
                 return new MapEntity(xblock, new Guid(trigger.EntityId), trigger.EntityName) {

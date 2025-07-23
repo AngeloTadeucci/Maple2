@@ -65,7 +65,8 @@ public record Ms2TriggerSkill(
     Vector3 Position,
     Vector3 Rotation,
     int TriggerId,
-    bool Visible)
+    bool Visible,
+    int Count)
 : Ms2Trigger(TriggerId, Visible);
 
 public record Ms2TriggerSound(
