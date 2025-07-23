@@ -120,9 +120,9 @@ public class CoreModels {
         List<AttributeBinding> attributeBinding = [];
 
         for (int i = 0; i < cubeSolidIndices.Length; i += 3) {
-            PositionBinding vertA = cubeVertices[i + 0];
-            PositionBinding vertB = cubeVertices[i + 1];
-            PositionBinding vertC = cubeVertices[i + 2];
+            PositionBinding vertA = cubeVertices[cubeSolidIndices[i + 0]];
+            PositionBinding vertB = cubeVertices[cubeSolidIndices[i + 1]];
+            PositionBinding vertC = cubeVertices[cubeSolidIndices[i + 2]];
 
             positionBinding.Add(vertA);
             positionBinding.Add(vertB);

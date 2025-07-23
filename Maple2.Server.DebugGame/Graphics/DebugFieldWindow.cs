@@ -43,10 +43,8 @@ public class DebugFieldWindow {
     }
 
     public void Initialize() {
-        unsafe {
-            if (IsInitialized) {
-                CleanUp();
-            }
+        if (IsInitialized) {
+            CleanUp();
         }
 
         IsInitialized = true;
@@ -81,7 +79,7 @@ public class DebugFieldWindow {
                 Input?.Dispose();
 
                 DxSwapChain = default;
-                Input = default;
+                Input = null;
 
                 Log.Information("Field debugger swap chain cleaning up");
             }
@@ -90,7 +88,7 @@ public class DebugFieldWindow {
         if (DebuggerWindow is not null) {
             DebuggerWindow.Dispose();
 
-            DebuggerWindow = default;
+            DebuggerWindow = null;
 
             Log.Information("Field debugger window cleaning up");
         }
@@ -117,7 +115,7 @@ public class DebugFieldWindow {
         };
 
         unsafe {
-            IDXGISwapChain1* swapChain = default;
+            IDXGISwapChain1* swapChain = null;
 
             SilkMarshal.ThrowHResult(Context.DxFactory.CreateSwapChainForHwnd(
                 pDevice: (IUnknown*) (ID3D11Device*) Context.DxDevice,
@@ -163,9 +161,9 @@ public class DebugFieldWindow {
         Context.DxDeviceContext.ClearRenderTargetView(renderTargetView, DebugGraphicsContext.WindowClearColor);
 
         Viewport viewport = new Viewport(0, 0, DebuggerWindow!.FramebufferSize.X, DebuggerWindow!.FramebufferSize.Y, 0, 1);
-        Context.DxDeviceContext.RSSetViewports(1, ref viewport);
+        Context.DxDeviceContext.RSSetViewports(1, in viewport);
 
-        Context.DxDeviceContext.OMSetRenderTargets(1, ref renderTargetView.Handle, (ID3D11DepthStencilView*) null);
+        Context.DxDeviceContext.OMSetRenderTargets(1, in renderTargetView.Handle, (ID3D11DepthStencilView*) null);
 
         ImGuiController!.BeginFrame((float) delta);
 

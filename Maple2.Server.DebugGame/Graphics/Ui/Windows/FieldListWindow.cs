@@ -4,10 +4,10 @@ using System.Numerics;
 namespace Maple2.Server.DebugGame.Graphics.Ui.Windows;
 
 public class FieldListWindow : IUiWindow {
-    public bool AllowMainWindow { get => true; }
-    public bool AllowFieldWindow { get => false; }
+    public bool AllowMainWindow => true;
+    public bool AllowFieldWindow => false;
     public bool Enabled { get; set; } = true;
-    public string TypeName { get => "Fields"; }
+    public string TypeName => "Fields";
     public DebugGraphicsContext? Context { get; set; }
     public ImGuiController? ImGuiController { get; set; }
     public DebugFieldWindow? FieldWindow { get; set; }
@@ -94,11 +94,11 @@ public class FieldListWindow : IUiWindow {
                 }
 
                 ImGui.TableSetColumnIndex(0);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 0", renderer.Field.MapId, index), selected);
+                nextSelected |= ImGui.Selectable($"{renderer.Field.MapId}##Active fields {index} 0", selected);
                 ImGui.TableSetColumnIndex(1);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 1", renderer.Field.Metadata.Name, index), selected);
+                nextSelected |= ImGui.Selectable($"{renderer.Field.Metadata.Name}##Active fields {index} 1", selected);
                 ImGui.TableSetColumnIndex(2);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active fields {1} 2", renderer.Field.RoomId, index), selected);
+                nextSelected |= ImGui.Selectable($"{renderer.Field.RoomId}##Active fields {index} 2", selected);
 
                 if (selectFieldDisabled) {
                     ImGui.EndDisabled();
@@ -106,6 +106,9 @@ public class FieldListWindow : IUiWindow {
 
                 if (nextSelected) {
                     SelectedRenderer = renderer;
+
+                    // Auto-create field window if none exists for this field
+                    AutoCreateFieldWindow(renderer);
                 }
 
                 ++index;
@@ -116,5 +119,22 @@ public class FieldListWindow : IUiWindow {
 
         ImGui.End();
     }
-}
 
+    private void AutoCreateFieldWindow(DebugFieldRenderer renderer) {
+        if (Context == null) return;
+
+        lock (Context.FieldWindows) {
+            // Check if a field window already exists for this renderer
+            foreach (DebugFieldWindow existingWindow in Context.FieldWindows) {
+                if (existingWindow.ActiveRenderer == renderer) {
+                    // Window already exists for this field, don't create another
+                    return;
+                }
+            }
+
+            // No window exists for this field, create one
+            DebugFieldWindow newWindow = Context.FieldWindowOpened();
+            newWindow.SetActiveRenderer(renderer);
+        }
+    }
+}

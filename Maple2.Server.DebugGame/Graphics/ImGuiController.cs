@@ -434,7 +434,7 @@ public class ImGuiController {
             Key.F22 => ImGuiKey.F22,
             Key.F23 => ImGuiKey.F23,
             Key.F24 => ImGuiKey.F24,
-            _ => throw new NotImplementedException(),
+            _ => ImGuiKey.None,
         };
     }
 }

@@ -38,9 +38,9 @@ public class WindowListWindow : IUiWindow {
             return;
         }
 
-        ImGui.Text(string.Format("Average frame time: {0} ms; {1} FPS", Context!.DeltaAverage, 1000.0f / Context!.DeltaAverage));
-        ImGui.Text(string.Format("Min frame time: {0} ms; {1} FPS", Context!.DeltaMin, 1000.0f / Context!.DeltaMin));
-        ImGui.Text(string.Format("Max frame time: {0} ms; {1} FPS", Context!.DeltaMax, 1000.0f / Context!.DeltaMax));
+        ImGui.Text($"Average frame time: {Context!.DeltaAverage} ms; {1000.0f / Context!.DeltaAverage} FPS");
+        ImGui.Text($"Min frame time: {Context!.DeltaMin} ms; {1000.0f / Context!.DeltaMin} FPS");
+        ImGui.Text($"Max frame time: {Context!.DeltaMax} ms; {1000.0f / Context!.DeltaMax} FPS");
 
         bool newWindowDisabled = false;
 
@@ -104,13 +104,13 @@ public class WindowListWindow : IUiWindow {
                 bool nextSelected = false;
 
                 ImGui.TableSetColumnIndex(0);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 0", window.WindowName, index), selected);
+                nextSelected |= ImGui.Selectable($"{window.WindowName}##Active windows {index} 0", selected);
                 ImGui.TableSetColumnIndex(1);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 1", window.ActiveRenderer?.Field.MapId.ToString() ?? "", index), selected);
+                nextSelected |= ImGui.Selectable($"{window.ActiveRenderer?.Field.MapId.ToString() ?? ""}##Active windows {index} 1", selected);
                 ImGui.TableSetColumnIndex(2);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 2", window.ActiveRenderer?.Field.Metadata.Name ?? "", index), selected);
+                nextSelected |= ImGui.Selectable($"{window.ActiveRenderer?.Field.Metadata.Name ?? ""}##Active windows {index} 2", selected);
                 ImGui.TableSetColumnIndex(3);
-                nextSelected |= ImGui.Selectable(string.Format("{0}##Active windows {1} 3", window.ActiveRenderer?.Field.RoomId.ToString() ?? "", index), selected);
+                nextSelected |= ImGui.Selectable($"{window.ActiveRenderer?.Field.RoomId.ToString() ?? ""}##Active windows {index} 3", selected);
 
                 if (nextSelected) {
                     SelectedWindow = window;
