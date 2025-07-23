@@ -329,12 +329,7 @@ public partial class TriggerContext {
                     continue;
                 }
 
-                if (!Field.SkillMetadata.TryGet(skill.SkillId, skill.Level, out SkillMetadata? skillMetadata)) {
-                    logger.Warning("Invalid skill: {Id}", skill.SkillId);
-                    continue;
-                }
-
-                Field.AddSkill(skillMetadata, (int) TimeSpan.FromMilliseconds(150).TotalMilliseconds, skill.Position, skill.Rotation, triggerId);
+                Field.AddSkill(skill, (int) TimeSpan.FromMilliseconds(150).TotalMilliseconds, skill.Position, skill.Rotation, triggerId);
             } else {
                 Field.RemoveSkillByTriggerId(triggerId);
             }

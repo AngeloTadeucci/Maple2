@@ -13,7 +13,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     public IActor Caster { get; init; }
     public int Interval { get; }
     public int FireCount { get; private set; }
-    public bool Enabled => FireCount < 0 || NextTick <= endTick || Field.FieldTick <= endTick;
+    public bool Enabled => FireCount != 0 || NextTick <= endTick || Field.FieldTick <= endTick;
     public bool Active { get; private set; } = true;
     public int TriggerId { get; init; }
 
@@ -30,6 +30,15 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         Points = points;
         Interval = interval;
         FireCount = -1;
+        NextTick = Field.FieldTick + interval;
+    }
+
+    public FieldSkill(FieldManager field, int objectId, IActor caster,
+                      SkillMetadata value, int interval, int fireCount, params Vector3[] points) : base(field, objectId, value) {
+        Caster = caster;
+        Points = points;
+        Interval = interval;
+        FireCount = fireCount;
         NextTick = Field.FieldTick + interval;
     }
 
@@ -62,12 +71,6 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         }
 
         if (tickCount < NextTick) {
-            return;
-        }
-
-        if (FireCount == 0) {
-            // Finished firing, remove skill
-            Field.RemoveSkill(ObjectId);
             return;
         }
 
