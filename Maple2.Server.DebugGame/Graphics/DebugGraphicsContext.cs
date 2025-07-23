@@ -57,6 +57,7 @@ public class DebugGraphicsContext : IGraphicsContext {
     public IReadOnlyList<DebugFieldWindow> FieldWindows => fieldWindows;
     private readonly List<DebugFieldWindow> fieldWindows = [];
     private readonly HashSet<FieldManager> updatedFields = [];
+    private readonly object updatedFieldsLock = new();
     private int deltaIndex = 0;
     private readonly List<int> deltaTimes = [];
     public int DeltaAverage { get; private set; }
@@ -103,7 +104,7 @@ public class DebugGraphicsContext : IGraphicsContext {
     }
 
     public bool UpdateWindow(IView window, bool shouldClose) {
-        bool startedOpen = window.IsClosing;
+        bool startedOpen = !window.IsClosing;
 
         if (shouldClose && !window.IsClosing) {
             window.Close();
@@ -372,17 +373,21 @@ public class DebugGraphicsContext : IGraphicsContext {
     }
 
     public bool HasFieldUpdated(FieldManager field) {
-        return updatedFields.Contains(field);
+        lock (updatedFieldsLock) {
+            return updatedFields.Contains(field);
+        }
     }
 
     public void FieldUpdated(FieldManager field) {
-        if (!updatedFields.Contains(field)) {
+        lock (updatedFieldsLock) {
             updatedFields.Add(field);
         }
     }
 
     private void OnUpdate(double delta) {
-        updatedFields.Clear();
+        lock (updatedFieldsLock) {
+            updatedFields.Clear();
+        }
     }
 
     private void UpdateDeltaTracker() {

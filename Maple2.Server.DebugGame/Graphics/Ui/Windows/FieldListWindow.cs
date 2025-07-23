@@ -123,17 +123,18 @@ public class FieldListWindow : IUiWindow {
     private void AutoCreateFieldWindow(DebugFieldRenderer renderer) {
         if (Context == null) return;
 
-        // Check if a field window already exists for this renderer
-        foreach (DebugFieldWindow existingWindow in Context.FieldWindows) {
-            if (existingWindow.ActiveRenderer == renderer) {
-                // Window already exists for this field, don't create another
-                return;
+        lock (Context.FieldWindows) {
+            // Check if a field window already exists for this renderer
+            foreach (DebugFieldWindow existingWindow in Context.FieldWindows) {
+                if (existingWindow.ActiveRenderer == renderer) {
+                    // Window already exists for this field, don't create another
+                    return;
+                }
             }
-        }
 
-        // No window exists for this field, create one
-        DebugFieldWindow newWindow = Context.FieldWindowOpened();
-        newWindow.SetActiveRenderer(renderer);
+            // No window exists for this field, create one
+            DebugFieldWindow newWindow = Context.FieldWindowOpened();
+            newWindow.SetActiveRenderer(renderer);
+        }
     }
 }
-
