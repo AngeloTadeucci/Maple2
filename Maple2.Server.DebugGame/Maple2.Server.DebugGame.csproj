@@ -37,4 +37,9 @@
     <Folder Include="Textures\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ClCompile Include="Shaders\wireframePixel.hlsl" />
+    <ClCompile Include="Shaders\wireframeVertex.hlsl" />
+  </ItemGroup>
+
 </Project>
