@@ -33,6 +33,7 @@ public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
         }
 
         checkTick = tickCount + (long) TimeSpan.FromSeconds(Value.RegenCheckTime).TotalMilliseconds;
+        if (SpawnId is 0) return;
         TriggerSpawn();
     }
 
@@ -44,7 +45,10 @@ public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
                 continue;
             }
 
-            int spawnCountNeeded = spawn.Count - npcs.Count(x => x.Value.Id == spawn.NpcId);
+            int spawnCountNeeded = spawn.Count;
+            if (SpawnId is not 0) {
+                spawnCountNeeded -= npcs.Count(x => x.Value.Id == spawn.NpcId);
+            }
             for (int i = 0; i < spawnCountNeeded; i++) {
                 FieldNpc? npc = Field.SpawnNpc(npcMetadata, Value);
                 if (npc == null) {
