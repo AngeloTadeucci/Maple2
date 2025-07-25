@@ -134,10 +134,24 @@ public class MasteryManager {
         }
 
         Gather(recipeMetadata, position, rotation);
-        this[recipeMetadata.Type] += recipeMetadata.RewardMastery;
         if (!recipeMetadata.NoRewardExp) {
             session.Exp.AddExp(ExpType.gathering);
         }
+        switch (recipeMetadata.Type) {
+            case MasteryType.Farming:
+            case MasteryType.Mining:
+            case MasteryType.Gathering:
+            case MasteryType.Breeding:
+                short playerLevel = GetLevel(recipeMetadata.Type);
+                if (playerLevel - recipeMetadata.RewardMastery >= 3) {
+                    // no mastery given - recipe level is more than 3 levels below player's mastery level
+                    return true;
+                }
+                break;
+            default:
+                break;
+        }
+        this[recipeMetadata.Type] += recipeMetadata.RewardMastery;
         return true;
     }
 
