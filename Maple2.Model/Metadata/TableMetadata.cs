@@ -47,6 +47,7 @@ public class TableMetadata {
 [JsonDerivedType(typeof(ChatStickerTable), typeDiscriminator: "chatsticker")]
 [JsonDerivedType(typeof(MasteryRecipeTable), typeDiscriminator: "masteryrecipe")]
 [JsonDerivedType(typeof(MasteryRewardTable), typeDiscriminator: "masteryreward")]
+[JsonDerivedType(typeof(MasteryDifferentialFactorTable), typeDiscriminator: "masterydifferentialfactor")]
 [JsonDerivedType(typeof(FishingRodTable), typeDiscriminator: "fishingrod")]
 [JsonDerivedType(typeof(GuildTable), typeDiscriminator: "guild")]
 [JsonDerivedType(typeof(PremiumClubTable), typeDiscriminator: "vip")]
