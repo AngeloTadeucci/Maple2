@@ -20,7 +20,7 @@ public class DebugGraphicsContext : IGraphicsContext {
     public static readonly Vector2D<int> DefaultWindowSize = new Vector2D<int>(800, 600);
     public static readonly Vector2D<int> DefaultFieldWindowSize = new Vector2D<int>(1920, 1080);
     public static readonly float[] WindowClearColor = [0.0f, 0.0f, 0.0f, 1.0f];
-    private static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
+    public static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
 
     private readonly Dictionary<FieldManager, DebugFieldRenderer> fields = [];
 

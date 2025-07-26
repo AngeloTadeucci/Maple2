@@ -111,7 +111,7 @@ public class ImGuiController {
         ImGuiNative.igImGui_ImplDX11_Shutdown();
         ImGui.DestroyContext(ImGuiContext);
 
-        ImGuiContext = default;
+        ImGuiContext = 0;
 
         Input.ConnectionChanged -= OnConnectionChanged;
 
