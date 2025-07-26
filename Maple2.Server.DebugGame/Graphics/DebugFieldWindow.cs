@@ -150,7 +150,7 @@ public class DebugFieldWindow {
         }
 
         // Handle camera input for this field window
-        HandleCameraInput((float)delta);
+        HandleCameraInput((float) delta);
     }
 
     public unsafe void OnRender(double delta) {
