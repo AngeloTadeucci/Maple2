@@ -325,20 +325,20 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         // Create depth stencil buffer
         var depthBufferDesc = new Texture2DDesc {
-            Width = (uint)windowSize.X,
-            Height = (uint)windowSize.Y,
+            Width = (uint) windowSize.X,
+            Height = (uint) windowSize.Y,
             MipLevels = 1,
             ArraySize = 1,
             Format = Format.FormatD24UnormS8Uint,
             SampleDesc = new SampleDesc(1, 0),
             Usage = Usage.Default,
-            BindFlags = (uint)BindFlag.DepthStencil,
+            BindFlags = (uint) BindFlag.DepthStencil,
             CPUAccessFlags = 0,
             MiscFlags = 0,
         };
 
         ID3D11Texture2D* depthStencilBuffer = null;
-        SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*)null, &depthStencilBuffer));
+        SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*) null, &depthStencilBuffer));
         DepthStencilBuffer = depthStencilBuffer;
 
         // Create depth stencil view
@@ -350,7 +350,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         depthStencilViewDesc.Anonymous.Texture2D.MipSlice = 0;
 
         ID3D11DepthStencilView* depthStencilView = null;
-        SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*)DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
+        SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*) DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
         DepthStencilView = depthStencilView;
 
         // Create depth stencil state
@@ -395,19 +395,19 @@ public class DebugGraphicsContext : IGraphicsContext {
         var constantBufferDesc = new BufferDesc {
             ByteWidth = 256, // 3 * 64 bytes for matrices + 16 bytes for color (rounded up to 256 for alignment)
             Usage = Usage.Dynamic,
-            BindFlags = (uint)BindFlag.ConstantBuffer,
-            CPUAccessFlags = (uint)CpuAccessFlag.Write,
+            BindFlags = (uint) BindFlag.ConstantBuffer,
+            CPUAccessFlags = (uint) CpuAccessFlag.Write,
             MiscFlags = 0,
         };
 
         ID3D11Buffer* constantBuffer = null;
-        SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*)null, &constantBuffer));
+        SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*) null, &constantBuffer));
         ConstantBuffer = constantBuffer;
     }
 
     public void UpdateProjectionMatrix() {
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        float aspectRatio = (float)windowSize.X / windowSize.Y;
+        float aspectRatio = (float) windowSize.X / windowSize.Y;
         ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
             MathF.PI / 4.0f, // 45 degree field of view
             aspectRatio,
@@ -451,7 +451,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         SilkMarshal.ThrowHResult(DxDeviceContext.Map(ConstantBuffer, 0, Map.WriteDiscard, 0, &mappedResource));
 
         // Write matrices and color to constant buffer (world, view, projection, color)
-        float* data = (float*)mappedResource.PData;
+        float* data = (float*) mappedResource.PData;
 
         // Copy world matrix (transposed)
         Matrix4x4 worldTransposed = Matrix4x4.Transpose(worldMatrix);
@@ -621,20 +621,20 @@ public class DebugGraphicsContext : IGraphicsContext {
 
             // Recreate depth buffer with new size
             var depthBufferDesc = new Texture2DDesc {
-                Width = (uint)newSize.X,
-                Height = (uint)newSize.Y,
+                Width = (uint) newSize.X,
+                Height = (uint) newSize.Y,
                 MipLevels = 1,
                 ArraySize = 1,
                 Format = Format.FormatD24UnormS8Uint,
                 SampleDesc = new SampleDesc(1, 0),
                 Usage = Usage.Default,
-                BindFlags = (uint)BindFlag.DepthStencil,
+                BindFlags = (uint) BindFlag.DepthStencil,
                 CPUAccessFlags = 0,
                 MiscFlags = 0,
             };
 
             ID3D11Texture2D* depthStencilBuffer = null;
-            SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*)null, &depthStencilBuffer));
+            SilkMarshal.ThrowHResult(DxDevice.CreateTexture2D(&depthBufferDesc, (SubresourceData*) null, &depthStencilBuffer));
             DepthStencilBuffer = depthStencilBuffer;
 
             var depthStencilViewDesc = new DepthStencilViewDesc {
@@ -645,7 +645,7 @@ public class DebugGraphicsContext : IGraphicsContext {
             depthStencilViewDesc.Anonymous.Texture2D.MipSlice = 0;
 
             ID3D11DepthStencilView* depthStencilView = null;
-            SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*)DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
+            SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*) DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
             DepthStencilView = depthStencilView;
         }
 

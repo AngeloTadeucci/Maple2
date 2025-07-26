@@ -166,7 +166,7 @@ public class CoreModels {
 
         // Create vertices for bottom circle (y = 0)
         for (int i = 0; i < segments; i++) {
-            float angle = (float)(2 * Math.PI * i / segments);
+            float angle = (float) (2 * Math.PI * i / segments);
             float x = radius * MathF.Cos(angle);
             float z = radius * MathF.Sin(angle);
             vertices.Add(new PositionBinding(new Vector3(x, 0, z)));
@@ -174,7 +174,7 @@ public class CoreModels {
 
         // Create vertices for top circle (y = height)
         for (int i = 0; i < segments; i++) {
-            float angle = (float)(2 * Math.PI * i / segments);
+            float angle = (float) (2 * Math.PI * i / segments);
             float x = radius * MathF.Cos(angle);
             float z = radius * MathF.Sin(angle);
             vertices.Add(new PositionBinding(new Vector3(x, height, z)));
@@ -190,35 +190,35 @@ public class CoreModels {
         // Create wire frame indices
         // Bottom circle
         for (int i = 0; i < segments; i++) {
-            wireIndices.Add((uint)i);
-            wireIndices.Add((uint)((i + 1) % segments));
+            wireIndices.Add((uint) i);
+            wireIndices.Add((uint) ((i + 1) % segments));
         }
 
         // Top circle
         for (int i = 0; i < segments; i++) {
-            wireIndices.Add((uint)(segments + i));
-            wireIndices.Add((uint)(segments + (i + 1) % segments));
+            wireIndices.Add((uint) (segments + i));
+            wireIndices.Add((uint) (segments + (i + 1) % segments));
         }
 
         // Vertical lines
         for (int i = 0; i < segments; i++) {
-            wireIndices.Add((uint)i);
-            wireIndices.Add((uint)(segments + i));
+            wireIndices.Add((uint) i);
+            wireIndices.Add((uint) (segments + i));
         }
 
         // Create solid indices
         // Bottom cap triangles
         for (int i = 0; i < segments; i++) {
-            solidIndices.Add((uint)bottomCenter);
-            solidIndices.Add((uint)((i + 1) % segments));
-            solidIndices.Add((uint)i);
+            solidIndices.Add((uint) bottomCenter);
+            solidIndices.Add((uint) ((i + 1) % segments));
+            solidIndices.Add((uint) i);
         }
 
         // Top cap triangles
         for (int i = 0; i < segments; i++) {
-            solidIndices.Add((uint)topCenter);
-            solidIndices.Add((uint)(segments + i));
-            solidIndices.Add((uint)(segments + (i + 1) % segments));
+            solidIndices.Add((uint) topCenter);
+            solidIndices.Add((uint) (segments + i));
+            solidIndices.Add((uint) (segments + (i + 1) % segments));
         }
 
         // Side triangles
@@ -226,14 +226,14 @@ public class CoreModels {
             int next = (i + 1) % segments;
 
             // First triangle
-            solidIndices.Add((uint)i);
-            solidIndices.Add((uint)(segments + i));
-            solidIndices.Add((uint)next);
+            solidIndices.Add((uint) i);
+            solidIndices.Add((uint) (segments + i));
+            solidIndices.Add((uint) next);
 
             // Second triangle
-            solidIndices.Add((uint)next);
-            solidIndices.Add((uint)(segments + i));
-            solidIndices.Add((uint)(segments + next));
+            solidIndices.Add((uint) next);
+            solidIndices.Add((uint) (segments + i));
+            solidIndices.Add((uint) (segments + next));
         }
 
         // Create wire mesh
