@@ -19,16 +19,6 @@ public class DebugFieldRenderer : IFieldRenderer {
     // Coordinate system transformation - flip Y/Z axes but keep original scale
     private static readonly Matrix4x4 MapRotation = Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
 
-    // Transform position - flip Y/Z axes but keep original scale
-    private static Vector3 TransformMapPosition(Vector3 mapPosition) {
-        return Vector3.Transform(mapPosition, MapRotation);
-    }
-
-    // Transform size - no rotation, keep original scale
-    private static Vector3 TransformMapSize(Vector3 mapSize) {
-        return mapSize; // Keep original size without scaling
-    }
-
     public bool IsActive {
         get {
             activeMutex.WaitOne();
@@ -43,14 +33,20 @@ public class DebugFieldRenderer : IFieldRenderer {
     private IActor? selectedActor;
 
     // 3D visualization settings
-    private bool showBoxColliders = true;   // Box colliders enabled by default (main map blocks)
-    private bool showMeshColliders = false; // Mesh colliders disabled by default
-    private bool showSpawnPoints = false;   // Spawn points disabled by default
-    private bool showVibrateObjects = false; // Vibrate objects disabled by default
-    private bool showActors = true;        // Actors enabled by default
+    private bool showBoxColliders = true; // Box colliders enabled by default (main map blocks)
+    private bool showMeshColliders; // Mesh colliders disabled by default
+    private bool showSpawnPoints; // Spawn points disabled by default
+    private bool showVibrateObjects; // Vibrate objects disabled by default
+    private bool showActors = true; // Actors enabled by default
 
     // Entity caching for performance
-    private FieldEntity[]? cachedStaticEntities = null; // Cache static entities (spawn points, triggers, etc.)
+    private FieldEntity[]? cachedStaticEntities; // Cache static entities (spawn points, triggers, etc.)
+
+    private const float AgentRadiusMeters = 0.3f;
+    private const float AgentHeightMeters = 1.4f;
+    private const float GameUnitsPerMeter = 100.0f;
+
+    private static readonly Vector3 CameraFollowOffset = new Vector3(-900, -1200, 2000);
 
     public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {
         Context = context;
@@ -460,8 +456,8 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
-        if (!Context.IsFollowingPlayer && !Context.HasManuallyStopped) {
-            var firstPlayer = Field.Players.Values.FirstOrDefault();
+        if (Context is { IsFollowingPlayer: false, HasManuallyStopped: false }) {
+            FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
                 Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
             }
@@ -572,10 +568,10 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             // Convert Euler angles (degrees) to quaternion
             Vector3 rotationRadians = meshCollider.Rotation * (MathF.PI / 180.0f);
-            Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
             // Apply coordinate system transformation (Y↔Z flip)
-            Quaternion coordinateTransform = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float)(-Math.PI / 2));
+            var coordinateTransform = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
             rotation = coordinateTransform * rotation;
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
@@ -593,7 +589,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         foreach (FieldSpawnTile spawnPoint in allSpawnPoints) {
             // Convert Euler angles (degrees) to quaternion
             Vector3 rotationRadians = spawnPoint.Rotation * (MathF.PI / 180.0f);
-            Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 50.0f) *
                                     Matrix4x4.CreateFromQuaternion(rotation) *
@@ -608,7 +604,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         foreach (FieldVibrateEntity vibrateEntity in Field.AccelerationStructure!.VibrateEntities) {
             // Convert Euler angles (degrees) to quaternion
             Vector3 rotationRadians = vibrateEntity.Rotation * (MathF.PI / 180.0f);
-            Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 100.0f) *
                                     Matrix4x4.CreateFromQuaternion(rotation) *
@@ -620,15 +616,14 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     private void RenderActors() {
-        // Agent parameters from Navigation.cs: radius=0.3f (30cm), height=1.4f (140cm)
-        const float agentRadius = 0.3f * 100.0f; // Convert to game units (30cm)
-        const float agentHeight = 1.4f * 100.0f; // Convert to game units (140cm)
+        const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
+        const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
 
         // Render players using cylinders (like Recast agents) - Cyan color
         Context.SetColor(0, 1, 1, 1); // Cyan for players
         foreach ((int _, FieldPlayer player) in Field.Players) {
             // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
-            Matrix4x4 rotation = Matrix4x4.CreateRotationX((float)(Math.PI / 2));
+            var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
                                     rotation *
                                     Matrix4x4.CreateTranslation(player.Position);
@@ -647,7 +642,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             }
 
             // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
-            Matrix4x4 rotation = Matrix4x4.CreateRotationX((float)(Math.PI / 2));
+            var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
                                     rotation *
                                     Matrix4x4.CreateTranslation(npc.Position);
@@ -671,7 +666,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             }
 
             // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
-            Matrix4x4 rotation = Matrix4x4.CreateRotationX((float)(Math.PI / 2));
+            var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
                                     rotation *
                                     Matrix4x4.CreateTranslation(mob.Position);
@@ -774,13 +769,13 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     private void SetFieldOverviewCamera() {
-        var allColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
+        List<FieldBoxColliderEntity> allColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
         if (allColliders.Count > 0) {
             // Calculate field bounds in map coordinates
             Vector3 min = allColliders[0].Position;
             Vector3 max = allColliders[0].Position;
 
-            foreach (var collider in allColliders) {
+            foreach (FieldBoxColliderEntity collider in allColliders) {
                 min = Vector3.Min(min, collider.Position - collider.Size * 0.5f);
                 max = Vector3.Max(max, collider.Position + collider.Size * 0.5f);
             }
@@ -789,9 +784,8 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector3 centerMap = (min + max) * 0.5f;
             Vector3 sizeMap = max - min;
 
-            Vector3 center = TransformMapPosition(centerMap);
-            Vector3 size = TransformMapSize(sizeMap);
-            float distance = Math.Max(size.X, Math.Max(size.Y, size.Z)) * 1.5f;
+            Vector3 center = Vector3.Transform(centerMap, MapRotation);
+            float distance = Math.Max(sizeMap.X, Math.Max(sizeMap.Y, sizeMap.Z)) * 1.5f;
 
             Context.SetCameraTarget(center);
             Context.SetCameraPosition(center + new Vector3(0, -distance * 0.7f, distance * 0.7f));
@@ -817,17 +811,16 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Update camera to follow player position
         Vector3 playerPosition = followedPlayer.Position;
-        Vector3 offset = new Vector3(-900, -1200, 2000); // Much further behind and above the player for better overview
 
         Context.SetCameraTarget(playerPosition);
-        Context.SetCameraPosition(playerPosition + offset);
+        Context.SetCameraPosition(playerPosition + CameraFollowOffset);
     }
 
     private Vector2D<int> GetFieldWindowSize() {
         // Get the size from the first active field window, or use default
         activeMutex.WaitOne();
         try {
-            var firstWindow = activeWindows.FirstOrDefault();
+            DebugFieldWindow? firstWindow = activeWindows.FirstOrDefault();
             if (firstWindow?.DebuggerWindow != null) {
                 return firstWindow.DebuggerWindow.FramebufferSize;
             }
@@ -839,7 +832,9 @@ public class DebugFieldRenderer : IFieldRenderer {
         return DebugGraphicsContext.DefaultFieldWindowSize;
     }
 
-    private Vector2? WorldToScreen(Vector3 worldPos) {
+    private bool TryWorldToScreen(Vector3 worldPos, out Vector2 screenPos) {
+        screenPos = Vector2.Zero;
+
         // Transform world position to screen coordinates
         Matrix4x4 viewMatrix = Context.ViewMatrix;
         Matrix4x4 projMatrix = Context.ProjectionMatrix;
@@ -849,16 +844,16 @@ public class DebugFieldRenderer : IFieldRenderer {
         Vector4 clipPos = Vector4.Transform(new Vector4(worldPos, 1.0f), viewProjMatrix);
 
         // Check if behind camera
-        if (clipPos.W <= 0) return null;
+        if (clipPos.W <= 0) return false;
 
         // Perspective divide to get NDC coordinates
         Vector3 ndcPos = new Vector3(clipPos.X, clipPos.Y, clipPos.Z) / clipPos.W;
 
         // Check if outside screen bounds (with some tolerance)
-        if (ndcPos.X < -1.2f || ndcPos.X > 1.2f || ndcPos.Y < -1.2f || ndcPos.Y > 1.2f) return null;
+        if (ndcPos.X < -1.2f || ndcPos.X > 1.2f || ndcPos.Y < -1.2f || ndcPos.Y > 1.2f) return false;
 
         // Get the actual viewport size from the field window (not main window)
-        var windowSize = GetFieldWindowSize();
+        Vector2D<int> windowSize = GetFieldWindowSize();
 
         // Convert NDC to screen coordinates
         // NDC: (-1, -1) = bottom-left, (1, 1) = top-right
@@ -866,99 +861,96 @@ public class DebugFieldRenderer : IFieldRenderer {
         float screenX = (ndcPos.X + 1.0f) * 0.5f * windowSize.X;
         float screenY = (1.0f - ndcPos.Y) * 0.5f * windowSize.Y; // Flip Y axis for screen coordinates
 
-        return new Vector2(screenX, screenY);
+        screenPos = new Vector2(screenX, screenY);
+        return true;
     }
 
     private void RenderActorTextLabels() {
-        var drawList = ImGui.GetBackgroundDrawList();
+        ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
 
         // Render player names using ImGui
         foreach ((int _, FieldPlayer player) in Field.Players) {
-            Vector3 textPos = player.Position + new Vector3(0, 0, 200); // Above the cylinder (higher)
-            Vector2? screenPos = WorldToScreen(textPos);
-            if (screenPos.HasValue) {
-                string playerName = player.Value.Character.Name;
-                Vector2 textSize = ImGui.CalcTextSize(playerName);
-                Vector4 textColor = new Vector4(0, 1, 1, 1); // Cyan
+            Vector3 textPos = player.Position + new Vector3(0, 0, 200); // Above the cylinder
+            if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
-                // Draw semi-transparent background
-                Vector2 bgMin = screenPos.Value - new Vector2(4, 2);
-                Vector2 bgMax = screenPos.Value + textSize + new Vector2(4, 2);
-                drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f))); // Dark background
-                drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f))); // Border
+            string playerName = player.Value.Character.Name;
+            Vector2 textSize = ImGui.CalcTextSize(playerName);
+            var textColor = new Vector4(0, 1, 1, 1); // Cyan
 
-                // Draw text on top
-                drawList.AddText(screenPos.Value, ImGui.ColorConvertFloat4ToU32(textColor), playerName);
-            }
+            // Draw semi-transparent background
+            Vector2 bgMin = screenPos - new Vector2(4, 2);
+            Vector2 bgMax = screenPos + textSize + new Vector2(4, 2);
+            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f))); // Dark background
+            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f))); // Border
+
+            // Draw text on top
+            drawList.AddText(screenPos, ImGui.ColorConvertFloat4ToU32(textColor), playerName);
         }
 
         // Render NPC names ImGui
         foreach ((int _, FieldNpc npc) in Field.Npcs) {
-            Vector3 textPos = npc.Position + new Vector3(0, 0, 200); // Above the cylinder (higher)
-            Vector2? screenPos = WorldToScreen(textPos);
-            if (screenPos.HasValue) {
-                string npcName = npc.Value.Metadata.Name ?? $"NPC {npc.Value.Metadata.Id}";
+            Vector3 textPos = npc.Position + new Vector3(0, 0, 200); // Above the cylinder
+            if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
-                Vector4 textColor = new Vector4(0, 1, 0, 1);
-                uint color = ImGui.ColorConvertFloat4ToU32(textColor);
+            string npcName = npc.Value.Metadata.Name ?? $"NPC {npc.Value.Metadata.Id}";
 
-                // Draw background for NPC name
-                Vector2 nameSize = ImGui.CalcTextSize(npcName);
-                Vector2 nameBgMin = screenPos.Value - new Vector2(4, 2);
-                Vector2 nameBgMax = screenPos.Value + nameSize + new Vector2(4, 2);
-                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+            var textColor = new Vector4(0, 1, 0, 1);
+            uint color = ImGui.ColorConvertFloat4ToU32(textColor);
 
-                drawList.AddText(screenPos.Value, color, npcName);
-            }
+            // Draw background for NPC name
+            Vector2 nameSize = ImGui.CalcTextSize(npcName);
+            Vector2 nameBgMin = screenPos - new Vector2(4, 2);
+            Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
+            drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
+            drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+
+            drawList.AddText(screenPos, color, npcName);
         }
 
         // Render Mob names and HP using ImGui
         foreach ((int _, FieldNpc mob) in Field.Mobs) {
-            Vector3 textPos = mob.Position + new Vector3(0, 0, 200); // Above the cylinder (higher)
-            Vector2? screenPos = WorldToScreen(textPos);
-            if (screenPos.HasValue) {
-                string mobName = mob.Value.Metadata.Name ?? $"Mob {mob.Value.Metadata.Id}";
+            Vector3 textPos = mob.Position + new Vector3(0, 0, 200); // Above the cylinder
+            if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
-                // Calculate HP percentage
-                long currentHp = mob.Stats.Values[BasicAttribute.Health].Current;
-                long maxHp = mob.Stats.Values[BasicAttribute.Health].Total;
-                float hpPercent = maxHp > 0 ? (float)currentHp / maxHp * 100f : 0f;
+            string mobName = mob.Value.Metadata.Name ?? $"Mob {mob.Value.Metadata.Id}";
 
-                // Choose color based on status
-                Vector4 textColor;
-                if (mob.IsDead) {
-                    textColor = new Vector4(0.5f, 0.5f, 0.5f, 0.7f); // Gray for dead
-                } else if (mob.BattleState.InBattle) {
-                    textColor = new Vector4(1, 0, 0, 1); // Red for aggressive
-                } else {
-                    textColor = new Vector4(1, 1, 0, 1); // Yellow for wandering
-                }
+            // Calculate HP percentage
+            long currentHp = mob.Stats.Values[BasicAttribute.Health].Current;
+            long maxHp = mob.Stats.Values[BasicAttribute.Health].Total;
+            float hpPercent = maxHp > 0 ? (float) currentHp / maxHp * 100f : 0f;
 
-                uint color = ImGui.ColorConvertFloat4ToU32(textColor);
-
-                // Draw background for mob name
-                Vector2 nameSize = ImGui.CalcTextSize(mobName);
-                Vector2 nameBgMin = screenPos.Value - new Vector2(4, 2);
-                Vector2 nameBgMax = screenPos.Value + nameSize + new Vector2(4, 2);
-                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
-
-                drawList.AddText(screenPos.Value, color, mobName);
-
-                // Position HP text below the name
-                Vector3 hpTextPos = mob.Position + new Vector3(0, 0, 180); // Slightly below name
-                Vector2? hpScreenPos = WorldToScreen(hpTextPos);
-                if (hpScreenPos.HasValue) {
-                    string hpText = $"HP: {hpPercent:F1}%";
-                    Vector2 hpSize = ImGui.CalcTextSize(hpText);
-                    Vector2 hpBgMin = hpScreenPos.Value - new Vector2(4, 2);
-                    Vector2 hpBgMax = hpScreenPos.Value + hpSize + new Vector2(4, 2);
-                    drawList.AddRectFilled(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                    drawList.AddRect(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
-                    drawList.AddText(hpScreenPos.Value, color, hpText);
-                }
+            // Choose color based on status
+            Vector4 textColor;
+            if (mob.IsDead) {
+                textColor = new Vector4(0.5f, 0.5f, 0.5f, 0.7f); // Gray for dead
+            } else if (mob.BattleState.InBattle) {
+                textColor = new Vector4(1, 0, 0, 1); // Red for aggressive
+            } else {
+                textColor = new Vector4(1, 1, 0, 1); // Yellow for wandering
             }
+
+            uint color = ImGui.ColorConvertFloat4ToU32(textColor);
+
+            // Draw background for mob name
+            Vector2 nameSize = ImGui.CalcTextSize(mobName);
+            Vector2 nameBgMin = screenPos - new Vector2(4, 2);
+            Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
+            drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
+            drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+
+            drawList.AddText(screenPos, color, mobName);
+
+            // Position HP text below the name
+            Vector3 hpTextPos = mob.Position + new Vector3(0, 0, 180); // Slightly below name
+            if (!TryWorldToScreen(hpTextPos, out Vector2 hpScreenPos)) continue;
+
+            string hpText = $"HP: {hpPercent:F1}%";
+            Vector2 hpSize = ImGui.CalcTextSize(hpText);
+            Vector2 hpBgMin = hpScreenPos - new Vector2(4, 2);
+            Vector2 hpBgMax = hpScreenPos + hpSize + new Vector2(4, 2);
+            drawList.AddRectFilled(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
+            drawList.AddRect(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+            drawList.AddText(hpScreenPos, color, hpText);
         }
     }
 
