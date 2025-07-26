@@ -125,9 +125,9 @@ public class CoreModels {
         List<AttributeBinding> attributeBinding = [];
 
         for (int i = 0; i < cubeSolidIndices.Length; i += 3) {
-            PositionBinding vertA = cubeVertices[cubeSolidIndices[i + 0]];
-            PositionBinding vertB = cubeVertices[cubeSolidIndices[i + 1]];
-            PositionBinding vertC = cubeVertices[cubeSolidIndices[i + 2]];
+            PositionBinding vertA = cubeVertices[cubeSolidIndices[i] + 0];
+            PositionBinding vertB = cubeVertices[cubeSolidIndices[i] + 1];
+            PositionBinding vertC = cubeVertices[cubeSolidIndices[i] + 2];
 
             positionBinding.Add(vertA);
             positionBinding.Add(vertB);
@@ -160,9 +160,9 @@ public class CoreModels {
             PrimitiveCount = 2,
         };
 
-        List<PositionBinding> vertices = new();
-        List<uint> wireIndices = new();
-        List<uint> solidIndices = new();
+        List<PositionBinding> vertices = [];
+        List<uint> wireIndices = [];
+        List<uint> solidIndices = [];
 
         // Create vertices for bottom circle (y = 0)
         for (int i = 0; i < segments; i++) {
