@@ -143,8 +143,9 @@ public class MasteryManager {
             case MasteryType.Gathering:
             case MasteryType.Breeding:
                 short playerLevel = GetLevel(recipeMetadata.Type);
-                if (playerLevel - recipeMetadata.RewardMastery >= 3) {
-                    // no mastery given - recipe level is more than 3 levels below player's mastery level
+                // no mastery given - recipe level is more than 3 levels below player's mastery level
+                int masteryFactorCount = session.TableMetadata.MasteryDifferentialFactorTable.Entries.Values.Count(m => m.Factor > 0);
+                if (playerLevel - recipeMetadata.RewardMastery >= masteryFactorCount) {
                     return true;
                 }
                 break;
