@@ -6,6 +6,7 @@ using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using System.Drawing;
 using System.Numerics;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -13,6 +14,38 @@ public enum ImGuiWindowType {
     NoToolbar,
     Main,
     Field,
+}
+
+public struct KeyState {
+    public bool IsDown;
+    public bool LastInput;
+    public bool Changed => LastInput != IsDown;
+    public bool IsPressed => IsDown && Changed;
+    public bool IsReleased => !IsDown && Changed;
+    public bool IsHeld => IsDown && !Changed;
+    public bool IsIdle => !IsDown && !Changed;
+}
+
+public struct AnalogInput {
+    public Vector3 Position;
+    public Vector3 LastPosition;
+    public Vector3 Delta => Position - LastPosition;
+    public bool Moved => !Position.IsNearlyEqual(LastPosition);
+    public bool Lock;
+}
+
+public class InputState {
+    public bool CapturedKeyboard;
+    public bool CapturedMouse;
+    public bool InputFocused;
+    public KeyState[] KeyStates { get; init; } = new KeyState[(int) Key.Menu + 1];
+    public KeyState MouseLeft = new();
+    public KeyState MouseMiddle = new();
+    public KeyState MouseRight = new();
+    public AnalogInput MousePosition = new();
+    public AnalogInput MouseWheel = new();
+
+    public KeyState GetState(Key key) => KeyStates[(int) key];
 }
 
 public class ImGuiController {
