@@ -73,7 +73,7 @@ namespace Maple2.Server.DebugGame.Graphics.Resources {
                     PSysMem = bindingData,
                 };
 
-                ID3D11Buffer* bufferHandle = default;
+                ID3D11Buffer* bufferHandle = null;
                 SilkMarshal.ThrowHResult(Context.DxDevice.CreateBuffer(ref bufferDescription, ref subresourceData, ref bufferHandle));
                 buffer = bufferHandle;
             }

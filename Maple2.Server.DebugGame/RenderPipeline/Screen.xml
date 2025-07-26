@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<pipeline name="Screen">
+    <pass>
+        <output name="swapchain" />
+        <program>
+            <shader path="Pipelines/Screen/vertex.hlsl" stage="vertex" entry="vs_main" />
+            <shader path="Pipelines/Screen/pixel.hlsl" stage="pixel" entry="ps_main" />
+        </program>
+    </pass>
+</pipeline>
