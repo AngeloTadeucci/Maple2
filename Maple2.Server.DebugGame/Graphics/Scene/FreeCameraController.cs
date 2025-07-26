@@ -6,8 +6,7 @@ namespace Maple2.Server.DebugGame.Graphics.Scene;
 public class FreeCameraController {
     const float MAX_PITCH = (float.Pi / 180) * 89;
 
-    // public InputState? InputState; // wtf is input state?
-    public dynamic? InputState;
+    public InputState? InputState;
     public Camera? Camera;
 
     private const Key MoveForward = Key.W;
