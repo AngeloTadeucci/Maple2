@@ -6,6 +6,7 @@ using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using System.Drawing;
 using System.Numerics;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -15,15 +16,47 @@ public enum ImGuiWindowType {
     Field,
 }
 
+public struct KeyState {
+    public bool IsDown;
+    public bool LastInput;
+    public bool Changed => LastInput != IsDown;
+    public bool IsPressed => IsDown && Changed;
+    public bool IsReleased => !IsDown && Changed;
+    public bool IsHeld => IsDown && !Changed;
+    public bool IsIdle => !IsDown && !Changed;
+}
+
+public struct AnalogInput {
+    public Vector3 Position;
+    public Vector3 LastPosition;
+    public Vector3 Delta => Position - LastPosition;
+    public bool Moved => !Position.IsNearlyEqual(LastPosition);
+    public bool Lock;
+}
+
+public class InputState {
+    public bool CapturedKeyboard;
+    public bool CapturedMouse;
+    public bool InputFocused;
+    public KeyState[] KeyStates { get; init; } = new KeyState[(int) Key.Menu + 1];
+    public KeyState MouseLeft = new();
+    public KeyState MouseMiddle = new();
+    public KeyState MouseRight = new();
+    public AnalogInput MousePosition = new();
+    public AnalogInput MouseWheel = new();
+
+    public KeyState GetState(Key key) => KeyStates[(int) key];
+}
+
 public class ImGuiController {
     public static readonly ILogger Logger = Log.Logger.ForContext<ImGuiController>();
 
-    public DebugGraphicsContext Context { get; init; }
-    public IWindow? ParentWindow { get; private set; }
-    public IInputContext Input { get; init; }
-    public IntPtr ImGuiContext { get; private set; }
-    public ImGuiWindowType WindowType { get; init; }
-    private List<char> pressedCharacters;
+    private DebugGraphicsContext Context { get; init; }
+    private IWindow? ParentWindow { get; set; }
+    private IInputContext Input { get; init; }
+    private IntPtr ImGuiContext { get; set; }
+    private ImGuiWindowType WindowType { get; init; }
+    private readonly List<char> pressedCharacters;
 
     private List<IUiWindow> uiWindows = [];
     private Dictionary<Type, IUiWindow> uiWindowMap = new();
@@ -60,7 +93,7 @@ public class ImGuiController {
         }
 
         foreach (Type type in _uiWindowTypes) {
-            var windowObject = Activator.CreateInstance(type);
+            object? windowObject = Activator.CreateInstance(type);
 
             if (windowObject is not IUiWindow window) {
                 throw new InvalidCastException($"Type {type.Name} doesn't implement IUiWindow");
@@ -111,7 +144,7 @@ public class ImGuiController {
         ImGuiNative.igImGui_ImplDX11_Shutdown();
         ImGui.DestroyContext(ImGuiContext);
 
-        ImGuiContext = default;
+        ImGuiContext = 0;
 
         Input.ConnectionChanged -= OnConnectionChanged;
 
