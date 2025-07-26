@@ -53,7 +53,7 @@ public class Texture {
                     SysMemSlicePitch = (uint) (image.Width * sizeof(int) * image.Height),
                 };
 
-                ID3D11Texture2D* texture = default;
+                ID3D11Texture2D* texture = null;
                 SilkMarshal.ThrowHResult(Context.DxDevice.CreateTexture2D(
                     pDesc: in textureDesc,
                     pInitialData: in subresourceData,
@@ -75,7 +75,7 @@ public class Texture {
             },
         };
 
-        ID3D11ShaderResourceView* resourceView = default;
+        ID3D11ShaderResourceView* resourceView = null;
         SilkMarshal.ThrowHResult(Context.DxDevice.CreateShaderResourceView(
             pResource: Texture2D,
             pDesc: ref resourceViewDesc,
@@ -98,7 +98,7 @@ public class Texture {
         samplerDesc.BorderColor[2] = 0.0f;
         samplerDesc.BorderColor[3] = 1.0f;
 
-        ID3D11SamplerState* samplerState = default;
+        ID3D11SamplerState* samplerState = null;
         SilkMarshal.ThrowHResult(Context.DxDevice.CreateSamplerState(
             pSamplerDesc: in samplerDesc,
             ppSamplerState: ref samplerState));
