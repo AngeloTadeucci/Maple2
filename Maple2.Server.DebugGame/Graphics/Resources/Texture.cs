@@ -40,7 +40,7 @@ public class Texture {
             BindFlags = (uint) BindFlag.ShaderResource,
             Usage = Usage.Default,
             CPUAccessFlags = 0,
-            MiscFlags = (uint) ResourceMiscFlag.None,
+            MiscFlags = 0,
             SampleDesc = new SampleDesc(1, 0),
             ArraySize = 1,
         };

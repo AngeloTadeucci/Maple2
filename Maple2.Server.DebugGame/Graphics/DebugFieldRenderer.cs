@@ -37,6 +37,7 @@ public class DebugFieldRenderer : IFieldRenderer {
     private bool showMeshColliders; // Mesh colliders disabled by default
     private bool showSpawnPoints; // Spawn points disabled by default
     private bool showVibrateObjects; // Vibrate objects disabled by default
+    private bool showPortals = true; // Portals enabled by default
     private bool showActors = true; // Actors enabled by default
 
     // Entity caching for performance
@@ -524,6 +525,15 @@ public class DebugFieldRenderer : IFieldRenderer {
             RenderVibrateObjects();
         }
 
+        // Render portals
+        if (showPortals) {
+            RenderPortals();
+            RenderPortalConnectionLines();
+
+            // Render portal text labels
+            RenderPortalTextLabels();
+        }
+
         // Render actors (players, NPCs, mobs)
         if (showActors) {
             RenderActors();
@@ -599,6 +609,9 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     private void RenderVibrateObjects() {
+        // Set pink color for vibrate objects
+        Context.SetColor(1, 0.75f, 0.8f, 1); // Pink for vibrate objects
+
         foreach (FieldVibrateEntity vibrateEntity in Field.AccelerationStructure!.VibrateEntities) {
             // Convert Euler angles (degrees) to quaternion
             Vector3 rotationRadians = vibrateEntity.Rotation * (MathF.PI / 180.0f);
@@ -608,9 +621,85 @@ public class DebugFieldRenderer : IFieldRenderer {
                                     Matrix4x4.CreateFromQuaternion(rotation) *
                                     Matrix4x4.CreateTranslation(vibrateEntity.Position);
 
-            Context.UpdateConstantBuffer(worldMatrix);
+            Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (pink)
             Context.CoreModels!.WireCube.Draw();
         }
+    }
+
+    private void RenderPortals() {
+        // Set blue color for portals
+        Context.SetColor(0, 0.5f, 1, 1); // Blue for portals
+
+        foreach (FieldPortal portal in Field.GetPortals()) {
+            // Convert Euler angles (degrees) to quaternion
+            Vector3 rotationRadians = portal.Rotation * (MathF.PI / 180.0f);
+            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+
+            // Use portal dimensions if available, otherwise use default size
+            Vector3 size = portal.Value.Dimension != Vector3.Zero ? portal.Value.Dimension : Vector3.One * 100.0f;
+
+            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
+                                    Matrix4x4.CreateFromQuaternion(rotation) *
+                                    Matrix4x4.CreateTranslation(portal.Position);
+
+            Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (blue)
+            Context.CoreModels!.WireCube.Draw();
+        }
+    }
+
+    private void RenderPortalConnectionLines() {
+        // Set cyan color for portal connection lines
+        Context.SetColor(0, 1, 1, 0.7f); // Cyan with some transparency
+
+        List<FieldPortal> portals = Field.GetPortals().ToList();
+
+        foreach (FieldPortal sourcePortal in portals) {
+            // Only draw lines for portals that target the same field and have a specific target portal
+            if (sourcePortal.Value.TargetMapId == Field.MapId && sourcePortal.Value.TargetPortalId > 0) {
+                // Find the target portal in the same field
+                FieldPortal? targetPortal = portals.FirstOrDefault(p => p.Value.Id == sourcePortal.Value.TargetPortalId);
+
+                if (targetPortal != null) {
+                    // Draw a line between the two portals
+                    RenderLine(sourcePortal.Position, targetPortal.Position);
+                }
+            }
+        }
+    }
+
+    private void RenderLine(Vector3 start, Vector3 end) {
+        // Create a line by drawing a thin cylinder between two points
+        Vector3 direction = end - start;
+        float distance = direction.Length();
+
+        if (distance < 0.1f) return; // Skip very short lines
+
+        Vector3 center = (start + end) * 0.5f;
+        Vector3 normalizedDirection = Vector3.Normalize(direction);
+
+        // Calculate rotation to align cylinder with the line direction
+        // The cylinder model is oriented along the Y axis by default
+        Vector3 defaultUp = Vector3.UnitY;
+        Quaternion rotation;
+
+        // Check if direction is parallel to Y axis
+        float dot = Vector3.Dot(defaultUp, normalizedDirection);
+        if (Math.Abs(dot) > 0.999f) {
+            // Direction is parallel to Y axis, no rotation needed (or 180 degrees)
+            rotation = dot > 0 ? Quaternion.Identity : Quaternion.CreateFromAxisAngle(Vector3.UnitX, MathF.PI);
+        } else {
+            // Calculate rotation between Y axis and direction
+            Vector3 axis = Vector3.Normalize(Vector3.Cross(defaultUp, normalizedDirection));
+            float angle = MathF.Acos(Math.Clamp(dot, -1.0f, 1.0f));
+            rotation = Quaternion.CreateFromAxisAngle(axis, angle);
+        }
+
+        Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(10.0f, distance / 2.0f, 10.0f)) *
+                                Matrix4x4.CreateFromQuaternion(rotation) *
+                                Matrix4x4.CreateTranslation(center);
+
+        Context.UpdateConstantBuffer(worldMatrix, true);
+        Context.CoreModels!.Cylinder.Draw();
     }
 
     private void RenderActors() {
@@ -683,6 +772,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             ImGui.Checkbox("Show Mesh Colliders", ref showMeshColliders);
             ImGui.Checkbox("Show Spawn Points", ref showSpawnPoints);
             ImGui.Checkbox("Show Vibrate Objects", ref showVibrateObjects);
+            ImGui.Checkbox("Show Portals", ref showPortals);
             ImGui.Checkbox("Show Actors", ref showActors);
 
             ImGui.Separator();
@@ -937,9 +1027,9 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             drawList.AddText(screenPos, color, mobName);
 
-            // Position HP text below the name
-            Vector3 hpTextPos = mob.Position + new Vector3(0, 0, 180); // Slightly below name
-            if (!TryWorldToScreen(hpTextPos, out Vector2 hpScreenPos)) continue;
+            // Position HP text below the name using screen-space offset to avoid overlap when zoomed out
+            // Calculate HP text position in screen space (below the name) with consistent pixel spacing
+            Vector2 hpScreenPos = new Vector2(screenPos.X, screenPos.Y + nameSize.Y + 4); // 4 pixels below name
 
             string hpText = $"HP: {hpPercent:F1}%";
             Vector2 hpSize = ImGui.CalcTextSize(hpText);
@@ -948,6 +1038,55 @@ public class DebugFieldRenderer : IFieldRenderer {
             drawList.AddRectFilled(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
             drawList.AddRect(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
             drawList.AddText(hpScreenPos, color, hpText);
+        }
+    }
+
+    private void RenderPortalTextLabels() {
+        ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
+
+        // Render portal information using ImGui
+        foreach (FieldPortal portal in Field.GetPortals()) {
+            Vector3 textPos = portal.Position + new Vector3(0, 0, 150); // Above the portal cube
+            if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
+
+            // Build portal info text
+            string enabledText = portal.Enabled ? "Enabled" : "Disabled";
+            string idText = $"ID: {portal.Value.Id}";
+            string targetText = $"Target: {portal.Value.TargetMapId}";
+            string targetPortalText = $"Target Portal: {portal.Value.TargetPortalId}";
+            string typeText = $"Type: {portal.Value.Type}";
+
+            // Choose color based on enabled status
+            Vector4 textColor = portal.Enabled ? new Vector4(0, 0.8f, 1, 1) : new Vector4(0.6f, 0.6f, 0.6f, 1); // Blue if enabled, gray if disabled
+            uint color = ImGui.ColorConvertFloat4ToU32(textColor);
+
+            // Calculate total text size for background
+            Vector2 enabledSize = ImGui.CalcTextSize(enabledText);
+            Vector2 idSize = ImGui.CalcTextSize(idText);
+            Vector2 targetSize = ImGui.CalcTextSize(targetText);
+            Vector2 targetPortalSize = ImGui.CalcTextSize(targetPortalText);
+            Vector2 typeSize = ImGui.CalcTextSize(typeText);
+
+            float maxWidth = Math.Max(Math.Max(Math.Max(enabledSize.X, idSize.X), Math.Max(targetSize.X, targetPortalSize.X)), typeSize.X);
+            float totalHeight = enabledSize.Y + idSize.Y + targetSize.Y + targetPortalSize.Y + typeSize.Y + 8; // 8 pixels spacing between lines
+
+            // Draw background
+            Vector2 bgMin = screenPos - new Vector2(4, 2);
+            Vector2 bgMax = screenPos + new Vector2(maxWidth + 8, totalHeight + 4);
+            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.8f))); // Dark background
+            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.3f, 0.3f, 0.3f, 0.9f))); // Border
+
+            // Draw text lines
+            Vector2 currentPos = screenPos;
+            drawList.AddText(currentPos, color, enabledText);
+            currentPos.Y += enabledSize.Y + 1;
+            drawList.AddText(currentPos, color, idText);
+            currentPos.Y += idSize.Y + 1;
+            drawList.AddText(currentPos, color, targetText);
+            currentPos.Y += targetSize.Y + 1;
+            drawList.AddText(currentPos, color, targetPortalText);
+            currentPos.Y += targetPortalSize.Y + 1;
+            drawList.AddText(currentPos, color, typeText);
         }
     }
 
