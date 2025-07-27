@@ -23,9 +23,6 @@ public class DebugFieldWindow {
 
     private static int _windowIdCounter;
 
-    // Camera input tracking
-    private Vector2 lastMousePosition;
-
     public DebugFieldWindow(DebugGraphicsContext context) {
         Context = context;
         WindowId = _windowIdCounter++;
@@ -101,9 +98,7 @@ public class DebugFieldWindow {
 
     }
 
-    private void OnClose() {
-
-    }
+    private void OnClose() { }
 
     private void OnLoad() {
         Input = DebuggerWindow!.CreateInput();
@@ -149,8 +144,9 @@ public class DebugFieldWindow {
             DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.RoomId})";
         }
 
-        // Handle camera input for this field window
-        HandleCameraInput((float) delta);
+        // Update camera input state and let FreeCameraController handle input
+        UpdateCameraInputState();
+        Context.CameraController.Update((float) delta);
     }
 
     public unsafe void OnRender(double delta) {
@@ -208,123 +204,59 @@ public class DebugFieldWindow {
         IsClosing = true;
     }
 
-    private void UnloadField(DebugFieldRenderer renderer) {
+    private void UnloadField(DebugFieldRenderer renderer) { }
 
-    }
+    private void LoadField(DebugFieldRenderer renderer) { }
 
-    private void LoadField(DebugFieldRenderer renderer) {
-
-    }
-
-    private void HandleCameraInput(float deltaTime) {
+    private void UpdateCameraInputState() {
         if (Input == null) return;
 
+        // Initialize InputState if not already done
+        if (Context.CameraController.InputState == null) {
+            Context.CameraController.InputState = new InputState();
+        }
+
+        InputState inputState = Context.CameraController.InputState;
         IKeyboard keyboard = Input.Keyboards[0];
         IMouse mouse = Input.Mice[0];
 
-        float moveSpeed = 500.0f * deltaTime; // Units per second
-        float rotateSpeed = 2.0f * deltaTime; // Radians per second
+        // Update InputFocused - camera should be active when window is focused
+        inputState.InputFocused = true;
 
-        // Faster movement when holding Shift
-        if (keyboard.IsKeyPressed(Key.ShiftLeft) || keyboard.IsKeyPressed(Key.ShiftRight)) {
-            moveSpeed *= 5.0f; // 5x faster with Shift
-        }
+        // Update keyboard state for specific keys we care about
+        Key[] keysToTrack = {
+            Key.W, Key.A, Key.S, Key.D, Key.Q, Key.E,
+            Key.ShiftLeft, Key.ShiftRight, Key.ControlLeft, Key.ControlRight,
+            Key.Space, Key.Escape, Key.Tab, Key.Enter,
+            Key.Up, Key.Down, Key.Left, Key.Right
+        };
 
-        // Calculate camera directions from quaternion rotation
-        Vector3 forward = Vector3.Transform(Vector3.UnitX, Context.CameraRotation); // X is forward in our coordinate system
-        Vector3 right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitZ)); // Use Z as world up for transformed coords
-        Vector3 up = Vector3.UnitZ; // Use Z as up direction for Q/E movement
-
-        // WASD movement
-        Vector3 movement = Vector3.Zero;
-        if (keyboard.IsKeyPressed(Key.W)) movement += forward;
-        if (keyboard.IsKeyPressed(Key.S)) movement -= forward;
-        if (keyboard.IsKeyPressed(Key.A)) movement -= right;
-        if (keyboard.IsKeyPressed(Key.D)) movement += right;
-        if (keyboard.IsKeyPressed(Key.Q)) movement += up;
-        if (keyboard.IsKeyPressed(Key.E)) movement -= up;
-
-        // Arrow keys for camera rotation (quaternion-based)
-        bool rotated = false;
-        Quaternion rotationDelta = Quaternion.Identity;
-
-        if (keyboard.IsKeyPressed(Key.Left)) {
-            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, rotateSpeed); // Yaw left
-            rotated = true;
-        }
-        if (keyboard.IsKeyPressed(Key.Right)) {
-            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, -rotateSpeed); // Yaw right
-            rotated = true;
-        }
-        if (keyboard.IsKeyPressed(Key.Up)) {
-            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, -rotateSpeed); // Pitch up (inverted)
-            rotated = true;
-        }
-        if (keyboard.IsKeyPressed(Key.Down)) {
-            rotationDelta *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, rotateSpeed); // Pitch down (inverted)
-            rotated = true;
-        }
-
-        if (rotated) {
-            // Apply rotation delta to camera
-            Context.CameraRotation = rotationDelta * Context.CameraRotation;
-            Context.CameraRotation = Quaternion.Normalize(Context.CameraRotation);
-            Context.UpdateViewMatrix();
-        }
-
-        if (movement != Vector3.Zero) {
-            movement = Vector3.Normalize(movement) * moveSpeed;
-            // Move camera position directly (free camera style)
-            Context.CameraPosition += movement;
-            Context.UpdateViewMatrix();
-
-            // Unlock camera follow when manually moving
-            if (Context.IsFollowingPlayer && movement.LengthSquared() > 0.01f) {
-                Context.StopFollowingPlayer();
+        foreach (Key key in keysToTrack) {
+            int keyIndex = (int)key;
+            if (keyIndex >= 0 && keyIndex < inputState.KeyStates.Length) {
+                inputState.KeyStates[keyIndex].LastInput = inputState.KeyStates[keyIndex].IsDown;
+                inputState.KeyStates[keyIndex].IsDown = keyboard.IsKeyPressed(key);
             }
         }
 
-        // Mouse look (only when right mouse button is held)
-        if (mouse.IsButtonPressed(MouseButton.Right)) {
-            Vector2 mouseDelta = mouse.Position - lastMousePosition;
+        // Update mouse button states
+        inputState.MouseLeft.LastInput = inputState.MouseLeft.IsDown;
+        inputState.MouseLeft.IsDown = mouse.IsButtonPressed(MouseButton.Left);
 
-            if (mouseDelta.X != 0 || mouseDelta.Y != 0) {
-                float sensitivity = 0.002f; // Mouse sensitivity
+        inputState.MouseMiddle.LastInput = inputState.MouseMiddle.IsDown;
+        inputState.MouseMiddle.IsDown = mouse.IsButtonPressed(MouseButton.Middle);
 
-                // Create rotation quaternions for yaw and pitch
-                Quaternion yawRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, -mouseDelta.X * sensitivity); // Yaw around Z-axis
-                Quaternion pitchRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, mouseDelta.Y * sensitivity); // Pitch around Y-axis (inverted)
+        inputState.MouseRight.LastInput = inputState.MouseRight.IsDown;
+        inputState.MouseRight.IsDown = mouse.IsButtonPressed(MouseButton.Right);
 
-                // Apply rotations: first yaw (world space), then pitch (local space)
-                Context.CameraRotation = yawRotation * Context.CameraRotation * pitchRotation;
+        // Update mouse position
+        inputState.MousePosition.LastPosition = inputState.MousePosition.Position;
+        inputState.MousePosition.Position = new Vector3(mouse.Position.X, mouse.Position.Y, 0);
 
-                // Normalize to prevent drift
-                Context.CameraRotation = Quaternion.Normalize(Context.CameraRotation);
-
-                Context.UpdateViewMatrix();
-            }
-        }
-
-        // Mouse wheel movement (with same modifiers as WASD)
-        if (mouse is { ScrollWheels.Count: > 0 }) {
-            float scroll = mouse.ScrollWheels[0].Y;
-            if (scroll != 0) {
-                // Use same speed modifiers as WASD movement
-                float wheelMoveSpeed = moveSpeed * scroll;
-
-                // Move forward/backward along camera's forward direction (like W/S)
-                Vector3 wheelMovement = forward * wheelMoveSpeed;
-
-                Context.CameraPosition += wheelMovement;
-                Context.UpdateViewMatrix();
-
-                // Unlock camera follow when manually moving
-                if (Context.IsFollowingPlayer && wheelMovement.LengthSquared() > 0.01f) {
-                    Context.StopFollowingPlayer();
-                }
-            }
-
-            lastMousePosition = mouse.Position;
+        // Update mouse wheel
+        inputState.MouseWheel.LastPosition = inputState.MouseWheel.Position;
+        if (mouse.ScrollWheels.Count > 0) {
+            inputState.MouseWheel.Position = new Vector3(mouse.ScrollWheels[0].X, mouse.ScrollWheels[0].Y, 0);
         }
     }
 }
