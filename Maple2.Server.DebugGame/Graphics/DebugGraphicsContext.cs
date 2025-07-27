@@ -10,6 +10,8 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Maple2.Server.DebugGame.Graphics.Assets;
+using Maple2.Server.DebugGame.Graphics.Scene;
+using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using System.Numerics;
 
@@ -54,7 +56,6 @@ public class DebugGraphicsContext : IGraphicsContext {
     private Texture? sampleTexture;
     private ImGuiController? ImGuiController { get; set; }
 
-    private string resourceRootPath = "";
 
     // 3D rendering state
     public Matrix4x4 ViewMatrix { get; set; } = Matrix4x4.Identity;
@@ -224,8 +225,12 @@ public class DebugGraphicsContext : IGraphicsContext {
         D3d11 = D3D11.GetApi(DebuggerWindow);
         Compiler = D3DCompiler.GetApi();
 
-        Shader.ShaderRootPath = GetResourceRootPath("Shaders");
-        Texture.TextureRootPath = GetResourceRootPath("Textures");
+        // Use application base directory where files are copied during build
+        Shader.ShaderRootPath = Path.Combine(AppContext.BaseDirectory, "Shaders");
+        Texture.TextureRootPath = Path.Combine(AppContext.BaseDirectory, "Textures");
+
+        // Set AssetRootPath for shader include system
+        ShaderPipelines.AssetRootPath = AppContext.BaseDirectory;
 
         unsafe {
             ComPtr<ID3D11Device> device = default;
@@ -286,10 +291,10 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         WireframePixelShader ??= new PixelShader(this);
 
-        VertexShader.Load("screenVertex.hlsl", "vs_main");
-        PixelShader.Load("screenPixel.hlsl", "ps_main");
-        WireframeVertexShader.Load("wireframeVertex.hlsl", "vs_main");
-        WireframePixelShader.Load("wireframePixel.hlsl", "ps_main");
+        VertexShader.Load(Path.Combine(Shader.ShaderRootPath, "screenVertex.hlsl"), "vs_main");
+        PixelShader.Load(Path.Combine(Shader.ShaderRootPath, "screenPixel.hlsl"), "ps_main");
+        WireframeVertexShader.Load(Path.Combine(Shader.ShaderRootPath, "wireframeVertex.hlsl"), "vs_main");
+        WireframePixelShader.Load(Path.Combine(Shader.ShaderRootPath, "wireframePixel.hlsl"), "ps_main");
 
         // Create 3D rendering resources
         Create3DRenderingResources();
@@ -299,7 +304,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         Logger.Information("Graphics context initialized");
 
         sampleTexture = new Texture(this);
-        sampleTexture.Load("sample_derp_wave.png");
+        sampleTexture.Load(Path.Combine(Texture.TextureRootPath, "sample_derp_wave.png"));
 
         // Initialize 3D matrices
         UpdateProjectionMatrix();
@@ -310,15 +315,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         ImGuiController.Initialize(DebuggerWindow);
     }
 
-    private string GetResourceRootPath(string rootPath) {
-        resourceRootPath = Environment.CurrentDirectory;
 
-        if (File.Exists("root_path.txt")) {
-            resourceRootPath = Path.Combine(resourceRootPath, File.ReadLines("root_path.txt").First());
-        }
-
-        return Path.GetFullPath(Path.Combine(resourceRootPath, rootPath));
-    }
 
     private unsafe void Create3DRenderingResources() {
         Vector2D<int> windowSize = DebuggerWindow!.FramebufferSize;
@@ -455,24 +452,60 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         // Copy world matrix (transposed)
         Matrix4x4 worldTransposed = Matrix4x4.Transpose(worldMatrix);
-        data[0] = worldTransposed.M11; data[1] = worldTransposed.M12; data[2] = worldTransposed.M13; data[3] = worldTransposed.M14;
-        data[4] = worldTransposed.M21; data[5] = worldTransposed.M22; data[6] = worldTransposed.M23; data[7] = worldTransposed.M24;
-        data[8] = worldTransposed.M31; data[9] = worldTransposed.M32; data[10] = worldTransposed.M33; data[11] = worldTransposed.M34;
-        data[12] = worldTransposed.M41; data[13] = worldTransposed.M42; data[14] = worldTransposed.M43; data[15] = worldTransposed.M44;
+        data[0] = worldTransposed.M11;
+        data[1] = worldTransposed.M12;
+        data[2] = worldTransposed.M13;
+        data[3] = worldTransposed.M14;
+        data[4] = worldTransposed.M21;
+        data[5] = worldTransposed.M22;
+        data[6] = worldTransposed.M23;
+        data[7] = worldTransposed.M24;
+        data[8] = worldTransposed.M31;
+        data[9] = worldTransposed.M32;
+        data[10] = worldTransposed.M33;
+        data[11] = worldTransposed.M34;
+        data[12] = worldTransposed.M41;
+        data[13] = worldTransposed.M42;
+        data[14] = worldTransposed.M43;
+        data[15] = worldTransposed.M44;
 
         // Copy view matrix (transposed)
         Matrix4x4 viewTransposed = Matrix4x4.Transpose(ViewMatrix);
-        data[16] = viewTransposed.M11; data[17] = viewTransposed.M12; data[18] = viewTransposed.M13; data[19] = viewTransposed.M14;
-        data[20] = viewTransposed.M21; data[21] = viewTransposed.M22; data[22] = viewTransposed.M23; data[23] = viewTransposed.M24;
-        data[24] = viewTransposed.M31; data[25] = viewTransposed.M32; data[26] = viewTransposed.M33; data[27] = viewTransposed.M34;
-        data[28] = viewTransposed.M41; data[29] = viewTransposed.M42; data[30] = viewTransposed.M43; data[31] = viewTransposed.M44;
+        data[16] = viewTransposed.M11;
+        data[17] = viewTransposed.M12;
+        data[18] = viewTransposed.M13;
+        data[19] = viewTransposed.M14;
+        data[20] = viewTransposed.M21;
+        data[21] = viewTransposed.M22;
+        data[22] = viewTransposed.M23;
+        data[23] = viewTransposed.M24;
+        data[24] = viewTransposed.M31;
+        data[25] = viewTransposed.M32;
+        data[26] = viewTransposed.M33;
+        data[27] = viewTransposed.M34;
+        data[28] = viewTransposed.M41;
+        data[29] = viewTransposed.M42;
+        data[30] = viewTransposed.M43;
+        data[31] = viewTransposed.M44;
 
         // Copy projection matrix (transposed)
         Matrix4x4 projTransposed = Matrix4x4.Transpose(ProjectionMatrix);
-        data[32] = projTransposed.M11; data[33] = projTransposed.M12; data[34] = projTransposed.M13; data[35] = projTransposed.M14;
-        data[36] = projTransposed.M21; data[37] = projTransposed.M22; data[38] = projTransposed.M23; data[39] = projTransposed.M24;
-        data[40] = projTransposed.M31; data[41] = projTransposed.M32; data[42] = projTransposed.M33; data[43] = projTransposed.M34;
-        data[44] = projTransposed.M41; data[45] = projTransposed.M42; data[46] = projTransposed.M43; data[47] = projTransposed.M44;
+        data[32] = projTransposed.M11;
+        data[33] = projTransposed.M12;
+        data[34] = projTransposed.M13;
+        data[35] = projTransposed.M14;
+        data[36] = projTransposed.M21;
+        data[37] = projTransposed.M22;
+        data[38] = projTransposed.M23;
+        data[39] = projTransposed.M24;
+        data[40] = projTransposed.M31;
+        data[41] = projTransposed.M32;
+        data[42] = projTransposed.M33;
+        data[43] = projTransposed.M34;
+        data[44] = projTransposed.M41;
+        data[45] = projTransposed.M42;
+        data[46] = projTransposed.M43;
+        data[47] = projTransposed.M44;
 
         // Copy color
         data[48] = color.X;
