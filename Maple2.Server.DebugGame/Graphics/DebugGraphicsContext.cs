@@ -56,17 +56,8 @@ public class DebugGraphicsContext : IGraphicsContext {
     private Texture? sampleTexture;
     private ImGuiController? ImGuiController { get; set; }
 
-
-    // 3D rendering state
-    public Matrix4x4 ViewMatrix { get; set; } = Matrix4x4.Identity;
-    public Matrix4x4 ProjectionMatrix { get; set; } = Matrix4x4.Identity;
-    public Vector3 CameraPosition { get; set; } = new Vector3(0, -1000, 1000); // Default overview position
-    public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
-    private Vector3 CameraUp { get; set; } = Vector3.UnitY;
-
-    // Quaternion-based camera rotation (eliminates gimbal lock)
-    public Quaternion CameraRotation { get; set; } = new Quaternion(-0.140f, 0.332f, 0.364f, 0.859f); // Back to standard Y up
-    public bool WireframeMode { get; set; } = true; // Start in wireframe mode
+    // Camera controller for all camera functionality
+    public FreeCameraController CameraController { get; private set; } = new FreeCameraController();
 
     private readonly List<DebugFieldRenderer> fieldRenderers = [];
     private readonly Mutex fieldRendererMutex = new();
@@ -90,10 +81,7 @@ public class DebugGraphicsContext : IGraphicsContext {
     // Cleanup tracking
     private bool isCleanedUp;
 
-    // Camera follow system
-    public bool IsFollowingPlayer { get; private set; }
-    public long? FollowedPlayerId { get; private set; }
-    public bool HasManuallyStopped { get; private set; }
+    // Performance tracking
     public int DeltaMin { get; private set; }
     public int DeltaMax { get; private set; }
     private DateTime lastTime = DateTime.Now;
@@ -306,9 +294,11 @@ public class DebugGraphicsContext : IGraphicsContext {
         sampleTexture = new Texture(this);
         sampleTexture.Load(Path.Combine(Texture.TextureRootPath, "sample_derp_wave.png"));
 
-        // Initialize 3D matrices
-        UpdateProjectionMatrix();
-        UpdateViewMatrix();
+        // Initialize camera controller
+        CameraController.Camera = new Camera();
+        Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
+        CameraController.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        CameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
@@ -404,26 +394,11 @@ public class DebugGraphicsContext : IGraphicsContext {
 
     public void UpdateProjectionMatrix() {
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        float aspectRatio = (float) windowSize.X / windowSize.Y;
-        ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
-            MathF.PI / 4.0f, // 45 degree field of view
-            aspectRatio,
-            1.0f,    // near plane
-            50000.0f // far plane - much larger for big fields
-        );
+        CameraController.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
     }
 
     public void UpdateViewMatrix() {
-        // Calculate forward direction from quaternion rotation
-        Vector3 forward = Vector3.Transform(Vector3.UnitX, CameraRotation); // X is forward in our coordinate system
-
-        // Calculate target as position + forward direction
-        CameraTarget = CameraPosition + forward;
-
-        // Calculate up vector from quaternion rotation
-        Vector3 up = Vector3.Transform(Vector3.UnitZ, CameraRotation); // Z is up in our coordinate system
-
-        ViewMatrix = Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, up);
+        CameraController.UpdateViewMatrix();
     }
 
     public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {
@@ -470,7 +445,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         data[15] = worldTransposed.M44;
 
         // Copy view matrix (transposed)
-        Matrix4x4 viewTransposed = Matrix4x4.Transpose(ViewMatrix);
+        Matrix4x4 viewTransposed = Matrix4x4.Transpose(CameraController.ViewMatrix);
         data[16] = viewTransposed.M11;
         data[17] = viewTransposed.M12;
         data[18] = viewTransposed.M13;
@@ -489,7 +464,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         data[31] = viewTransposed.M44;
 
         // Copy projection matrix (transposed)
-        Matrix4x4 projTransposed = Matrix4x4.Transpose(ProjectionMatrix);
+        Matrix4x4 projTransposed = Matrix4x4.Transpose(CameraController.ProjectionMatrix);
         data[32] = projTransposed.M11;
         data[33] = projTransposed.M12;
         data[34] = projTransposed.M13;
@@ -768,7 +743,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         DxDeviceContext.OMSetDepthStencilState(DepthStencilState, 1);
 
         // Set rasterizer state based on wireframe mode
-        DxDeviceContext.RSSetState(WireframeMode ? WireframeRasterizerState : SolidRasterizerState);
+        DxDeviceContext.RSSetState(CameraController.WireframeMode ? WireframeRasterizerState : SolidRasterizerState);
 
         ImGuiController!.BeginFrame((float) delta);
         ImGuiController!.EndFrame();
@@ -777,88 +752,6 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         renderTargetView.Dispose();
         framebuffer.Dispose();
-    }
-
-    // Camera control methods
-    public void SetCameraPosition(Vector3 position) {
-        CameraPosition = position;
-        UpdateViewMatrix();
-    }
-
-    public void SetCameraTarget(Vector3 target) {
-        CameraTarget = target;
-        UpdateViewMatrix();
-    }
-
-    public void RotateCamera(float yawDelta, float pitchDelta) {
-        // Rotate camera around target
-        Vector3 direction = CameraPosition - CameraTarget;
-        float distance = direction.Length();
-
-        if (distance < 0.01f) return; // Avoid division by zero
-
-        // Convert to spherical coordinates
-        float currentYaw = MathF.Atan2(direction.Z, direction.X);
-        float currentPitch = MathF.Asin(Math.Clamp(direction.Y / distance, -1.0f, 1.0f));
-
-        // Apply rotation
-        currentYaw += yawDelta;
-        currentPitch = Math.Clamp(currentPitch + pitchDelta, -MathF.PI * 0.4f, MathF.PI * 0.4f);
-
-        // Convert back to cartesian
-        float x = distance * MathF.Cos(currentPitch) * MathF.Cos(currentYaw);
-        float y = distance * MathF.Sin(currentPitch);
-        float z = distance * MathF.Cos(currentPitch) * MathF.Sin(currentYaw);
-
-        SetCameraPosition(CameraTarget + new Vector3(x, y, z));
-    }
-
-    public void SetCameraOrientationForMapData() {
-        // Set camera orientation that works well with the transformed map coordinate system
-        // Based on the working camera position you provided, set up a similar view
-        Vector3 offset = new Vector3(0, -5, 5); // Look up from below and in front (inverted from typical)
-        SetCameraPosition(CameraTarget + offset);
-    }
-
-    public void FlipCameraUpVector() {
-        // Flip the camera's up vector to fix upside-down view
-        CameraUp = -CameraUp;
-        UpdateViewMatrix();
-    }
-
-    public void MoveCameraRelative(Vector3 offset) {
-        CameraPosition += offset;
-        CameraTarget += offset;
-        UpdateViewMatrix();
-
-        // Unlock camera follow when manually moving
-        if (IsFollowingPlayer && offset.LengthSquared() > 0.01f) {
-            UnlockCameraFollow();
-        }
-    }
-
-    public void StartFollowingPlayer(long playerId) {
-        IsFollowingPlayer = true;
-        FollowedPlayerId = playerId;
-        HasManuallyStopped = false; // Reset manual stop flag when starting to follow
-    }
-
-    public void StopFollowingPlayer() {
-        IsFollowingPlayer = false;
-        FollowedPlayerId = null;
-        HasManuallyStopped = true; // Remember that user manually stopped
-    }
-
-    private void UnlockCameraFollow() {
-        if (IsFollowingPlayer) {
-            IsFollowingPlayer = false;
-            Logger.Information("Camera follow unlocked - manual movement detected");
-        }
-    }
-
-    public void ToggleWireframeMode() {
-        WireframeMode = !WireframeMode;
-        Logger.Information("Wireframe mode: {Mode}", WireframeMode ? "ON" : "OFF");
     }
 
     public void SetWireframeRasterizer() {

@@ -46,8 +46,6 @@ public class DebugFieldRenderer : IFieldRenderer {
     private const float AgentHeightMeters = 1.4f;
     private const float GameUnitsPerMeter = 100.0f;
 
-    private static readonly Vector3 CameraFollowOffset = new Vector3(-900, -1200, 2000);
-
     public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {
         Context = context;
         Field = field;
@@ -66,10 +64,10 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is first opened or when a new player joins
         // But only if user hasn't manually stopped following
-        if (Context is { IsFollowingPlayer: false, HasManuallyStopped: false }) {
+        if (!Context.CameraController.IsFollowingPlayer && !Context.CameraController.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
-            if (firstPlayer != null && (!hasTriedAutoFollow || Context.FollowedPlayerId != firstPlayer.Value.Character.Id)) {
-                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+            if (firstPlayer != null && (!hasTriedAutoFollow || Context.CameraController.FollowedPlayerId != firstPlayer.Value.Character.Id)) {
+                Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
                 hasTriedAutoFollow = true;
             }
         }
@@ -456,10 +454,10 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
-        if (Context is { IsFollowingPlayer: false, HasManuallyStopped: false }) {
+        if (!Context.CameraController.IsFollowingPlayer && !Context.CameraController.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
-                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
             }
         }
     }
@@ -482,8 +480,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         Context.UpdateProjectionMatrix();
 
         // Enable wireframe mode for field visualization
-        bool originalWireframeMode = Context.WireframeMode;
-        Context.WireframeMode = true;
+        bool originalWireframeMode = Context.CameraController.WireframeMode;
+        Context.CameraController.WireframeMode = true;
         Context.SetWireframeRasterizer();
 
         // Always use wireframe shaders for field visualization (they don't need texture samplers)
@@ -494,7 +492,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         RenderFieldEntities3D();
 
         // Restore original wireframe mode
-        Context.WireframeMode = originalWireframeMode;
+        Context.CameraController.WireframeMode = originalWireframeMode;
         Context.SetSolidRasterizer();
 
         // Also render the entity details window
@@ -692,14 +690,13 @@ public class DebugFieldRenderer : IFieldRenderer {
             // Camera controls
             ImGui.Text("Camera Controls:");
             if (ImGui.Button("Reset Camera")) {
-                // Reset quaternion rotation to default values
-                Context.CameraRotation = new Quaternion(-0.140f, 0.332f, 0.364f, 0.859f);
-                Context.UpdateViewMatrix();
+                // Reset camera to default rotation for MapleStory 2
+                Context.CameraController.SetDefaultRotation();
             }
 
             ImGui.SameLine();
             if (ImGui.Button("Toggle Wireframe")) {
-                Context.ToggleWireframeMode();
+                Context.CameraController.ToggleWireframeMode();
             }
 
             if (ImGui.Button("View Field Overview")) {
@@ -710,29 +707,29 @@ public class DebugFieldRenderer : IFieldRenderer {
             ImGui.Separator();
             ImGui.Text("Player Follow:");
 
-            if (Context.IsFollowingPlayer) {
-                ImGui.Text($"Following Player ID: {Context.FollowedPlayerId}");
+            if (Context.CameraController.IsFollowingPlayer) {
+                ImGui.Text($"Following Player ID: {Context.CameraController.FollowedPlayerId}");
                 if (ImGui.Button("Stop Following")) {
-                    Context.StopFollowingPlayer();
+                    Context.CameraController.StopFollowingPlayer();
                 }
             } else {
                 if (ImGui.Button("Follow First Player")) {
                     FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
                     if (firstPlayer != null) {
-                        Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                        Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
                     }
                 }
             }
 
             // Camera position display
-            ImGui.Text($"Camera Position: {Context.CameraPosition}");
-            ImGui.Text($"Camera Target: {Context.CameraTarget}");
+            ImGui.Text($"Camera Position: {Context.CameraController.CameraPosition}");
+            ImGui.Text($"Camera Target: {Context.CameraController.CameraTarget}");
 
             // Camera rotation display
-            Quaternion q = Context.CameraRotation;
+            Quaternion q = Context.CameraController.CameraRotation;
             ImGui.Text($"Camera Rotation: X={q.X:F3}, Y={q.Y:F3}, Z={q.Z:F3}, W={q.W:F3}");
 
-            ImGui.Text($"Wireframe Mode: {(Context.WireframeMode ? "ON" : "OFF")}");
+            ImGui.Text($"Wireframe Mode: {(Context.CameraController.WireframeMode ? "ON" : "OFF")}");
         }
         ImGui.End();
     }
@@ -787,33 +784,33 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector3 center = Vector3.Transform(centerMap, MapRotation);
             float distance = Math.Max(sizeMap.X, Math.Max(sizeMap.Y, sizeMap.Z)) * 1.5f;
 
-            Context.SetCameraTarget(center);
-            Context.SetCameraPosition(center + new Vector3(0, -distance * 0.7f, distance * 0.7f));
+            Context.CameraController.SetCameraTarget(center);
+            Context.CameraController.SetCameraPosition(center + new Vector3(0, -distance * 0.7f, distance * 0.7f));
+            Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         } else {
             // Fallback if no colliders found
-            Context.SetCameraPosition(new Vector3(0, -1000, 1000));
-            Context.SetCameraTarget(Vector3.Zero);
+            Context.CameraController.SetCameraPosition(new Vector3(0, -1000, 1000));
+            Context.CameraController.SetCameraTarget(Vector3.Zero);
+            Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         }
     }
 
     private void UpdateCameraFollow() {
-        if (!Context.IsFollowingPlayer || Context.FollowedPlayerId == null) {
+        if (!Context.CameraController.IsFollowingPlayer || Context.CameraController.FollowedPlayerId == null) {
             return;
         }
 
         // Find the player being followed
-        FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == Context.FollowedPlayerId);
+        FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == Context.CameraController.FollowedPlayerId);
         if (followedPlayer == null) {
             // Player not found, stop following
-            Context.StopFollowingPlayer();
+            Context.CameraController.StopFollowingPlayer();
             return;
         }
 
-        // Update camera to follow player position
+        // Update camera to follow player position using the camera controller
         Vector3 playerPosition = followedPlayer.Position;
-
-        Context.SetCameraTarget(playerPosition);
-        Context.SetCameraPosition(playerPosition + CameraFollowOffset);
+        Context.CameraController.UpdatePlayerFollow(playerPosition);
     }
 
     private Vector2D<int> GetFieldWindowSize() {
@@ -836,8 +833,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         screenPos = Vector2.Zero;
 
         // Transform world position to screen coordinates
-        Matrix4x4 viewMatrix = Context.ViewMatrix;
-        Matrix4x4 projMatrix = Context.ProjectionMatrix;
+        Matrix4x4 viewMatrix = Context.CameraController.ViewMatrix;
+        Matrix4x4 projMatrix = Context.CameraController.ProjectionMatrix;
         Matrix4x4 viewProjMatrix = viewMatrix * projMatrix;
 
         // Transform to clip space
