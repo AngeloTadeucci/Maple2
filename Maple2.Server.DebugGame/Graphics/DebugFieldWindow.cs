@@ -232,7 +232,7 @@ public class DebugFieldWindow {
         };
 
         foreach (Key key in keysToTrack) {
-            int keyIndex = (int)key;
+            int keyIndex = (int) key;
             if (keyIndex >= 0 && keyIndex < inputState.KeyStates.Length) {
                 inputState.KeyStates[keyIndex].LastInput = inputState.KeyStates[keyIndex].IsDown;
                 inputState.KeyStates[keyIndex].IsDown = keyboard.IsKeyPressed(key);

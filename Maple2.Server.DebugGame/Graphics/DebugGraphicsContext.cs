@@ -302,10 +302,10 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
-        ImGuiController.Initialize(DebuggerWindow);
+        if (DebuggerWindow is not null) {
+            ImGuiController.Initialize(DebuggerWindow);
+        }
     }
-
-
 
     private unsafe void Create3DRenderingResources() {
         Vector2D<int> windowSize = DebuggerWindow!.FramebufferSize;
