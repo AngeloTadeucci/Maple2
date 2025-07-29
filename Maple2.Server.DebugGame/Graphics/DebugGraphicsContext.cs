@@ -69,6 +69,9 @@ public class DebugGraphicsContext : IGraphicsContext {
     // Global follow state (independent of active controller)
     private bool hasManuallyStoppedFollowing = false;
 
+    // Rendering state
+    public bool WireframeMode { get; set; } = true; // Start in wireframe mode
+
     private readonly List<DebugFieldRenderer> fieldRenderers = [];
     private readonly Mutex fieldRendererMutex = new();
     public DebugFieldRenderer[] FieldRenderers {
@@ -488,6 +491,14 @@ public class DebugGraphicsContext : IGraphicsContext {
         }
     }
 
+    /// <summary>
+    /// Toggles wireframe rendering mode
+    /// </summary>
+    public void ToggleWireframeMode() {
+        WireframeMode = !WireframeMode;
+        Logger.Information("Wireframe mode: {Mode}", WireframeMode ? "ON" : "OFF");
+    }
+
     public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {
         UpdateConstantBuffer(worldMatrix, new Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // Default white color
     }
@@ -830,7 +841,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         DxDeviceContext.OMSetDepthStencilState(DepthStencilState, 1);
 
         // Set rasterizer state based on wireframe mode
-        DxDeviceContext.RSSetState(CameraController.WireframeMode ? WireframeRasterizerState : SolidRasterizerState);
+        DxDeviceContext.RSSetState(WireframeMode ? WireframeRasterizerState : SolidRasterizerState);
 
         ImGuiController!.BeginFrame((float) delta);
         ImGuiController!.EndFrame();

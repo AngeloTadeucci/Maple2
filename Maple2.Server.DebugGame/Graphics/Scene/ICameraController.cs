@@ -16,10 +16,7 @@ public interface ICameraController {
     /// </summary>
     InputState InputState { get; }
 
-    /// <summary>
-    /// Whether wireframe rendering mode is enabled
-    /// </summary>
-    bool WireframeMode { get; set; }
+
 
     /// <summary>
     /// Current camera position
@@ -103,10 +100,7 @@ public interface ICameraController {
     /// <param name="playerPosition">Player position</param>
     void UpdatePlayerFollow(Vector3 playerPosition);
 
-    /// <summary>
-    /// Toggles wireframe rendering mode
-    /// </summary>
-    void ToggleWireframeMode();
+
 
     /// <summary>
     /// Sets camera orientation that works well with MapleStory 2's coordinate system

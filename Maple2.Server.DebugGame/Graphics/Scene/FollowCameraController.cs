@@ -9,8 +9,7 @@ public class FollowCameraController : ICameraController {
     public Camera Camera { get; }
     public InputState InputState { get; } = new();
 
-    // Rendering modes
-    public bool WireframeMode { get; set; } = true;
+
 
     // Camera follow system
     public bool IsFollowingPlayer { get; private set; }
@@ -148,12 +147,7 @@ public class FollowCameraController : ICameraController {
         // Manual movement would break following, so this is intentionally minimal
     }
 
-    /// <summary>
-    /// Toggles wireframe rendering mode
-    /// </summary>
-    public void ToggleWireframeMode() {
-        WireframeMode = !WireframeMode;
-    }
+
 
     /// <summary>
     /// Sets camera orientation that works well with MapleStory 2's coordinate system
