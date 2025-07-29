@@ -9,12 +9,8 @@ public class FreeCameraController {
 
     const float MAX_PITCH = (float.Pi / 180) * 89;
 
-    public InputState? InputState;
-    public Camera? Camera;
-
-    // 3D rendering matrices
-    public Matrix4x4 ViewMatrix { get; private set; } = Matrix4x4.Identity;
-    public Matrix4x4 ProjectionMatrix { get; private set; } = Matrix4x4.Identity;
+    public InputState InputState = new();
+    public Camera Camera = new();
 
     // Rendering modes
     public bool WireframeMode { get; set; } = true; // Start in wireframe mode
@@ -25,9 +21,9 @@ public class FreeCameraController {
     public bool HasManuallyStopped { get; private set; }
 
     // Camera properties that delegate to Camera.Transform
-    public Vector3 CameraPosition => Camera?.Transform.Position ?? Vector3.Zero;
+    public Vector3 CameraPosition => Camera.Transform.Position;
     public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
-    public Quaternion CameraRotation => Camera?.Transform.Quaternion ?? Quaternion.Identity;
+    public Quaternion CameraRotation => Camera.Transform.Quaternion;
 
     private const Key MoveForward = Key.W;
     private const Key MoveBackward = Key.S;
@@ -53,32 +49,22 @@ public class FreeCameraController {
     // Field overview camera rotation
     private static readonly Quaternion FieldOverviewRotation = new Quaternion(0.000f, 0.450f, 0.900f, 0.000f);
 
-    public FreeCameraController() {
-        UpdateViewMatrix();
-    }
-
     /// <summary>
     /// Sets the camera to the default rotation for MapleStory 2
     /// </summary>
     public void SetDefaultRotation() {
-        if (Camera != null) {
-            Camera.Transform.Quaternion = DefaultCameraRotation;
-            UpdateViewMatrix();
-        }
+        Camera.Transform.Quaternion = DefaultCameraRotation;
     }
 
     /// <summary>
     /// Sets the camera to the field overview rotation
     /// </summary>
     public void SetFieldOverviewRotation() {
-        if (Camera != null) {
-            Camera.Transform.Quaternion = FieldOverviewRotation;
-            UpdateViewMatrix();
-        }
+        Camera.Transform.Quaternion = FieldOverviewRotation;
     }
 
     public void Update(float delta) {
-        if (InputState is null || Camera is null || !InputState.InputFocused) {
+        if (!InputState.InputFocused) {
             return;
         }
 
@@ -157,54 +143,12 @@ public class FreeCameraController {
         Camera.Transform.Position = position;
 
         InputState.MousePosition.Lock = true;
-
-        // Update matrices after camera transform changes
-        UpdateViewMatrix();
-    }
-
-    /// <summary>
-    /// Updates the projection matrix based on window size
-    /// </summary>
-    public void UpdateProjectionMatrix(int windowWidth, int windowHeight) {
-        float aspectRatio = (float) windowWidth / windowHeight;
-        ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
-            MathF.PI / 4.0f, // 45 degree field of view
-            aspectRatio,
-            1.0f, // near plane
-            50000.0f // far plane - much larger for big fields
-        );
-    }
-
-    /// <summary>
-    /// Updates the view matrix based on current camera transform
-    /// </summary>
-    public void UpdateViewMatrix() {
-        if (Camera == null) return;
-
-        // Use Camera.Transform to calculate view matrix
-        Vector3 position = Camera.Transform.Position;
-        Vector3 forward = Camera.Transform.FrontAxis;
-        Vector3 up = Camera.Transform.UpAxis;
-
-        CameraTarget = position + forward;
-        ViewMatrix = Matrix4x4.CreateLookAt(position, CameraTarget, up);
-    }
-
-    /// <summary>
-    /// Sets the camera position using Camera.Transform
-    /// </summary>
-    public void SetCameraPosition(Vector3 position) {
-        if (Camera == null) return;
-        Camera.Transform.Position = position;
-        UpdateViewMatrix();
     }
 
     /// <summary>
     /// Sets the camera target and updates camera orientation
     /// </summary>
     public void SetCameraTarget(Vector3 target) {
-        if (Camera == null) return;
-
         CameraTarget = target;
         Vector3 direction = Vector3.Normalize(target - Camera.Transform.Position);
 
@@ -221,15 +165,12 @@ public class FreeCameraController {
         );
 
         Camera.Transform.Transformation = lookAtMatrix;
-        UpdateViewMatrix();
     }
 
     /// <summary>
     /// Rotates the camera around the target point
     /// </summary>
     public void RotateCamera(float yawDelta, float pitchDelta) {
-        if (Camera == null) return;
-
         // Rotate camera around target
         Vector3 direction = Camera.Transform.Position - CameraTarget;
         float distance = direction.Length();
@@ -249,18 +190,15 @@ public class FreeCameraController {
         float y = distance * MathF.Sin(currentPitch);
         float z = distance * MathF.Cos(currentPitch) * MathF.Sin(currentYaw);
 
-        SetCameraPosition(CameraTarget + new Vector3(x, y, z));
+        Camera.Transform.Position = CameraTarget + new Vector3(x, y, z);
     }
 
     /// <summary>
     /// Moves the camera relative to its current position
     /// </summary>
     public void MoveCameraRelative(Vector3 offset) {
-        if (Camera == null) return;
-
         Camera.Transform.Position += offset;
         CameraTarget += offset;
-        UpdateViewMatrix();
 
         // Unlock camera follow when manually moving
         if (IsFollowingPlayer && offset.LengthSquared() > 0.01f) {
@@ -306,7 +244,7 @@ public class FreeCameraController {
         if (!IsFollowingPlayer) return;
 
         SetCameraTarget(playerPosition);
-        SetCameraPosition(playerPosition + CameraFollowOffset);
+        Camera.Transform.Position = playerPosition + CameraFollowOffset;
         SetDefaultRotation(); // Always use default rotation when following player
     }
 
@@ -324,19 +262,16 @@ public class FreeCameraController {
     public void SetCameraOrientationForMapData() {
         // Set camera orientation that works well with the transformed map coordinate system
         Vector3 offset = new Vector3(0, -5, 5); // Look up from below and in front (inverted from typical)
-        SetCameraPosition(CameraTarget + offset);
+        Camera.Transform.Position = CameraTarget + offset;
     }
 
     /// <summary>
     /// Flips the camera's up vector to fix upside-down view
     /// </summary>
     public void FlipCameraUpVector() {
-        if (Camera == null) return;
-
         // Flip the up axis in the transform
         Matrix4x4 currentTransform = Camera.Transform.Transformation;
         Matrix4x4 flipMatrix = Matrix4x4.CreateScale(1, 1, -1);
         Camera.Transform.Transformation = currentTransform * flipMatrix;
-        UpdateViewMatrix();
     }
 }

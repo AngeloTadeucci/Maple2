@@ -211,11 +211,6 @@ public class DebugFieldWindow {
     private void UpdateCameraInputState() {
         if (Input == null) return;
 
-        // Initialize InputState if not already done
-        if (Context.CameraController.InputState == null) {
-            Context.CameraController.InputState = new InputState();
-        }
-
         InputState inputState = Context.CameraController.InputState;
         IKeyboard keyboard = Input.Keyboards[0];
         IMouse mouse = Input.Mice[0];

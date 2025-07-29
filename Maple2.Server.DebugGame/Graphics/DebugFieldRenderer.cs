@@ -875,11 +875,11 @@ public class DebugFieldRenderer : IFieldRenderer {
             float distance = Math.Max(sizeMap.X, Math.Max(sizeMap.Y, sizeMap.Z)) * 1.5f;
 
             Context.CameraController.SetCameraTarget(center);
-            Context.CameraController.SetCameraPosition(center + new Vector3(0, -distance * 0.7f, distance * 0.7f));
+            Context.CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
             Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         } else {
             // Fallback if no colliders found
-            Context.CameraController.SetCameraPosition(new Vector3(0, -1000, 1000));
+            Context.CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
             Context.CameraController.SetCameraTarget(Vector3.Zero);
             Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         }
@@ -923,8 +923,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         screenPos = Vector2.Zero;
 
         // Transform world position to screen coordinates
-        Matrix4x4 viewMatrix = Context.CameraController.ViewMatrix;
-        Matrix4x4 projMatrix = Context.CameraController.ProjectionMatrix;
+        Matrix4x4 viewMatrix = Context.CameraController.Camera.ViewMatrix;
+        Matrix4x4 projMatrix = Context.CameraController.Camera.ProjectionMatrix;
         Matrix4x4 viewProjMatrix = viewMatrix * projMatrix;
 
         // Transform to clip space

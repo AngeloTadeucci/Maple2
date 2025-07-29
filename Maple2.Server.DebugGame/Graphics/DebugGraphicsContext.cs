@@ -295,9 +295,8 @@ public class DebugGraphicsContext : IGraphicsContext {
         sampleTexture.Load(Path.Combine(Texture.TextureRootPath, "sample_derp_wave.png"));
 
         // Initialize camera controller
-        CameraController.Camera = new Camera();
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        CameraController.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
         CameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
@@ -394,11 +393,11 @@ public class DebugGraphicsContext : IGraphicsContext {
 
     public void UpdateProjectionMatrix() {
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        CameraController.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
     }
 
     public void UpdateViewMatrix() {
-        CameraController.UpdateViewMatrix();
+        CameraController.Camera.UpdateViewMatrix();
     }
 
     public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {
@@ -445,7 +444,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         data[15] = worldTransposed.M44;
 
         // Copy view matrix (transposed)
-        Matrix4x4 viewTransposed = Matrix4x4.Transpose(CameraController.ViewMatrix);
+        Matrix4x4 viewTransposed = Matrix4x4.Transpose(CameraController.Camera.ViewMatrix);
         data[16] = viewTransposed.M11;
         data[17] = viewTransposed.M12;
         data[18] = viewTransposed.M13;
@@ -464,7 +463,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         data[31] = viewTransposed.M44;
 
         // Copy projection matrix (transposed)
-        Matrix4x4 projTransposed = Matrix4x4.Transpose(CameraController.ProjectionMatrix);
+        Matrix4x4 projTransposed = Matrix4x4.Transpose(CameraController.Camera.ProjectionMatrix);
         data[32] = projTransposed.M11;
         data[33] = projTransposed.M12;
         data[34] = projTransposed.M13;
