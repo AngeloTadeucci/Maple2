@@ -4,26 +4,26 @@ using Serilog;
 
 namespace Maple2.Server.DebugGame.Graphics.Scene;
 
-public class FreeCameraController {
+public class FreeCameraController : ICameraController {
     private static readonly ILogger Logger = Log.Logger.ForContext<FreeCameraController>();
 
     const float MAX_PITCH = (float.Pi / 180) * 89;
 
-    public InputState InputState = new();
-    public Camera Camera = new();
+    public InputState InputState { get; } = new();
+    public Camera Camera { get; }
 
     // Rendering modes
     public bool WireframeMode { get; set; } = true; // Start in wireframe mode
 
-    // Camera follow system
-    public bool IsFollowingPlayer { get; private set; }
-    public long? FollowedPlayerId { get; private set; }
-    public bool HasManuallyStopped { get; private set; }
-
     // Camera properties that delegate to Camera.Transform
     public Vector3 CameraPosition => Camera.Transform.Position;
-    public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
     public Quaternion CameraRotation => Camera.Transform.Quaternion;
+
+    // Free camera controller doesn't support following - these return default values
+    public bool IsFollowingPlayer => false;
+    public long? FollowedPlayerId => null;
+    public bool HasManuallyStopped => false;
+    public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
 
     private const Key MoveForward = Key.W;
     private const Key MoveBackward = Key.S;
@@ -40,14 +40,15 @@ public class FreeCameraController {
         set => RotationSpeed = (float.Pi / 180.0f) * value;
     }
 
-    // Default camera follow offset
-    private static readonly Vector3 CameraFollowOffset = new Vector3(-800, -1000, 1200);
-
     // Default camera rotation for MapleStory 2 coordinate system
     private static readonly Quaternion DefaultCameraRotation = new Quaternion(0.130f, 0.325f, 0.870f, 0.350f);
 
     // Field overview camera rotation
     private static readonly Quaternion FieldOverviewRotation = new Quaternion(0.000f, 0.450f, 0.900f, 0.000f);
+
+    public FreeCameraController(Camera camera) {
+        Camera = camera;
+    }
 
     /// <summary>
     /// Sets the camera to the default rotation for MapleStory 2
@@ -110,10 +111,7 @@ public class FreeCameraController {
         if (hasMovementInput) {
             Camera.Transform.Position += delta * currentSpeed * (moveDirection.X * Camera.Transform.RightAxis + moveDirection.Y * Camera.Transform.FrontAxis + moveDirection.Z * Camera.Transform.UpAxis);
 
-            // Disable follow when manual movement is detected
-            if (IsFollowingPlayer) {
-                StopFollowingPlayer();
-            }
+            // Free camera controller doesn't support following
         }
 
         if (!InputState.MouseRight.IsDown) {
@@ -124,10 +122,7 @@ public class FreeCameraController {
 
         // Check if there's actual mouse movement
         if (mouseDelta.X != 0 || mouseDelta.Y != 0) {
-            // Disable follow when mouse rotation is detected
-            if (IsFollowingPlayer) {
-                StopFollowingPlayer();
-            }
+            // Free camera controller doesn't support following
         }
 
         float currentPitch = -float.Asin(Camera.Transform.FrontAxis.Z);
@@ -145,27 +140,7 @@ public class FreeCameraController {
         InputState.MousePosition.Lock = true;
     }
 
-    /// <summary>
-    /// Sets the camera target and updates camera orientation
-    /// </summary>
-    public void SetCameraTarget(Vector3 target) {
-        CameraTarget = target;
-        Vector3 direction = Vector3.Normalize(target - Camera.Transform.Position);
 
-        // Calculate rotation to look at target
-        Vector3 up = Vector3.UnitZ; // Z is up in our coordinate system
-        Vector3 right = Vector3.Normalize(Vector3.Cross(direction, up));
-        up = Vector3.Cross(right, direction);
-
-        Matrix4x4 lookAtMatrix = new Matrix4x4(
-            right.X, up.X, -direction.X, 0,
-            right.Y, up.Y, -direction.Y, 0,
-            right.Z, up.Z, -direction.Z, 0,
-            0, 0, 0, 1
-        );
-
-        Camera.Transform.Transformation = lookAtMatrix;
-    }
 
     /// <summary>
     /// Rotates the camera around the target point
@@ -199,53 +174,49 @@ public class FreeCameraController {
     public void MoveCameraRelative(Vector3 offset) {
         Camera.Transform.Position += offset;
         CameraTarget += offset;
-
-        // Unlock camera follow when manually moving
-        if (IsFollowingPlayer && offset.LengthSquared() > 0.01f) {
-            UnlockCameraFollow();
-        }
     }
 
     /// <summary>
-    /// Starts following a specific player
+    /// Starts following a specific player - not supported by free camera controller
     /// </summary>
     public void StartFollowingPlayer(long playerId) {
-        IsFollowingPlayer = true;
-        FollowedPlayerId = playerId;
-        HasManuallyStopped = false; // Reset manual stop flag when starting to follow
-        SetDefaultRotation(); // Set default rotation when starting to follow
-        Logger.Information("Started following player {PlayerId}", playerId);
+        // Free camera controller doesn't support following
     }
 
     /// <summary>
-    /// Stops following the current player
+    /// Stops following the current player - not supported by free camera controller
     /// </summary>
     public void StopFollowingPlayer() {
-        IsFollowingPlayer = false;
-        FollowedPlayerId = null;
-        HasManuallyStopped = true; // Remember that user manually stopped
-        Logger.Information("Stopped following player");
+        // Free camera controller doesn't support following
     }
 
     /// <summary>
-    /// Unlocks camera follow when manual movement is detected
-    /// </summary>
-    private void UnlockCameraFollow() {
-        if (IsFollowingPlayer) {
-            IsFollowingPlayer = false;
-            Logger.Information("Camera follow unlocked - manual movement detected");
-        }
-    }
-
-    /// <summary>
-    /// Updates camera to follow a player at the specified position
+    /// Updates camera to follow a player at the specified position - not supported by free camera controller
     /// </summary>
     public void UpdatePlayerFollow(Vector3 playerPosition) {
-        if (!IsFollowingPlayer) return;
+        // Free camera controller doesn't support following
+    }
 
-        SetCameraTarget(playerPosition);
-        Camera.Transform.Position = playerPosition + CameraFollowOffset;
-        SetDefaultRotation(); // Always use default rotation when following player
+    /// <summary>
+    /// Sets the camera target
+    /// </summary>
+    public void SetCameraTarget(Vector3 target) {
+        CameraTarget = target;
+        Vector3 direction = Vector3.Normalize(target - Camera.Transform.Position);
+
+        // Calculate rotation to look at target
+        Vector3 up = Vector3.UnitZ; // Z is up in our coordinate system
+        Vector3 right = Vector3.Normalize(Vector3.Cross(direction, up));
+        up = Vector3.Cross(right, direction);
+
+        Matrix4x4 lookAtMatrix = new Matrix4x4(
+            right.X, up.X, -direction.X, 0,
+            right.Y, up.Y, -direction.Y, 0,
+            right.Z, up.Z, -direction.Z, 0,
+            0, 0, 0, 1
+        );
+
+        Camera.Transform.Transformation = lookAtMatrix;
     }
 
     /// <summary>

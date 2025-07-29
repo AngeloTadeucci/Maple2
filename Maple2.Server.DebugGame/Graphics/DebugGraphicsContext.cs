@@ -56,8 +56,18 @@ public class DebugGraphicsContext : IGraphicsContext {
     private Texture? sampleTexture;
     private ImGuiController? ImGuiController { get; set; }
 
-    // Camera controller for all camera functionality
-    public FreeCameraController CameraController { get; private set; } = new FreeCameraController();
+    // Camera controller interface for all camera functionality
+    public ICameraController CameraController { get; private set; } = null!;
+
+    // Available controller implementations
+    private FreeCameraController freeCameraController = null!;
+    private FollowCameraController followCameraController = null!;
+
+    // Shared camera instance
+    private readonly Camera sharedCamera = new();
+
+    // Global follow state (independent of active controller)
+    private bool hasManuallyStoppedFollowing = false;
 
     private readonly List<DebugFieldRenderer> fieldRenderers = [];
     private readonly Mutex fieldRendererMutex = new();
@@ -294,9 +304,15 @@ public class DebugGraphicsContext : IGraphicsContext {
         sampleTexture = new Texture(this);
         sampleTexture.Load(Path.Combine(Texture.TextureRootPath, "sample_derp_wave.png"));
 
-        // Initialize camera controller
+        // Initialize camera controllers
+        freeCameraController = new FreeCameraController(sharedCamera);
+        followCameraController = new FollowCameraController(sharedCamera);
+
+        // Start with free camera controller as default
+        CameraController = freeCameraController;
+
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        sharedCamera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
         CameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
@@ -398,6 +414,78 @@ public class DebugGraphicsContext : IGraphicsContext {
 
     public void UpdateViewMatrix() {
         CameraController.Camera.UpdateViewMatrix();
+    }
+
+    /// <summary>
+    /// Switches to the free camera controller
+    /// </summary>
+    private void SwitchToFreeCameraController() {
+        if (CameraController != freeCameraController) {
+            Logger.Information("Switching from {OldController} to FreeCameraController", GetCurrentControllerType());
+            CameraController = freeCameraController;
+            Logger.Information("Switched to free camera controller - IsFollowing={IsFollowing}", CameraController.IsFollowingPlayer);
+        } else {
+            Logger.Information("Already using FreeCameraController - no switch needed");
+        }
+    }
+
+    /// <summary>
+    /// Switches to the follow camera controller
+    /// </summary>
+    private void SwitchToFollowCameraController() {
+        if (CameraController != followCameraController) {
+            CameraController = followCameraController;
+            Logger.Information("Switched to follow camera controller");
+        }
+    }
+
+    /// <summary>
+    /// Gets the current controller type name for UI display
+    /// </summary>
+    public string GetCurrentControllerType() {
+        return CameraController switch {
+            FreeCameraController => "Free Camera",
+            FollowCameraController => "Follow Camera",
+            _ => "Unknown"
+        };
+    }
+
+    /// <summary>
+    /// Whether the user has manually stopped following (global state)
+    /// </summary>
+    public bool HasManuallyStopped => hasManuallyStoppedFollowing;
+
+    /// <summary>
+    /// Starts following a player and automatically switches to follow camera controller
+    /// </summary>
+    public void StartFollowingPlayer(long playerId) {
+        hasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
+        SwitchToFollowCameraController();
+        followCameraController.StartFollowingPlayer(playerId);
+    }
+
+    /// <summary>
+    /// Stops following a player and automatically switches to free camera controller
+    /// </summary>
+    public void StopFollowingPlayer() {
+        Logger.Information("StopFollowingPlayer called - before: IsFollowing={IsFollowing}, Controller={Controller}",
+            CameraController.IsFollowingPlayer, GetCurrentControllerType());
+
+        hasManuallyStoppedFollowing = true; // Remember that user manually stopped
+        followCameraController.StopFollowingPlayer();
+        SwitchToFreeCameraController();
+
+        Logger.Information("StopFollowingPlayer called - after: IsFollowing={IsFollowing}, Controller={Controller}, HasManuallyStopped={HasManuallyStopped}",
+            CameraController.IsFollowingPlayer, GetCurrentControllerType(), HasManuallyStopped);
+    }
+
+    /// <summary>
+    /// Updates player follow position (only works when follow controller is active)
+    /// </summary>
+    public void UpdatePlayerFollow(Vector3 playerPosition) {
+        if (CameraController == followCameraController) {
+            followCameraController.UpdatePlayerFollow(playerPosition);
+        }
     }
 
     public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {

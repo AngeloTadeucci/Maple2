@@ -65,10 +65,10 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is first opened or when a new player joins
         // But only if user hasn't manually stopped following
-        if (!Context.CameraController.IsFollowingPlayer && !Context.CameraController.HasManuallyStopped) {
+        if (!Context.CameraController.IsFollowingPlayer && !Context.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null && (!hasTriedAutoFollow || Context.CameraController.FollowedPlayerId != firstPlayer.Value.Character.Id)) {
-                Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
                 hasTriedAutoFollow = true;
             }
         }
@@ -455,10 +455,10 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
-        if (!Context.CameraController.IsFollowingPlayer && !Context.CameraController.HasManuallyStopped) {
+        if (!Context.CameraController.IsFollowingPlayer && !Context.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
-                Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
             }
         }
     }
@@ -800,13 +800,13 @@ public class DebugFieldRenderer : IFieldRenderer {
             if (Context.CameraController.IsFollowingPlayer) {
                 ImGui.Text($"Following Player ID: {Context.CameraController.FollowedPlayerId}");
                 if (ImGui.Button("Stop Following")) {
-                    Context.CameraController.StopFollowingPlayer();
+                    Context.StopFollowingPlayer();
                 }
             } else {
                 if (ImGui.Button("Follow First Player")) {
                     FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
                     if (firstPlayer != null) {
-                        Context.CameraController.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                        Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
                     }
                 }
             }
@@ -856,6 +856,11 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     private void SetFieldOverviewCamera() {
+        // Stop following player when switching to field overview
+        if (Context.CameraController.IsFollowingPlayer) {
+            Context.StopFollowingPlayer();
+        }
+
         List<FieldBoxColliderEntity> allColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
         if (allColliders.Count > 0) {
             // Calculate field bounds in map coordinates
@@ -894,13 +899,13 @@ public class DebugFieldRenderer : IFieldRenderer {
         FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == Context.CameraController.FollowedPlayerId);
         if (followedPlayer == null) {
             // Player not found, stop following
-            Context.CameraController.StopFollowingPlayer();
+            Context.StopFollowingPlayer();
             return;
         }
 
         // Update camera to follow player position using the camera controller
         Vector3 playerPosition = followedPlayer.Position;
-        Context.CameraController.UpdatePlayerFollow(playerPosition);
+        Context.UpdatePlayerFollow(playerPosition);
     }
 
     private Vector2D<int> GetFieldWindowSize() {
