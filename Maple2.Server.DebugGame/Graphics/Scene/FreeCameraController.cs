@@ -69,36 +69,29 @@ public class FreeCameraController : ICameraController {
         }
 
         Vector3 moveDirection = new();
-        bool hasMovementInput = false;
 
         if (InputState.GetState(MoveForward).IsDown) {
             moveDirection.Y += 1;
-            hasMovementInput = true;
         }
 
         if (InputState.GetState(MoveBackward).IsDown) {
             moveDirection.Y -= 1;
-            hasMovementInput = true;
         }
 
         if (InputState.GetState(MoveRight).IsDown) {
             moveDirection.X += 1;
-            hasMovementInput = true;
         }
 
         if (InputState.GetState(MoveLeft).IsDown) {
             moveDirection.X -= 1;
-            hasMovementInput = true;
         }
 
         if (InputState.GetState(MoveUp).IsDown) {
             moveDirection.Z += 1;
-            hasMovementInput = true;
         }
 
         if (InputState.GetState(MoveDown).IsDown) {
             moveDirection.Z -= 1;
-            hasMovementInput = true;
         }
 
         // Apply speed modifier with Shift key
@@ -107,7 +100,7 @@ public class FreeCameraController : ICameraController {
             currentSpeed *= 5.0f; // 5x speed with Shift
         }
 
-        if (hasMovementInput) {
+        if (moveDirection.LengthSquared() > 0) {
             Camera.Transform.Position += delta * currentSpeed * (moveDirection.X * Camera.Transform.RightAxis + moveDirection.Y * Camera.Transform.FrontAxis + moveDirection.Z * Camera.Transform.UpAxis);
 
             // Free camera controller doesn't support following
