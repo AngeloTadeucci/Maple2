@@ -12,8 +12,7 @@ public class FreeCameraController : ICameraController {
     public InputState InputState { get; } = new();
     public Camera Camera { get; }
 
-    // Rendering modes
-    public bool WireframeMode { get; set; } = true; // Start in wireframe mode
+
 
     // Camera properties that delegate to Camera.Transform
     public Vector3 CameraPosition => Camera.Transform.Position;
@@ -219,13 +218,7 @@ public class FreeCameraController : ICameraController {
         Camera.Transform.Transformation = lookAtMatrix;
     }
 
-    /// <summary>
-    /// Toggles wireframe rendering mode
-    /// </summary>
-    public void ToggleWireframeMode() {
-        WireframeMode = !WireframeMode;
-        Logger.Information("Wireframe mode: {Mode}", WireframeMode ? "ON" : "OFF");
-    }
+
 
     /// <summary>
     /// Sets camera orientation that works well with MapleStory 2's coordinate system

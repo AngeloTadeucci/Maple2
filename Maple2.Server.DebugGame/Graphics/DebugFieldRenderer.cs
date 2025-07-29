@@ -481,8 +481,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         Context.UpdateProjectionMatrix();
 
         // Enable wireframe mode for field visualization
-        bool originalWireframeMode = Context.CameraController.WireframeMode;
-        Context.CameraController.WireframeMode = true;
+        bool originalWireframeMode = Context.WireframeMode;
+        Context.WireframeMode = true;
         Context.SetWireframeRasterizer();
 
         // Always use wireframe shaders for field visualization (they don't need texture samplers)
@@ -493,7 +493,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         RenderFieldEntities3D();
 
         // Restore original wireframe mode
-        Context.CameraController.WireframeMode = originalWireframeMode;
+        Context.WireframeMode = originalWireframeMode;
         Context.SetSolidRasterizer();
 
         // Also render the entity details window
@@ -786,7 +786,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             ImGui.SameLine();
             if (ImGui.Button("Toggle Wireframe")) {
-                Context.CameraController.ToggleWireframeMode();
+                Context.ToggleWireframeMode();
             }
 
             if (ImGui.Button("View Field Overview")) {
@@ -819,7 +819,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             Quaternion q = Context.CameraController.CameraRotation;
             ImGui.Text($"Camera Rotation: X={q.X:F3}, Y={q.Y:F3}, Z={q.Z:F3}, W={q.W:F3}");
 
-            ImGui.Text($"Wireframe Mode: {(Context.CameraController.WireframeMode ? "ON" : "OFF")}");
+            ImGui.Text($"Wireframe Mode: {(Context.WireframeMode ? "ON" : "OFF")}");
         }
         ImGui.End();
     }
