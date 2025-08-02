@@ -795,10 +795,9 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             // Player follow controls
             ImGui.Separator();
-            ImGui.Text("Player Follow:");
+            ImGui.Text($"Player Follow: {(Context.CameraController.IsFollowingPlayer ? $"Player ID: {Context.CameraController.FollowedPlayerId}" : string.Empty)}");
 
             if (Context.CameraController.IsFollowingPlayer) {
-                ImGui.Text($"Following Player ID: {Context.CameraController.FollowedPlayerId}");
                 if (ImGui.Button("Stop Following")) {
                     Context.StopFollowingPlayer();
                 }
@@ -811,9 +810,11 @@ public class DebugFieldRenderer : IFieldRenderer {
                 }
             }
 
+            if (Context.CameraController.IsFollowingPlayer) {
+                ImGui.Text($"Player Following Position: {Context.CameraController.CameraTarget}");
+            }
             // Camera position display
             ImGui.Text($"Camera Position: {Context.CameraController.CameraPosition}");
-            ImGui.Text($"Camera Target: {Context.CameraController.CameraTarget}");
 
             // Camera rotation display
             Quaternion q = Context.CameraController.CameraRotation;
