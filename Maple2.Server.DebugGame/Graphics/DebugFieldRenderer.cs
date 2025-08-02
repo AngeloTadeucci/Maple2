@@ -7,6 +7,7 @@ using Maple2.Model.Game;
 using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
+using Maple2.Server.Game.Packets;
 using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
 using Silk.NET.Maths;
@@ -45,6 +46,10 @@ public class DebugFieldRenderer : IFieldRenderer {
     private bool showPlayers = true; // Players enabled by default
     private bool showNpcs = true; // NPCs enabled by default
     private bool showMobs = true; // Mobs enabled by default
+
+    // Player movement mode
+    private bool playerMoveMode = false; // Player move mode disabled by default
+    private bool forceMove = false; // Force move (bypass validation) disabled by default
 
     // Entity caching for performance
     private FieldEntity[]? cachedStaticEntities; // Cache static entities (spawn points, triggers, etc.)
@@ -138,13 +143,21 @@ public class DebugFieldRenderer : IFieldRenderer {
     private void HandleMouseInput() {
         // Check if mouse is clicked and we're hovering over the field window
         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left)) {
+            // Don't process clicks if ImGui is handling them (mouse over UI elements)
+            if (ImGui.GetIO().WantCaptureMouse) {
+                return;
+            }
+
             // Get mouse position in screen coordinates
             Vector2 mousePos = ImGui.GetMousePos();
 
-            // For now, assume we're clicking in the field window if any are active
-            // The mouse position is already in the correct coordinate space for the field window
-            // since ImGui handles the coordinate transformation automatically
-            TrySelectActorAtScreenPosition(mousePos);
+            if (playerMoveMode && selectedActor is FieldPlayer selectedPlayer) {
+                // Move mode: try to move the selected player to clicked position
+                TryMovePlayerToScreenPosition(selectedPlayer, mousePos);
+            } else {
+                // Selection mode: try to select an actor at clicked position
+                TrySelectActorAtScreenPosition(mousePos);
+            }
         }
     }
 
@@ -452,12 +465,22 @@ public class DebugFieldRenderer : IFieldRenderer {
     private void RenderActorAdditionalInfo() {
         if (selectedActor == null) return;
 
-        ImGui.Text("Additional Information:");
-        ImGui.Indent();
+        ImGui.Text("Additional Information");
 
         switch (selectedActor) {
             case FieldPlayer player:
                 ImGui.Text($"Admin Permissions: {player.AdminPermissions}");
+
+                // Player movement controls
+                ImGui.Separator();
+                ImGui.Text("Movement Controls:");
+                ImGui.Checkbox("Move Player Mode", ref playerMoveMode);
+                if (playerMoveMode) {
+                    ImGui.Indent();
+                    ImGui.Checkbox("Force Move (bypass validation)", ref forceMove);
+                    ImGui.Text("Click on the map to move this player");
+                    ImGui.Unindent();
+                }
                 break;
             case FieldNpc npc:
                 ImGui.Text($"NPC Type: {(npc.Value.Metadata.Basic.Kind == 0 ? "Friendly" : "Hostile")}");
@@ -470,7 +493,6 @@ public class DebugFieldRenderer : IFieldRenderer {
                 break;
         }
 
-        ImGui.Unindent();
     }
 
     public void CleanUp() {
@@ -597,9 +619,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             };
 
             transform.Transformation *= MapRotation;
-
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(boxCollider.Size) *
-                                    Matrix4x4.CreateFromQuaternion(transform.Quaternion) *
                                     Matrix4x4.CreateTranslation(boxCollider.Position);
 
             Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (white)
@@ -624,7 +644,6 @@ public class DebugFieldRenderer : IFieldRenderer {
             rotation = coordinateTransform * rotation;
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
-                                    Matrix4x4.CreateFromQuaternion(rotation) *
                                     Matrix4x4.CreateTranslation(center);
 
             Context.UpdateConstantBuffer(worldMatrix);
@@ -641,7 +660,6 @@ public class DebugFieldRenderer : IFieldRenderer {
             var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 50.0f) *
-                                    Matrix4x4.CreateFromQuaternion(rotation) *
                                     Matrix4x4.CreateTranslation(spawnPoint.Position);
 
             Context.UpdateConstantBuffer(worldMatrix);
@@ -659,7 +677,6 @@ public class DebugFieldRenderer : IFieldRenderer {
             var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 100.0f) *
-                                    Matrix4x4.CreateFromQuaternion(rotation) *
                                     Matrix4x4.CreateTranslation(vibrateEntity.Position);
 
             Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (pink)
@@ -672,15 +689,10 @@ public class DebugFieldRenderer : IFieldRenderer {
         Context.SetColor(0, 0.5f, 1, 1); // Blue for portals
 
         foreach (FieldPortal portal in Field.GetPortals()) {
-            // Convert Euler angles (degrees) to quaternion
-            Vector3 rotationRadians = portal.Rotation * (MathF.PI / 180.0f);
-            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
-
             // Use portal dimensions if available, otherwise use default size
             Vector3 size = portal.Value.Dimension != Vector3.Zero ? portal.Value.Dimension : Vector3.One * 100.0f;
 
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
-                                    Matrix4x4.CreateFromQuaternion(rotation) *
                                     Matrix4x4.CreateTranslation(portal.Position);
 
             Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (blue)
@@ -816,29 +828,11 @@ public class DebugFieldRenderer : IFieldRenderer {
         const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
         const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
 
-        // Set bright highlight color (white with high intensity)
-        Context.SetColor(1, 1, 1, 1); // Bright white for selection highlight
-
-        // Render a slightly larger cylinder as highlight outline
-        float highlightRadius = agentRadius * 1.2f; // 20% larger radius
-        float highlightHeight = agentHeight * 1.1f; // 10% larger height
-
         // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
         var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
-        Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(highlightRadius, highlightHeight, highlightRadius)) *
-                                rotation *
-                                Matrix4x4.CreateTranslation(selectedActor.Position);
-
-        Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (bright white)
-        Context.CoreModels!.Cylinder.Draw(); // Use cylinder for highlight
-
-        // Optional: Add a pulsing effect by varying the highlight intensity
-        // You could use time-based sine wave to make it pulse
-        float time = (float)(Environment.TickCount64 % 2000) / 2000.0f; // 2 second cycle
-        float pulseIntensity = 0.7f + 0.3f * MathF.Sin(time * MathF.PI * 2); // Pulse between 0.7 and 1.0
 
         // Render a second, even larger outline with pulsing effect
-        Context.SetColor(1, 1, 0, pulseIntensity); // Yellow with pulsing alpha
+        Context.SetColor(1, 1, 0, 1); // Yellow with pulsing alpha
         float pulseRadius = agentRadius * 1.4f;
         float pulseHeight = agentHeight * 1.2f;
 
@@ -956,13 +950,12 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             Context.CameraController.SetCameraTarget(center);
             Context.CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
-            Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         } else {
             // Fallback if no colliders found
             Context.CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
             Context.CameraController.SetCameraTarget(Vector3.Zero);
-            Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
         }
+        Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
     }
 
     private void UpdateCameraFollow() {
@@ -1057,7 +1050,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Create two points: one on near plane, one on far plane
         Vector4 nearPoint = new Vector4(ndcX, ndcY, -1.0f, 1.0f); // Near plane in NDC
-        Vector4 farPoint = new Vector4(ndcX, ndcY, 1.0f, 1.0f);   // Far plane in NDC
+        Vector4 farPoint = new Vector4(ndcX, ndcY, 1.0f, 1.0f); // Far plane in NDC
 
         // Transform to world space
         Vector4 nearWorld = Vector4.Transform(nearPoint, invViewProjMatrix);
@@ -1146,6 +1139,95 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         return false;
+    }
+
+    private void TryMovePlayerToScreenPosition(FieldPlayer player, Vector2 screenPos) {
+        if (!TryScreenToWorldRay(screenPos, out Vector3 rayOrigin, out Vector3 rayDirection)) {
+            return;
+        }
+
+        // Cast ray down to find ground intersection
+        Vector3? targetPosition = FindGroundIntersection(rayOrigin, rayDirection);
+
+        if (targetPosition.HasValue) {
+            Vector3 newPosition = targetPosition.Value;
+            Vector3 currentRotation = player.Rotation; // Keep current rotation
+
+            if (forceMove) {
+                // Force move: bypass validation and send packet directly
+                player.Session.Send(PortalPacket.MoveByPortal(player, newPosition, currentRotation));
+            } else {
+                // Normal move: use the built-in function with validation
+                player.MoveToPosition(newPosition, currentRotation);
+            }
+        }
+    }
+
+    private Vector3? FindGroundIntersection(Vector3 rayOrigin, Vector3 rayDirection) {
+        // First, get the X,Y position where the ray would hit a horizontal plane
+        Vector2 targetXy = GetRayGroundProjection(rayOrigin, rayDirection);
+
+        // Find the topmost block at this X,Y position
+        float? topBlockZ = FindTopmostBlockAt(targetXy);
+
+        if (topBlockZ.HasValue) {
+            // Place player on top of the highest block (add some height for the player)
+            return new Vector3(targetXy.X, targetXy.Y, topBlockZ.Value + 100.0f); // 50 units above block
+        }
+        // No blocks found - drop player from way above for natural falling
+        const float dropHeight = 2000.0f; // Drop from 2000 units above
+        return new Vector3(targetXy.X, targetXy.Y, dropHeight);
+    }
+
+    private Vector2 GetRayGroundProjection(Vector3 rayOrigin, Vector3 rayDirection) {
+        // Project the ray to a reasonable ground level to get X,Y coordinates
+        float targetZ = selectedActor?.Position.Z ?? 0.0f;
+
+        if (Math.Abs(rayDirection.Z) > 0.001f) {
+            float t = (targetZ - rayOrigin.Z) / rayDirection.Z;
+            if (t > 0) {
+                Vector3 intersection = rayOrigin + t * rayDirection;
+                return new Vector2(intersection.X, intersection.Y);
+            }
+        }
+
+        // Fallback: project ray forward a reasonable distance
+        Vector3 projected = rayOrigin + rayDirection * 1000.0f;
+        return new Vector2(projected.X, projected.Y);
+    }
+
+    private float? FindTopmostBlockAt(Vector2 position) {
+        if (Field.AccelerationStructure == null) {
+            return null;
+        }
+
+        float? highestZ = null;
+
+        // Query box colliders (main map blocks) at this position
+        var boxColliders = GetAllEntities().OfType<FieldBoxColliderEntity>();
+
+        foreach (FieldBoxColliderEntity collider in boxColliders) {
+            // Check if this collider contains the X,Y position
+            if (IsPositionInBoxCollider(position, collider)) {
+                // Calculate the top of this collider
+                float colliderTop = collider.Position.Z + (collider.Size.Z * 0.5f);
+
+                if (!highestZ.HasValue || colliderTop > highestZ.Value) {
+                    highestZ = colliderTop;
+                }
+            }
+        }
+
+        return highestZ;
+    }
+
+    private bool IsPositionInBoxCollider(Vector2 position, FieldBoxColliderEntity collider) {
+        // Simple AABB check for now - could be enhanced for rotated boxes
+        Vector3 min = collider.Position - (collider.Size * 0.5f);
+        Vector3 max = collider.Position + (collider.Size * 0.5f);
+
+        return position.X >= min.X && position.X <= max.X &&
+               position.Y >= min.Y && position.Y <= max.Y;
     }
 
     private void RenderActorTextLabels() {
