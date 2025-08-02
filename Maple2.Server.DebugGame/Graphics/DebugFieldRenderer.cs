@@ -8,6 +8,7 @@ using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Tools.VectorMath;
+using Maple2.Tools.Collision;
 using Silk.NET.Maths;
 
 namespace Maple2.Server.DebugGame.Graphics;
@@ -127,8 +128,24 @@ public class DebugFieldRenderer : IFieldRenderer {
             return;
         }
 
+        // Handle mouse input for actor selection
+        HandleMouseInput();
+
         // Render 3D field visualization using the DirectX pipeline
         RenderField3DVisualization(delta);
+    }
+
+    private void HandleMouseInput() {
+        // Check if mouse is clicked and we're hovering over the field window
+        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left)) {
+            // Get mouse position in screen coordinates
+            Vector2 mousePos = ImGui.GetMousePos();
+
+            // For now, assume we're clicking in the field window if any are active
+            // The mouse position is already in the correct coordinate space for the field window
+            // since ImGui handles the coordinate transformation automatically
+            TrySelectActorAtScreenPosition(mousePos);
+        }
     }
 
     private void RenderFieldBasicInfo() {
@@ -557,6 +574,11 @@ public class DebugFieldRenderer : IFieldRenderer {
         if (showActors) {
             RenderActors();
 
+            // Render selection highlight for selected actor
+            if (selectedActor != null) {
+                RenderActorSelectionHighlight();
+            }
+
             // Render text labels above actors using ImGui
             RenderActorTextLabels();
         }
@@ -788,6 +810,46 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
     }
 
+    private void RenderActorSelectionHighlight() {
+        if (selectedActor == null) return;
+
+        const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
+        const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
+
+        // Set bright highlight color (white with high intensity)
+        Context.SetColor(1, 1, 1, 1); // Bright white for selection highlight
+
+        // Render a slightly larger cylinder as highlight outline
+        float highlightRadius = agentRadius * 1.2f; // 20% larger radius
+        float highlightHeight = agentHeight * 1.1f; // 10% larger height
+
+        // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
+        var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
+        Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(highlightRadius, highlightHeight, highlightRadius)) *
+                                rotation *
+                                Matrix4x4.CreateTranslation(selectedActor.Position);
+
+        Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (bright white)
+        Context.CoreModels!.Cylinder.Draw(); // Use cylinder for highlight
+
+        // Optional: Add a pulsing effect by varying the highlight intensity
+        // You could use time-based sine wave to make it pulse
+        float time = (float)(Environment.TickCount64 % 2000) / 2000.0f; // 2 second cycle
+        float pulseIntensity = 0.7f + 0.3f * MathF.Sin(time * MathF.PI * 2); // Pulse between 0.7 and 1.0
+
+        // Render a second, even larger outline with pulsing effect
+        Context.SetColor(1, 1, 0, pulseIntensity); // Yellow with pulsing alpha
+        float pulseRadius = agentRadius * 1.4f;
+        float pulseHeight = agentHeight * 1.2f;
+
+        Matrix4x4 pulseWorldMatrix = Matrix4x4.CreateScale(new Vector3(pulseRadius, pulseHeight, pulseRadius)) *
+                                     rotation *
+                                     Matrix4x4.CreateTranslation(selectedActor.Position);
+
+        Context.UpdateConstantBuffer(pulseWorldMatrix, true);
+        Context.CoreModels!.Cylinder.Draw();
+    }
+
     private void RenderVisualizationControls() {
         if (ImGui.Begin("3D Visualization Controls")) {
             ImGui.Text("Field Visualization Settings");
@@ -970,6 +1032,122 @@ public class DebugFieldRenderer : IFieldRenderer {
         return true;
     }
 
+    private bool TryScreenToWorldRay(Vector2 screenPos, out Vector3 rayOrigin, out Vector3 rayDirection) {
+        rayOrigin = Vector3.Zero;
+        rayDirection = Vector3.Zero;
+
+        // Get the actual viewport size from the field window
+        Vector2D<int> windowSize = GetFieldWindowSize();
+
+        // Convert screen coordinates to NDC coordinates
+        // Screen: (0, 0) = top-left, (width, height) = bottom-right
+        // NDC: (-1, -1) = bottom-left, (1, 1) = top-right
+        float ndcX = (screenPos.X / windowSize.X) * 2.0f - 1.0f;
+        float ndcY = 1.0f - (screenPos.Y / windowSize.Y) * 2.0f; // Flip Y axis
+
+        // Get camera matrices
+        Matrix4x4 viewMatrix = Context.CameraController.Camera.ViewMatrix;
+        Matrix4x4 projMatrix = Context.CameraController.Camera.ProjectionMatrix;
+
+        // Calculate inverse view-projection matrix
+        Matrix4x4 viewProjMatrix = viewMatrix * projMatrix;
+        if (!Matrix4x4.Invert(viewProjMatrix, out Matrix4x4 invViewProjMatrix)) {
+            return false; // Matrix is not invertible
+        }
+
+        // Create two points: one on near plane, one on far plane
+        Vector4 nearPoint = new Vector4(ndcX, ndcY, -1.0f, 1.0f); // Near plane in NDC
+        Vector4 farPoint = new Vector4(ndcX, ndcY, 1.0f, 1.0f);   // Far plane in NDC
+
+        // Transform to world space
+        Vector4 nearWorld = Vector4.Transform(nearPoint, invViewProjMatrix);
+        Vector4 farWorld = Vector4.Transform(farPoint, invViewProjMatrix);
+
+        // Perspective divide
+        if (nearWorld.W == 0 || farWorld.W == 0) return false;
+        nearWorld /= nearWorld.W;
+        farWorld /= farWorld.W;
+
+        // Calculate ray
+        rayOrigin = new Vector3(nearWorld.X, nearWorld.Y, nearWorld.Z);
+        Vector3 farWorldPos = new Vector3(farWorld.X, farWorld.Y, farWorld.Z);
+        rayDirection = Vector3.Normalize(farWorldPos - rayOrigin);
+
+        return true;
+    }
+
+    private bool TrySelectActorAtScreenPosition(Vector2 screenPos) {
+        if (!TryScreenToWorldRay(screenPos, out Vector3 rayOrigin, out Vector3 rayDirection)) {
+            return false;
+        }
+
+        IActor? closestActor = null;
+        float closestDistance = float.MaxValue;
+
+        // Test players
+        if (showPlayers) {
+            foreach ((int _, FieldPlayer player) in Field.Players) {
+                if (TryRayPrismIntersection(rayOrigin, rayDirection, player.Shape, out float distance)) {
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestActor = player;
+                    }
+                }
+            }
+        }
+
+        // Test NPCs
+        if (showNpcs) {
+            foreach ((int _, FieldNpc npc) in Field.Npcs) {
+                if (TryRayPrismIntersection(rayOrigin, rayDirection, npc.Shape, out float distance)) {
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestActor = npc;
+                    }
+                }
+            }
+        }
+
+        // Test Mobs
+        if (showMobs) {
+            foreach ((int _, FieldNpc mob) in Field.Mobs) {
+                if (TryRayPrismIntersection(rayOrigin, rayDirection, mob.Shape, out float distance)) {
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestActor = mob;
+                    }
+                }
+            }
+        }
+
+        if (closestActor != null) {
+            selectedActor = closestActor;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryRayPrismIntersection(Vector3 rayOrigin, Vector3 rayDirection, IPrism prism, out float distance) {
+        distance = 0;
+
+        // Sample points along the ray to test for intersection with the prism
+        // This is a simple approach - for more accuracy, you could implement proper ray-prism intersection
+        const float stepSize = 10.0f; // Step size in world units
+        const float maxDistance = 10000.0f; // Maximum ray distance to test
+
+        for (float t = 0; t < maxDistance; t += stepSize) {
+            Vector3 testPoint = rayOrigin + t * rayDirection;
+
+            if (prism.Contains(testPoint)) {
+                distance = t;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void RenderActorTextLabels() {
         ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
 
@@ -980,14 +1158,18 @@ public class DebugFieldRenderer : IFieldRenderer {
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string playerName = player.Value.Character.Name;
-                Vector2 textSize = ImGui.CalcTextSize(playerName);
-                var textColor = new Vector4(0, 1, 1, 1); // Cyan
+                bool isSelected = selectedActor == player;
 
-                // Draw semi-transparent background
+                Vector2 textSize = ImGui.CalcTextSize(playerName);
+                Vector4 textColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0, 1, 1, 1); // Yellow if selected, cyan otherwise
+                Vector4 bgColor = isSelected ? new Vector4(0.2f, 0.2f, 0, 0.9f) : new Vector4(0, 0, 0, 0.7f); // Darker yellow bg if selected
+                Vector4 borderColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0.2f, 0.2f, 0.2f, 0.8f); // Yellow border if selected
+
+                // Draw background
                 Vector2 bgMin = screenPos - new Vector2(4, 2);
                 Vector2 bgMax = screenPos + textSize + new Vector2(4, 2);
-                drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f))); // Dark background
-                drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f))); // Border
+                drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
+                drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
 
                 // Draw text on top
                 drawList.AddText(screenPos, ImGui.ColorConvertFloat4ToU32(textColor), playerName);
@@ -1001,16 +1183,19 @@ public class DebugFieldRenderer : IFieldRenderer {
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string npcName = npc.Value.Metadata.Name ?? $"NPC {npc.Value.Metadata.Id}";
+                bool isSelected = selectedActor == npc;
 
-                var textColor = new Vector4(0, 1, 0, 1);
+                Vector4 textColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0, 1, 0, 1); // Yellow if selected, green otherwise
+                Vector4 bgColor = isSelected ? new Vector4(0.2f, 0.2f, 0, 0.9f) : new Vector4(0, 0, 0, 0.7f); // Darker yellow bg if selected
+                Vector4 borderColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0.2f, 0.2f, 0.2f, 0.8f); // Yellow border if selected
                 uint color = ImGui.ColorConvertFloat4ToU32(textColor);
 
                 // Draw background for NPC name
                 Vector2 nameSize = ImGui.CalcTextSize(npcName);
                 Vector2 nameBgMin = screenPos - new Vector2(4, 2);
                 Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
-                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
+                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
 
                 drawList.AddText(screenPos, color, npcName);
             }
@@ -1023,20 +1208,33 @@ public class DebugFieldRenderer : IFieldRenderer {
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string mobName = mob.Value.Metadata.Name ?? $"Mob {mob.Value.Metadata.Id}";
+                bool isSelected = selectedActor == mob;
 
                 // Calculate HP percentage
                 long currentHp = mob.Stats.Values[BasicAttribute.Health].Current;
                 long maxHp = mob.Stats.Values[BasicAttribute.Health].Total;
                 float hpPercent = maxHp > 0 ? (float) currentHp / maxHp * 100f : 0f;
 
-                // Choose color based on status
+                // Choose color based on status, but override with yellow if selected
                 Vector4 textColor;
-                if (mob.IsDead) {
-                    textColor = new Vector4(0.5f, 0.5f, 0.5f, 0.7f); // Gray for dead
-                } else if (mob.BattleState.InBattle) {
-                    textColor = new Vector4(1, 0, 0, 1); // Red for aggressive
+                Vector4 bgColor;
+                Vector4 borderColor;
+
+                if (isSelected) {
+                    textColor = new Vector4(1, 1, 0, 1); // Yellow for selected
+                    bgColor = new Vector4(0.2f, 0.2f, 0, 0.9f); // Darker yellow bg
+                    borderColor = new Vector4(1, 1, 0, 1); // Yellow border
                 } else {
-                    textColor = new Vector4(1, 1, 0, 1); // Yellow for wandering
+                    // Normal colors based on mob status
+                    if (mob.IsDead) {
+                        textColor = new Vector4(0.5f, 0.5f, 0.5f, 0.7f); // Gray for dead
+                    } else if (mob.BattleState.InBattle) {
+                        textColor = new Vector4(1, 0, 0, 1); // Red for aggressive
+                    } else {
+                        textColor = new Vector4(1, 1, 0, 1); // Yellow for wandering
+                    }
+                    bgColor = new Vector4(0, 0, 0, 0.7f); // Normal dark background
+                    borderColor = new Vector4(0.2f, 0.2f, 0.2f, 0.8f); // Normal border
                 }
 
                 uint color = ImGui.ColorConvertFloat4ToU32(textColor);
@@ -1045,8 +1243,8 @@ public class DebugFieldRenderer : IFieldRenderer {
                 Vector2 nameSize = ImGui.CalcTextSize(mobName);
                 Vector2 nameBgMin = screenPos - new Vector2(4, 2);
                 Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
-                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
+                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
+                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
 
                 drawList.AddText(screenPos, color, mobName);
 
