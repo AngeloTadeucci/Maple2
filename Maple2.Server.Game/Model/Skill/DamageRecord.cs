@@ -37,6 +37,7 @@ public class DamageRecord {
             CompulsionTypes = attackMetadata.CompulsionTypes,
             Rate = attackMetadata.Damage.Rate,
             Value = attackMetadata.Damage.Value,
+            SuperArmorBreak = attackMetadata.Damage.SuperArmorBreak,
         };
     }
 }

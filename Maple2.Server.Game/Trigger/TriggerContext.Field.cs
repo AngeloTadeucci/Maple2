@@ -118,9 +118,6 @@ public partial class TriggerContext {
         if (!Objects.Cameras.TryGetValue(triggerId, out TriggerObjectCamera? camera)) {
             return;
         }
-        if (camera.Visible == enabled) {
-            return;
-        }
 
         camera.Visible = enabled;
         Broadcast(TriggerPacket.Update(camera));
@@ -164,7 +161,7 @@ public partial class TriggerContext {
                 continue;
             }
 
-            breakable.UpdateState(BreakableState.Show);
+            breakable.UpdateState(enabled ? BreakableState.Show : BreakableState.Hide);
             updated.Add(breakable);
         }
 

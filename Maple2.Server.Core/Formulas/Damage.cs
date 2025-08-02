@@ -8,12 +8,16 @@ public static class Damage {
     /// <summary>
     /// Checks hit rate for evading
     /// </summary>
-    public static bool Evade(float targetAccuracyResistance, long targetEvasionTotal, long targetDexeterityTotal, long casterAccuracyTotal, float casterEvasionResistance, long casterLuckTotal) {
+    public static bool Evade(float targetAccuracyResistance, long targetEvasionTotal, long targetDexterityTotal, long casterAccuracyTotal, float casterEvasionResistance, long casterLuckTotal, bool superArmorBreak) {
+        if (superArmorBreak) {
+            return false;
+        }
+
         // Unconfirmed
         double casterAccuracy = casterAccuracyTotal * (1 - targetAccuracyResistance);
         double targetEvasion = targetEvasionTotal * (1 - casterEvasionResistance);
 
-        double hitRate = (casterAccuracy - 10) / (targetEvasion + (0.8 * casterAccuracy)) * 2 + Math.Min(0.05, targetDexeterityTotal / (targetDexeterityTotal + 50) * 0.05)
+        double hitRate = (casterAccuracy - 10) / (targetEvasion + (0.8 * casterAccuracy)) * 2 + Math.Min(0.05, targetDexterityTotal / (targetDexterityTotal + 50) * 0.05)
                - Math.Min(0.05, casterLuckTotal / (casterLuckTotal + 50) * 0.05);
 
         if (Random.Shared.NextDouble() > hitRate) {

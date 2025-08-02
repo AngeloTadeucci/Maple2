@@ -21,7 +21,7 @@ public static class DamageCalculator {
 
         // Get hit rate
         if (Damage.Evade(target.Buffs.GetResistance(BasicAttribute.Accuracy), target.Stats.Values[BasicAttribute.Evasion].Total, target.Stats.Values[BasicAttribute.Dexterity].Total,
-                caster.Stats.Values[BasicAttribute.Accuracy].Total, caster.Buffs.GetResistance(BasicAttribute.Evasion), caster.Stats.Values[BasicAttribute.Luck].Total)) {
+                caster.Stats.Values[BasicAttribute.Accuracy].Total, caster.Buffs.GetResistance(BasicAttribute.Evasion), caster.Stats.Values[BasicAttribute.Luck].Total, property.SuperArmorBreak)) {
             return (DamageType.Miss, 0);
         }
 
