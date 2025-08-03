@@ -56,6 +56,10 @@ public class FieldBreakable : FieldEntity<BreakableActor> {
             return;
         }
 
+        if (!Visible) {
+            return;
+        }
+
         switch (State) {
             case BreakableState.Show:
                 break;
