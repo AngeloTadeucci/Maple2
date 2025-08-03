@@ -12,16 +12,6 @@ public class FreeCameraController : ICameraController {
     public InputState InputState { get; } = new();
     public Camera Camera { get; }
 
-
-
-    // Camera properties that delegate to Camera.Transform
-    public Vector3 CameraPosition => Camera.Transform.Position;
-    public Quaternion CameraRotation => Camera.Transform.Quaternion;
-
-    // Free camera controller doesn't support following - these return default values
-    public bool IsFollowingPlayer => false;
-    public long? FollowedPlayerId => null;
-    public bool HasManuallyStopped => false;
     public Vector3 CameraTarget { get; private set; } = Vector3.Zero;
 
     private const Key MoveForward = Key.W;
@@ -40,10 +30,20 @@ public class FreeCameraController : ICameraController {
     }
 
     // Default camera rotation for MapleStory 2 coordinate system
-    private static readonly Quaternion DefaultCameraRotation = new Quaternion(0.130f, 0.325f, 0.870f, 0.350f);
+    private static readonly Matrix4x4 DefaultCameraRotation = new Matrix4x4(
+        -0.5347f, 0.8451f, 0.0000f, 0.0000f,
+        -0.6053f, -0.3830f, 0.6978f, 0.0000f,
+        0.5897f, 0.3731f, 0.7163f, 0.0000f,
+        0.0000f, 0.0000f, 0.0000f, 1.0000f
+    );
 
     // Field overview camera rotation
-    private static readonly Quaternion FieldOverviewRotation = new Quaternion(0.000f, 0.450f, 0.900f, 0.000f);
+    private static readonly Matrix4x4 FieldOverviewRotation = new Matrix4x4(
+        -1.0000f, 0.0018f, 0.0000f, 0.0000f,
+        -0.0013f, -0.6994f, 0.7147f, 0.0000f,
+        0.0013f, 0.7147f, 0.6994f, 0.0000f,
+        0.0000f, 0.0000f, 0.0000f, 1.0000f
+    );
 
     public FreeCameraController(Camera camera) {
         Camera = camera;
@@ -53,14 +53,14 @@ public class FreeCameraController : ICameraController {
     /// Sets the camera to the default rotation for MapleStory 2
     /// </summary>
     public void SetDefaultRotation() {
-        Camera.Transform.Quaternion = DefaultCameraRotation;
+        Camera.Transform.RotationMatrix = DefaultCameraRotation;
     }
 
     /// <summary>
     /// Sets the camera to the field overview rotation
     /// </summary>
     public void SetFieldOverviewRotation() {
-        Camera.Transform.Quaternion = FieldOverviewRotation;
+        Camera.Transform.RotationMatrix = FieldOverviewRotation;
     }
 
     public void Update(float delta) {
@@ -100,22 +100,13 @@ public class FreeCameraController : ICameraController {
             currentSpeed *= 5.0f; // 5x speed with Shift
         }
 
-        if (moveDirection.LengthSquared() > 0) {
-            Camera.Transform.Position += delta * currentSpeed * (moveDirection.X * Camera.Transform.RightAxis + moveDirection.Y * Camera.Transform.FrontAxis + moveDirection.Z * Camera.Transform.UpAxis);
-
-            // Free camera controller doesn't support following
-        }
+        Camera.Transform.Position += delta * currentSpeed * (moveDirection.X * Camera.Transform.RightAxis + moveDirection.Y * Camera.Transform.FrontAxis + moveDirection.Z * Camera.Transform.UpAxis);
 
         if (!InputState.MouseRight.IsDown) {
             return;
         }
 
         Vector3 mouseDelta = InputState.MousePosition.Delta;
-
-        // Check if there's actual mouse movement
-        if (mouseDelta.X != 0 || mouseDelta.Y != 0) {
-            // Free camera controller doesn't support following
-        }
 
         float currentPitch = -float.Asin(Camera.Transform.FrontAxis.Z);
         float currentYaw = -float.Atan2(-Camera.Transform.FrontAxis.X, -Camera.Transform.FrontAxis.Y);
@@ -131,8 +122,6 @@ public class FreeCameraController : ICameraController {
 
         InputState.MousePosition.Lock = true;
     }
-
-
 
     /// <summary>
     /// Rotates the camera around the target point
@@ -169,49 +158,15 @@ public class FreeCameraController : ICameraController {
     }
 
     /// <summary>
-    /// Starts following a specific player - not supported by free camera controller
-    /// </summary>
-    public void StartFollowingPlayer(long playerId) {
-        // Free camera controller doesn't support following
-    }
-
-    /// <summary>
-    /// Stops following the current player - not supported by free camera controller
-    /// </summary>
-    public void StopFollowingPlayer() {
-        // Free camera controller doesn't support following
-    }
-
-    /// <summary>
-    /// Updates camera to follow a player at the specified position - not supported by free camera controller
-    /// </summary>
-    public void UpdatePlayerFollow(Vector3 playerPosition) {
-        // Free camera controller doesn't support following
-    }
-
-    /// <summary>
     /// Sets the camera target
     /// </summary>
     public void SetCameraTarget(Vector3 target) {
         CameraTarget = target;
         Vector3 direction = Vector3.Normalize(target - Camera.Transform.Position);
 
-        // Calculate rotation to look at target
-        Vector3 up = Vector3.UnitZ; // Z is up in our coordinate system
-        Vector3 right = Vector3.Normalize(Vector3.Cross(direction, up));
-        up = Vector3.Cross(right, direction);
-
-        Matrix4x4 lookAtMatrix = new Matrix4x4(
-            right.X, up.X, -direction.X, 0,
-            right.Y, up.Y, -direction.Y, 0,
-            right.Z, up.Z, -direction.Z, 0,
-            0, 0, 0, 1
-        );
-
-        Camera.Transform.Transformation = lookAtMatrix;
+        // Use Transform's LookTo method instead of manual matrix calculation
+        Camera.Transform.LookTo(direction, Vector3.UnitZ, snapToGroundPlane: false);
     }
-
-
 
     /// <summary>
     /// Sets camera orientation that works well with MapleStory 2's coordinate system

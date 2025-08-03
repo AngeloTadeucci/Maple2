@@ -14,6 +14,7 @@ using Maple2.Server.DebugGame.Graphics.Scene;
 using Maple2.Tools;
 using Maple2.Tools.Extensions;
 using System.Numerics;
+using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -316,7 +317,7 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
         sharedCamera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
-        CameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
+        freeCameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
 
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
@@ -415,18 +416,13 @@ public class DebugGraphicsContext : IGraphicsContext {
         CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
     }
 
-    public void UpdateViewMatrix() {
-        CameraController.Camera.UpdateViewMatrix();
-    }
-
     /// <summary>
     /// Switches to the free camera controller
     /// </summary>
     private void SwitchToFreeCameraController() {
         if (CameraController != freeCameraController) {
-            Logger.Information("Switching from {OldController} to FreeCameraController", GetCurrentControllerType());
             CameraController = freeCameraController;
-            Logger.Information("Switched to free camera controller - IsFollowing={IsFollowing}", CameraController.IsFollowingPlayer);
+            Logger.Information("Switched to free camera controller");
         } else {
             Logger.Information("Already using FreeCameraController - no switch needed");
         }
@@ -461,25 +457,19 @@ public class DebugGraphicsContext : IGraphicsContext {
     /// <summary>
     /// Starts following a player and automatically switches to follow camera controller
     /// </summary>
-    public void StartFollowingPlayer(long playerId) {
+    public void StartFollowingPlayer(FieldPlayer player) {
         hasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
         SwitchToFollowCameraController();
-        followCameraController.StartFollowingPlayer(playerId);
+        followCameraController.StartFollowingPlayer(player.Value.Character.Id, player.Position);
     }
 
     /// <summary>
     /// Stops following a player and automatically switches to free camera controller
     /// </summary>
     public void StopFollowingPlayer() {
-        Logger.Information("StopFollowingPlayer called - before: IsFollowing={IsFollowing}, Controller={Controller}",
-            CameraController.IsFollowingPlayer, GetCurrentControllerType());
-
         hasManuallyStoppedFollowing = true; // Remember that user manually stopped
         followCameraController.StopFollowingPlayer();
         SwitchToFreeCameraController();
-
-        Logger.Information("StopFollowingPlayer called - after: IsFollowing={IsFollowing}, Controller={Controller}, HasManuallyStopped={HasManuallyStopped}",
-            CameraController.IsFollowingPlayer, GetCurrentControllerType(), HasManuallyStopped);
     }
 
     /// <summary>

@@ -11,6 +11,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
 using Silk.NET.Maths;
+using Maple2.Server.DebugGame.Graphics.Scene;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -76,10 +77,12 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is first opened or when a new player joins
         // But only if user hasn't manually stopped following
-        if (!Context.CameraController.IsFollowingPlayer && !Context.HasManuallyStopped) {
+        bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
+        if (!isFollowing && !Context.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
-            if (firstPlayer != null && (!hasTriedAutoFollow || Context.CameraController.FollowedPlayerId != firstPlayer.Value.Character.Id)) {
-                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+            long? currentFollowedId = Context.CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
+            if (firstPlayer != null && (!hasTriedAutoFollow || currentFollowedId != firstPlayer.Value.Character.Id)) {
+                Context.StartFollowingPlayer(firstPlayer);
                 hasTriedAutoFollow = true;
             }
         }
@@ -511,10 +514,11 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
-        if (!Context.CameraController.IsFollowingPlayer && !Context.HasManuallyStopped) {
+        bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
+        if (!isFollowing && !Context.HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
-                Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                Context.StartFollowingPlayer(firstPlayer);
             }
         }
     }
@@ -533,7 +537,6 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         // Set up 3D rendering matrices
-        Context.UpdateViewMatrix();
         Context.UpdateProjectionMatrix();
 
         // Enable wireframe mode for field visualization
@@ -879,8 +882,13 @@ public class DebugFieldRenderer : IFieldRenderer {
             // Camera controls
             ImGui.Text("Camera Controls:");
             if (ImGui.Button("Reset Camera")) {
-                // Reset camera to default rotation for MapleStory 2
-                Context.CameraController.SetDefaultRotation();
+                // Reset camera to default rotation
+                if (Context.CameraController is FreeCameraController freeCam) {
+                    freeCam.SetDefaultRotation();
+                }
+                // else if (Context.CameraController is FollowCameraController followCam) {
+                //     followCam.SetDefaultRotation();
+                // }
             }
 
             ImGui.SameLine();
@@ -894,9 +902,11 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             // Player follow controls
             ImGui.Separator();
-            ImGui.Text($"Player Follow: {(Context.CameraController.IsFollowingPlayer ? $"Player ID: {Context.CameraController.FollowedPlayerId}" : string.Empty)}");
+            bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
+            long? followedId = Context.CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
+            ImGui.Text($"Player Follow: {(isFollowing ? $"Player ID: {followedId}" : string.Empty)}");
 
-            if (Context.CameraController.IsFollowingPlayer) {
+            if (isFollowing) {
                 if (ImGui.Button("Stop Following")) {
                     Context.StopFollowingPlayer();
                 }
@@ -904,20 +914,24 @@ public class DebugFieldRenderer : IFieldRenderer {
                 if (ImGui.Button("Follow First Player")) {
                     FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
                     if (firstPlayer != null) {
-                        Context.StartFollowingPlayer(firstPlayer.Value.Character.Id);
+                        Context.StartFollowingPlayer(firstPlayer);
                     }
                 }
             }
 
-            if (Context.CameraController.IsFollowingPlayer) {
-                ImGui.Text($"Player Following Position: {Context.CameraController.CameraTarget}");
+            if (isFollowing) {
+                // Get target from concrete controller if available
+                Vector3 target = Context.CameraController switch {
+                    FreeCameraController freeCam => freeCam.CameraTarget,
+                    FollowCameraController followCam => followCam.CameraTarget,
+                    _ => Vector3.Zero,
+                };
+                ImGui.Text($"Player Following Position: {target}");
             }
-            // Camera position display
-            ImGui.Text($"Camera Position: {Context.CameraController.CameraPosition}");
+            ImGui.Text($"Camera Position: {Context.CameraController.Camera.Transform.Position}");
 
-            // Camera rotation display
-            Quaternion q = Context.CameraController.CameraRotation;
-            ImGui.Text($"Camera Rotation: X={q.X:F3}, Y={q.Y:F3}, Z={q.Z:F3}, W={q.W:F3}");
+            Vector3 forward = Context.CameraController.Camera.Transform.FrontAxis;
+            ImGui.Text($"Camera Forward: X={forward.X:F3}, Y={forward.Y:F3}, Z={forward.Z:F3}");
 
             ImGui.Text($"Wireframe Mode: {(Context.WireframeMode ? "ON" : "OFF")}");
         }
@@ -926,7 +940,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void SetFieldOverviewCamera() {
         // Stop following player when switching to field overview
-        if (Context.CameraController.IsFollowingPlayer) {
+        if (Context.CameraController is FollowCameraController { IsFollowingPlayer: true }) {
             Context.StopFollowingPlayer();
         }
 
@@ -948,23 +962,29 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector3 center = Vector3.Transform(centerMap, MapRotation);
             float distance = Math.Max(sizeMap.X, Math.Max(sizeMap.Y, sizeMap.Z)) * 1.5f;
 
-            Context.CameraController.SetCameraTarget(center);
-            Context.CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
+            // Set camera target and position for field overview
+            if (Context.CameraController is FreeCameraController freeCam) {
+                freeCam.SetCameraTarget(center);
+                freeCam.SetFieldOverviewRotation();
+                Context.CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
+            }
         } else {
             // Fallback if no colliders found
-            Context.CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
-            Context.CameraController.SetCameraTarget(Vector3.Zero);
+            if (Context.CameraController is FreeCameraController freeCam) {
+                freeCam.SetCameraTarget(Vector3.Zero);
+                freeCam.SetFieldOverviewRotation();
+                Context.CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
+            }
         }
-        Context.CameraController.SetFieldOverviewRotation(); // Use field overview rotation
     }
 
     private void UpdateCameraFollow() {
-        if (!Context.CameraController.IsFollowingPlayer || Context.CameraController.FollowedPlayerId == null) {
+        if (Context.CameraController is not FollowCameraController { IsFollowingPlayer: true } followCam || followCam.FollowedPlayerId == null) {
             return;
         }
 
         // Find the player being followed
-        FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == Context.CameraController.FollowedPlayerId);
+        FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == followCam.FollowedPlayerId);
         if (followedPlayer == null) {
             // Player not found, stop following
             Context.StopFollowingPlayer();
