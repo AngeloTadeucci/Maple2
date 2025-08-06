@@ -55,7 +55,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             NextTick = baseTick;
             endTick = baseTick + splash.RemoveDelay + (FireCount - 1) * splash.Interval;
         } else {
-            NextTick = baseTick + splash.Delay + splash.Interval;
+            NextTick = baseTick + splash.Interval;
             endTick = baseTick + splash.Delay + splash.RemoveDelay + FireCount * splash.Interval;
         }
         if (splash.OnlySensingActive) {
@@ -87,7 +87,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             }
 
             NextTick = Field.FieldTick + Interval;
-            return;
+            goto end;
         }
 
     activated:
@@ -206,7 +206,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                 }
             }
         }
-
+    end:
         if (Interval == 0) {
             FireCount = 0;
             NextTick = int.MaxValue;
