@@ -55,7 +55,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             NextTick = baseTick;
             endTick = baseTick + splash.RemoveDelay + (FireCount - 1) * splash.Interval;
         } else {
-            NextTick = baseTick + splash.Delay + splash.Interval;
+            NextTick = baseTick + splash.Interval;
             endTick = baseTick + splash.Delay + splash.RemoveDelay + FireCount * splash.Interval;
         }
         if (splash.OnlySensingActive) {
@@ -79,6 +79,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             foreach (SkillMetadataMotion motion in Value.Data.Motions) {
                 foreach (SkillMetadataAttack attack in motion.Attacks) {
                     Prism[] prisms = Points.Select(point => attack.Range.GetPrism(point, UseDirection ? Rotation.Z : 0)).ToArray();
+                    var targets = Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount);
                     if (Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount).Any()) {
                         Active = true;
                         goto activated;
@@ -87,7 +88,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             }
 
             NextTick = Field.FieldTick + Interval;
-            return;
+            goto end;
         }
 
     activated:
@@ -206,7 +207,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                 }
             }
         }
-
+    end:
         if (Interval == 0) {
             FireCount = 0;
             NextTick = int.MaxValue;
