@@ -79,7 +79,6 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             foreach (SkillMetadataMotion motion in Value.Data.Motions) {
                 foreach (SkillMetadataAttack attack in motion.Attacks) {
                     Prism[] prisms = Points.Select(point => attack.Range.GetPrism(point, UseDirection ? Rotation.Z : 0)).ToArray();
-                    var targets = Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount);
                     if (Field.GetTargets(Caster, prisms, attack.Range.ApplyTarget, attack.TargetCount).Any()) {
                         Active = true;
                         goto activated;
