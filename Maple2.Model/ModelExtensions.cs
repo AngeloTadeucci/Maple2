@@ -6,6 +6,7 @@ namespace Maple2.Model;
 
 public static class ModelExtensions {
     public static JobCode Code(this Job job) {
+        if (job == Job.GameMaster) return JobCode.GameMaster;
         return (JobCode) ((int) job / 10);
     }
 
@@ -28,6 +29,7 @@ public static class ModelExtensions {
             JobCode.RuneBlader => JobFilterFlag.RuneBlader,
             JobCode.Striker => JobFilterFlag.Striker,
             JobCode.SoulBinder => JobFilterFlag.SoulBinder,
+            JobCode.GameMaster => JobFilterFlag.Newbie,
             _ => throw new ArgumentOutOfRangeException(nameof(job), job, "Invalid JobCode"),
         };
     }

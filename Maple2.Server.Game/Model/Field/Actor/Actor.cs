@@ -107,7 +107,10 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
         long damageAmount = 0;
         for (int i = 0; i < attack.Damage.Count; i++) {
             Reflect(caster);
-            if (attack.Damage.IsConstDamage) {
+            if (attack.Damage.DamageByTargetMaxHp > 0) {
+                targetRecord.AddDamage(DamageType.Normal, (long) (Stats.Values[BasicAttribute.Health].Total * attack.Damage.DamageByTargetMaxHp));
+                damageAmount -= (long) (Stats.Values[BasicAttribute.Health].Total * attack.Damage.DamageByTargetMaxHp);
+            } else if (attack.Damage.IsConstDamage) {
                 targetRecord.AddDamage(DamageType.Normal, attack.Damage.Value);
                 damageAmount -= attack.Damage.Value;
             } else {

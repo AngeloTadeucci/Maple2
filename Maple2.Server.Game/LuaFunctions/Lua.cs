@@ -2957,7 +2957,7 @@ public static class Lua {
             (int) JobCode.RuneBlader => 3.78f,
             (int) JobCode.Striker => 2.03875f,
             (int) JobCode.SoulBinder => 3.40375f,
-            (int) JobCode.None => 0.7f, // "GM"
+            (int) JobCode.None or (int) JobCode.GameMaster => 0.7f, // "GM"
             _ => throw new ArgumentOutOfRangeException(nameof(jobCode), "Invalid job code"),
         };
     }

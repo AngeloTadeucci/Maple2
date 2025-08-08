@@ -16,7 +16,7 @@ public enum JobCode : short {
     RuneBlader = 90,
     Striker = 100,
     SoulBinder = 110,
-    //GameMaster = 999,
+    GameMaster = 999,
 }
 
 public enum Job {
@@ -43,5 +43,5 @@ public enum Job {
     StrikerII = 1001,
     SoulBinder = 1100,
     SoulBinderII = 1101,
-    //GameMaster = 999,
+    GameMaster = 999,
 }
