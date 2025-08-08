@@ -617,6 +617,7 @@ public class ServerTableMapper : TypeMapper<ServerTableMetadata> {
                 { JobCode.RuneBlader, parser.ParseUserStat90().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.Striker, parser.ParseUserStat100().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
                 { JobCode.SoulBinder, parser.ParseUserStat110().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
+                { JobCode.GameMaster, parser.ParseUserStat999().ToDictionary(x => x.Level, x => UserStatMetadataMapper(x.UserStat)) },
             }
         );
     }
