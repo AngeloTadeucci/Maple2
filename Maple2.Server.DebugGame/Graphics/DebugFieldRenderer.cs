@@ -725,23 +725,7 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     private bool TryRayPrismIntersection(Vector3 rayOrigin, Vector3 rayDirection, IPrism prism, out float distance) {
-        distance = 0;
-
-        // Sample points along the ray to test for intersection with the prism
-        // This is a simple approach - for more accuracy, you could implement proper ray-prism intersection
-        const float stepSize = 10.0f; // Step size in world units
-        const float maxDistance = 10000.0f; // Maximum ray distance to test
-
-        for (float t = 0; t < maxDistance; t += stepSize) {
-            Vector3 testPoint = rayOrigin + t * rayDirection;
-
-            if (prism.Contains(testPoint)) {
-                distance = t;
-                return true;
-            }
-        }
-
-        return false;
+        return prism.Raycast(rayOrigin, rayDirection, out distance);
     }
 
     private void TryMovePlayerToScreenPosition(FieldPlayer player, Vector2 screenPos) {

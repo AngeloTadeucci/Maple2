@@ -66,7 +66,7 @@ public class ShaderPipelines {
         if (expected == "") {
             shaderErrors = true;
 
-            DebugGraphicsContext.Logger.Error("[{0}]: Unrecognized {label}node type '{1}'", currentDocument, element.Name);
+            DebugGraphicsContext.Logger.Error("[{0}]: Unrecognized {label}node type '{1}'", currentDocument, label, element.Name);
 
             return true;
         }
@@ -74,7 +74,7 @@ public class ShaderPipelines {
         if (element.Name != expected) {
             shaderErrors = true;
 
-            DebugGraphicsContext.Logger.Error("[{0}]: Unrecognized {label}node type '{1}', expected '{2}'", currentDocument, element.Name, expected);
+            DebugGraphicsContext.Logger.Error("[{0}]: Unrecognized {label}node type '{2}', expected '{3}'", currentDocument, label, element.Name, expected);
 
             return true;
         }
@@ -289,7 +289,7 @@ public class ShaderPipelines {
                             } catch (Exception e) {
                                 shaderErrors = true;
 
-                                DebugGraphicsContext.Logger.Error($"[{{0}}, {{1}}]: {e.Message}", currentDocument, stage);
+                                DebugGraphicsContext.Logger.Error("[{0}, {1}]: {Message}", currentDocument, stage, e.Message);
                             }
                         }
 

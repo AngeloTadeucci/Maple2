@@ -58,8 +58,8 @@ public class SceneState {
         }
     }
 
-    private static unsafe Type*[] GetPointerArray<Type>(List<ComPtr<Type>> list) where Type : unmanaged, IComVtbl<Type> {
-        Type*[] array = new Type*[list.Count];
+    private static unsafe T*[] GetPointerArray<T>(List<ComPtr<T>> list) where T : unmanaged, IComVtbl<T> {
+        T*[] array = new T*[list.Count];
 
         for (int i = 0; i < list.Count; i++) {
             array[i] = list[i].GetPinnableReference();
