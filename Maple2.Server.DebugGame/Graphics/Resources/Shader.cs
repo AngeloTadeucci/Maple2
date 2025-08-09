@@ -18,8 +18,6 @@ internal class ShaderCompilationJob {
 }
 
 public abstract class Shader {
-    public static string ShaderRootPath = "";
-
     // HRESULT values, mandatory for some DX11 features
     public const int S_OK = 0;
     public const int E_FAIL = unchecked((int) 0x80004005);

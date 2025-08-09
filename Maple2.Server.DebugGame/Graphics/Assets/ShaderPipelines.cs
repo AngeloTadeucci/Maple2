@@ -148,7 +148,8 @@ public class ShaderPipelines {
 
         InitializeFileWatchers(pipelineRoot, shaderRoot);
 
-        foreach (FileInfo file in directory.EnumerateFiles()) {
+        IEnumerable<FileInfo> enumerateFiles = directory.EnumerateFiles();
+        foreach (FileInfo file in enumerateFiles) {
             string relpath = Path.GetRelativePath(pipelineRoot, file.FullName);
             currentDocument = relpath;
 

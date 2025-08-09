@@ -122,7 +122,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterModule<WebDbModule>();
 
     // Make all packet handlers available to PacketRouter
-    autofac.RegisterAssemblyTypes(Assembly.LoadFrom("Maple2.Server.Game.dll"))
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Maple2.Server.Game.dll")))
         .Where(type => typeof(PacketHandler<GameSession>).IsAssignableFrom(type))
         .As<PacketHandler<GameSession>>()
         .PropertiesAutowired()
@@ -131,7 +131,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     // ChatCommand Handlers
     autofac.RegisterType<CommandRouter>();
 
-    autofac.RegisterAssemblyTypes(Assembly.LoadFrom("Maple2.Server.Game.dll"))
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Maple2.Server.Game.dll")))
         .PublicOnly()
         .WithAttributeFiltering()
         .Where(type => typeof(GameCommand).IsAssignableFrom(type))

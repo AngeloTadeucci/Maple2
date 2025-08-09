@@ -39,11 +39,13 @@ public class DebugGraphicsContext : IGraphicsContext {
     public ComPtr<IDXGIFactory2> DxFactory { get; private set; }
     private ComPtr<IDXGISwapChain1> DxSwapChain { get; set; }
 
-    // Enhanced shader support
-    private VertexShader? VertexShader { get; set; }
-    private PixelShader? PixelShader { get; set; }
-    public VertexShader? WireframeVertexShader { get; private set; }
-    public PixelShader? WireframePixelShader { get; private set; }
+    private string resourceRootPath = "";
+
+    public ShaderPipeline? ScreenPipeline { get; private set; }
+    public ShaderPipeline? DebugScenePipeline { get; private set; }
+    public ShaderPipeline? WireframePipeline { get; private set; }
+    public ShaderPipelines? ShaderPipelines { get; private set; }
+    public SceneState SceneState { get; init; }
 
     // 3D rendering resources
     private ComPtr<ID3D11Texture2D> DepthStencilBuffer { get; set; }
@@ -51,24 +53,11 @@ public class DebugGraphicsContext : IGraphicsContext {
     private ComPtr<ID3D11DepthStencilState> DepthStencilState { get; set; }
     private ComPtr<ID3D11RasterizerState> SolidRasterizerState { get; set; }
     private ComPtr<ID3D11RasterizerState> WireframeRasterizerState { get; set; }
-    private ComPtr<ID3D11Buffer> ConstantBuffer { get; set; }
+    // private ComPtr<ID3D11Buffer> ConstantBuffer { get; set; }
 
     public CoreModels? CoreModels { get; private set; }
     private Texture? sampleTexture;
     private ImGuiController? ImGuiController { get; set; }
-
-    // Camera controller interface for all camera functionality
-    public ICameraController CameraController { get; private set; } = null!;
-
-    // Available controller implementations
-    private FreeCameraController freeCameraController = null!;
-    private FollowCameraController followCameraController = null!;
-
-    // Shared camera instance
-    private readonly Camera sharedCamera = new();
-
-    // Global follow state (independent of active controller)
-    private bool hasManuallyStoppedFollowing = false;
 
     // Rendering state
     public bool WireframeMode { get; set; } = true; // Start in wireframe mode
@@ -100,6 +89,10 @@ public class DebugGraphicsContext : IGraphicsContext {
     public int DeltaMax { get; private set; }
     private DateTime lastTime = DateTime.Now;
     private bool IsClosing { get; set; }
+
+    public DebugGraphicsContext() {
+        SceneState = new(this);
+    }
 
     public void RunDebugger() {
         DebuggerWindow!.Initialize();
@@ -227,12 +220,8 @@ public class DebugGraphicsContext : IGraphicsContext {
         D3d11 = D3D11.GetApi(DebuggerWindow);
         Compiler = D3DCompiler.GetApi();
 
-        // Use application base directory where files are copied during build
-        Shader.ShaderRootPath = Path.Combine(AppContext.BaseDirectory, "Shaders");
-        Texture.TextureRootPath = Path.Combine(AppContext.BaseDirectory, "Textures");
-
-        // Set AssetRootPath for shader include system
-        ShaderPipelines.AssetRootPath = AppContext.BaseDirectory;
+        Texture.TextureRootPath = GetResourceRootPath("Textures");
+        ShaderPipelines.AssetRootPath = GetResourceRootPath("");
 
         unsafe {
             ComPtr<ID3D11Device> device = default;
@@ -284,22 +273,12 @@ public class DebugGraphicsContext : IGraphicsContext {
             DxSwapChain = swapChain;
         }
 
-        // Create shaders
-        VertexShader ??= new VertexShader(this);
-
-        PixelShader ??= new PixelShader(this);
-
-        WireframeVertexShader ??= new VertexShader(this);
-
-        WireframePixelShader ??= new PixelShader(this);
-
-        VertexShader.Load(Path.Combine(Shader.ShaderRootPath, "screenVertex.hlsl"), "vs_main");
-        PixelShader.Load(Path.Combine(Shader.ShaderRootPath, "screenPixel.hlsl"), "ps_main");
-        WireframeVertexShader.Load(Path.Combine(Shader.ShaderRootPath, "wireframeVertex.hlsl"), "vs_main");
-        WireframePixelShader.Load(Path.Combine(Shader.ShaderRootPath, "wireframePixel.hlsl"), "ps_main");
-
         // Create 3D rendering resources
         Create3DRenderingResources();
+
+        ShaderPipelines ??= new(this);
+
+        LoadPipelines();
 
         CoreModels = new CoreModels(this);
 
@@ -308,22 +287,37 @@ public class DebugGraphicsContext : IGraphicsContext {
         sampleTexture = new Texture(this);
         sampleTexture.Load(Path.Combine(Texture.TextureRootPath, "sample_derp_wave.png"));
 
-        // Initialize camera controllers
-        freeCameraController = new FreeCameraController(sharedCamera);
-        followCameraController = new FollowCameraController(sharedCamera);
-
-        // Start with free camera controller as default
-        CameraController = freeCameraController;
-
-        Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        sharedCamera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
-        freeCameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
-
         ImGuiController = new ImGuiController(this, Input, ImGuiWindowType.Main);
 
         if (DebuggerWindow is not null) {
             ImGuiController.Initialize(DebuggerWindow);
         }
+    }
+
+    private void LoadPipelines() {
+        ShaderPipelines!.LoadPipelines();
+
+        if (!ShaderPipelines!.Pipelines.TryGetValue("Screen", out ShaderPipeline? screenPipeline)) {
+            ShaderPipelines!.ExternalError();
+
+            Logger.Error("No 'Screen' shader pipeline defined");
+        }
+
+        if (!ShaderPipelines!.Pipelines.TryGetValue("DebugScene", out ShaderPipeline? debugScenePipeline)) {
+            ShaderPipelines!.ExternalError();
+
+            Logger.Error("No 'DebugScene' shader pipeline defined");
+        }
+
+        if (!ShaderPipelines!.Pipelines.TryGetValue("Wireframe", out ShaderPipeline? wireframePipeline)) {
+            ShaderPipelines!.ExternalError();
+
+            Logger.Error("No 'DebugScene' shader pipeline defined");
+        }
+
+        ScreenPipeline = screenPipeline;
+        DebugScenePipeline = debugScenePipeline;
+        WireframePipeline = wireframePipeline;
     }
 
     private unsafe void Create3DRenderingResources() {
@@ -398,88 +392,19 @@ public class DebugGraphicsContext : IGraphicsContext {
         WireframeRasterizerState = wireframeRasterizerState;
 
         // Create constant buffer for matrices and color
-        var constantBufferDesc = new BufferDesc {
-            ByteWidth = 256, // 3 * 64 bytes for matrices + 16 bytes for color (rounded up to 256 for alignment)
-            Usage = Usage.Dynamic,
-            BindFlags = (uint) BindFlag.ConstantBuffer,
-            CPUAccessFlags = (uint) CpuAccessFlag.Write,
-            MiscFlags = 0,
-        };
-
-        ID3D11Buffer* constantBuffer = null;
-        SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*) null, &constantBuffer));
-        ConstantBuffer = constantBuffer;
+        // var constantBufferDesc = new BufferDesc {
+        //     ByteWidth = 256, // 3 * 64 bytes for matrices + 16 bytes for color (rounded up to 256 for alignment)
+        //     Usage = Usage.Dynamic,
+        //     BindFlags = (uint) BindFlag.ConstantBuffer,
+        //     CPUAccessFlags = (uint) CpuAccessFlag.Write,
+        //     MiscFlags = 0,
+        // };
+        //
+        // ID3D11Buffer* constantBuffer = null;
+        // SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*) null, &constantBuffer));
+        // ConstantBuffer = constantBuffer;
     }
 
-    public void UpdateProjectionMatrix() {
-        Vector2D<int> windowSize = DebuggerWindow?.FramebufferSize ?? DefaultWindowSize;
-        CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
-    }
-
-    /// <summary>
-    /// Switches to the free camera controller
-    /// </summary>
-    private void SwitchToFreeCameraController() {
-        if (CameraController != freeCameraController) {
-            CameraController = freeCameraController;
-            Logger.Information("Switched to free camera controller");
-        } else {
-            Logger.Information("Already using FreeCameraController - no switch needed");
-        }
-    }
-
-    /// <summary>
-    /// Switches to the follow camera controller
-    /// </summary>
-    private void SwitchToFollowCameraController() {
-        if (CameraController != followCameraController) {
-            CameraController = followCameraController;
-            Logger.Information("Switched to follow camera controller");
-        }
-    }
-
-    /// <summary>
-    /// Gets the current controller type name for UI display
-    /// </summary>
-    public string GetCurrentControllerType() {
-        return CameraController switch {
-            FreeCameraController => "Free Camera",
-            FollowCameraController => "Follow Camera",
-            _ => "Unknown"
-        };
-    }
-
-    /// <summary>
-    /// Whether the user has manually stopped following (global state)
-    /// </summary>
-    public bool HasManuallyStopped => hasManuallyStoppedFollowing;
-
-    /// <summary>
-    /// Starts following a player and automatically switches to follow camera controller
-    /// </summary>
-    public void StartFollowingPlayer(FieldPlayer player) {
-        hasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
-        SwitchToFollowCameraController();
-        followCameraController.StartFollowingPlayer(player.Value.Character.Id, player.Position);
-    }
-
-    /// <summary>
-    /// Stops following a player and automatically switches to free camera controller
-    /// </summary>
-    public void StopFollowingPlayer() {
-        hasManuallyStoppedFollowing = true; // Remember that user manually stopped
-        followCameraController.StopFollowingPlayer();
-        SwitchToFreeCameraController();
-    }
-
-    /// <summary>
-    /// Updates player follow position (only works when follow controller is active)
-    /// </summary>
-    public void UpdatePlayerFollow(Vector3 playerPosition) {
-        if (CameraController == followCameraController) {
-            followCameraController.UpdatePlayerFollow(playerPosition);
-        }
-    }
 
     /// <summary>
     /// Toggles wireframe rendering mode
@@ -489,110 +414,13 @@ public class DebugGraphicsContext : IGraphicsContext {
         Logger.Information("Wireframe mode: {Mode}", WireframeMode ? "ON" : "OFF");
     }
 
-    public void UpdateConstantBuffer(Matrix4x4 worldMatrix) {
-        UpdateConstantBuffer(worldMatrix, new Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // Default white color
-    }
-
-    // Current color for rendering
-    private Vector4 currentColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f); // Default white
-
-    public void SetColor(float r, float g, float b, float a) {
-        currentColor = new Vector4(r, g, b, a);
-    }
-
-    public void UpdateConstantBuffer(Matrix4x4 worldMatrix, bool useCurrentColor) {
-        UpdateConstantBuffer(worldMatrix, useCurrentColor ? currentColor : new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
-    }
-
-    public unsafe void UpdateConstantBuffer(Matrix4x4 worldMatrix, Vector4 color) {
-        if (ConstantBuffer.Handle == null) return;
-
-        MappedSubresource mappedResource;
-        SilkMarshal.ThrowHResult(DxDeviceContext.Map(ConstantBuffer, 0, Map.WriteDiscard, 0, &mappedResource));
-
-        // Write matrices and color to constant buffer (world, view, projection, color)
-        float* data = (float*) mappedResource.PData;
-
-        // Copy world matrix (transposed)
-        Matrix4x4 worldTransposed = Matrix4x4.Transpose(worldMatrix);
-        data[0] = worldTransposed.M11;
-        data[1] = worldTransposed.M12;
-        data[2] = worldTransposed.M13;
-        data[3] = worldTransposed.M14;
-        data[4] = worldTransposed.M21;
-        data[5] = worldTransposed.M22;
-        data[6] = worldTransposed.M23;
-        data[7] = worldTransposed.M24;
-        data[8] = worldTransposed.M31;
-        data[9] = worldTransposed.M32;
-        data[10] = worldTransposed.M33;
-        data[11] = worldTransposed.M34;
-        data[12] = worldTransposed.M41;
-        data[13] = worldTransposed.M42;
-        data[14] = worldTransposed.M43;
-        data[15] = worldTransposed.M44;
-
-        // Copy view matrix (transposed)
-        Matrix4x4 viewTransposed = Matrix4x4.Transpose(CameraController.Camera.ViewMatrix);
-        data[16] = viewTransposed.M11;
-        data[17] = viewTransposed.M12;
-        data[18] = viewTransposed.M13;
-        data[19] = viewTransposed.M14;
-        data[20] = viewTransposed.M21;
-        data[21] = viewTransposed.M22;
-        data[22] = viewTransposed.M23;
-        data[23] = viewTransposed.M24;
-        data[24] = viewTransposed.M31;
-        data[25] = viewTransposed.M32;
-        data[26] = viewTransposed.M33;
-        data[27] = viewTransposed.M34;
-        data[28] = viewTransposed.M41;
-        data[29] = viewTransposed.M42;
-        data[30] = viewTransposed.M43;
-        data[31] = viewTransposed.M44;
-
-        // Copy projection matrix (transposed)
-        Matrix4x4 projTransposed = Matrix4x4.Transpose(CameraController.Camera.ProjectionMatrix);
-        data[32] = projTransposed.M11;
-        data[33] = projTransposed.M12;
-        data[34] = projTransposed.M13;
-        data[35] = projTransposed.M14;
-        data[36] = projTransposed.M21;
-        data[37] = projTransposed.M22;
-        data[38] = projTransposed.M23;
-        data[39] = projTransposed.M24;
-        data[40] = projTransposed.M31;
-        data[41] = projTransposed.M32;
-        data[42] = projTransposed.M33;
-        data[43] = projTransposed.M34;
-        data[44] = projTransposed.M41;
-        data[45] = projTransposed.M42;
-        data[46] = projTransposed.M43;
-        data[47] = projTransposed.M44;
-
-        // Copy color
-        data[48] = color.X;
-        data[49] = color.Y;
-        data[50] = color.Z;
-        data[51] = color.W;
-
-        DxDeviceContext.Unmap(ConstantBuffer, 0);
-
-        // Bind constant buffer to vertex shader
-        ID3D11Buffer* constantBuffers = ConstantBuffer;
-        DxDeviceContext.VSSetConstantBuffers(0, 1, &constantBuffers);
-    }
-
     public void CleanUp() {
         if (isCleanedUp) return; // Prevent multiple cleanup calls
         isCleanedUp = true;
 
         unsafe {
             if (DxDevice.Handle is not null) {
-                VertexShader?.CleanUp();
-                PixelShader?.CleanUp();
-                WireframeVertexShader?.CleanUp();
-                WireframePixelShader?.CleanUp();
+                ShaderPipelines?.CleanUp();
 
                 // Clean up 3D resources
                 DepthStencilBuffer.Dispose();
@@ -600,17 +428,14 @@ public class DebugGraphicsContext : IGraphicsContext {
                 DepthStencilState.Dispose();
                 SolidRasterizerState.Dispose();
                 WireframeRasterizerState.Dispose();
-                ConstantBuffer.Dispose();
+                // ConstantBuffer.Dispose();
 
                 DxDevice.Dispose();
                 DxDeviceContext.Dispose();
                 DxSwapChain.Dispose();
                 Input?.Dispose();
 
-                VertexShader = null;
-                PixelShader = null;
-                WireframeVertexShader = null;
-                WireframePixelShader = null;
+                ShaderPipelines = null;
                 DxDevice = default;
                 DxDeviceContext = default;
                 DxSwapChain = default;
@@ -619,7 +444,7 @@ public class DebugGraphicsContext : IGraphicsContext {
                 DepthStencilState = default;
                 SolidRasterizerState = default;
                 WireframeRasterizerState = default;
-                ConstantBuffer = default;
+                // ConstantBuffer = default;
                 Input = null;
 
                 Logger.Information("Graphics context cleaning up");
@@ -746,7 +571,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         }
 
         // Update projection matrix for new aspect ratio
-        UpdateProjectionMatrix();
+        // UpdateProjectionMatrix();
     }
 
     public bool HasFieldUpdated(FieldManager field) {
@@ -764,6 +589,16 @@ public class DebugGraphicsContext : IGraphicsContext {
     private void OnUpdate(double delta) {
         lock (updatedFieldsLock) {
             updatedFields.Clear();
+        }
+
+        if (ShaderPipelines is null) {
+            return;
+        }
+
+        if (ShaderPipelines.CompilingShaders && ShaderPipelines.RenderingFrames == 0) {
+            ShaderPipelines.CleanUp();
+
+            LoadPipelines();
         }
     }
 
@@ -808,6 +643,11 @@ public class DebugGraphicsContext : IGraphicsContext {
     }
 
     private unsafe void OnRender(double delta) {
+        if (!(ShaderPipelines?.CanRender ?? false)) {
+            return;
+        }
+
+        ShaderPipelines?.StartedFrame();
         UpdateDeltaTracker();
 
         DebuggerWindow!.MakeCurrent();
@@ -838,6 +678,8 @@ public class DebugGraphicsContext : IGraphicsContext {
 
         DxSwapChain.Present(1, 0);
 
+        ShaderPipelines?.EndedFrame();
+
         renderTargetView.Dispose();
         framebuffer.Dispose();
     }
@@ -852,5 +694,15 @@ public class DebugGraphicsContext : IGraphicsContext {
         // Set solid rasterizer state
         // This would typically involve setting D3D11 rasterizer state
         // For now, we'll rely on the WireframeMode flag
+    }
+
+    private string GetResourceRootPath(string rootPath) {
+        resourceRootPath = Environment.CurrentDirectory;
+
+        if (File.Exists("root_path.txt")) {
+            resourceRootPath = Path.Combine(resourceRootPath, File.ReadLines("root_path.txt").First());
+        }
+
+        return Path.GetFullPath(Path.Combine(resourceRootPath, rootPath));
     }
 }

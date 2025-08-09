@@ -1,4 +1,7 @@
 ﻿using System.Numerics;
+using Maple2.Server.DebugGame.Graphics.Data;
+using Maple2.Server.DebugGame.Graphics.Resources;
+using Maple2.Server.DebugGame.Graphics.Scene;
 using Serilog;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
@@ -20,6 +23,10 @@ public class DebugFieldWindow {
     public string WindowName { get; }
     public bool IsInitialized { get; private set; }
     public bool IsClosing { get; private set; }
+    public SceneState SceneState { get; init; }
+
+    public ConstantBuffer SceneViewConstantBuffer { get; init; }
+    public ConstantBuffer InstanceConstantBuffer { get; init; }
 
     private static int _windowIdCounter;
 
@@ -27,6 +34,11 @@ public class DebugFieldWindow {
         Context = context;
         WindowId = _windowIdCounter++;
         WindowName = $"Window {WindowId}";
+
+        SceneState = new SceneState(Context);
+
+        SceneViewConstantBuffer = new ConstantBuffer(Context);
+        InstanceConstantBuffer = new ConstantBuffer(Context);
     }
 
     public void SetActiveRenderer(DebugFieldRenderer? renderer) {
@@ -69,6 +81,14 @@ public class DebugFieldWindow {
         DebuggerWindow.Closing += OnClose;
 
         Log.Information("Creating field renderer window");
+
+        SceneViewBuffer sceneViewBuffer = new();
+
+        SceneViewConstantBuffer.Initialize(in sceneViewBuffer);
+
+        InstanceBuffer instanceBuffer = new();
+
+        InstanceConstantBuffer.Initialize(in instanceBuffer);
 
         DebuggerWindow.Initialize();
     }
@@ -142,17 +162,23 @@ public class DebugFieldWindow {
         if (ActiveRenderer is not null) {
             ActiveRenderer.Update();
             DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.RoomId})";
-        }
 
-        // Update camera input state and let FreeCameraController handle input
-        UpdateCameraInputState();
-        Context.CameraController.Update((float) delta);
+            // Update camera input state and let FreeCameraController handle input
+            UpdateCameraInputState();
+            ActiveRenderer.CameraController.Update((float) delta);
+        }
     }
 
     public unsafe void OnRender(double delta) {
         if (IsClosing) {
             return;
         }
+
+        if (!(Context.ShaderPipelines?.CanRender ?? false)) {
+            return;
+        }
+
+        Context.ShaderPipelines?.StartedFrame();
 
         DebuggerWindow!.MakeCurrent();
 
@@ -173,9 +199,15 @@ public class DebugFieldWindow {
         #region Render code
         // Begin region for render code
 
+        // SceneState.BindTexture(Context.SampleTexture!);
+
+        SceneState.BindConstantBuffer(SceneViewConstantBuffer, 0, Enum.ShaderStageFlags.Vertex);
+        SceneState.BindConstantBuffer(InstanceConstantBuffer, 1, Enum.ShaderStageFlags.Vertex);
+        SceneState.UpdateBindings();
+
         // Render 3D field content first (before ImGui)
         if (ActiveRenderer is not null) {
-            ActiveRenderer.RenderFieldWindow3D(delta);
+            ActiveRenderer.RenderFieldWindow3D(this, delta);
         }
 
         // Then render ImGui content
@@ -189,6 +221,8 @@ public class DebugFieldWindow {
         ImGuiController!.EndFrame();
 
         DxSwapChain.Present(1, 0);
+
+        Context.ShaderPipelines?.EndedFrame();
 
         renderTargetView.Dispose();
         framebuffer.Dispose();
@@ -211,7 +245,7 @@ public class DebugFieldWindow {
     private void UpdateCameraInputState() {
         if (Input == null) return;
 
-        InputState inputState = Context.CameraController.InputState;
+        InputState inputState = ActiveRenderer!.CameraController.InputState;
         IKeyboard keyboard = Input.Keyboards[0];
         IMouse mouse = Input.Mice[0];
 
@@ -220,10 +254,24 @@ public class DebugFieldWindow {
 
         // Update keyboard state for specific keys we care about
         Key[] keysToTrack = {
-            Key.W, Key.A, Key.S, Key.D, Key.Q, Key.E,
-            Key.ShiftLeft, Key.ShiftRight, Key.ControlLeft, Key.ControlRight,
-            Key.Space, Key.Escape, Key.Tab, Key.Enter,
-            Key.Up, Key.Down, Key.Left, Key.Right
+            Key.W,
+            Key.A,
+            Key.S,
+            Key.D,
+            Key.Q,
+            Key.E,
+            Key.ShiftLeft,
+            Key.ShiftRight,
+            Key.ControlLeft,
+            Key.ControlRight,
+            Key.Space,
+            Key.Escape,
+            Key.Tab,
+            Key.Enter,
+            Key.Up,
+            Key.Down,
+            Key.Left,
+            Key.Right
         };
 
         foreach (Key key in keysToTrack) {

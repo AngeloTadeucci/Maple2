@@ -5,6 +5,7 @@ using ImGuiNET;
 using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata.FieldEntity;
+using Maple2.Server.DebugGame.Graphics.Data;
 using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -12,6 +13,7 @@ using Maple2.Tools.VectorMath;
 using Maple2.Tools.Collision;
 using Silk.NET.Maths;
 using Maple2.Server.DebugGame.Graphics.Scene;
+using Serilog;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -21,6 +23,8 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     // Coordinate system transformation - flip Y/Z axes but keep original scale
     private static readonly Matrix4x4 MapRotation = Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
+    private static readonly ILogger Logger = Log.Logger.ForContext<DebugGraphicsContext>();
+
 
     public bool IsActive {
         get {
@@ -59,9 +63,37 @@ public class DebugFieldRenderer : IFieldRenderer {
     private const float AgentHeightMeters = 1.4f;
     private const float GameUnitsPerMeter = 100.0f;
 
+    private InstanceBuffer instanceBuffer;
+    private SceneViewBuffer sceneViewBuffer;
+
+    // Camera controller interface for all camera functionality
+    public ICameraController CameraController { get; private set; }
+
+    // Available controller implementations
+    private readonly FreeCameraController freeCameraController;
+    private readonly FollowCameraController followCameraController;
+
+    // Shared camera instance
+    private readonly Camera sharedCamera = new();
+
+    // Global follow state (independent of active controller)
+    private bool hasManuallyStoppedFollowing = false;
+    private bool hasTriedAutoFollow = false;
+
     public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {
         Context = context;
         Field = field;
+
+        // Initialize camera controllers
+        freeCameraController = new FreeCameraController(sharedCamera);
+        followCameraController = new FollowCameraController(sharedCamera);
+
+        // Start with free camera controller as default
+        CameraController = freeCameraController;
+
+        Vector2D<int> windowSize = Context.DebuggerWindow?.FramebufferSize ?? DebugGraphicsContext.DefaultWindowSize;
+        sharedCamera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        freeCameraController.SetDefaultRotation(); // Set default rotation for MapleStory 2
     }
 
     public void Update() {
@@ -77,24 +109,20 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is first opened or when a new player joins
         // But only if user hasn't manually stopped following
-        bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
-        if (!isFollowing && !Context.HasManuallyStopped) {
+        bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
+        if (!isFollowing && !HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
-            long? currentFollowedId = Context.CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
+            long? currentFollowedId = CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
             if (firstPlayer != null && (!hasTriedAutoFollow || currentFollowedId != firstPlayer.Value.Character.Id)) {
-                Context.StartFollowingPlayer(firstPlayer);
+                StartFollowingPlayer(firstPlayer);
                 hasTriedAutoFollow = true;
             }
         }
 
         // Update camera follow if active
         UpdateCameraFollow();
-
-        // We'll use ImGui for text rendering instead of 3D billboards
-        // ImGui is much simpler and more reliable for debug text
     }
 
-    private bool hasTriedAutoFollow = false;
 
     public void Render(double delta) {
         if (!IsActive) {
@@ -131,7 +159,7 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     // New method specifically for field window 3D rendering
-    public void RenderFieldWindow3D(double delta) {
+    public void RenderFieldWindow3D(DebugFieldWindow window, double delta) {
         if (!IsActive) {
             return;
         }
@@ -140,7 +168,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         HandleMouseInput();
 
         // Render 3D field visualization using the DirectX pipeline
-        RenderField3DVisualization(delta);
+        RenderField3DVisualization(window, delta);
     }
 
     private void HandleMouseInput() {
@@ -514,11 +542,11 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
-        bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
-        if (!isFollowing && !Context.HasManuallyStopped) {
+        bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
+        if (!isFollowing && !HasManuallyStopped) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
-                Context.StartFollowingPlayer(firstPlayer);
+                StartFollowingPlayer(firstPlayer);
             }
         }
     }
@@ -531,62 +559,61 @@ public class DebugFieldRenderer : IFieldRenderer {
         activeMutex.ReleaseMutex();
     }
 
-    private void RenderField3DVisualization(double delta) {
+    private void RenderField3DVisualization(DebugFieldWindow window, double delta) {
         if (Field.AccelerationStructure == null) {
             return;
         }
 
         // Set up 3D rendering matrices
-        Context.UpdateProjectionMatrix();
+        UpdateProjectionMatrix(window);
 
         // Enable wireframe mode for field visualization
         bool originalWireframeMode = Context.WireframeMode;
         Context.WireframeMode = true;
         Context.SetWireframeRasterizer();
 
-        // Always use wireframe shaders for field visualization (they don't need texture samplers)
-        Context.WireframeVertexShader?.Bind();
-        Context.WireframePixelShader?.Bind();
+        Context.WireframePipeline!.RenderPass!.VertexShader!.Bind();
+        Context.WireframePipeline.RenderPass.PixelShader!.Bind();
 
         // Render field entities using the DirectX 11 pipeline
-        RenderFieldEntities3D();
+        RenderFieldEntities3D(window);
 
         // Restore original wireframe mode
         Context.WireframeMode = originalWireframeMode;
         Context.SetSolidRasterizer();
     }
 
-    private void RenderFieldEntities3D() {
+    private void RenderFieldEntities3D(DebugFieldWindow window) {
         if (Field.AccelerationStructure == null) {
             return;
         }
 
         // Render box colliders
         if (showBoxColliders) {
-            RenderBoxColliders();
+            RenderBoxColliders(window);
         }
 
         // Render mesh colliders
         if (showMeshColliders) {
-            RenderMeshColliders();
+            RenderMeshColliders(window);
         }
 
         // Render spawn points
         if (showSpawnPoints) {
-            RenderSpawnPoints();
+            RenderSpawnPoints(window);
         }
 
         // Render vibrate objects
         if (showVibrateObjects) {
-            RenderVibrateObjects();
+            RenderVibrateObjects(window);
         }
 
         // Render portals
         if (showPortals) {
-            RenderPortals();
+            RenderPortals(window);
 
             if (showPortalConnections) {
-                RenderPortalConnectionLines();
+                RenderPortalConnectionLines(window);
             }
 
             // Render portal text labels
@@ -597,11 +624,11 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         // Render actors (players, NPCs, mobs)
         if (showActors) {
-            RenderActors();
+            RenderActors(window);
 
             // Render selection highlight for selected actor
             if (selectedActor != null) {
-                RenderActorSelectionHighlight();
+                RenderActorSelectionHighlight(window);
             }
 
             // Render text labels above actors using ImGui
@@ -609,9 +636,9 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
     }
 
-    private void RenderBoxColliders() {
+    private void RenderBoxColliders(DebugFieldWindow window) {
         // Set white color for box colliders
-        Context.SetColor(1, 1, 1, 1); // White for box colliders
+        instanceBuffer.Color = new Vector4(1, 1, 1, 1); // White for box colliders
 
         List<FieldBoxColliderEntity> allBoxColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
 
@@ -622,15 +649,15 @@ public class DebugFieldRenderer : IFieldRenderer {
             };
 
             transform.Transformation *= MapRotation;
-            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(boxCollider.Size) *
-                                    Matrix4x4.CreateTranslation(boxCollider.Position);
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(boxCollider.Size) *
+                                                                Matrix4x4.CreateTranslation(boxCollider.Position));
 
-            Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (white)
+            UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
         }
     }
 
-    private void RenderMeshColliders() {
+    private void RenderMeshColliders(DebugFieldWindow window) {
         IEnumerable<FieldMeshColliderEntity> allMeshColliders = GetAllEntities().OfType<FieldMeshColliderEntity>();
 
         foreach (FieldMeshColliderEntity meshCollider in allMeshColliders) {
@@ -646,66 +673,66 @@ public class DebugFieldRenderer : IFieldRenderer {
             var coordinateTransform = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
             rotation = coordinateTransform * rotation;
 
-            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
-                                    Matrix4x4.CreateTranslation(center);
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) *
+                                                                Matrix4x4.CreateTranslation(center));
 
-            Context.UpdateConstantBuffer(worldMatrix);
+            UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
         }
     }
 
-    private void RenderSpawnPoints() {
+    private void RenderSpawnPoints(DebugFieldWindow window) {
         IEnumerable<FieldSpawnTile> allSpawnPoints = GetAllEntities().OfType<FieldSpawnTile>();
 
         foreach (FieldSpawnTile spawnPoint in allSpawnPoints) {
             // Convert Euler angles (degrees) to quaternion
-            Vector3 rotationRadians = spawnPoint.Rotation * (MathF.PI / 180.0f);
-            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+            // Vector3 rotationRadians = spawnPoint.Rotation * (MathF.PI / 180.0f);
+            // var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
-            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 50.0f) *
-                                    Matrix4x4.CreateTranslation(spawnPoint.Position);
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(Vector3.One * 50.0f) *
+                                                                Matrix4x4.CreateTranslation(spawnPoint.Position));
 
-            Context.UpdateConstantBuffer(worldMatrix);
+            UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
         }
     }
 
-    private void RenderVibrateObjects() {
+    private void RenderVibrateObjects(DebugFieldWindow window) {
         // Set pink color for vibrate objects
-        Context.SetColor(1, 0.75f, 0.8f, 1); // Pink for vibrate objects
+        instanceBuffer.Color = new Vector4(1, 0.75f, 0.8f, 1); // Pink for vibrate objects
 
         foreach (FieldVibrateEntity vibrateEntity in Field.AccelerationStructure!.VibrateEntities) {
             // Convert Euler angles (degrees) to quaternion
             Vector3 rotationRadians = vibrateEntity.Rotation * (MathF.PI / 180.0f);
             var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
 
-            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Vector3.One * 100.0f) *
-                                    Matrix4x4.CreateTranslation(vibrateEntity.Position);
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(Vector3.One * 100.0f) *
+                                                                Matrix4x4.CreateTranslation(vibrateEntity.Position));
 
-            Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (pink)
+            UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
         }
     }
 
-    private void RenderPortals() {
+    private void RenderPortals(DebugFieldWindow window) {
         // Set blue color for portals
-        Context.SetColor(0, 0.5f, 1, 1); // Blue for portals
+        instanceBuffer.Color = new Vector4(0, 0.5f, 1, 1); // Blue for portals
 
         foreach (FieldPortal portal in Field.GetPortals()) {
             // Use portal dimensions if available, otherwise use default size
             Vector3 size = portal.Value.Dimension != Vector3.Zero ? portal.Value.Dimension : Vector3.One * 100.0f;
 
-            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(size) *
-                                    Matrix4x4.CreateTranslation(portal.Position);
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) *
+                                                                Matrix4x4.CreateTranslation(portal.Position));
 
-            Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (blue)
+            UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
         }
     }
 
-    private void RenderPortalConnectionLines() {
+    private void RenderPortalConnectionLines(DebugFieldWindow window) {
         // Set cyan color for portal connection lines
-        Context.SetColor(0, 1, 1, 0.7f); // Cyan with some transparency
+        instanceBuffer.Color = new Vector4(0, 1, 1, 0.7f); // Cyan with some transparency
 
         List<FieldPortal> portals = Field.GetPortals().ToList();
 
@@ -717,13 +744,13 @@ public class DebugFieldRenderer : IFieldRenderer {
 
                 if (targetPortal != null) {
                     // Draw a line between the two portals
-                    RenderLine(sourcePortal.Position, targetPortal.Position);
+                    RenderLine(window, sourcePortal.Position, targetPortal.Position);
                 }
             }
         }
     }
 
-    private void RenderLine(Vector3 start, Vector3 end) {
+    private void RenderLine(DebugFieldWindow window, Vector3 start, Vector3 end) {
         // Create a line by drawing a thin cylinder between two points
         Vector3 direction = end - start;
         float distance = direction.Length();
@@ -750,29 +777,29 @@ public class DebugFieldRenderer : IFieldRenderer {
             rotation = Quaternion.CreateFromAxisAngle(axis, angle);
         }
 
-        Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(10.0f, distance / 2.0f, 10.0f)) *
-                                Matrix4x4.CreateFromQuaternion(rotation) *
-                                Matrix4x4.CreateTranslation(center);
+        instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(10.0f, distance / 2.0f, 10.0f)) *
+                                                            Matrix4x4.CreateFromQuaternion(rotation) *
+                                                            Matrix4x4.CreateTranslation(center));
 
-        Context.UpdateConstantBuffer(worldMatrix, true);
+        UpdateWireframeInstance(window);
         Context.CoreModels!.Cylinder.Draw();
     }
 
-    private void RenderActors() {
+    private void RenderActors(DebugFieldWindow window) {
         const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
         const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
 
         // Render players using cylinders (like Recast agents) - Cyan color
         if (showPlayers) {
-            Context.SetColor(0, 1, 1, 1); // Cyan for players
+            instanceBuffer.Color = new Vector4(0, 1, 1, 1); // Cyan for players
             foreach ((int _, FieldPlayer player) in Field.Players) {
                 // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
                 var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
-                Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
-                                        rotation *
-                                        Matrix4x4.CreateTranslation(player.Position);
+                instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
+                                                                    rotation *
+                                                                    Matrix4x4.CreateTranslation(player.Position));
 
-                Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (cyan)
+                UpdateWireframeInstance(window);
                 Context.CoreModels!.Cylinder.Draw(); // Use cylinder for players (like Recast agents)
             }
         }
@@ -782,50 +809,51 @@ public class DebugFieldRenderer : IFieldRenderer {
             foreach ((int _, FieldNpc npc) in Field.Npcs) {
                 // Set color based on dead status
                 if (npc.IsDead) {
-                    Context.SetColor(0.5f, 0.5f, 0.5f, 0.3f); // Gray and semi-transparent for dead NPCs
+                    instanceBuffer.Color = new Vector4(0.5f, 0.5f, 0.5f, 0.3f); // Gray and semi-transparent for dead NPCs
                 } else {
-                    Context.SetColor(0, 1, 0, 1); // Green for alive NPCs
+                    instanceBuffer.Color = new Vector4(0, 1, 0, 1); // Green for alive NPCs
                 }
 
                 // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
                 var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
-                Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
-                                        rotation *
-                                        Matrix4x4.CreateTranslation(npc.Position);
+                instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
+                                                                    rotation *
+                                                                    Matrix4x4.CreateTranslation(npc.Position));
 
-                Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (green/gray)
+                UpdateWireframeInstance(window);
                 Context.CoreModels!.Cylinder.Draw(); // Use cylinder for NPCs (like Recast agents)
             }
         }
+
 
         // Render Mobs using cylinders (like Recast agents) - Red for aggressive, Yellow for wandering, Gray for dead
         if (showMobs) {
             foreach ((int _, FieldNpc mob) in Field.Mobs) {
                 // Set color based on dead status and battle state
                 if (mob.IsDead) {
-                    Context.SetColor(0.5f, 0.5f, 0.5f, 0.3f); // Gray and semi-transparent for dead mobs
+                    instanceBuffer.Color = new Vector4(0.5f, 0.5f, 0.5f, 0.3f); // Gray and semi-transparent for dead mobs
                 } else {
                     // Check if mob is aggressive (in battle) or wandering
                     if (mob.BattleState.InBattle) {
-                        Context.SetColor(1, 0, 0, 1); // Red for aggressive mobs
+                        instanceBuffer.Color = new Vector4(1, 0, 0, 1); // Red for aggressive mobs
                     } else {
-                        Context.SetColor(1, 1, 0, 1); // Yellow for wandering mobs
+                        instanceBuffer.Color = new Vector4(1, 1, 0, 1); // Yellow for wandering mobs
                     }
                 }
 
                 // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
                 var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
-                Matrix4x4 worldMatrix = Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
-                                        rotation *
-                                        Matrix4x4.CreateTranslation(mob.Position);
+                instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(agentRadius, agentHeight, agentRadius)) *
+                                                                    rotation *
+                                                                    Matrix4x4.CreateTranslation(mob.Position));
 
-                Context.UpdateConstantBuffer(worldMatrix, true); // Use current color (red/yellow/gray)
+                UpdateWireframeInstance(window);
                 Context.CoreModels!.Cylinder.Draw(); // Use cylinder for mobs (like Recast agents)
             }
         }
     }
 
-    private void RenderActorSelectionHighlight() {
+    private void RenderActorSelectionHighlight(DebugFieldWindow window) {
         if (selectedActor == null) return;
 
         const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
@@ -835,15 +863,15 @@ public class DebugFieldRenderer : IFieldRenderer {
         var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
 
         // Render a second, even larger outline with pulsing effect
-        Context.SetColor(1, 1, 0, 1); // Yellow with pulsing alpha
+        instanceBuffer.Color = new Vector4(1, 1, 0, 1); // Yellow with pulsing alpha
         float pulseRadius = agentRadius * 1.4f;
         float pulseHeight = agentHeight * 1.2f;
 
-        Matrix4x4 pulseWorldMatrix = Matrix4x4.CreateScale(new Vector3(pulseRadius, pulseHeight, pulseRadius)) *
-                                     rotation *
-                                     Matrix4x4.CreateTranslation(selectedActor.Position);
+        instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(pulseRadius, pulseHeight, pulseRadius)) *
+                                                            rotation *
+                                                            Matrix4x4.CreateTranslation(selectedActor.Position));
 
-        Context.UpdateConstantBuffer(pulseWorldMatrix, true);
+        UpdateWireframeInstance(window);
         Context.CoreModels!.Cylinder.Draw();
     }
 
@@ -883,10 +911,10 @@ public class DebugFieldRenderer : IFieldRenderer {
             ImGui.Text("Camera Controls:");
             if (ImGui.Button("Reset Camera")) {
                 // Reset camera to default rotation
-                if (Context.CameraController is FreeCameraController freeCam) {
+                if (CameraController is FreeCameraController freeCam) {
                     freeCam.SetDefaultRotation();
                 }
-                // else if (Context.CameraController is FollowCameraController followCam) {
+                // else if (CameraController is FollowCameraController followCam) {
                 //     followCam.SetDefaultRotation();
                 // }
             }
@@ -902,35 +930,35 @@ public class DebugFieldRenderer : IFieldRenderer {
 
             // Player follow controls
             ImGui.Separator();
-            bool isFollowing = Context.CameraController is FollowCameraController { IsFollowingPlayer: true };
-            long? followedId = Context.CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
+            bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
+            long? followedId = CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
             ImGui.Text($"Player Follow: {(isFollowing ? $"Player ID: {followedId}" : string.Empty)}");
 
             if (isFollowing) {
                 if (ImGui.Button("Stop Following")) {
-                    Context.StopFollowingPlayer();
+                    StopFollowingPlayer();
                 }
             } else {
                 if (ImGui.Button("Follow First Player")) {
                     FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
                     if (firstPlayer != null) {
-                        Context.StartFollowingPlayer(firstPlayer);
+                        StartFollowingPlayer(firstPlayer);
                     }
                 }
             }
 
             if (isFollowing) {
                 // Get target from concrete controller if available
-                Vector3 target = Context.CameraController switch {
+                Vector3 target = CameraController switch {
                     FreeCameraController freeCam => freeCam.CameraTarget,
                     FollowCameraController followCam => followCam.CameraTarget,
                     _ => Vector3.Zero,
                 };
                 ImGui.Text($"Player Following Position: {target}");
             }
-            ImGui.Text($"Camera Position: {Context.CameraController.Camera.Transform.Position}");
+            ImGui.Text($"Camera Position: {CameraController.Camera.Transform.Position}");
 
-            Vector3 forward = Context.CameraController.Camera.Transform.FrontAxis;
+            Vector3 forward = CameraController.Camera.Transform.FrontAxis;
             ImGui.Text($"Camera Forward: X={forward.X:F3}, Y={forward.Y:F3}, Z={forward.Z:F3}");
 
             ImGui.Text($"Wireframe Mode: {(Context.WireframeMode ? "ON" : "OFF")}");
@@ -940,8 +968,8 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void SetFieldOverviewCamera() {
         // Stop following player when switching to field overview
-        if (Context.CameraController is FollowCameraController { IsFollowingPlayer: true }) {
-            Context.StopFollowingPlayer();
+        if (CameraController is FollowCameraController { IsFollowingPlayer: true }) {
+            StopFollowingPlayer();
         }
 
         List<FieldBoxColliderEntity> allColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
@@ -963,23 +991,23 @@ public class DebugFieldRenderer : IFieldRenderer {
             float distance = Math.Max(sizeMap.X, Math.Max(sizeMap.Y, sizeMap.Z)) * 1.5f;
 
             // Set camera target and position for field overview
-            if (Context.CameraController is FreeCameraController freeCam) {
+            if (CameraController is FreeCameraController freeCam) {
                 freeCam.SetCameraTarget(center);
                 freeCam.SetFieldOverviewRotation();
-                Context.CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
+                CameraController.Camera.Transform.Position = center + new Vector3(0, -distance * 0.7f, distance * 0.7f);
             }
         } else {
             // Fallback if no colliders found
-            if (Context.CameraController is FreeCameraController freeCam) {
+            if (CameraController is FreeCameraController freeCam) {
                 freeCam.SetCameraTarget(Vector3.Zero);
                 freeCam.SetFieldOverviewRotation();
-                Context.CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
+                CameraController.Camera.Transform.Position = new Vector3(0, -1000, 1000);
             }
         }
     }
 
     private void UpdateCameraFollow() {
-        if (Context.CameraController is not FollowCameraController { IsFollowingPlayer: true } followCam || followCam.FollowedPlayerId == null) {
+        if (CameraController is not FollowCameraController { IsFollowingPlayer: true } followCam || followCam.FollowedPlayerId == null) {
             return;
         }
 
@@ -987,13 +1015,13 @@ public class DebugFieldRenderer : IFieldRenderer {
         FieldPlayer? followedPlayer = Field.Players.Values.FirstOrDefault(p => p.Value.Character.Id == followCam.FollowedPlayerId);
         if (followedPlayer == null) {
             // Player not found, stop following
-            Context.StopFollowingPlayer();
+            StopFollowingPlayer();
             return;
         }
 
         // Update camera to follow player position using the camera controller
         Vector3 playerPosition = followedPlayer.Position;
-        Context.UpdatePlayerFollow(playerPosition);
+        UpdatePlayerFollow(playerPosition);
     }
 
     private Vector2D<int> GetFieldWindowSize() {
@@ -1016,8 +1044,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         screenPos = Vector2.Zero;
 
         // Transform world position to screen coordinates
-        Matrix4x4 viewMatrix = Context.CameraController.Camera.ViewMatrix;
-        Matrix4x4 projMatrix = Context.CameraController.Camera.ProjectionMatrix;
+        Matrix4x4 viewMatrix = CameraController.Camera.ViewMatrix;
+        Matrix4x4 projMatrix = CameraController.Camera.ProjectionMatrix;
         Matrix4x4 viewProjMatrix = viewMatrix * projMatrix;
 
         // Transform to clip space
@@ -1059,8 +1087,8 @@ public class DebugFieldRenderer : IFieldRenderer {
         float ndcY = 1.0f - (screenPos.Y / windowSize.Y) * 2.0f; // Flip Y axis
 
         // Get camera matrices
-        Matrix4x4 viewMatrix = Context.CameraController.Camera.ViewMatrix;
-        Matrix4x4 projMatrix = Context.CameraController.Camera.ProjectionMatrix;
+        Matrix4x4 viewMatrix = CameraController.Camera.ViewMatrix;
+        Matrix4x4 projMatrix = CameraController.Camera.ProjectionMatrix;
 
         // Calculate inverse view-projection matrix
         Matrix4x4 viewProjMatrix = viewMatrix * projMatrix;
@@ -1442,5 +1470,89 @@ public class DebugFieldRenderer : IFieldRenderer {
         // Cache the result for future calls
         cachedStaticEntities = allEntities.ToArray();
         return cachedStaticEntities;
+    }
+
+    public void UpdateProjectionMatrix(DebugFieldWindow window) {
+        Vector2D<int> windowSize = Context.DebuggerWindow?.FramebufferSize ?? DebugGraphicsContext.DefaultWindowSize;
+        CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
+        sceneViewBuffer.ViewMatrix = Matrix4x4.Transpose(CameraController.Camera.ViewMatrix);
+        sceneViewBuffer.ProjectionMatrix = Matrix4x4.Transpose(CameraController.Camera.ProjectionMatrix);
+
+        window.SceneViewConstantBuffer.Update(in sceneViewBuffer);
+
+        window.SceneState.BindConstantBuffer(window.SceneViewConstantBuffer, 0, Enum.ShaderStageFlags.Vertex);
+        window.SceneState.UpdateBindings();
+    }
+
+    /// <summary>
+    /// Switches to the free camera controller
+    /// </summary>
+    private void SwitchToFreeCameraController() {
+        if (CameraController != freeCameraController) {
+            CameraController = freeCameraController;
+            Logger.Information("Switched to free camera controller");
+        } else {
+            Logger.Information("Already using FreeCameraController - no switch needed");
+        }
+    }
+
+    /// <summary>
+    /// Switches to the follow camera controller
+    /// </summary>
+    private void SwitchToFollowCameraController() {
+        if (CameraController != followCameraController) {
+            CameraController = followCameraController;
+            Logger.Information("Switched to follow camera controller");
+        }
+    }
+
+    /// <summary>
+    /// Gets the current controller type name for UI display
+    /// </summary>
+    public string GetCurrentControllerType() {
+        return CameraController switch {
+            FreeCameraController => "Free Camera",
+            FollowCameraController => "Follow Camera",
+            _ => "Unknown"
+        };
+    }
+
+    /// <summary>
+    /// Whether the user has manually stopped following (global state)
+    /// </summary>
+    public bool HasManuallyStopped => hasManuallyStoppedFollowing;
+
+    /// <summary>
+    /// Starts following a player and automatically switches to follow camera controller
+    /// </summary>
+    public void StartFollowingPlayer(FieldPlayer player) {
+        hasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
+        SwitchToFollowCameraController();
+        followCameraController.StartFollowingPlayer(player.Value.Character.Id, player.Position);
+    }
+
+    /// <summary>
+    /// Stops following a player and automatically switches to free camera controller
+    /// </summary>
+    public void StopFollowingPlayer() {
+        hasManuallyStoppedFollowing = true; // Remember that user manually stopped
+        followCameraController.StopFollowingPlayer();
+        SwitchToFreeCameraController();
+    }
+
+    /// <summary>
+    /// Updates player follow position (only works when follow controller is active)
+    /// </summary>
+    public void UpdatePlayerFollow(Vector3 playerPosition) {
+        if (CameraController == followCameraController) {
+            followCameraController.UpdatePlayerFollow(playerPosition);
+        }
+    }
+
+    private void UpdateWireframeInstance(DebugFieldWindow window) {
+        window.InstanceConstantBuffer.Update(in instanceBuffer);
+
+        window.SceneState.BindConstantBuffer(window.InstanceConstantBuffer, 1, Enum.ShaderStageFlags.Vertex);
+        window.SceneState.UpdateBindings();
     }
 }
