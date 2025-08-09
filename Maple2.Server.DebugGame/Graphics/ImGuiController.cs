@@ -229,7 +229,7 @@ public class ImGuiController {
         comboFlags |= ImGuiComboFlags.WidthFitPreview;
 
         if (ImGui.BeginCombo("##TOOLBAR COMBO", "View", comboFlags)) {
-            foreach (IUiWindow window in uiWindows) {
+            foreach (IUiWindow window in uiWindows.Where(x => !x.HideFromMenuBar)) {
                 bool toggle = ImGui.Selectable(window.TypeName, window.Enabled);
 
                 if (toggle) {
@@ -244,13 +244,49 @@ public class ImGuiController {
 
         ImGui.End();
 
-
         foreach (IUiWindow window in uiWindows) {
             if (!window.Enabled) {
                 continue;
             }
 
             window.Render();
+        }
+    }
+
+    /// <summary>
+    /// Clamp current ImGui window position & size so it stays fully visible inside the main viewport work area.
+    /// Call at end of each window's Render() after ImGui.Begin but before ImGui.End.
+    /// </summary>
+    /// <param name="padding">Optional padding inside the viewport bounds.</param>
+    public static void ClampWindowToViewport(float padding = 4f) {
+        ImGuiViewportPtr vp = ImGui.GetMainViewport();
+        Vector2 workPos = vp.WorkPos; // top-left
+        Vector2 workSize = vp.WorkSize; // available size
+        Vector2 min = new(workPos.X + padding, workPos.Y + padding);
+        Vector2 max = new(workPos.X + workSize.X - padding, workPos.Y + workSize.Y - padding);
+
+        Vector2 pos = ImGui.GetWindowPos();
+        Vector2 size = ImGui.GetWindowSize();
+
+        // If window size exceeds work area, shrink it first
+        bool resized = false;
+        if (size.X > max.X - min.X) { size.X = MathF.Max(50f, max.X - min.X); resized = true; }
+        if (size.Y > max.Y - min.Y) { size.Y = MathF.Max(50f, max.Y - min.Y); resized = true; }
+        if (resized) ImGui.SetWindowSize(size, ImGuiCond.Always);
+
+        // Re-fetch possibly updated size
+        size = ImGui.GetWindowSize();
+
+        // Clamp position
+        float newX = pos.X;
+        float newY = pos.Y;
+        if (newX < min.X) newX = min.X;
+        if (newY < min.Y) newY = min.Y;
+        if (newX + size.X > max.X) newX = max.X - size.X;
+        if (newY + size.Y > max.Y) newY = max.Y - size.Y;
+
+        if (Math.Abs(newX - pos.X) > 0.5f || Math.Abs(newY - pos.Y) > 0.5f) {
+            ImGui.SetWindowPos(new Vector2(newX, newY), ImGuiCond.Always);
         }
     }
 

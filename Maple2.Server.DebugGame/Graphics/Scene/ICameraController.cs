@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace Maple2.Server.DebugGame.Graphics.Scene;
+﻿namespace Maple2.Server.DebugGame.Graphics.Scene;
 
 public interface ICameraController {
     /// <summary>

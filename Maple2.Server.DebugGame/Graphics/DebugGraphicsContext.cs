@@ -11,10 +11,7 @@ using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Maple2.Server.DebugGame.Graphics.Assets;
 using Maple2.Server.DebugGame.Graphics.Scene;
-using Maple2.Tools;
 using Maple2.Tools.Extensions;
-using System.Numerics;
-using Maple2.Server.Game.Model;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -390,21 +387,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         ID3D11RasterizerState* wireframeRasterizerState = null;
         SilkMarshal.ThrowHResult(DxDevice.CreateRasterizerState(&wireframeRasterizerDesc, &wireframeRasterizerState));
         WireframeRasterizerState = wireframeRasterizerState;
-
-        // Create constant buffer for matrices and color
-        // var constantBufferDesc = new BufferDesc {
-        //     ByteWidth = 256, // 3 * 64 bytes for matrices + 16 bytes for color (rounded up to 256 for alignment)
-        //     Usage = Usage.Dynamic,
-        //     BindFlags = (uint) BindFlag.ConstantBuffer,
-        //     CPUAccessFlags = (uint) CpuAccessFlag.Write,
-        //     MiscFlags = 0,
-        // };
-        //
-        // ID3D11Buffer* constantBuffer = null;
-        // SilkMarshal.ThrowHResult(DxDevice.CreateBuffer(&constantBufferDesc, (SubresourceData*) null, &constantBuffer));
-        // ConstantBuffer = constantBuffer;
     }
-
 
     /// <summary>
     /// Toggles wireframe rendering mode
@@ -428,7 +411,6 @@ public class DebugGraphicsContext : IGraphicsContext {
                 DepthStencilState.Dispose();
                 SolidRasterizerState.Dispose();
                 WireframeRasterizerState.Dispose();
-                // ConstantBuffer.Dispose();
 
                 DxDevice.Dispose();
                 DxDeviceContext.Dispose();
@@ -444,7 +426,6 @@ public class DebugGraphicsContext : IGraphicsContext {
                 DepthStencilState = default;
                 SolidRasterizerState = default;
                 WireframeRasterizerState = default;
-                // ConstantBuffer = default;
                 Input = null;
 
                 Logger.Information("Graphics context cleaning up");
@@ -569,9 +550,6 @@ public class DebugGraphicsContext : IGraphicsContext {
             SilkMarshal.ThrowHResult(DxDevice.CreateDepthStencilView((ID3D11Resource*) DepthStencilBuffer.Handle, &depthStencilViewDesc, &depthStencilView));
             DepthStencilView = depthStencilView;
         }
-
-        // Update projection matrix for new aspect ratio
-        // UpdateProjectionMatrix();
     }
 
     public bool HasFieldUpdated(FieldManager field) {

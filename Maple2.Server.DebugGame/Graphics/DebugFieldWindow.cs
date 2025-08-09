@@ -205,15 +205,8 @@ public class DebugFieldWindow {
         SceneState.BindConstantBuffer(InstanceConstantBuffer, 1, Enum.ShaderStageFlags.Vertex);
         SceneState.UpdateBindings();
 
-        // Render 3D field content first (before ImGui)
-        if (ActiveRenderer is not null) {
-            ActiveRenderer.RenderFieldWindow3D(this, delta);
-        }
-
-        // Then render ImGui content
-        if (ActiveRenderer is not null) {
-            ActiveRenderer.Render(delta);
-        }
+        // Render 3D field
+        ActiveRenderer?.RenderFieldWindow3D(this, delta);
 
         // End region for render code
         #endregion
@@ -226,7 +219,6 @@ public class DebugFieldWindow {
 
         renderTargetView.Dispose();
         framebuffer.Dispose();
-
     }
 
     private void OnFramebufferResize(Vector2D<int> newSize) {
@@ -253,7 +245,7 @@ public class DebugFieldWindow {
         inputState.InputFocused = true;
 
         // Update keyboard state for specific keys we care about
-        Key[] keysToTrack = {
+        Key[] keysToTrack = [
             Key.W,
             Key.A,
             Key.S,
@@ -271,8 +263,8 @@ public class DebugFieldWindow {
             Key.Up,
             Key.Down,
             Key.Left,
-            Key.Right
-        };
+            Key.Right,
+        ];
 
         foreach (Key key in keysToTrack) {
             int keyIndex = (int) key;

@@ -100,6 +100,7 @@ public class FieldPropertiesWindow : IUiWindow {
             ImGui.EndTable();
         }
 
+        ImGuiController.ClampWindowToViewport();
         ImGui.End();
     }
 }

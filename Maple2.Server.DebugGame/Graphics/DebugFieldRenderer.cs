@@ -3,10 +3,8 @@ using Maple2.Server.Game.DebugGraphics;
 using Maple2.Server.Game.Manager.Field;
 using ImGuiNET;
 using Maple2.Model.Enum;
-using Maple2.Model.Game;
 using Maple2.Model.Metadata.FieldEntity;
 using Maple2.Server.DebugGame.Graphics.Data;
-using Maple2.Server.Game.Manager;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Tools.VectorMath;
@@ -14,12 +12,13 @@ using Maple2.Tools.Collision;
 using Silk.NET.Maths;
 using Maple2.Server.DebugGame.Graphics.Scene;
 using Serilog;
+using Maple2.Model.Game;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
 public class DebugFieldRenderer : IFieldRenderer {
-    public DebugGraphicsContext Context { get; init; }
-    public FieldManager Field { get; init; }
+    public DebugGraphicsContext Context { get; }
+    public FieldManager Field { get; }
 
     // Coordinate system transformation - flip Y/Z axes but keep original scale
     private static readonly Matrix4x4 MapRotation = Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
@@ -37,24 +36,24 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private readonly HashSet<DebugFieldWindow> activeWindows = [];
     private readonly Mutex activeMutex = new();
-    private IActor? selectedActor;
 
-    // 3D visualization settings
-    private bool showBoxColliders = true; // Box colliders enabled by default (main map blocks)
-    private bool showMeshColliders; // Mesh colliders disabled by default
-    private bool showSpawnPoints; // Spawn points disabled by default
-    private bool showVibrateObjects; // Vibrate objects disabled by default
-    private bool showPortals = true; // Portals enabled by default
-    private bool showPortalInformation = true; // Portal text information enabled by default
-    private bool showPortalConnections = true; // Portal connection lines enabled by default
-    private bool showActors = true; // Actors enabled by default
-    private bool showPlayers = true; // Players enabled by default
-    private bool showNpcs = true; // NPCs enabled by default
-    private bool showMobs = true; // Mobs enabled by default
-
-    // Player movement mode
-    private bool playerMoveMode = false; // Player move mode disabled by default
-    private bool forceMove = false; // Force move (bypass validation) disabled by default
+    // Public auto-properties replacing previous private fields + wrappers
+    public IActor? SelectedActor;
+    public bool ShowBoxColliders = true;
+    public bool ShowMeshColliders;
+    public bool ShowSpawnPoints;
+    public bool ShowVibrateObjects;
+    public bool ShowPortals = true;
+    public bool ShowPortalInformation = true;
+    public bool ShowPortalConnections = true;
+    public bool ShowActors = true;
+    public bool ShowPlayers = true;
+    public bool ShowNpcs = true;
+    public bool ShowMobs = true;
+    public bool ShowSellableTiles; // toggle for rendering sellable plot tiles
+    public bool ShowPlotLabels = true; // toggle for showing floating plot labels (status/owner/etc.)
+    public bool PlayerMoveMode;
+    public bool ForceMove;
 
     // Entity caching for performance
     private FieldEntity[]? cachedStaticEntities; // Cache static entities (spawn points, triggers, etc.)
@@ -77,8 +76,8 @@ public class DebugFieldRenderer : IFieldRenderer {
     private readonly Camera sharedCamera = new();
 
     // Global follow state (independent of active controller)
-    private bool hasManuallyStoppedFollowing = false;
-    private bool hasTriedAutoFollow = false;
+    public bool HasManuallyStoppedFollowing;
+    private bool hasTriedAutoFollow;
 
     public DebugFieldRenderer(DebugGraphicsContext context, FieldManager field) {
         Context = context;
@@ -110,7 +109,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         // Auto-follow first player when field window is first opened or when a new player joins
         // But only if user hasn't manually stopped following
         bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
-        if (!isFollowing && !HasManuallyStopped) {
+        if (!isFollowing && !HasManuallyStoppedFollowing) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             long? currentFollowedId = CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
             if (firstPlayer != null && (!hasTriedAutoFollow || currentFollowedId != firstPlayer.Value.Character.Id)) {
@@ -123,40 +122,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         UpdateCameraFollow();
     }
 
-
-    public void Render(double delta) {
-        if (!IsActive) {
-            return;
-        }
-
-        // Store field window position and size for positioning player details panel
-        Vector2 fieldWindowPos = Vector2.Zero;
-        Vector2 fieldWindowSize = Vector2.Zero;
-
-        // Create a field information window
-        if (ImGui.Begin("Field Information")) {
-            // Get window position and size while the window is active
-            fieldWindowPos = ImGui.GetWindowPos();
-            fieldWindowSize = ImGui.GetWindowSize();
-
-            RenderFieldBasicInfo();
-            ImGui.Separator();
-            RenderEntityCounts();
-            ImGui.Separator();
-            RenderActorList();
-            ImGui.Separator();
-            RenderFieldEntityDetails();
-        }
-        ImGui.End();
-
-        // Render visualization controls
-        RenderVisualizationControls();
-
-        // Show actor details panel if an actor is selected
-        if (selectedActor != null) {
-            RenderActorDetailsPanel(fieldWindowPos, fieldWindowSize);
-        }
-    }
+    public void Render(double delta) { }
 
     // New method specifically for field window 3D rendering
     public void RenderFieldWindow3D(DebugFieldWindow window, double delta) {
@@ -182,7 +148,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             // Get mouse position in screen coordinates
             Vector2 mousePos = ImGui.GetMousePos();
 
-            if (playerMoveMode && selectedActor is FieldPlayer selectedPlayer) {
+            if (PlayerMoveMode && SelectedActor is FieldPlayer selectedPlayer) {
                 // Move mode: try to move the selected player to clicked position
                 TryMovePlayerToScreenPosition(selectedPlayer, mousePos);
             } else {
@@ -192,343 +158,10 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
     }
 
-    private void RenderFieldBasicInfo() {
-        ImGui.Text($"Map ID: {Field.MapId}");
-        ImGui.Text($"Room ID: {Field.RoomId}");
-        ImGui.Text($"Map Name: {Field.Metadata.Name}");
-        ImGui.Text($"Field Type: {Field.FieldType}");
-        ImGui.Text($"Field Instance Type: {Field.FieldInstance.Type}");
-        if (Field.RoomTimer != null) {
-            ImGui.Text($"Room Timer Active: {Field.RoomTimer.Duration}");
-        }
+    public string GetActorName(IActor actor) => actor switch { FieldPlayer player => player.Value.Character.Name, FieldNpc npc => npc.Value.Metadata.Name ?? "Unknown", _ => "Unknown" };
+    public string GetActorType(IActor actor) => actor switch { FieldPlayer => "Player", FieldNpc => "NPC", _ => "Unknown" };
 
-        if (Field.DungeonId > 0) {
-            ImGui.Text($"Dungeon ID: {Field.DungeonId}");
-        }
-    }
-
-    private void RenderEntityCounts() {
-        ImGui.Text("Entity Counts:");
-        ImGui.Indent();
-        ImGui.Text($"Players: {Field.Players.Count}");
-        ImGui.Text($"NPCs: {Field.Npcs.Count}");
-        ImGui.Text($"Mobs: {Field.Mobs.Count}");
-        ImGui.Text($"Pets: {Field.Pets.Count}");
-        ImGui.Unindent();
-    }
-
-    private void RenderActorList() {
-        ImGui.Text("Active Actors:");
-
-        int totalActors = Field.Players.Count + Field.Npcs.Count + Field.Mobs.Count;
-        if (totalActors == 0) {
-            ImGui.Text("No active actors");
-            return;
-        }
-
-        // Actor selection controls
-        bool showActorDetailsDisabled = selectedActor == null;
-        if (showActorDetailsDisabled) {
-            ImGui.BeginDisabled();
-        }
-        if (ImGui.Button("Show Actor Details") && !showActorDetailsDisabled) {
-            // Keep the selected actor to show details panel
-        }
-        if (showActorDetailsDisabled) {
-            ImGui.EndDisabled();
-        }
-
-        ImGui.SameLine();
-        bool clearSelectionDisabled = selectedActor == null;
-        if (clearSelectionDisabled) {
-            ImGui.BeginDisabled();
-        }
-        if (ImGui.Button("Clear Selection") && !clearSelectionDisabled) {
-            selectedActor = null;
-        }
-        if (clearSelectionDisabled) {
-            ImGui.EndDisabled();
-        }
-
-        // Players section (collapsed by default)
-        if (ImGui.CollapsingHeader($"Players ({Field.Players.Count})", ImGuiTreeNodeFlags.None)) {
-            if (ImGui.BeginTable("Players Table", 4)) {
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableSetColumnIndex(0);
-                ImGui.Text("Name");
-                ImGui.TableSetColumnIndex(1);
-                ImGui.Text("Level");
-                ImGui.TableSetColumnIndex(2);
-                ImGui.Text("Object ID");
-                ImGui.TableSetColumnIndex(3);
-                ImGui.Text("Status");
-
-                int playerIndex = 0;
-                foreach ((int objectId, FieldPlayer player) in Field.Players) {
-                    ImGui.TableNextRow();
-                    bool selected = player == selectedActor;
-                    bool nextSelected = false;
-
-                    ImGui.TableSetColumnIndex(0);
-                    nextSelected |= ImGui.Selectable($"{player.Value.Character.Name}##Player {playerIndex} 0", selected);
-                    ImGui.TableSetColumnIndex(1);
-                    nextSelected |= ImGui.Selectable($"{player.Value.Character.Level}##Player {playerIndex} 1", selected);
-                    ImGui.TableSetColumnIndex(2);
-                    nextSelected |= ImGui.Selectable($"{objectId}##Player {playerIndex} 2", selected);
-                    ImGui.TableSetColumnIndex(3);
-                    nextSelected |= ImGui.Selectable($"{(player.IsDead ? "Dead" : "Alive")}##Player {playerIndex} 3", selected);
-
-                    if (nextSelected) {
-                        selectedActor = player;
-                    }
-                    ++playerIndex;
-                }
-                ImGui.EndTable();
-            }
-        }
-
-        // NPCs section (collapsed by default, includes both NPCs and Mobs)
-        int totalNpcs = Field.Npcs.Count + Field.Mobs.Count;
-        if (ImGui.CollapsingHeader($"NPCs ({totalNpcs})", ImGuiTreeNodeFlags.None)) {
-            if (ImGui.BeginTable("NPCs Table", 5)) {
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableSetColumnIndex(0);
-                ImGui.Text("Type");
-                ImGui.TableSetColumnIndex(1);
-                ImGui.Text("Name");
-                ImGui.TableSetColumnIndex(2);
-                ImGui.Text("Level");
-                ImGui.TableSetColumnIndex(3);
-                ImGui.Text("Object ID");
-                ImGui.TableSetColumnIndex(4);
-                ImGui.Text("Status");
-
-                int npcIndex = 0;
-
-                // Render NPCs
-                foreach ((int objectId, FieldNpc npc) in Field.Npcs) {
-                    ImGui.TableNextRow();
-                    bool selected = npc == selectedActor;
-                    bool nextSelected = false;
-
-                    ImGui.TableSetColumnIndex(0);
-                    nextSelected |= ImGui.Selectable($"NPC##NPC {npcIndex} 0", selected);
-                    ImGui.TableSetColumnIndex(1);
-                    nextSelected |= ImGui.Selectable($"{npc.Value.Metadata.Name}##NPC {npcIndex} 1", selected);
-                    ImGui.TableSetColumnIndex(2);
-                    nextSelected |= ImGui.Selectable($"{npc.Value.Metadata.Basic.Level}##NPC {npcIndex} 2", selected);
-                    ImGui.TableSetColumnIndex(3);
-                    nextSelected |= ImGui.Selectable($"{objectId}##NPC {npcIndex} 3", selected);
-                    ImGui.TableSetColumnIndex(4);
-                    nextSelected |= ImGui.Selectable($"{(npc.IsDead ? "Dead" : "Alive")}##NPC {npcIndex} 4", selected);
-
-                    if (nextSelected) {
-                        selectedActor = npc;
-                    }
-                    ++npcIndex;
-                }
-
-                // Render Mobs
-                foreach ((int objectId, FieldNpc mob) in Field.Mobs) {
-                    ImGui.TableNextRow();
-                    bool selected = mob == selectedActor;
-                    bool nextSelected = false;
-
-                    ImGui.TableSetColumnIndex(0);
-                    nextSelected |= ImGui.Selectable($"Mob##Mob {npcIndex} 0", selected);
-                    ImGui.TableSetColumnIndex(1);
-                    nextSelected |= ImGui.Selectable($"{mob.Value.Metadata.Name}##Mob {npcIndex} 1", selected);
-                    ImGui.TableSetColumnIndex(2);
-                    nextSelected |= ImGui.Selectable($"{mob.Value.Metadata.Basic.Level}##Mob {npcIndex} 2", selected);
-                    ImGui.TableSetColumnIndex(3);
-                    nextSelected |= ImGui.Selectable($"{objectId}##Mob {npcIndex} 3", selected);
-                    ImGui.TableSetColumnIndex(4);
-                    nextSelected |= ImGui.Selectable($"{(mob.IsDead ? "Dead" : "Alive")}##Mob {npcIndex} 4", selected);
-
-                    if (nextSelected) {
-                        selectedActor = mob;
-                    }
-                    ++npcIndex;
-                }
-                ImGui.EndTable();
-            }
-        }
-    }
-
-    private void RenderFieldEntityDetails() {
-        if (Field.AccelerationStructure == null) {
-            return;
-        }
-        ImGui.Text("Field Entity Information:");
-        ImGui.Separator();
-
-        // Basic field info
-        ImGui.Text($"Grid Size: {Field.AccelerationStructure.GridSize}");
-        ImGui.Text($"Min Index: {Field.AccelerationStructure.MinIndex}");
-        ImGui.Text($"Max Index: {Field.AccelerationStructure.MaxIndex}");
-
-        ImGui.Separator();
-
-        // Entity counts by type
-        FieldEntity[] allEntities = GetAllEntities().ToArray();
-        Dictionary<string, int> entityCounts = allEntities.GroupBy(e => e.GetType().Name).ToDictionary(g => g.Key, g => g.Count());
-
-        ImGui.Text("Entity Types:");
-        foreach (KeyValuePair<string, int> kvp in entityCounts) {
-            ImGui.Text($"  {kvp.Key}: {kvp.Value}");
-        }
-    }
-
-    private void RenderActorDetailsPanel(Vector2 fieldWindowPos, Vector2 fieldWindowSize) {
-        if (selectedActor == null) return;
-
-        // Position the actor details panel to the right of the field information panel
-        ImGui.SetNextWindowPos(new Vector2(
-            fieldWindowPos.X + fieldWindowSize.X + 10, // 10px gap
-            fieldWindowPos.Y
-        ));
-
-        // Set a reasonable size for the actor details panel
-        ImGui.SetNextWindowSize(new Vector2(350, 500), ImGuiCond.FirstUseEver);
-
-        // Get actor name for window title
-        string actorName = GetActorName(selectedActor);
-        string actorType = GetActorType(selectedActor);
-
-        // Create a separate window for actor details
-        if (ImGui.Begin($"{actorType} Details: {actorName}##ActorDetails")) {
-            RenderActorBasicInfo();
-            ImGui.Separator();
-            RenderActorPositionInfo();
-            ImGui.Separator();
-            RenderActorStatsInfo();
-            ImGui.Separator();
-            RenderActorAdditionalInfo();
-        }
-        ImGui.End();
-    }
-
-    private string GetActorName(IActor actor) {
-        return actor switch {
-            FieldPlayer player => player.Value.Character.Name,
-            FieldNpc npc => npc.Value.Metadata.Name ?? "Unknown",
-            _ => "Unknown",
-        };
-    }
-
-    private string GetActorType(IActor actor) {
-        return actor switch {
-            FieldPlayer => "Player",
-            FieldNpc => "NPC",
-            _ => "Unknown",
-        };
-    }
-
-    private void RenderActorBasicInfo() {
-        if (selectedActor == null) return;
-
-        ImGui.Text($"Type: {GetActorType(selectedActor)}");
-        ImGui.Text($"Name: {GetActorName(selectedActor)}");
-        ImGui.Text($"Object ID: {selectedActor.ObjectId}");
-        ImGui.Text($"Is Dead: {selectedActor.IsDead}");
-
-        switch (selectedActor) {
-            case FieldPlayer player:
-                ImGui.Text($"State: {player.State}");
-                ImGui.Text($"Sub State: {player.SubState}");
-                Character character = player.Value.Character;
-                ImGui.Text($"Level: {character.Level}");
-                ImGui.Text($"Job: {character.Job}");
-                ImGui.Text($"Gender: {character.Gender}");
-                ImGui.Text($"Account ID: {player.Value.Account.Id}");
-                ImGui.Text($"Character ID: {character.Id}");
-                break;
-            case FieldNpc npc:
-                ImGui.Text($"State: {npc.State.State}");
-                ImGui.Text($"Sub State: {npc.State.SubState}");
-                ImGui.Text($"Level: {npc.Value.Metadata.Basic.Level}");
-                ImGui.Text($"NPC ID: {npc.Value.Metadata.Id}");
-                ImGui.Text($"Model name: {npc.Value.Metadata.Model.Name}");
-                ImGui.Text($"Animation Speed: {npc.Value.Metadata.Model.AniSpeed}");
-                ImGui.Text($"Is Boss: {npc.Value.IsBoss}");
-                break;
-        }
-    }
-
-    private void RenderActorPositionInfo() {
-        if (selectedActor == null) return;
-
-        ImGui.Text("Position & Movement:");
-        ImGui.Indent();
-        ImGui.Text($"Position: {selectedActor.Position}");
-        ImGui.Text($"Rotation: {selectedActor.Rotation}");
-        if (selectedActor is FieldNpc npc) {
-            ImGui.Text($"Velocity: {npc.MovementState.Velocity}");
-        }
-        ImGui.Text($"Playing Sequence: {selectedActor.Animation.PlayingSequence?.Name ?? "None"}");
-
-        if (selectedActor is FieldPlayer player) {
-            ImGui.Text($"Last Ground Position: {player.LastGroundPosition}");
-            ImGui.Text($"In Battle: {player.InBattle}");
-        }
-
-        ImGui.Unindent();
-    }
-
-    private void RenderActorStatsInfo() {
-        if (selectedActor == null) return;
-
-        ImGui.Text("Stats:");
-        ImGui.Indent();
-
-        StatsManager stats = selectedActor.Stats;
-        ImGui.Text($"Health: {stats.Values[BasicAttribute.Health].Current}/{stats.Values[BasicAttribute.Health].Total}");
-
-        // Show additional stats for players
-        if (selectedActor is FieldPlayer) {
-            ImGui.Text($"Spirit: {stats.Values[BasicAttribute.Spirit].Current}/{stats.Values[BasicAttribute.Spirit].Total}");
-            ImGui.Text($"Stamina: {stats.Values[BasicAttribute.Stamina].Current}/{stats.Values[BasicAttribute.Stamina].Total}");
-        }
-
-        ImGui.Unindent();
-    }
-
-    private void RenderActorAdditionalInfo() {
-        if (selectedActor == null) return;
-
-        ImGui.Text("Additional Information");
-
-        switch (selectedActor) {
-            case FieldPlayer player:
-                ImGui.Text($"Admin Permissions: {player.AdminPermissions}");
-
-                // Player movement controls
-                ImGui.Separator();
-                ImGui.Text("Movement Controls:");
-                ImGui.Checkbox("Move Player Mode", ref playerMoveMode);
-                if (playerMoveMode) {
-                    ImGui.Indent();
-                    ImGui.Checkbox("Force Move (bypass validation)", ref forceMove);
-                    ImGui.Text("Click on the map to move this player");
-                    ImGui.Unindent();
-                }
-                break;
-            case FieldNpc npc:
-                ImGui.Text($"NPC Type: {(npc.Value.Metadata.Basic.Kind == 0 ? "Friendly" : "Hostile")}");
-                if (npc.Owner != null) {
-                    ImGui.Text($"Spawn Point ID: {npc.SpawnPointId}");
-                }
-                break;
-            default:
-                ImGui.Text("No additional information available.");
-                break;
-        }
-
-    }
-
-    public void CleanUp() {
-        // No cleanup needed for ImGui text rendering
-    }
+    public void CleanUp() { }
 
     public void AttachWindow(DebugFieldWindow window) {
         activeMutex.WaitOne();
@@ -543,7 +176,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         // Auto-follow first player when field window is opened
         // But only if user hasn't manually stopped following
         bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
-        if (!isFollowing && !HasManuallyStopped) {
+        if (!isFollowing && !HasManuallyStoppedFollowing) {
             FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
             if (firstPlayer != null) {
                 StartFollowingPlayer(firstPlayer);
@@ -564,8 +197,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             return;
         }
 
-        // Set up 3D rendering matrices
-        UpdateProjectionMatrix(window);
+        UpdateCameraProjection(window);
 
         // Enable wireframe mode for field visualization
         bool originalWireframeMode = Context.WireframeMode;
@@ -589,45 +221,53 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         // Render box colliders
-        if (showBoxColliders) {
+        if (ShowBoxColliders) {
             RenderBoxColliders(window);
         }
 
         // Render mesh colliders
-        if (showMeshColliders) {
+        if (ShowMeshColliders) {
             RenderMeshColliders(window);
         }
 
         // Render spawn points
-        if (showSpawnPoints) {
+        if (ShowSpawnPoints) {
             RenderSpawnPoints(window);
         }
 
         // Render vibrate objects
-        if (showVibrateObjects) {
+        if (ShowVibrateObjects) {
             RenderVibrateObjects(window);
         }
 
         // Render portals
-        if (showPortals) {
+        if (ShowPortals) {
             RenderPortals(window);
 
-            if (showPortalConnections) {
+            if (ShowPortalConnections) {
                 RenderPortalConnectionLines(window);
             }
 
             // Render portal text labels
-            if (showPortalInformation) {
+            if (ShowPortalInformation) {
                 RenderPortalTextLabels();
             }
         }
 
+        // Render sellable tiles (player housing plots / sellable land tiles)
+        if (ShowSellableTiles) {
+            RenderSellableTiles(window);
+            if (ShowPlotLabels) {
+                RenderPlotTextLabels();
+            }
+        }
+
         // Render actors (players, NPCs, mobs)
-        if (showActors) {
+        if (ShowActors) {
             RenderActors(window);
 
             // Render selection highlight for selected actor
-            if (selectedActor != null) {
+            if (SelectedActor != null) {
                 RenderActorSelectionHighlight(window);
             }
 
@@ -638,7 +278,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void RenderBoxColliders(DebugFieldWindow window) {
         // Set white color for box colliders
-        instanceBuffer.Color = new Vector4(1, 1, 1, 1); // White for box colliders
+        instanceBuffer.Color = new Vector4(1, 1, 1, 1);
 
         List<FieldBoxColliderEntity> allBoxColliders = GetAllEntities().OfType<FieldBoxColliderEntity>().ToList();
 
@@ -665,14 +305,6 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector3 size = meshCollider.Bounds.Max - meshCollider.Bounds.Min;
             Vector3 center = (meshCollider.Bounds.Max + meshCollider.Bounds.Min) * 0.5f;
 
-            // Convert Euler angles (degrees) to quaternion
-            Vector3 rotationRadians = meshCollider.Rotation * (MathF.PI / 180.0f);
-            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
-
-            // Apply coordinate system transformation (Y↔Z flip)
-            var coordinateTransform = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float) (-Math.PI / 2));
-            rotation = coordinateTransform * rotation;
-
             instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) *
                                                                 Matrix4x4.CreateTranslation(center));
 
@@ -685,10 +317,6 @@ public class DebugFieldRenderer : IFieldRenderer {
         IEnumerable<FieldSpawnTile> allSpawnPoints = GetAllEntities().OfType<FieldSpawnTile>();
 
         foreach (FieldSpawnTile spawnPoint in allSpawnPoints) {
-            // Convert Euler angles (degrees) to quaternion
-            // Vector3 rotationRadians = spawnPoint.Rotation * (MathF.PI / 180.0f);
-            // var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
-
             instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(Vector3.One * 50.0f) *
                                                                 Matrix4x4.CreateTranslation(spawnPoint.Position));
 
@@ -699,13 +327,9 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void RenderVibrateObjects(DebugFieldWindow window) {
         // Set pink color for vibrate objects
-        instanceBuffer.Color = new Vector4(1, 0.75f, 0.8f, 1); // Pink for vibrate objects
+        instanceBuffer.Color = new Vector4(1, 0.75f, 0.8f, 1);
 
         foreach (FieldVibrateEntity vibrateEntity in Field.AccelerationStructure!.VibrateEntities) {
-            // Convert Euler angles (degrees) to quaternion
-            Vector3 rotationRadians = vibrateEntity.Rotation * (MathF.PI / 180.0f);
-            var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
-
             instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(Vector3.One * 100.0f) *
                                                                 Matrix4x4.CreateTranslation(vibrateEntity.Position));
 
@@ -716,14 +340,41 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void RenderPortals(DebugFieldWindow window) {
         // Set blue color for portals
-        instanceBuffer.Color = new Vector4(0, 0.5f, 1, 1); // Blue for portals
-
+        instanceBuffer.Color = new Vector4(0, 0.5f, 1, 1);
         foreach (FieldPortal portal in Field.GetPortals()) {
-            // Use portal dimensions if available, otherwise use default size
             Vector3 size = portal.Value.Dimension != Vector3.Zero ? portal.Value.Dimension : Vector3.One * 100.0f;
-
             instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) *
                                                                 Matrix4x4.CreateTranslation(portal.Position));
+            UpdateWireframeInstance(window);
+            Context.CoreModels!.WireCube.Draw();
+        }
+    }
+
+    private void RenderSellableTiles(DebugFieldWindow window) {
+        if (Field.AccelerationStructure == null) return;
+        IEnumerable<FieldSellableTile> tiles = GetAllEntities().OfType<FieldSellableTile>();
+
+        // Simple deterministic color per group (hash -> color)
+        Vector4 ColorForGroup(int group) {
+            unchecked {
+                int hash = (int) (group * 2654435761u); // Knuth multiplicative hash (32-bit wrap)
+                // extract bytes
+                float r = ((hash >> 16) & 0xFF) / 255f;
+                float g = ((hash >> 8) & 0xFF) / 255f;
+                float b = (hash & 0xFF) / 255f;
+                // brighten a bit
+                float scale = 0.6f + 0.4f * ((hash >> 24) & 0xFF) / 255f;
+                return new Vector4(r * scale, g * scale, b * scale, 0.45f); // semi-transparent
+            }
+        }
+
+        foreach (FieldSellableTile tile in tiles) {
+            // Color by group
+            instanceBuffer.Color = ColorForGroup(tile.SellableGroup);
+            Vector3 size = tile.Bounds.Max - tile.Bounds.Min;
+            Vector3 center = (tile.Bounds.Max + tile.Bounds.Min) * 0.5f;
+            center.Z -= size.Z * 0.5f; // shift down half-height
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) * Matrix4x4.CreateTranslation(center));
 
             UpdateWireframeInstance(window);
             Context.CoreModels!.WireCube.Draw();
@@ -732,7 +383,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private void RenderPortalConnectionLines(DebugFieldWindow window) {
         // Set cyan color for portal connection lines
-        instanceBuffer.Color = new Vector4(0, 1, 1, 0.7f); // Cyan with some transparency
+        instanceBuffer.Color = new Vector4(0, 1, 1, 0.7f);
 
         List<FieldPortal> portals = Field.GetPortals().ToList();
 
@@ -789,8 +440,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
         const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
 
-        // Render players using cylinders (like Recast agents) - Cyan color
-        if (showPlayers) {
+        if (ShowPlayers) {
             instanceBuffer.Color = new Vector4(0, 1, 1, 1); // Cyan for players
             foreach ((int _, FieldPlayer player) in Field.Players) {
                 // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
@@ -800,12 +450,11 @@ public class DebugFieldRenderer : IFieldRenderer {
                                                                     Matrix4x4.CreateTranslation(player.Position));
 
                 UpdateWireframeInstance(window);
-                Context.CoreModels!.Cylinder.Draw(); // Use cylinder for players (like Recast agents)
+                Context.CoreModels!.Cylinder.Draw();
             }
         }
 
-        // Render NPCs using cylinders (like Recast agents) - Green for alive, Gray for dead
-        if (showNpcs) {
+        if (ShowNpcs) {
             foreach ((int _, FieldNpc npc) in Field.Npcs) {
                 // Set color based on dead status
                 if (npc.IsDead) {
@@ -821,13 +470,12 @@ public class DebugFieldRenderer : IFieldRenderer {
                                                                     Matrix4x4.CreateTranslation(npc.Position));
 
                 UpdateWireframeInstance(window);
-                Context.CoreModels!.Cylinder.Draw(); // Use cylinder for NPCs (like Recast agents)
+                Context.CoreModels!.Cylinder.Draw(); // Use cylinder for NPCs
             }
         }
 
 
-        // Render Mobs using cylinders (like Recast agents) - Red for aggressive, Yellow for wandering, Gray for dead
-        if (showMobs) {
+        if (ShowMobs) {
             foreach ((int _, FieldNpc mob) in Field.Mobs) {
                 // Set color based on dead status and battle state
                 if (mob.IsDead) {
@@ -848,125 +496,32 @@ public class DebugFieldRenderer : IFieldRenderer {
                                                                     Matrix4x4.CreateTranslation(mob.Position));
 
                 UpdateWireframeInstance(window);
-                Context.CoreModels!.Cylinder.Draw(); // Use cylinder for mobs (like Recast agents)
+                Context.CoreModels!.Cylinder.Draw();
             }
         }
     }
 
     private void RenderActorSelectionHighlight(DebugFieldWindow window) {
-        if (selectedActor == null) return;
+        if (SelectedActor == null) return;
 
-        const float agentRadius = AgentRadiusMeters * GameUnitsPerMeter;
-        const float agentHeight = AgentHeightMeters * GameUnitsPerMeter;
+        const float highlightRadius = AgentRadiusMeters * GameUnitsPerMeter * 1.4f;
+        const float highlightHeight = AgentHeightMeters * GameUnitsPerMeter * 1.2f;
 
         // Rotate cylinder 90 degrees around X axis to make it stand upright (Y axis becomes Z axis)
         var rotation = Matrix4x4.CreateRotationX((float) (Math.PI / 2));
 
-        // Render a second, even larger outline with pulsing effect
-        instanceBuffer.Color = new Vector4(1, 1, 0, 1); // Yellow with pulsing alpha
-        float pulseRadius = agentRadius * 1.4f;
-        float pulseHeight = agentHeight * 1.2f;
+        // Render larger outline
+        instanceBuffer.Color = new Vector4(1, 1, 0, 1); // Yellow
 
-        instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(pulseRadius, pulseHeight, pulseRadius)) *
+        instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(highlightRadius, highlightHeight, highlightRadius)) *
                                                             rotation *
-                                                            Matrix4x4.CreateTranslation(selectedActor.Position));
+                                                            Matrix4x4.CreateTranslation(SelectedActor.Position));
 
         UpdateWireframeInstance(window);
         Context.CoreModels!.Cylinder.Draw();
     }
 
-    private void RenderVisualizationControls() {
-        if (ImGui.Begin("3D Visualization Controls")) {
-            ImGui.Text("Field Visualization Settings");
-            ImGui.Separator();
-
-            ImGui.Checkbox("Show Box Colliders", ref showBoxColliders);
-            // ImGui.Checkbox("Show Mesh Colliders", ref showMeshColliders);
-            // ImGui.Checkbox("Show Spawn Points", ref showSpawnPoints);
-            ImGui.Checkbox("Show Vibrate Objects", ref showVibrateObjects);
-            ImGui.Checkbox("Show Portals", ref showPortals);
-
-            // Portal sub-options (only show when portals are enabled)
-            if (showPortals) {
-                ImGui.Indent();
-                ImGui.Checkbox("Show Portal Information", ref showPortalInformation);
-                ImGui.Checkbox("Show Portal Connections", ref showPortalConnections);
-                ImGui.Unindent();
-            }
-
-            ImGui.Checkbox("Show Actors", ref showActors);
-
-            // Actor sub-options (only show when actors are enabled)
-            if (showActors) {
-                ImGui.Indent();
-                ImGui.Checkbox("Show Players", ref showPlayers);
-                ImGui.Checkbox("Show NPCs", ref showNpcs);
-                ImGui.Checkbox("Show Mobs", ref showMobs);
-                ImGui.Unindent();
-            }
-
-            ImGui.Separator();
-
-            // Camera controls
-            ImGui.Text("Camera Controls:");
-            if (ImGui.Button("Reset Camera")) {
-                // Reset camera to default rotation
-                if (CameraController is FreeCameraController freeCam) {
-                    freeCam.SetDefaultRotation();
-                }
-                // else if (CameraController is FollowCameraController followCam) {
-                //     followCam.SetDefaultRotation();
-                // }
-            }
-
-            ImGui.SameLine();
-            if (ImGui.Button("Toggle Wireframe")) {
-                Context.ToggleWireframeMode();
-            }
-
-            if (ImGui.Button("View Field Overview")) {
-                SetFieldOverviewCamera();
-            }
-
-            // Player follow controls
-            ImGui.Separator();
-            bool isFollowing = CameraController is FollowCameraController { IsFollowingPlayer: true };
-            long? followedId = CameraController is FollowCameraController fc ? fc.FollowedPlayerId : null;
-            ImGui.Text($"Player Follow: {(isFollowing ? $"Player ID: {followedId}" : string.Empty)}");
-
-            if (isFollowing) {
-                if (ImGui.Button("Stop Following")) {
-                    StopFollowingPlayer();
-                }
-            } else {
-                if (ImGui.Button("Follow First Player")) {
-                    FieldPlayer? firstPlayer = Field.Players.Values.FirstOrDefault();
-                    if (firstPlayer != null) {
-                        StartFollowingPlayer(firstPlayer);
-                    }
-                }
-            }
-
-            if (isFollowing) {
-                // Get target from concrete controller if available
-                Vector3 target = CameraController switch {
-                    FreeCameraController freeCam => freeCam.CameraTarget,
-                    FollowCameraController followCam => followCam.CameraTarget,
-                    _ => Vector3.Zero,
-                };
-                ImGui.Text($"Player Following Position: {target}");
-            }
-            ImGui.Text($"Camera Position: {CameraController.Camera.Transform.Position}");
-
-            Vector3 forward = CameraController.Camera.Transform.FrontAxis;
-            ImGui.Text($"Camera Forward: X={forward.X:F3}, Y={forward.Y:F3}, Z={forward.Z:F3}");
-
-            ImGui.Text($"Wireframe Mode: {(Context.WireframeMode ? "ON" : "OFF")}");
-        }
-        ImGui.End();
-    }
-
-    private void SetFieldOverviewCamera() {
+    public void SetFieldOverviewCamera() {
         // Stop following player when switching to field overview
         if (CameraController is FollowCameraController { IsFollowingPlayer: true }) {
             StopFollowingPlayer();
@@ -1126,7 +681,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         float closestDistance = float.MaxValue;
 
         // Test players
-        if (showPlayers) {
+        if (ShowPlayers) {
             foreach ((int _, FieldPlayer player) in Field.Players) {
                 if (TryRayPrismIntersection(rayOrigin, rayDirection, player.Shape, out float distance)) {
                     if (distance < closestDistance) {
@@ -1138,7 +693,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         // Test NPCs
-        if (showNpcs) {
+        if (ShowNpcs) {
             foreach ((int _, FieldNpc npc) in Field.Npcs) {
                 if (TryRayPrismIntersection(rayOrigin, rayDirection, npc.Shape, out float distance)) {
                     if (distance < closestDistance) {
@@ -1150,7 +705,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         // Test Mobs
-        if (showMobs) {
+        if (ShowMobs) {
             foreach ((int _, FieldNpc mob) in Field.Mobs) {
                 if (TryRayPrismIntersection(rayOrigin, rayDirection, mob.Shape, out float distance)) {
                     if (distance < closestDistance) {
@@ -1162,7 +717,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         }
 
         if (closestActor != null) {
-            selectedActor = closestActor;
+            SelectedActor = closestActor;
             return true;
         }
 
@@ -1201,7 +756,7 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector3 newPosition = targetPosition.Value;
             Vector3 currentRotation = player.Rotation; // Keep current rotation
 
-            if (forceMove) {
+            if (ForceMove) {
                 // Force move: bypass validation and send packet directly
                 player.Session.Send(PortalPacket.MoveByPortal(player, newPosition, currentRotation));
             } else {
@@ -1229,7 +784,7 @@ public class DebugFieldRenderer : IFieldRenderer {
 
     private Vector2 GetRayGroundProjection(Vector3 rayOrigin, Vector3 rayDirection) {
         // Project the ray to a reasonable ground level to get X,Y coordinates
-        float targetZ = selectedActor?.Position.Z ?? 0.0f;
+        float targetZ = SelectedActor?.Position.Z ?? 0.0f;
 
         if (Math.Abs(rayDirection.Z) > 0.001f) {
             float t = (targetZ - rayOrigin.Z) / rayDirection.Z;
@@ -1281,69 +836,72 @@ public class DebugFieldRenderer : IFieldRenderer {
     private void RenderActorTextLabels() {
         ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
 
-        // Render player names using ImGui
-        if (showPlayers) {
+        // Render player names
+        if (ShowPlayers) {
             foreach ((int _, FieldPlayer player) in Field.Players) {
                 Vector3 textPos = player.Position + new Vector3(0, 0, 200); // Above the cylinder
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string playerName = player.Value.Character.Name;
-                bool isSelected = selectedActor == player;
+                bool isSelected = SelectedActor == player;
 
                 Vector2 textSize = ImGui.CalcTextSize(playerName);
+                float left = screenPos.X - (textSize.X * 0.5f);
+                Vector2 textTopLeft = new(left, screenPos.Y);
                 Vector4 textColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0, 1, 1, 1); // Yellow if selected, cyan otherwise
                 Vector4 bgColor = isSelected ? new Vector4(0.2f, 0.2f, 0, 0.9f) : new Vector4(0, 0, 0, 0.7f); // Darker yellow bg if selected
                 Vector4 borderColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0.2f, 0.2f, 0.2f, 0.8f); // Yellow border if selected
 
-                // Draw background
-                Vector2 bgMin = screenPos - new Vector2(4, 2);
-                Vector2 bgMax = screenPos + textSize + new Vector2(4, 2);
+                // Draw background centered
+                Vector2 bgMin = textTopLeft - new Vector2(4, 2);
+                Vector2 bgMax = textTopLeft + textSize + new Vector2(4, 2);
                 drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
                 drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
 
                 // Draw text on top
-                drawList.AddText(screenPos, ImGui.ColorConvertFloat4ToU32(textColor), playerName);
+                drawList.AddText(textTopLeft, ImGui.ColorConvertFloat4ToU32(textColor), playerName);
             }
         }
 
-        // Render NPC names ImGui
-        if (showNpcs) {
+        // Render NPC names
+        if (ShowNpcs) {
             foreach ((int _, FieldNpc npc) in Field.Npcs) {
                 Vector3 textPos = npc.Position + new Vector3(0, 0, 200); // Above the cylinder
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string npcName = npc.Value.Metadata.Name ?? $"NPC {npc.Value.Metadata.Id}";
-                bool isSelected = selectedActor == npc;
+                bool isSelected = SelectedActor == npc;
 
                 Vector4 textColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0, 1, 0, 1); // Yellow if selected, green otherwise
                 Vector4 bgColor = isSelected ? new Vector4(0.2f, 0.2f, 0, 0.9f) : new Vector4(0, 0, 0, 0.7f); // Darker yellow bg if selected
                 Vector4 borderColor = isSelected ? new Vector4(1, 1, 0, 1) : new Vector4(0.2f, 0.2f, 0.2f, 0.8f); // Yellow border if selected
                 uint color = ImGui.ColorConvertFloat4ToU32(textColor);
 
-                // Draw background for NPC name
                 Vector2 nameSize = ImGui.CalcTextSize(npcName);
-                Vector2 nameBgMin = screenPos - new Vector2(4, 2);
-                Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
+                float left = screenPos.X - (nameSize.X * 0.5f);
+                Vector2 nameTopLeft = new(left, screenPos.Y);
+                Vector2 nameBgMin = nameTopLeft - new Vector2(4, 2);
+                Vector2 nameBgMax = nameTopLeft + nameSize + new Vector2(4, 2);
                 drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
                 drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
-
-                drawList.AddText(screenPos, color, npcName);
+                drawList.AddText(nameTopLeft, color, npcName);
             }
         }
 
-        // Render Mob names and HP using ImGui
-        if (showMobs) {
+        // Render Mob names and HP
+        if (ShowMobs) {
             foreach ((int _, FieldNpc mob) in Field.Mobs) {
                 Vector3 textPos = mob.Position + new Vector3(0, 0, 200); // Above the cylinder
                 if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
                 string mobName = mob.Value.Metadata.Name ?? $"Mob {mob.Value.Metadata.Id}";
-                bool isSelected = selectedActor == mob;
+                bool isSelected = SelectedActor == mob;
 
                 // Calculate HP percentage
                 long currentHp = mob.Stats.Values[BasicAttribute.Health].Current;
                 long maxHp = mob.Stats.Values[BasicAttribute.Health].Total;
                 float hpPercent = maxHp > 0 ? (float) currentHp / maxHp * 100f : 0f;
+                string hpText = $"HP: {hpPercent:F1}%";
 
                 // Choose color based on status, but override with yellow if selected
                 Vector4 textColor;
@@ -1369,26 +927,21 @@ public class DebugFieldRenderer : IFieldRenderer {
 
                 uint color = ImGui.ColorConvertFloat4ToU32(textColor);
 
-                // Draw background for mob name
                 Vector2 nameSize = ImGui.CalcTextSize(mobName);
-                Vector2 nameBgMin = screenPos - new Vector2(4, 2);
-                Vector2 nameBgMax = screenPos + nameSize + new Vector2(4, 2);
-                drawList.AddRectFilled(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
-                drawList.AddRect(nameBgMin, nameBgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
-
-                drawList.AddText(screenPos, color, mobName);
-
-                // Position HP text below the name using screen-space offset to avoid overlap when zoomed out
-                // Calculate HP text position in screen space (below the name) with consistent pixel spacing
-                Vector2 hpScreenPos = new Vector2(screenPos.X, screenPos.Y + nameSize.Y + 4); // 4 pixels below name
-
-                string hpText = $"HP: {hpPercent:F1}%";
                 Vector2 hpSize = ImGui.CalcTextSize(hpText);
-                Vector2 hpBgMin = hpScreenPos - new Vector2(4, 2);
-                Vector2 hpBgMax = hpScreenPos + hpSize + new Vector2(4, 2);
-                drawList.AddRectFilled(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.7f)));
-                drawList.AddRect(hpBgMin, hpBgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.2f, 0.2f, 0.2f, 0.8f)));
-                drawList.AddText(hpScreenPos, color, hpText);
+                float maxWidth = MathF.Max(nameSize.X, hpSize.X);
+                float left = screenPos.X - (maxWidth * 0.5f);
+                Vector2 namePos = new(left + (maxWidth - nameSize.X) * 0.5f, screenPos.Y);
+                Vector2 hpPos = new(left + (maxWidth - hpSize.X) * 0.5f, namePos.Y + nameSize.Y + 4);
+
+                // Background covering both lines
+                Vector2 bgMin = new(left - 4, screenPos.Y - 2);
+                Vector2 bgMax = new(left + maxWidth + 4, hpPos.Y + hpSize.Y + 2);
+                drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
+                drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
+
+                drawList.AddText(namePos, color, mobName);
+                drawList.AddText(hpPos, color, hpText);
             }
         }
     }
@@ -1396,23 +949,20 @@ public class DebugFieldRenderer : IFieldRenderer {
     private void RenderPortalTextLabels() {
         ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
 
-        // Render portal information using ImGui
+        // Render portal information
         foreach (FieldPortal portal in Field.GetPortals()) {
             Vector3 textPos = portal.Position + new Vector3(0, 0, 150); // Above the portal cube
             if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
 
-            // Build portal info text
             string enabledText = $"{(portal.Enabled ? "Enabled" : "Disabled")} | {(portal.Visible ? "Visible" : "Hidden")}";
             string idText = $"ID: {portal.Value.Id}";
             string targetText = $"Target: {portal.Value.TargetMapId}";
             string targetPortalText = $"Target Portal: {portal.Value.TargetPortalId}";
             string typeText = $"Type: {portal.Value.Type}";
 
-            // Choose color based on enabled status
-            Vector4 textColor = portal.Enabled ? new Vector4(0, 0.8f, 1, 1) : new Vector4(0.6f, 0.6f, 0.6f, 1); // Blue if enabled, gray if disabled
+            Vector4 textColor = portal.Enabled ? new Vector4(0, 0.8f, 1, 1) : new Vector4(0.6f, 0.6f, 0.6f, 1);
             uint color = ImGui.ColorConvertFloat4ToU32(textColor);
 
-            // Calculate total text size for background
             Vector2 enabledSize = ImGui.CalcTextSize(enabledText);
             Vector2 idSize = ImGui.CalcTextSize(idText);
             Vector2 targetSize = ImGui.CalcTextSize(targetText);
@@ -1420,16 +970,15 @@ public class DebugFieldRenderer : IFieldRenderer {
             Vector2 typeSize = ImGui.CalcTextSize(typeText);
 
             float maxWidth = Math.Max(Math.Max(Math.Max(enabledSize.X, idSize.X), Math.Max(targetSize.X, targetPortalSize.X)), typeSize.X);
-            float totalHeight = enabledSize.Y + idSize.Y + targetSize.Y + targetPortalSize.Y + typeSize.Y + 8; // 8 pixels spacing between lines
+            float totalHeight = enabledSize.Y + idSize.Y + targetSize.Y + targetPortalSize.Y + typeSize.Y + 8;
+            float left = screenPos.X - (maxWidth * 0.5f);
 
-            // Draw background
-            Vector2 bgMin = screenPos - new Vector2(4, 2);
-            Vector2 bgMax = screenPos + new Vector2(maxWidth + 8, totalHeight + 4);
-            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.8f))); // Dark background
-            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.3f, 0.3f, 0.3f, 0.9f))); // Border
+            Vector2 bgMin = new(left - 4, screenPos.Y - 2);
+            Vector2 bgMax = new(left + maxWidth + 4, screenPos.Y + totalHeight + 4);
+            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 0.8f)));
+            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(new Vector4(0.3f, 0.3f, 0.3f, 0.9f)));
 
-            // Draw text lines
-            Vector2 currentPos = screenPos;
+            Vector2 currentPos = new(left, screenPos.Y);
             drawList.AddText(currentPos, color, enabledText);
             currentPos.Y += enabledSize.Y + 1;
             drawList.AddText(currentPos, color, idText);
@@ -1439,6 +988,76 @@ public class DebugFieldRenderer : IFieldRenderer {
             drawList.AddText(currentPos, color, targetPortalText);
             currentPos.Y += targetPortalSize.Y + 1;
             drawList.AddText(currentPos, color, typeText);
+        }
+    }
+
+    private void RenderPlotTextLabels() {
+        if (!ShowSellableTiles || !ShowPlotLabels) return;
+        if (Field.AccelerationStructure == null) return;
+
+        // We'll aggregate one label per SellableGroup using the first tile's center.
+        // Map group -> representative tile center & vertical extent
+        var groupInfo = new Dictionary<int, (Vector3 center, float maxZ)>();
+        foreach (FieldEntity entity in GetAllEntities()) {
+            if (entity is not FieldSellableTile tile) continue;
+            Vector3 size = tile.Bounds.Max - tile.Bounds.Min;
+            Vector3 center = (tile.Bounds.Max + tile.Bounds.Min) * 0.5f;
+            center.Z -= size.Z * 0.5f; // match visual cube shift
+            if (groupInfo.TryGetValue(tile.SellableGroup, out var info)) {
+                // Average centers and track max Z for label stacking
+                Vector3 avg = (info.center + center) * 0.5f;
+                groupInfo[tile.SellableGroup] = (avg, MathF.Max(info.maxZ, center.Z + size.Z));
+            } else {
+                groupInfo[tile.SellableGroup] = (center, center.Z + size.Z);
+            }
+        }
+
+        if (groupInfo.Count == 0) return;
+
+        ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
+
+        // Attempt to look up plot metadata via Field.Plots (number == SellableGroup)
+        foreach ((int group, (Vector3 baseCenter, float topZ)) in groupInfo) {
+            Vector3 labelWorld = new(baseCenter.X, baseCenter.Y, topZ + 120f);
+            if (!TryWorldToScreen(labelWorld, out Vector2 screenPos)) continue;
+
+            Plot? plot = null;
+            if (Field.Plots.ContainsKey(group)) {
+                plot = Field.Plots[group];
+            }
+            string state = plot?.State.ToString() ?? "Unknown";
+            long ownerId = plot?.OwnerId ?? 0;
+            long expiry = plot?.ExpiryTime ?? 0;
+            string ownerText = ownerId == 0 ? "Unowned" : ownerId.ToString();
+            string expiryText = expiry <= 0 ? "-" : DateTimeOffset.FromUnixTimeSeconds(expiry).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+            string name = plot?.Name ?? string.Empty;
+            string header = string.IsNullOrEmpty(name) ? $"Plot {group}" : name;
+            string line2 = $"State: {state} | Owner: {ownerText}";
+            string line3 = $"Expiry: {expiryText}";
+
+            Vector2 headerSize = ImGui.CalcTextSize(header);
+            Vector2 l2Size = ImGui.CalcTextSize(line2);
+            Vector2 l3Size = ImGui.CalcTextSize(line3);
+            float maxWidth = MathF.Max(headerSize.X, MathF.Max(l2Size.X, l3Size.X));
+            float totalHeight = headerSize.Y + l2Size.Y + l3Size.Y + 8;
+            float left = screenPos.X - (maxWidth * 0.5f);
+
+            Vector4 boxColor = new(0, 0, 0, 0.65f);
+            Vector4 borderColor = new(0.3f, 0.3f, 0.3f, 0.9f);
+            Vector4 headerColor = new(1f, 0.85f, 0.3f, 1f);
+            Vector4 textColor = new(0.9f, 0.9f, 0.9f, 1f);
+
+            Vector2 bgMin = new(left - 4, screenPos.Y - 2);
+            Vector2 bgMax = new(left + maxWidth + 4, screenPos.Y + totalHeight + 4);
+            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(boxColor));
+            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(borderColor));
+
+            Vector2 cursor = new(left, screenPos.Y);
+            drawList.AddText(cursor, ImGui.ColorConvertFloat4ToU32(headerColor), header);
+            cursor.Y += headerSize.Y + 1;
+            drawList.AddText(cursor, ImGui.ColorConvertFloat4ToU32(textColor), line2);
+            cursor.Y += l2Size.Y + 1;
+            drawList.AddText(cursor, ImGui.ColorConvertFloat4ToU32(textColor), line3);
         }
     }
 
@@ -1472,7 +1091,7 @@ public class DebugFieldRenderer : IFieldRenderer {
         return cachedStaticEntities;
     }
 
-    public void UpdateProjectionMatrix(DebugFieldWindow window) {
+    private void UpdateCameraProjection(DebugFieldWindow window) {
         Vector2D<int> windowSize = Context.DebuggerWindow?.FramebufferSize ?? DebugGraphicsContext.DefaultWindowSize;
         CameraController.Camera.UpdateProjectionMatrix(windowSize.X, windowSize.Y);
         sceneViewBuffer.ViewMatrix = Matrix4x4.Transpose(CameraController.Camera.ViewMatrix);
@@ -1518,15 +1137,10 @@ public class DebugFieldRenderer : IFieldRenderer {
     }
 
     /// <summary>
-    /// Whether the user has manually stopped following (global state)
-    /// </summary>
-    public bool HasManuallyStopped => hasManuallyStoppedFollowing;
-
-    /// <summary>
     /// Starts following a player and automatically switches to follow camera controller
     /// </summary>
     public void StartFollowingPlayer(FieldPlayer player) {
-        hasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
+        HasManuallyStoppedFollowing = false; // Reset manual stop flag when starting to follow
         SwitchToFollowCameraController();
         followCameraController.StartFollowingPlayer(player.Value.Character.Id, player.Position);
     }
@@ -1535,7 +1149,7 @@ public class DebugFieldRenderer : IFieldRenderer {
     /// Stops following a player and automatically switches to free camera controller
     /// </summary>
     public void StopFollowingPlayer() {
-        hasManuallyStoppedFollowing = true; // Remember that user manually stopped
+        HasManuallyStoppedFollowing = true; // Remember that user manually stopped
         followCameraController.StopFollowingPlayer();
         SwitchToFreeCameraController();
     }
