@@ -211,7 +211,7 @@ public class TableMetadataStorage {
             lock (context) {
                 TableMetadata? row = context.TableMetadata.Find(key);
                 if (row?.Table is not T result) {
-                    throw new InvalidOperationException($"Row does not exist: {key}");
+                    throw new InvalidOperationException($"Row does not exist: {key}. Rerun Ingest!");
                 }
 
                 return result;

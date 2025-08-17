@@ -209,7 +209,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     end:
         if (Interval == 0) {
             FireCount = 0;
-            NextTick = int.MaxValue;
+            NextTick = long.MaxValue;
         } else {
             FireCount--;
             NextTick += Interval;
