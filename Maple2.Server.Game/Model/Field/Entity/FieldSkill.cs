@@ -13,7 +13,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     public IActor Caster { get; init; }
     public int Interval { get; }
     public int FireCount { get; private set; }
-    public bool Enabled => FireCount != 0 || NextTick <= endTick || Field.FieldTick <= endTick;
+    public bool Enabled => FireCount > 0 || NextTick <= endTick || Field.FieldTick <= endTick;
     public bool Active { get; private set; } = true;
     public int TriggerId { get; init; }
 
@@ -29,7 +29,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         Caster = caster;
         Points = points;
         Interval = interval;
-        FireCount = -1;
+        FireCount = int.MaxValue;
         NextTick = Field.FieldTick + interval;
     }
 
@@ -42,6 +42,8 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         NextTick = Field.FieldTick + interval;
     }
 
+    // TODO: check if duration of field skill is correct.
+    // Example: Heaven's Wrath says duration is 20s but it's lasting ~22s (Probably the splash.Delay being added to the endTick).
     public FieldSkill(FieldManager field, int objectId, IActor caster,
                       SkillMetadata value, int fireCount, SkillEffectMetadataSplash splash, params Vector3[] points) : base(field, objectId, value) {
         Caster = caster;
@@ -211,8 +213,15 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             FireCount = 0;
             NextTick = long.MaxValue;
         } else {
-            FireCount--;
-            NextTick += Interval;
+            if (FireCount != int.MaxValue) {
+                FireCount--;
+            }
+
+            if (FireCount <= 0) {
+                NextTick = long.MaxValue;
+            } else {
+                NextTick += Interval;
+            }
         }
     }
 }
