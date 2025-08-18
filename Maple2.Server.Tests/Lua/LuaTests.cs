@@ -13,20 +13,197 @@ public class LuaTests {
     }
 
     [Test]
-    public void TestCalcItemLevel() {
+    public void TestCalcItemLevel_ExceptionalAdventuringThrowingStar() {
         // Arrange
         const int gearScore = 67;
         const int rarity = 4;
-        var itemType = new ItemType(13460307);
+        var itemType = new ItemType(13460307); // Exceptional Adventuring Throwing Star
 
         // Act
-        int maple2LuaResult = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, 0, 0).Item1;
-        int luaResult = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, 0, 0).Item1;
+        (int maple2LuaBaseGearScore, int maple2LuaEnchantScore) = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0);
+        (int baseGearScore, int enchantScore) = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0);
+
+        // Throwing stars and daggers have half the gear score
+        int maple2LuaTotalGearScore = maple2LuaBaseGearScore + maple2LuaEnchantScore;
+        int totalGearScore = baseGearScore + enchantScore;
+        if (itemType.IsThrowingStar || itemType.IsDagger) {
+            maple2LuaTotalGearScore /= 2;
+            maple2LuaEnchantScore /= 2;
+            maple2LuaBaseGearScore = maple2LuaTotalGearScore - maple2LuaEnchantScore;
+
+            totalGearScore /= 2;
+            enchantScore /= 2;
+            baseGearScore = totalGearScore - enchantScore;
+        }
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(maple2LuaBaseGearScore, Is.EqualTo(4177));
+            Assert.That(baseGearScore, Is.EqualTo(4177));
+
+            Assert.That(maple2LuaEnchantScore, Is.EqualTo(0));
+            Assert.That(enchantScore, Is.EqualTo(0));
+
+            // total
+            Assert.That(maple2LuaTotalGearScore, Is.EqualTo(4177));
+            Assert.That(totalGearScore, Is.EqualTo(4177));
+        });
+    }
+
+    [Test]
+    public void TestCalcItemLevel_ExceptionalAdventuringThrowingStar_Enchanted() {
+        // Arrange
+        const int gearScore = 67;
+        const int rarity = 4;
+        var itemType = new ItemType(13460307); // Exceptional Adventuring Throwing Star
+
+        // Act
+        (int maple2LuaBaseGearScore, int maple2LuaEnchantScore) = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+        (int baseGearScore, int enchantScore) = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+
+        // Throwing stars and daggers have half the gear score
+        int maple2LuaTotalGearScore = maple2LuaBaseGearScore + maple2LuaEnchantScore;
+        int totalGearScore = baseGearScore + enchantScore;
+        if (itemType.IsThrowingStar || itemType.IsDagger) {
+            maple2LuaTotalGearScore /= 2;
+            maple2LuaEnchantScore /= 2;
+            maple2LuaBaseGearScore = maple2LuaTotalGearScore - maple2LuaEnchantScore;
+
+            totalGearScore /= 2;
+            enchantScore /= 2;
+            baseGearScore = totalGearScore - enchantScore;
+        }
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(maple2LuaBaseGearScore, Is.EqualTo(4178));
+            Assert.That(baseGearScore, Is.EqualTo(4178));
+
+            Assert.That(maple2LuaEnchantScore, Is.EqualTo(2088));
+            Assert.That(enchantScore, Is.EqualTo(2088));
+
+            // total
+            Assert.That(maple2LuaTotalGearScore, Is.EqualTo(6266));
+            Assert.That(totalGearScore, Is.EqualTo(6266));
+        });
+    }
+
+    [Test]
+    public void TestCalcItemLevel_ExceptionalAdventuringKnife() {
+        // Arrange
+        const int gearScore = 67;
+        const int rarity = 4;
+        var itemType = new ItemType(13160314); // Exceptional Adventuring Knife
+
+        // Act
+        (int maple2LuaBaseGearScore, int maple2LuaEnchantScore) = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+        (int baseGearScore, int enchantScore) = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+
+        // Throwing stars and daggers have half the gear score
+        int maple2LuaTotalGearScore = maple2LuaBaseGearScore + maple2LuaEnchantScore;
+        int totalGearScore = baseGearScore + enchantScore;
+        if (itemType.IsThrowingStar || itemType.IsDagger) {
+            maple2LuaTotalGearScore /= 2;
+            maple2LuaEnchantScore /= 2;
+            maple2LuaBaseGearScore = maple2LuaTotalGearScore - maple2LuaEnchantScore;
+
+            totalGearScore /= 2;
+            enchantScore /= 2;
+            baseGearScore = totalGearScore - enchantScore;
+        }
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(maple2LuaBaseGearScore, Is.EqualTo(4178));
+            Assert.That(baseGearScore, Is.EqualTo(4178));
+
+            Assert.That(maple2LuaEnchantScore, Is.EqualTo(2088));
+            Assert.That(enchantScore, Is.EqualTo(2088));
+
+            // total
+            Assert.That(maple2LuaTotalGearScore, Is.EqualTo(6266));
+            Assert.That(totalGearScore, Is.EqualTo(6266));
+        });
+    }
+
+    [Test]
+    public void TestCalcItemLevel_RookStar() {
+        // Arrange
+        const int gearScore = 7;
+        const int rarity = 1;
+        var itemType = new ItemType(13400218); // Rook's Star
+
+        // Act
+        (int maple2LuaBaseGearScore, int maple2LuaEnchantScore) = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0);
+        (int baseGearScore, int enchantScore) = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0);
+
+        // Throwing stars and daggers have half the gear score
+        int maple2LuaTotalGearScore = maple2LuaBaseGearScore + maple2LuaEnchantScore;
+        int totalGearScore = baseGearScore + enchantScore;
+        if (itemType.IsThrowingStar || itemType.IsDagger) {
+            maple2LuaTotalGearScore /= 2;
+            maple2LuaEnchantScore /= 2;
+            maple2LuaBaseGearScore = maple2LuaTotalGearScore - maple2LuaEnchantScore;
+
+            totalGearScore /= 2;
+            enchantScore /= 2;
+            baseGearScore = totalGearScore - enchantScore;
+        }
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(maple2LuaBaseGearScore, Is.EqualTo(35));
+            Assert.That(baseGearScore, Is.EqualTo(35));
+
+            Assert.That(maple2LuaEnchantScore, Is.EqualTo(0));
+            Assert.That(enchantScore, Is.EqualTo(0));
+
+            // total
+            Assert.That(maple2LuaTotalGearScore, Is.EqualTo(35));
+            Assert.That(totalGearScore, Is.EqualTo(35));
+        });
+    }
+
+    [Test]
+    public void TestCalcItemLevel_ExceptionalAdventuringCodex() {
+        // Arrange
+        const int gearScore = 67;
+        const int rarity = 4;
+        var itemType = new ItemType(14060270); // Exceptional Adventuring Codex
+
+        // Act
+        int maple2LuaResult = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0).Item1;
+        int luaResult = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 0, limitBreakLevel: 0).Item1;
 
         // Assert
         Assert.Multiple(() => {
             Assert.That(maple2LuaResult, Is.EqualTo(8355));
             Assert.That(luaResult, Is.EqualTo(8355));
+        });
+    }
+
+    [Test]
+    public void TestCalcItemLevel_ExceptionalAdventuringScepter() {
+        // Arrange
+        const int gearScore = 67;
+        const int rarity = 4;
+        var itemType = new ItemType(13360308); // Exceptional Adventuring Scepter
+
+        // Act
+        (int maple2LuaBaseGearScore, int maple2LuaEnchantScore) = maple2Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+        (int baseGearScore, int enchantScore) = Server.Game.LuaFunctions.Lua.CalcItemLevel(gearScore, rarity, itemType.Type, enchantLevel: 10, limitBreakLevel: 0);
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(maple2LuaBaseGearScore, Is.EqualTo(8355));
+            Assert.That(baseGearScore, Is.EqualTo(8355));
+
+            Assert.That(maple2LuaEnchantScore, Is.EqualTo(4177));
+            Assert.That(enchantScore, Is.EqualTo(4177));
+
+            // total
+            Assert.That(maple2LuaBaseGearScore + maple2LuaEnchantScore, Is.EqualTo(12532));
+            Assert.That(baseGearScore + enchantScore, Is.EqualTo(12532));
         });
     }
 
