@@ -414,22 +414,22 @@ public class DebugFieldRenderer : IFieldRenderer {
         // Calculate rotation to align cylinder with the line direction
         // The cylinder model is oriented along the Y axis by default
         Vector3 defaultUp = Vector3.UnitY;
-        Quaternion rotation;
+        Matrix4x4 rotationMatrix;
 
         // Check if direction is parallel to Y axis
         float dot = Vector3.Dot(defaultUp, normalizedDirection);
         if (Math.Abs(dot) > 0.999f) {
             // Direction is parallel to Y axis, no rotation needed (or 180 degrees)
-            rotation = dot > 0 ? Quaternion.Identity : Quaternion.CreateFromAxisAngle(Vector3.UnitX, MathF.PI);
+            rotationMatrix = dot > 0 ? Matrix4x4.Identity : Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, MathF.PI);
         } else {
             // Calculate rotation between Y axis and direction
             Vector3 axis = Vector3.Normalize(Vector3.Cross(defaultUp, normalizedDirection));
             float angle = MathF.Acos(Math.Clamp(dot, -1.0f, 1.0f));
-            rotation = Quaternion.CreateFromAxisAngle(axis, angle);
+            rotationMatrix = Matrix4x4.CreateFromAxisAngle(axis, angle);
         }
 
         instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(new Vector3(10.0f, distance / 2.0f, 10.0f)) *
-                                                            Matrix4x4.CreateFromQuaternion(rotation) *
+                                                            rotationMatrix *
                                                             Matrix4x4.CreateTranslation(center));
 
         UpdateWireframeInstance(window);

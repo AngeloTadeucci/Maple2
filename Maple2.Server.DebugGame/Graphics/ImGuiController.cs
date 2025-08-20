@@ -51,6 +51,10 @@ public class InputState {
 public class ImGuiController {
     public static readonly ILogger Logger = Log.Logger.ForContext<ImGuiController>();
 
+    // Global config: when true, ClampWindowToViewport will keep only the title bar inside the viewport
+    // if callers don't explicitly provide the override flag.
+    public static bool ClampTitleBarOnlyDefault = false;
+
     private DebugGraphicsContext Context { get; init; }
     private IWindow? ParentWindow { get; set; }
     private IInputContext Input { get; init; }
@@ -240,6 +244,15 @@ public class ImGuiController {
             ImGui.EndCombo();
         }
 
+        // Place Settings combo on the same line as View
+        ImGui.SameLine();
+        if (ImGui.BeginCombo("##TOOLBAR SETTINGS", "Settings", comboFlags)) {
+            // Global options
+            ImGui.Checkbox("Clamp title bar only", ref ClampTitleBarOnlyDefault);
+
+            ImGui.EndCombo();
+        }
+
         ImGui.PopStyleVar(2); // WindowBorderSize, WindowPadding
 
         ImGui.End();
@@ -268,6 +281,31 @@ public class ImGuiController {
         Vector2 pos = ImGui.GetWindowPos();
         Vector2 size = ImGui.GetWindowSize();
 
+        if (ClampTitleBarOnlyDefault) {
+            // Estimate title bar height using current style
+            ImGuiStylePtr style = ImGui.GetStyle();
+            float titleBarHeight = ImGui.GetFontSize() + style.FramePadding.Y * 2f;
+
+            float newX = pos.X;
+            float newY = pos.Y;
+
+            // Compute allowed ranges for top-left of title bar
+            float minXAllowed = min.X;
+            float maxXAllowed = max.X - size.X;
+            float minYAllowed = min.Y;
+            float maxYAllowed = max.Y - titleBarHeight;
+
+            // If the window/titlebar is wider/taller than work area, prefer keeping the left/top aligned to min
+            if (maxXAllowed < minXAllowed) newX = minXAllowed; else newX = Math.Clamp(newX, minXAllowed, maxXAllowed);
+            if (maxYAllowed < minYAllowed) newY = minYAllowed; else newY = Math.Clamp(newY, minYAllowed, maxYAllowed);
+
+            if (Math.Abs(newX - pos.X) > 0.5f || Math.Abs(newY - pos.Y) > 0.5f) {
+                ImGui.SetWindowPos(new Vector2(newX, newY), ImGuiCond.Always);
+            }
+
+            return;
+        }
+
         // If window size exceeds work area, shrink it first
         bool resized = false;
         if (size.X > max.X - min.X) { size.X = MathF.Max(50f, max.X - min.X); resized = true; }
@@ -277,16 +315,16 @@ public class ImGuiController {
         // Re-fetch possibly updated size
         size = ImGui.GetWindowSize();
 
-        // Clamp position
-        float newX = pos.X;
-        float newY = pos.Y;
-        if (newX < min.X) newX = min.X;
-        if (newY < min.Y) newY = min.Y;
-        if (newX + size.X > max.X) newX = max.X - size.X;
-        if (newY + size.Y > max.Y) newY = max.Y - size.Y;
+        // Clamp position for full body
+        float newBodyX = pos.X;
+        float newBodyY = pos.Y;
+        if (newBodyX < min.X) newBodyX = min.X;
+        if (newBodyY < min.Y) newBodyY = min.Y;
+        if (newBodyX + size.X > max.X) newBodyX = max.X - size.X;
+        if (newBodyY + size.Y > max.Y) newBodyY = max.Y - size.Y;
 
-        if (Math.Abs(newX - pos.X) > 0.5f || Math.Abs(newY - pos.Y) > 0.5f) {
-            ImGui.SetWindowPos(new Vector2(newX, newY), ImGuiCond.Always);
+        if (Math.Abs(newBodyX - pos.X) > 0.5f || Math.Abs(newBodyY - pos.Y) > 0.5f) {
+            ImGui.SetWindowPos(new Vector2(newBodyX, newBodyY), ImGuiCond.Always);
         }
     }
 
