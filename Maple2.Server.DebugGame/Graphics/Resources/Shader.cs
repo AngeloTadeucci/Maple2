@@ -4,40 +4,197 @@ using Silk.NET.Direct3D11;
 using System.Numerics;
 using Silk.NET.DXGI;
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
+using Maple2.Server.DebugGame.Graphics.Assets;
+using System.Runtime.InteropServices;
 
 namespace Maple2.Server.DebugGame.Graphics.Resources;
 
+internal class ShaderCompilationJob {
+    public string ShaderPath = string.Empty;
+    public byte[] IncludeSource = [];
+    public GCHandle IncludeSourceHandle;
+    public List<string> IncludedFiles = [];
+}
+
 public abstract class Shader {
-    public static string ShaderRootPath = "";
+    // HRESULT values, mandatory for some DX11 features
+    public const int S_OK = 0;
+    public const int E_FAIL = unchecked((int) 0x80004005);
 
     protected ComPtr<ID3D10Blob> Bytecode;
     protected ComPtr<ID3D10Blob> CompileErrors;
     public bool Loaded { get; private set; }
+    private static unsafe ConcurrentDictionary<IntPtr, ShaderCompilationJob> _compilingShaders = new();
+    public string FilePath { get; private set; } = string.Empty;
+    public IReadOnlyList<string> IncludedFiles => includedFiles;
+    private List<string> includedFiles = [];
 
-    public Shader() {
+    public Shader() { }
+
+    static unsafe int IncludeOpen(ID3DInclude* include, D3DIncludeType includeType, byte* pFileName, void* pParentData, void** ppData, uint* pBytes) {
+        string filePath = string.Empty;
+        string shaderPath = string.Empty;
+        string fileName = new((sbyte*) pFileName);
+        ShaderCompilationJob? job = null;
+
+        string message = includeType switch {
+            D3DIncludeType.D3DIncludeLocal => $"Shader included path \"{fileName}\"",
+            D3DIncludeType.D3DIncludeSystem => $"Shader included path <{fileName}>",
+            _ => $"Shader included path '{fileName}'",
+        };
+
+        Log.Information(message);
+
+        try {
+            if (!_compilingShaders.TryGetValue((IntPtr) include, out ShaderCompilationJob? value)) {
+                Log.Error("[{ShaderPath}]: Failed to find shader path for compiling shader", shaderPath);
+
+                return E_FAIL;
+            }
+
+            job = value;
+            shaderPath = Path.GetRelativePath(ShaderPipelines.AssetRootPath, job.ShaderPath);
+
+            if (job.IncludeSource.Length > 0) {
+                Log.Error("[{ShaderPath}]: Old shader compilation job lingering, failed to clean up previous job", shaderPath);
+
+                return E_FAIL;
+            }
+
+            switch (includeType) {
+                case D3DIncludeType.D3DIncludeLocal:
+                    filePath = job.ShaderPath;
+
+                    DirectoryInfo? shaderParent = Directory.GetParent(filePath);
+
+                    if (shaderParent is null) {
+                        Log.Error("[{ShaderPath}]: Failed to find shader parent directory path for compiling shader", shaderPath);
+
+                        return E_FAIL;
+                    }
+
+                    filePath = Path.Combine(shaderParent.FullName, fileName);
+
+                    break;
+                case D3DIncludeType.D3DIncludeSystem:
+                    string shaderRoot = Path.Combine(ShaderPipelines.AssetRootPath, "Shaders");
+                    filePath = Path.Combine(shaderRoot, fileName);
+
+                    break;
+                default:
+                    throw new InvalidDataException($"Unexpected include type: {includeType}");
+            }
+
+            if (!File.Exists(filePath)) {
+                Log.Error("[{ShaderPath}]: Failed to find included file path '{S}'", shaderPath, filePath);
+
+                return E_FAIL;
+            }
+
+            FileStream file = File.Open(filePath, FileMode.Open, FileAccess.Read);
+
+            if (file.Length > 0) {
+                job.IncludeSource = new byte[file.Length];
+
+                file.Read(job.IncludeSource);
+
+                job.IncludeSourceHandle = GCHandle.Alloc(job.IncludeSource, GCHandleType.Pinned);
+
+                *ppData = job.IncludeSourceHandle.AddrOfPinnedObject().ToPointer();
+                *pBytes = (uint) file.Length;
+            } else {
+                *ppData = null;
+                *pBytes = 0;
+            }
+
+            job.IncludedFiles.Add(filePath);
+
+            file.Close();
+
+            return S_OK;
+        } catch (Exception exception) {
+            if (job is not null && job.IncludeSource.Length > 0) {
+                job.IncludeSourceHandle.Free();
+                job.IncludeSource = [];
+            }
+
+            Log.Error("[{ShaderPath}]: {ExceptionMessage}", shaderPath, exception.Message);
+
+            return E_FAIL;
+        }
+    }
+
+    static unsafe int IncludeClose(ID3DInclude* include, void* pData) {
+        if (!_compilingShaders.TryGetValue((IntPtr) include, out ShaderCompilationJob? job)) {
+            Log.Error($"Failed to find shader path for compiling shader");
+
+            return E_FAIL;
+        }
+
+        if (job.IncludeSource.Length > 0) {
+            job.IncludeSourceHandle.Free();
+            job.IncludeSource = [];
+        }
+
+        return S_OK;
     }
 
     protected unsafe void LoadBytecode(DebugGraphicsContext context, string path, string entry, string target) {
-        path = Path.GetFullPath(Path.Combine(ShaderRootPath, path));
+        FilePath = path;
 
         string source = File.ReadAllText(path);
         ID3DInclude* defaultInclude = (ID3DInclude*) 1; // enable simple include behavior
 
-        ID3D10Blob* bytecode = default;
-        ID3D10Blob* compileErrors = default;
+        ID3D10Blob* bytecode = null;
+        ID3D10Blob* compileErrors = null;
+
+        #region pInclude
+        // Ugly hack: C# doesn't support struct inheritance, so need to implement a vtable by hand to pass to pInclude
+        var lpVtable = stackalloc void*[2];
+
+        delegate*<ID3DInclude*, D3DIncludeType, byte*, void*, void**, uint*, int> open = &IncludeOpen;
+        delegate*<ID3DInclude*, void*, int> close = &IncludeClose;
+
+        lpVtable[0] = open;
+        lpVtable[1] = close;
+
+        var include = new ID3DInclude(lpVtable);
+        #endregion
+
+        ID3DInclude* pInclude = &include;
+        ShaderCompilationJob job = new() {
+            ShaderPath = path,
+        };
+
+        if (!_compilingShaders.TryAdd((IntPtr) pInclude, job)) {
+            Log.Error("[{Path}]: Failed to add shader path to ID3DInclude compilation job dictionary", path);
+        }
 
         HResult result = context.Compiler!.Compile(
             pSrcData: Marshal(source),
             SrcDataSize: (nuint) source.Length,
             pSourceName: Marshal(path),
             pDefines: null,
-            pInclude: defaultInclude,
+            pInclude: ref include,
             pEntrypoint: Marshal(entry),
             pTarget: Marshal(target),
             Flags1: 0,
             Flags2: 0,
             ppCode: ref bytecode,
             ppErrorMsgs: ref compileErrors);
+
+
+        if (job.IncludeSource.Length > 0) {
+            job.IncludeSourceHandle.Free();
+            job.IncludeSource = [];
+        }
+
+        if (!_compilingShaders.TryRemove((IntPtr) pInclude, out _)) {
+            Log.Error("[{Path}]: Failed to remove shader path from ID3DInclude compilation job dictionary", path);
+        }
+
+        includedFiles = job.IncludedFiles;
 
         Bytecode = bytecode;
         CompileErrors = compileErrors;
@@ -77,7 +234,7 @@ public class PixelShader : Shader {
         unsafe {
             LoadBytecode(Context, path, entry, "ps_5_0");
 
-            ID3D11PixelShader* shader = default;
+            ID3D11PixelShader* shader = null;
 
             SilkMarshal.ThrowHResult(Context.DxDevice.CreatePixelShader(
                 pShaderBytecode: Bytecode.GetBufferPointer(),
@@ -101,7 +258,7 @@ public class PixelShader : Shader {
 
     public unsafe void Bind() {
         ID3D11ClassInstance* classInstances = null;
-        Context.DxDeviceContext.PSSetShader(Shader, ref classInstances, 0);
+        Context.DxDeviceContext.PSSetShader(Shader, in classInstances, 0);
     }
 }
 
@@ -122,7 +279,7 @@ public class VertexShader : Shader {
         LoadBytecode(Context, path, entry, "vs_5_0");
 
         unsafe {
-            ID3D11VertexShader* shader = default;
+            ID3D11VertexShader* shader = null;
             SilkMarshal.ThrowHResult(Context.DxDevice.CreateVertexShader(
                 pShaderBytecode: Bytecode.GetBufferPointer(),
                 BytecodeLength: Bytecode.GetBufferSize(),
@@ -200,7 +357,7 @@ public class VertexShader : Shader {
         }
 
         fixed (InputElementDesc* inputElements = vertexAttributes) {
-            ID3D11InputLayout* layout = default;
+            ID3D11InputLayout* layout = null;
             SilkMarshal.ThrowHResult(Context.DxDevice.CreateInputLayout(
                 pInputElementDescs: inputElements,
                 NumElements: 9,
@@ -227,7 +384,7 @@ public class VertexShader : Shader {
 
     public unsafe void Bind() {
         ID3D11ClassInstance* classInstances = null;
-        Context.DxDeviceContext.VSSetShader(Shader, ref classInstances, 0);
+        Context.DxDeviceContext.VSSetShader(Shader, in classInstances, 0);
         Context.DxDeviceContext.IASetInputLayout(InputLayout);
     }
 }

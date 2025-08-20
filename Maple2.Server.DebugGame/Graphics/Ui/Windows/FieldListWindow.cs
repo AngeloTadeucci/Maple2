@@ -117,6 +117,7 @@ public class FieldListWindow : IUiWindow {
             ImGui.EndTable();
         }
 
+        ImGuiController.ClampWindowToViewport();
         ImGui.End();
     }
 

@@ -123,6 +123,7 @@ public class WindowListWindow : IUiWindow {
             ImGui.EndTable();
         }
 
+        ImGuiController.ClampWindowToViewport();
         ImGui.End();
     }
 }

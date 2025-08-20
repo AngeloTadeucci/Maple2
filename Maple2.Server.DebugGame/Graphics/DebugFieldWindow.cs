@@ -1,4 +1,8 @@
-﻿using Serilog;
+﻿using System.Numerics;
+using Maple2.Server.DebugGame.Graphics.Data;
+using Maple2.Server.DebugGame.Graphics.Resources;
+using Maple2.Server.DebugGame.Graphics.Scene;
+using Serilog;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
@@ -9,23 +13,32 @@ using Silk.NET.Windowing;
 namespace Maple2.Server.DebugGame.Graphics;
 
 public class DebugFieldWindow {
-    public DebugGraphicsContext Context { get; init; }
+    private DebugGraphicsContext Context { get; }
     public DebugFieldRenderer? ActiveRenderer { get; private set; }
     public IWindow? DebuggerWindow { get; private set; }
-    public IInputContext? Input { get; private set; }
-    public ComPtr<IDXGISwapChain1> DxSwapChain { get; private set; }
-    public ImGuiController? ImGuiController { get; private set; }
-    public int WindowId { get; init; }
-    public string WindowName { get; init; }
+    private IInputContext? Input { get; set; }
+    private ComPtr<IDXGISwapChain1> DxSwapChain { get; set; }
+    private ImGuiController? ImGuiController { get; set; }
+    private int WindowId { get; }
+    public string WindowName { get; }
     public bool IsInitialized { get; private set; }
     public bool IsClosing { get; private set; }
+    public SceneState SceneState { get; init; }
 
-    private static int _windowIdCounter = 0;
+    public ConstantBuffer SceneViewConstantBuffer { get; init; }
+    public ConstantBuffer InstanceConstantBuffer { get; init; }
+
+    private static int _windowIdCounter;
 
     public DebugFieldWindow(DebugGraphicsContext context) {
         Context = context;
         WindowId = _windowIdCounter++;
         WindowName = $"Window {WindowId}";
+
+        SceneState = new SceneState(Context);
+
+        SceneViewConstantBuffer = new ConstantBuffer(Context);
+        InstanceConstantBuffer = new ConstantBuffer(Context);
     }
 
     public void SetActiveRenderer(DebugFieldRenderer? renderer) {
@@ -50,7 +63,7 @@ public class DebugFieldWindow {
         IsInitialized = true;
 
         var windowOptions = WindowOptions.Default;
-        windowOptions.Size = DebugGraphicsContext.DefaultWindowSize;
+        windowOptions.Size = DebugGraphicsContext.DefaultFieldWindowSize;
         windowOptions.Title = $"Maple2 - {WindowName}";
         windowOptions.API = GraphicsAPI.None;
         windowOptions.FramesPerSecond = 60;
@@ -68,6 +81,14 @@ public class DebugFieldWindow {
         DebuggerWindow.Closing += OnClose;
 
         Log.Information("Creating field renderer window");
+
+        SceneViewBuffer sceneViewBuffer = new();
+
+        SceneViewConstantBuffer.Initialize(in sceneViewBuffer);
+
+        InstanceBuffer instanceBuffer = new();
+
+        InstanceConstantBuffer.Initialize(in instanceBuffer);
 
         DebuggerWindow.Initialize();
     }
@@ -97,9 +118,7 @@ public class DebugFieldWindow {
 
     }
 
-    private void OnClose() {
-
-    }
+    private void OnClose() { }
 
     private void OnLoad() {
         Input = DebuggerWindow!.CreateInput();
@@ -135,7 +154,7 @@ public class DebugFieldWindow {
         ImGuiController.Initialize(DebuggerWindow);
     }
 
-    public unsafe void OnUpdate(double delta) {
+    public void OnUpdate(double delta) {
         if (IsClosing) {
             return;
         }
@@ -143,6 +162,10 @@ public class DebugFieldWindow {
         if (ActiveRenderer is not null) {
             ActiveRenderer.Update();
             DebuggerWindow!.Title = $"Maple2 - {WindowName}: {ActiveRenderer.Field.Metadata.Name} [{ActiveRenderer.Field.MapId}] ({ActiveRenderer.Field.RoomId})";
+
+            // Update camera input state and let FreeCameraController handle input
+            UpdateCameraInputState();
+            ActiveRenderer.CameraController.Update((float) delta);
         }
     }
 
@@ -150,6 +173,12 @@ public class DebugFieldWindow {
         if (IsClosing) {
             return;
         }
+
+        if (!(Context.ShaderPipelines?.CanRender ?? false)) {
+            return;
+        }
+
+        Context.ShaderPipelines?.StartedFrame();
 
         DebuggerWindow!.MakeCurrent();
 
@@ -170,14 +199,14 @@ public class DebugFieldWindow {
         #region Render code
         // Begin region for render code
 
-        Context.VertexShader!.Bind();
-        Context.PixelShader!.Bind();
-        Context.SampleTexture!.Bind();
-        Context.CoreModels!.Quad.Draw();
+        // SceneState.BindTexture(Context.SampleTexture!);
 
-        if (ActiveRenderer is not null) {
-            ActiveRenderer.Render(delta);
-        }
+        SceneState.BindConstantBuffer(SceneViewConstantBuffer, 0, Enum.ShaderStageFlags.Vertex);
+        SceneState.BindConstantBuffer(InstanceConstantBuffer, 1, Enum.ShaderStageFlags.Vertex);
+        SceneState.UpdateBindings();
+
+        // Render 3D field
+        ActiveRenderer?.RenderFieldWindow3D(this, delta);
 
         // End region for render code
         #endregion
@@ -186,12 +215,13 @@ public class DebugFieldWindow {
 
         DxSwapChain.Present(1, 0);
 
+        Context.ShaderPipelines?.EndedFrame();
+
         renderTargetView.Dispose();
         framebuffer.Dispose();
-
     }
 
-    private unsafe void OnFramebufferResize(Vector2D<int> newSize) {
+    private void OnFramebufferResize(Vector2D<int> newSize) {
         // there is currently a bug with resizing where the framebuffer positioning doesn't take into account title bar size
         SilkMarshal.ThrowHResult(DxSwapChain.ResizeBuffers(0, (uint) newSize.X, (uint) newSize.Y, Format.FormatB8G8R8A8Unorm, 0));
     }
@@ -200,11 +230,68 @@ public class DebugFieldWindow {
         IsClosing = true;
     }
 
-    private void UnloadField(DebugFieldRenderer renderer) {
+    private void UnloadField(DebugFieldRenderer renderer) { }
 
-    }
+    private void LoadField(DebugFieldRenderer renderer) { }
 
-    private void LoadField(DebugFieldRenderer renderer) {
+    private void UpdateCameraInputState() {
+        if (Input == null) return;
 
+        InputState inputState = ActiveRenderer!.CameraController.InputState;
+        IKeyboard keyboard = Input.Keyboards[0];
+        IMouse mouse = Input.Mice[0];
+
+        // Update InputFocused - camera should be active when window is focused
+        inputState.InputFocused = true;
+
+        // Update keyboard state for specific keys we care about
+        Key[] keysToTrack = [
+            Key.W,
+            Key.A,
+            Key.S,
+            Key.D,
+            Key.Q,
+            Key.E,
+            Key.ShiftLeft,
+            Key.ShiftRight,
+            Key.ControlLeft,
+            Key.ControlRight,
+            Key.Space,
+            Key.Escape,
+            Key.Tab,
+            Key.Enter,
+            Key.Up,
+            Key.Down,
+            Key.Left,
+            Key.Right,
+        ];
+
+        foreach (Key key in keysToTrack) {
+            int keyIndex = (int) key;
+            if (keyIndex >= 0 && keyIndex < inputState.KeyStates.Length) {
+                inputState.KeyStates[keyIndex].LastInput = inputState.KeyStates[keyIndex].IsDown;
+                inputState.KeyStates[keyIndex].IsDown = keyboard.IsKeyPressed(key);
+            }
+        }
+
+        // Update mouse button states
+        inputState.MouseLeft.LastInput = inputState.MouseLeft.IsDown;
+        inputState.MouseLeft.IsDown = mouse.IsButtonPressed(MouseButton.Left);
+
+        inputState.MouseMiddle.LastInput = inputState.MouseMiddle.IsDown;
+        inputState.MouseMiddle.IsDown = mouse.IsButtonPressed(MouseButton.Middle);
+
+        inputState.MouseRight.LastInput = inputState.MouseRight.IsDown;
+        inputState.MouseRight.IsDown = mouse.IsButtonPressed(MouseButton.Right);
+
+        // Update mouse position
+        inputState.MousePosition.LastPosition = inputState.MousePosition.Position;
+        inputState.MousePosition.Position = new Vector3(mouse.Position.X, mouse.Position.Y, 0);
+
+        // Update mouse wheel
+        inputState.MouseWheel.LastPosition = inputState.MouseWheel.Position;
+        if (mouse.ScrollWheels.Count > 0) {
+            inputState.MouseWheel.Position = new Vector3(mouse.ScrollWheels[0].X, mouse.ScrollWheels[0].Y, 0);
+        }
     }
 }

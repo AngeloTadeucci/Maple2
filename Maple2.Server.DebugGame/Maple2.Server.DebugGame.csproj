@@ -1,40 +1,101 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="root_path.txt" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="root_path.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Maple2.ImGui.NET" Version="1.91.0.3"/>
+        <PackageReference Include="Silk.NET" Version="2.21.0"/>
+        <PackageReference Include="Silk.NET.Direct3D.Compilers" Version="2.21.0"/>
+        <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0"/>
+        <PackageReference Include="Silk.NET.DXGI" Version="2.21.0"/>
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Maple2.ImGui.NET" Version="1.91.0.3" />
-    <PackageReference Include="Silk.NET" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.Direct3D.Compilers" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.DXGI" Version="2.21.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Maple2.Database\Maple2.Database.csproj"/>
+        <ProjectReference Include="..\Maple2.Server.Core\Maple2.Server.Core.csproj"/>
+        <ProjectReference Include="..\Maple2.Server.Game\Maple2.Server.Game.csproj"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Maple2.Database\Maple2.Database.csproj" />
-    <ProjectReference Include="..\Maple2.Server.Core\Maple2.Server.Core.csproj" />
-    <ProjectReference Include="..\Maple2.Server.Game\Maple2.Server.Game.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Textures\" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Textures\" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="Shaders\pixelInput.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\screenPixel.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\screenVertex.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\vertexAttributes.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\wireframePixel.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\wireframeVertex.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Textures\sample_derp_wave.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+
+        <Content Include="RenderPipeline\Screen.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="RenderPipeline\DebugScene.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+
+        <Content Include="Shaders\Pipelines\Screen\pixel.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Pipelines\Screen\vertex.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Pipelines\DebugScene\pixel.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Pipelines\DebugScene\vertex.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Common\instance.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Common\pixelInput.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Common\sceneInput.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Common\sceneView.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Common\vertexAttributes.hlsl">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Pipelines\Wireframe\vertex.hlsl">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Shaders\Pipelines\Wireframe\pixel.hlsl">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="RenderPipeline\Wireframe.xml">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+
+
+    </ItemGroup>
 
 </Project>
