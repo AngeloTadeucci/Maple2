@@ -48,11 +48,11 @@ public static class ListExtension {
             return;
         }
 
-        if (comparer.Compare(@this.Last(), item) > 0) {
+        if (comparer.Compare(@this.Last(), item) < 0) { // item greater than last -> cannot be present
             return;
         }
 
-        if (comparer.Compare(@this.First(), item) < 0) {
+        if (comparer.Compare(@this.First(), item) > 0) { // item smaller than first -> cannot be present
             return;
         }
 
@@ -63,4 +63,3 @@ public static class ListExtension {
         }
     }
 }
-
