@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
@@ -80,7 +81,11 @@ public class MasteryManager {
             session.Send(MasteryPacket.UpdateMastery(type, session.Mastery[type]));
             int currentLevel = GetLevel(type);
             if (startLevel < currentLevel || startValue == 0) {
-                session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
+                if (type == MasteryType.Fishing) {
+                    session.ConditionUpdate(ConditionType.fisher_grade, codeLong: currentLevel);
+                } else {
+                    session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
+                }
             }
             if (startLevel > currentLevel) {
                 session.ConditionUpdate(ConditionType.set_mastery_grade, codeLong: (int) type);

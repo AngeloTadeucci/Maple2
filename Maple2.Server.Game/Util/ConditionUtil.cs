@@ -59,6 +59,7 @@ public static class ConditionUtil {
                 break;
             case ConditionType.map:
             case ConditionType.fish:
+            case ConditionType.fisher_grade:
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.item_add:
@@ -265,6 +266,7 @@ public static class ConditionUtil {
             case ConditionType.fish_fail:
             case ConditionType.fish_collect:
             case ConditionType.fish_goldmedal:
+            case ConditionType.fisher_grade:
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.music_play_grade:
