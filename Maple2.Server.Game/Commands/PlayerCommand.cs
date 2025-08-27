@@ -27,18 +27,44 @@ public class PlayerCommand : GameCommand {
 
     private class MasteryCommand : Command {
         public MasteryCommand(GameSession session) : base("mastery", "Set player mastery.") {
-            AddCommand(new MasteryExpCommand(session));
+            AddCommand(new MasteryAddExpCommand(session));
+            AddCommand(new MasterySetExpCommand(session));
             AddCommand(new MasteryLevelCommand(session));
         }
 
-        private class MasteryExpCommand : Command {
+        private class MasteryAddExpCommand : Command {
             private readonly GameSession session;
 
-            public MasteryExpCommand(GameSession session) : base("exp", "Set player mastery experience.") {
+            public MasteryAddExpCommand(GameSession session) : base("addexp", "Add player mastery experience.") {
                 this.session = session;
 
                 var masteryCode = new Argument<MasteryType>("mastery", "MasteryType of the player.");
                 var exp = new Argument<int>("exp", "Experience points to add.");
+
+                AddArgument(masteryCode);
+                AddArgument(exp);
+                this.SetHandler<InvocationContext, MasteryType, int>(Handle, masteryCode, exp);
+            }
+
+            private void Handle(InvocationContext ctx, MasteryType masteryType, int exp) {
+                try {
+                    session.Mastery[masteryType] = session.Mastery[masteryType] + exp;
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+        }
+
+        private class MasterySetExpCommand : Command {
+            private readonly GameSession session;
+
+            public MasterySetExpCommand(GameSession session) : base("setexp", "Set player mastery experience.") {
+                this.session = session;
+
+                var masteryCode = new Argument<MasteryType>("mastery", "MasteryType of the player.");
+                var exp = new Argument<int>("exp", "Experience points to set to.");
 
                 AddArgument(masteryCode);
                 AddArgument(exp);
