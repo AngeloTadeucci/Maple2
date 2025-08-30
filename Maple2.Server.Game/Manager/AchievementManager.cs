@@ -166,6 +166,18 @@ public sealed class AchievementManager {
             return;
         }
 
+        bool hasMoreGrades = achievement.Metadata.Grades.Count > achievement.CurrentGrade;
+        // If an achievement has still more grade then we need to make sure the reward grade
+        // does not exceed the current grade. Else it will not show the correct trophy in
+        // the UI but rather the one past.
+        if (grade.Reward == null && hasMoreGrades) {
+            achievement.RewardGrade = Math.Min(achievement.RewardGrade + 1, achievement.CurrentGrade);
+            return;
+        }
+
+        // If an achievement has no reward and no further grade we need to push the reward grade
+        // past the current grade to mark it as fully completed. Else it will not show the crown
+        // and completion date for the trophy but rather the claim button which is not correct.
         if (grade.Reward == null) {
             achievement.RewardGrade++;
             return;

@@ -110,6 +110,7 @@ public static class ConditionUtil {
             case ConditionType.holdtime:
             case ConditionType.riding:
             case ConditionType.fish_big:
+            case ConditionType.music_play_instrument_mastery:
             case ConditionType.music_play_instrument_time:
             case ConditionType.music_play_ensemble_in:
             case ConditionType.music_play_score:
@@ -271,6 +272,7 @@ public static class ConditionUtil {
             case ConditionType.set_mastery_grade:
             case ConditionType.music_play_grade:
             case ConditionType.music_play_ensemble:
+            case ConditionType.music_play_instrument_mastery:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
             case ConditionType.item_destroy:
