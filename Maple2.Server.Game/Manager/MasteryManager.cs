@@ -9,6 +9,7 @@ using Maple2.Server.Game.Manager.Field;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
+using Serilog;
 
 namespace Maple2.Server.Game.Manager;
 
@@ -80,21 +81,60 @@ public class MasteryManager {
 
             session.Send(MasteryPacket.UpdateMastery(type, session.Mastery[type]));
             int currentLevel = GetLevel(type);
-            if (startLevel < currentLevel || startValue == 0) {
-                if (type == MasteryType.Fishing) {
-                    session.ConditionUpdate(ConditionType.fisher_grade, codeLong: currentLevel);
-                } else {
-                    session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
-                }
-            }
-            if (startLevel > currentLevel) {
-                session.ConditionUpdate(ConditionType.set_mastery_grade, codeLong: (int) type);
-                if (type == MasteryType.Music) {
-                    session.ConditionUpdate(ConditionType.music_play_grade);
-                }
-            }
+            int deltaLevel = currentLevel - startLevel + (startValue == 0 ? 1 : 0);
+            int deltaExp = value - startValue;
+            Log.Logger.Debug("[Mastery] {type} changed from {startValue} to {value} (Level {startLevel} -> {currentLevel}), ΔLevel: {deltaLevel}, ΔExp: {deltaExp}", type, startValue, value, startLevel, currentLevel, deltaLevel, deltaExp);
+
+            HandleMasteryLevelChange(type, currentLevel, deltaLevel);
+            HandleMasteryExpIncrease(type, deltaExp);
         }
 
+    }
+
+    /// <summary>
+    /// Handles the change of mastery level for a specified <see cref="MasteryType"/>.
+    /// Updates the corresponding condition based on the mastery type and level changes.
+    /// </summary>
+    /// <param name="type">The type of mastery whos level has been increased.</param>
+    /// <param name="currentLevel">The new current level of the mastery after the increase.</param>
+    /// <param name="deltaLevel">The delta by which the mastery level has changed.</param>
+    private void HandleMasteryLevelChange(MasteryType type, int currentLevel, int deltaLevel) {
+        if (deltaLevel == 0) {
+            return;
+        }
+
+        if (deltaLevel < 0) {
+            session.ConditionUpdate(ConditionType.set_mastery_grade, codeLong: (int) type);
+            return;
+        }
+
+        switch (type) {
+            case MasteryType.Fishing:
+                session.ConditionUpdate(ConditionType.fisher_grade, codeLong: currentLevel);
+                return;
+            case MasteryType.Music:
+                session.ConditionUpdate(ConditionType.music_play_grade, counter: deltaLevel);
+                return;
+            default:
+                session.ConditionUpdate(ConditionType.mastery_grade, codeLong: (int) type);
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Handles the increase of mastery experience for a specified MasteryType.
+    /// Updates relevant conditions based on the mastery type and the amount of experience gained.
+    /// </summary>
+    /// <param name="type">The type of mastery for which experience is being increased.</param>
+    /// <param name="deltaExp">The amount of experience that has been gained for the mastery.</param>
+    private void HandleMasteryExpIncrease(MasteryType type, int deltaExp) {
+        switch (type) {
+            case MasteryType.Music:
+                session.ConditionUpdate(ConditionType.music_play_instrument_mastery, counter: deltaExp, codeLong: session.Instrument?.Value.Category ?? 0);
+                return;
+            default:
+                return;
+        }
     }
 
     public short GetLevel(MasteryType type) {
