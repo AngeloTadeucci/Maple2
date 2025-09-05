@@ -2,6 +2,7 @@
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Game.Util;
 
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 
@@ -63,6 +64,27 @@ public class SkillState {
 
         if (attack.CubeMagicPathId != 0) {
 
+        }
+
+        // Apply damage to targets server-side for NPC attacks.
+        var resolvedTargets = new List<IActor>(attackTargets);
+        if (resolvedTargets.Count == 0) {
+            // Fallback: query targets from attack range.
+            Maple2.Tools.Collision.Prism prism = attack.Range.GetPrism(actor.Position, actor.Rotation.Z);
+            foreach (IActor target in actor.Field.GetTargets(actor, new[] { prism }, attack.Range.ApplyTarget, attack.TargetCount)) {
+                resolvedTargets.Add(target);
+            }
+        }
+
+        if (resolvedTargets.Count > 0) {
+            int limit = attack.TargetCount > 0 ? attack.TargetCount : 1;
+            for (int i = 0; i < resolvedTargets.Count && i < limit; i++) {
+                IActor target = resolvedTargets[i];
+                cast.Targets.TryAdd(target.ObjectId, target);
+            }
+
+            // Reuse existing pipeline to calculate and broadcast damage/effects.
+            actor.TargetAttack(cast);
         }
     }
 }
