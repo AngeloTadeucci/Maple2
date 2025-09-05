@@ -12,7 +12,7 @@ public static class DotEnv {
         }
 
         foreach (string line in File.ReadAllLines(dotenv)) {
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) {
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#")) {
                 continue;
             }
 
@@ -24,8 +24,15 @@ public static class DotEnv {
 
             string key = line[..index].Trim();
             string value = line[(index + 1)..].Trim();
+            if ((value.StartsWith("\"") && value.EndsWith("\"")) || (value.StartsWith("'") && value.EndsWith("'"))) {
+                value = value.Substring(1, value.Length - 2);
+            }
 
-            Environment.SetEnvironmentVariable(key, value);
+            // Do not override values that are already set by the host/container
+            string? existing = Environment.GetEnvironmentVariable(key);
+            if (string.IsNullOrEmpty(existing)) {
+                Environment.SetEnvironmentVariable(key, value);
+            }
         }
     }
 }
