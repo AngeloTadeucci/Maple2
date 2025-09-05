@@ -28,7 +28,8 @@ public partial class WorldService {
                     Token = token,
                 });
             case Server.Game:
-                if (channelClients.Count == 0) {
+                // If no non-instanced channels are active, allow an instanced channel as a fallback
+                if (channelClients.Count == 0 && !channelClients.TryGetInstancedChannelId(out _)) {
                     throw new RpcException(new Status(StatusCode.Unavailable, $"No available game channels"));
                 }
 
@@ -40,10 +41,12 @@ public partial class WorldService {
                 } else if (request.HasChannel && channelClients.TryGetActiveEndpoint(request.Channel, out _)) {
                     channel = request.Channel;
                 } else {
-                    // Fall back to first available channel
+                    // Fall back to first available non-instanced channel, then instanced if none
                     channel = channelClients.FirstChannel();
                     if (channel == -1) {
-                        throw new RpcException(new Status(StatusCode.Unavailable, "No available game channels"));
+                        if (!channelClients.TryGetInstancedChannelId(out channel)) {
+                            throw new RpcException(new Status(StatusCode.Unavailable, "No available game channels"));
+                        }
                     }
                 }
 
