@@ -66,10 +66,10 @@ public class SkillState {
 
         }
 
-        // Apply damage to targets server-side for NPC attacks.
+        // Apply damage to targets server-side for NPC attacks
         var resolvedTargets = new List<IActor>(attackTargets);
         if (resolvedTargets.Count == 0) {
-            // Fallback: query targets from attack range.
+            // Fallback: query targets from attack range
             Maple2.Tools.Collision.Prism prism = attack.Range.GetPrism(actor.Position, actor.Rotation.Z);
             foreach (IActor target in actor.Field.GetTargets(actor, new[] { prism }, attack.Range.ApplyTarget, attack.TargetCount)) {
                 resolvedTargets.Add(target);
@@ -83,7 +83,7 @@ public class SkillState {
                 cast.Targets.TryAdd(target.ObjectId, target);
             }
 
-            // Reuse existing pipeline to calculate and broadcast damage/effects.
+            // Reuse existing pipeline to calculate and broadcast damage/effects
             actor.TargetAttack(cast);
         }
     }
