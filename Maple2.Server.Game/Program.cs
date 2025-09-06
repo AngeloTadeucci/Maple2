@@ -11,6 +11,7 @@ using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Modules;
 using Maple2.Server.Core.Network;
 using Maple2.Server.Core.PacketHandlers;
+using Maple2.Server.Core.Config;
 using Maple2.Server.Game;
 using Maple2.Server.Game.Commands;
 using Maple2.Server.Game.DebugGraphics;
@@ -37,6 +38,9 @@ CultureInfo.CurrentCulture = new("en-US");
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 DotEnv.Load();
+
+// Load YAML server configuration once
+ConfigProvider.Initialize();
 
 IConfigurationRoot configRoot = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())

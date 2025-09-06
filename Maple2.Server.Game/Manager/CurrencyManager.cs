@@ -2,6 +2,8 @@
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
+using Maple2.Server.Core.Constants;
+using Maple2.Server.Core.Config;
 using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Manager;
@@ -52,10 +54,31 @@ public class CurrencyManager {
             if (value < 0) {
                 throw new ArgumentException("Not enough Mesos");
             }
-
-            Currency.Meso = Math.Min(value, Constant.MaxMeso);
+            long current = Currency.Meso;
+            long desired = Math.Min(value, Constant.MaxMeso);
+            long delta = desired - current;
+            if (delta != 0) {
+                float rate = delta > 0
+                    ? ConfigProvider.Settings.Rates.Meso.Gain
+                    : ConfigProvider.Settings.Rates.Meso.Cost;
+                long scaledDelta = ScaleDelta(delta, rate);
+                long newValue = Math.Min(Math.Max(current + scaledDelta, 0), Constant.MaxMeso);
+                Currency.Meso = newValue;
+            } else {
+                Currency.Meso = desired;
+            }
             session.Send(CurrencyPacket.UpdateMeso(Currency));
         }
+    }
+
+    private static long ScaleDelta(long delta, float rate) {
+        if (delta == 0) return 0;
+        double scaled = Math.Round(delta * rate);
+        if (delta > 0 && scaled <= 0) return 0;
+        if (delta < 0 && scaled >= 0) return 0;
+        if (scaled > long.MaxValue) return long.MaxValue;
+        if (scaled < long.MinValue) return long.MinValue;
+        return (long) scaled;
     }
 
     public long CanAddMeso(long amount) {

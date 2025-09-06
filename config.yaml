@@ -1,0 +1,32 @@
+# YAML configuration for Maple2 server. All values are optional; defaults are shown.
+
+rates:
+  exp:
+    global: 10.0
+    kill: 1.0
+    quest: 1.0
+    dungeon: 1.0
+    prestige: 1.0
+    mastery: 1.0  # fishing/gathering/etc.
+  meso:
+    gain: 10.0
+    cost: 1.0
+
+economy:
+  repair_cost_rate: 1.0
+  enchant_cost_rate: 1.0
+  travel_fee_rate: 1.0
+  market_tax_rate: 1.0  # multiplier on Constant.MesoMarketTaxRate
+
+loot:
+  global_drop_rate: 1.0
+  boss_drop_rate: 1.0
+  rare_drop_rate: 1.0
+  mesos_drop_rate: 1.0
+
+difficulty:
+  damage_dealt_rate: 1.0
+  damage_taken_rate: 1.0
+  enemy_hp_scale: 1.0
+  enemy_level_offset: 0
+
