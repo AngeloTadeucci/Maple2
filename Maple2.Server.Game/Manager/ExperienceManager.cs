@@ -98,13 +98,12 @@ public sealed class ExperienceManager {
         return addedRestExp;
     }
 
+    // Treats the provided amount as already scaled (final) EXP.
     public long AddExp(long expGained, ExpMessageCode message = ExpMessageCode.s_msg_take_exp) {
         if (expGained <= 0) {
             return 0;
         }
-        float mult = ConfigProvider.Settings.Rates.Exp.Global;
-        long scaled = ScaleExp(expGained, mult);
-        return AddScaledExp(scaled, message);
+        return AddScaledExp(expGained, message);
     }
 
     public long AddExp(ExpType expType, float modifier = 1f, long additionalExp = 0) {
@@ -153,11 +152,19 @@ public sealed class ExperienceManager {
         return AddScaledExp(scaled + additionalExp, expType.Message());
     }
 
+    // Applies the appropriate multiplier for the given ExpType to a provided base amount (unscaled).
+    public long AddBaseExp(long baseAmount, ExpType expType, ExpMessageCode? message = null) {
+        if (baseAmount <= 0) return 0;
+        float mult = ConfigProvider.Settings.ExpMultiplier(expType);
+        long scaled = ScaleExp(baseAmount, mult);
+        return AddScaledExp(scaled, message ?? expType.Message());
+    }
+
     public void AddStaticExp(long amount) {
         if (amount <= 0) {
             return;
         }
-        float mult = ConfigProvider.Settings.Rates.Exp.Global;
+        float mult = ConfigProvider.Settings.ExpMultiplier(ExpType.none);
         long scaled = ScaleExp(amount, mult);
         Exp += scaled;
         session.Send(ExperienceUpPacket.Add(scaled, Exp, RestExp, ExpMessageCode.s_msg_take_exp));
@@ -190,8 +197,8 @@ public sealed class ExperienceManager {
             return;
         }
 
-
-        AddExp((long) (expValue * modifier) + additionalExp, ExpType.monster.Message());
+        long baseExp = (long) (expValue * modifier) + additionalExp;
+        AddBaseExp(baseExp, ExpType.monster);
     }
 
     public bool LevelUp() {

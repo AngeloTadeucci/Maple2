@@ -408,7 +408,7 @@ public class DungeonManager {
             }
             UserRecord.Rewards[DungeonRewardType.Exp] = exp;
             UserRecord.Rewards[DungeonRewardType.Meso] = (int) rewardMetadata.Meso;
-            session.Exp.AddExp(UserRecord.Rewards[DungeonRewardType.Exp]);
+            session.Exp.AddBaseExp(UserRecord.Rewards[DungeonRewardType.Exp], ExpType.dungeonClear);
             session.Currency.Meso += UserRecord.Rewards[DungeonRewardType.Meso];
             session.Send(DungeonRoomPacket.Modify(DungeonRoomModify.GiveReward, Lobby.DungeonId));
 

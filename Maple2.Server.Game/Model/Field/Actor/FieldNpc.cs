@@ -428,7 +428,7 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        player.Session.Exp.AddExp(Value.Metadata.Basic.CustomExp);
+        player.Session.Exp.AddBaseExp(Value.Metadata.Basic.CustomExp, ExpType.monster);
     }
 
     public void SendDebugAiInfo(GameSession requester) {

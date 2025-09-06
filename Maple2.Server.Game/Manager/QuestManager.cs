@@ -357,7 +357,7 @@ public sealed class QuestManager {
         }
 
         if (reward.Exp > 0) {
-            session.Exp.AddExp(reward.Exp);
+            session.Exp.AddBaseExp(reward.Exp, ExpType.quest);
         }
 
         if (reward.Meso > 0) {
