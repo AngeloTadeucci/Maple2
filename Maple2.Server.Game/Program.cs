@@ -37,7 +37,9 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 CultureInfo.CurrentCulture = new("en-US");
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-DotEnv.Load();
+if (!string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)) {
+    DotEnv.Load();
+}
 
 // Load YAML server configuration once
 ConfigProvider.Initialize();

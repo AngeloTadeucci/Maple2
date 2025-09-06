@@ -44,7 +44,7 @@ public sealed class ServerSettings {
     public sealed class DifficultySection {
         public float DamageDealtRate { get; init; } = 1.0f;
         public float DamageTakenRate { get; init; } = 1.0f;
-        public float EnemyHPScale { get; init; } = 1.0f;
+        public float EnemyHpScale { get; init; } = 1.0f;
         public int EnemyLevelOffset { get; init; } = 0;
     }
 }
@@ -61,4 +61,3 @@ public static class ServerSettingsExtensions {
         };
     }
 }
-

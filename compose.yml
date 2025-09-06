@@ -73,6 +73,8 @@ services:
     environment:
       DB_IP: mysql
       GRPC_LOGIN_IP: login
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     restart: unless-stopped
     healthcheck:
       # simple TCP check on gRPC port (HTTP/2 only)
@@ -104,6 +106,8 @@ services:
     environment:
       DB_IP: mysql
       GRPC_WORLD_IP: world
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/21000' || exit 1"]
@@ -133,6 +137,8 @@ services:
       INSTANCED_CONTENT: true
       GRPC_WORLD_IP: world
       GRPC_GAME_IP: game-ch0
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     restart: unless-stopped
     healthcheck:
       # gRPC channel port for ch0 is 21002
@@ -162,6 +168,8 @@ services:
       DB_IP: mysql
       GRPC_WORLD_IP: world
       GRPC_GAME_IP: game-ch1
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     restart: unless-stopped
     healthcheck:
       # gRPC channel port for ch1 is 21003

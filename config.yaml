@@ -3,7 +3,7 @@
 rates:
   exp:
     global: 10.0
-    kill: 1.0
+    kill: 10.0
     quest: 1.0
     dungeon: 1.0
     prestige: 1.0
