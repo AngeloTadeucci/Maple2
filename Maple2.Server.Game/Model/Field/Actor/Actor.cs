@@ -94,6 +94,9 @@ public abstract class Actor<T> : IActor<T>, IDisposable {
     }
 
     public virtual void ApplyDamage(IActor caster, DamageRecord damage, SkillMetadataAttack attack) {
+        if (IsDead) {
+            return;
+        }
         var targetRecord = new DamageRecordTarget(this) {
             Position = caster.Position,
             Direction = caster.Rotation, // Idk why this is wrong

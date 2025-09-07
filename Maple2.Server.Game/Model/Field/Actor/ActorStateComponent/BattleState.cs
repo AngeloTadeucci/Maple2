@@ -99,6 +99,9 @@ public class BattleState {
     }
 
     public bool ShouldTargetActor(IActor target, float radiusSquared, float heightUp, float heightDown, ref float currentBestMatch, List<(float, IActor)>? targetCandidates) {
+        if (target.IsDead) {
+            return false;
+        }
         Vector3 position = actor.Position;
 
         if (TargetNode is not null && TargetType == NodeTargetType.Near) {
@@ -206,6 +209,10 @@ public class BattleState {
 
 
         if (target is null) {
+            return false;
+        }
+
+        if (target.IsDead) {
             return false;
         }
 
