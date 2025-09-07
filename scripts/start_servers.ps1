@@ -23,7 +23,7 @@ function Wait-Healthy {
   param(
     [Parameter(Mandatory=$true)][string]$Service,
     [int]$TimeoutSec = 300,
-    [switch]$Soft # Do not error on timeout/exited; just warn
+    [switch]$Soft
   )
   Write-Host "Waiting for $Service to be healthy (timeout ${TimeoutSec}s)..."
   $start = Get-Date
@@ -38,7 +38,6 @@ function Wait-Healthy {
       Write-Host "OK: $Service is healthy"
       return $true
     } elseif ($status -match '^(running|starting|created)$') {
-      # still waiting
     } elseif ($status -match 'exited') {
       Write-Warning "$Service exited unexpectedly. Showing last logs:"
       try { Compose logs --no-color --tail=200 $Service } catch { }
@@ -75,7 +74,6 @@ if (-not $gameIp) {
   Write-Warning "GAME_IP is set to $gameIp. External clients will fail. Set GAME_IP to your host/LAN IP in .env."
 }
 
-# Set defaults if not provided
 if (-not $PSBoundParameters.ContainsKey('NonInstancedChannels') -or -not $NonInstancedChannels) {
   $NonInstancedChannels = @(1)
 }

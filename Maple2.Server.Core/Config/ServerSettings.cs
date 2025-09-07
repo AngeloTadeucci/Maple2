@@ -10,7 +10,6 @@ public sealed class ServerSettings {
 
     public sealed class RatesSection {
         public ExpRates Exp { get; init; } = new();
-        public MesoRates Meso { get; init; } = new();
 
         public sealed class ExpRates {
             public float Global { get; init; } = 1.0f;
@@ -18,12 +17,7 @@ public sealed class ServerSettings {
             public float Quest { get; init; } = 1.0f;
             public float Dungeon { get; init; } = 1.0f;
             public float Prestige { get; init; } = 1.0f;
-            public float Mastery { get; init; } = 1.0f; // fishing/gathering/etc.
-        }
-
-        public sealed class MesoRates {
-            public float Gain { get; init; } = 1.0f;
-            public float Cost { get; init; } = 1.0f;
+            public float Mastery { get; init; } = 1.0f;
         }
     }
 
@@ -31,7 +25,7 @@ public sealed class ServerSettings {
         public float RepairCostRate { get; init; } = 1.0f;
         public float EnchantCostRate { get; init; } = 1.0f;
         public float TravelFeeRate { get; init; } = 1.0f;
-        public float MarketTaxRate { get; init; } = 1.0f; // multiplier on Constant.MesoMarketTaxRate
+        public float MarketTaxRate { get; init; } = 1.0f;
     }
 
     public sealed class LootSection {

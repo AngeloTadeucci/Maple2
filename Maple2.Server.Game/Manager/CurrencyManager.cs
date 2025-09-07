@@ -54,32 +54,13 @@ public class CurrencyManager {
             if (value < 0) {
                 throw new ArgumentException("Not enough Mesos");
             }
-            long current = Currency.Meso;
             long desired = Math.Min(value, Constant.MaxMeso);
-            long delta = desired - current;
-            if (delta != 0) {
-                float rate = delta > 0
-                    ? ConfigProvider.Settings.Rates.Meso.Gain
-                    : ConfigProvider.Settings.Rates.Meso.Cost;
-                long scaledDelta = ScaleDelta(delta, rate);
-                long newValue = Math.Min(Math.Max(current + scaledDelta, 0), Constant.MaxMeso);
-                Currency.Meso = newValue;
-            } else {
-                Currency.Meso = desired;
-            }
+            Currency.Meso = desired;
             session.Send(CurrencyPacket.UpdateMeso(Currency));
         }
     }
 
-    private static long ScaleDelta(long delta, float rate) {
-        if (delta == 0) return 0;
-        double scaled = Math.Round(delta * rate);
-        if (delta > 0 && scaled <= 0) return 0;
-        if (delta < 0 && scaled >= 0) return 0;
-        if (scaled > long.MaxValue) return long.MaxValue;
-        if (scaled < long.MinValue) return long.MinValue;
-        return (long) scaled;
-    }
+    // Removed meso gain/cost scaling. Meso adjustments are applied directly.
 
     public long CanAddMeso(long amount) {
         return amount >= 0

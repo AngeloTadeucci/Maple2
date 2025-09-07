@@ -152,7 +152,7 @@ public sealed class ExperienceManager {
         return AddScaledExp(scaled + additionalExp, expType.Message());
     }
 
-    // Applies the appropriate multiplier for the given ExpType to a provided base amount (unscaled).
+    // Applies the appropriate multiplier for the given ExpType to a provided base amount (unscaled)
     public long AddBaseExp(long baseAmount, ExpType expType, ExpMessageCode? message = null) {
         if (baseAmount <= 0) return 0;
         float mult = ConfigProvider.Settings.ExpMultiplier(expType);

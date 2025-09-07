@@ -22,29 +22,29 @@ public static class ConfigProvider {
     }
 
     private static string ResolvePath(string? path) {
-        // 1) Explicit path argument
+        // Explicit path argument
         if (!string.IsNullOrWhiteSpace(path)) {
             string full = Path.GetFullPath(path);
             if (File.Exists(full)) return full;
         }
 
-        // 2) Environment variable
+        // Environment variable
         string? env = Environment.GetEnvironmentVariable("CONFIG_PATH");
         if (!string.IsNullOrWhiteSpace(env)) {
             string full = Path.GetFullPath(env);
             if (File.Exists(full)) return full;
         }
 
-        // 3) Current working directory
+        // Current working directory
         string cwdPath = Path.GetFullPath("config.yaml");
         if (File.Exists(cwdPath)) return cwdPath;
 
-        // 4) Assembly base directory
+        // Assembly base directory
         string baseDir = AppContext.BaseDirectory;
         string baseDirPath = Path.Combine(baseDir, "config.yaml");
         if (File.Exists(baseDirPath)) return baseDirPath;
 
-        // 5) Walk up from base directory a few levels to catch repo-root configs
+        // Walk up from base directory a few levels to catch repo-root configs
         string? cur = baseDir;
         for (int i = 0; i < 6 && !string.IsNullOrEmpty(cur); i++) {
             string candidate = Path.Combine(cur, "config.yaml");
@@ -52,14 +52,12 @@ public static class ConfigProvider {
             cur = Path.GetDirectoryName(cur);
         }
 
-        // 6) As a last resort, return resolved path in CWD (may not exist)
         return cwdPath;
     }
 
     private static void Load() {
         try {
             if (!File.Exists(configPath)) {
-                // No file: keep defaults
                 Console.WriteLine($"Config: not found at {configPath}; using defaults.");
                 return;
             }
@@ -80,7 +78,6 @@ public static class ConfigProvider {
     }
 
     private static ServerSettings MergeWithDefaults(ServerSettings incoming) {
-        // This relies on init defaults in POCOs
         return incoming;
     }
 

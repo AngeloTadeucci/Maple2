@@ -146,13 +146,13 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                 return ((ushort)newGamePort, newGrpcChannelPort, channelId);
             }
 
-            // If instanced content, id=0 is unique; no alternative available.
+            // If instanced content, id=0 is unique; no alternative available
             if (instancedContent) {
                 logger.Error("Failed to add instanced channel (ID 0) due to conflict.");
                 return (0, 0, -1);
             }
 
-            // Try next available ID to avoid races when multiple game channels start concurrently.
+            // Try next available ID to avoid races when multiple game channels start concurrently
             candidate++;
             if (attempts > 100) {
                 logger.Error("Failed to allocate a channel after {Attempts} attempts", attempts);

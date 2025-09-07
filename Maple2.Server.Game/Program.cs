@@ -71,7 +71,7 @@ while (true) {
         if (response != null && response.GamePort != 0 && response.GrpcPort != 0) {
             break; // Success with valid ports
         }
-        // Received an invalid allocation (likely due to a race). Retry.
+        
         attempt++;
         int baseDelayMs = (int)Math.Min(30000, 1000 * Math.Pow(2, Math.Min(attempt, 6)));
         int jitterMs = Random.Shared.Next(250, 1000);
