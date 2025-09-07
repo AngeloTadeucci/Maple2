@@ -4,6 +4,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Manager.Field;
+using Maple2.Server.Core.Config;
 using Maple2.Server.Game.Session;
 using Maple2.Tools;
 
@@ -51,6 +52,7 @@ public class ItemDropManager {
                 }
 
                 int amount = itemsAmount.Get().Amount;
+                amount = Math.Max(0, (int) Math.Round(amount * ConfigProvider.Settings.Loot.GlobalDropRate));
                 if (amount == 0) {
                     continue;
                 }
@@ -154,6 +156,7 @@ public class ItemDropManager {
             }
 
             int amount = itemsAmount.Get().Count;
+            amount = Math.Max(0, (int) Math.Round(amount * ConfigProvider.Settings.Loot.GlobalDropRate));
             if (amount == 0) {
                 continue;
             }
@@ -302,6 +305,15 @@ public class ItemDropManager {
             } else {
                 rarity = 1;
             }
+        }
+
+        // Scale meso pouch amounts by loot.mesos_drop_rate before item is created.
+        if (itemId is >= 90000001 and <= 90000003 && amount > 0) {
+            int scaled = (int) Math.Round(amount * ConfigProvider.Settings.Loot.MesosDropRate);
+            if (scaled <= 0) {
+                return null;
+            }
+            amount = scaled;
         }
 
         var item = new Item(itemMetadata, rarity, amount);
