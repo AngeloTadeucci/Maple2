@@ -1,6 +1,5 @@
 #!/usr/bin/env pwsh
 
-# Parameters must be declared at the top of the script
 param([string[]]$Service)
 
 Set-StrictMode -Version Latest
