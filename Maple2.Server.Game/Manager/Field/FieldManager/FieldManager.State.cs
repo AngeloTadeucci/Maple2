@@ -130,6 +130,12 @@ public partial class FieldManager {
 
     public FieldPet? SpawnPet(Item pet, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, FieldPlayer? player = null) {
         if (!NpcMetadata.TryGet(pet.Metadata.Property.PetId, out NpcMetadata? npc)) {
+            logger.Error("Failed to get npc metadata for pet id {PetId}", pet.Metadata.Property.PetId);
+            return null;
+        }
+
+        if (!ItemMetadata.TryGetPet(pet.Metadata.Property.PetId, out PetMetadata? petMetadata)) {
+            logger.Error("Failed to get pet metadata for pet id {PetId}", pet.Metadata.Property.PetId);
             return null;
         }
 
@@ -138,10 +144,7 @@ public partial class FieldManager {
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
-        if (!ItemMetadata.TryGetPet(pet.Metadata.Property.PetId, out PetMetadata? petMetadata)) {
-            logger.Error("Failed to get pet metadata for pet id {PetId}", pet.Metadata.Property.PetId);
-            return null;
-        }
+
         var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, petMetadata, Constant.PetFieldAiPath, player) {
             Owner = owner,
             Position = position,
