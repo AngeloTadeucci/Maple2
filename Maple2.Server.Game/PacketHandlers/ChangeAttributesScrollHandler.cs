@@ -136,9 +136,16 @@ public class ChangeAttributesScrollHandler : FieldPacketHandler {
                 // Fixed attributes.
                 if (lockItem != null) {
                     // Restore locked attribute values.
-                    if (!ItemStatsCalc.UpdateFixedOption(ref changeItem, new LockOption((SpecialAttribute) attribute, true))) {
-                        session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
-                        return;
+                    if (isSpecialAttribute) {
+                        if (!ItemStatsCalc.UpdateFixedOption(ref changeItem, new LockOption((SpecialAttribute) attribute, true))) {
+                            session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
+                            return;
+                        }
+                    } else {
+                        if (!ItemStatsCalc.UpdateFixedOption(ref changeItem, new LockOption((BasicAttribute) attribute, true))) {
+                            session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
+                            return;
+                        }
                     }
                 } else {
                     if (!ItemStatsCalc.UpdateFixedOption(ref changeItem)) {
@@ -146,6 +153,7 @@ public class ChangeAttributesScrollHandler : FieldPacketHandler {
                         return;
                     }
                 }
+
             }
 
             // Try to consume both items.

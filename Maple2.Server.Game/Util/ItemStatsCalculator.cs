@@ -184,7 +184,7 @@ public sealed class ItemStatsCalculator {
         return true;
     }
 
-    public bool UpdateFixedOption(ref Item item, params LockOption[] presets){
+    public bool UpdateFixedOption(ref Item item, params LockOption[] presets) {
         if (item.Metadata.Option == null || item.Stats == null) {
             return false;
         }
@@ -198,7 +198,9 @@ public sealed class ItemStatsCalculator {
         if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
             return false;
         }
-        ItemStats.Option fixedOption = new ItemStats.Option(option.Basic, option.Special, multiplyFactor: itemOption.MultiplyFactor);
+        var statResult = new Dictionary<BasicAttribute, BasicOption>(option.Basic);
+        var specialResult = new Dictionary<SpecialAttribute, SpecialOption>(option.Special);
+        var fixedOption = new ItemStats.Option(statResult, specialResult, multiplyFactor: itemOption.MultiplyFactor);
 
         if (!RandomizeValues(item, itemOption, ref fixedOption)) {
             return false;
@@ -208,10 +210,12 @@ public sealed class ItemStatsCalculator {
         foreach (LockOption lockOption in presets) {
             if (lockOption.TryGet(out BasicAttribute basic, out bool lockBasicValue)) {
                 if (lockBasicValue) {
+                    Debug.Assert(option.Basic.ContainsKey(basic), "Missing basic attribute after using lock.");
                     fixedOption.Basic[basic] = option.Basic[basic];
                 }
             } else if (lockOption.TryGet(out SpecialAttribute special, out bool lockSpecialValue)) {
                 if (lockSpecialValue) {
+                    Debug.Assert(option.Special.ContainsKey(special), "Missing special attribute after using lock.");
                     fixedOption.Special[special] = option.Special[special];
                 }
             }
