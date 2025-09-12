@@ -184,6 +184,48 @@ public sealed class ItemStatsCalculator {
         return true;
     }
 
+    public bool UpdateFixedOption(ref Item item, params LockOption[] presets) {
+        if (item.Metadata.Option == null || item.Stats == null) {
+            return false;
+        }
+
+        ItemStats.Option option = item.Stats[ItemStats.Type.Random];
+        if (option.Count == 0) {
+            return false;
+        }
+
+        // Get fixed options (with right MultiplyFactor)
+        if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(item.Metadata.Option.RandomId, item.Rarity, out ItemOption? itemOption)) {
+            return false;
+        }
+        var statResult = new Dictionary<BasicAttribute, BasicOption>(option.Basic);
+        var specialResult = new Dictionary<SpecialAttribute, SpecialOption>(option.Special);
+        var fixedOption = new ItemStats.Option(statResult, specialResult, multiplyFactor: itemOption.MultiplyFactor);
+
+        if (!RandomizeValues(item, itemOption, ref fixedOption)) {
+            return false;
+        }
+
+        // Restore locked values.
+        foreach (LockOption lockOption in presets) {
+            if (lockOption.TryGet(out BasicAttribute basic, out bool lockBasicValue)) {
+                if (lockBasicValue) {
+                    Debug.Assert(option.Basic.ContainsKey(basic), "Missing basic attribute after using lock.");
+                    fixedOption.Basic[basic] = option.Basic[basic];
+                }
+            } else if (lockOption.TryGet(out SpecialAttribute special, out bool lockSpecialValue)) {
+                if (lockSpecialValue) {
+                    Debug.Assert(option.Special.ContainsKey(special), "Missing special attribute after using lock.");
+                    fixedOption.Special[special] = option.Special[special];
+                }
+            }
+        }
+
+        // Update item with result.
+        item.Stats[ItemStats.Type.Random] = fixedOption;
+        return true;
+    }
+
     /// <param name="item">Item</param>
     /// <param name="itemOptionMetadata">Item's Random Option Metadata</param>
     /// <param name="option"></param>
