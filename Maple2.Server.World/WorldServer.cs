@@ -2,11 +2,13 @@
 using Grpc.Core;
 using Maple2.Database.Extensions;
 using Maple2.Database.Storage;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Game.Event;
 using Maple2.Model.Metadata;
 using Maple2.Server.Channel.Service;
 using Maple2.Server.World.Containers;
+using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using Serilog;
 using ChannelClient = Maple2.Server.Channel.Service.Channel.ChannelClient;
@@ -19,6 +21,7 @@ public class WorldServer {
     private readonly GameStorage gameStorage;
     private readonly ChannelClientLookup channelClients;
     private readonly ServerTableMetadataStorage serverTableMetadata;
+    private readonly ItemMetadataStorage itemMetadata;
     private readonly GlobalPortalLookup globalPortalLookup;
     private readonly PlayerInfoLookup playerInfoLookup;
     private readonly Thread thread;
@@ -32,32 +35,32 @@ public class WorldServer {
 
     private readonly LoginClient login;
 
-    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup, PlayerInfoLookup playerInfoLookup, LoginClient login) {
+    public WorldServer(GameStorage gameStorage, ChannelClientLookup channelClients, ServerTableMetadataStorage serverTableMetadata, GlobalPortalLookup globalPortalLookup, PlayerInfoLookup playerInfoLookup, LoginClient login, ItemMetadataStorage itemMetadata) {
         this.gameStorage = gameStorage;
         this.channelClients = channelClients;
         this.serverTableMetadata = serverTableMetadata;
         this.globalPortalLookup = globalPortalLookup;
         this.playerInfoLookup = playerInfoLookup;
         this.login = login;
+        this.itemMetadata = itemMetadata;
         scheduler = new EventQueue();
         scheduler.Start();
         memoryStringBoards = [];
 
-        SetAllCharacterToOffline();
+        // World initialization: set all characters offline and cleanup unowned items
+        using GameStorage.Request db = gameStorage.Context();
+        db.SetAllCharacterToOffline();
+        db.DeleteUnownedItems();
 
         StartDailyReset();
         StartWorldEvents();
         ScheduleGameEvents();
+        FieldPlotExpiryCheck();
         thread = new Thread(Loop);
         thread.Start();
 
         heartbeatThread = new Thread(Heartbeat);
         heartbeatThread.Start();
-    }
-
-    private void SetAllCharacterToOffline() {
-        using GameStorage.Request db = gameStorage.Context();
-        db.SetAllCharacterToOffline();
     }
 
     private void Heartbeat() {
@@ -68,21 +71,24 @@ public class WorldServer {
                 login.Heartbeat(new HeartbeatRequest(), cancellationToken: tokenSource.Token);
 
                 foreach (PlayerInfo playerInfo in playerInfoLookup.GetOnlinePlayerInfos()) {
-                    if (playerInfo.CharacterId == 0) continue;
-                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) continue;
+                    if (playerInfo.CharacterId == 0) {
+                        logger.Information("Player {CharacterId} is online without a character id, setting to offline", playerInfo.CharacterId);
+                        playerInfo.Channel = -1;
+                        continue;
+                    }
+                    if (!channelClients.TryGetClient(playerInfo.Channel, out ChannelClient? channel)) {
+                        // Player is online and without a channel, set them to offline.
+                        logger.Information("Player {CharacterId} is online without a channel, setting to offline", playerInfo.CharacterId);
+                        SetOffline(playerInfo);
+                        continue;
+                    }
 
                     try {
                         HeartbeatResponse? response = channel.Heartbeat(new HeartbeatRequest {
                             CharacterId = playerInfo.CharacterId,
                         }, cancellationToken: tokenSource.Token);
                         if (response is { Success: false }) {
-                            playerInfoLookup.Update(new PlayerUpdateRequest {
-                                AccountId = playerInfo.AccountId,
-                                CharacterId = playerInfo.CharacterId,
-                                LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                                Channel = -1,
-                                Async = true,
-                            });
+                            SetOffline(playerInfo);
                             continue;
                         }
                         playerInfo.RetryHeartbeat = 3;
@@ -91,13 +97,7 @@ public class WorldServer {
                             playerInfo.RetryHeartbeat--;
                             continue;
                         }
-                        playerInfoLookup.Update(new PlayerUpdateRequest {
-                            AccountId = playerInfo.AccountId,
-                            CharacterId = playerInfo.CharacterId,
-                            LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
-                            Channel = -1,
-                            Async = true,
-                        });
+                        SetOffline(playerInfo);
                     }
 
                 }
@@ -107,6 +107,16 @@ public class WorldServer {
                 logger.Warning(ex, "Heartbeat loop error");
             }
         }
+    }
+
+    public void SetOffline(PlayerInfo playerInfo) {
+        playerInfoLookup.Update(new PlayerUpdateRequest {
+            AccountId = playerInfo.AccountId,
+            CharacterId = playerInfo.CharacterId,
+            LastOnlineTime = DateTime.UtcNow.ToEpochSeconds(),
+            Channel = -1,
+            Async = true,
+        });
     }
 
     private void Loop() {
@@ -126,6 +136,7 @@ public class WorldServer {
     public void Stop() {
         tokenSource.Cancel();
         thread.Join();
+        heartbeatThread.Join();
         scheduler.Stop();
     }
 
@@ -144,13 +155,13 @@ public class WorldServer {
 
         DateTime nextMidnight = lastMidnight.AddDays(1);
         TimeSpan timeUntilMidnight = nextMidnight - now;
-        scheduler.Schedule(ScheduleDailyReset, (int) timeUntilMidnight.TotalMilliseconds);
+        scheduler.Schedule(ScheduleDailyReset, timeUntilMidnight);
     }
 
     private void ScheduleDailyReset() {
         DailyReset();
         // Schedule it to repeat every once a day.
-        scheduler.ScheduleRepeated(DailyReset, (int) TimeSpan.FromDays(1).TotalMilliseconds, true);
+        scheduler.ScheduleRepeated(DailyReset, TimeSpan.FromDays(1), strict: true);
     }
 
     private void DailyReset() {
@@ -185,7 +196,7 @@ public class WorldServer {
                 if (startTime > eventData.EndTime) {
                     continue;
                 }
-                scheduler.Schedule(() => GlobalPortal(eventData, startTime), (int) (startTime - DateTime.Now).TotalMilliseconds);
+                scheduler.Schedule(() => GlobalPortal(eventData, startTime), startTime - DateTime.Now);
             }
         }
     }
@@ -221,7 +232,7 @@ public class WorldServer {
             return;
         }
 
-        scheduler.Schedule(() => GlobalPortal(data, nextRunTime), (int) (nextRunTime - DateTime.Now).TotalMilliseconds);
+        scheduler.Schedule(() => GlobalPortal(data, nextRunTime), nextRunTime - DateTime.Now);
     }
 
     private void ScheduleGameEvents() {
@@ -229,12 +240,129 @@ public class WorldServer {
         // Add Events
         // Get only events that havent been started. Started events already get loaded on game/login servers on start up
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.StartTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            scheduler.Schedule(() => AddGameEvent(data.Id), (int) (data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+            scheduler.Schedule(() => AddGameEvent(data.Id), TimeSpan.FromSeconds(data.StartTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
         }
 
         // Remove Events
         foreach (GameEvent data in events.Where(gameEvent => gameEvent.EndTime > DateTimeOffset.Now.ToUnixTimeSeconds())) {
-            scheduler.Schedule(() => RemoveGameEvent(data.Id), (int) (data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+            scheduler.Schedule(() => RemoveGameEvent(data.Id), TimeSpan.FromSeconds(data.EndTime - DateTimeOffset.Now.ToUnixTimeSeconds()));
+        }
+    }
+
+    public void FieldPlotExpiryCheck() {
+        using GameStorage.Request db = gameStorage.Context();
+        // Get all plots that have expired but are not yet pending
+        List<PlotInfo> expiredPlots = db.GetPlotsToExpire();
+        if (expiredPlots.Count > 0) {
+            foreach (PlotInfo plot in expiredPlots) {
+                bool forfeit = false;
+                try {
+                    if (plot.OwnerId > 0 && plot.ExpiryTime < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                        SetPlotAsPending(db, plot);
+                        forfeit = true;
+                        // mark as open when 3 days has passed since the expiry time
+                    } else if (plot.OwnerId == 0 && plot.ExpiryTime + Constant.UgcHomeSaleWaitingTime.TotalSeconds < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+                        logger.Information("Marking plot {PlotId} as open (no owner)", plot.Id);
+                        db.SetPlotOpen(plot.Id); // Mark as open
+                    } else {
+                        continue; // Still valid, skip
+                    }
+                } catch (Exception e) {
+                    logger.Error(e, "Error processing plot {PlotId} for expiry check", plot.Id);
+                    continue; // Skip this plot if there's an error
+                }
+
+                // Notify channels about the expired plots
+                foreach ((int _, ChannelClient channelClient) in channelClients) {
+                    logger.Information("Notifying channel about expired plot {PlotId}", plot.Id);
+                    channelClient.UpdateFieldPlot(new FieldPlotRequest {
+                        MapId = plot.MapId,
+                        PlotNumber = plot.Number,
+                        UpdatePlot = new FieldPlotRequest.Types.UpdatePlot() {
+                            AccountId = plot.OwnerId,
+                            Forfeit = forfeit,
+                        },
+                    });
+                }
+            }
+        }
+
+        // Schedule next check for the next soonest expiry
+        PlotInfo? nextPlot = db.GetSoonestPlotFromExpire();
+        TimeSpan delay;
+        if (nextPlot is not null) {
+            DateTimeOffset nextExpiry = DateTimeOffset.FromUnixTimeSeconds(nextPlot.ExpiryTime);
+            delay = nextExpiry - DateTimeOffset.UtcNow;
+            if (delay < TimeSpan.Zero) {
+                delay = TimeSpan.Zero;
+            }
+        } else {
+            delay = TimeSpan.FromDays(1); // Default to 1 day if no plots are found
+        }
+        scheduler.Schedule(FieldPlotExpiryCheck, delay);
+    }
+
+    // Marks a plot as pending, removes its cubes, and adds them to the owner's inventory.
+    private void SetPlotAsPending(GameStorage.Request db, PlotInfo plot) {
+        logger.Information("Marking plot {PlotId} as pending (owner: {OwnerId})", plot.Id, plot.OwnerId);
+
+        db.SetPlotPending(plot.Id);
+
+        Plot? outdoorPlot = db.GetOutdoorPlotInfo(plot.Number, plot.MapId);
+        if (outdoorPlot == null) {
+            logger.Warning("Outdoor plot not found for plot id {PlotId}", plot.Id);
+            return;
+        }
+
+        List<Item>? items = db.GetItemGroupsNoTracking(plot.OwnerId, ItemGroup.Furnishing).GetValueOrDefault(ItemGroup.Furnishing);
+        if (items == null) {
+            logger.Warning("No furnishing items found for owner id {OwnerId}", outdoorPlot.OwnerId);
+            return;
+        }
+
+        var changedItems = new List<Item>();
+
+        foreach (PlotCube cube in outdoorPlot.Cubes.Values.ToList()) {
+            // remove cube from plot
+            db.DeleteCube(cube);
+
+            // add item to account inventory
+            Item? stored = items.FirstOrDefault(existing => existing.Id == cube.ItemId && existing.Template?.Url == cube.Template?.Url);
+            if (stored == null) {
+                Item? item = CreateItem(cube.ItemId);
+                if (item == null) {
+                    continue;
+                }
+                item.Group = ItemGroup.Furnishing;
+                db.CreateItem(outdoorPlot.OwnerId, item);
+                continue;
+            }
+
+            stored.Amount += 1;
+            if (!changedItems.Contains(stored)) {
+                changedItems.Add(stored);
+            }
+        }
+
+        if (changedItems.Count > 0) {
+            db.SaveItems(plot.OwnerId, changedItems.ToArray());
+        }
+        return;
+
+        Item? CreateItem(int itemId, int rarity = -1, int amount = 1) {
+            if (!itemMetadata.TryGet(itemId, out ItemMetadata? metadata)) {
+                return null;
+            }
+
+            if (rarity <= 0) {
+                if (metadata.Option != null && metadata.Option.ConstantId is < 6 and > 0) {
+                    rarity = metadata.Option.ConstantId;
+                } else {
+                    rarity = 1;
+                }
+            }
+
+            return new Item(metadata, rarity, amount);
         }
     }
 

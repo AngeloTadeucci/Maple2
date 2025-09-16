@@ -59,6 +59,7 @@ public static class ConditionUtil {
                 break;
             case ConditionType.map:
             case ConditionType.fish:
+            case ConditionType.fisher_grade:
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.item_add:
@@ -109,6 +110,7 @@ public static class ConditionUtil {
             case ConditionType.holdtime:
             case ConditionType.riding:
             case ConditionType.fish_big:
+            case ConditionType.music_play_instrument_mastery:
             case ConditionType.music_play_instrument_time:
             case ConditionType.music_play_ensemble_in:
             case ConditionType.music_play_score:
@@ -265,10 +267,12 @@ public static class ConditionUtil {
             case ConditionType.fish_fail:
             case ConditionType.fish_collect:
             case ConditionType.fish_goldmedal:
+            case ConditionType.fisher_grade:
             case ConditionType.mastery_grade:
             case ConditionType.set_mastery_grade:
             case ConditionType.music_play_grade:
             case ConditionType.music_play_ensemble:
+            case ConditionType.music_play_instrument_mastery:
             case ConditionType.item_add:
             case ConditionType.item_pickup:
             case ConditionType.item_destroy:

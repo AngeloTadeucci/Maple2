@@ -20,7 +20,7 @@ public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
 
     public void SpawnOnCreate() {
         if (Value.SpawnOnFieldCreate) {
-            TriggerSpawn();
+            TriggerSpawn(forceFullSpawn: true);
         }
     }
 
@@ -36,15 +36,18 @@ public class FieldSpawnPointNpc : FieldEntity<SpawnPointNPC> {
         TriggerSpawn();
     }
 
-    public void TriggerSpawn() {
-        IEnumerable<FieldNpc> npcs = Field.GetActorsBySpawnId(SpawnId).OfType<FieldNpc>().ToList(); // Only get npcs
+    public void TriggerSpawn(bool forceFullSpawn = false) {
+        FieldNpc[] npcs = forceFullSpawn ? [] :
+            Field.GetActorsBySpawnId(SpawnId).OfType<FieldNpc>().ToArray();
+
         foreach (SpawnPointNPCListEntry spawn in Value.NpcList) {
             if (!Field.NpcMetadata.TryGet(spawn.NpcId, out NpcMetadata? npcMetadata)) {
                 // Log.Logger.Warning("Npc {NpcId} failed to load for map {MapId}", spawn.NpcId, Field.MapId);
                 continue;
             }
 
-            int spawnCountNeeded = spawn.Count - npcs.Count(x => x.Value.Id == spawn.NpcId);
+            int spawnCountNeeded = forceFullSpawn ? spawn.Count : spawn.Count - npcs.Count(x => x.Value.Id == spawn.NpcId);
+
             for (int i = 0; i < spawnCountNeeded; i++) {
                 FieldNpc? npc = Field.SpawnNpc(npcMetadata, Value);
                 if (npc == null) {

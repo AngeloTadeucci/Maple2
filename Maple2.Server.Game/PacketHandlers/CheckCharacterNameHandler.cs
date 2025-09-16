@@ -1,5 +1,7 @@
 ﻿using Maple2.Database.Storage;
+using Maple2.Model.Error;
 using Maple2.Model.Metadata;
+using Maple2.Model.Validators;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;
@@ -23,13 +25,10 @@ public class CheckCharacterNameHandler : FieldPacketHandler {
         string characterName = packet.ReadUnicodeString();
         long itemUid = packet.ReadLong();
 
-        if (characterName.Length < Constant.CharacterNameLengthMin) {
-            session.Send(CharacterListPacket.CreateError(s_char_err_name));
-            return;
-        }
-
-        if (characterName.Length > Constant.CharacterNameLengthMax) {
-            session.Send(CharacterListPacket.CreateError(s_char_err_system));
+        // Validate character name using comprehensive validator
+        var nameError = CharacterNameValidator.ValidateName(characterName);
+        if (nameError != null) {
+            session.Send(CharacterListPacket.CreateError(nameError.Value));
             return;
         }
 

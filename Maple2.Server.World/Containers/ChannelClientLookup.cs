@@ -26,36 +26,12 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     private enum ChannelStatus {
         Active,
         Inactive,
+        Pending,
     }
 
     public void InjectDependencies(WorldServer worldSv, PlayerInfoLookup playerInfo) {
         worldServer = worldSv;
         playerInfoLookup = playerInfo;
-    }
-
-    private class Channel {
-        public ChannelStatus Status { get; set; }
-
-        public readonly int Id;
-        public readonly bool InstancedContent;
-
-        public readonly IPEndPoint Endpoint;
-        public readonly ushort GamePort;
-        public readonly int GrpcPort;
-
-        public readonly ChannelClient Client;
-        public readonly Health.HealthClient Health;
-
-        public Channel(ChannelStatus status, int id, bool instancedContent, IPEndPoint endpoint, ChannelClient client, Health.HealthClient health, ushort gamePort, int grpcPort) {
-            Status = status;
-            Id = id;
-            InstancedContent = instancedContent;
-            Endpoint = endpoint;
-            Client = client;
-            Health = health;
-            GamePort = gamePort;
-            GrpcPort = grpcPort;
-        }
     }
 
     private readonly ConcurrentDictionary<int, Channel> channels = [];
@@ -73,13 +49,15 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     public (ushort gamePort, int grpcPort, int channel) FindOrCreateChannelByIp(string gameIp, string grpcGameIp, bool instancedContent) {
-        // find the first channel that matches the ip, status and instanced content
+        // find the first channel that matches the ip, status and instanced content, but only if not Pending
         Channel? activeChannel = channels.Values.FirstOrDefault(channel =>
             channel.Endpoint.Address.ToString() == gameIp &&
             channel.Status is ChannelStatus.Inactive &&
             channel.InstancedContent == instancedContent);
 
         if (activeChannel is not null) {
+            // Mark as pending before returning
+            activeChannel.Status = ChannelStatus.Pending;
             return (activeChannel.GamePort, activeChannel.GrpcPort, activeChannel.Id);
         }
 
@@ -98,7 +76,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         return -1;
     }
 
-    public bool TryGetInstancedChannelId([NotNullWhen(true)] out int channelId) {
+    public bool TryGetInstancedChannelId(out int channelId) {
         foreach (Channel channel in channels.Values.Where(ch => ch.Status is ChannelStatus.Active && ch.InstancedContent)) {
             channelId = channel.Id;
             return true;
@@ -133,8 +111,14 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
     }
 
     private (ushort gamePort, int grpcPort, int channel) AddChannel(string gameIp, string grpcGameIp, bool instancedContent) {
-        int channelId = channels.Count(kvp => !kvp.Value.InstancedContent) + 1;
-        if (instancedContent) {
+        int channelId = 1;
+        if (!instancedContent) {
+            // Find the smallest positive integer not used as a channel ID (excluding 0)
+            HashSet<int> usedIds = channels.Keys.Where(id => id > 0).ToHashSet();
+            while (usedIds.Contains(channelId)) {
+                channelId++;
+            }
+        } else {
             channelId = 0;
         }
 
@@ -159,7 +143,7 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
         GrpcChannel grpcChannel = GrpcChannel.ForAddress(grpcUri);
         var client = new ChannelClient(grpcChannel);
         var healthClient = new Health.HealthClient(grpcChannel);
-        var activeChannel = new Channel(ChannelStatus.Inactive, channelId, instancedContent, gameEndpoint, client, healthClient, (ushort) newGamePort, newGrpcChannelPort);
+        var activeChannel = new Channel(ChannelStatus.Pending, channelId, instancedContent, gameEndpoint, client, healthClient, (ushort) newGamePort, newGrpcChannelPort);
         if (!channels.TryAdd(channelId, activeChannel)) {
             logger.Error("Failed to add channel {Channel}", channelId);
             return (0, 0, -1);
@@ -181,13 +165,13 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
                     cancellationToken: cancellationToken);
                 switch (response.Status) {
                     case HealthCheckResponse.Types.ServingStatus.Serving:
-                        if (channel.Status is ChannelStatus.Inactive) {
+                        if (channel.Status is ChannelStatus.Inactive || channel.Status is ChannelStatus.Pending) {
                             logger.Information("Channel {Channel} has become active", channel.Id);
                             Active(channel);
                         }
                         break;
                     default:
-                        if (channel.Status is ChannelStatus.Active) {
+                        if (channel.Status is ChannelStatus.Active || channel.Status is ChannelStatus.Pending) {
                             Inactive(channel);
                             logger.Information("Channel {Channel} has become inactive due to {Status}", channel.Id, response.Status);
 #if !DEBUG
@@ -278,8 +262,35 @@ public class ChannelClientLookup : IEnumerable<(int, ChannelClient)> {
 
             List<int> channelList = channels.Values.Where(ch => ch.Status is ChannelStatus.Active && !ch.InstancedContent).Select(ch => ch.Id).ToList();
             channelClient.UpdateChannels(new Maple2.Server.Channel.Service.ChannelsUpdateRequest {
-                Channels = { channelList },
+                Channels = {
+                    channelList,
+                },
             });
+        }
+    }
+
+    private class Channel {
+        public ChannelStatus Status { get; set; }
+
+        public readonly int Id;
+        public readonly bool InstancedContent;
+
+        public readonly IPEndPoint Endpoint;
+        public readonly ushort GamePort;
+        public readonly int GrpcPort;
+
+        public readonly ChannelClient Client;
+        public readonly Health.HealthClient Health;
+
+        public Channel(ChannelStatus status, int id, bool instancedContent, IPEndPoint endpoint, ChannelClient client, Health.HealthClient health, ushort gamePort, int grpcPort) {
+            Status = status;
+            Id = id;
+            InstancedContent = instancedContent;
+            Endpoint = endpoint;
+            Client = client;
+            Health = health;
+            GamePort = gamePort;
+            GrpcPort = grpcPort;
         }
     }
 }

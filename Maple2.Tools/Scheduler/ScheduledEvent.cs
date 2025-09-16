@@ -7,13 +7,13 @@ internal class ScheduledEvent {
     public long ExecutionTime { get; private set; }
 
     private readonly Action task;
-    private readonly int interval;
+    private readonly TimeSpan interval;
     private readonly bool strict;
 
-    public ScheduledEvent(Action task, long executionTime = 0, int interval = -1, bool strict = false) {
+    public ScheduledEvent(Action task, long executionTime = 0, TimeSpan? interval = null, bool strict = false) {
         this.task = task;
         ExecutionTime = executionTime;
-        this.interval = interval;
+        this.interval = interval ?? TimeSpan.FromMilliseconds(-1);
         this.strict = strict;
     }
 
@@ -25,15 +25,15 @@ internal class ScheduledEvent {
 
         task.Invoke();
 
-        if (interval < 0) {
+        if (interval < TimeSpan.Zero || interval == TimeSpan.Zero) {
             Completed = true;
             return -1;
         }
 
         if (strict) {
-            ExecutionTime += interval;
+            ExecutionTime += (long) interval.TotalMilliseconds;
         } else {
-            ExecutionTime = Environment.TickCount64 + interval;
+            ExecutionTime = Environment.TickCount64 + (long) interval.TotalMilliseconds;
         }
 
         return ExecutionTime;

@@ -137,13 +137,17 @@ public partial class FieldManager : IField {
             using GameStorage.Request db = GameStorage.Context();
             foreach (Plot plot in db.LoadPlotsForMap(MapId)) {
                 Plots[plot.Number] = plot;
-            }
 
-            Plots.Values
-                .SelectMany(plot => plot.Cubes.Values)
-                .Where(plotCube => plotCube.Interact != null)
-                .ToList()
-                .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
+                plot.Cubes.Values
+                    .Where(plotCube => plotCube.Interact != null)
+                    .ToList()
+                    .ForEach(plotCube => AddFieldFunctionInteract(plotCube));
+
+                plot.Cubes.Values
+                    .Where(plotCube => plotCube.Metadata.Install is { IndoorPortal: true })
+                    .ToList()
+                    .ForEach(plotCube => SpawnFieldToHomePortal(plotCube, plot.OwnerId));
+            }
         }
 
         // Create default to place liftable cubes
@@ -203,7 +207,7 @@ public partial class FieldManager : IField {
 
             if (spawn.Tags.Contains("보너스맵")) { // Bonus Map
                 // Spawn a hat within a random range of 5 min to 8 hours
-                int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
+                TimeSpan delay = Random.Shared.Next(1, 97) * TimeSpan.FromMinutes(5);
                 Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, regionSpawn), delay);
             }
         }
@@ -271,6 +275,12 @@ public partial class FieldManager : IField {
                         continue;
                     }
                     packet.handler.Handle(packet.session, packet.reader);
+                } catch (Exception ex) {
+                    if (ex is IndexOutOfRangeException) {
+                        logger.Error("Error processing packet {OpCode} for account ID {AccountId}. Packet: {Packet}", packet.handler.OpCode, packet.session.AccountId, packet.ToString());
+                    } else {
+                        logger.Error(ex, "Error processing handler {Handler} for account ID {AccountId}. Packet: {Packet}", packet.handler.OpCode, packet.session.AccountId, packet.ToString());
+                    }
                 } finally {
                     ArrayPool<byte>.Shared.Return(packet.reader.Buffer);
                 }
@@ -545,12 +555,28 @@ public partial class FieldManager : IField {
             case PortalType.Quest:
                 session.Field?.RemovePortal(fieldPortal.ObjectId);
                 break;
-
+            case PortalType.FieldToHome:
+                session.Migrate(Constant.DefaultHomeMapId, fieldPortal.HomeId);
+                break;
         }
 
         if (srcPortal.TargetMapId == MapId) {
             if (TryGetPortal(srcPortal.TargetPortalId, out FieldPortal? dstPortal)) {
-                session.Send(PortalPacket.MoveByPortal(session.Player, dstPortal));
+                Vector3 position = dstPortal.Position;
+                Vector3 rotation = dstPortal.Rotation;
+
+                if (dstPortal.Value.ActionType is PortalActionType.Touch) {
+                    // add one blocks or use offset in the direction of front axis
+                    float offset = Constant.BlockSize;
+                    if (dstPortal.Value.FrontOffset != 0) {
+                        offset = dstPortal.Value.FrontOffset;
+                    }
+
+                    Vector3 forward = dstPortal.Transform.FrontAxis;
+
+                    position += forward * offset;
+                }
+                session.Send(PortalPacket.MoveByPortal(session.Player, position, rotation));
             }
 
             return true;

@@ -121,8 +121,8 @@ public record ItemMetadataInstall(
     bool IsSolidCube,
     int FunctionId,
     int ObjectCubeId,
-    MapAttribute MapAttribute
-);
+    bool IndoorPortal,
+    MapAttribute MapAttribute);
 
 public record DefaultHairMetadata(
     Vector3 BackPosition = default,

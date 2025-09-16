@@ -8,7 +8,7 @@ using static Maple2.Server.Game.Model.ActorStateComponent.TaskState;
 namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
-    class NpcSkillCastTask : NpcTask {
+    public class NpcSkillCastTask : NpcTask {
         private readonly MovementState movement;
 
         public SkillRecord? Cast;
@@ -33,7 +33,7 @@ public partial class MovementState {
 
         protected override void TaskFinished(bool isCompleted) {
             movement.castSkill = null;
-            movement.castTask = null;
+            movement.CastTask = null;
             movement.Idle();
             movement.actor.AppendDebugMessage((isCompleted ? "Finished" : "Canceled") + " cast\n");
         }
@@ -77,8 +77,8 @@ public partial class MovementState {
     }
 
     private void SkillCast(NpcSkillCastTask task, int id, short level, long uid, byte motion) {
-        if (castTask != task) {
-            castTask?.Cancel();
+        if (CastTask != task) {
+            CastTask?.Cancel();
         }
 
         if (!CanTransitionToState(ActorState.PcSkill)) {
@@ -109,7 +109,7 @@ public partial class MovementState {
             SkillCastFaceTarget(cast, actor.BattleState.Target, task.FaceTarget);
         }
 
-        castTask = task;
+        CastTask = task;
         castSkill = cast;
         task.Cast = cast;
 

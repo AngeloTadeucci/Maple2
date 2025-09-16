@@ -118,9 +118,6 @@ public partial class TriggerContext {
         if (!Objects.Cameras.TryGetValue(triggerId, out TriggerObjectCamera? camera)) {
             return;
         }
-        if (camera.Visible == enabled) {
-            return;
-        }
 
         camera.Visible = enabled;
         Broadcast(TriggerPacket.Update(camera));
@@ -164,7 +161,7 @@ public partial class TriggerContext {
                 continue;
             }
 
-            breakable.UpdateState(BreakableState.Show);
+            breakable.UpdateState(enabled ? BreakableState.Show : BreakableState.Hide);
             updated.Add(breakable);
         }
 
@@ -293,7 +290,7 @@ public partial class TriggerContext {
 
             if (interval > 0) {
                 intervalTotal += interval;
-                Events.Schedule(() => UpdateSetMesh(mesh), intervalTotal + delay);
+                Events.Schedule(() => UpdateSetMesh(mesh), TimeSpan.FromMilliseconds(intervalTotal + delay));
             } else {
                 UpdateSetMesh(mesh);
             }
@@ -329,12 +326,7 @@ public partial class TriggerContext {
                     continue;
                 }
 
-                if (!Field.SkillMetadata.TryGet(skill.SkillId, skill.Level, out SkillMetadata? skillMetadata)) {
-                    logger.Warning("Invalid skill: {Id}", skill.SkillId);
-                    continue;
-                }
-
-                Field.AddSkill(skillMetadata, (int) TimeSpan.FromMilliseconds(150).TotalMilliseconds, skill.Position, skill.Rotation, triggerId);
+                Field.AddSkill(skill, (int) TimeSpan.FromMilliseconds(150).TotalMilliseconds, skill.Position, skill.Rotation, triggerId);
             } else {
                 Field.RemoveSkillByTriggerId(triggerId);
             }

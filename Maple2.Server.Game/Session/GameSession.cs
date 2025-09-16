@@ -116,7 +116,7 @@ public sealed partial class GameSession : Core.Network.Session {
         State = SessionState.ChangeMap;
         CommandHandler = context.Resolve<CommandRouter>(new NamedParameter("session", this));
         Scheduler = new EventQueue();
-        Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
+        Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), TimeSpan.FromSeconds(1));
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
@@ -125,6 +125,11 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
         return server.GetSession(characterId, out other);
+    }
+
+    public bool FindField(int mapId, [NotNullWhen(true)] out FieldManager? field) {
+        field = server.GetField(mapId);
+        return field is not null;
     }
 
     public bool EnterServer(long accountId, Guid machineId, MigrateInResponse migrateResponse) {
@@ -653,7 +658,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 OwnerId = AccountId,
                 InstancedContent = true,
                 Type = (World.Service.MigrationType) plotMode,
-                RoomId = -1,
+                RoomId = plotMode is not PlotMode.Normal ? -1 : 0,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);

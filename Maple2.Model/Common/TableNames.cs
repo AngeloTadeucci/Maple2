@@ -15,6 +15,7 @@ public static class TableNames {
     public const string ITEM_SOCKET = "itemsocket.xml";
     public const string MASTERY_RECIPE = "masteryreceipe.xml";
     public const string MASTERY = "mastery.xml";
+    public const string MASTERYT_DIFFERENTIAL_FACTOR = "masterydifferentialfactor.xml";
     public const string GUILD = "guild*.xml";
     public const string VIP = "vip*.xml";
     public const string INDIVIDUAL_ITEM_DROP = "individualitemdrop*.xml";

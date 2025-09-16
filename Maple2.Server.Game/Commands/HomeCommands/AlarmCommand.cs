@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
 using Maple2.Server.Game.Packets;
@@ -7,10 +8,10 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands.HomeCommands;
 
-public class AlarmCommand : Command {
+public class AlarmCommand : GameCommand {
     private readonly GameSession session;
 
-    public AlarmCommand(GameSession session) : base("hostalarm", "Send a message to all players in the map") {
+    public AlarmCommand(GameSession session) : base(AdminPermissions.None, "hostalarm", "Send a message to all players in the map") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
 

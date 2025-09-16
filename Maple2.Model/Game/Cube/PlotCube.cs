@@ -7,6 +7,10 @@ public class PlotCube : HeldCube {
     public enum CubeType { Default, Construction, Liftable };
     public readonly ItemMetadata Metadata;
 
+    // TODO: plotcube should have an unique ID different from the held cube ID,
+    // PlotCube id should be the cube uid
+    // HelCube id I think it's the Item Uid
+
     public Vector3B Position { get; set; }
     public float Rotation { get; set; }
     public required CubeType Type { get; set; }
@@ -21,5 +25,13 @@ public class PlotCube : HeldCube {
         ItemType = new ItemType(metadata.Id);
         Id = id;
         Template = template;
+    }
+
+    public void Rotate(bool clockwise) {
+        if (clockwise) {
+            Rotation = (Rotation + 270f) % 360f; // Rotate clockwise
+        } else {
+            Rotation = (Rotation + 90f) % 360f; // Rotate counter-clockwise
+        }
     }
 }

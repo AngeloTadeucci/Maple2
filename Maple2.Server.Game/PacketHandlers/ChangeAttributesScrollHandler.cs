@@ -111,11 +111,6 @@ public class ChangeAttributesScrollHandler : FieldPacketHandler {
                 return;
             }
 
-            if (!TableMetadata.ItemOptionRandomTable.Options.TryGetValue(changeItem.Metadata.Option.RandomId, changeItem.Rarity, out ItemOption? itemOptionMetadata)) {
-                session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_impossible_item));
-                return;
-            }
-
             if (itemRemakeScrollMetadata.RollAttribute) {
                 // Randomize attributes.
                 if (lockItem != null) {
@@ -138,24 +133,27 @@ public class ChangeAttributesScrollHandler : FieldPacketHandler {
                     }
                 }
             } else {
-                ItemStats.Option changeOption = changeItem.Stats[ItemStats.Type.Random];
-
-                if (!ItemStatsCalc.RandomizeValues(changeItem, itemOptionMetadata, ref changeOption)) {
-                    session.Send(ChangeAttributesScrollPacket.Error(ChangeAttributesScrollError.s_itemremake_scroll_error_server_fail_remake));
-                    return;
-                }
-
-                // Restore locked attribute values.
+                // Fixed attributes.
                 if (lockItem != null) {
-                    ItemStats.Option option = item.Stats[ItemStats.Type.Random];
+                    // Restore locked attribute values.
                     if (isSpecialAttribute) {
-                        var specialAttribute = (SpecialAttribute) attribute;
-                        changeOption.Special[specialAttribute] = option.Special[specialAttribute];
+                        if (!ItemStatsCalc.UpdateFixedOption(ref changeItem, new LockOption((SpecialAttribute) attribute, true))) {
+                            session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
+                            return;
+                        }
                     } else {
-                        var basicAttribute = (BasicAttribute) attribute;
-                        changeOption.Basic[basicAttribute] = option.Basic[basicAttribute];
+                        if (!ItemStatsCalc.UpdateFixedOption(ref changeItem, new LockOption((BasicAttribute) attribute, true))) {
+                            session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
+                            return;
+                        }
+                    }
+                } else {
+                    if (!ItemStatsCalc.UpdateFixedOption(ref changeItem)) {
+                        session.Send(ChangeAttributesPacket.Error(ChangeAttributesError.s_itemremake_error_server_default));
+                        return;
                     }
                 }
+
             }
 
             // Try to consume both items.

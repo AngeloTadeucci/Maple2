@@ -35,7 +35,7 @@ public class PlotInfo {
 
     public PlotState State {
         get {
-            if (ExpiryTime > DateTimeOffset.UtcNow.ToUnixTimeSeconds()) {
+            if (ExpiryTime > 0) {
                 return OwnerId != 0 ? PlotState.Taken : PlotState.Pending;
             }
             if (ExpiryTime == 0) {
@@ -52,6 +52,9 @@ public class Plot(UgcMapGroup metadata) : PlotInfo(metadata) {
 
     public void SetPlannerMode(PlotMode mode) {
         PlotMode = mode;
-        Cubes.Clear();
+    }
+
+    public override string ToString() {
+        return $"Plot: {Number}, Owner: {OwnerId}, Name: {Name}, MapId: {MapId}, Expiry: {ExpiryTime}, Mode: {PlotMode}, State: {State}";
     }
 }

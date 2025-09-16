@@ -30,7 +30,7 @@ public static class Constant {
     public const byte MaxHomeArea = 25;
     public const byte MinHomeHeight = 3;
     public const byte MaxHomeHeight = 15;
-    public const short FurnishingStorageMaxSlot = 512;
+    public const short FurnishingStorageMaxSlot = 1024;
     public const int ConstructionCubeItemId = 50200183;
     public const int HomeNameMaxLength = 16;
     public const int HomeMessageMaxLength = 100;
@@ -103,6 +103,7 @@ public static class Constant {
     public const int Grade2WeddingCouponItemId = 20303167;
     public const int Grade3WeddingCouponItemId = 20303168;
     public const int MinStatIntervalTick = 100;
+    public const int HomePollMaxCount = 5;
 
     public const int MaxMentees = 3;
 
@@ -275,7 +276,7 @@ public static class Constant {
     public const int UgcBoundaryStartDistance = 1;
     public const int UgcBoundaryEndDistance = 7;
     public const int DurationForBoundaryDisplay = 3000;
-    public const int UgcHomeSaleWaitingTime = 259200;
+    public static TimeSpan UgcHomeSaleWaitingTime = TimeSpan.FromSeconds(259200);
     public const int UgcContainerExpireDurationNormal = 90;
     public const int UgcContainerExpireDurationCash = 365;
     public const int UgcContainerExpireDurationMeret = 365;

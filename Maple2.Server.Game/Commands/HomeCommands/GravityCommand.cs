@@ -9,13 +9,13 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands.HomeCommands;
 
-public class GravityCommand : Command {
+public class GravityCommand : GameCommand {
     private readonly GameSession session;
 
     private const float GravityMultiplier = 40f;
     private const float MaxGravity = 400f;
 
-    public GravityCommand(GameSession session) : base("hostgravity", "Change the gravity of the map") {
+    public GravityCommand(GameSession session) : base(AdminPermissions.None, "hostgravity", "Change the gravity of the map") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
 

@@ -83,6 +83,12 @@ public class GameServer : Server<GameSession> {
         }
     }
 
+    public GameSession? GetSessionByAccountId(long accountId) {
+        lock (mutex) {
+            return sessions.Values.FirstOrDefault(session => session.AccountId == accountId);
+        }
+    }
+
     public List<GameSession> GetSessions() {
         lock (mutex) {
             return sessions.Values.ToList();

@@ -28,16 +28,16 @@ public class Home : IByteSerializable {
     public HomeLighting Lighting { get; private set; }
     public HomeCamera Camera { get; private set; }
     public string? Passcode { get; set; }
-    public readonly IDictionary<HomePermission, HomePermissionSetting> Permissions;
+    public readonly IDictionary<HomePermission, HomePermissionSetting> Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
 
     public long DecorationExp { get; set; }
     public long DecorationLevel { get; set; }
     public long DecorationRewardTimestamp { get; set; }
-    public List<int> InteriorRewardsClaimed { get; set; }
-    public List<HomeLayout> Layouts { get; set; }
-    public List<HomeLayout> Blueprints { get; set; }
+    public List<int> InteriorRewardsClaimed { get; set; } = [];
+    public List<HomeLayout> Layouts { get; set; } = [];
+    public List<HomeLayout> Blueprints { get; set; } = [];
 
-    private string message;
+    private string message = string.Empty;
     public string Message {
         get => message;
         set {
@@ -60,14 +60,6 @@ public class Home : IByteSerializable {
     public bool IsHomeSetup => !string.IsNullOrEmpty(Name);
 
     public static DateTimeOffset HomeExpiryTime = new DateTimeOffset(2900, 12, 31, 0, 0, 0, TimeSpan.Zero);
-
-    public Home() {
-        message = string.Empty;
-        Permissions = new Dictionary<HomePermission, HomePermissionSetting>();
-        InteriorRewardsClaimed = [];
-        Layouts = [];
-        Blueprints = [];
-    }
 
     public void NewHomeDefaults(string characterName) {
         Indoor.Name = characterName;

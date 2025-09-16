@@ -156,6 +156,7 @@ public class ItemMapper : TypeMapper<ItemMetadata> {
                 IsSolidCube: data.install.cubeProp == 1,
                 FunctionId: data.install.funcCode,
                 ObjectCubeId: data.install.objCode,
+                IndoorPortal: data.install.indoor != 0,
                 MapAttribute: Enum.TryParse<MapAttribute>(data.install.mapAttribute, true, out MapAttribute mapAttribute) ? mapAttribute : MapAttribute.none);
 
             var itemMetadata = new ItemMetadata(

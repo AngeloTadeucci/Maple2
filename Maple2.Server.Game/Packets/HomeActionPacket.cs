@@ -23,6 +23,7 @@ public static class HomeActionPacket {
 
     private enum SurveyCommand : byte {
         Message = 0,
+        Progress = 1,
         Question = 2,
         AddOption = 3,
         Start = 4,
@@ -79,6 +80,20 @@ public static class HomeActionPacket {
         var pWriter = Packet.Of(SendOp.HomeAction);
         pWriter.Write<HomeActionCommand>(HomeActionCommand.Survey);
         pWriter.Write<SurveyCommand>(SurveyCommand.Message);
+
+        return pWriter;
+    }
+
+    public static ByteWriter SurveyProgress(HomeSurvey survey) {
+        var pWriter = Packet.Of(SendOp.HomeAction);
+        pWriter.Write<HomeActionCommand>(HomeActionCommand.Survey);
+        pWriter.Write<SurveyCommand>(SurveyCommand.Progress);
+        pWriter.WriteUnicodeString(survey.Question);
+        pWriter.WriteBool(survey.Public);
+        pWriter.WriteByte((byte) survey.Options.Count);
+        foreach (string option in survey.Options.Keys) {
+            pWriter.WriteUnicodeString(option);
+        }
 
         return pWriter;
     }
