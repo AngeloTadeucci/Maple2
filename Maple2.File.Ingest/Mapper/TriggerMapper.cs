@@ -37,10 +37,7 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
 
             XmlNodeList? importNodeList = xmlDoc.SelectNodes("//import");
             if (importNodeList is not null) {
-                List<XmlNode> toRemove = new();
-                foreach (XmlNode n in importNodeList) {
-                    toRemove.Add(n);
-                }
+                var toRemove = importNodeList.Cast<XmlNode>().ToList();
                 foreach (XmlNode n in toRemove) {
                     n.ParentNode?.RemoveChild(n);
                 }
