@@ -1,7 +1,9 @@
 ﻿using Grpc.Core;
+using Maple2.Database.Model;
 using Maple2.Database.Storage;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Enum; // added for BanType reference
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -39,8 +41,22 @@ public partial class GlobalService : Global.GlobalBase {
         string username = request.Username.Trim().ToLower();
         string password = request.Password.Trim();
         var machineId = new Guid(request.MachineId);
+        string clientIp = request.ClientIp;
 
         using GameStorage.Request db = gameStorage.Context();
+
+        // Hardware and ip ban pre-check (no account context yet, prevents auto-registration for banned hardware)
+        (bool IsBanned, Ban? Ban) hwStatus = db.GetBanStatus(null, clientIp, machineId);
+        if (hwStatus is { IsBanned: true, Ban: not null }) {
+            return Task.FromResult(new LoginResponse {
+                Code = LoginResponse.Types.Code.Restricted,
+                Message = hwStatus.Ban.Reason,
+                AccountId = 0,
+                BanStart = new DateTimeOffset(hwStatus.Ban.CreatedAt).ToUnixTimeSeconds(),
+                BanExpiry = new DateTimeOffset(hwStatus.Ban.ExpiresAt).ToUnixTimeSeconds(),
+            });
+        }
+
         Account? account = db.GetAccount(username);
         if (account is null) {
             if (Constant.AutoRegister) {
@@ -85,6 +101,17 @@ public partial class GlobalService : Global.GlobalBase {
 
         if (account.MachineId == default) {
             db.UpdateMachineId(account.Id, machineId);
+        }
+
+        (bool IsBanned, Ban? Ban) status = db.GetBanStatus(account.Id, clientIp, machineId);
+        if (status is { IsBanned: true, Ban: not null }) {
+            return Task.FromResult(new LoginResponse {
+                Code = LoginResponse.Types.Code.Restricted,
+                Message = status.Ban.Reason,
+                AccountId = account.Id,
+                BanStart = new DateTimeOffset(status.Ban.CreatedAt).ToUnixTimeSeconds(),
+                BanExpiry = new DateTimeOffset(status.Ban.ExpiresAt).ToUnixTimeSeconds(),
+            });
         }
 
         return Task.FromResult(new LoginResponse { AccountId = account.Id });

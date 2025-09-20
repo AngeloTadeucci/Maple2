@@ -304,4 +304,18 @@ public abstract class Session : IDisposable {
                 break;
         }
     }
+
+    public string ExtractIp() {
+        int lastColon = name.LastIndexOf(':');
+        if (name.StartsWith('[') && name.Contains(']')) {
+            int endBracket = name.IndexOf(']');
+            if (endBracket > 1) {
+                return name.Substring(1, endBracket - 1);
+            }
+        }
+        if (lastColon > 0) {
+            return name[..lastColon];
+        }
+        return name;
+    }
 }
