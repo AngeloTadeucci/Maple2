@@ -20,6 +20,7 @@ public class PlayerInfo : CharacterInfo, IPlayerInfo, IByteSerializable {
     public long PremiumTime { get; set; }
     public List<long> ClubIds { get; set; }
     public Dictionary<int, DungeonEnterLimit> DungeonEnterLimits { get; set; }
+    public AdminPermissions AccountAdminPermissions { get; set; }
 
     public static implicit operator PlayerInfo(Player player) {
         return new PlayerInfo(player, player.Home.Name, player.Character.AchievementInfo, player.Character.ClubIds) {

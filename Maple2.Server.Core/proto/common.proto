@@ -336,6 +336,8 @@ message AdminResponse {
 
 message DisconnectRequest {
   int64 character_id = 1;
+  bool all = 2;
+  bool force = 3;
 }
 
 message DisconnectResponse {
