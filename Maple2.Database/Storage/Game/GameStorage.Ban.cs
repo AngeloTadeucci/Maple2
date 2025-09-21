@@ -23,26 +23,23 @@ public partial class GameStorage {
 
         private IQueryable<Ban> ActiveBansQuery() {
             DateTime now = DateTime.UtcNow;
-            return Context.Ban.AsNoTracking().Where(b => b.ExpiresAt == null || b.ExpiresAt > now);
+            return Context.Ban.AsNoTracking().Where(b => b.ExpiresAt > now);
         }
 
         private Ban? GetActiveAccountBan(long accountId) =>
             ActiveBansQuery()
                 .Where(b => b.AccountId == accountId)
-                .OrderByDescending(b => b.ExpiresAt == null)
-                .ThenBy(b => b.ExpiresAt)
+                .OrderByDescending(b => b.ExpiresAt)
                 .FirstOrDefault();
         private Ban? GetActiveHardwareBan(Guid machineId) =>
             ActiveBansQuery()
                 .Where(b => b.MachineId == machineId)
-                .OrderByDescending(b => b.ExpiresAt == null)
-                .ThenBy(b => b.ExpiresAt)
+                .OrderByDescending(b => b.ExpiresAt)
                 .FirstOrDefault();
         private Ban? GetActiveIpBan(string ipAddress) =>
             ActiveBansQuery()
                 .Where(b => b.IpAddress == ipAddress)
-                .OrderByDescending(b => b.ExpiresAt == null)
-                .ThenBy(b => b.ExpiresAt)
+                .OrderByDescending(b => b.ExpiresAt)
                 .FirstOrDefault();
 
         // Precedence: Account > Hardware > IP
@@ -64,7 +61,7 @@ public partial class GameStorage {
         }
 
         // List all active bans tied to accountId (account-level, ip, hardware)
-        public IEnumerable<(long Id, string Reason, DateTime? ExpiresAt, string? Details, string? IpAddress, Guid? MachineId)> ListActiveBans(long accountId) {
+        public IEnumerable<(long Id, string Reason, DateTime ExpiresAt, string? Details, string? IpAddress, Guid? MachineId)> ListActiveBans(long accountId) {
             foreach (Ban b in ActiveBansQuery().Where(b => b.AccountId == accountId)) {
                 yield return (b.Id, b.Reason, b.ExpiresAt, b.Details, b.IpAddress, b.MachineId);
             }

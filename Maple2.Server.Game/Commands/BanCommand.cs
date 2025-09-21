@@ -63,6 +63,7 @@ public class BanCommand : GameCommand {
         Account? targetAccount = db.GetAccountByCharacterName(characterName);
         if (targetAccount is null || characterId == 0) {
             ctx.Console.Out.WriteLine($"Character '{characterName}' not found.");
+            ctx.ExitCode = 1;
             return;
         }
 
@@ -107,6 +108,7 @@ public class BanCommand : GameCommand {
     private void HandleIpBan(InvocationContext ctx, GameStorage.Request db, Account targetAccount, long characterId, string reason) {
         if (!session.FindSession(characterId, out GameSession? targetSession)) {
             ctx.Console.Out.WriteLine($"Player '{targetAccount.Username}' must be online for IP ban (no stored IP).");
+            ctx.ExitCode = 1;
             return;
         }
         string ip = targetSession.ExtractIp();
@@ -135,6 +137,7 @@ public class BanCommand : GameCommand {
         Guid machineId = targetAccount.MachineId;
         if (machineId == Guid.Empty) {
             ctx.Console.Out.WriteLine("Target has no recorded machine id (cannot apply hardware ban).");
+            ctx.ExitCode = 1;
             return;
         }
         if (db.GetBanStatus(null, null, machineId).IsBanned) {
@@ -170,18 +173,18 @@ public class BanInfoCommand : GameCommand {
         Account? targetAccount = db.GetAccountByCharacterName(characterName);
         if (targetAccount is null || characterId == 0) {
             ctx.Console.Out.WriteLine($"Character '{characterName}' not found.");
+            ctx.ExitCode = 1;
             return;
         }
 
-        List<(long Id, string Reason, DateTime? ExpiresAt, string? Details, string? IpAddress, Guid? MachineId)> bans = db.ListActiveBans(targetAccount.Id)
-            .OrderBy(b => b.ExpiresAt ?? DateTime.MaxValue).ToList();
+        List<(long Id, string Reason, DateTime ExpiresAt, string? Details, string? IpAddress, Guid? MachineId)> bans = db.ListActiveBans(targetAccount.Id).OrderBy(b => b.ExpiresAt).ToList();
         if (bans.Count == 0) {
             ctx.Console.Out.WriteLine("No active bans found.");
             return;
         }
-        foreach ((long Id, string Reason, DateTime? ExpiresAt, string? Details, string? IpAddress, Guid? MachineId) ban in bans) {
+        foreach ((long Id, string Reason, DateTime ExpiresAt, string? Details, string? IpAddress, Guid? MachineId) ban in bans) {
             Dictionary<string, string> parsed = ParseDetails(ban.Details);
-            string expires = ban.ExpiresAt == null ? "PERMANENT" : ban.ExpiresAt.Value.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
+            string expires = ban.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
             string issuedBy = parsed.TryGetValue("banned_by_name", out string? byName) ? byName : "?";
             string hwStr = parsed.TryGetValue("machine_id", out string? hwVal) ? $", HW={hwVal}" : string.Empty;
             string ipStr = parsed.TryGetValue("ip", out string? ipVal) ? $", IP={ipVal}" : string.Empty;
