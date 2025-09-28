@@ -151,6 +151,7 @@ public static class Constant {
     public static readonly TimeSpan FieldUgcBannerRemoveAfter = TimeSpan.FromHours(4);
     public static readonly TimeSpan FieldDisposeLoopInterval = TimeSpan.FromMinutes(1);
     public static readonly TimeSpan FieldDisposeEmptyTime = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan DungeonDisposeEmptyTime = TimeSpan.FromMinutes(5);
     #endregion
 
     #region Character

@@ -107,10 +107,12 @@ public class DungeonManager {
             session.PlayerInfo.SendUpdate(new PlayerUpdateRequest {
                 AccountId = session.AccountId,
                 CharacterId = session.CharacterId,
-                DungeonEnterLimits = { EnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
-                    DungeonId = dungeon.Key,
-                    Limit = (int) dungeon.Value,
-                })},
+                DungeonEnterLimits = {
+                    EnterLimits.Select(dungeon => new DungeonEnterLimitUpdate {
+                        DungeonId = dungeon.Key,
+                        Limit = (int) dungeon.Value,
+                    })
+                },
                 Async = true,
             });
             session.Send(FieldEntrancePacket.Load(EnterLimits));
@@ -587,6 +589,8 @@ public class DungeonManager {
             logger.Error("Dungeon metadata is null, cannot migrate to dungeon");
             return;
         }
+
+        session.MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = session.AccountId,
