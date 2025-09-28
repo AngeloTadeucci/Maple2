@@ -24,7 +24,7 @@ public class ChannelHandler : PacketHandler<GameSession> {
 
     public override void Handle(GameSession session, IByteReader packet) {
         short channel = packet.ReadShort();
-
+        session.MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = session.AccountId,

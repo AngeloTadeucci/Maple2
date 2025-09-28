@@ -53,7 +53,7 @@ public class GlobalPortal : FieldPacketHandler {
 
         GlobalPortalInfo portal = eventResponse.GlobalPortalInfo;
 
-        // migrate
+        session.MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = session.AccountId,

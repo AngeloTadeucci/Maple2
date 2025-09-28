@@ -34,6 +34,7 @@ public class QuitHandler : PacketHandler<GameSession> {
             return;
         }
 
+        session.MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = session.AccountId,

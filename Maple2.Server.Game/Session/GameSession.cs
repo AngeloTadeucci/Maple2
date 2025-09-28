@@ -50,6 +50,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public int Latency;
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
+    private bool preMigrationSaved;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -152,11 +153,11 @@ public sealed partial class GameSession : Core.Network.Session {
         int objectId = FieldManager.NextGlobalId();
         Player? player;
         try {
-            AcquireLock(CharacterId, 5);
+            AcquireLock(AccountId, 5);
             player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
             db.Commit();
         } finally {
-            ReleaseLock(CharacterId);
+            ReleaseLock(AccountId);
         }
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
@@ -644,6 +645,7 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void MigrateToPlanner(PlotMode plotMode) {
+        MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
@@ -672,6 +674,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public void Migrate(int mapId, long ownerId = 0) {
         bool isInstanced = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
 
+        MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
@@ -742,7 +745,6 @@ public sealed partial class GameSession : Core.Network.Session {
     protected override void Dispose(bool disposing) {
         // Ensure dispose is only run once
         if (Interlocked.CompareExchange(ref gameDisposeState, 1, 0) != 0) return;
-        // begin dispose
 
         // Snapshot values needed after teardown
         long fieldTickSnapshot = Field?.FieldTick ?? Environment.TickCount64;
@@ -774,26 +776,10 @@ public sealed partial class GameSession : Core.Network.Session {
 
             // Cache config & persistence
             SaveCacheConfig();
-            AcquireLock(CharacterId);
-            using GameStorage.Request db = GameStorage.Context();
-            db.BeginTransaction();
-            db.SavePlayer(Player);
-            TrySaveComponent(db, UgcMarket.Save);
-            TrySaveComponent(db, Config.Save);
-            TrySaveComponent(db, Shop.Save);
-            TrySaveComponent(db, Item.Save);
-            TrySaveComponent(db, Survival.Save);
-            TrySaveComponent(db, Housing.Save);
-            TrySaveComponent(db, GameEvent.Save);
-            TrySaveComponent(db, Achievement.Save);
-            TrySaveComponent(db, Quest.Save);
-            TrySaveComponent(db, Dungeon.Save);
-            db.Commit();
-            db.SaveChanges();
+            MigrationSave();
         } catch (Exception ex) {
             Logger.Error(ex, "Error during session cleanup for {Player}", PlayerName);
         } finally {
-            try { ReleaseLock(CharacterId); } catch (Exception ex) { Logger.Error(ex, "Error releasing lock for {Player}", PlayerName); }
             SafeDispose(Guild);
             SafeDispose(Buddy);
             SafeDispose(Party);
@@ -858,4 +844,35 @@ public sealed partial class GameSession : Core.Network.Session {
         }
     }
     #endregion
+
+    public void MigrationSave() {
+        if (preMigrationSaved) return;
+        try {
+            AcquireLock(AccountId, 5);
+            using GameStorage.Request db = GameStorage.Context();
+            db.BeginTransaction();
+            db.SavePlayer(Player);
+            TrySaveComponent(db, UgcMarket.Save);
+            TrySaveComponent(db, Config.Save);
+            TrySaveComponent(db, Shop.Save);
+            TrySaveComponent(db, Item.Save);
+            TrySaveComponent(db, Survival.Save);
+            TrySaveComponent(db, Housing.Save);
+            TrySaveComponent(db, GameEvent.Save);
+            TrySaveComponent(db, Achievement.Save);
+            TrySaveComponent(db, Quest.Save);
+            TrySaveComponent(db, Dungeon.Save);
+            db.Commit();
+            db.SaveChanges();
+            preMigrationSaved = true;
+        } catch (Exception ex) {
+            Logger.Error(ex, "MigrationSave failed AccountId={AccountId} CharacterId={CharacterId}", AccountId, CharacterId);
+        } finally {
+            ReleaseLock(AccountId);
+        }
+
+        void TrySaveComponent(GameStorage.Request db, Action<GameStorage.Request> action) {
+            try { action(db); } catch (Exception ex) { Logger.Error(ex, "Error saving component for {Player}", PlayerName); }
+        }
+    }
 }
