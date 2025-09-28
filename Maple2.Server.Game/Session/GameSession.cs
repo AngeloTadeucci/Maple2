@@ -50,7 +50,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public int Latency;
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
-    private bool preMigrationSaved; // added flag for early migration save
+    private bool preMigrationSaved;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
