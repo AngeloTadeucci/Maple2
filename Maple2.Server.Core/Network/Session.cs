@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Maple2.Model.Enum;
 using Maple2.PacketLib.Crypto;
@@ -32,6 +33,7 @@ public abstract class Session : IDisposable {
     public Action? OnLoop;
 
     private bool disposed;
+    private int disconnecting; // 0 = not disconnecting, 1 = disconnect in progress/already triggered (reentrancy guard)
     private readonly uint siv;
     private readonly uint riv;
 
@@ -45,6 +47,8 @@ public abstract class Session : IDisposable {
     private readonly QueuedPipeScheduler pipeScheduler;
     private readonly Pipe recvPipe;
 
+    public long AccountId { get; protected set; }
+    public long CharacterId { get; protected set; }
     private readonly ConcurrentDictionary<SendOp, byte[]> lastSentPackets = [];
 
     protected abstract PatchType Type { get; }
@@ -87,10 +91,21 @@ public abstract class Session : IDisposable {
 
         disposed = true;
         State = SessionState.Disconnected;
-        Complete();
-        thread.Join(STOP_TIMEOUT);
-
-        CloseClient();
+        try {
+            Complete();
+        } catch (Exception ex) {
+            Logger.Debug(ex, "Complete() threw during Dispose");
+        }
+        try {
+            thread.Join(STOP_TIMEOUT);
+        } catch (Exception ex) {
+            Logger.Debug(ex, "thread.Join failed");
+        }
+        try {
+            CloseClient();
+        } catch (Exception ex) {
+            Logger.Debug(ex, "CloseClient failed");
+        }
     }
 
     protected void Complete() {
@@ -99,10 +114,11 @@ public abstract class Session : IDisposable {
         pipeScheduler.Complete();
     }
 
-    public void Disconnect() {
+    public void Disconnect([CallerMemberName] string caller = "", [CallerLineNumber] int line = 0, [CallerFilePath] string filePath = "") {
         if (disposed) return;
 
-        Logger.Information("Disconnected {Session}", this);
+        Logger.Information("Disconnected {Session} at {Caller} in {FilePath} on line {LineNumber}", this, caller, filePath, line);
+        if (Interlocked.Exchange(ref disconnecting, 1) == 1) return;
         Dispose();
     }
 
@@ -140,7 +156,12 @@ public abstract class Session : IDisposable {
             // Pipeline tasks can be run asynchronously
             Task writeTask = WriteRecvPipe(client.Client, recvPipe.Writer);
             Task readTask = ReadRecvPipe(recvPipe.Reader);
-            Task.WhenAll(writeTask, readTask).ContinueWith(_ => CloseClient());
+            Task.WhenAll(writeTask, readTask).ContinueWith(t => {
+                if (t.IsFaulted) {
+                    Logger.Debug(t.Exception, "Pipeline aggregate fault account={AccountId} char={CharacterId}", AccountId, CharacterId);
+                }
+                CloseClient();
+            });
 
             while (!disposed && pipeScheduler.OutputAvailableAsync().Result) {
                 pipeScheduler.ProcessQueue();
@@ -150,9 +171,7 @@ public abstract class Session : IDisposable {
             if (!disposed) {
                 Logger.Error(ex, "Exception on session thread");
             }
-        } finally {
-            Disconnect();
-        }
+        } finally { Disconnect(); }
     }
 
     private void PerformHandshake() {
@@ -183,9 +202,7 @@ public abstract class Session : IDisposable {
 
                 result = await writer.FlushAsync();
             } while (!disposed && !result.IsCompleted);
-        } catch (Exception) {
-            Disconnect();
-        }
+        } catch (Exception ex) { Logger.Debug(ex, "WriteRecvPipe exception account={AccountId} char={CharacterId}", AccountId, CharacterId); Disconnect(); }
     }
 
     private async Task ReadRecvPipe(PipeReader reader) {
@@ -211,17 +228,20 @@ public abstract class Session : IDisposable {
                 reader.AdvanceTo(buffer.Start, buffer.End);
             } while (!disposed && !result.IsCompleted);
         } catch (Exception ex) {
+            // Stop web crawlers
+            if (ex.Message.StartsWith("Packet has invalid sequence header")) {
+                return;
+            }
+
             if (ex is InvalidOperationException invalidOperation && invalidOperation.Message.Contains("reader was completed")) {
                 // Ignore this exception, it happens when the reader is completed, either by the client closing or by the session being disposed.
                 // it's not a real error
                 return;
             }
             if (!disposed) {
-                Logger.Error(ex, "Exception reading recv packet");
+                Logger.Error(ex, "Exception reading recv packet || AccountId: {AccountId}, CharacterId: {CharacterId}", AccountId, CharacterId);
             }
-        } finally {
-            Disconnect();
-        }
+        } finally { Disconnect(); }
     }
 
 
@@ -231,7 +251,7 @@ public abstract class Session : IDisposable {
      * length: length of packet that only includes data
      */
     private void SendInternal(byte[] packet, int length) {
-        if (disposed) return;
+        if (disposed || disconnecting == 1) return;
 #if DEBUG
         LogSend(packet, length);
 #endif
@@ -243,17 +263,19 @@ public abstract class Session : IDisposable {
         }
 
         lock (sendCipher) {
+            // re-check after potential delay acquiring lock
+            if (disposed || disconnecting == 1) return;
             using PoolByteWriter encryptedPacket = sendCipher.Encrypt(packet, 0, length);
             SendRaw(encryptedPacket);
         }
     }
 
     private void SendRaw(ByteWriter packet) {
-        if (disposed) return;
-
+        if (disposed || disconnecting == 1) return;
         try {
             networkStream.Write(packet.Buffer, 0, packet.Length);
-        } catch (Exception) {
+        } catch (Exception ex) {
+            Logger.Debug(ex, "[LIFECYCLE] SendRaw write failed account={AccountId} char={CharacterId}", AccountId, CharacterId);
             Disconnect();
         }
     }
