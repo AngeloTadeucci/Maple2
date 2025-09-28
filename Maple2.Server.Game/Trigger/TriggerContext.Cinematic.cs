@@ -122,7 +122,12 @@ public partial class TriggerContext {
         int duration,
         float scale
     ) {
-        DebugLog("[ShowCaption] type:{Type}, title:{Title}, script:{Script}", type, title, script);
+        DebugLog("[ShowCaption] type:{Type}, title:{Title}, script:{Script} align:{Align}, offsetRateX:{OffsetRateX}, offsetRateY:{OffsetRateY}, duration:{Duration}, scale:{Scale}",
+            type, title, script, align, offsetRateX, offsetRateY, duration, scale);
+        // Not sure if this is correct, but I only found packets where NameCaption and offsetRateX and offsetRateY are both not 0 or both 0. even though in the trigger only one of them is set to a value.
+        if (type == "NameCaption" && (offsetRateX == 0 || offsetRateY == 0)) {
+            offsetRateX = offsetRateY = 0;
+        }
         Broadcast(CinematicPacket.Caption(type, title, script, align, offsetRateX, offsetRateY, duration, scale));
     }
 }
