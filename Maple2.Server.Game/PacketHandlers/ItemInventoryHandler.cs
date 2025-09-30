@@ -114,7 +114,6 @@ public class ItemInventoryHandler : FieldPacketHandler {
             return;
         }
 
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, drop);
-        session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+        session.Field.DropItem(session.Player, drop);
     }
 }

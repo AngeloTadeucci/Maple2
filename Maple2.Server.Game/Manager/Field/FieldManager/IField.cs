@@ -71,8 +71,10 @@ public interface IField : IDisposable {
 
 
     public FieldItem SpawnItem(IActor owner, Item item);
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false);
-    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, long characterId);
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false);
+
+    public void DropItem(IActor owner, Item item);
+    public void DropItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false);
 
     public void EnsurePlayerPosition(FieldPlayer player);
     public bool TryGetPlayerById(long characterId, [NotNullWhen(true)] out FieldPlayer? player);

@@ -148,6 +148,11 @@ public class InventoryManager {
 
     public bool Add(Item add, bool notifyNew = false, bool commit = false) {
         lock (session.Item) {
+            if (session.Field is null) {
+                logger.Warning("Tried to add item while not in a field");
+                return false;
+            }
+
             if (add.IsCurrency()) {
                 AddCurrency(add);
                 session.Item.Inventory.Discard(add);
@@ -171,28 +176,48 @@ public class InventoryManager {
                 return false;
             }
 
-            if (add.Metadata.Property.SlotMax == 1 && add.Amount > 1) {
-                if (items.OpenSlots < add.Amount) {
+            // Unified logic for stack splitting (works for both SlotMax == 1 and SlotMax > 1)
+            int slotMax = Math.Max(1, add.Metadata.Property.SlotMax);
+            if (add.Amount > slotMax) {
+                int totalAmount = add.Amount;
+
+                // 1. Fill partially filled stacks first
+                foreach (Item existing in items.Where(x => x.Id == add.Id && x.Rarity == add.Rarity && x.Amount < slotMax && !x.IsExpired())) {
+                    int canFill = slotMax - existing.Amount;
+                    int toFill = Math.Min(canFill, totalAmount);
+                    if (toFill <= 0) continue;
+                    totalAmount -= toFill;
+                    Item? itemToStack = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity, toFill);
+                    if (itemToStack is null) return false;
+                    if (!Add(itemToStack, notifyNew, commit)) {
+                        logger.Error("Failed to add partial stack during multi-step stacking");
+                        return false;
+                    }
+                }
+
+                int fullStacks = totalAmount / slotMax;
+                int remainder = totalAmount % slotMax;
+                int stacksNeeded = fullStacks + (remainder > 0 ? 1 : 0);
+
+                if (items.OpenSlots < stacksNeeded) {
                     session.Send(ItemInventoryPacket.Error(s_err_inventory));
                     return false;
                 }
-                int totalAmount = add.Amount;
-                add.Amount = 1;
 
-                if (!Add(add, notifyNew, commit)) {
-                    return false;
+                // 2. Add full stacks
+                for (int i = 0; i < fullStacks; i++) {
+                    Item? stackItem = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity);
+                    if (stackItem is null) return false;
+                    stackItem.Amount = slotMax;
+                    if (!Add(stackItem, notifyNew, commit)) return false;
                 }
 
-                // Create and add individual copies for remaining items
-                for (int i = 1; i < totalAmount; i++) {
-                    Item? copy = session.Field?.ItemDrop.CreateItem(add.Id, add.Rarity);
-                    if (copy is null) {
-                        return false;
-                    }
-
-                    if (!Add(copy, notifyNew, commit)) {
-                        return false;
-                    }
+                // 3. Add remainder stack
+                if (remainder > 0) {
+                    Item? remainderItem = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity);
+                    if (remainderItem is null) return false;
+                    remainderItem.Amount = remainder;
+                    if (!Add(remainderItem, notifyNew, commit)) return false;
                 }
 
                 return true;

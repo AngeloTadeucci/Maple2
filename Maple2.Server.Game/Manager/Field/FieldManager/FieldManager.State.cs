@@ -261,8 +261,9 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false) {
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner, long characterId = 0, bool fixedPosition = false) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
+            Owner = owner,
             Position = position,
             Rotation = rotation,
             FixedPosition = fixedPosition,
@@ -274,17 +275,14 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, long characterId) {
-        var fieldItem = new FieldItem(this, NextLocalId(), item) {
-            Owner = owner,
-            Position = position,
-            Rotation = rotation,
-            ReceiverId = characterId,
-            Type = characterId > 0 ? DropType.Default : DropType.Player,
-        };
-        fieldItems[fieldItem.ObjectId] = fieldItem;
+    public void DropItem(IActor owner, Item item) {
+        FieldItem fieldItem = SpawnItem(owner, item);
+        Broadcast(FieldPacket.DropItem(fieldItem));
+    }
 
-        return fieldItem;
+    public void DropItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false) {
+        FieldItem fieldItem = SpawnItem(position, rotation, item, owner, characterId, fixedPosition);
+        Broadcast(FieldPacket.DropItem(fieldItem));
     }
 
     public FieldBreakable? AddBreakable(string entityId, BreakableActor breakable) {

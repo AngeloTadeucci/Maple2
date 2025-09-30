@@ -123,8 +123,7 @@ public class FunctionCubeHandler : FieldPacketHandler {
                 return;
             }
             // drop the item
-            FieldItem fieldRewardStageItem = session.Field.SpawnItem(session.Player, fieldCube.Position, fieldCube.Rotation, rewardStageItem, session.CharacterId);
-            session.Field.Broadcast(FieldPacket.DropItem(fieldRewardStageItem));
+            session.Field.DropItem(fieldCube.Position, fieldCube.Rotation, rewardStageItem, owner: session.Player, characterId: session.CharacterId);
             db.UpdateNurturing(session.AccountId, fieldCube.InteractCube);
 
             session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldCube.InteractCube));
@@ -148,13 +147,12 @@ public class FunctionCubeHandler : FieldPacketHandler {
         }
 
         // drop the item
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, fieldCube.Position, fieldCube.Rotation, rewardItem, session.CharacterId);
-        session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+        session.Field.DropItem(fieldCube.Position, fieldCube.Rotation, rewardItem, owner: session.Player, characterId: session.CharacterId);
         nurturing.Feed();
         db.UpdateNurturing(session.AccountId, fieldCube.InteractCube);
 
         session.Field.Broadcast(FunctionCubePacket.UpdateFunctionCube(fieldCube.InteractCube));
-        session.Send(FunctionCubePacket.Feed(fieldItem.Value.Uid, fieldCube.CubeId, fieldCube.InteractCube));
+        session.Send(FunctionCubePacket.Feed(rewardItem.Uid, fieldCube.CubeId, fieldCube.InteractCube));
     }
 
     private void HandlePlayNurturing(GameSession session, Plot plot, FieldFunctionInteract cube, Nurturing nurturing, GameStorage.Request db) {
@@ -182,8 +180,7 @@ public class FunctionCubeHandler : FieldPacketHandler {
         }
 
         // drop the item
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, cube.Position, cube.Rotation, rewardItem, session.CharacterId);
-        session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+        session.Field.DropItem(cube.Position, cube.Rotation, rewardItem, owner: session.Player, characterId: session.CharacterId);
 
         db.UpdateNurturing(plot.OwnerId, cube.InteractCube);
 
