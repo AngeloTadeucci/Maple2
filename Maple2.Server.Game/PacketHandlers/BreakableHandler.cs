@@ -47,7 +47,7 @@ public class BreakableHandler : FieldPacketHandler {
             if (breakable.Value.GlobalDropBoxId != 0) {
                 ICollection<Item> items = session.Field.ItemDrop.GetGlobalDropItems(breakable.Value.GlobalDropBoxId, session.Field.Metadata.Drop.Level);
                 foreach (Item item in items) {
-                    session.Field.DropItem(breakable.Position, breakable.Rotation, item, owner:breakable, characterId:session.CharacterId);
+                    session.Field.DropItem(breakable.Position, breakable.Rotation, item, owner: breakable, characterId: session.CharacterId);
                 }
             }
             session.ConditionUpdate(ConditionType.breakable_object);

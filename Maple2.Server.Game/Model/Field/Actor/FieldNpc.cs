@@ -365,7 +365,7 @@ public class FieldNpc : Actor<Npc> {
             float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
             var position = new Vector3(x, y, Position.Z);
 
-            Field.DropItem( position, Rotation, item, owner:this, characterId: firstPlayer.Value.Character.Id);
+            Field.DropItem(position, Rotation, item, owner: this, characterId: firstPlayer.Value.Character.Id);
         }
     }
 

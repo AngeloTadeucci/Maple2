@@ -416,7 +416,7 @@ public partial class TriggerContext {
             }
 
             foreach (Item item in items) {
-                 Field.DropItem(spawn.Position, spawn.Rotation, item, characterId: 0, fixedPosition:true);
+                Field.DropItem(spawn.Position, spawn.Rotation, item, characterId: 0, fixedPosition: true);
 
             }
         }
@@ -442,7 +442,7 @@ public partial class TriggerContext {
             }
 
             foreach (Item item in items) {
-                Field.DropItem(spawn.Position, spawn.Rotation, item, characterId: 0, fixedPosition:true);
+                Field.DropItem(spawn.Position, spawn.Rotation, item, characterId: 0, fixedPosition: true);
             }
         }
     }

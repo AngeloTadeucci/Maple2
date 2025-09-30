@@ -280,7 +280,7 @@ public partial class FieldManager {
         Broadcast(FieldPacket.DropItem(fieldItem));
     }
 
-    public void DropItem( Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null,long characterId = 0, bool fixedPosition = false) {
+    public void DropItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false) {
         FieldItem fieldItem = SpawnItem(position, rotation, item, owner, characterId, fixedPosition);
         Broadcast(FieldPacket.DropItem(fieldItem));
     }
