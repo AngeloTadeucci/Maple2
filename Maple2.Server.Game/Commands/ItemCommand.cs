@@ -61,19 +61,19 @@ public class ItemCommand : GameCommand {
                     // Apply hard cap only when dropping non-stackable items
                     amount = Math.Clamp(amount, 1, 100);
 
-                    DropItem(firstItem);
+                    session.Field.DropItem(session.Player, firstItem);
                     for (int i = 1; i < amount; i++) {
                         Item? additionalItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
                         if (additionalItem == null) {
                             ctx.Console.Error.WriteLine($"Failed to create additional item {i + 1}/{amount}");
                             continue;
                         }
-                        DropItem(additionalItem);
+                        session.Field.DropItem(session.Player, additionalItem);
                     }
                 } else {
                     // Stackable items can be dropped as a single stack only up to SlotMax
                     firstItem.Amount = Math.Clamp(amount, 1, firstItem.Metadata.Property.SlotMax);
-                    DropItem(firstItem);
+                    session.Field.DropItem(session.Player, firstItem);
                 }
                 ctx.ExitCode = 0;
                 return;
@@ -114,12 +114,6 @@ public class ItemCommand : GameCommand {
             ctx.Console.Error.WriteLine(ex.Message);
             ctx.ExitCode = 1;
         }
-    }
-
-    private void DropItem(Item item) {
-        if (session.Field is null) return;
-        FieldItem fieldItem = session.Field.SpawnItem(session.Player, item);
-        session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
     }
 
     private bool GiveItem(InvocationContext ctx, Item item) {

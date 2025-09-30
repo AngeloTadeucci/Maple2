@@ -95,17 +95,15 @@ public class InteractObjectHandler : FieldPacketHandler {
             }
 
             foreach (Item item in globalDropBoxItems) {
-                FieldItem fieldItem = session.Field.SpawnItem(interact, interact.Position with {
+                session.Field.DropItem(interact.Position with {
                     Z = interact.Position.Z + interact.Value.Drop.DropHeight,
-                }, interact.Rotation, item, session.CharacterId);
-                session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+                }, interact.Rotation, item, owner: interact, characterId: session.CharacterId);
             }
 
             foreach (Item item in items) {
-                FieldItem fieldItem = session.Field.SpawnItem(interact, interact.Position with {
+                session.Field.DropItem(interact.Position with {
                     Z = interact.Position.Z + interact.Value.Drop.DropHeight,
-                }, interact.Rotation, item, session.CharacterId);
-                session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+                }, interact.Rotation, item, owner: interact, characterId: session.CharacterId);
             }
 
             foreach (InteractObjectMetadataEffect.InvokeEffect invokeEffect in interact.Value.AdditionalEffect.Invoke) {

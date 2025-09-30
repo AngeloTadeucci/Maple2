@@ -207,8 +207,7 @@ public class MasteryManager {
             if (item == null || session.Field is null) {
                 continue;
             }
-            FieldItem fieldItem = session.Field.SpawnItem(position, rotation, item, session.CharacterId);
-            session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            session.Field.DropItem(position, rotation, item, characterId: session.CharacterId);
         }
 
         AfterGather(recipeMetadata, 1);
