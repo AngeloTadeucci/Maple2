@@ -67,14 +67,22 @@ public class ClubHandler : FieldPacketHandler {
     private void HandleCreate(GameSession session, IByteReader packet) {
         string clubName = packet.ReadUnicodeString();
 
+        if (string.IsNullOrWhiteSpace(clubName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+        if (clubName.Length is < Constant.ClubNameLengthMin or > Constant.ClubNameLengthMax) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
         if (BanWordStorage.ContainsBannedWord(clubName)) {
             session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
             return;
         }
 
-        ClubError? result = ClubNameValidator.ValidateName(clubName);
-        if (result is not null) {
-            session.Send(ClubPacket.Error(result.Value));
+        if (!NameValidator.ValidName(clubName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
             return;
         }
 
@@ -231,14 +239,22 @@ public class ClubHandler : FieldPacketHandler {
         long clubId = packet.ReadLong();
         string newName = packet.ReadUnicodeString();
 
+        if (string.IsNullOrWhiteSpace(newName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+        if (newName.Length is < Constant.ClubNameLengthMin or > Constant.ClubNameLengthMax) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
         if (BanWordStorage.ContainsBannedWord(newName)) {
             session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
             return;
         }
 
-        ClubError? result = ClubNameValidator.ValidateName(newName);
-        if (result is not null) {
-            session.Send(ClubPacket.Error(result.Value));
+        if (!NameValidator.ValidName(newName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
             return;
         }
 

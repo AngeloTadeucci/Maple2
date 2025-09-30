@@ -1,46 +1,36 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Maple2.Model.Error;
 using Maple2.Model.Metadata;
 
 namespace Maple2.Model.Validators;
 
-public static partial class CharacterNameValidator {
-    // Regex patterns for valid character names
+public static partial class NameValidator {
+    // Regex patterns for valid names
     private static readonly Regex ValidNamePatternAscii = NamePatternAsciiRegex();
     private static readonly Regex ValidNamePatternUnicode = NamePatternUnicodeRegex();
 
     /// <summary>
-    /// Validates a character name according to all rules.
+    /// Validates a name according to all rules.
     /// </summary>
-    /// <param name="name">The character name to validate</param>
-    /// <returns>CharacterCreateError code if invalid, null if valid</returns>
-    public static CharacterCreateError? ValidateName(string name) {
+    /// <param name="name">The name to validate</param>
+    /// <returns>True if valid, false if invalid</returns>
+    public static bool ValidName(string name) {
         if (string.IsNullOrWhiteSpace(name)) {
-            return CharacterCreateError.s_char_err_name;
+            return false; // Null or whitespace
         }
-
-        string validatedName = name;
-
-        // Check length constraints
-        if (validatedName.Length is < Constant.CharacterNameLengthMin) {
-            return CharacterCreateError.s_char_err_name;
-        }
-        if (validatedName.Length > Constant.CharacterNameLengthMax) {
-            return CharacterCreateError.s_char_err_system;
-        }
-
         // Select pattern
         Regex pattern = Constant.AllowUnicodeInNames ? ValidNamePatternUnicode : ValidNamePatternAscii;
-        if (!pattern.IsMatch(validatedName)) {
-            return CharacterCreateError.s_char_err_ban_all;
+        if (!pattern.IsMatch(name)) {
+            return false;
         }
 
         // Check for names that are only special characters
-        if (validatedName.All(c => !char.IsLetterOrDigit(c))) {
-            return CharacterCreateError.s_char_err_name;
+        if (name.All(c => !char.IsLetterOrDigit(c))) {
+            return false;
         }
 
-        return null; // Valid name
+        return true; // Valid name
     }
 
     // ASCII only: A-Z, a-z, 0-9 (no dash, no underscore)

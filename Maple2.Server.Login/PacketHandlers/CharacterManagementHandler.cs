@@ -116,15 +116,28 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         var job = (Job) ((int) jobCode * 10);
         string name = packet.ReadUnicodeString();
 
+        if (string.IsNullOrWhiteSpace(name)) {
+            session.Send(CharacterListPacket.CreateError(s_char_err_name));
+            return;
+        }
+
+        if (name.Length < Constant.CharacterNameLengthMin) {
+            session.Send(CharacterListPacket.CreateError(s_char_err_name));
+            return;
+        }
+        if (name.Length > Constant.CharacterNameLengthMax) {
+            session.Send(CharacterListPacket.CreateError(s_char_err_system));
+            return;
+        }
+
         if (BanWordStorage.ContainsBannedWord(name)) {
             session.Send(CharacterListPacket.CreateError(s_char_err_ban_any));
             return;
         }
 
         // Validate character name
-        CharacterCreateError? nameError = CharacterNameValidator.ValidateName(name);
-        if (nameError != null) {
-            session.Send(CharacterListPacket.CreateError(nameError.Value));
+        if (NameValidator.ValidName(name)) {
+            session.Send(CharacterListPacket.CreateError(s_char_err_ban_all));
             return;
         }
 

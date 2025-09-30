@@ -4,79 +4,68 @@ using Maple2.Model.Validators;
 
 namespace Maple2.Server.Tests.Validators;
 
-public class CharacterNameValidatorTests {
+public class NameValidatorTests {
     [Test]
-    public void ValidName_ShouldReturnNull() {
+    public void ValidName_ShouldReturnFalse() {
         // Valid names should return null (no error)
-        Assert.That(CharacterNameValidator.ValidateName("ValidName"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Test123"), Is.Null);
-
-        Assert.That(CharacterNameValidator.ValidateName("ab"), Is.Null); // minimum length
-        Assert.That(CharacterNameValidator.ValidateName("abcdefghijkl"), Is.Null); // maximum length
+        Assert.That(NameValidator.ValidName("ValidName"), Is.True);
+        Assert.That(NameValidator.ValidName("Test123"), Is.True);
     }
 
     [Test]
-    public void TooShortName_ShouldReturnNameError() {
+    public void EmptyName_ShouldReturnFalse() {
         // Names shorter than minimum should return name error
-        Assert.That(CharacterNameValidator.ValidateName("a"), Is.EqualTo(CharacterCreateError.s_char_err_name));
-        Assert.That(CharacterNameValidator.ValidateName(""), Is.EqualTo(CharacterCreateError.s_char_err_name));
-        Assert.That(CharacterNameValidator.ValidateName(" "), Is.EqualTo(CharacterCreateError.s_char_err_name));
+        Assert.That(NameValidator.ValidName(""), Is.False);
+        Assert.That(NameValidator.ValidName(" "), Is.False);
     }
 
     [Test]
-    public void TooLongName_ShouldReturnSystemError() {
-        // Names longer than maximum should return system error
-        Assert.That(CharacterNameValidator.ValidateName("abcdefghijklm"), Is.EqualTo(CharacterCreateError.s_char_err_system));
-        Assert.That(CharacterNameValidator.ValidateName("ThisNameIsTooLong"), Is.EqualTo(CharacterCreateError.s_char_err_system));
-    }
-
-    [Test]
-    public void InvalidCharacters_ShouldReturnNameError() {
+    public void InvalidCharacters_ShouldReturnFalse() {
         // Names with invalid characters should return name error
-        Assert.That(CharacterNameValidator.ValidateName("test@name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("name#test"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("test$name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("test%name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("test*name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("test@name"), Is.False);
+        Assert.That(NameValidator.ValidName("name#test"), Is.False);
+        Assert.That(NameValidator.ValidName("test$name"), Is.False);
+        Assert.That(NameValidator.ValidName("test%name"), Is.False);
+        Assert.That(NameValidator.ValidName("test*name"), Is.False);
 
         // Dashes and underscores are not allowed
-        Assert.That(CharacterNameValidator.ValidateName("User_Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Cool-Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("User_Name"), Is.False);
+        Assert.That(NameValidator.ValidName("Cool-Name"), Is.False);
     }
 
     [Test]
-    public void OnlySpecialCharacters_ShouldReturnNameError() {
+    public void OnlySpecialCharacters_ShouldReturnFalse() {
         // Names with only special characters should return name error
-        Assert.That(CharacterNameValidator.ValidateName("--"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("__"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("  "), Is.EqualTo(CharacterCreateError.s_char_err_name));
-        Assert.That(CharacterNameValidator.ValidateName("-_-"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("--"), Is.False);
+        Assert.That(NameValidator.ValidName("__"), Is.False);
+        Assert.That(NameValidator.ValidName("  "), Is.False);
+        Assert.That(NameValidator.ValidName("-_-"), Is.False);
     }
 
     [Test]
-    public void NullOrWhitespace_ShouldReturnNameError() {
+    public void NullOrWhitespace_ShouldReturnFalse() {
         // Null or whitespace names should return name error
-        Assert.That(CharacterNameValidator.ValidateName(null!), Is.EqualTo(CharacterCreateError.s_char_err_name));
-        Assert.That(CharacterNameValidator.ValidateName(""), Is.EqualTo(CharacterCreateError.s_char_err_name));
-        Assert.That(CharacterNameValidator.ValidateName("   "), Is.EqualTo(CharacterCreateError.s_char_err_name));
+        Assert.That(NameValidator.ValidName(null!), Is.False);
+        Assert.That(NameValidator.ValidName(""), Is.False);
+        Assert.That(NameValidator.ValidName("   "), Is.False);
     }
 
     [Test]
-    public void SpaceValidation_ShouldWork() {
+    public void SpaceValidation_ShouldReturnFalse() {
         // Names with spaces should be invalid
-        Assert.That(CharacterNameValidator.ValidateName("Test Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Cool Player"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("a b"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("Test Name"), Is.False);
+        Assert.That(NameValidator.ValidName("Cool Player"), Is.False);
+        Assert.That(NameValidator.ValidName("a b"), Is.False);
 
         // Names with leading or trailing spaces should be invalid
-        Assert.That(CharacterNameValidator.ValidateName(" ValidName"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("ValidName "), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName(" ValidName "), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName(" ValidName"), Is.False);
+        Assert.That(NameValidator.ValidName("ValidName "), Is.False);
+        Assert.That(NameValidator.ValidName(" ValidName "), Is.False);
 
         // Names with multiple consecutive spaces should be invalid
-        Assert.That(CharacterNameValidator.ValidateName("Test  Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Test   Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("A  B"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("Test  Name"), Is.False);
+        Assert.That(NameValidator.ValidName("Test   Name"), Is.False);
+        Assert.That(NameValidator.ValidName("A  B"), Is.False);
     }
 
     [Test]
@@ -85,26 +74,26 @@ public class CharacterNameValidatorTests {
             return;
         }
         // Japanese Hiragana characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("さくら"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("ひろし"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("あいうえお"), Is.Null);
+        Assert.That(NameValidator.ValidName("さくら"), Is.True);
+        Assert.That(NameValidator.ValidName("ひろし"), Is.True);
+        Assert.That(NameValidator.ValidName("あいうえお"), Is.True);
 
         // Japanese Katakana characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("サクラ"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("ヒロシ"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("アイウエオ"), Is.Null);
+        Assert.That(NameValidator.ValidName("サクラ"), Is.True);
+        Assert.That(NameValidator.ValidName("ヒロシ"), Is.True);
+        Assert.That(NameValidator.ValidName("アイウエオ"), Is.True);
 
         // Japanese Kanji characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("田中"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("山田"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("佐藤"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("鈴木"), Is.Null);
+        Assert.That(NameValidator.ValidName("田中"), Is.True);
+        Assert.That(NameValidator.ValidName("山田"), Is.True);
+        Assert.That(NameValidator.ValidName("佐藤"), Is.True);
+        Assert.That(NameValidator.ValidName("鈴木"), Is.True);
 
         // Mixed Japanese characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("さくら123"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("田中ひろし"), Is.Null);
+        Assert.That(NameValidator.ValidName("さくら123"), Is.True);
+        Assert.That(NameValidator.ValidName("田中ひろし"), Is.True);
         // Mixed with dashes/underscores should be invalid
-        Assert.That(CharacterNameValidator.ValidateName("サクラ_田中"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("サクラ_田中"), Is.False);
     }
 
     [Test]
@@ -113,18 +102,18 @@ public class CharacterNameValidatorTests {
             return;
         }
         // Korean Hangul characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("김철수"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("이영희"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("박민수"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("정수진"), Is.Null);
+        Assert.That(NameValidator.ValidName("김철수"), Is.True);
+        Assert.That(NameValidator.ValidName("이영희"), Is.True);
+        Assert.That(NameValidator.ValidName("박민수"), Is.True);
+        Assert.That(NameValidator.ValidName("정수진"), Is.True);
 
         // Korean with numbers should be valid
-        Assert.That(CharacterNameValidator.ValidateName("김철수123"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("이영희456"), Is.Null);
+        Assert.That(NameValidator.ValidName("김철수123"), Is.True);
+        Assert.That(NameValidator.ValidName("이영희456"), Is.True);
 
         // Korean with dashes/underscores should be invalid
-        Assert.That(CharacterNameValidator.ValidateName("박민수-정"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("정수진_김"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("박민수-정"), Is.False);
+        Assert.That(NameValidator.ValidName("정수진_김"), Is.False);
     }
 
     [Test]
@@ -133,44 +122,44 @@ public class CharacterNameValidatorTests {
             return;
         }
         // Simplified Chinese characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("王小明"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("李小红"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("张三"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("刘德华"), Is.Null);
+        Assert.That(NameValidator.ValidName("王小明"), Is.True);
+        Assert.That(NameValidator.ValidName("李小红"), Is.True);
+        Assert.That(NameValidator.ValidName("张三"), Is.True);
+        Assert.That(NameValidator.ValidName("刘德华"), Is.True);
 
         // Traditional Chinese characters should be valid
-        Assert.That(CharacterNameValidator.ValidateName("王小明"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("陳大文"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("黃志強"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("林美玲"), Is.Null);
+        Assert.That(NameValidator.ValidName("王小明"), Is.True);
+        Assert.That(NameValidator.ValidName("陳大文"), Is.True);
+        Assert.That(NameValidator.ValidName("黃志強"), Is.True);
+        Assert.That(NameValidator.ValidName("林美玲"), Is.True);
 
         // Chinese with numbers should be valid
-        Assert.That(CharacterNameValidator.ValidateName("王小明123"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("李小红456"), Is.Null);
+        Assert.That(NameValidator.ValidName("王小明123"), Is.True);
+        Assert.That(NameValidator.ValidName("李小红456"), Is.True);
 
         // Chinese with dashes/underscores should be invalid
-        Assert.That(CharacterNameValidator.ValidateName("张三-李四"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("刘德华_陈"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("张三-李四"), Is.False);
+        Assert.That(NameValidator.ValidName("刘德华_陈"), Is.False);
     }
 
     [Test]
-    public void SpecialCharacters_ShouldReturnNameError() {
+    public void SpecialCharacters_ShouldReturnFalse() {
         // Names with special or non-ASCII symbols should return name error
-        Assert.That(CharacterNameValidator.ValidateName("Name★"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name."), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name!"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name<3"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name♪"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name~"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name*"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name♥"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+        Assert.That(NameValidator.ValidName("Name★"), Is.False);
+        Assert.That(NameValidator.ValidName("Name."), Is.False);
+        Assert.That(NameValidator.ValidName("Name!"), Is.False);
+        Assert.That(NameValidator.ValidName("Name<3"), Is.False);
+        Assert.That(NameValidator.ValidName("Name♪"), Is.False);
+        Assert.That(NameValidator.ValidName("Name~"), Is.False);
+        Assert.That(NameValidator.ValidName("Name*"), Is.False);
+        Assert.That(NameValidator.ValidName("Name♥"), Is.False);
     }
 
     [Test]
-    public void DashesAndUnderscores_ShouldReturnNameError() {
-        Assert.That(CharacterNameValidator.ValidateName("Name-Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("Name_Name"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
-        Assert.That(CharacterNameValidator.ValidateName("A-B_C-D"), Is.EqualTo(CharacterCreateError.s_char_err_ban_all));
+    public void DashesAndUnderscores_ShouldReturnFalse() {
+        Assert.That(NameValidator.ValidName("Name-Name"), Is.False);
+        Assert.That(NameValidator.ValidName("Name_Name"), Is.False);
+        Assert.That(NameValidator.ValidName("A-B_C-D"), Is.False);
     }
 
     [Test]
@@ -178,14 +167,14 @@ public class CharacterNameValidatorTests {
         if (!Constant.AllowUnicodeInNames) {
             return;
         }
-        Assert.That(CharacterNameValidator.ValidateName("José"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Renée"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Beyoncé"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("José"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Renée"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Beyoncé"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("André"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("Zoë"), Is.Null);
-        Assert.That(CharacterNameValidator.ValidateName("François"), Is.Null);
+        Assert.That(NameValidator.ValidName("José"), Is.True);
+        Assert.That(NameValidator.ValidName("Renée"), Is.True);
+        Assert.That(NameValidator.ValidName("Beyoncé"), Is.True);
+        Assert.That(NameValidator.ValidName("José"), Is.True);
+        Assert.That(NameValidator.ValidName("Renée"), Is.True);
+        Assert.That(NameValidator.ValidName("Beyoncé"), Is.True);
+        Assert.That(NameValidator.ValidName("André"), Is.True);
+        Assert.That(NameValidator.ValidName("Zoë"), Is.True);
+        Assert.That(NameValidator.ValidName("François"), Is.True);
     }
 }

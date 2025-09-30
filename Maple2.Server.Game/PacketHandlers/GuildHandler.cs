@@ -189,14 +189,22 @@ public class GuildHandler : PacketHandler<GameSession> {
             return; // Already in a guild.
         }
 
+        if (string.IsNullOrWhiteSpace(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
+            return;
+        }
+        if (guildName.Length is < Constant.GuildNameLengthMin or > Constant.GuildNameLengthMax) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
+            return;
+        }
+
         if (BanWordStorage.ContainsBannedWord(guildName)) {
             session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
             return;
         }
 
-        GuildError? result = GuildNameValidator.ValidateName(guildName);
-        if (result is not null) {
-            session.Send(GuildPacket.Error(result.Value));
+        if (!NameValidator.ValidName(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
             return;
         }
 
