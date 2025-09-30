@@ -7,8 +7,10 @@ using Grpc.Core;
 using Maple2.Database.Storage;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Validators;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -41,6 +43,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
     // ReSharper disable MemberCanBePrivate.Global
     public required WorldClient World { private get; init; }
     public required GameStorage GameStorage { private get; init; }
+    public required BanWordStorage BanWordStorage { private get; init; }
     public required ItemMetadataStorage ItemMetadata { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
     // ReSharper restore All
@@ -113,19 +116,21 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         var job = (Job) ((int) jobCode * 10);
         string name = packet.ReadUnicodeString();
 
-        if (name.Length < Constant.CharacterNameLengthMin) {
-            session.Send(CharacterListPacket.CreateError(s_char_err_name));
+        if (BanWordStorage.ContainsBannedWord(name)) {
+            session.Send(CharacterListPacket.CreateError(s_char_err_ban_any));
             return;
         }
 
-        if (name.Length > Constant.CharacterNameLengthMax) {
-            session.Send(CharacterListPacket.CreateError(s_char_err_system));
+        // Validate character name
+        CharacterCreateError? nameError = CharacterNameValidator.ValidateName(name);
+        if (nameError != null) {
+            session.Send(CharacterListPacket.CreateError(nameError.Value));
             return;
         }
 
         using GameStorage.Request db = GameStorage.Context();
         long existingId = db.GetCharacterId(name);
-        if (existingId != default) {
+        if (existingId != 0) {
             session.Send(CharacterListPacket.CreateError(s_char_err_already_taken));
             return;
         }
