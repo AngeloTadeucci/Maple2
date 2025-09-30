@@ -189,7 +189,10 @@ public class InventoryManager {
                     totalAmount -= toFill;
                     Item? itemToStack = session.Field.ItemDrop.CreateItem(add.Id, add.Rarity, toFill);
                     if (itemToStack is null) return false;
-                    Add(itemToStack, notifyNew, commit);
+                    if (!Add(itemToStack, notifyNew, commit)) {
+                        logger.Error("Failed to add partial stack during multi-step stacking");
+                        return false;
+                    }
                 }
 
                 int fullStacks = totalAmount / slotMax;
