@@ -4,6 +4,7 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Validators;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.PacketHandlers;
@@ -63,6 +64,7 @@ public class GuildHandler : PacketHandler<GameSession> {
     // ReSharper disable MemberCanBePrivate.Global
     public required WorldClient World { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
+    public required BanWordStorage BanWordStorage { private get; init; }
 
     // ReSharper restore All
     #endregion
@@ -186,10 +188,18 @@ public class GuildHandler : PacketHandler<GameSession> {
         if (session.Guild.Guild != null) {
             return; // Already in a guild.
         }
-        if (guildName.Length is < Constant.GuildNameLengthMin or > Constant.GuildNameLengthMax) {
-            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value)); // temp
+
+        if (BanWordStorage.ContainsBannedWord(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
             return;
         }
+
+        GuildError? result = GuildNameValidator.ValidateName(guildName);
+        if (result is not null) {
+            session.Send(GuildPacket.Error(result.Value));
+            return;
+        }
+
         if (session.Player.Value.Character.Level < Constant.GuildCreateMinLevel) {
             session.Send(GuildPacket.Error(GuildError.s_guild_err_not_enough_level));
             return;

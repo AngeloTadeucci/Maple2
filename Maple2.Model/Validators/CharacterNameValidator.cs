@@ -5,8 +5,9 @@ using Maple2.Model.Metadata;
 namespace Maple2.Model.Validators;
 
 public static partial class CharacterNameValidator {
-    // Regex pattern for valid character names (Unicode letters, numbers, and some special characters, no spaces)
-    private static readonly Regex ValidNamePattern = NamePatternRegex();
+    // Regex patterns for valid character names
+    private static readonly Regex ValidNamePatternAscii = NamePatternAsciiRegex();
+    private static readonly Regex ValidNamePatternUnicode = NamePatternUnicodeRegex();
 
     /// <summary>
     /// Validates a character name according to all rules.
@@ -18,24 +19,23 @@ public static partial class CharacterNameValidator {
             return CharacterCreateError.s_char_err_name;
         }
 
-        // Use the original name for validation
         string validatedName = name;
 
         // Check length constraints
-        if (validatedName.Length < Constant.CharacterNameLengthMin) {
+        if (validatedName.Length is < Constant.CharacterNameLengthMin) {
             return CharacterCreateError.s_char_err_name;
         }
-
         if (validatedName.Length > Constant.CharacterNameLengthMax) {
             return CharacterCreateError.s_char_err_system;
         }
 
-        // Check character pattern (Unicode letters, numbers, hyphens, underscores only, no spaces)
-        if (!ValidNamePattern.IsMatch(validatedName)) {
+        // Select pattern
+        Regex pattern = Constant.AllowUnicodeInNames ? ValidNamePatternUnicode : ValidNamePatternAscii;
+        if (!pattern.IsMatch(validatedName)) {
             return CharacterCreateError.s_char_err_ban_all;
         }
 
-        // Check for names that are only whitespace/special characters
+        // Check for names that are only special characters
         if (validatedName.All(c => !char.IsLetterOrDigit(c))) {
             return CharacterCreateError.s_char_err_name;
         }
@@ -43,6 +43,11 @@ public static partial class CharacterNameValidator {
         return null; // Valid name
     }
 
-    [GeneratedRegex(@"^[\p{L}0-9\-_]+$", RegexOptions.Compiled)]
-    private static partial Regex NamePatternRegex();
+    // ASCII only: A-Z, a-z, 0-9 (no dash, no underscore)
+    [GeneratedRegex(@"^[A-Za-z0-9]+$", RegexOptions.Compiled)]
+    private static partial Regex NamePatternAsciiRegex();
+
+    // Unicode: \p{L} (all letters, including accents), 0-9 (no dash, no underscore)
+    [GeneratedRegex(@"^[\p{L}0-9]+$", RegexOptions.Compiled)]
+    private static partial Regex NamePatternUnicodeRegex();
 }
