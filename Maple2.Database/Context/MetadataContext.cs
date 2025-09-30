@@ -31,6 +31,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
     public DbSet<FunctionCubeMetadata> FunctionCubeMetadata { get; set; } = null!;
     public DbSet<MapDataMetadata> MapDataMetadata { get; set; } = null!;
     public DbSet<TriggerMetadata> TriggerMetadata { get; set; } = null!;
+    public DbSet<BanWordMetadata> BanWordMetadata { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -58,6 +59,7 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
         modelBuilder.Entity<NxsMeshMetadata>(ConfigureNXSMeshMetadata);
         modelBuilder.Entity<FunctionCubeMetadata>(ConfigureFunctionCubeMetadata);
         modelBuilder.Entity<TriggerMetadata>(ConfigureTriggerMetadata);
+        modelBuilder.Entity<BanWordMetadata>(BanWordMetadataConfigure);
     }
 
     private static void ConfigureAdditionalEffectMetadata(EntityTypeBuilder<AdditionalEffectMetadata> builder) {
@@ -259,5 +261,11 @@ public sealed class MetadataContext(DbContextOptions options) : DbContext(option
             trigger.MapXBlock,
             trigger.Name,
         });
+    }
+
+    private static void BanWordMetadataConfigure(EntityTypeBuilder<BanWordMetadata> builder) {
+        builder.ToTable("ban-word");
+        builder.Property(banWord => banWord.Id).ValueGeneratedOnAdd();
+        builder.HasKey(banWord => banWord.Id);
     }
 }

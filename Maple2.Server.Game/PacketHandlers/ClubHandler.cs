@@ -4,6 +4,7 @@ using Maple2.Model.Error;
 using Maple2.Model.Game.Club;
 using Maple2.Model.Game.Party;
 using Maple2.Model.Metadata;
+using Maple2.Model.Validators;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Game.PacketHandlers.Field;
@@ -32,6 +33,7 @@ public class ClubHandler : FieldPacketHandler {
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
     public required WorldClient World { private get; init; }
+    public required BanWordStorage BanWordStorage { private get; init; }
     // ReSharper restore All
     #endregion
 
@@ -64,6 +66,25 @@ public class ClubHandler : FieldPacketHandler {
 
     private void HandleCreate(GameSession session, IByteReader packet) {
         string clubName = packet.ReadUnicodeString();
+
+        if (string.IsNullOrWhiteSpace(clubName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+        if (clubName.Length is < Constant.ClubNameLengthMin or > Constant.ClubNameLengthMax) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
+        if (BanWordStorage.ContainsBannedWord(clubName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
+        if (!NameValidator.ValidName(clubName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
 
         // Grabbing party. Clubs can only be created by party leaders.
         Party? party = session.Party.Party;
@@ -217,6 +238,25 @@ public class ClubHandler : FieldPacketHandler {
     private void HandleRename(GameSession session, IByteReader packet) {
         long clubId = packet.ReadLong();
         string newName = packet.ReadUnicodeString();
+
+        if (string.IsNullOrWhiteSpace(newName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+        if (newName.Length is < Constant.ClubNameLengthMin or > Constant.ClubNameLengthMax) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
+        if (BanWordStorage.ContainsBannedWord(newName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
+
+        if (!NameValidator.ValidName(newName)) {
+            session.Send(ClubPacket.Error(ClubError.s_club_err_name_value));
+            return;
+        }
 
         if (!session.Clubs.ContainsKey(clubId)) {
             return;

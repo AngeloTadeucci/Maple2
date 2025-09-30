@@ -214,6 +214,7 @@ UpdateDatabase(metadataContext, new SkillMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new TableMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 UpdateDatabase(metadataContext, new FunctionCubeMapper(xmlReader));
+UpdateDatabase(metadataContext, new BanWordMapper(xmlReader));
 
 NifParserHelper.ParseNif(modelReaders);
 
