@@ -136,7 +136,7 @@ public class CharacterManagementHandler : PacketHandler<LoginSession> {
         }
 
         // Validate character name
-        if (NameValidator.ValidName(name)) {
+        if (!NameValidator.ValidName(name)) {
             session.Send(CharacterListPacket.CreateError(s_char_err_ban_all));
             return;
         }
