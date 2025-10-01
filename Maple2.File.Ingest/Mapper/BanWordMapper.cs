@@ -16,7 +16,7 @@ public class BanWordMapper : TypeMapper<BanWordMetadata> {
         foreach ((int Id, string Name) word in parser.ParseBanWords()) {
             if (hashSet.Add(word.Name)) {
                 yield return new BanWordMetadata(
-                    word.Id, word.Name, false
+                    0, word.Name, false
                 );
             }
         }
@@ -24,7 +24,7 @@ public class BanWordMapper : TypeMapper<BanWordMetadata> {
         foreach ((int Id, string Name) word in parser.ParseUgcBanWords()) {
             if (hashSet.Add(word.Name)) {
                 yield return new BanWordMetadata(
-                    word.Id, word.Name, true
+                    0, word.Name, true
                 );
             }
         }
