@@ -46,7 +46,7 @@ public class CheckCharacterNameHandler : FieldPacketHandler {
         }
 
         // Validate character name
-        if (NameValidator.ValidName(characterName)) {
+        if (!NameValidator.ValidName(characterName)) {
             session.Send(CharacterListPacket.CreateError(s_char_err_ban_all));
             return;
         }
