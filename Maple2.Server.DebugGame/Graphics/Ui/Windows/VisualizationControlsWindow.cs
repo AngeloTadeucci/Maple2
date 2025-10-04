@@ -35,6 +35,12 @@ public class VisualizationControlsWindow : IUiWindow {
             ImGui.Checkbox("Show Portal Connections", ref renderer.ShowPortalConnections);
             ImGui.Unindent();
         }
+        ImGui.Checkbox("Show Triggers", ref renderer.ShowTriggers);
+        if (renderer.ShowTriggers) {
+            ImGui.Indent();
+            ImGui.Checkbox("Show Trigger Information", ref renderer.ShowTriggerInformation);
+            ImGui.Unindent();
+        }
         ImGui.Checkbox("Show Sellable Tiles (Plots)", ref renderer.ShowSellableTiles);
         if (renderer.ShowSellableTiles) {
             ImGui.Indent();

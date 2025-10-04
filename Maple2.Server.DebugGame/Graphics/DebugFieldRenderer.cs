@@ -52,6 +52,8 @@ public class DebugFieldRenderer : IFieldRenderer {
     public bool ShowMobs = true;
     public bool ShowSellableTiles; // toggle for rendering sellable plot tiles
     public bool ShowPlotLabels = true; // toggle for showing floating plot labels (status/owner/etc.)
+    public bool ShowTriggers = true;
+    public bool ShowTriggerInformation = true;
     public bool PlayerMoveMode;
     public bool ForceMove;
 
@@ -238,6 +240,14 @@ public class DebugFieldRenderer : IFieldRenderer {
         // Render vibrate objects
         if (ShowVibrateObjects) {
             RenderVibrateObjects(window);
+        }
+
+        // Render trigger boxes
+        if (ShowTriggers) {
+            RenderTriggerBoxes(window);
+            if (ShowTriggerInformation) {
+                RenderTriggerTextLabels();
+            }
         }
 
         // Render portals
@@ -1168,5 +1178,38 @@ public class DebugFieldRenderer : IFieldRenderer {
 
         window.SceneState.BindConstantBuffer(window.InstanceConstantBuffer, 1, Enum.ShaderStageFlags.Vertex);
         window.SceneState.UpdateBindings();
+    }
+
+    private void RenderTriggerBoxes(DebugFieldWindow window) {
+        if (Field.TriggerObjects.Boxes.Count == 0) return;
+        instanceBuffer.Color = new Vector4(1.0f, 0.3f, 0.8f, 0.9f); // magenta-ish
+        foreach (TriggerBox box in Field.TriggerObjects.Boxes.Values) {
+            Vector3 size = box.Metadata.Dimensions;
+            Vector3 center = box.Metadata.Position;
+            instanceBuffer.Transformation = Matrix4x4.Transpose(Matrix4x4.CreateScale(size) * Matrix4x4.CreateTranslation(center));
+            UpdateWireframeInstance(window);
+            Context.CoreModels!.WireCube.Draw();
+        }
+    }
+
+    private void RenderTriggerTextLabels() {
+        if (Field.TriggerObjects.Boxes.Count == 0) return;
+        ImDrawListPtr drawList = ImGui.GetBackgroundDrawList();
+        foreach (TriggerBox box in Field.TriggerObjects.Boxes.Values) {
+            Vector3 textPos = box.Metadata.Position + new Vector3(0, 0, 150);
+            if (!TryWorldToScreen(textPos, out Vector2 screenPos)) continue;
+            string idText = $"TriggerBox Id: {box.Id}";
+            Vector2 textSize = ImGui.CalcTextSize(idText);
+            float left = screenPos.X - (textSize.X * 0.5f);
+            Vector2 topLeft = new(left, screenPos.Y);
+            Vector4 textColor = new(1.0f, 0.3f, 0.8f, 1.0f);
+            Vector4 bgColor = new(0, 0, 0, 0.75f);
+            Vector4 border = new(0.3f, 0.3f, 0.3f, 0.9f);
+            Vector2 bgMin = topLeft - new Vector2(4, 2);
+            Vector2 bgMax = topLeft + textSize + new Vector2(4, 2);
+            drawList.AddRectFilled(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(bgColor));
+            drawList.AddRect(bgMin, bgMax, ImGui.ColorConvertFloat4ToU32(border));
+            drawList.AddText(topLeft, ImGui.ColorConvertFloat4ToU32(textColor), idText);
+        }
     }
 }

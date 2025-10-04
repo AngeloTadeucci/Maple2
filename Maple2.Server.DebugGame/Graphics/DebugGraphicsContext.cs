@@ -482,8 +482,6 @@ public class DebugGraphicsContext : IGraphicsContext {
             return;
         }
 
-        Logger.Information("Field removed {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
-
         renderer.CleanUp();
 
         fieldRendererMutex.WaitOne();
@@ -491,6 +489,7 @@ public class DebugGraphicsContext : IGraphicsContext {
         fieldRendererMutex.ReleaseMutex();
 
         fields.Remove(field);
+        Logger.Information("Field removed {Name} [{Id}]", field.Metadata.Name, field.Metadata.Id);
     }
 
     public DebugFieldWindow FieldWindowOpened() {
