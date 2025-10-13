@@ -21,37 +21,19 @@ public class PlayerConfigLookUp {
     }
 
     public void Save(List<BuffInfo> saveBuffs, List<SkillCooldownInfo> skillCooldownInfos, DeathInfo death, long characterId) {
-        // Save buffs
-        if (!buffs.TryGetValue(characterId, out ConcurrentDictionary<int, BuffInfo>? list)) {
-            buffs.TryAdd(characterId, new ConcurrentDictionary<int, BuffInfo>());
-            list = buffs[characterId];
-        }
-
-        // Add to existing list
+        var newBuffList = new ConcurrentDictionary<int, BuffInfo>();
         foreach (BuffInfo buff in saveBuffs) {
-            if (list.TryGetValue(buff.Id, out BuffInfo? _)) {
-                list[buff.Id] = buff;
-                continue;
-            }
-
-            list.TryAdd(buff.Id, buff);
+            newBuffList.TryAdd(buff.Id, buff);
         }
 
-        // Save SkillCooldowns
-        if (!skillCooldowns.TryGetValue(characterId, out ConcurrentDictionary<int, SkillCooldownInfo>? skillList)) {
-            skillCooldowns.TryAdd(characterId, new ConcurrentDictionary<int, SkillCooldownInfo>());
-            skillList = skillCooldowns[characterId];
-        }
+        buffs[characterId] = newBuffList;
 
-        // Add to existing list
+        var newSkillList = new ConcurrentDictionary<int, SkillCooldownInfo>();
         foreach (SkillCooldownInfo skillCooldown in skillCooldownInfos) {
-            if (skillList.TryGetValue(skillCooldown.SkillId, out SkillCooldownInfo? _)) {
-                skillList[skillCooldown.SkillId] = skillCooldown;
-                continue;
-            }
-
-            skillList.TryAdd(skillCooldown.SkillId, skillCooldown);
+            newSkillList.TryAdd(skillCooldown.SkillId, skillCooldown);
         }
+
+        skillCooldowns[characterId] = newSkillList;
 
         // Save death
         if (!deaths.TryGetValue(characterId, out DeathInfo? _)) {
