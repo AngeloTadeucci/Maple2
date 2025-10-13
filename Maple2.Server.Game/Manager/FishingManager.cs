@@ -254,7 +254,7 @@ public class FishingManager {
             fishingTick = Random.Shared.Next(fishingTick + 1, fishingTick * 2); // If tick is over bore duration, it will fail
         }
 
-        session.Send(FishingPacket.Start(((int) session.Field.FieldTick) + fishingTick, fishFightGame));
+        session.Send(FishingPacket.Start(session.Field.FieldTickInt + fishingTick, fishFightGame));
 
         return FishingError.none;
     }

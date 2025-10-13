@@ -62,7 +62,7 @@ public static class InstrumentPacket {
         pWriter.WriteInt(instrument.ObjectId);
         pWriter.WriteInt(instrument.OwnerId);
         pWriter.Write<Vector3>(instrument.Position);
-        pWriter.WriteInt((int) instrument.StartTick);
+        pWriter.WriteInt(instrument.StartTick.Truncate32());
         pWriter.WriteInt(instrument.Value.MidiId);
         pWriter.WriteInt(instrument.Value.PercussionId);
         pWriter.WriteBool(instrument.Ensemble);

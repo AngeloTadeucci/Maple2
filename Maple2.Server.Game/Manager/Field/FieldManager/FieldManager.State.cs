@@ -184,8 +184,8 @@ public partial class FieldManager {
         var fieldPortal = new FieldQuestPortal(owner, this, NextLocalId(), portal) {
             Position = portal.Position,
             Rotation = portal.Rotation,
-            EndTick = (int) (FieldTick + TimeSpan.FromSeconds(Constant.QuestPortalKeepTime).TotalMilliseconds),
-            StartTick = (int) FieldTick,
+            EndTick = FieldTickInt + (int) TimeSpan.FromSeconds(Constant.QuestPortalKeepTime).TotalMilliseconds,
+            StartTick = FieldTickInt,
             Model = Constant.QuestPortalKeepNif,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
@@ -625,7 +625,7 @@ public partial class FieldManager {
             Continent.Kritias => "Eff_ks_magichole_portal_A01",
             _ => "Eff_event_portal_A01",
         };
-        fieldPortal.EndTick = (int) (FieldTick + TimeSpan.FromSeconds(30).TotalMilliseconds);
+        fieldPortal.EndTick = FieldTickInt + (int) TimeSpan.FromSeconds(30).TotalMilliseconds;
         Broadcast(PortalPacket.Add(fieldPortal));
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
     }

@@ -261,6 +261,13 @@ public partial class FieldManager : IField {
     // Use this to keep systems in sync. Do not use Environment.TickCount directly
     public long FieldTick { get; private set; }
 
+    /// <summary>
+    /// FieldTick truncated to 32-bit int. Use this when sending tick values to the client or when
+    /// int tick values are required (e.g., TimeSync packets, performance stage).
+    /// This properly handles overflow to match Environment.TickCount behavior.
+    /// </summary>
+    public int FieldTickInt => FieldTick.Truncate32();
+
     public void QueuePacket(FieldPacketHandler handler, GameSession session, ByteReader reader) {
         lock (queuedPackets) {
             queuedPackets.Add((handler, session, reader));

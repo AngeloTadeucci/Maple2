@@ -809,28 +809,33 @@ public sealed partial class GameSession : Core.Network.Session {
 
             long stopTime = DateTime.Now.ToEpochSeconds();
             long fieldTick = fieldTickSnapshot;
+
             try {
                 PlayerConfigResponse _ = World.PlayerConfig(new PlayerConfigRequest {
                     Save = new PlayerConfigRequest.Types.Save {
                         Buffs = {
-                            buffs.Select(buff => new BuffInfo {
-                                Id = buff.Id,
-                                Level = buff.Level,
-                                MsRemaining = (int) (buff.EndTick - fieldTick),
-                                Stacks = buff.Stacks,
-                                Enabled = buff.Enabled,
-                                StopTime = stopTime,
-                            }),
+                            buffs
+                                .Where(buff => buff.EndTick - fieldTick > 0)
+                                .Select(buff => new BuffInfo {
+                                    Id = buff.Id,
+                                    Level = buff.Level,
+                                    MsRemaining = (int) (buff.EndTick - fieldTick),
+                                    Stacks = buff.Stacks,
+                                    Enabled = buff.Enabled,
+                                    StopTime = stopTime,
+                                }),
                         },
                         SkillCooldowns = {
-                            skillCooldowns.Select(cooldown => new SkillCooldownInfo {
-                                SkillId = cooldown.SkillId,
-                                SkillLevel = cooldown.Level,
-                                GroupId = cooldown.GroupId,
-                                MsRemaining = (int) (cooldown.EndTick - fieldTick),
-                                StopTime = stopTime,
-                                Charges = cooldown.Charges,
-                            }),
+                            skillCooldowns
+                                .Where(cooldown => cooldown.EndTick - fieldTick > 0)
+                                .Select(cooldown => new SkillCooldownInfo {
+                                    SkillId = cooldown.SkillId,
+                                    SkillLevel = cooldown.Level,
+                                    GroupId = cooldown.GroupId,
+                                    MsRemaining = (int) (cooldown.EndTick - fieldTick),
+                                    StopTime = stopTime,
+                                    Charges = cooldown.Charges,
+                                }),
                         },
                         DeathInfo = new DeathInfo {
                             Count = Config.DeathCount,

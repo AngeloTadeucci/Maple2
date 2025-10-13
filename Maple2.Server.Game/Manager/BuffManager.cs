@@ -498,19 +498,19 @@ public class BuffManager : IUpdatable {
         Remove(buffsToRemove.ToArray());
     }
 
-    public void SetCacheBuffs(IList<BuffInfo> buffs, long currentTick) {
+    public void SetCacheBuffs(IList<BuffInfo> cacheBuffs, long currentTick) {
         if (Actor is not FieldPlayer player) {
             return;
         }
 
-        foreach (BuffInfo info in buffs) {
+        foreach (BuffInfo info in cacheBuffs) {
             if (!player.Field.SkillMetadata.TryGetEffect(info.Id, (short) info.Level, out AdditionalEffectMetadata? additionalEffect)) {
                 logger.Error("Invalid buff: {SkillId},{Level}", info.Id, info.Level);
                 continue;
             }
 
             if (additionalEffect.Property.UseInGameTime || info.MsRemaining > 0) {
-                AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.MsRemaining);
+                AddBuff(Actor, Actor, info.Id, (short) info.Level, currentTick, info.Stacks, info.MsRemaining);
             }
         }
     }

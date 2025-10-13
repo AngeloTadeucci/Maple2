@@ -322,7 +322,7 @@ public class DungeonManager {
         }
 
         if (firstField.DungeonRoomRecord.StartTick == 0) {
-            firstField.DungeonRoomRecord.StartTick = Environment.TickCount;
+            firstField.DungeonRoomRecord.StartTick = Lobby.FieldTick;
         }
         session.Send(session.PrepareField(firstField.MapId, roomId: firstField.RoomId) ? FieldEnterPacket.Request(session.Player) :
             FieldEnterPacket.Error(MigrationError.s_move_err_default));
