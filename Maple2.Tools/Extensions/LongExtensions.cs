@@ -8,7 +8,7 @@ public static class LongExtensions {
     /// <param name="value">The long value to truncate</param>
     /// <returns>The truncated int value</returns>
     public static int Truncate32(this long value) {
-        return (int)(0xFFFFFFFF & value);
+        return (int) (0xFFFFFFFF & value);
     }
 }
 
