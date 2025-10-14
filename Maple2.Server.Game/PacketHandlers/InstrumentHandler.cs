@@ -271,17 +271,9 @@ public class InstrumentHandler : FieldPacketHandler {
         session.Send(InstrumentPacket.ViewScore(score.Uid, score.Music.Mml));
     }
 
-    private void HandleStartPerform(GameSession session) {
-        if (session.Field?.PerformanceStage is null) {
-            return;
-        }
-    }
+    private void HandleStartPerform(GameSession session) => session.Field?.PerformanceStage?.StartPerformance(session);
 
-    private void HandleEndPerform(GameSession session) {
-        if (session.Field?.PerformanceStage is null) {
-            return;
-        }
-    }
+    private void HandleEndPerform(GameSession session) => session.Field?.PerformanceStage?.EndPerformance(session);
 
     private void HandleEnterExitStage(GameSession session) => session.Field?.PerformanceStage?.EnterExitStage(session);
 

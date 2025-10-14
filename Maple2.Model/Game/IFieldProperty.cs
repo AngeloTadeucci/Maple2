@@ -33,12 +33,12 @@ public class FieldPropertyMusicConcert : IFieldProperty {
     public FieldProperty Type => FieldProperty.MusicConcert;
 
     public long CharacterId { get; init; }
-    public int Unknown { get; init; } // ServerTicks?
+    public int PerformanceEndTick { get; init; }
 
     public void WriteTo(IByteWriter writer) {
         writer.Write<FieldProperty>(Type);
         writer.WriteLong(CharacterId);
-        writer.WriteInt(Unknown);
+        writer.WriteInt(PerformanceEndTick);
     }
 }
 
