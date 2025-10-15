@@ -103,8 +103,13 @@ public class PerformanceStageManager {
         }
 
         // Check if the owner has left the field or gone offline - this ends the performance
-        if (!performanceOwner.Connected() || performanceOwner.Field?.MapId != Constant.PerformanceMapId) {
-            logger.Debug("Performance owner {PlayerName} left the performance map or went offline at tick {CurrentTick}, scheduled end was {PerformanceEndTick}", performanceOwner.PlayerName, Field.FieldTickInt, performanceEndTick);
+        bool isConnected = performanceOwner.State == SessionState.Connected;
+        int? ownerMapId = performanceOwner.Field?.MapId;
+        bool isInPerformanceMap = ownerMapId == Constant.PerformanceMapId;
+
+        if (!isConnected || !isInPerformanceMap) {
+            logger.Debug("Performance owner {PlayerName} left the performance map or went offline at tick {CurrentTick}, scheduled end was {PerformanceEndTick}. SessionState={SessionState}, OwnerMapId={OwnerMapId}, PerformanceMapId={PerformanceMapId}",
+                performanceOwner.PlayerName, Field.FieldTickInt, performanceEndTick, performanceOwner.State, ownerMapId, Constant.PerformanceMapId);
             EndPerformance();
         }
     }
