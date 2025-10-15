@@ -337,6 +337,7 @@ public partial class FieldManager : IField {
         UpdateBanners();
 
         RoomTimer?.Update(FieldTick);
+        PerformanceStage?.Update();
     }
 
     public void EnsurePlayerPosition(FieldPlayer player) {
