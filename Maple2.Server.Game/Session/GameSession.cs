@@ -27,6 +27,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
+using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using MigrationType = Maple2.Model.Enum.MigrationType;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
@@ -819,7 +820,7 @@ public sealed partial class GameSession : Core.Network.Session {
                                 .Select(buff => new BuffInfo {
                                     Id = buff.Id,
                                     Level = buff.Level,
-                                    MsRemaining = (int) (buff.EndTick - fieldTick),
+                                    MsRemaining = (buff.EndTick - fieldTick).Truncate32(),
                                     Stacks = buff.Stacks,
                                     Enabled = buff.Enabled,
                                     StopTime = stopTime,
@@ -832,7 +833,7 @@ public sealed partial class GameSession : Core.Network.Session {
                                     SkillId = cooldown.SkillId,
                                     SkillLevel = cooldown.Level,
                                     GroupId = cooldown.GroupId,
-                                    MsRemaining = (int) (cooldown.EndTick - fieldTick),
+                                    MsRemaining = (cooldown.EndTick - fieldTick).Truncate32(),
                                     StopTime = stopTime,
                                     Charges = cooldown.Charges,
                                 }),
