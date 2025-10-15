@@ -1,5 +1,6 @@
 ﻿using Maple2.PacketLib.Tools;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Model.Game;
 
@@ -20,7 +21,7 @@ public class SkillCooldown : IByteSerializable {
     public void WriteTo(IByteWriter writer) {
         writer.WriteInt(SkillId);
         writer.WriteInt(GroupId);
-        writer.WriteInt((int) EndTick);
+        writer.WriteInt(EndTick.Truncate32());
         writer.WriteInt(Charges);
     }
 }

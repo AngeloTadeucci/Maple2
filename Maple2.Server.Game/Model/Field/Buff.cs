@@ -7,6 +7,7 @@ using Maple2.Server.Game.Model.Skill;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Tools;
+using Maple2.Tools.Extensions;
 using Serilog;
 
 namespace Maple2.Server.Game.Model;
@@ -318,8 +319,8 @@ public class Buff : IUpdatable, IByteSerializable {
     }
 
     public void WriteAdditionalEffect(IByteWriter writer) {
-        writer.WriteInt((int) StartTick);
-        writer.WriteInt((int) EndTick);
+        writer.WriteInt(StartTick.Truncate32());
+        writer.WriteInt(EndTick.Truncate32());
         writer.WriteInt(Id);
         writer.WriteShort(Level);
         writer.WriteInt(Stacks);

@@ -3,6 +3,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -17,7 +18,7 @@ public static class RegionSkillPacket {
         pWriter.Write<Command>(Command.Add);
         pWriter.WriteInt(fieldSkill.ObjectId);
         pWriter.WriteInt(fieldSkill.Caster.ObjectId);
-        pWriter.WriteInt((int) fieldSkill.NextTick);
+        pWriter.WriteInt(fieldSkill.NextTick.Truncate32());
         pWriter.WriteByte((byte) fieldSkill.Points.Length);
         foreach (Vector3 point in fieldSkill.Points) {
             pWriter.Write<Vector3>(point);
