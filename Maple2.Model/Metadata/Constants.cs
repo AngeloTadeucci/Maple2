@@ -37,6 +37,7 @@ public static class Constant {
     public const int HomePasscodeLength = 6;
     public const int HomeMaxLayoutSlots = 5;
     public const int PerformanceMapId = 2000064; // Queenstown
+    public static readonly TimeSpan MaxPerformanceDuration = TimeSpan.FromMinutes(10);
     public const int BaseStorageCount = 36;
     public const float MesoMarketTaxRate = 0.1f;
     public const float MesoMarketRangeRate = 0.2f;
