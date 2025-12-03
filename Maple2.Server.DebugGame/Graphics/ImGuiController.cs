@@ -6,6 +6,7 @@ using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using System.Drawing;
 using System.Numerics;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.DebugGame.Graphics;
 
@@ -15,15 +16,51 @@ public enum ImGuiWindowType {
     Field,
 }
 
+public struct KeyState {
+    public bool IsDown;
+    public bool LastInput;
+    public bool Changed => LastInput != IsDown;
+    public bool IsPressed => IsDown && Changed;
+    public bool IsReleased => !IsDown && Changed;
+    public bool IsHeld => IsDown && !Changed;
+    public bool IsIdle => !IsDown && !Changed;
+}
+
+public struct AnalogInput {
+    public Vector3 Position;
+    public Vector3 LastPosition;
+    public Vector3 Delta => Position - LastPosition;
+    public bool Moved => !Position.IsNearlyEqual(LastPosition);
+    public bool Lock;
+}
+
+public class InputState {
+    public bool CapturedKeyboard;
+    public bool CapturedMouse;
+    public bool InputFocused;
+    public KeyState[] KeyStates { get; init; } = new KeyState[(int) Key.Menu + 1];
+    public KeyState MouseLeft = new();
+    public KeyState MouseMiddle = new();
+    public KeyState MouseRight = new();
+    public AnalogInput MousePosition = new();
+    public AnalogInput MouseWheel = new();
+
+    public KeyState GetState(Key key) => KeyStates[(int) key];
+}
+
 public class ImGuiController {
     public static readonly ILogger Logger = Log.Logger.ForContext<ImGuiController>();
 
-    public DebugGraphicsContext Context { get; init; }
-    public IWindow? ParentWindow { get; private set; }
-    public IInputContext Input { get; init; }
-    public IntPtr ImGuiContext { get; private set; }
-    public ImGuiWindowType WindowType { get; init; }
-    private List<char> pressedCharacters;
+    // Global config: when true, ClampWindowToViewport will keep only the title bar inside the viewport
+    // if callers don't explicitly provide the override flag.
+    public static bool ClampTitleBarOnlyDefault = false;
+
+    private DebugGraphicsContext Context { get; init; }
+    private IWindow? ParentWindow { get; set; }
+    private IInputContext Input { get; init; }
+    private IntPtr ImGuiContext { get; set; }
+    private ImGuiWindowType WindowType { get; init; }
+    private readonly List<char> pressedCharacters;
 
     private List<IUiWindow> uiWindows = [];
     private Dictionary<Type, IUiWindow> uiWindowMap = new();
@@ -60,7 +97,7 @@ public class ImGuiController {
         }
 
         foreach (Type type in _uiWindowTypes) {
-            var windowObject = Activator.CreateInstance(type);
+            object? windowObject = Activator.CreateInstance(type);
 
             if (windowObject is not IUiWindow window) {
                 throw new InvalidCastException($"Type {type.Name} doesn't implement IUiWindow");
@@ -111,7 +148,7 @@ public class ImGuiController {
         ImGuiNative.igImGui_ImplDX11_Shutdown();
         ImGui.DestroyContext(ImGuiContext);
 
-        ImGuiContext = default;
+        ImGuiContext = 0;
 
         Input.ConnectionChanged -= OnConnectionChanged;
 
@@ -196,7 +233,7 @@ public class ImGuiController {
         comboFlags |= ImGuiComboFlags.WidthFitPreview;
 
         if (ImGui.BeginCombo("##TOOLBAR COMBO", "View", comboFlags)) {
-            foreach (IUiWindow window in uiWindows) {
+            foreach (IUiWindow window in uiWindows.Where(x => !x.HideFromMenuBar)) {
                 bool toggle = ImGui.Selectable(window.TypeName, window.Enabled);
 
                 if (toggle) {
@@ -207,10 +244,18 @@ public class ImGuiController {
             ImGui.EndCombo();
         }
 
+        // Place Settings combo on the same line as View
+        ImGui.SameLine();
+        if (ImGui.BeginCombo("##TOOLBAR SETTINGS", "Settings", comboFlags)) {
+            // Global options
+            ImGui.Checkbox("Clamp title bar only", ref ClampTitleBarOnlyDefault);
+
+            ImGui.EndCombo();
+        }
+
         ImGui.PopStyleVar(2); // WindowBorderSize, WindowPadding
 
         ImGui.End();
-
 
         foreach (IUiWindow window in uiWindows) {
             if (!window.Enabled) {
@@ -218,6 +263,68 @@ public class ImGuiController {
             }
 
             window.Render();
+        }
+    }
+
+    /// <summary>
+    /// Clamp current ImGui window position & size so it stays fully visible inside the main viewport work area.
+    /// Call at end of each window's Render() after ImGui.Begin but before ImGui.End.
+    /// </summary>
+    /// <param name="padding">Optional padding inside the viewport bounds.</param>
+    public static void ClampWindowToViewport(float padding = 4f) {
+        ImGuiViewportPtr vp = ImGui.GetMainViewport();
+        Vector2 workPos = vp.WorkPos; // top-left
+        Vector2 workSize = vp.WorkSize; // available size
+        Vector2 min = new(workPos.X + padding, workPos.Y + padding);
+        Vector2 max = new(workPos.X + workSize.X - padding, workPos.Y + workSize.Y - padding);
+
+        Vector2 pos = ImGui.GetWindowPos();
+        Vector2 size = ImGui.GetWindowSize();
+
+        if (ClampTitleBarOnlyDefault) {
+            // Estimate title bar height using current style
+            ImGuiStylePtr style = ImGui.GetStyle();
+            float titleBarHeight = ImGui.GetFontSize() + style.FramePadding.Y * 2f;
+
+            float newX = pos.X;
+            float newY = pos.Y;
+
+            // Compute allowed ranges for top-left of title bar
+            float minXAllowed = min.X;
+            float maxXAllowed = max.X - size.X;
+            float minYAllowed = min.Y;
+            float maxYAllowed = max.Y - titleBarHeight;
+
+            // If the window/titlebar is wider/taller than work area, prefer keeping the left/top aligned to min
+            if (maxXAllowed < minXAllowed) newX = minXAllowed; else newX = Math.Clamp(newX, minXAllowed, maxXAllowed);
+            if (maxYAllowed < minYAllowed) newY = minYAllowed; else newY = Math.Clamp(newY, minYAllowed, maxYAllowed);
+
+            if (Math.Abs(newX - pos.X) > 0.5f || Math.Abs(newY - pos.Y) > 0.5f) {
+                ImGui.SetWindowPos(new Vector2(newX, newY), ImGuiCond.Always);
+            }
+
+            return;
+        }
+
+        // If window size exceeds work area, shrink it first
+        bool resized = false;
+        if (size.X > max.X - min.X) { size.X = MathF.Max(50f, max.X - min.X); resized = true; }
+        if (size.Y > max.Y - min.Y) { size.Y = MathF.Max(50f, max.Y - min.Y); resized = true; }
+        if (resized) ImGui.SetWindowSize(size, ImGuiCond.Always);
+
+        // Re-fetch possibly updated size
+        size = ImGui.GetWindowSize();
+
+        // Clamp position for full body
+        float newBodyX = pos.X;
+        float newBodyY = pos.Y;
+        if (newBodyX < min.X) newBodyX = min.X;
+        if (newBodyY < min.Y) newBodyY = min.Y;
+        if (newBodyX + size.X > max.X) newBodyX = max.X - size.X;
+        if (newBodyY + size.Y > max.Y) newBodyY = max.Y - size.Y;
+
+        if (Math.Abs(newBodyX - pos.X) > 0.5f || Math.Abs(newBodyY - pos.Y) > 0.5f) {
+            ImGui.SetWindowPos(new Vector2(newBodyX, newBodyY), ImGuiCond.Always);
         }
     }
 
@@ -434,7 +541,7 @@ public class ImGuiController {
             Key.F22 => ImGuiKey.F22,
             Key.F23 => ImGuiKey.F23,
             Key.F24 => ImGuiKey.F24,
-            _ => throw new NotImplementedException(),
+            _ => ImGuiKey.None,
         };
     }
 }

@@ -22,6 +22,94 @@ public class PlayerCommand : GameCommand {
         AddCommand(new CurrencyCommand(session));
         AddCommand(new InventoryCommand(session));
         AddCommand(new TrophyCommand(session, achievementMetadataStorage));
+        AddCommand(new MasteryCommand(session));
+    }
+
+    private class MasteryCommand : Command {
+        public MasteryCommand(GameSession session) : base("mastery", "Set player mastery.") {
+            AddCommand(new MasteryAddExpCommand(session));
+            AddCommand(new MasterySetExpCommand(session));
+            AddCommand(new MasteryLevelCommand(session));
+        }
+
+        private class MasteryAddExpCommand : Command {
+            private readonly GameSession session;
+
+            public MasteryAddExpCommand(GameSession session) : base("addexp", "Add player mastery experience.") {
+                this.session = session;
+
+                var masteryCode = new Argument<MasteryType>("mastery", "MasteryType of the player.");
+                var exp = new Argument<int>("exp", "Experience points to add.");
+
+                AddArgument(masteryCode);
+                AddArgument(exp);
+                this.SetHandler<InvocationContext, MasteryType, int>(Handle, masteryCode, exp);
+            }
+
+            private void Handle(InvocationContext ctx, MasteryType masteryType, int exp) {
+                try {
+                    session.Mastery[masteryType] = session.Mastery[masteryType] + exp;
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+        }
+
+        private class MasterySetExpCommand : Command {
+            private readonly GameSession session;
+
+            public MasterySetExpCommand(GameSession session) : base("setexp", "Set player mastery experience.") {
+                this.session = session;
+
+                var masteryCode = new Argument<MasteryType>("mastery", "MasteryType of the player.");
+                var exp = new Argument<int>("exp", "Experience points to set to.");
+
+                AddArgument(masteryCode);
+                AddArgument(exp);
+                this.SetHandler<InvocationContext, MasteryType, int>(Handle, masteryCode, exp);
+            }
+
+            private void Handle(InvocationContext ctx, MasteryType masteryType, int exp) {
+                try {
+                    session.Mastery[masteryType] = exp;
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+        }
+
+        private class MasteryLevelCommand : Command {
+            private readonly GameSession session;
+
+            public MasteryLevelCommand(GameSession session) : base("level", "Set player mastery level.") {
+                this.session = session;
+
+                var masteryCode = new Argument<MasteryType>("mastery", "MasteryType of the player.");
+                var level = new Argument<int>("level", "Level of the mastery.");
+
+                AddArgument(masteryCode);
+                AddArgument(level);
+                this.SetHandler<InvocationContext, MasteryType, int>(Handle, masteryCode, level);
+            }
+
+            private void Handle(InvocationContext ctx, MasteryType masteryType, int level) {
+                try {
+                    int exp = 0;
+                    if (session.TableMetadata.MasteryRewardTable.Entries.TryGetValue(masteryType, out IReadOnlyDictionary<int, MasteryRewardTable.Entry>? masteryRewardMetadata)) {
+                        exp = masteryRewardMetadata.OrderByDescending(mastery => mastery.Key).FirstOrDefault(mastery => level >= mastery.Key).Value.Value;
+                    }
+                    session.Mastery[masteryType] = exp;
+                    ctx.ExitCode = 0;
+                } catch (SystemException ex) {
+                    ctx.Console.Error.WriteLine(ex.Message);
+                    ctx.ExitCode = 1;
+                }
+            }
+        }
     }
 
     private class LevelCommand : Command {

@@ -40,6 +40,9 @@ public readonly record struct Vector3B(sbyte X, sbyte Y, sbyte Z) {
     public static Vector3B operator +(in Vector3B a, in Vector3B b) =>
         new((sbyte) (a.X + b.X), (sbyte) (a.Y + b.Y), (sbyte) (a.Z + b.Z));
 
+    public static Vector3 operator *(in Vector3B a, float multiplier) =>
+        new(a.X * multiplier, a.Y * multiplier, a.Z * multiplier);
+
     public int ConvertToInt() {
         // Convert x, y, and z to a single 24-bit integer
         return ((Z & 0xFF) << 16) | ((Y & 0xFF) << 8) | (X & 0xFF);

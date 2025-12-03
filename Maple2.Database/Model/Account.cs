@@ -12,6 +12,7 @@ internal class Account {
     public long Id { get; set; }
     public required string Username { get; set; }
     public string Password { get; set; }
+    // TODO: Add list of MachineId and IP addresses used to login
     public Guid MachineId { get; set; }
     public int MaxCharacters { get; set; }
     public int PrestigeLevel { get; set; }

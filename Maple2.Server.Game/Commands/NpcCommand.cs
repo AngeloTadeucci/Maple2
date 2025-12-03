@@ -20,28 +20,47 @@ public class NpcCommand : GameCommand {
         this.npcStorage = npcStorage;
 
         var id = new Argument<int>("id", "Id of npc to spawn.");
+        var amount = new Option<int>(["--amount", "-a"], () => 1, "Amount of the npc.");
 
         AddArgument(id);
-        this.SetHandler<InvocationContext, int>(Handle, id);
+        AddOption(amount);
+        this.SetHandler<InvocationContext, int, int>(Handle, id, amount);
     }
 
-    private void Handle(InvocationContext ctx, int npcId) {
+    private void Handle(InvocationContext ctx, int npcId, int amount) {
         try {
             if (session.Field == null || !npcStorage.TryGet(npcId, out NpcMetadata? metadata)) {
                 ctx.Console.Error.WriteLine($"Invalid Npc: {npcId}");
                 return;
             }
 
-            Vector3 position = session.Player.Position;
+            Vector3 basePosition = session.Player.Position;
             Vector3 rotation = session.Player.Rotation;
-            FieldNpc? fieldNpc = session.Field.SpawnNpc(metadata, position, rotation);
-            if (fieldNpc == null) {
-                ctx.Console.Error.WriteLine($"Failed to spawn npc: {npcId}");
-                return;
+
+            int spawnedCount = 0;
+            for (int i = 0; i < amount; i++) {
+                // Add small random offset to prevent NPCs from spawning exactly on top of each other
+                Vector3 spawnPosition = basePosition + new Vector3(
+                    Random.Shared.NextSingle() * 200 - 100, // Random offset between -100 and 100
+                    Random.Shared.NextSingle() * 200 - 100,
+                    0 // Keep Z position the same
+                );
+
+                FieldNpc? fieldNpc = session.Field.SpawnNpc(metadata, spawnPosition, rotation);
+                if (fieldNpc == null) {
+                    ctx.Console.Error.WriteLine($"Failed to spawn npc {i + 1}/{amount}: {npcId}");
+                    continue;
+                }
+
+                session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
+                session.Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
+                fieldNpc.Update(Environment.TickCount64);
+                spawnedCount++;
             }
-            session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
-            session.Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
-            fieldNpc.Update(Environment.TickCount64);
+
+            if (spawnedCount > 0) {
+                ctx.Console.Out.WriteLine($"Successfully spawned {spawnedCount}/{amount} NPCs with ID {npcId}");
+            }
 
             ctx.ExitCode = 0;
         } catch (SystemException ex) {

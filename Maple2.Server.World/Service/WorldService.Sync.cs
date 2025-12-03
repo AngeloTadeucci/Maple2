@@ -75,22 +75,63 @@ public partial class WorldService {
     }
 
     public override Task<DisconnectResponse> Disconnect(DisconnectRequest request, ServerCallContext context) {
-        if (request is { CharacterId: <= 0 }) {
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"CharacterId not specified"));
+        if (request is { CharacterId: <= 0, All: false }) {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "CharacterId not specified"));
+        }
+
+        ChannelClient? channelClient;
+
+        if (request.All) {
+            // Disconnect all players in the world.
+            foreach (PlayerInfo playerInfo in playerLookup.GetOnlinePlayerInfos()) {
+                // don't dc players with admin or game master permissions
+                if (playerInfo.AccountAdminPermissions is AdminPermissions.Admin or AdminPermissions.GameMaster) {
+                    continue;
+                }
+                if (!channelClients.TryGetClient(playerInfo.Channel, out channelClient)) {
+                    logger.Error("No registry for channel: {Channel}", playerInfo.Channel);
+                    continue;
+                }
+
+                channelClient.Disconnect(new DisconnectRequest {
+                    CharacterId = playerInfo.CharacterId,
+                });
+                worldServer.SetOffline(playerInfo);
+            }
+            return Task.FromResult(new DisconnectResponse {
+                Success = true,
+            });
         }
 
         if (!playerLookup.TryGet(request.CharacterId, out PlayerInfo? info) || info is { Online: false }) {
+            logger.Error("Unable to find player info for character: {CharacterId}", request.CharacterId);
             throw new RpcException(new Status(StatusCode.NotFound, $"Unable to find: {request.CharacterId}"));
         }
 
-        if (!channelClients.TryGetClient(info.Channel, out ChannelClient? channelClient)) {
+        if (!request.Force && info.AccountAdminPermissions is AdminPermissions.Admin or AdminPermissions.GameMaster) {
+            throw new RpcException(new Status(StatusCode.PermissionDenied, $"Cannot disconnect player with admin permissions: {info.CharacterId}"));
+        }
+
+        if (!channelClients.TryGetClient(info.Channel, out channelClient)) {
             logger.Error("No registry for channel: {Channel}", info.Channel);
             return Task.FromResult(new DisconnectResponse());
         }
 
-        return Task.FromResult(channelClient.Disconnect(new DisconnectRequest {
+        DisconnectResponse disconnectResponse = channelClient.Disconnect(new DisconnectRequest {
             CharacterId = info.CharacterId,
-        }));
+        });
+
+        if (!disconnectResponse.Success) {
+            logger.Information("Disconnect failed for character: {CharacterId}", info.CharacterId);
+            worldServer.SetOffline(info);
+            return Task.FromResult(new DisconnectResponse {
+                Success = true,
+            });
+        }
+
+        logger.Information("Disconnect successful for character: {CharacterId}", info.CharacterId);
+        worldServer.SetOffline(info);
+        return Task.FromResult(disconnectResponse);
     }
 
     private static PlayerInfoResponse PlayerInfoResponse(PlayerInfo info) {

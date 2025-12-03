@@ -13,6 +13,7 @@ message LoginRequest {
   string username = 1;
   string password = 2;
   string machine_id = 3;
+  string client_ip = 4;
 }
 
 message LoginResponse {
@@ -63,4 +64,6 @@ message LoginResponse {
   Code code = 1;
   string message = 2;
   int64 account_id = 3;
+  int64 ban_start = 4;
+  int64 ban_expiry = 5;
 }

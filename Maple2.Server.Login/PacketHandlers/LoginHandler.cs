@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
@@ -39,11 +40,17 @@ public class LoginHandler : PacketHandler<LoginSession> {
         LoginResponse response = Global.Login(new LoginRequest {
             Username = user,
             Password = pass,
+            ClientIp = session.ExtractIp(),
             MachineId = machineId.ToString(),
         });
 
         if (response.Code != LoginResponse.Types.Code.Ok) {
-            session.Send(LoginResultPacket.Error((byte) response.Code, response.Message, response.AccountId));
+            if (response.Code == LoginResponse.Types.Code.Restricted) {
+                session.Send(LoginResultPacket.Restricted(response.Message, response.AccountId, response.BanStart, response.BanExpiry));
+            } else {
+                session.Send(LoginResultPacket.Error((byte) response.Code, response.Message, response.AccountId));
+            }
+            session.Disconnect();
             return;
         }
 
@@ -58,9 +65,10 @@ public class LoginHandler : PacketHandler<LoginSession> {
             AccountId = response.AccountId,
         });
 
-        if (playerInfo is not null && playerInfo.Channel > 0) {
+        if (playerInfo is not null && playerInfo.Channel != -1 && playerInfo.CharacterId > 0) {
             DisconnectResponse? disconnectResponse = World.Disconnect(new DisconnectRequest {
                 CharacterId = playerInfo.CharacterId,
+                Force = true,
             });
             if (disconnectResponse is null || !disconnectResponse.Success) {
                 Logger.Error("Failed to disconnect character: {CharacterId}", playerInfo.CharacterId);

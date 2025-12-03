@@ -10,7 +10,6 @@ using Maple2.Model.Metadata;
 using Maple2.Tools;
 using static System.Char;
 
-
 namespace Maple2.File.Ingest.Mapper;
 
 public class TriggerMapper : TypeMapper<TriggerMetadata> {
@@ -27,16 +26,33 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
             string[] filePath = file.Name["trigger/".Length..].Split('/');
             string folderName = filePath[0];
             string triggerName = filePath[1].Split(".")[0]; // remove the file extension
-            string xml = NormalizeTriggerXmlNames(reader.GetXmlDocument(file));
 
-            var trigger = new TriggerMetadata(folderName, triggerName, xml);
+            XmlDocument xmlDoc = reader.GetXmlDocument(file);
+
+            List<string> importPaths = ExtractImportPaths(xmlDoc);
+
+            Dictionary<string, XmlNode> importedStates = LoadImportedStates(importPaths);
+
+            MergeImportedStates(xmlDoc, importedStates);
+
+            XmlNodeList? importNodeList = xmlDoc.SelectNodes("//import");
+            if (importNodeList is not null) {
+                var toRemove = importNodeList.Cast<XmlNode>().ToList();
+                foreach (XmlNode n in toRemove) {
+                    n.ParentNode?.RemoveChild(n);
+                }
+            }
+
+            string normalizedXml = NormalizeTriggerXmlNames(xmlDoc);
+
+            var trigger = new TriggerMetadata(folderName, triggerName, normalizedXml);
 
             if (Constant.DebugTriggers) { // for debugging purposes
                 string filePathName = Path.Combine(Paths.DEBUG_TRIGGERS_DIR, folderName, $"{triggerName}.xml");
                 Directory.CreateDirectory(Path.GetDirectoryName(filePathName)!);
 
                 var formattedXml = new XmlDocument();
-                formattedXml.LoadXml(xml);
+                formattedXml.LoadXml(normalizedXml);
                 var settings = new XmlWriterSettings {
                     Indent = true,
                     NewLineOnAttributes = false,
@@ -47,6 +63,82 @@ public class TriggerMapper : TypeMapper<TriggerMetadata> {
                 formattedXml.Save(writer);
             }
             yield return trigger;
+        }
+    }
+
+    private List<string> ExtractImportPaths(XmlDocument xml) {
+        var importPaths = new List<string>();
+        XmlNodeList? importNodes = xml.SelectNodes("//import");
+        if (importNodes != null) {
+            foreach (XmlNode importNode in importNodes) {
+                string? raw = importNode.Attributes?["path"]?.Value;
+                if (string.IsNullOrWhiteSpace(raw)) {
+                    continue;
+                }
+
+                string path = raw.Replace('\\', '/');
+
+                // Convert relative asset path to pack path
+                if (path.StartsWith("./")) path = path[2..];
+                string triggerPath = path.Replace("Data/Xml/Trigger/", "trigger/");
+                if (!triggerPath.StartsWith("trigger/")) {
+                    // Fallback: if it didn't map above but looks like a direct file name, prefix it
+                    if (!triggerPath.Contains('/')) {
+                        triggerPath = $"trigger/{triggerPath}";
+                    }
+                }
+
+                importPaths.Add(triggerPath);
+            }
+        }
+
+        return importPaths;
+    }
+
+    private Dictionary<string, XmlNode> LoadImportedStates(List<string> importPaths) {
+        var importedStates = new Dictionary<string, XmlNode>(StringComparer.Ordinal);
+
+        foreach (string importPath in importPaths) {
+            try {
+                // Find the imported file in the reader
+                PackFileEntry? importFile = reader.Files.FirstOrDefault(f => f.Name.Equals(importPath, StringComparison.Ordinal));
+                if (importFile == null) {
+                    importFile = reader.Files.FirstOrDefault(f => f.Name.EndsWith('/' + Path.GetFileName(importPath), StringComparison.OrdinalIgnoreCase)
+                                                                 || f.Name.Equals(importPath, StringComparison.OrdinalIgnoreCase));
+                }
+                if (importFile == null) continue;
+
+                XmlDocument importDoc = reader.GetXmlDocument(importFile);
+
+                XmlNodeList? stateNodes = importDoc.SelectNodes("//state");
+                if (stateNodes != null) {
+                    foreach (XmlNode stateNode in stateNodes) {
+                        string? stateName = stateNode.Attributes?["name"]?.Value;
+                        if (!string.IsNullOrEmpty(stateName)) {
+                            // last-in wins (later imports can override earlier ones)
+                            importedStates[stateName] = stateNode;
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                Console.WriteLine($"Warning: Failed to load import {importPath}: {ex.Message}");
+            }
+        }
+
+        return importedStates;
+    }
+
+    private void MergeImportedStates(XmlDocument mainXml, Dictionary<string, XmlNode> importedStates) {
+        XmlElement? rootNode = mainXml.DocumentElement;
+        if (rootNode == null) return;
+
+        foreach ((string stateName, XmlNode importedState) in importedStates) {
+            // Check if state already exists in main XML
+            XmlNode? existing = mainXml.SelectSingleNode($"//state[@name='{stateName}']");
+            if (existing == null) {
+                XmlNode importedNode = mainXml.ImportNode(importedState, true);
+                rootNode.AppendChild(importedNode);
+            }
         }
     }
 

@@ -151,6 +151,50 @@ namespace Maple2.Server.World.Migrations
                     b.ToTable("achievement", (string)null);
                 });
 
+            modelBuilder.Entity("Maple2.Database.Model.Ban", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<Guid?>("MachineId")
+                        .HasColumnType("binary(16)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("IpAddress");
+
+                    b.HasIndex("MachineId");
+
+                    b.ToTable("ban", (string)null);
+                });
+
             modelBuilder.Entity("Maple2.Database.Model.BannerSlot", b =>
                 {
                     b.Property<long>("Id")

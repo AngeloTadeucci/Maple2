@@ -1,5 +1,4 @@
-﻿using System.CommandLine;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using System.Reflection;
 using Autofac;
@@ -45,7 +44,7 @@ try {
     var worldClient = new WorldClient(channel);
     response = worldClient.AddChannel(new AddChannelRequest {
         GameIp = Target.GameIp.ToString(),
-        GrpcGameIp = Target.GrpcGameIp.ToString(),
+        GrpcGameIp = Target.GrpcGameIp,
     });
 
 } catch (RpcException e) {
@@ -108,6 +107,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterType<ItemStatsCalculator>()
         .PropertiesAutowired()
         .SingleInstance();
+    autofac.RegisterType<TriggerCache>()
+        .PropertiesAutowired()
+        .SingleInstance();
     autofac.RegisterType<PlayerInfoStorage>()
         .SingleInstance();
     autofac.RegisterType<WorldMapGraphStorage>()
@@ -120,7 +122,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     autofac.RegisterModule<WebDbModule>();
 
     // Make all packet handlers available to PacketRouter
-    autofac.RegisterAssemblyTypes(Assembly.LoadFrom("Maple2.Server.Game.dll"))
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Maple2.Server.Game.dll")))
         .Where(type => typeof(PacketHandler<GameSession>).IsAssignableFrom(type))
         .As<PacketHandler<GameSession>>()
         .PropertiesAutowired()
@@ -129,11 +131,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(autofac => {
     // ChatCommand Handlers
     autofac.RegisterType<CommandRouter>();
 
-    autofac.RegisterAssemblyTypes(typeof(CommandRouter).Assembly)
+    autofac.RegisterAssemblyTypes(Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Maple2.Server.Game.dll")))
         .PublicOnly()
         .WithAttributeFiltering()
-        .Where(type => typeof(Command).IsAssignableFrom(type))
-        .As<Command>()
+        .Where(type => typeof(GameCommand).IsAssignableFrom(type))
+        .As<GameCommand>()
         .PropertiesAutowired();
 
     // Managers

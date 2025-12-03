@@ -59,6 +59,7 @@ public class TableMapper : TypeMapper<TableMetadata> {
         yield return new TableMetadata { Name = TableNames.ITEM_SOCKET, Table = ParseItemSocketTable() };
         yield return new TableMetadata { Name = TableNames.MASTERY_RECIPE, Table = ParseMasteryRecipe() };
         yield return new TableMetadata { Name = TableNames.MASTERY, Table = ParseMasteryReward() };
+        yield return new TableMetadata { Name = TableNames.MASTERYT_DIFFERENTIAL_FACTOR, Table = ParseMasteryDifferentialFactor() };
         yield return new TableMetadata { Name = TableNames.GUILD, Table = ParseGuildTable() };
         yield return new TableMetadata { Name = TableNames.VIP, Table = ParsePremiumClubTable() };
         yield return new TableMetadata { Name = TableNames.INDIVIDUAL_ITEM_DROP, Table = ParseIndividualItemDropTable() };
@@ -774,6 +775,16 @@ public class TableMapper : TypeMapper<TableMetadata> {
             results.Add((MasteryType) type, masteryLevelDictionary);
         }
         return new MasteryRewardTable(results);
+    }
+
+    private MasteryDifferentialFactorTable ParseMasteryDifferentialFactor() {
+        var results = new Dictionary<int, MasteryDifferentialFactorTable.Entry>();
+        foreach ((int id, MasteryDifferentialFactor factor) in parser.ParseMasteryDifferentialFactor()) {
+            results.Add(id, new MasteryDifferentialFactorTable.Entry(
+                Differential: factor.differential,
+                Factor: factor.factor));
+        }
+        return new MasteryDifferentialFactorTable(results);
     }
 
     private GuildTable ParseGuildTable() {

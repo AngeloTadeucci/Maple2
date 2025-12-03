@@ -532,7 +532,7 @@ public class ItemUseHandler : FieldPacketHandler {
         }
         session.Field.Broadcast(FieldPacket.AddNpc(fieldNpc));
         session.Field.Broadcast(ProxyObjectPacket.AddNpc(fieldNpc));
-        session.Field.RemoveNpc(fieldNpc.ObjectId, (int) TimeSpan.FromSeconds(lifeSpanSeconds).TotalMilliseconds);
+        session.Field.RemoveNpc(fieldNpc.ObjectId, TimeSpan.FromSeconds(lifeSpanSeconds));
         session.Item.Inventory.Consume(item.Uid, 1);
     }
 

@@ -25,7 +25,8 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
         IMS2Bounding? secondBounding = null;
 
         Dictionary<string, IMS2WayPoint> ms2WayPoints = new();
-        foreach (var wayPoint in entities) {
+        IMapEntity[] mapEntities = entities as IMapEntity[] ?? entities.ToArray();
+        foreach (IMapEntity wayPoint in mapEntities) {
             switch (wayPoint) {
                 case IMS2WayPoint ms2WayPoint:
                     ms2WayPoints.Add(ms2WayPoint.EntityId, ms2WayPoint);
@@ -35,7 +36,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
             }
         }
 
-        foreach (IMapEntity entity in entities) {
+        foreach (IMapEntity entity in mapEntities) {
             switch (entity) {
                 case IMS2InteractObject interactObject:
 
@@ -56,6 +57,9 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                             };
                             continue;
                         case IMS2SimpleUiObject simpleUiObject:
+                            yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
+                                Block = new Ms2SimpleUiObject(simpleUiObject.interactID, simpleUiObject.Position, simpleUiObject.Rotation),
+                            };
                             continue;
                         case IMS2Telescope telescope:
                             yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
@@ -289,7 +293,7 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                     return null;
                 }
                 return new MapEntity(xblock, new Guid(trigger.EntityId), trigger.EntityName) {
-                    Block = new Ms2TriggerSkill(skill.skillID, (short) skill.skillLevel, skill.Position, skill.Rotation, skill.TriggerObjectID, skill.IsVisible),
+                    Block = new Ms2TriggerSkill(skill.skillID, (short) skill.skillLevel, skill.Position, skill.Rotation, skill.TriggerObjectID, skill.IsVisible, skill.count),
                 };
             case IMS2TriggerSound sound:
                 return new MapEntity(xblock, new Guid(trigger.EntityId), trigger.EntityName) {

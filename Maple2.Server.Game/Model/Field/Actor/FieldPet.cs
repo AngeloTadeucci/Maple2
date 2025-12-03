@@ -24,13 +24,10 @@ public sealed class FieldPet : FieldNpc {
     public int TamingPoint;
     private long tamingTick;
 
-    public FieldPet(FieldManager field, int objectId, DtCrowdAgent agent, Npc npc, Item pet, string aiPath, FieldPlayer? owner = null) : base(field, objectId, agent, npc, aiPath) {
+    public FieldPet(FieldManager field, int objectId, DtCrowdAgent agent, Npc npc, Item pet, PetMetadata petMetadata, string aiPath, FieldPlayer? owner = null) : base(field, objectId, agent, npc, aiPath) {
         this.owner = owner;
         Pet = pet;
 
-        if (!field.ItemMetadata.TryGetPet(pet.Metadata.Property.PetId, out PetMetadata? petMetadata)) {
-            throw new KeyNotFoundException($"Pet metadata not found for pet id {pet.Id}");
-        }
         Metadata = petMetadata;
 
         // Wild pets need a TamingRank.
@@ -86,7 +83,7 @@ public sealed class FieldPet : FieldNpc {
         damage.Targets.TryAdd(ObjectId, targetRecord);
     }
 
-    protected override void Remove(int delay) => Field.RemovePet(ObjectId, delay);
+    protected override void Remove(TimeSpan delay) => Field.RemovePet(ObjectId, delay);
 
     public void UpdateSkin(int skinId) {
         SkinId = skinId > 0 ? skinId : Value.Id;

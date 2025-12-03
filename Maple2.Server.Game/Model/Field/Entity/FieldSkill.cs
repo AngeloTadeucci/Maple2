@@ -13,7 +13,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
     public IActor Caster { get; init; }
     public int Interval { get; }
     public int FireCount { get; private set; }
-    public bool Enabled => FireCount < 0 || NextTick <= endTick || Field.FieldTick <= endTick;
+    public bool Enabled => FireCount > 0 || NextTick <= endTick || Field.FieldTick <= endTick;
     public bool Active { get; private set; } = true;
     public int TriggerId { get; init; }
 
@@ -29,10 +29,21 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
         Caster = caster;
         Points = points;
         Interval = interval;
-        FireCount = -1;
+        FireCount = int.MaxValue;
         NextTick = Field.FieldTick + interval;
     }
 
+    public FieldSkill(FieldManager field, int objectId, IActor caster,
+                      SkillMetadata value, int interval, int fireCount, params Vector3[] points) : base(field, objectId, value) {
+        Caster = caster;
+        Points = points;
+        Interval = interval;
+        FireCount = fireCount;
+        NextTick = Field.FieldTick + interval;
+    }
+
+    // TODO: check if duration of field skill is correct.
+    // Example: Heaven's Wrath says duration is 20s but it's lasting ~22s (Probably the splash.Delay being added to the endTick).
     public FieldSkill(FieldManager field, int objectId, IActor caster,
                       SkillMetadata value, int fireCount, SkillEffectMetadataSplash splash, params Vector3[] points) : base(field, objectId, value) {
         Caster = caster;
@@ -46,7 +57,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             NextTick = baseTick;
             endTick = baseTick + splash.RemoveDelay + (FireCount - 1) * splash.Interval;
         } else {
-            NextTick = baseTick + splash.Delay + splash.Interval;
+            NextTick = baseTick + splash.Interval;
             endTick = baseTick + splash.Delay + splash.RemoveDelay + FireCount * splash.Interval;
         }
         if (splash.OnlySensingActive) {
@@ -65,12 +76,6 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             return;
         }
 
-        if (FireCount == 0) {
-            // Finished firing, remove skill
-            Field.RemoveSkill(ObjectId);
-            return;
-        }
-
         // Check Activation for OnlySensingActive
         if (!Active) {
             foreach (SkillMetadataMotion motion in Value.Data.Motions) {
@@ -84,7 +89,7 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
             }
 
             NextTick = Field.FieldTick + Interval;
-            return;
+            goto end;
         }
 
     activated:
@@ -203,13 +208,20 @@ public class FieldSkill : FieldEntity<SkillMetadata> {
                 }
             }
         }
-
+    end:
         if (Interval == 0) {
             FireCount = 0;
-            NextTick = int.MaxValue;
+            NextTick = long.MaxValue;
         } else {
-            FireCount--;
-            NextTick += Interval;
+            if (FireCount != int.MaxValue) {
+                FireCount--;
+            }
+
+            if (FireCount <= 0) {
+                NextTick = long.MaxValue;
+            } else {
+                NextTick += Interval;
+            }
         }
     }
 }

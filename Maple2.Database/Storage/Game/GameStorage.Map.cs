@@ -110,6 +110,59 @@ public partial class GameStorage {
             return Context.TrySaveChanges() ? ToPlotInfo(model) : null;
         }
 
+        public PlotInfo? GetSoonestPlotFromExpire() {
+            IQueryable<UgcMap> maps = Context.UgcMap.Where(map => map.ExpiryTime > DateTimeOffset.MinValue && !map.Indoor);
+            foreach (UgcMap map in maps) {
+                if (map.OwnerId == 0) {
+                    map.ExpiryTime = map.ExpiryTime.Add(Constant.UgcHomeSaleWaitingTime);
+                }
+            }
+            UgcMap? model = maps.OrderBy(map => map.ExpiryTime).FirstOrDefault();
+
+            return model == null ? null : ToPlotInfo(model);
+        }
+
+        public List<PlotInfo> GetPlotsToExpire() {
+            // Get all plots with expiry time <= now and owner >= 0 (not unowned or pending).
+            List<UgcMap> expired = Context.UgcMap
+                .Where(map => map.OwnerId >= 0 && map.ExpiryTime <= DateTimeOffset.UtcNow && map.ExpiryTime > DateTimeOffset.MinValue && !map.Indoor)
+                .ToList();
+
+            return expired.Select(ToPlotInfo).Where(p => p != null).ToList()!;
+        }
+
+        public void SetPlotPending(long plotId) {
+            // Set expiry time to now
+            UgcMap? ugcMap = Context.UgcMap.Find(plotId);
+            if (ugcMap == null) return;
+
+            ugcMap.ExpiryTime = DateTimeOffset.UtcNow;
+            ugcMap.OwnerId = 0;
+            ugcMap.Name = string.Empty;
+
+            Context.UgcMap.Update(ugcMap);
+            Context.TrySaveChanges();
+        }
+
+        public void SetPlotOpen(long plotId) {
+            UgcMap? model = Context.UgcMap.Find(plotId);
+            if (model == null) return;
+
+            model.ExpiryTime = DateTimeOffset.MinValue;
+
+            Context.UgcMap.Update(model);
+            Context.TrySaveChanges();
+        }
+
+        public Plot? GetOutdoorPlotInfo(int plotNumber, int mapId) {
+            UgcMap? model = Context.UgcMap.Include(x => x.Cubes).SingleOrDefault(map => map.MapId == mapId && map.Number == plotNumber && !map.Indoor);
+            if (model == null) {
+                return null;
+            }
+
+            return ToPlot(model);
+        }
+
         public bool SaveHome(Home home) {
             Model.Home model = home;
             Context.Home.Update(model);
@@ -121,21 +174,31 @@ public partial class GameStorage {
             return true;
         }
 
-        public bool SavePlotInfo(params PlotInfo[] plotInfos) {
-            foreach (PlotInfo plotInfo in plotInfos) {
-                UgcMap? model = Context.UgcMap.Find(plotInfo.Id);
-                if (model == null) {
-                    return false;
-                }
-
-                model.OwnerId = plotInfo.OwnerId;
-                model.MapId = plotInfo.MapId;
-                model.Number = plotInfo.Number;
-                model.ApartmentNumber = plotInfo.ApartmentNumber;
-                model.ExpiryTime = plotInfo.ExpiryTime.FromEpochSeconds();
-                model.Name = plotInfo.Name;
-                Context.UgcMap.Update(model);
+        public bool SavePlotInfo(PlotInfo plotInfo) {
+            UgcMap? model = Context.UgcMap.Find(plotInfo.Id);
+            if (model == null) {
+                return false;
             }
+
+            model.OwnerId = plotInfo.OwnerId;
+            model.MapId = plotInfo.MapId;
+            model.Number = plotInfo.Number;
+            model.ApartmentNumber = plotInfo.ApartmentNumber;
+            model.ExpiryTime = plotInfo.ExpiryTime.FromEpochSeconds();
+            model.Name = plotInfo.Name;
+            Context.UgcMap.Update(model);
+
+            return Context.TrySaveChanges();
+        }
+
+        public bool SavePlotInfoName(long plotInfoId, string name) {
+            UgcMap? model = Context.UgcMap.Find(plotInfoId);
+            if (model == null) {
+                return false;
+            }
+
+            model.Name = name;
+            Context.UgcMap.Update(model);
 
             return Context.TrySaveChanges();
         }
@@ -181,6 +244,54 @@ public partial class GameStorage {
             return plotCubes;
         }
 
+        public PlotCube? CreateCube(PlotInfo plotInfo, PlotCube cube) {
+            try {
+                Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+
+                UgcMapCube model = cube;
+                model.UgcMapId = plotInfo.Id;
+
+                Context.UgcMapCube.Add(model);
+
+                if (!Context.TrySaveChanges()) {
+                    return null;
+                }
+
+                PlotCube? plotCube = ToPlotCube(model);
+                if (plotCube?.Interact?.Metadata.Nurturing is not null) {
+                    plotCube.Interact.Nurturing = GetNurturing(plotInfo.OwnerId, cube.ItemId, plotCube.Interact.Metadata.Nurturing);
+                }
+
+                return plotCube;
+            } catch (Exception e) {
+                Logger.LogError(e, "Failed to create cube for plot {PlotId} with item {ItemId}", plotInfo.Id, cube.ItemId);
+                return null;
+            }
+        }
+
+        public bool DeleteCube(PlotCube cube) {
+            Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+
+            UgcMapCube? model = Context.UgcMapCube.Find(cube.Id);
+            if (model == null) {
+                return false;
+            }
+
+            Context.UgcMapCube.Remove(model);
+            return Context.TrySaveChanges();
+        }
+
+        public PlotCube? GetCube(long cubeId) {
+            Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+
+            UgcMapCube? model = Context.UgcMapCube.Find(cubeId);
+            if (model == null) {
+                return null;
+            }
+
+            return ToPlotCube(model);
+        }
+
         public bool InitUgcMap(IEnumerable<UgcMapMetadata> maps) {
             // If there are entries, we assume it's already initialized.
             if (Context.UgcMap.Any()) {
@@ -223,6 +334,7 @@ public partial class GameStorage {
                 MapId = ugcMap.MapId,
                 Number = ugcMap.Number,
                 ApartmentNumber = 0,
+                Name = ugcMap.Name,
                 ExpiryTime = ugcMap.ExpiryTime.ToUnixTimeSeconds(),
             };
 

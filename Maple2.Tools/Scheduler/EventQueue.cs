@@ -9,17 +9,11 @@ public class EventQueue {
     public int Queued => nextEvents.Count;
     public int Count => nextEvents.Count + timedEvents.Count;
 
-    private readonly List<ScheduledEvent> timedEvents;
-    private Queue<ScheduledEvent> nextEvents;
-    private long nextTime;
+    private readonly List<ScheduledEvent> timedEvents = [];
+    private Queue<ScheduledEvent> nextEvents = [];
+    private long nextTime = long.MaxValue;
 
     private readonly object mutex = new object();
-
-    public EventQueue() {
-        timedEvents = new List<ScheduledEvent>();
-        nextEvents = new Queue<ScheduledEvent>();
-        nextTime = long.MaxValue;
-    }
 
     public void Start() {
         Running = true;
@@ -53,14 +47,14 @@ public class EventQueue {
     /// </summary>
     /// <param name="task">task to be run</param>
     /// <param name="delay">delay after which the task will be run</param>
-    public void Schedule(Action task, int delay) {
-        if (delay <= 0) {
+    public void Schedule(Action task, TimeSpan delay) {
+        if (delay <= TimeSpan.Zero) {
             Schedule(task);
             return;
         }
 
         lock (mutex) {
-            long executionTime = Environment.TickCount64 + delay;
+            long executionTime = Environment.TickCount64 + (long) delay.TotalMilliseconds;
             timedEvents.Add(new ScheduledEvent(task, executionTime));
 
             Interlocked.Exchange(ref nextTime, Math.Min(nextTime, executionTime));
@@ -74,12 +68,12 @@ public class EventQueue {
     /// <param name="interval">interval for this task to be run at</param>
     /// <param name="strict">if true, any delays will not affect future task scheduling</param>
     /// <param name="skipFirst">if true, the first execution will be skipped</param>
-    public void ScheduleRepeated(Action task, int interval, bool strict = false, bool skipFirst = false) {
-        if (interval <= 0) throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be positive");
+    public void ScheduleRepeated(Action task, TimeSpan interval, bool strict = false, bool skipFirst = false) {
+        if (interval <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be positive");
         lock (mutex) {
             long executionTime = Environment.TickCount64;
             if (skipFirst) {
-                executionTime += interval;
+                executionTime += (long) interval.TotalMilliseconds;
             }
             timedEvents.Add(new ScheduledEvent(task, executionTime, interval, strict));
 

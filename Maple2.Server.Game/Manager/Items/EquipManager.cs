@@ -16,6 +16,8 @@ public class EquipManager {
     public readonly ConcurrentDictionary<EquipSlot, Item> Outfit;
     public readonly ConcurrentDictionary<BadgeType, Item> Badge;
 
+    private readonly List<Item> delete = [];
+
     public EquipManager(GameStorage.Request db, GameSession session) {
         this.session = session;
 
@@ -26,12 +28,22 @@ public class EquipManager {
         // Load from DB
         foreach ((ItemGroup tab, List<Item> items) in db.GetItemGroups(session.CharacterId, ItemGroup.Gear, ItemGroup.Outfit, ItemGroup.Badge)) {
             foreach (Item item in items) {
+                EquipSlot equipSlot = item.EquipSlot();
+
                 switch (tab) {
                     case ItemGroup.Gear:
-                        Gear[item.EquipSlot()] = item;
+                        if (equipSlot is EquipSlot.Unknown) {
+                            delete.Add(item);
+                            continue;
+                        }
+                        Gear[equipSlot] = item;
                         break;
                     case ItemGroup.Outfit:
-                        Outfit[item.EquipSlot()] = item;
+                        if (equipSlot is EquipSlot.Unknown) {
+                            delete.Add(item);
+                            continue;
+                        }
+                        Outfit[equipSlot] = item;
                         break;
                     case ItemGroup.Badge:
                         if (item.Badge != null) {
@@ -51,8 +63,8 @@ public class EquipManager {
 
     public Item? Get(EquipSlot equipSlot) {
         return Gear.TryGetValue(equipSlot, out Item? item) ? item
-               : Outfit.TryGetValue(equipSlot, out item) ? item
-               : null;
+            : Outfit.TryGetValue(equipSlot, out item) ? item
+            : null;
     }
 
     public Item? Get(BadgeType badgeType) {
@@ -348,6 +360,7 @@ public class EquipManager {
 
     public void Save(GameStorage.Request db) {
         lock (session.Item) {
+            db.SaveItems(0, delete.ToArray());
             db.SaveItems(session.CharacterId, Gear.Values.ToArray());
             db.SaveItems(session.CharacterId, Outfit.Values.ToArray());
             db.SaveItems(session.CharacterId, Badge.Values.ToArray());

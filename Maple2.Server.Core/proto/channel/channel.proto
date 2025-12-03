@@ -48,6 +48,8 @@ service Channel {
   rpc Disconnect(maple2.DisconnectRequest) returns (maple2.DisconnectResponse);
   // Heartbeat
   rpc Heartbeat(maple2.HeartbeatRequest) returns (maple2.HeartbeatResponse);
+  // Update Field Plots
+  rpc UpdateFieldPlot(maple2.FieldPlotRequest) returns (maple2.FieldPlotResponse);
 }
 
 message ChannelsUpdateRequest {

@@ -216,6 +216,7 @@ public class RequestCubeHandler : FieldPacketHandler {
     }
 
     private void HandleRemoveCube(GameSession session, IByteReader packet) {
+        if (session.Field == null) return;
         var position = packet.Read<Vector3B>();
 
         Plot? plot = session.Housing.GetFieldPlot();
@@ -227,8 +228,20 @@ public class RequestCubeHandler : FieldPacketHandler {
             return;
         }
 
-        session.Field?.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
-
+        session.Field.Broadcast(CubePacket.RemoveCube(session.Player.ObjectId, position));
+        if (plot.MapId is not Constant.DefaultHomeMapId) {
+            session.World.UpdateFieldPlot(new FieldPlotRequest {
+                IgnoreChannel = GameServer.GetChannel(),
+                MapId = session.Field.MapId,
+                PlotNumber = plot.Number,
+                UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
+                    X = position.X,
+                    Y = position.Y,
+                    Z = position.Z,
+                    Remove = new FieldPlotRequest.Types.UpdateBlock.Types.Remove(),
+                },
+            });
+        }
         if (plot.IsPlanner) {
             return;
         }
@@ -237,6 +250,7 @@ public class RequestCubeHandler : FieldPacketHandler {
     }
 
     private void HandleRotateCube(GameSession session, IByteReader packet) {
+        if (session.Field == null) return;
         var position = packet.Read<Vector3B>();
         bool clockwise = packet.ReadBool();
 
@@ -249,13 +263,25 @@ public class RequestCubeHandler : FieldPacketHandler {
             return;
         }
 
-        if (clockwise) {
-            cube.Rotation = (cube.Rotation + 270f) % 360f; // Rotate clockwise
-        } else {
-            cube.Rotation = (cube.Rotation + 90f) % 360f; // Rotate counter-clockwise
+        cube.Rotate(clockwise);
+
+        session.Field.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
+        if (plot.MapId is not Constant.DefaultHomeMapId) {
+            session.World.UpdateFieldPlot(new FieldPlotRequest {
+                IgnoreChannel = GameServer.GetChannel(),
+                MapId = session.Field.MapId,
+                PlotNumber = plot.Number,
+                UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
+                    X = position.X,
+                    Y = position.Y,
+                    Z = position.Z,
+                    Rotate = new FieldPlotRequest.Types.UpdateBlock.Types.Rotate {
+                        Clockwise = clockwise,
+                    },
+                },
+            });
         }
 
-        session.Field?.Broadcast(CubePacket.RotateCube(session.Player.ObjectId, cube));
         if (plot.IsPlanner) {
             return;
         }
@@ -264,6 +290,8 @@ public class RequestCubeHandler : FieldPacketHandler {
     }
 
     private void HandleReplaceCube(GameSession session, IByteReader packet) {
+        if (session.Field == null) return;
+
         var position = packet.Read<Vector3B>();
         var cubeItem = packet.ReadClass<HeldCube>();
         float rotation = packet.ReadFloat();
@@ -273,11 +301,26 @@ public class RequestCubeHandler : FieldPacketHandler {
             return;
         }
 
-        if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? metdata)) {
+        if (!session.ItemMetadata.TryGet(cubeItem.ItemId, out ItemMetadata? metadata)) {
             return;
         }
-        if (session.Housing.TryPlaceCube(cubeItem, plot, metdata, position, rotation, out PlotCube? placedCube, isReplace: true)) {
-            session.Field?.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
+
+        if (!session.Housing.TryPlaceCube(cubeItem, plot, metadata, position, rotation, out PlotCube? placedCube, isReplace: true)) {
+            return;
+        }
+
+        session.Field.Broadcast(CubePacket.ReplaceCube(session.Player.ObjectId, placedCube));
+
+        if (plot.MapId is not Constant.DefaultHomeMapId) {
+            session.World.UpdateFieldPlot(new FieldPlotRequest {
+                IgnoreChannel = GameServer.GetChannel(),
+                MapId = session.Field.MapId,
+                PlotNumber = plot.Number,
+                UpdateBlock = new FieldPlotRequest.Types.UpdateBlock {
+                    BlockUid = placedCube.Id,
+                    Replace = new FieldPlotRequest.Types.UpdateBlock.Types.Replace { },
+                },
+            });
         }
     }
 

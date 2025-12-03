@@ -4,9 +4,10 @@ using Maple2.Model.Enum;
 using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Model.Metadata;
+using Maple2.Model.Validators;
 using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
-using Maple2.Server.Game.PacketHandlers.Field;
+using Maple2.Server.Core.PacketHandlers;
 using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Session;
 using Maple2.Server.World.Service;
@@ -15,7 +16,7 @@ using WorldClient = Maple2.Server.World.Service.World.WorldClient;
 
 namespace Maple2.Server.Game.PacketHandlers;
 
-public class GuildHandler : FieldPacketHandler {
+public class GuildHandler : PacketHandler<GameSession> {
     public override RecvOp OpCode => RecvOp.Guild;
 
     private enum Command : byte {
@@ -63,6 +64,7 @@ public class GuildHandler : FieldPacketHandler {
     // ReSharper disable MemberCanBePrivate.Global
     public required WorldClient World { private get; init; }
     public required TableMetadataStorage TableMetadata { private get; init; }
+    public required BanWordStorage BanWordStorage { private get; init; }
 
     // ReSharper restore All
     #endregion
@@ -188,10 +190,26 @@ public class GuildHandler : FieldPacketHandler {
         if (session.Guild.Guild != null) {
             return; // Already in a guild.
         }
-        if (guildName.Length is < Constant.GuildNameLengthMin or > Constant.GuildNameLengthMax) {
-            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value)); // temp
+
+        if (string.IsNullOrWhiteSpace(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
             return;
         }
+        if (guildName.Length is < Constant.GuildNameLengthMin or > Constant.GuildNameLengthMax) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
+            return;
+        }
+
+        if (BanWordStorage.ContainsBannedWord(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
+            return;
+        }
+
+        if (!NameValidator.ValidName(guildName)) {
+            session.Send(GuildPacket.Error(GuildError.s_guild_err_name_value));
+            return;
+        }
+
         if (session.Player.Value.Character.Level < Constant.GuildCreateMinLevel) {
             session.Send(GuildPacket.Error(GuildError.s_guild_err_not_enough_level));
             return;

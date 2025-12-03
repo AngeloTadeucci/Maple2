@@ -30,6 +30,14 @@ public partial class GameStorage {
                 .FirstOrDefault(account => account.Username == username);
         }
 
+        public Account? GetAccountByCharacterName(string name) {
+            long accountId = Context.Character.Where(character => character.Name.ToLower() == name.ToLower())
+                .Select(character => character.AccountId)
+                .FirstOrDefault();
+
+            return accountId == 0 ? null : GetAccount(accountId);
+        }
+
         public bool VerifyPassword(long accountId, string password) {
             Model.Account? account = Context.Account.Find(accountId);
 #if DEBUG
@@ -128,6 +136,7 @@ public partial class GameStorage {
                               indoor,
                               outdoor,
                               account.PremiumTime,
+                              account.Permissions,
                           })
                 .FirstOrDefault();
             if (result == null) {
@@ -142,7 +151,7 @@ public partial class GameStorage {
 
             AchievementInfo achievementInfo = GetAchievementInfo(result.character.AccountId, result.character.Id);
             IList<long> clubs = ListClubs(result.character.Id);
-            return BuildPlayerInfo(result.character, result.indoor, result.outdoor, achievementInfo, guild.Item1, guild.Item2, result.PremiumTime, clubs);
+            return BuildPlayerInfo(result.character, result.Permissions, result.indoor, result.outdoor, achievementInfo, guild.Item1, guild.Item2, result.PremiumTime, clubs);
         }
 
         public Home? GetHome(long ownerId) {

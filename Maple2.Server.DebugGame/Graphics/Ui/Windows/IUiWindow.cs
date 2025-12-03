@@ -1,9 +1,10 @@
 ﻿namespace Maple2.Server.DebugGame.Graphics.Ui.Windows;
 
 public interface IUiWindow {
-    public bool AllowMainWindow { get => false; }
-    public bool AllowFieldWindow { get => false; }
+    public bool AllowMainWindow => false;
+    public bool AllowFieldWindow => false;
     public bool Enabled { get; set; }
+    public bool HideFromMenuBar => false;
     public string TypeName { get; }
     public DebugGraphicsContext? Context { get; protected set; }
     public ImGuiController? ImGuiController { get; protected set; }

@@ -3,6 +3,7 @@ using Maple2.PacketLib.Tools;
 using Maple2.Server.Core.Constants;
 using Maple2.Server.Core.Packets;
 using Maple2.Server.Game.Model;
+using Maple2.Tools.Extensions;
 
 namespace Maple2.Server.Game.Packets;
 
@@ -23,8 +24,8 @@ public static class BreakablePacket {
             pWriter.Write<BreakableState>(breakable.State);
             pWriter.WriteBool(breakable.Visible);
             if (breakable.BaseTick > 0) {
-                pWriter.WriteInt((int) (currentTick - breakable.BaseTick));
-                pWriter.WriteInt((int) breakable.BaseTick);
+                pWriter.WriteInt((currentTick - breakable.BaseTick).Truncate32());
+                pWriter.WriteInt(breakable.BaseTick.Truncate32());
             } else {
                 pWriter.WriteInt();
                 pWriter.WriteInt();
@@ -41,8 +42,8 @@ public static class BreakablePacket {
         pWriter.Write<BreakableState>(breakable.State);
         pWriter.WriteBool(breakable.Visible);
         if (breakable.BaseTick > 0) {
-            pWriter.WriteInt((int) (Environment.TickCount64 - breakable.BaseTick));
-            pWriter.WriteInt((int) breakable.BaseTick);
+            pWriter.WriteInt((Environment.TickCount64 - breakable.BaseTick).Truncate32());
+            pWriter.WriteInt(breakable.BaseTick.Truncate32());
         } else {
             pWriter.WriteInt();
             pWriter.WriteInt();

@@ -29,11 +29,18 @@ public partial class TriggerContext {
 
     public void KickMusicAudience(int targetBoxId, int targetPortalId) {
         DebugLog("[KickMusicAudience] targetBoxId:{BoxId}, targetPortalId:{PortalId}", targetBoxId, targetPortalId);
+        if (Field.PerformanceStage is null) {
+            return;
+        }
         if (!Field.TryGetPortal(targetPortalId, out FieldPortal? portal)) {
             return;
         }
 
         foreach (FieldPlayer player in PlayersInBox(targetBoxId)) {
+            // Don't kick the current performer
+            if (Field.PerformanceStage.IsCurrentPerformer(player.Session)) {
+                continue;
+            }
             player.MoveToPortal(portal);
         }
     }

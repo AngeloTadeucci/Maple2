@@ -25,6 +25,12 @@ public sealed class QuestManager {
 
     private ChangeJobMetadata? changeJobMetadata;
 
+    private readonly HashSet<ConditionType> throttleStates = [
+        ConditionType.fall, ConditionType.swim, ConditionType.swimtime, ConditionType.run, ConditionType.stay_cube,
+        ConditionType.crawl, ConditionType.glide, ConditionType.climb, ConditionType.ropetime, ConditionType.laddertime,
+        ConditionType.holdtime, ConditionType.riding, ConditionType.emotiontime,
+    ];
+
     private readonly ILogger logger = Log.Logger.ForContext<QuestManager>();
 
     public QuestManager(GameSession session) {
@@ -191,7 +197,7 @@ public sealed class QuestManager {
             // Testing only on FieldMission for now.
             if (quest.Metadata.Basic is { Type: QuestType.FieldMission, ProgressMaps: not null } && session.Field is not null) {
                 switch (session.Field.Metadata.Property.ExploreType) {
-                    case 1 when !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId):
+                    case 1 or 0 when !quest.Metadata.Basic.ProgressMaps.Contains(session.Player.Value.Character.MapId):
                     case 2 when !quest.Metadata.Basic.ProgressMaps.Any(x => session.Player.Value.Character.ReturnMaps.Contains(x)):
                         continue;
                 }
@@ -214,9 +220,18 @@ public sealed class QuestManager {
                     continue;
                 }
 
+                int previousCounter = condition.Counter;
                 condition.Counter = (int) Math.Min(condition.Metadata.Value, condition.Counter + counter);
 
-                session.Send(QuestPacket.Update(quest));
+                // Only send update every 5 increments for throttleStates
+                if (throttleStates.Contains(type)) {
+                    if (condition.Counter / 5 > previousCounter / 5 || condition.Counter == condition.Metadata.Value) {
+                        session.Send(QuestPacket.Update(quest));
+                    }
+                } else {
+                    session.Send(QuestPacket.Update(quest));
+                }
+
                 if (quest.Metadata.Basic.Type == QuestType.FieldMission && CanComplete(quest)) {
                     Complete(quest);
                 }

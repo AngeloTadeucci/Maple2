@@ -175,6 +175,7 @@ public class GotoCommand : GameCommand {
                 return;
             }
 
+            session.MigrationSave();
             try {
                 var request = new MigrateOutRequest {
                     AccountId = session.AccountId,

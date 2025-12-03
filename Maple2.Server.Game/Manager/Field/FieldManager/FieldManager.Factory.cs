@@ -135,7 +135,7 @@ public partial class FieldManager {
                 home = new Home();
             }
 
-            var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata);
+            var field = new HomeFieldManager(home, mapMetadata, ugcMetadata, entities, npcMetadata, roomId);
             context.InjectProperties(field);
             field.Init();
 
@@ -195,6 +195,7 @@ public partial class FieldManager {
             }
 
             dungeons.TryAdd(lobbyField.RoomId, lobbyField);
+            logger.Debug("Dungeon Lobby Field:{MapId} OwnerId:{OwnerId} Room:{RoomId} initialized in {Time}ms", dungeonMetadata.LobbyFieldId, ownerId, lobbyField.RoomId, sw.ElapsedMilliseconds);
 
             return lobbyField;
         }
@@ -282,7 +283,31 @@ public partial class FieldManager {
                 }
 
                 foreach (DungeonFieldManager dungeonField in dungeons.Values) {
-                    DisposeDungeon(dungeonField);
+                    // Calculate total players across lobby + sub fields
+                    int totalPlayers = dungeonField.Players.Count + dungeonField.RoomFields.Values.Sum(r => r.Players.Count);
+                    if (totalPlayers > 0) {
+                        // Active dungeon, reset empty timer
+                        dungeonField.fieldEmptySince = null;
+                        logger.Verbose("Dungeon Lobby {LobbyMapId} Room:{RoomId} has players (Total={Total})", dungeonField.MapId, dungeonField.RoomId, totalPlayers);
+                        continue;
+                    }
+
+                    // Empty dungeon lobby (and its rooms)
+                    if (dungeonField.fieldEmptySince is null) {
+                        dungeonField.fieldEmptySince = DateTime.UtcNow;
+                        logger.Verbose("Dungeon Lobby {LobbyMapId} Room:{RoomId} empty, starting grace timer {Grace}", dungeonField.MapId, dungeonField.RoomId, Constant.DungeonDisposeEmptyTime);
+                        continue;
+                    }
+
+                    TimeSpan emptyFor = DateTime.UtcNow - dungeonField.fieldEmptySince.Value;
+                    if (emptyFor < Constant.DungeonDisposeEmptyTime) {
+                        logger.Verbose("Dungeon Lobby {LobbyMapId} Room:{RoomId} empty for {Elapsed}/{Grace}, waiting", dungeonField.MapId, dungeonField.RoomId, emptyFor, Constant.DungeonDisposeEmptyTime);
+                        continue;
+                    }
+
+                    // Grace period passed -> dispose
+                    MigrationError result = DisposeDungeon(dungeonField);
+                    logger.Debug("Dungeon Grace Dispose attempt LobbyMap:{LobbyMapId} Room:{RoomId} Result:{Result}", dungeonField.MapId, dungeonField.RoomId, result);
                 }
 
                 logger.Verbose("Field dispose loop sleeping for {Interval}ms", Constant.FieldDisposeLoopInterval);

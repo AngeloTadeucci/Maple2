@@ -36,8 +36,10 @@ public class CoordCommand : GameCommand {
         if (session.Field is null) return;
 
         Vector3 pos = session.Player.Position;
+        Vector3B vector3B = pos;
+        Vector3 center = vector3B * Constant.BlockSize;
         if (x == null && y == null && z == null) {
-            ctx.Console.Out.WriteLine("Current position: " + pos + ", Vector3B: " + (Vector3B) pos);
+            ctx.Console.Out.WriteLine("Current position: " + pos + "\nVector3B: " + vector3B + "\nBlock center: " + center);
             return;
         }
 
@@ -67,7 +69,12 @@ public class CoordCommand : GameCommand {
                 ctx.Console.Error.WriteLine($"Invalid relative coordinate: {input}. Use ~[value] or ~+[value] or ~-[value].");
                 return current;
             }
-            if (float.TryParse(input, out float abs)) return abs;
+            if (float.TryParse(input, out float abs)) {
+                if (asBlock) {
+                    abs *= Constant.BlockSize;
+                }
+                return abs;
+            }
             ctx.Console.Error.WriteLine($"Invalid coordinate: {input}. Use a number or ~[value] for relative coordinates.");
             return current;
         }

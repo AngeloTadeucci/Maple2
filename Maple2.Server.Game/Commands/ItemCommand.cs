@@ -4,6 +4,7 @@ using System.CommandLine.IO;
 using Maple2.Database.Storage;
 using Maple2.Model;
 using Maple2.Model.Enum;
+using Maple2.Model.Error;
 using Maple2.Model.Game;
 using Maple2.Server.Game.Model;
 using Maple2.Server.Game.Packets;
@@ -41,7 +42,7 @@ public class ItemCommand : GameCommand {
         try {
             rarity = Math.Clamp(rarity, 1, MAX_RARITY);
 
-            Item? firstItem = session.Field?.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+            Item? firstItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
             if (firstItem == null) {
                 ctx.Console.Error.WriteLine($"Invalid Item: {itemId}");
                 return;
@@ -49,33 +50,64 @@ public class ItemCommand : GameCommand {
 
             if (firstItem.IsCurrency()) {
                 firstItem.Amount = amount;
-                ProcessSingleItem(ctx, firstItem, drop);
+                ctx.ExitCode = GiveItem(ctx, firstItem) ? 0 : 1;
                 return;
             }
 
-            bool isNonStackable = firstItem.Metadata.Property.SlotMax == 0;
-            if (isNonStackable) {
-                ctx.Console.Error.WriteLine($"{itemId} has SlotMax of 0, ignoring...");
-                amount = Math.Clamp(amount, 1, int.MaxValue);
+            bool isNonStackable = firstItem.Metadata.Property.SlotMax == 1;
+
+            if (drop) {
+                if (isNonStackable) {
+                    // Apply hard cap only when dropping non-stackable items
+                    amount = Math.Clamp(amount, 1, 100);
+
+                    session.Field.DropItem(session.Player, firstItem);
+                    for (int i = 1; i < amount; i++) {
+                        Item? additionalItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+                        if (additionalItem == null) {
+                            ctx.Console.Error.WriteLine($"Failed to create additional item {i + 1}/{amount}");
+                            continue;
+                        }
+                        session.Field.DropItem(session.Player, additionalItem);
+                    }
+                } else {
+                    // Stackable items can be dropped as a single stack only up to SlotMax
+                    firstItem.Amount = Math.Clamp(amount, 1, firstItem.Metadata.Property.SlotMax);
+                    session.Field.DropItem(session.Player, firstItem);
+                }
+                ctx.ExitCode = 0;
+                return;
             }
 
-            // For non-stackable items or when rollMax is enabled, create individual items
-            if (isNonStackable || (rollMax && amount > 1)) {
-                ProcessSingleItem(ctx, firstItem, drop);
+            if (isNonStackable) {
+                int freeSlots = session.Item.Inventory.FreeSlots(firstItem.Inventory);
+                if (freeSlots <= 0) {
+                    session.Send(ItemInventoryPacket.Error(ItemInventoryError.s_err_inventory));
+                    return;
+                }
+                if (!GiveItem(ctx, firstItem)) {
+                    return;
+                }
 
+                amount = Math.Clamp(amount, 1, freeSlots);
+                // don't need to recalculate free slots, since we are skipping one already
                 for (int i = 1; i < amount; i++) {
-                    Item? additionalItem = session.Field?.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
+                    Item? additionalItem = session.Field.ItemDrop.CreateItem(itemId, rarity, rollMax: rollMax);
                     if (additionalItem == null) {
                         ctx.Console.Error.WriteLine($"Failed to create additional item {i + 1}/{amount}");
                         continue;
                     }
-
-                    ProcessSingleItem(ctx, additionalItem, drop);
+                    if (!GiveItem(ctx, additionalItem)) {
+                        return;
+                    }
                 }
             } else {
                 firstItem.Amount = amount;
-                ProcessSingleItem(ctx, firstItem, drop);
+                if (!GiveItem(ctx, firstItem)) {
+                    return;
+                }
             }
+
 
             ctx.ExitCode = 0;
         } catch (SystemException ex) {
@@ -84,14 +116,11 @@ public class ItemCommand : GameCommand {
         }
     }
 
-    private void ProcessSingleItem(InvocationContext ctx, Item item, bool drop) {
-        if (drop && session.Field != null) {
-            FieldItem fieldItem = session.Field.SpawnItem(session.Player, item);
-            session.Field.Broadcast(FieldPacket.DropItem(fieldItem));
-        } else if (!session.Item.Inventory.Add(item, true)) {
-            session.Item.Inventory.Discard(item);
-            ctx.Console.Error.WriteLine($"Failed to add item:{item.Id} to inventory");
-            ctx.ExitCode = 1;
-        }
+    private bool GiveItem(InvocationContext ctx, Item item) {
+        if (session.Item.Inventory.Add(item, true)) return true;
+        session.Item.Inventory.Discard(item);
+        ctx.Console.Error.WriteLine($"Failed to add item:{item.Id} to inventory");
+        ctx.ExitCode = 1;
+        return false;
     }
 }

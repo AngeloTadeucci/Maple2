@@ -130,6 +130,12 @@ public partial class FieldManager {
 
     public FieldPet? SpawnPet(Item pet, Vector3 position, Vector3 rotation, FieldMobSpawn? owner = null, FieldPlayer? player = null) {
         if (!NpcMetadata.TryGet(pet.Metadata.Property.PetId, out NpcMetadata? npc)) {
+            logger.Error("Failed to get npc metadata for pet id {PetId}", pet.Metadata.Property.PetId);
+            return null;
+        }
+
+        if (!ItemMetadata.TryGetPet(pet.Metadata.Property.PetId, out PetMetadata? petMetadata)) {
+            logger.Error("Failed to get pet metadata for pet id {PetId}", pet.Metadata.Property.PetId);
             return null;
         }
 
@@ -138,7 +144,8 @@ public partial class FieldManager {
         // We use GlobalId if there is an owner because players can move between maps.
         int objectId = player != null ? NextGlobalId() : NextLocalId();
         AnimationMetadata? animation = NpcMetadata.GetAnimation(npc.Model.Name);
-        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, Constant.PetFieldAiPath, player) {
+
+        var fieldPet = new FieldPet(this, objectId, agent, new Npc(npc, animation), pet, petMetadata, Constant.PetFieldAiPath, player) {
             Owner = owner,
             Position = position,
             Rotation = rotation,
@@ -177,8 +184,8 @@ public partial class FieldManager {
         var fieldPortal = new FieldQuestPortal(owner, this, NextLocalId(), portal) {
             Position = portal.Position,
             Rotation = portal.Rotation,
-            EndTick = (int) (FieldTick + TimeSpan.FromSeconds(Constant.QuestPortalKeepTime).TotalMilliseconds),
-            StartTick = (int) FieldTick,
+            EndTick = (FieldTick + (long) TimeSpan.FromSeconds(Constant.QuestPortalKeepTime).TotalMilliseconds).Truncate32(),
+            StartTick = FieldTickInt,
             Model = Constant.QuestPortalKeepNif,
         };
         fieldPortals[fieldPortal.ObjectId] = fieldPortal;
@@ -216,6 +223,27 @@ public partial class FieldManager {
         return fieldPortal;
     }
 
+    public FieldPortal? SpawnFieldToHomePortal(PlotCube plotCube, long targetHomeAccountId) {
+        if (plotCube.Metadata.Install is { IndoorPortal: false }) {
+            return null;
+        }
+
+        var transform = new Transform {
+            Position = plotCube.Position,
+            RotationAnglesDegrees = new Vector3(0, 0, plotCube.Rotation),
+        };
+
+        Vector3 newPosition = plotCube.Position;
+        newPosition -= transform.FrontAxis * 75;
+        newPosition.Z -= 75;
+
+        var portal = new Portal(NextLocalId(), Constant.DefaultHomeMapId, -1, PortalType.FieldToHome, PortalActionType.Interact, newPosition, new Vector3(0, 0, plotCube.Rotation), new Vector3(75, 75, 75), 0, 0, Visible: true, MinimapVisible: false, Enable: true);
+        FieldPortal fieldPortal = SpawnPortal(portal);
+        fieldPortal.HomeId = targetHomeAccountId;
+
+        return fieldPortal;
+    }
+
     public FieldItem SpawnItem(IActor owner, Item item) {
         lock (item) {
             using GameStorage.Request db = GameStorage.Context();
@@ -233,8 +261,9 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false) {
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner, long characterId = 0, bool fixedPosition = false) {
         var fieldItem = new FieldItem(this, NextLocalId(), item) {
+            Owner = owner,
             Position = position,
             Rotation = rotation,
             FixedPosition = fixedPosition,
@@ -246,17 +275,14 @@ public partial class FieldManager {
         return fieldItem;
     }
 
-    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, long characterId) {
-        var fieldItem = new FieldItem(this, NextLocalId(), item) {
-            Owner = owner,
-            Position = position,
-            Rotation = rotation,
-            ReceiverId = characterId,
-            Type = characterId > 0 ? DropType.Default : DropType.Player,
-        };
-        fieldItems[fieldItem.ObjectId] = fieldItem;
+    public void DropItem(IActor owner, Item item) {
+        FieldItem fieldItem = SpawnItem(owner, item);
+        Broadcast(FieldPacket.DropItem(fieldItem));
+    }
 
-        return fieldItem;
+    public void DropItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false) {
+        FieldItem fieldItem = SpawnItem(position, rotation, item, owner, characterId, fixedPosition);
+        Broadcast(FieldPacket.DropItem(fieldItem));
     }
 
     public FieldBreakable? AddBreakable(string entityId, BreakableActor breakable) {
@@ -427,6 +453,22 @@ public partial class FieldManager {
         Broadcast(InteractObjectPacket.Add(fieldInteract.Object));
     }
 
+    public void AddSkill(Ms2TriggerSkill triggerSkill, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
+        if (!SkillMetadata.TryGet(triggerSkill.SkillId, triggerSkill.Level, out SkillMetadata? skillMetadata)) {
+            logger.Warning("Invalid skill: {Id}", triggerSkill.SkillId);
+            return;
+        }
+
+        var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, skillMetadata, interval, triggerSkill.Count, position) {
+            Position = position,
+            Rotation = rotation,
+            TriggerId = triggerId,
+        };
+
+        fieldSkills[fieldSkill.ObjectId] = fieldSkill;
+        Broadcast(RegionSkillPacket.Add(fieldSkill));
+    }
+
     public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0) {
         var fieldSkill = new FieldSkill(this, NextLocalId(), FieldActor, metadata, interval, position) {
             Position = position,
@@ -564,7 +606,7 @@ public partial class FieldManager {
 
     private void SetBonusMapPortal(IList<MapMetadata> bonusMaps, Ms2RegionSpawn spawn) {
         // Spawn a hat within a random range of 5 min to 8 hours
-        int delay = Random.Shared.Next(1, 97) * (int) TimeSpan.FromMinutes(5).TotalMilliseconds;
+        var delay = Random.Shared.Next(1, 97) * TimeSpan.FromMinutes(5);
         MapMetadata bonusMapMetadata = bonusMaps[Random.Shared.Next(bonusMaps.Count)];
         IField? bonusMap = FieldFactory.Create(bonusMapMetadata.Id);
         bonusMap?.Init();
@@ -583,7 +625,7 @@ public partial class FieldManager {
             Continent.Kritias => "Eff_ks_magichole_portal_A01",
             _ => "Eff_event_portal_A01",
         };
-        fieldPortal.EndTick = (int) (FieldTick + TimeSpan.FromSeconds(30).TotalMilliseconds);
+        fieldPortal.EndTick = (FieldTick + (long) TimeSpan.FromSeconds(30).TotalMilliseconds).Truncate32();
         Broadcast(PortalPacket.Add(fieldPortal));
         Scheduler.Schedule(() => SetBonusMapPortal(bonusMaps, spawn), delay);
     }
@@ -667,6 +709,8 @@ public partial class FieldManager {
 
         fieldFunctionInteracts[cube.Interact.Id] = fieldInteract;
 
+        Broadcast(FunctionCubePacket.AddFunctionCube(cube.Interact));
+
         return fieldInteract;
     }
 
@@ -726,7 +770,7 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveInteract(IInteractObject interactObject, int removeDelay = 0) {
+    public bool RemoveInteract(IInteractObject interactObject, TimeSpan removeDelay = default) {
         if (!fieldAdBalloons.ContainsKey(interactObject.EntityId) && !fieldInteracts.ContainsKey(interactObject.EntityId)) {
             return false;
         }
@@ -747,8 +791,8 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemoveNpc(int objectId, int removeDelay = 0) {
-        if (!Mobs.TryGetValue(objectId, out FieldNpc? npc) && !Npcs.TryGetValue(objectId, out npc)) {
+    public bool RemoveNpc(int objectId, TimeSpan removeDelay = default) {
+        if (!Mobs.TryGetValue(objectId, out _) && !Npcs.TryGetValue(objectId, out _)) {
             return false;
         }
 
@@ -764,7 +808,7 @@ public partial class FieldManager {
         return true;
     }
 
-    public bool RemovePet(int objectId, int removeDelay = 0) {
+    public bool RemovePet(int objectId, TimeSpan removeDelay = default) {
         if (!Pets.TryRemove(objectId, out FieldPet? pet)) {
             return false;
         }

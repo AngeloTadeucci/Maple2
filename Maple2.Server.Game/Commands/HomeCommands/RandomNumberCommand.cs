@@ -9,10 +9,10 @@ using Maple2.Server.Game.Session;
 
 namespace Maple2.Server.Game.Commands.HomeCommands;
 
-public class RandomNumberCommand : Command {
+public class RandomNumberCommand : GameCommand {
     private readonly GameSession session;
 
-    public RandomNumberCommand(GameSession session) : base("roll", "Roll a random number between 1 and 100") {
+    public RandomNumberCommand(GameSession session) : base(AdminPermissions.None, "roll", "Roll a random number between 1 and 100") {
         this.session = session;
         IsHidden = Constant.HideHomeCommands;
 

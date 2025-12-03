@@ -336,6 +336,8 @@ message AdminResponse {
 
 message DisconnectRequest {
   int64 character_id = 1;
+  bool all = 2;
+  bool force = 3;
 }
 
 message DisconnectResponse {
@@ -360,3 +362,42 @@ message MentorRequest {
     Invite invite = 2;
   }
 }
+
+message FieldPlotRequest {
+  int32 ignore_channel = 1;
+  int32 map_id = 2;
+  int32 plot_number = 3;
+
+  message UpdatePlot {
+    int64 account_id = 1;
+    optional bool forfeit = 2;
+  }
+
+  message UpdateBlock {
+    int64 block_uid = 1;
+    int32 x = 2;
+    int32 y = 3;
+    int32 z = 4;
+
+    message Add {}
+    message Remove {}
+    message Rotate {
+      bool clockwise = 1;
+    }
+    message Replace {}
+
+    oneof request {
+      Add add = 5;
+      Remove remove = 6;
+      Rotate rotate = 7;
+      Replace replace = 8;
+    }
+  }
+
+  oneof request {
+    UpdatePlot update_plot = 4;
+    UpdateBlock update_block = 5;
+  }
+}
+
+message FieldPlotResponse {}

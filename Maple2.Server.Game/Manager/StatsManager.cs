@@ -170,11 +170,6 @@ public class StatsManager {
                 }
             }
 
-            Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
-            Values.GearScore += Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0).Item1;
-            player.Session.Dungeon.UpdateDungeonEnterLimit();
-            player.Session.ConditionUpdate(ConditionType.item_gear_score, counter: Values.GearScore);
-
             if (item.Socket != null) {
                 for (int index = 0; index < item.Socket.UnlockSlots; index++) {
                     ItemGemstone? gem = item.Socket.Sockets[index];
@@ -185,7 +180,26 @@ public class StatsManager {
             }
 
             player.Buffs.AddItemBuffs(item);
+
+            if (item.Type.IsShield || item.Type.IsSpellbook) {
+                // Shields and spellbooks do not contribute to gear score
+                continue;
+            }
+
+            Log.Logger.Debug("Calculating Gearscore. Item ID: {id} - Gearscore: {gearscore} - Rarity: {rarity}, Enchant Level: {enchantLevel}, Limit Break Level: {limitBreakLevel}", item.Metadata.Id, item.Metadata.Property.GearScore, item.Rarity, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
+            (int gearScore, int enchantScore) = Lua.CalcItemLevel(item.Metadata.Property.GearScore, item.Rarity, item.Type.Type, item.Enchant?.Enchants ?? 0, item.LimitBreak?.Level ?? 0);
+            int totalGearScore = gearScore + enchantScore;
+            // Stars and daggers have half gear score
+            if (item.Type.IsThrowingStar || item.Type.IsDagger) {
+                totalGearScore /= 2;
+            }
+            // TODO: When dual-wielding weapons, if the difference between the two weapons GS is too great (we don't know the exact value yet), the GS should be penalized (we don't know by how much).
+            Values.GearScore += totalGearScore;
         }
+
+        Log.Logger.Debug("Final Gearscore for {name} ({id}): {gearscore}", player.Value.Character.Name, player.Value.Character.Id, Values.GearScore);
+        player.Session.Dungeon.UpdateDungeonEnterLimit();
+        player.Session.ConditionUpdate(ConditionType.item_gear_score, counter: Values.GearScore);
     }
 
     private void AddBuffs(FieldPlayer player) {

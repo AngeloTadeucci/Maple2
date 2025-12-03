@@ -69,13 +69,13 @@ public class BattleState {
             actor.AppendDebugMessage($"Lost target '{GetTargetName()}'\n");
 
             Target = null;
-            if (actor is FieldPet pet && pet.OwnerId == 0) {
+            if (actor is FieldPet { OwnerId: 0 } pet) {
                 actor.Field.Broadcast(PetPacket.SyncTaming(0, pet));
             }
         }
 
         if (CanBattle && TargetId == 0 && nextTargetSearchTick <= tickCount) {
-            if (actor is FieldPet pet && pet.OwnerId == 0 && pet.TamingPoint <= 0) {
+            if (actor is FieldPet { OwnerId: 0, TamingPoint: <= 0 }) {
                 return;
             }
             FindNewTarget();

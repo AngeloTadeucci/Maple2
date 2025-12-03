@@ -7,7 +7,7 @@ namespace Maple2.Server.Game.Model.ActorStateComponent;
 
 public partial class MovementState {
     private SkillRecord? castSkill = null;
-    private NpcTask? castTask = null;
+    public NpcTask? CastTask { get; private set; } = null;
     private Vector3 castMoveOffset;
     private string castMoveStartKeyframe;
     private string castMoveEndKeyframe;
@@ -16,7 +16,7 @@ public partial class MovementState {
 
     public void StateSkillEvent(string keyName) {
         if (castSkill is null) {
-            castTask?.Cancel();
+            CastTask?.Cancel();
 
             return;
         }
@@ -55,13 +55,12 @@ public partial class MovementState {
                 int motionCount = castSkill.Metadata.Data.Motions.Length;
                 byte motion = castSkill.MotionPoint;
 
-                if (castTask is NpcSkillCastTask task && motion + 1 < motionCount) {
+                if (CastTask is NpcSkillCastTask task && motion + 1 < motionCount) {
                     SkillCast(task, castSkill!.SkillId, castSkill!.Level, 0, (byte) (motion + 1));
-
                     return;
                 }
 
-                castTask?.Completed();
+                CastTask?.Completed();
 
                 break;
             case "move0":

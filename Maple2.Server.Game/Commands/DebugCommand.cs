@@ -9,15 +9,13 @@ using Maple2.Model.Game.Field;
 using System.Numerics;
 using Maple2.Model.Common;
 using Maple2.Model.Enum;
+using Maple2.Model.Game;
 
 namespace Maple2.Server.Game.Commands;
 
 public class DebugCommand : GameCommand {
-    private readonly NpcMetadataStorage npcStorage;
 
-    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage) : base(AdminPermissions.Debug, "debug", "Debug information management.") {
-        this.npcStorage = npcStorage;
-
+    public DebugCommand(GameSession session, NpcMetadataStorage npcStorage, MapDataStorage mapDataStorage, MapMetadataStorage mapMetadataStorage) : base(AdminPermissions.Debug, "debug", "Debug information management.") {
         AddCommand(new DebugNpcAiCommand(session, npcStorage));
         AddCommand(new DebugAnimationCommand(session));
         AddCommand(new DebugSkillsCommand(session));
@@ -27,6 +25,8 @@ public class DebugCommand : GameCommand {
         AddCommand(new LogoutCommand(session));
         AddCommand(new ReloadCommandsCommand(session));
         AddCommand(new PrintInventoryCommand(session));
+        AddCommand(new ResetHomeCommand(session, mapMetadataStorage));
+        AddCommand(new ReloadPlotsCommand(session));
     }
 
     private class ReloadCommandsCommand : Command {
@@ -429,6 +429,64 @@ public class DebugCommand : GameCommand {
                 ctx.Console.Error.WriteLine(ex.Message);
                 ctx.ExitCode = 1;
             }
+        }
+    }
+
+    private class ResetHomeCommand : Command {
+        private readonly GameSession session;
+        private readonly MapMetadataStorage mapMetadata;
+
+        public ResetHomeCommand(GameSession session, MapMetadataStorage mapMetadata) : base("reset-home", "Resets the player's home to default values.") {
+            this.session = session;
+            this.mapMetadata = mapMetadata;
+
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            using GameStorage.Request db = session.GameStorage.Context();
+            long indoorId = session.Player.Value.Home.Indoor.Id;
+            int number = session.Player.Value.Home.Indoor.Number;
+            if (!mapMetadata.TryGetUgc(Constant.DefaultHomeMapId, out UgcMapMetadata? metadata)) {
+                return;
+            }
+
+            if (!metadata.Plots.TryGetValue(number, out UgcMapGroup? group)) {
+                return;
+            }
+            session.Player.Value.Home = new Home {
+                AccountId = session.AccountId,
+                Indoor = new PlotInfo(group) {
+                    OwnerId = session.AccountId,
+                    Id = indoorId,
+                    MapId = Constant.DefaultHomeMapId,
+                    Name = string.Empty,
+                    Number = number,
+                    ExpiryTime = 0,
+                },
+            };
+            ctx.Console.Out.WriteLine("Player home has been reset to default values. Relog now to apply changes.");
+        }
+    }
+
+    private class ReloadPlotsCommand : Command {
+        private readonly GameSession session;
+
+        public ReloadPlotsCommand(GameSession session) : base("reload-plots", "Request a reload for all plots in world for current map.") {
+            this.session = session;
+
+            this.SetHandler<InvocationContext>(Handle);
+        }
+
+        private void Handle(InvocationContext ctx) {
+            if (session.Field == null) {
+                ctx.Console.Error.WriteLine("No field loaded.");
+                return;
+            }
+            session.World.UpdateFieldPlot(new FieldPlotRequest {
+                MapId = -1,
+            });
+            ctx.Console.Out.WriteLine("Requested reload for all plots in current map.");
         }
     }
 }

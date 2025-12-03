@@ -13,7 +13,7 @@ public class ItemManager {
 
     public readonly EquipManager Equips;
     public readonly InventoryManager Inventory;
-    public readonly FurnishingManager Furnishing;
+    public FurnishingManager Furnishing { get; private set; }
 
     public ItemManager(GameStorage.Request db, GameSession session, ItemStatsCalculator itemStatsCalc) {
         this.session = session;
@@ -22,6 +22,12 @@ public class ItemManager {
         Equips = new EquipManager(db, session);
         Inventory = new InventoryManager(db, session);
         Furnishing = new FurnishingManager(db, session);
+    }
+
+    public void ReInstantiateFurnishing() {
+        using GameStorage.Request db = session.GameStorage.Context();
+        Furnishing = new FurnishingManager(db, session);
+        Furnishing.Load();
     }
 
     /// <summary>

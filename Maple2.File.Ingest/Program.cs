@@ -214,6 +214,7 @@ UpdateDatabase(metadataContext, new SkillMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new TableMapper(xmlReader, language));
 UpdateDatabase(metadataContext, new AchievementMapper(xmlReader));
 UpdateDatabase(metadataContext, new FunctionCubeMapper(xmlReader));
+UpdateDatabase(metadataContext, new BanWordMapper(xmlReader));
 
 NifParserHelper.ParseNif(modelReaders);
 
@@ -222,11 +223,11 @@ UpdateDatabase(metadataContext, new NxsMeshMapper());
 
 var index = new FlatTypeIndex(exportedReader);
 
-XBlockParser parser = new XBlockParser(exportedReader, index);
+var xBlockParser = new XBlockParser(exportedReader, index);
 
-UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, parser));
+UpdateDatabase(metadataContext, new MapEntityMapper(metadataContext, xBlockParser));
 
-MapDataMapper mapDataMapper = new MapDataMapper(metadataContext, parser);
+var mapDataMapper = new MapDataMapper(metadataContext, xBlockParser);
 
 UpdateDatabase(metadataContext, mapDataMapper);
 

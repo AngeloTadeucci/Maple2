@@ -131,7 +131,7 @@ public class FieldNpc : Actor<Npc> {
 
     protected override void Dispose(bool disposing) { }
 
-    protected virtual void Remove(int delay) => Field.RemoveNpc(ObjectId, delay);
+    protected virtual void Remove(TimeSpan delay) => Field.RemoveNpc(ObjectId, delay);
 
     private List<string> debugMessages = [];
     private bool playersListeningToDebug = false; // controls whether messages should log
@@ -181,7 +181,7 @@ public class FieldNpc : Actor<Npc> {
 
         playersListeningToDebug = playersListeningToDebugNow;
 
-        if (SendControl) {
+        if (SendControl && !IsDead) {
             SequenceCounter++;
             Field.BroadcastNpcControl(this);
             SendControl = false;
@@ -199,7 +199,7 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        if (hasBeenBattling && idleTask is null) {
+        if (hasBeenBattling && idleTask is null && MovementState.CastTask is null) {
             Vector3 spawnPoint = Navigation?.GetRandomPatrolPoint() ?? Origin;
 
             idleTask = MovementState.TryMoveTo(spawnPoint, false);
@@ -321,7 +321,7 @@ public class FieldNpc : Actor<Npc> {
 
         HandleDamageDealers();
 
-        Remove(delay: (int) (Value.Metadata.Dead.Time * 1000));
+        Remove(delay: TimeSpan.FromSeconds(Value.Metadata.Dead.Time));
     }
 
     public virtual void Animate(string sequenceName, float duration = -1f) {
@@ -330,13 +330,13 @@ public class FieldNpc : Actor<Npc> {
             return;
         }
 
-        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase);
+        bool isIdle = sequenceName.Contains("idle", StringComparison.OrdinalIgnoreCase) || sequenceName.Contains("sit", StringComparison.OrdinalIgnoreCase);
 
         idleTask = MovementState.TryEmote(sequence.Name, isIdle, duration);
     }
 
     public void Talk() {
-        if (SpawnAnimation is not null) {
+        if (!string.IsNullOrEmpty(SpawnAnimation)) {
             return;
         }
         idleTask = MovementState.TryTalk();
@@ -365,8 +365,7 @@ public class FieldNpc : Actor<Npc> {
             float y = Random.Shared.Next((int) Position.Y - Value.Metadata.DropInfo.DropDistanceRandom, (int) Position.Y + Value.Metadata.DropInfo.DropDistanceRandom);
             var position = new Vector3(x, y, Position.Z);
 
-            FieldItem fieldItem = Field.SpawnItem(this, position, Rotation, item, firstPlayer.Value.Character.Id);
-            Field.Broadcast(FieldPacket.DropItem(fieldItem));
+            Field.DropItem(position, Rotation, item, owner: this, characterId: firstPlayer.Value.Character.Id);
         }
     }
 

@@ -56,6 +56,7 @@ public interface IField : IDisposable {
 
     public int MapId { get; init; }
     public long FieldTick { get; }
+    public int FieldTickInt { get; }
     public virtual void Init() { }
 
     public void AddSkill(SkillMetadata metadata, int interval, in Vector3 position, in Vector3 rotation = default, int triggerId = 0);
@@ -71,8 +72,10 @@ public interface IField : IDisposable {
 
 
     public FieldItem SpawnItem(IActor owner, Item item);
-    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, long characterId = 0, bool fixedPosition = false);
-    public FieldItem SpawnItem(IFieldEntity owner, Vector3 position, Vector3 rotation, Item item, long characterId);
+    public FieldItem SpawnItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false);
+
+    public void DropItem(IActor owner, Item item);
+    public void DropItem(Vector3 position, Vector3 rotation, Item item, IFieldEntity? owner = null, long characterId = 0, bool fixedPosition = false);
 
     public void EnsurePlayerPosition(FieldPlayer player);
     public bool TryGetPlayerById(long characterId, [NotNullWhen(true)] out FieldPlayer? player);
@@ -91,6 +94,6 @@ public interface IField : IDisposable {
     public bool LiftupCube(in Vector3B coordinates, [NotNullWhen(true)] out LiftupWeapon? liftupWeapon);
     public void MovePlayerAlongPath(string pathName);
 
-    public bool RemoveNpc(int objectId, int removeDelay = 0);
-    public bool RemovePet(int objectId, int removeDelay = 0);
+    public bool RemoveNpc(int objectId, TimeSpan removeDelay = default);
+    public bool RemovePet(int objectId, TimeSpan removeDelay = default);
 }

@@ -1,6 +1,7 @@
 ﻿using Maple2.Database.Context;
 using Maple2.Database.Extensions;
 using Maple2.Database.Model;
+using Maple2.Model.Enum;
 using Maple2.Model.Game;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -53,13 +54,14 @@ public partial class GameStorage {
             this.game = game;
         }
 
-        private static PlayerInfo BuildPlayerInfo(Model.Character character, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long guildId, string guildName, long premiumTime, IList<long> clubs) {
+        private static PlayerInfo BuildPlayerInfo(Model.Character character, string permissions, UgcMap indoor, UgcMap? outdoor, AchievementInfo achievementInfo, long guildId, string guildName, long premiumTime, IList<long> clubs) {
             if (outdoor == null) {
                 return new PlayerInfo(character, indoor.Name, achievementInfo, clubs) {
                     PremiumTime = premiumTime,
                     LastOnlineTime = character.LastModified.ToEpochSeconds(),
                     GuildId = guildId,
                     GuildName = guildName,
+                    AccountAdminPermissions = Enum.Parse<AdminPermissions>(permissions, true),
                 };
             }
 

@@ -27,6 +27,7 @@ using Maple2.Server.Game.Packets;
 using Maple2.Server.Game.Util;
 using Maple2.Server.Game.Util.Sync;
 using Maple2.Server.World.Service;
+using Maple2.Tools.Extensions;
 using Maple2.Tools.Scheduler;
 using MigrationType = Maple2.Model.Enum.MigrationType;
 using WorldClient = Maple2.Server.World.Service.World.WorldClient;
@@ -37,7 +38,8 @@ public sealed partial class GameSession : Core.Network.Session {
     protected override PatchType Type => PatchType.Ignore;
     public const int FIELD_KEY = 0x1234;
 
-    private bool disposed;
+    // gameDisposeState: 0 = active, 1 = disposing, 2 = disposed
+    private int gameDisposeState;
     private readonly GameServer server;
 
     public readonly CommandRouter CommandHandler;
@@ -47,11 +49,9 @@ public sealed partial class GameSession : Core.Network.Session {
     public int ClientTick;
 
     public int Latency;
-
-    public long AccountId { get; private set; }
-    public long CharacterId { get; private set; }
     public string PlayerName => Player.Value.Character.Name;
     public Guid MachineId { get; private set; }
+    private bool preMigrationSaved;
 
     #region Autofac Autowired
     // ReSharper disable MemberCanBePrivate.Global
@@ -116,7 +116,7 @@ public sealed partial class GameSession : Core.Network.Session {
         State = SessionState.ChangeMap;
         CommandHandler = context.Resolve<CommandRouter>(new NamedParameter("session", this));
         Scheduler = new EventQueue();
-        Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), 1000);
+        Scheduler.ScheduleRepeated(() => Send(TimeSyncPacket.Request()), TimeSpan.FromSeconds(1));
 
         OnLoop += Scheduler.InvokeAll;
         GroupChats = new ConcurrentDictionary<int, GroupChatManager>();
@@ -125,6 +125,11 @@ public sealed partial class GameSession : Core.Network.Session {
 
     public bool FindSession(long characterId, [NotNullWhen(true)] out GameSession? other) {
         return server.GetSession(characterId, out other);
+    }
+
+    public bool FindField(int mapId, [NotNullWhen(true)] out FieldManager? field) {
+        field = server.GetField(mapId);
+        return field is not null;
     }
 
     public bool EnterServer(long accountId, Guid machineId, MigrateInResponse migrateResponse) {
@@ -149,11 +154,11 @@ public sealed partial class GameSession : Core.Network.Session {
         int objectId = FieldManager.NextGlobalId();
         Player? player;
         try {
-            AcquireLock(CharacterId, 5);
+            AcquireLock(AccountId, 5);
             player = db.LoadPlayer(AccountId, CharacterId, objectId, GameServer.GetChannel());
             db.Commit();
         } finally {
-            ReleaseLock(CharacterId);
+            ReleaseLock(AccountId);
         }
         if (player == null) {
             Logger.Warning("Failed to load player from database: {AccountId}, {CharacterId}", AccountId, CharacterId);
@@ -643,6 +648,7 @@ public sealed partial class GameSession : Core.Network.Session {
     }
 
     public void MigrateToPlanner(PlotMode plotMode) {
+        MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
@@ -653,7 +659,7 @@ public sealed partial class GameSession : Core.Network.Session {
                 OwnerId = AccountId,
                 InstancedContent = true,
                 Type = (World.Service.MigrationType) plotMode,
-                RoomId = -1,
+                RoomId = plotMode is not PlotMode.Normal ? -1 : 0,
             };
 
             MigrateOutResponse response = World.MigrateOut(request);
@@ -671,6 +677,7 @@ public sealed partial class GameSession : Core.Network.Session {
     public void Migrate(int mapId, long ownerId = 0) {
         bool isInstanced = ServerTableMetadata.InstanceFieldTable.Entries.ContainsKey(mapId);
 
+        MigrationSave();
         try {
             var request = new MigrateOutRequest {
                 AccountId = AccountId,
@@ -739,9 +746,11 @@ public sealed partial class GameSession : Core.Network.Session {
     ~GameSession() => Dispose(false);
 
     protected override void Dispose(bool disposing) {
-        if (disposed) return;
-        if (Field is null) return;
-        disposed = true;
+        // Ensure dispose is only run once
+        if (Interlocked.CompareExchange(ref gameDisposeState, 1, 0) != 0) return;
+
+        // Snapshot values needed after teardown
+        long fieldTickSnapshot = Field?.FieldTick ?? Environment.TickCount64;
 
         if (State == SessionState.Connected) {
             PlayerInfo.SendUpdate(new PlayerUpdateRequest {
@@ -758,79 +767,78 @@ public sealed partial class GameSession : Core.Network.Session {
 
         try {
             Scheduler.Stop();
-            OnLoop -= Scheduler.InvokeAll;
+            if (OnLoop != null) OnLoop -= Scheduler.InvokeAll;
             server.OnDisconnected(this);
             LeaveField();
             Player.Value.Character.Channel = -1;
             Player.Value.Account.Online = false;
             State = SessionState.Disconnected;
-            Complete();
 
+            // Early base dispose to stop further network sends
+            base.Dispose(disposing);
+
+            // Cache config & persistence
             SaveCacheConfig();
-            AcquireLock(CharacterId);
-            using GameStorage.Request db = GameStorage.Context();
-            db.BeginTransaction();
-            db.SavePlayer(Player);
-            UgcMarket.Save(db);
-            Config.Save(db);
-            Shop.Save(db);
-            Item.Save(db);
-            Survival.Save(db);
-            Housing.Save(db);
-            GameEvent.Save(db);
-            Achievement.Save(db);
-            Quest.Save(db);
-            Dungeon.Save(db);
-            db.Commit();
-            db.SaveChanges();
+            MigrationSave();
         } catch (Exception ex) {
             Logger.Error(ex, "Error during session cleanup for {Player}", PlayerName);
         } finally {
-            ReleaseLock(CharacterId);
-            Guild.Dispose();
-            Buddy.Dispose();
-            Party.Dispose();
+            SafeDispose(Guild);
+            SafeDispose(Buddy);
+            SafeDispose(Party);
             foreach ((int groupChatId, GroupChatManager groupChat) in GroupChats) {
-                groupChat.CheckDisband();
+                try { groupChat.CheckDisband(); } catch (Exception ex) { Logger.Error(ex, "Error disbanding group chat {Id} for {Player}", groupChatId, PlayerName); }
             }
-
             foreach ((long clubId, ClubManager club) in Clubs) {
-                club.Dispose();
+                SafeDispose(club);
             }
-
-            Player.Dispose();
-            base.Dispose(disposing);
+            try { Player.Dispose(); } catch (Exception ex) { Logger.Error(ex, "Error disposing player for {Player}", PlayerName); }
+            Interlocked.Exchange(ref gameDisposeState, 2);
         }
         return;
+
+        void TrySaveComponent(GameStorage.Request db, Action<GameStorage.Request> action) {
+            try { action(db); } catch (Exception ex) { Logger.Error(ex, "Error saving component for {Player}", PlayerName); }
+        }
+
+        void SafeDispose(IDisposable? disp) {
+            if (disp == null) return;
+            try { disp.Dispose(); } catch (Exception ex) { Logger.Error(ex, "Error disposing component for {Player}", PlayerName); }
+        }
 
         void SaveCacheConfig() {
             List<Buff> buffs = Buffs.GetSaveCacheBuffs();
             IList<SkillCooldown> skillCooldowns = Config.GetCurrentSkillCooldowns();
 
             long stopTime = DateTime.Now.ToEpochSeconds();
-            long fieldTick = Field.FieldTick;
+            long fieldTick = fieldTickSnapshot;
+
             try {
                 PlayerConfigResponse _ = World.PlayerConfig(new PlayerConfigRequest {
                     Save = new PlayerConfigRequest.Types.Save {
                         Buffs = {
-                            buffs.Select(buff => new BuffInfo {
-                                Id = buff.Id,
-                                Level = buff.Level,
-                                MsRemaining = (int) (buff.EndTick - fieldTick),
-                                Stacks = buff.Stacks,
-                                Enabled = buff.Enabled,
-                                StopTime = stopTime,
-                            }),
+                            buffs
+                                .Where(buff => buff.EndTick - fieldTick > 0)
+                                .Select(buff => new BuffInfo {
+                                    Id = buff.Id,
+                                    Level = buff.Level,
+                                    MsRemaining = (buff.EndTick - fieldTick).Truncate32(),
+                                    Stacks = buff.Stacks,
+                                    Enabled = buff.Enabled,
+                                    StopTime = stopTime,
+                                }),
                         },
                         SkillCooldowns = {
-                            skillCooldowns.Select(cooldown => new SkillCooldownInfo {
-                                SkillId = cooldown.SkillId,
-                                SkillLevel = cooldown.Level,
-                                GroupId = cooldown.GroupId,
-                                MsRemaining = (int) (cooldown.EndTick - fieldTick),
-                                StopTime = stopTime,
-                                Charges = cooldown.Charges,
-                            }),
+                            skillCooldowns
+                                .Where(cooldown => cooldown.EndTick - fieldTick > 0)
+                                .Select(cooldown => new SkillCooldownInfo {
+                                    SkillId = cooldown.SkillId,
+                                    SkillLevel = cooldown.Level,
+                                    GroupId = cooldown.GroupId,
+                                    MsRemaining = (cooldown.EndTick - fieldTick).Truncate32(),
+                                    StopTime = stopTime,
+                                    Charges = cooldown.Charges,
+                                }),
                         },
                         DeathInfo = new DeathInfo {
                             Count = Config.DeathCount,
@@ -840,10 +848,39 @@ public sealed partial class GameSession : Core.Network.Session {
                     },
                     RequesterId = CharacterId,
                 });
-            } catch (Exception ex) {
-                Logger.Error(ex, "Error saving buffs for {Player}", PlayerName);
-            }
+            } catch (Exception ex) { Logger.Error(ex, "Error saving buffs for {Player}", PlayerName); }
         }
     }
     #endregion
+
+    public void MigrationSave() {
+        if (preMigrationSaved) return;
+        try {
+            AcquireLock(AccountId, 5);
+            using GameStorage.Request db = GameStorage.Context();
+            db.BeginTransaction();
+            db.SavePlayer(Player);
+            TrySaveComponent(db, UgcMarket.Save);
+            TrySaveComponent(db, Config.Save);
+            TrySaveComponent(db, Shop.Save);
+            TrySaveComponent(db, Item.Save);
+            TrySaveComponent(db, Survival.Save);
+            TrySaveComponent(db, Housing.Save);
+            TrySaveComponent(db, GameEvent.Save);
+            TrySaveComponent(db, Achievement.Save);
+            TrySaveComponent(db, Quest.Save);
+            TrySaveComponent(db, Dungeon.Save);
+            db.Commit();
+            db.SaveChanges();
+            preMigrationSaved = true;
+        } catch (Exception ex) {
+            Logger.Error(ex, "MigrationSave failed AccountId={AccountId} CharacterId={CharacterId}", AccountId, CharacterId);
+        } finally {
+            ReleaseLock(AccountId);
+        }
+
+        void TrySaveComponent(GameStorage.Request db, Action<GameStorage.Request> action) {
+            try { action(db); } catch (Exception ex) { Logger.Error(ex, "Error saving component for {Player}", PlayerName); }
+        }
+    }
 }

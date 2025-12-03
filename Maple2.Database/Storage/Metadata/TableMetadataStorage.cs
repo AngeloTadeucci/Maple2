@@ -14,6 +14,7 @@ public class TableMetadataStorage {
     private readonly Lazy<MagicPathTable> magicPathTable;
     private readonly Lazy<MasteryRecipeTable> masteryRecipeTable;
     private readonly Lazy<MasteryRewardTable> masteryRewardTable;
+    private readonly Lazy<MasteryDifferentialFactorTable> masteryDifferentialFactorTable;
     private readonly Lazy<FishingRodTable> fishingRodTable;
     private readonly Lazy<InstrumentTable> instrumentTable;
     private readonly Lazy<InteractObjectTable> interactObjectTable;
@@ -80,6 +81,7 @@ public class TableMetadataStorage {
     public MagicPathTable MagicPathTable => magicPathTable.Value;
     public MasteryRecipeTable MasteryRecipeTable => masteryRecipeTable.Value;
     public MasteryRewardTable MasteryRewardTable => masteryRewardTable.Value;
+    public MasteryDifferentialFactorTable MasteryDifferentialFactorTable => masteryDifferentialFactorTable.Value;
     public FishingRodTable FishingRodTable => fishingRodTable.Value;
     public InstrumentTable InstrumentTable => instrumentTable.Value;
     public InteractObjectTable InteractObjectTable => interactObjectTable.Value;
@@ -147,6 +149,7 @@ public class TableMetadataStorage {
         magicPathTable = Retrieve<MagicPathTable>(context, TableNames.MAGIC_PATH);
         masteryRecipeTable = Retrieve<MasteryRecipeTable>(context, TableNames.MASTERY_RECIPE);
         masteryRewardTable = Retrieve<MasteryRewardTable>(context, TableNames.MASTERY);
+        masteryDifferentialFactorTable = Retrieve<MasteryDifferentialFactorTable>(context, TableNames.MASTERYT_DIFFERENTIAL_FACTOR);
         fishingRodTable = Retrieve<FishingRodTable>(context, TableNames.FISHING_ROD);
         instrumentTable = Retrieve<InstrumentTable>(context, TableNames.INSTRUMENT_CATEGORY_INFO);
         interactObjectTable = Retrieve<InteractObjectTable>(context, TableNames.INTERACT_OBJECT);
@@ -208,7 +211,7 @@ public class TableMetadataStorage {
             lock (context) {
                 TableMetadata? row = context.TableMetadata.Find(key);
                 if (row?.Table is not T result) {
-                    throw new InvalidOperationException($"Row does not exist: {key}");
+                    throw new InvalidOperationException($"Row does not exist: {key}. Rerun Ingest!");
                 }
 
                 return result;

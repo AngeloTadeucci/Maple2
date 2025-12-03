@@ -79,7 +79,7 @@ public sealed class AchievementManager {
                 achievements.Add(metadata.Id, achievement);
             }
 
-            if (!RankUp(achievement, count)) {
+            if (!RankUp(conditionType, achievement, count)) {
                 session.Send(AchievementPacket.Update(achievement));
             }
         }
@@ -88,11 +88,17 @@ public sealed class AchievementManager {
     /// <summary>
     /// Checks if trophy has reached a new grade. Provides rewards only on certain reward types.
     /// </summary>
+    /// <param name="conditionType">ConditionType to check for trophy rank up.</param>
     /// <param name="achievement">Trophy entry from player</param>
     /// <param name="count">Count amount to increment on for the trophy.</param>
     /// <returns>False if there is no rank up possible or condition value has not been met.</returns>
-    private bool RankUp(Achievement achievement, long count = 1) {
-        achievement.Counter += count;
+    private bool RankUp(ConditionType conditionType, Achievement achievement, long count = 1) {
+        // Are there more conditions that should be added here?
+        if (conditionType is ConditionType.item_gear_score) {
+            achievement.Counter = Math.Max(achievement.Counter, count); // Using Math.Max to ensure gear score doesn't decrease.
+        } else {
+            achievement.Counter += count;
+        }
 
         if (!achievement.Metadata.Grades.TryGetValue(achievement.CurrentGrade, out AchievementMetadataGrade? grade)) {
             return false;
@@ -160,6 +166,18 @@ public sealed class AchievementManager {
             return;
         }
 
+        bool hasMoreGrades = achievement.Metadata.Grades.Count > achievement.CurrentGrade;
+        // If an achievement has still more grade then we need to make sure the reward grade
+        // does not exceed the current grade. Else it will not show the correct trophy in
+        // the UI but rather the one past.
+        if (grade.Reward == null && hasMoreGrades) {
+            achievement.RewardGrade = Math.Min(achievement.RewardGrade + 1, achievement.CurrentGrade);
+            return;
+        }
+
+        // If an achievement has no reward and no further grade we need to push the reward grade
+        // past the current grade to mark it as fully completed. Else it will not show the crown
+        // and completion date for the trophy but rather the claim button which is not correct.
         if (grade.Reward == null) {
             achievement.RewardGrade++;
             return;

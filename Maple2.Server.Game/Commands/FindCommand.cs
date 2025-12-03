@@ -18,12 +18,12 @@ public class FindCommand : GameCommand {
                        NpcMetadataStorage npcStorage,
                        QuestMetadataStorage questStorage,
                        SkillMetadataStorage skillStorage) : base(AdminPermissions.Find, "find", "Search database for ids.") {
-        AddCommand(new FindSubCommand<AchievementMetadata>("achievement", session, achievementStorage));
-        AddCommand(new FindSubCommand<ItemMetadata>("item", session, itemStorage));
-        AddCommand(new FindSubCommand<MapMetadata>("map", session, mapStorage));
-        AddCommand(new FindSubCommand<NpcMetadata>("npc", session, npcStorage));
-        AddCommand(new FindSubCommand<QuestMetadata>("quest", session, questStorage));
-        AddCommand(new FindSubCommand<StoredSkillMetadata>("skill", session, skillStorage));
+        AddCommand(new FindSubCommand<AchievementMetadata>(["achievement"], session, achievementStorage));
+        AddCommand(new FindSubCommand<ItemMetadata>(["item"], session, itemStorage));
+        AddCommand(new FindSubCommand<MapMetadata>(["map"], session, mapStorage));
+        AddCommand(new FindSubCommand<NpcMetadata>(["npc", "mob"], session, npcStorage));
+        AddCommand(new FindSubCommand<QuestMetadata>(["quest"], session, questStorage));
+        AddCommand(new FindSubCommand<StoredSkillMetadata>(["skill"], session, skillStorage));
     }
 
     private class FindSubCommand<T> : Command where T : ISearchResult {
@@ -32,7 +32,13 @@ public class FindCommand : GameCommand {
         private readonly GameSession session;
         private readonly ISearchable<T> storage;
 
-        public FindSubCommand(string name, GameSession session, ISearchable<T> storage) : base(name, "Search by querying metadata.") {
+        public FindSubCommand(string[] name, GameSession session, ISearchable<T> storage) : base(name[0], "Search by querying metadata.") {
+            if (name.Length > 1) {
+                foreach (string alias in name.Skip(1)) {
+                    AddAlias(alias);
+                }
+            }
+
             this.session = session;
             this.storage = storage;
 
