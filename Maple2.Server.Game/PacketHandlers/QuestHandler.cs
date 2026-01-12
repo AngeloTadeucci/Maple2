@@ -198,7 +198,7 @@ public class QuestHandler : FieldPacketHandler {
     private static void HandleGoToDungeon(GameSession session, IByteReader packet) {
         int questId = packet.ReadInt();
 
-        if (!session.Quest.TryGetQuest(questId, out Quest? quest)) {
+        if (!session.Quest.TryGetQuest(questId, out Quest? quest) || quest.State != QuestState.Started) {
             return;
         }
 
