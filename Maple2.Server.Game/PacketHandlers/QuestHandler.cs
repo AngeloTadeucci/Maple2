@@ -195,7 +195,7 @@ public class QuestHandler : FieldPacketHandler {
             : FieldEnterPacket.Error(MigrationError.s_move_err_default));
     }
 
-    private void HandleGoToDungeon(GameSession session, IByteReader packet) {
+    private static void HandleGoToDungeon(GameSession session, IByteReader packet) {
         int questId = packet.ReadInt();
 
         if (!session.Quest.TryGetQuest(questId, out Quest? quest)) {
