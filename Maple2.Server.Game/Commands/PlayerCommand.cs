@@ -377,7 +377,7 @@ public class PlayerCommand : GameCommand {
 
         private void Handle(InvocationContext ctx, int points) {
             try {
-                session.Config.AddStatPoint(AttributePointSource.Unknown, points);
+                session.Config.AddStatPoint(AttributePointSource.Command, points);
                 ctx.ExitCode = 0;
             } catch (SystemException ex) {
                 ctx.Console.Error.WriteLine(ex.Message);
