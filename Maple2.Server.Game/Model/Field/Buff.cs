@@ -255,7 +255,7 @@ public class Buff : IUpdatable, IByteSerializable {
 
         AdditionalEffectMetadataDot.DotBuff dotBuff = Metadata.Dot.Buff;
         if (dotBuff.Target == DotTargetType.Caster) {
-            Caster.Buffs.AddBuff(Caster, Caster, dotBuff.Id, dotBuff.Level, Field.FieldTick);
+            Caster.Buffs.AddBuff(Owner, Caster, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         } else {
             Owner.Buffs.AddBuff(Caster, Owner, dotBuff.Id, dotBuff.Level, Field.FieldTick);
         }
