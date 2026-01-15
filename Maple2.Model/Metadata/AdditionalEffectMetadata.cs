@@ -119,7 +119,7 @@ public record AdditionalEffectMetadataDot(
         bool NotKill);
 
     public record DotBuff(
-        SkillTargetType Target, // 0,1
+        DotTargetType Target, // 0,1
         int Id,
         short Level);
 }

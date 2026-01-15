@@ -236,7 +236,7 @@ public class AdditionalEffectMapper : TypeMapper<AdditionalEffectMetadata> {
             return null;
         }
 
-        return new AdditionalEffectMetadataDot.DotBuff(Target: (SkillTargetType) dotBuff.target, Id: dotBuff.buffID, Level: dotBuff.buffLevel);
+        return new AdditionalEffectMetadataDot.DotBuff(Target: (DotTargetType) dotBuff.target, Id: dotBuff.buffID, Level: dotBuff.buffLevel);
     }
 
     private static AdditionalEffectMetadataShield? Convert(ShieldProperty shield) {
