@@ -274,7 +274,7 @@ public partial class TriggerContext {
             .Select(boxId => Objects.Boxes.GetValueOrDefault(boxId))
             .Where(box => box != null)!;
 
-        return Field.EnumerateNpcs().Where(mob => boxes.Any(box => box.Contains(mob.Position)));
+        return Field.EnumerateNpcs().Where(mob => boxes.Any(box => box.Contains(mob.Position) || box.Intersects(mob.Shape)));
     }
 
     private void SpawnNpc(int spawnId, bool useSpawnAnimation = false) {
