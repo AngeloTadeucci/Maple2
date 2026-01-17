@@ -20,7 +20,7 @@ public partial class TriggerContext {
     }
 
     public void SpawnMonster(int[] spawnIds, bool autoTarget, int delay) {
-        WarnLog("[CreateMonster] spawnIds:{SpawnIds}, spawnAnimation:{SpawnAnimation}, delay:{Delay}", string.Join(", ", spawnIds), autoTarget, delay);
+        WarnLog("[CreateMonster] spawnIds:{SpawnIds}, autoTarget:{AutoTarget}, delay:{Delay}", string.Join(", ", spawnIds), autoTarget, delay);
         foreach (int spawnId in spawnIds) {
             if (delay > 0) {
                 Events.Schedule(() => SpawnNpc(spawnId, autoTarget), TimeSpan.FromMilliseconds(delay));
