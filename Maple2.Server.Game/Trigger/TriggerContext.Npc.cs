@@ -19,10 +19,14 @@ public partial class TriggerContext {
         SpawnMonster(addSpawnId);
     }
 
-    public void SpawnMonster(int[] spawnIds, bool spawnAnimation, int arg3) {
-        WarnLog("[CreateMonster] spawnIds:{SpawnIds}, spawnAnimation:{SpawnAnimation}, arg3:{Arg3}", string.Join(", ", spawnIds), spawnAnimation, arg3);
+    public void SpawnMonster(int[] spawnIds, bool autoTarget, int delay) {
+        WarnLog("[CreateMonster] spawnIds:{SpawnIds}, autoTarget:{AutoTarget}, delay:{Delay}", string.Join(", ", spawnIds), autoTarget, delay);
         foreach (int spawnId in spawnIds) {
-            SpawnNpc(spawnId, spawnAnimation);
+            if (delay > 0) {
+                Events.Schedule(() => SpawnNpc(spawnId, autoTarget), TimeSpan.FromMilliseconds(delay));
+            } else {
+                SpawnNpc(spawnId, autoTarget);
+            }
         }
     }
 
@@ -283,7 +287,9 @@ public partial class TriggerContext {
             return;
         }
 
-        foreach (SpawnPointNPCListEntry entry in spawn.NpcList) {
+        List<SpawnPointNPCListEntry> npcList = spawn.NpcList.OrderBy(_ => Random.Shared.Next()).Take(spawn.NpcCount).ToList();
+
+        foreach (SpawnPointNPCListEntry entry in npcList) {
             if (!Field.NpcMetadata.TryGet(entry.NpcId, out NpcMetadata? npc)) {
                 logger.Error("[SpawnNpc] Invalid npcId:{NpcId}", entry.NpcId);
                 continue;

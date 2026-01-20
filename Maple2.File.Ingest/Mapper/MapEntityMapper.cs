@@ -103,14 +103,14 @@ public class MapEntityMapper : TypeMapper<MapEntity> {
                                 return new SpawnPointNPCListEntry(npcId, npcCount);
                             }).WhereNotNull().ToList();
                             if (npcSpawn.NpcCount == 0 || npcList.Count == 0) {
-                                Console.WriteLine($"No NPCs for {xblock}:{entity.EntityId}");
+                                //Console.WriteLine($"No NPCs for {xblock}:{entity.EntityId}");
                                 continue;
                             }
 
                             switch (npcSpawn) {
                                 case IEventSpawnPointNPC eventNpcSpawn:
                                     yield return new MapEntity(xblock, new Guid(entity.EntityId), entity.EntityName) {
-                                        Block = new EventSpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, npcList, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation),
+                                        Block = new EventSpawnPointNPC(npcSpawn.EntityId, npcSpawn.SpawnPointID, npcSpawn.Position, npcSpawn.Rotation, npcSpawn.IsVisible, npcSpawn.IsSpawnOnFieldCreate, npcSpawn.SpawnRadius, (int) npcSpawn.NpcCount, npcList, (int) npcSpawn.RegenCheckTime, (int) eventNpcSpawn.LifeTime, eventNpcSpawn.SpawnAnimation),
                                     };
                                     continue;
                                 default:
