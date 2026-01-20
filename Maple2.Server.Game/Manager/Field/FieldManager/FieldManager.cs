@@ -174,8 +174,13 @@ public partial class FieldManager : IField {
             AddSpawnPointNpc(spawnPointNpc);
         }
 
-        foreach ((int id, SpawnPointPC spawnPoint) in Entities.PlayerSpawns) {
-            fieldPlayerSpawnPoints[id] = new FieldPlayerSpawnPoint(this, NextLocalId(), spawnPoint);
+        foreach (SpawnPointPC spawnPoint in Entities.PlayerSpawns) {
+            int fieldId = spawnPoint.SpawnPointId;
+            if (fieldPlayerSpawnPoints.ContainsKey(fieldId)) {
+                // Duplicate spawn point id (ex. unassigned ID), use next local id
+                fieldId = NextLocalId();
+            }
+            fieldPlayerSpawnPoints[fieldId] = new FieldPlayerSpawnPoint(this, NextLocalId(), spawnPoint, fieldId);
         }
 
         foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
@@ -466,6 +471,10 @@ public partial class FieldManager : IField {
             return playerSpawnPoint != null;
         }
         return fieldPlayerSpawnPoints.TryGetValue(id, out playerSpawnPoint);
+    }
+
+    public List<FieldPlayerSpawnPoint> GetPlayerSpawns() {
+        return fieldPlayerSpawnPoints.Values.ToList();
     }
 
     public bool TryGetItem(int objectId, [NotNullWhen(true)] out FieldItem? fieldItem) {

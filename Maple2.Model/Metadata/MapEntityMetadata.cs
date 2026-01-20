@@ -11,7 +11,7 @@ public class MapEntityMetadata {
     public required IReadOnlyDictionary<Vector3B, LiftableTargetBox> LiftableTargetBoxes { get; init; }
     public required IReadOnlyDictionary<Vector3B, ObjectWeapon> ObjectWeapons { get; init; }
     public required IReadOnlyDictionary<int, Portal> Portals { get; init; }
-    public required IReadOnlyDictionary<int, SpawnPointPC> PlayerSpawns { get; init; }
+    public required IReadOnlyList<SpawnPointPC> PlayerSpawns { get; init; }
     public required IReadOnlyList<SpawnPointNPC> NpcSpawns { get; init; }
     public required IReadOnlyDictionary<int, Ms2RegionSpawn> RegionSpawns { get; init; }
     public required IReadOnlyList<Ms2RegionSkill> RegionSkills { get; init; }
