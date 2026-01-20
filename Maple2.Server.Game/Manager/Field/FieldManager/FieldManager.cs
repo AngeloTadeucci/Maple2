@@ -160,13 +160,6 @@ public partial class FieldManager : IField {
                 new UgcMapGroup.Limits(0, 0, 0, 0, 0, 0)));
         }
 
-        foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
-            AddTrigger(trigger);
-        }
-        foreach (Portal portal in Entities.Portals.Values) {
-            SpawnPortal(portal);
-        }
-
         foreach ((Guid guid, BreakableActor breakable) in Entities.BreakableActors) {
             AddBreakable(guid.ToString("N"), breakable);
         }
@@ -183,6 +176,18 @@ public partial class FieldManager : IField {
 
         foreach ((int id, SpawnPointPC spawnPoint) in Entities.PlayerSpawns) {
             fieldPlayerSpawnPoints[id] = new FieldPlayerSpawnPoint(this, NextLocalId(), spawnPoint);
+        }
+
+        foreach (TriggerModel trigger in Entities.TriggerModels.Values) {
+            AddTrigger(trigger);
+        }
+
+        foreach (Portal portal in Entities.Portals.Values) {
+            SpawnPortal(portal);
+        }
+
+        foreach (FieldTrigger trigger in fieldTriggers.Values) {
+            trigger.Update(FieldTick);
         }
 
         IList<MapMetadata> bonusMaps = MapMetadata.GetMapsByType(Metadata.Property.Continent, MapType.PocketRealm);
