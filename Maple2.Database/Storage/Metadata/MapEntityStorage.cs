@@ -32,7 +32,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
             var liftableTargetBoxes = new Dictionary<Vector3B, LiftableTargetBox>();
             var objectWeapons = new Dictionary<Vector3B, ObjectWeapon>();
             var portals = new Dictionary<int, Portal>();
-            var playerSpawns = new Dictionary<int, SpawnPointPC>();
+            var playerSpawns = new List<SpawnPointPC>();
             var npcSpawns = new List<SpawnPointNPC>();
             var regionSpawns = new Dictionary<int, Ms2RegionSpawn>();
             var regionSkills = new List<Ms2RegionSkill>();
@@ -72,7 +72,7 @@ public class MapEntityStorage(MetadataContext context) : MetadataStorage<string,
                         regionSkills.Add(regionSkill);
                         break;
                     case SpawnPointPC playerSpawn:
-                        playerSpawns[playerSpawn.SpawnPointId] = playerSpawn;
+                        playerSpawns.Add(playerSpawn);
                         break;
                     case SpawnPointNPC npcSpawn:
                         if (npcSpawn is EventSpawnPointNPC eventNpcSpawn) {
